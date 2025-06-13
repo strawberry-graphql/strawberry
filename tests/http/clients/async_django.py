@@ -1,12 +1,15 @@
 from __future__ import annotations
 
-from collections.abc import AsyncIterable
+from collections.abc import AsyncIterable, Sequence
+from datetime import timedelta
+from typing import Optional
 
 from django.core.exceptions import BadRequest, SuspiciousOperation
 from django.http import Http404, HttpRequest, HttpResponse, StreamingHttpResponse
 
 from strawberry.django.views import AsyncGraphQLView as BaseAsyncGraphQLView
 from strawberry.http import GraphQLHTTPResponse
+from strawberry.http.ides import GraphQL_IDE
 from strawberry.types import ExecutionResult
 from tests.http.context import get_context
 from tests.views.schema import Query, schema
@@ -39,18 +42,31 @@ class AsyncGraphQLView(BaseAsyncGraphQLView[dict[str, object], object]):
 
 
 class AsyncDjangoHttpClient(DjangoHttpClient):
-    async def _do_request(self, request: HttpRequest) -> Response:
-        view = AsyncGraphQLView.as_view(
+    def __init__(
+        self,
+        graphiql: Optional[bool] = None,
+        graphql_ide: Optional[GraphQL_IDE] = "graphiql",
+        allow_queries_via_get: bool = True,
+        keep_alive: bool = False,
+        keep_alive_interval: float = 1,
+        debug: bool = False,
+        subscription_protocols: Sequence[str] = (),
+        connection_init_wait_timeout: timedelta = timedelta(minutes=1),
+        result_override: ResultOverrideFunction = None,
+        multipart_uploads_enabled: bool = False,
+    ):
+        self.view = AsyncGraphQLView.as_view(
             schema=schema,
-            graphiql=self.graphiql,
-            graphql_ide=self.graphql_ide,
-            allow_queries_via_get=self.allow_queries_via_get,
-            result_override=self.result_override,
-            multipart_uploads_enabled=self.multipart_uploads_enabled,
+            graphiql=graphiql,
+            graphql_ide=graphql_ide,
+            allow_queries_via_get=allow_queries_via_get,
+            result_override=result_override,
+            multipart_uploads_enabled=multipart_uploads_enabled,
         )
 
+    async def _do_request(self, request: HttpRequest) -> Response:
         try:
-            response = await view(request)
+            response = await self.view(request)
         except Http404:
             return Response(status_code=404, data=b"Not found", headers={})
         except (BadRequest, SuspiciousOperation) as e:

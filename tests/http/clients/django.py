@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from collections.abc import Sequence
+from datetime import timedelta
 from io import BytesIO
 from json import dumps
 from typing import Any, Optional, Union
@@ -49,14 +51,22 @@ class DjangoHttpClient(HttpClient):
         graphiql: Optional[bool] = None,
         graphql_ide: Optional[GraphQL_IDE] = "graphiql",
         allow_queries_via_get: bool = True,
+        keep_alive: bool = False,
+        keep_alive_interval: float = 1,
+        debug: bool = False,
+        subscription_protocols: Sequence[str] = (),
+        connection_init_wait_timeout: timedelta = timedelta(minutes=1),
         result_override: ResultOverrideFunction = None,
         multipart_uploads_enabled: bool = False,
     ):
-        self.graphiql = graphiql
-        self.graphql_ide = graphql_ide
-        self.allow_queries_via_get = allow_queries_via_get
-        self.result_override = result_override
-        self.multipart_uploads_enabled = multipart_uploads_enabled
+        self.view = GraphQLView.as_view(
+            schema=schema,
+            graphiql=graphiql,
+            graphql_ide=graphql_ide,
+            allow_queries_via_get=allow_queries_via_get,
+            result_override=result_override,
+            multipart_uploads_enabled=multipart_uploads_enabled,
+        )
 
     def _get_header_name(self, key: str) -> str:
         return f"HTTP_{key.upper().replace('-', '_')}"
@@ -73,17 +83,8 @@ class DjangoHttpClient(HttpClient):
         return super()._get_headers(method=method, headers=headers, files=files)
 
     async def _do_request(self, request: HttpRequest) -> Response:
-        view = GraphQLView.as_view(
-            schema=schema,
-            graphiql=self.graphiql,
-            graphql_ide=self.graphql_ide,
-            allow_queries_via_get=self.allow_queries_via_get,
-            result_override=self.result_override,
-            multipart_uploads_enabled=self.multipart_uploads_enabled,
-        )
-
         try:
-            response = view(request)
+            response = self.view(request)
         except Http404:
             return Response(status_code=404, data=b"Not found")
         except (BadRequest, SuspiciousOperation) as e:

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from collections.abc import Sequence
+from datetime import timedelta
 from io import BytesIO
 from json import dumps
 from random import randint
@@ -52,6 +54,11 @@ class SanicHttpClient(HttpClient):
         graphiql: Optional[bool] = None,
         graphql_ide: Optional[GraphQL_IDE] = "graphiql",
         allow_queries_via_get: bool = True,
+        keep_alive: bool = False,
+        keep_alive_interval: float = 1,
+        debug: bool = False,
+        subscription_protocols: Sequence[str] = (),
+        connection_init_wait_timeout: timedelta = timedelta(minutes=1),
         result_override: ResultOverrideFunction = None,
         multipart_uploads_enabled: bool = False,
     ):
@@ -66,10 +73,7 @@ class SanicHttpClient(HttpClient):
             result_override=result_override,
             multipart_uploads_enabled=multipart_uploads_enabled,
         )
-        self.app.add_route(
-            view,
-            "/graphql",
-        )
+        self.app.add_route(view, "/graphql")
 
     async def _graphql_request(
         self,

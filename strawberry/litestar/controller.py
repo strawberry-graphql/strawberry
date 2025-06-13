@@ -55,7 +55,7 @@ from strawberry.http.typevars import Context, RootValue
 from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
 
 if TYPE_CHECKING:
-    from collections.abc import AsyncGenerator, AsyncIterator, Mapping
+    from collections.abc import AsyncGenerator, AsyncIterator, Mapping, Sequence
 
     from litestar.types import AnyCallable, Dependencies
     from strawberry.http import GraphQLHTTPResponse
@@ -411,7 +411,7 @@ def make_graphql_controller(
     root_value_getter: Optional[AnyCallable] = None,
     # TODO: context typevar
     context_getter: Optional[AnyCallable] = None,
-    subscription_protocols: tuple[str, ...] = (
+    subscription_protocols: Sequence[str] = (
         GRAPHQL_TRANSPORT_WS_PROTOCOL,
         GRAPHQL_WS_PROTOCOL,
     ),
