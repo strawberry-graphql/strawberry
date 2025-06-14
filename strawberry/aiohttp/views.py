@@ -68,7 +68,7 @@ class AioHTTPRequestAdapter(AsyncHTTPRequestAdapter):
         data: dict[str, Any] = {}
         files: dict[str, Any] = {}
 
-        async for field in reader:
+        while field := await reader.next():
             assert isinstance(field, BodyPartReader)
             assert field.name
 
