@@ -153,9 +153,7 @@ async def test_ws_message_frame_types_cannot_be_mixed(ws_raw: WebSocketClient):
     assert ws.close_reason == "WebSocket message type must be text"
 
 
-async def test_connection_init_timeout(
-    request: object, http_client_class: type[HttpClient]
-):
+async def test_connection_init_timeout(http_client_class: type[HttpClient]):
     with contextlib.suppress(ImportError):
         from tests.http.clients.aiohttp import AioHttpClient
 
@@ -206,9 +204,7 @@ async def test_connection_init_timeout_cancellation(
 
 
 @pytest.mark.xfail(reason="This test is flaky")
-async def test_close_twice(
-    mocker: MockerFixture, request: object, http_client_class: type[HttpClient]
-):
+async def test_close_twice(mocker: MockerFixture, http_client_class: type[HttpClient]):
     test_client = http_client_class()
     test_client.create_app(connection_init_wait_timeout=timedelta(seconds=0.25))
 
