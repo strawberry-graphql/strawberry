@@ -43,7 +43,7 @@ if TYPE_CHECKING:
     from strawberry.schema import BaseSchema
 
 
-class AioHTTPRequestAdapter(AsyncHTTPRequestAdapter):
+class AiohttpHTTPRequestAdapter(AsyncHTTPRequestAdapter):
     def __init__(self, request: web.Request) -> None:
         self.request = request
 
@@ -84,7 +84,7 @@ class AioHTTPRequestAdapter(AsyncHTTPRequestAdapter):
         return self.headers.get("content-type")
 
 
-class AioHTTPWebSocketAdapter(AsyncWebSocketAdapter):
+class AiohttpWebSocketAdapter(AsyncWebSocketAdapter):
     def __init__(
         self, view: AsyncBaseHTTPView, request: web.Request, ws: web.WebSocketResponse
     ) -> None:
@@ -132,8 +132,8 @@ class GraphQLView(
     _is_coroutine = asyncio.coroutines._is_coroutine  # type: ignore[attr-defined]
 
     allow_queries_via_get = True
-    request_adapter_class = AioHTTPRequestAdapter
-    websocket_adapter_class = AioHTTPWebSocketAdapter
+    request_adapter_class = AiohttpHTTPRequestAdapter
+    websocket_adapter_class = AiohttpWebSocketAdapter
 
     def __init__(
         self,
