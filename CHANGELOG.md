@@ -1,6 +1,15 @@
 CHANGELOG
 =========
 
+0.273.2 - 2025-06-15
+--------------------
+
+In this release, we replaced the usage of an undocumented AIOHTTP
+`MultipartReader` API with the intended public API.
+
+Contributed by [Jonathan Ehwald](https://github.com/DoctorJohn) via [PR #3906](https://github.com/strawberry-graphql/strawberry/pull/3906/)
+
+
 0.273.1 - 2025-06-15
 --------------------
 
