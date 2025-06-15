@@ -52,12 +52,6 @@ async def ws(ws_raw: WebSocketClient) -> AsyncGenerator[WebSocketClient, None]:
     assert ws.closed
 
 
-# convenience fixture to use previous name
-@pytest.fixture
-def aiohttp_app_client(http_client: HttpClient) -> HttpClient:
-    return http_client
-
-
 async def test_simple_subscription(ws: WebSocketClient):
     await ws.send_legacy_message(
         {
@@ -292,9 +286,9 @@ async def test_context_can_be_modified_from_within_on_ws_connect(
     assert ws_raw.closed
 
 
-async def test_sends_keep_alive(aiohttp_app_client: HttpClient):
-    aiohttp_app_client.create_app(keep_alive=True, keep_alive_interval=0.1)
-    async with aiohttp_app_client.ws_connect(
+async def test_sends_keep_alive(http_client: HttpClient):
+    http_client.create_app(keep_alive=True, keep_alive_interval=0.1)
+    async with http_client.ws_connect(
         "/graphql", protocols=[GRAPHQL_WS_PROTOCOL]
     ) as ws:
         await ws.send_legacy_message({"type": "connection_init"})
@@ -655,7 +649,7 @@ async def test_resolving_enums(ws: WebSocketClient):
 
 
 @pytest.mark.xfail(reason="flaky test")
-async def test_task_cancellation_separation(aiohttp_app_client: HttpClient):
+async def test_task_cancellation_separation(http_client: HttpClient):
     # Note Python 3.7 does not support Task.get_name/get_coro so we have to use
     # repr(Task) to check whether expected tasks are running.
     # This only works for aiohttp, where we are using the same event loop
@@ -663,7 +657,7 @@ async def test_task_cancellation_separation(aiohttp_app_client: HttpClient):
     try:
         from tests.http.clients.aiohttp import AioHttpClient
 
-        aio = aiohttp_app_client == AioHttpClient  # type: ignore
+        aio = http_client == AioHttpClient  # type: ignore
     except ImportError:
         aio = False
 
@@ -674,12 +668,8 @@ async def test_task_cancellation_separation(aiohttp_app_client: HttpClient):
             if "BaseGraphQLWSHandler.handle_async_results" in repr(task)
         ]
 
-    connection1 = aiohttp_app_client.ws_connect(
-        "/graphql", protocols=[GRAPHQL_WS_PROTOCOL]
-    )
-    connection2 = aiohttp_app_client.ws_connect(
-        "/graphql", protocols=[GRAPHQL_WS_PROTOCOL]
-    )
+    connection1 = http_client.ws_connect("/graphql", protocols=[GRAPHQL_WS_PROTOCOL])
+    connection2 = http_client.ws_connect("/graphql", protocols=[GRAPHQL_WS_PROTOCOL])
 
     async with connection1 as ws1, connection2 as ws2:
         start_message: StartMessage = {
@@ -748,8 +738,8 @@ async def test_task_cancellation_separation(aiohttp_app_client: HttpClient):
         assert complete_message["id"] == "debug1"
 
 
-async def test_injects_connection_params(aiohttp_app_client: HttpClient):
-    async with aiohttp_app_client.ws_connect(
+async def test_injects_connection_params(http_client: HttpClient):
+    async with http_client.ws_connect(
         "/graphql", protocols=[GRAPHQL_WS_PROTOCOL]
     ) as ws:
         await ws.send_legacy_message(
@@ -791,8 +781,8 @@ async def test_injects_connection_params(aiohttp_app_client: HttpClient):
         assert ws.closed
 
 
-async def test_rejects_connection_params(aiohttp_app_client: HttpClient):
-    async with aiohttp_app_client.ws_connect(
+async def test_rejects_connection_params(http_client: HttpClient):
+    async with http_client.ws_connect(
         "/graphql", protocols=[GRAPHQL_WS_PROTOCOL]
     ) as ws:
         await ws.send_json(
@@ -813,9 +803,9 @@ async def test_rejects_connection_params(aiohttp_app_client: HttpClient):
 
 @mock.patch.object(MyExtension, MyExtension.get_results.__name__, return_value={})
 async def test_no_extensions_results_wont_send_extensions_in_payload(
-    mock: mock.MagicMock, aiohttp_app_client: HttpClient
+    mock: mock.MagicMock, http_client: HttpClient
 ):
-    async with aiohttp_app_client.ws_connect(
+    async with http_client.ws_connect(
         "/graphql", protocols=[GRAPHQL_WS_PROTOCOL]
     ) as ws:
         await ws.send_legacy_message({"type": "connection_init"})
