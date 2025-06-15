@@ -154,15 +154,6 @@ async def test_ws_message_frame_types_cannot_be_mixed(ws_raw: WebSocketClient):
 
 
 async def test_connection_init_timeout(http_client_class: type[HttpClient]):
-    with contextlib.suppress(ImportError):
-        from tests.http.clients.aiohttp import AioHttpClient
-
-        if http_client_class == AioHttpClient:
-            pytest.skip(
-                "Closing a AIOHTTP WebSocket from a "
-                "task currently doesn't work as expected"
-            )
-
     test_client = http_client_class()
     test_client.create_app(connection_init_wait_timeout=timedelta(seconds=0))
 
