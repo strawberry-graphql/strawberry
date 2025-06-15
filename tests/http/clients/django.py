@@ -171,7 +171,7 @@ class DjangoHttpClient(HttpClient):
 
         additional_arguments = {**headers}
 
-        body = data or dumps(json)
+        body = dumps(json) if json is not None else data
 
         if headers.get("HTTP_CONTENT_TYPE"):
             additional_arguments["content_type"] = headers["HTTP_CONTENT_TYPE"]
