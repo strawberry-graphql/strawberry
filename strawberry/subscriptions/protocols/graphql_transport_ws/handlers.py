@@ -224,7 +224,7 @@ class BaseGraphQLTransportWSHandler(Generic[Context, RootValue]):
         except RuntimeError:
             # Unlike in the other protocol implementations, we access the operation type
             # before executing the operation. Therefore, we don't get a nice
-            # CannotGetOperationTypeError, but rather the underlying a RuntimeError.
+            # CannotGetOperationTypeError, but rather the underlying RuntimeError.
             e = CannotGetOperationTypeError(operation_name)
             await self.websocket.close(
                 code=4400,
