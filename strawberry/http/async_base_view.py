@@ -13,7 +13,7 @@ from typing import (
     cast,
     overload,
 )
-from typing_extensions import Literal, TypeGuard
+from typing_extensions import Literal, Self, TypeGuard
 
 from graphql import GraphQLError
 
@@ -113,7 +113,7 @@ class AsyncBaseHTTPView(
     request_adapter_class: Callable[[Request], AsyncHTTPRequestAdapter]
     websocket_adapter_class: Callable[
         [
-            "AsyncBaseHTTPView[Any, Any, Any, Any, Any, Context, RootValue]",
+            Self,
             WebSocketRequest,
             WebSocketResponse,
         ],
@@ -361,7 +361,7 @@ class AsyncBaseHTTPView(
             response_data=response_data, sub_response=sub_response
         )
 
-    def encode_multipart_data(self, data: Any, separator: str) -> str:
+    def encode_multipart_data(self, data: object, separator: str) -> str:
         return "".join(
             [
                 f"\r\n--{separator}\r\n",
