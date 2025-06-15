@@ -277,7 +277,7 @@ async def test_operation_selection(
 
 
 @pytest.mark.parametrize(
-    ("operation_name"),
+    "operation_name",
     ["", "Query3"],
 )
 async def test_invalid_operation_selection(http_client: HttpClient, operation_name):
