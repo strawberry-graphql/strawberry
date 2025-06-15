@@ -498,7 +498,7 @@ class Schema(BaseSchema):
         try:
             operation_type = context.operation_type
         except RuntimeError as error:
-            raise CannotGetOperationTypeError from error
+            raise CannotGetOperationTypeError(context.operation_name) from error
 
         if operation_type not in context.allowed_operations:
             raise InvalidOperationTypeError(operation_type)
@@ -609,7 +609,11 @@ class Schema(BaseSchema):
                         # only return a sanitised version to the client.
                         self._process_errors(result.errors, execution_context)
 
-        except (MissingQueryError, InvalidOperationTypeError):
+        except (
+            MissingQueryError,
+            CannotGetOperationTypeError,
+            InvalidOperationTypeError,
+        ):
             raise
         except Exception as exc:  # noqa: BLE001
             return await self._handle_execution_result(
@@ -677,8 +681,15 @@ class Schema(BaseSchema):
                             extensions=extensions_runner.get_extensions_results_sync(),
                         )
 
-                if execution_context.operation_type not in allowed_operation_types:
-                    raise InvalidOperationTypeError(execution_context.operation_type)  # noqa: TRY301
+                try:
+                    operation_type = execution_context.operation_type
+                except RuntimeError as error:
+                    raise CannotGetOperationTypeError(
+                        execution_context.operation_name
+                    ) from error
+
+                if operation_type not in execution_context.allowed_operations:
+                    raise InvalidOperationTypeError(operation_type)  # noqa: TRY301
 
                 with extensions_runner.validation():
                     _run_validation(execution_context)
@@ -725,7 +736,11 @@ class Schema(BaseSchema):
                             # extension). That way we can log the original errors but
                             # only return a sanitised version to the client.
                             self._process_errors(result.errors, execution_context)
-        except (MissingQueryError, InvalidOperationTypeError):
+        except (
+            MissingQueryError,
+            CannotGetOperationTypeError,
+            InvalidOperationTypeError,
+        ):
             raise
         except Exception as exc:  # noqa: BLE001
             errors = [_coerce_error(exc)]

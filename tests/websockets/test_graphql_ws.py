@@ -80,7 +80,6 @@ async def test_simple_subscription(ws: WebSocketClient):
     [
         ({}, "Hi1"),
         ({"operationName": None}, "Hi1"),
-        ({"operationName": ""}, "Hi1"),
         ({"operationName": "Subscription1"}, "Hi1"),
         ({"operationName": "Subscription2"}, "Hi2"),
     ],
@@ -114,7 +113,11 @@ async def test_operation_selection(
     assert complete_message["id"] == "demo"
 
 
-async def test_invalid_operation_selection(ws: WebSocketClient):
+@pytest.mark.parametrize(
+    ("operation_name"),
+    ["", "Subscription2"],
+)
+async def test_invalid_operation_selection(ws: WebSocketClient, operation_name):
     await ws.send_legacy_message(
         {
             "type": "start",
@@ -123,7 +126,7 @@ async def test_invalid_operation_selection(ws: WebSocketClient):
                 "query": """
                     subscription Subscription1 { echo(message: "Hi1") }
                 """,
-                "operationName": "Subscription2",
+                "operationName": operation_name,
             },
         }
     )
@@ -132,7 +135,7 @@ async def test_invalid_operation_selection(ws: WebSocketClient):
     assert error_message["type"] == "error"
     assert error_message["id"] == "demo"
     assert error_message["payload"] == {
-        "message": 'Unknown operation named "Subscription2".'
+        "message": f'Unknown operation named "{operation_name}".'
     }
 
 

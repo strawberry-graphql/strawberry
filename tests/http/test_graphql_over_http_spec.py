@@ -275,10 +275,6 @@ async def test_13ee(http_client):
     assert "errors" not in response.json
 
 
-@pytest.mark.xfail(
-    reason="OPTIONAL - Currently results in lots of CannotGetOperationTypeErrors",
-    raises=AssertionError,
-)
 @pytest.mark.parametrize(
     "invalid",
     [{"obj": "ect"}, 0, False, ["array"]],
