@@ -1,6 +1,16 @@
 CHANGELOG
 =========
 
+0.273.1 - 2025-06-15
+--------------------
+
+This release fixes that the Chalice HTTP view integration did not set
+appropriate content-type headers for responses, as it's recommended by the
+GraphQL over HTTP specification.
+
+Contributed by [Jonathan Ehwald](https://github.com/DoctorJohn) via [PR #3904](https://github.com/strawberry-graphql/strawberry/pull/3904/)
+
+
 0.273.0 - 2025-06-10
 --------------------
 
