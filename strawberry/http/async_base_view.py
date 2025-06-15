@@ -287,7 +287,7 @@ class AsyncBaseHTTPView(
                 await self.graphql_transport_ws_handler_class(
                     view=self,
                     websocket=websocket,
-                    context=context,  # type: ignore
+                    context=context,
                     root_value=root_value,  # type: ignore
                     schema=self.schema,
                     debug=self.debug,
@@ -297,7 +297,7 @@ class AsyncBaseHTTPView(
                 await self.graphql_ws_handler_class(
                     view=self,
                     websocket=websocket,
-                    context=context,  # type: ignore
+                    context=context,
                     root_value=root_value,  # type: ignore
                     schema=self.schema,
                     debug=self.debug,
