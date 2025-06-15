@@ -64,6 +64,9 @@ class DjangoHttpClient(HttpClient):
     def _get_header_name(self, key: str) -> str:
         return f"HTTP_{key.upper().replace('-', '_')}"
 
+    def _to_django_headers(self, headers: dict[str, str]) -> dict[str, str]:
+        return {self._get_header_name(key): value for key, value in headers.items()}
+
     def _get_headers(
         self,
         method: Literal["get", "post"],
@@ -71,7 +74,7 @@ class DjangoHttpClient(HttpClient):
         files: Optional[dict[str, BytesIO]],
     ) -> dict[str, str]:
         headers = headers or {}
-        headers = {self._get_header_name(key): value for key, value in headers.items()}
+        headers = self._to_django_headers(headers)
 
         return super()._get_headers(method=method, headers=headers, files=files)
 
@@ -152,13 +155,8 @@ class DjangoHttpClient(HttpClient):
         url: str,
         headers: Optional[dict[str, str]] = None,
     ) -> Response:
-        headers = self._get_headers(
-            method="get",
-            headers=headers,
-            files=None,
-        )
-
-        return await self.request(url, "get", headers=headers)
+        django_headers = self._to_django_headers(headers or {})
+        return await self.request(url, "get", headers=django_headers)
 
     async def post(
         self,
@@ -167,20 +165,17 @@ class DjangoHttpClient(HttpClient):
         json: Optional[JSON] = None,
         headers: Optional[dict[str, str]] = None,
     ) -> Response:
-        headers = self._get_headers(method="post", headers=headers, files=None)
-
-        additional_arguments = {**headers}
+        django_headers = self._to_django_headers(headers or {})
+        content_type = django_headers.pop("HTTP_CONTENT_TYPE", "")
 
         body = data or dumps(json)
-
-        if headers.get("HTTP_CONTENT_TYPE"):
-            additional_arguments["content_type"] = headers["HTTP_CONTENT_TYPE"]
 
         factory = RequestFactory()
         request = factory.post(
             url,
             data=body,
-            **additional_arguments,
+            content_type=content_type,
+            headers=django_headers,
         )
 
         return await self._do_request(request)
