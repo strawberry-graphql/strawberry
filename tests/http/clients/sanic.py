@@ -66,10 +66,7 @@ class SanicHttpClient(HttpClient):
             result_override=result_override,
             multipart_uploads_enabled=multipart_uploads_enabled,
         )
-        self.app.add_route(
-            view,
-            "/graphql",
-        )
+        self.app.add_route(view, "/graphql")
 
     async def _graphql_request(
         self,
