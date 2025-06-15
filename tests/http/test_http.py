@@ -1,3 +1,5 @@
+from typing import Literal
+
 import pytest
 
 from strawberry.http.base import BaseView
@@ -7,10 +9,10 @@ from .clients.base import HttpClient
 
 @pytest.mark.parametrize("method", ["delete", "head", "put", "patch"])
 async def test_does_only_allow_get_and_post(
-    method: str,
+    method: Literal["delete", "head", "put", "patch"],
     http_client: HttpClient,
 ):
-    response = await http_client.request(url="/graphql", method=method)  # type: ignore
+    response = await http_client.request(url="/graphql", method=method)
 
     assert response.status_code == 405
 
