@@ -248,7 +248,7 @@ class AsyncBaseHTTPView(
     async def run(
         self,
         request: Request,
-        context: Optional[Context] = UNSET,
+        context: Context = UNSET,
         root_value: Optional[RootValue] = UNSET,
     ) -> Response: ...
 
@@ -256,14 +256,14 @@ class AsyncBaseHTTPView(
     async def run(
         self,
         request: WebSocketRequest,
-        context: Optional[Context] = UNSET,
+        context: Context = UNSET,
         root_value: Optional[RootValue] = UNSET,
     ) -> WebSocketResponse: ...
 
     async def run(
         self,
         request: Union[Request, WebSocketRequest],
-        context: Optional[Context] = UNSET,
+        context: Context = UNSET,
         root_value: Optional[RootValue] = UNSET,
     ) -> Union[Response, WebSocketResponse]:
         root_value = (
@@ -287,7 +287,7 @@ class AsyncBaseHTTPView(
                 await self.graphql_transport_ws_handler_class(
                     view=self,
                     websocket=websocket,
-                    context=context,  # type: ignore
+                    context=context,
                     root_value=root_value,  # type: ignore
                     schema=self.schema,
                     debug=self.debug,
@@ -297,7 +297,7 @@ class AsyncBaseHTTPView(
                 await self.graphql_ws_handler_class(
                     view=self,
                     websocket=websocket,
-                    context=context,  # type: ignore
+                    context=context,
                     root_value=root_value,  # type: ignore
                     schema=self.schema,
                     debug=self.debug,
@@ -317,8 +317,6 @@ class AsyncBaseHTTPView(
             if context is UNSET
             else context
         )
-
-        assert context
 
         if not self.is_request_allowed(request_adapter):
             raise HTTPException(405, "GraphQL only supports GET and POST requests.")
