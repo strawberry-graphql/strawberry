@@ -195,11 +195,6 @@ async def test_a5bf(http_client):
     """
     MAY use 400 status code when request body is missing on POST
     """
-    if isinstance(http_client, (DjangoHttpClient, ChaliceHttpClient, SanicHttpClient)):
-        pytest.xfail(
-            "Our Django, Chalice, and Sanic test clients currently require a body"
-        )
-
     response = await http_client.post(
         url="/graphql",
         headers={"Content-Type": "application/json"},

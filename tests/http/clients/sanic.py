@@ -140,7 +140,8 @@ class SanicHttpClient(HttpClient):
         json: Optional[JSON] = None,
         headers: Optional[dict[str, str]] = None,
     ) -> Response:
-        body = data or dumps(json)
+        body = dumps(json) if json is not None else data
+
         request, response = await self.app.asgi_client.request(
             "post", url, content=body, headers=headers
         )
