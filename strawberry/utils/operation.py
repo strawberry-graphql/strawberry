@@ -25,7 +25,7 @@ def get_operation_type(
 ) -> OperationType:
     definition: Optional[OperationDefinitionNode] = None
 
-    if operation_name:
+    if operation_name is not None:
         for d in graphql_document.definitions:
             if not isinstance(d, OperationDefinitionNode):
                 continue

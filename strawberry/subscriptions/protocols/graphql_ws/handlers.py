@@ -194,18 +194,12 @@ class BaseGraphQLWSHandler(Generic[Context, RootValue]):
 
             await self.send_message(CompleteMessage(type="complete", id=operation_id))
 
-        except CannotGetOperationTypeError:
+        except CannotGetOperationTypeError as e:
             await self.send_message(
                 ErrorMessage(
                     type="error",
                     id=operation_id,
-                    payload={
-                        "message": (
-                            f'Unknown operation named "{operation_name}".'
-                            if operation_name
-                            else "Can't get GraphQL operation type"
-                        )
-                    },
+                    payload={"message": e.as_http_error_reason()},
                 )
             )
         except asyncio.CancelledError:

@@ -57,7 +57,7 @@ class ExecutionContext:
 
     @property
     def operation_name(self) -> Optional[str]:
-        if self._provided_operation_name:
+        if self._provided_operation_name is not None:
             return self._provided_operation_name
 
         definition = self._get_first_operation()

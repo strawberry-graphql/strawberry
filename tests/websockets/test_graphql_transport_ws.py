@@ -472,7 +472,6 @@ async def test_simple_subscription(ws: WebSocketClient):
     [
         ({}, "Hi1"),
         ({"operationName": None}, "Hi1"),
-        ({"operationName": ""}, "Hi1"),
         ({"operationName": "Subscription1"}, "Hi1"),
         ({"operationName": "Subscription2"}, "Hi2"),
     ],
@@ -499,7 +498,11 @@ async def test_operation_selection(
     await ws.send_message({"id": "sub1", "type": "complete"})
 
 
-async def test_invalid_operation_selection(ws: WebSocketClient):
+@pytest.mark.parametrize(
+    ("operation_name"),
+    ["", "Subscription2"],
+)
+async def test_invalid_operation_selection(ws: WebSocketClient, operation_name):
     await ws.send_message(
         {
             "type": "subscribe",
@@ -508,7 +511,7 @@ async def test_invalid_operation_selection(ws: WebSocketClient):
                 "query": """
                     subscription Subscription1 { echo(message: "Hi1") }
                 """,
-                "operationName": "Subscription2",
+                "operationName": f"{operation_name}",
             },
         }
     )
@@ -516,7 +519,7 @@ async def test_invalid_operation_selection(ws: WebSocketClient):
     await ws.receive(timeout=2)
     assert ws.closed
     assert ws.close_code == 4400
-    assert ws.close_reason == 'Unknown operation named "Subscription2".'
+    assert ws.close_reason == f'Unknown operation named "{operation_name}".'
 
 
 async def test_operation_selection_without_operations(ws: WebSocketClient):
@@ -790,7 +793,6 @@ async def test_single_result_mutation_operation(ws: WebSocketClient):
     [
         ({}, "Hello Strawberry1"),
         ({"operationName": None}, "Hello Strawberry1"),
-        ({"operationName": ""}, "Hello Strawberry1"),
         ({"operationName": "Query1"}, "Hello Strawberry1"),
         ({"operationName": "Query2"}, "Hello Strawberry2"),
     ],
@@ -822,7 +824,13 @@ async def test_single_result_operation_selection(
     assert complete_message == {"id": "sub1", "type": "complete"}
 
 
-async def test_single_result_invalid_operation_selection(ws: WebSocketClient):
+@pytest.mark.parametrize(
+    "operation_name",
+    ["", "Query2"],
+)
+async def test_single_result_invalid_operation_selection(
+    ws: WebSocketClient, operation_name
+):
     query = """
         query Query1 {
             hello
@@ -833,14 +841,14 @@ async def test_single_result_invalid_operation_selection(ws: WebSocketClient):
         {
             "id": "sub1",
             "type": "subscribe",
-            "payload": {"query": query, "operationName": "Query2"},
+            "payload": {"query": query, "operationName": operation_name},
         }
     )
 
     await ws.receive(timeout=2)
     assert ws.closed
     assert ws.close_code == 4400
-    assert ws.close_reason == 'Unknown operation named "Query2".'
+    assert ws.close_reason == f'Unknown operation named "{operation_name}".'
 
 
 async def test_single_result_operation_selection_without_operations(

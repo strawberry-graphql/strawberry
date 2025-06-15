@@ -8,6 +8,11 @@ from tests.conftest import skip_if_gql_32
 
 from .clients.base import HttpClient
 
+try:
+    from .clients.chalice import ChaliceHttpClient
+except ImportError:
+    ChaliceHttpClient = type(None)
+
 
 @pytest.mark.parametrize("method", ["get", "post"])
 async def test_graphql_query(method: Literal["get", "post"], http_client: HttpClient):
@@ -245,3 +250,71 @@ async def test_updating_headers(
     assert response.status_code == 200
     assert response.json["data"] == {"setHeader": "Jake"}
     assert response.headers["x-name"] == "Jake"
+
+
+@pytest.mark.parametrize(
+    ("extra_kwargs", "expected_message"),
+    [
+        ({}, "Hello Foo"),
+        ({"operation_name": None}, "Hello Foo"),
+        ({"operation_name": "Query1"}, "Hello Foo"),
+        ({"operation_name": "Query2"}, "Hello Bar"),
+    ],
+)
+async def test_operation_selection(
+    http_client: HttpClient, extra_kwargs, expected_message
+):
+    response = await http_client.query(
+        query="""
+            query Query1 { hello(name: "Foo") }
+            query Query2 { hello(name: "Bar") }
+        """,
+        **extra_kwargs,
+    )
+
+    assert response.status_code == 200
+    assert response.json["data"] == {"hello": expected_message}
+
+
+@pytest.mark.parametrize(
+    ("operation_name"),
+    ["", "Query3"],
+)
+async def test_invalid_operation_selection(http_client: HttpClient, operation_name):
+    response = await http_client.query(
+        query="""
+            query Query1 { hello(name: "Foo") }
+            query Query2 { hello(name: "Bar") }
+        """,
+        operation_name=operation_name,
+    )
+
+    assert response.status_code == 400
+
+    if isinstance(http_client, ChaliceHttpClient):
+        # Our Chalice integration purposely wraps errors messages with a JSON object
+        assert response.json == {
+            "Code": "BadRequestError",
+            "Message": f'Unknown operation named "{operation_name}".',
+        }
+    else:
+        assert response.data == f'Unknown operation named "{operation_name}".'.encode()
+
+
+async def test_operation_selection_without_operations(http_client: HttpClient):
+    response = await http_client.query(
+        query="""
+            fragment Fragment1 on Query { __typename }
+        """,
+    )
+
+    assert response.status_code == 400
+
+    if isinstance(http_client, ChaliceHttpClient):
+        # Our Chalice integration purposely wraps errors messages with a JSON object
+        assert response.json == {
+            "Code": "BadRequestError",
+            "Message": "Can't get GraphQL operation type",
+        }
+    else:
+        assert response.data == b"Can't get GraphQL operation type"

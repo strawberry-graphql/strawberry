@@ -139,6 +139,7 @@ class QuartHttpClient(HttpClient):
         self,
         method: Literal["get", "post"],
         query: Optional[str] = None,
+        operation_name: Optional[str] = None,
         variables: Optional[dict[str, object]] = None,
         files: Optional[dict[str, BytesIO]] = None,
         headers: Optional[dict[str, str]] = None,
@@ -147,6 +148,7 @@ class QuartHttpClient(HttpClient):
     ) -> Response:
         body = self._build_body(
             query=query,
+            operation_name=operation_name,
             variables=variables,
             files=files,
             method=method,
