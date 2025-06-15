@@ -154,8 +154,7 @@ async def test_ws_message_frame_types_cannot_be_mixed(ws_raw: WebSocketClient):
 
 
 async def test_connection_init_timeout(http_client_class: type[HttpClient]):
-    test_client = http_client_class()
-    test_client.create_app(connection_init_wait_timeout=timedelta(seconds=0))
+    test_client = http_client_class(connection_init_wait_timeout=timedelta(seconds=0))
 
     async with test_client.ws_connect(
         "/graphql", protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL]
@@ -196,8 +195,9 @@ async def test_connection_init_timeout_cancellation(
 
 @pytest.mark.xfail(reason="This test is flaky")
 async def test_close_twice(mocker: MockerFixture, http_client_class: type[HttpClient]):
-    test_client = http_client_class()
-    test_client.create_app(connection_init_wait_timeout=timedelta(seconds=0.25))
+    test_client = http_client_class(
+        connection_init_wait_timeout=timedelta(seconds=0.25)
+    )
 
     async with test_client.ws_connect(
         "/graphql", protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL]

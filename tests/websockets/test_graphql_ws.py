@@ -23,7 +23,7 @@ from strawberry.subscriptions.protocols.graphql_ws.types import (
 from tests.views.schema import MyExtension, Schema, Subscription
 
 if TYPE_CHECKING:
-    from tests.http.clients.aiohttp import HttpClient, WebSocketClient
+    from tests.http.clients.base import HttpClient, WebSocketClient
 
 
 @pytest_asyncio.fixture
@@ -286,8 +286,9 @@ async def test_context_can_be_modified_from_within_on_ws_connect(
     assert ws_raw.closed
 
 
-async def test_sends_keep_alive(http_client: HttpClient):
-    http_client.create_app(keep_alive=True, keep_alive_interval=0.1)
+async def test_sends_keep_alive(http_client_class: type[HttpClient]):
+    http_client = http_client_class(keep_alive=True, keep_alive_interval=0.1)
+
     async with http_client.ws_connect(
         "/graphql", protocols=[GRAPHQL_WS_PROTOCOL]
     ) as ws:

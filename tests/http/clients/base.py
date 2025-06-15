@@ -2,8 +2,9 @@ import abc
 import contextlib
 import json
 import logging
-from collections.abc import AsyncGenerator, AsyncIterable, Mapping
+from collections.abc import AsyncGenerator, AsyncIterable, Mapping, Sequence
 from dataclasses import dataclass
+from datetime import timedelta
 from functools import cached_property
 from io import BytesIO
 from typing import Any, Callable, Optional, Union
@@ -100,6 +101,11 @@ class HttpClient(abc.ABC):
         graphiql: Optional[bool] = None,
         graphql_ide: Optional[GraphQL_IDE] = "graphiql",
         allow_queries_via_get: bool = True,
+        keep_alive: bool = False,
+        keep_alive_interval: float = 1,
+        debug: bool = False,
+        subscription_protocols: Sequence[str] = (),
+        connection_init_wait_timeout: timedelta = timedelta(minutes=1),
         result_override: ResultOverrideFunction = None,
         multipart_uploads_enabled: bool = False,
     ): ...
@@ -244,10 +250,6 @@ class HttpClient(abc.ABC):
                 files_map[key] = [f"variables.{key}"]
 
         return files_map
-
-    def create_app(self, **kwargs: Any) -> None:
-        """For use by websocket tests."""
-        raise NotImplementedError
 
     def ws_connect(
         self,
