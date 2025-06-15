@@ -361,7 +361,7 @@ class SyncGraphQLHTTPConsumer(
         self,
         request: ChannelsRequest,
         context: Union[Context, UnsetType] = UNSET,
-        root_value: Optional[RootValue] = UNSET,
+        root_value: Union[Optional[RootValue], UnsetType] = UNSET,
     ) -> ChannelsResponse | MultipartChannelsResponse:
         return super().run(request, context, root_value)
 

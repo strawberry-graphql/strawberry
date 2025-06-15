@@ -167,7 +167,7 @@ class SyncBaseHTTPView(
         self,
         request: Request,
         context: Union[Context, UnsetType] = UNSET,
-        root_value: Optional[RootValue] = UNSET,
+        root_value: Union[Optional[RootValue], UnsetType] = UNSET,
     ) -> Response:
         request_adapter = self.request_adapter_class(request)
 
