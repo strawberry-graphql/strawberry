@@ -185,6 +185,31 @@ def test_extension_access_to_root_value():
     assert root_value == "ROOT"
 
 
+def test_extension_access_to_operation_extensions():
+    operation_extensions = None
+
+    class MyExtension(SchemaExtension):
+        def on_operation(self):
+            nonlocal operation_extensions
+            yield
+            operation_extensions = self.execution_context.operation_extensions
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def hi(self) -> str:
+            return "👋"
+
+    schema = strawberry.Schema(query=Query, extensions=[MyExtension])
+
+    query = "{ hi }"
+
+    result = schema.execute_sync(query, operation_extensions={"MyExtension": {}})
+
+    assert not result.errors
+    assert operation_extensions == {"MyExtension": {}}
+
+
 def test_can_initialize_extension(default_query_types_and_query):
     class CustomizableExtension(SchemaExtension):
         def __init__(self, arg: int):
