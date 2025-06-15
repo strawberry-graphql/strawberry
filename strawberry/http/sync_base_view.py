@@ -23,7 +23,7 @@ from strawberry.schema import BaseSchema
 from strawberry.schema.exceptions import InvalidOperationTypeError
 from strawberry.types import ExecutionResult
 from strawberry.types.graphql import OperationType
-from strawberry.types.unset import UNSET, UnsetType
+from strawberry.types.unset import UNSET
 
 from .base import BaseView
 from .exceptions import HTTPException
@@ -166,8 +166,8 @@ class SyncBaseHTTPView(
     def run(
         self,
         request: Request,
-        context: Union[Context, UnsetType] = UNSET,
-        root_value: Union[Optional[RootValue], UnsetType] = UNSET,
+        context: Context = UNSET,
+        root_value: Optional[RootValue] = UNSET,
     ) -> Response:
         request_adapter = self.request_adapter_class(request)
 

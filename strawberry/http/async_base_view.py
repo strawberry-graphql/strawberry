@@ -248,23 +248,23 @@ class AsyncBaseHTTPView(
     async def run(
         self,
         request: Request,
-        context: Union[Context, UnsetType] = UNSET,
-        root_value: Union[Optional[RootValue], UnsetType] = UNSET,
+        context: Context = UNSET,
+        root_value: Optional[RootValue] = UNSET,
     ) -> Response: ...
 
     @overload
     async def run(
         self,
         request: WebSocketRequest,
-        context: Union[Context, UnsetType] = UNSET,
-        root_value: Union[Optional[RootValue], UnsetType] = UNSET,
+        context: Context = UNSET,
+        root_value: Optional[RootValue] = UNSET,
     ) -> WebSocketResponse: ...
 
     async def run(
         self,
         request: Union[Request, WebSocketRequest],
-        context: Union[Context, UnsetType] = UNSET,
-        root_value: Union[Optional[RootValue], UnsetType] = UNSET,
+        context: Context = UNSET,
+        root_value: Optional[RootValue] = UNSET,
     ) -> Union[Response, WebSocketResponse]:
         root_value = (
             await self.get_root_value(request) if root_value is UNSET else root_value

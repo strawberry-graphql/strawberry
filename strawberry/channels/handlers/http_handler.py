@@ -27,7 +27,7 @@ from strawberry.http.sync_base_view import SyncBaseHTTPView, SyncHTTPRequestAdap
 from strawberry.http.temporal_response import TemporalResponse
 from strawberry.http.types import FormData
 from strawberry.http.typevars import Context, RootValue
-from strawberry.types.unset import UNSET, UnsetType
+from strawberry.types.unset import UNSET
 
 from .base import ChannelsConsumer
 
@@ -360,8 +360,8 @@ class SyncGraphQLHTTPConsumer(
     def run(
         self,
         request: ChannelsRequest,
-        context: Union[Context, UnsetType] = UNSET,
-        root_value: Union[Optional[RootValue], UnsetType] = UNSET,
+        context: Context = UNSET,
+        root_value: Optional[RootValue] = UNSET,
     ) -> ChannelsResponse | MultipartChannelsResponse:
         return super().run(request, context, root_value)
 
