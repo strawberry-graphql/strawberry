@@ -1,6 +1,16 @@
 CHANGELOG
 =========
 
+0.274.0 - 2025-06-16
+--------------------
+
+In this release, we fixed various edge cases around operation selection in
+GraphQL documents. Now, operation selection works consistently across all
+protocols, both in documents with single and multiple operations.
+
+Contributed by [Jonathan Ehwald](https://github.com/DoctorJohn) via [PR #3916](https://github.com/strawberry-graphql/strawberry/pull/3916/)
+
+
 0.273.3 - 2025-06-16
 --------------------
 
