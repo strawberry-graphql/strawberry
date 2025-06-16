@@ -36,7 +36,7 @@ from strawberry.http.typevars import (
 from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
 
 if TYPE_CHECKING:
-    from collections.abc import AsyncGenerator, Iterable, Mapping
+    from collections.abc import AsyncGenerator, Mapping, Sequence
 
     from strawberry.http import GraphQLHTTPResponse
     from strawberry.http.ides import GraphQL_IDE
@@ -144,7 +144,7 @@ class GraphQLView(
         keep_alive: bool = True,
         keep_alive_interval: float = 1,
         debug: bool = False,
-        subscription_protocols: Iterable[str] = (
+        subscription_protocols: Sequence[str] = (
             GRAPHQL_TRANSPORT_WS_PROTOCOL,
             GRAPHQL_WS_PROTOCOL,
         ),
