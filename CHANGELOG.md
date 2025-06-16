@@ -1,6 +1,16 @@
 CHANGELOG
 =========
 
+0.273.3 - 2025-06-16
+--------------------
+
+In this release, we updated the type hints for `subscription_protocols` across
+all HTTP view integrations. It's now consistently defined as `Sequence[str]`,
+the minimum type required by Strawberry.
+
+Contributed by [Jonathan Ehwald](https://github.com/DoctorJohn) via [PR #3910](https://github.com/strawberry-graphql/strawberry/pull/3910/)
+
+
 0.273.2 - 2025-06-15
 --------------------
 
