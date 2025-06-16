@@ -144,7 +144,7 @@ class ChaliceHttpClient(HttpClient):
         json: Optional[JSON] = None,
         headers: Optional[dict[str, str]] = None,
     ) -> Response:
-        body = data or dumps(json)
+        body = dumps(json) if json is not None else data
 
         with Client(self.app) as client:
             response = client.http.post(url, headers=headers, body=body)
