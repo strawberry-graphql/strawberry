@@ -20,6 +20,7 @@ from strawberry.http.exceptions import (
     WebSocketDisconnected,
 )
 from strawberry.http.typevars import Context, RootValue
+from strawberry.schema.exceptions import CannotGetOperationTypeError
 from strawberry.subscriptions.protocols.graphql_transport_ws.types import (
     CompleteMessage,
     ConnectionInitMessage,
@@ -221,13 +222,13 @@ class BaseGraphQLTransportWSHandler(Generic[Context, RootValue]):
         try:
             operation_type = get_operation_type(graphql_document, operation_name)
         except RuntimeError:
+            # Unlike in the other protocol implementations, we access the operation type
+            # before executing the operation. Therefore, we don't get a nice
+            # CannotGetOperationTypeError, but rather the underlying RuntimeError.
+            e = CannotGetOperationTypeError(operation_name)
             await self.websocket.close(
                 code=4400,
-                reason=(
-                    f'Unknown operation named "{operation_name}".'
-                    if operation_name
-                    else "Can't get GraphQL operation type"
-                ),
+                reason=e.as_http_error_reason(),
             )
             return
 

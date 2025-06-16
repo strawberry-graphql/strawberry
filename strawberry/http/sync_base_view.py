@@ -20,7 +20,10 @@ from strawberry.http import (
 )
 from strawberry.http.ides import GraphQL_IDE
 from strawberry.schema import BaseSchema
-from strawberry.schema.exceptions import InvalidOperationTypeError
+from strawberry.schema.exceptions import (
+    CannotGetOperationTypeError,
+    InvalidOperationTypeError,
+)
 from strawberry.types import ExecutionResult
 from strawberry.types.graphql import OperationType
 from strawberry.types.unset import UNSET
@@ -193,6 +196,8 @@ class SyncBaseHTTPView(
                 context=context,
                 root_value=root_value,
             )
+        except CannotGetOperationTypeError as e:
+            raise HTTPException(400, e.as_http_error_reason()) from e
         except InvalidOperationTypeError as e:
             raise HTTPException(
                 400, e.as_http_error_reason(request_adapter.method)

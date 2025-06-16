@@ -26,7 +26,10 @@ from strawberry.http import (
 )
 from strawberry.http.ides import GraphQL_IDE
 from strawberry.schema.base import BaseSchema
-from strawberry.schema.exceptions import InvalidOperationTypeError
+from strawberry.schema.exceptions import (
+    CannotGetOperationTypeError,
+    InvalidOperationTypeError,
+)
 from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
 from strawberry.subscriptions.protocols.graphql_transport_ws.handlers import (
     BaseGraphQLTransportWSHandler,
@@ -330,6 +333,8 @@ class AsyncBaseHTTPView(
             result = await self.execute_operation(
                 request=request, context=context, root_value=root_value
             )
+        except CannotGetOperationTypeError as e:
+            raise HTTPException(400, e.as_http_error_reason()) from e
         except InvalidOperationTypeError as e:
             raise HTTPException(
                 400, e.as_http_error_reason(request_adapter.method)

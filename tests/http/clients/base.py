@@ -115,6 +115,7 @@ class HttpClient(abc.ABC):
         self,
         method: Literal["get", "post"],
         query: Optional[str] = None,
+        operation_name: Optional[str] = None,
         variables: Optional[dict[str, object]] = None,
         files: Optional[dict[str, BytesIO]] = None,
         headers: Optional[dict[str, str]] = None,
@@ -150,6 +151,7 @@ class HttpClient(abc.ABC):
         self,
         query: str,
         method: Literal["get", "post"] = "post",
+        operation_name: Optional[str] = None,
         variables: Optional[dict[str, object]] = None,
         files: Optional[dict[str, BytesIO]] = None,
         headers: Optional[dict[str, str]] = None,
@@ -158,6 +160,7 @@ class HttpClient(abc.ABC):
         return await self._graphql_request(
             method,
             query=query,
+            operation_name=operation_name,
             headers=headers,
             variables=variables,
             files=files,
@@ -186,6 +189,7 @@ class HttpClient(abc.ABC):
     def _build_body(
         self,
         query: Optional[str] = None,
+        operation_name: Optional[str] = None,
         variables: Optional[dict[str, object]] = None,
         files: Optional[dict[str, BytesIO]] = None,
         method: Literal["get", "post"] = "post",
@@ -198,6 +202,9 @@ class HttpClient(abc.ABC):
             return None
 
         body: dict[str, object] = {"query": query}
+
+        if operation_name is not None:
+            body["operationName"] = operation_name
 
         if variables:
             body["variables"] = variables
