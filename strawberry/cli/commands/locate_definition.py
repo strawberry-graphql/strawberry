@@ -12,7 +12,7 @@ from strawberry.utils.locate_definition import (
 err_console = Console(stderr=True)
 
 
-@app.command(help="Locate a definition in the schema")
+@app.command(help="Locate a definition in the schema (output: path:line:column)")
 def locate_definition(
     schema: str,
     symbol: str,
@@ -29,9 +29,7 @@ def locate_definition(
 ) -> None:
     schema_symbol = load_schema(schema, app_dir)
 
-    location = locate_definition_util(schema_symbol, symbol)
-
-    if location:
+    if location := locate_definition_util(schema_symbol, symbol):
         typer.echo(location)
     else:
         err_console.print(f"Definition not found: {symbol}")
