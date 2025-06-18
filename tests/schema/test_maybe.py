@@ -149,3 +149,32 @@ def test_optional_argument_maybe() -> None:
     )
     assert not result.errors
     assert result.data == {"hello": "None"}
+
+
+def test_maybe_list():
+    @strawberry.input
+    class InputData:
+        items: strawberry.Maybe[list[str]]
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def test(self, data: InputData) -> str:
+            if data.items is None:
+                return "No `items` key"
+            if data.items.value is None:
+                return "`items` is `None`"
+            return f"{len(data.items.value)} items passed"
+
+    schema = strawberry.Schema(Query)
+
+    assert str(schema) == dedent(
+        """\
+        input InputData {
+          items: [String!]
+        }
+
+        type Query {
+          test(data: InputData!): String!
+        }"""
+    )
