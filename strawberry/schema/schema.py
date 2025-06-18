@@ -412,6 +412,7 @@ class Schema(BaseSchema):
         context_value: Optional[Any] = None,
         root_value: Optional[Any] = None,
         operation_name: Optional[str] = None,
+        operation_extensions: Optional[dict[str, Any]] = None,
     ) -> ExecutionContext:
         return ExecutionContext(
             query=query,
@@ -421,6 +422,7 @@ class Schema(BaseSchema):
             root_value=root_value,
             variables=variable_values,
             provided_operation_name=operation_name,
+            operation_extensions=operation_extensions,
         )
 
     @lru_cache
@@ -554,6 +556,7 @@ class Schema(BaseSchema):
             context_value=context_value,
             root_value=root_value,
             operation_name=operation_name,
+            operation_extensions=operation_extensions,
         )
         extensions = self.get_extensions()
         # TODO (#3571): remove this when we implement execution context as parameter.
@@ -646,6 +649,7 @@ class Schema(BaseSchema):
             context_value=context_value,
             root_value=root_value,
             operation_name=operation_name,
+            operation_extensions=operation_extensions,
         )
         extensions = self._sync_extensions
         # TODO (#3571): remove this when we implement execution context as parameter.
