@@ -160,11 +160,7 @@ def test_maybe_list():
     class Query:
         @strawberry.field
         def test(self, data: InputData) -> str:
-            if data.items is None:
-                return "No `items` key"
-            if data.items.value is None:
-                return "`items` is `None`"
-            return f"{len(data.items.value)} items passed"
+            return "I am a test, and I received: " + str(data.items)
 
     schema = strawberry.Schema(Query)
 
