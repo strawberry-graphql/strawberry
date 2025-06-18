@@ -7,12 +7,11 @@ from strawberry.annotation import StrawberryAnnotation
 def test_forward_reference():
     global ForwardClass
 
-    annotation = StrawberryAnnotation("ForwardClass", namespace=globals())
-
     @strawberry.type
     class ForwardClass:
         backward: bool
 
+    annotation = StrawberryAnnotation(ForwardClass, namespace=globals())
     resolved = annotation.resolve()
 
     assert resolved is ForwardClass
@@ -24,14 +23,12 @@ def test_forward_reference():
 def test_forward_reference_locals_and_globals():
     global BackwardClass
 
-    namespace = {**locals(), **globals()}
-
-    annotation = StrawberryAnnotation("BackwardClass", namespace=namespace)
-
     @strawberry.type
     class BackwardClass:
         backward: bool
 
+    namespace = {**locals(), **globals()}
+    annotation = StrawberryAnnotation(BackwardClass, namespace=namespace)
     resolved = annotation.resolve()
 
     assert resolved is BackwardClass
