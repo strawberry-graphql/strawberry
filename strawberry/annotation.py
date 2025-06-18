@@ -145,11 +145,8 @@ class StrawberryAnnotation:
             return evaled_type
         if self._is_list(evaled_type):
             return self.create_list(evaled_type)
-        if type_of := self._is_maybe(evaled_type):
+        if self._is_maybe(evaled_type):
             return self.create_maybe(evaled_type)
-            return StrawberryMaybe(
-                of_type=type_of,
-            )
 
         if self._is_graphql_generic(evaled_type):
             if any(is_type_var(type_) for type_ in get_args(evaled_type)):
@@ -225,7 +222,7 @@ class StrawberryAnnotation:
 
         return StrawberryOptional(of_type)
 
-    def create_maybe(self, evaled_type: TypeVar) -> StrawberryMaybe:
+    def create_maybe(self, evaled_type: Any) -> StrawberryMaybe:
         # we expect a single arg to the evaled type,
         # as unions on input types are not supported
         # and maybe[t] already represents t | None
