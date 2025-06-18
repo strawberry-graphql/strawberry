@@ -1,6 +1,16 @@
 CHANGELOG
 =========
 
+0.274.2 - 2025-06-18
+--------------------
+
+Introduces an optional operation_extensions parameter throughout the GraphQL
+execution flow—adding it to execution entry points and embedding it into the
+ExecutionContext—so custom extensions can access per-operation metadata.
+
+Contributed by [Matt Gilene](https://github.com/mdgilene) via [PR #3878](https://github.com/strawberry-graphql/strawberry/pull/3878/)
+
+
 0.274.1 - 2025-06-18
 --------------------
 
