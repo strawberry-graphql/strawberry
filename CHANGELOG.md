@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.274.1 - 2025-06-18
+--------------------
+
+This release fixes an issue that caused schema generation with `Maybe` to fail when using lists, such as `Maybe[List[User]]`.
+
+Contributed by [Erik Wrede](https://github.com/erikwrede) via [PR #3920](https://github.com/strawberry-graphql/strawberry/pull/3920/)
+
+
 0.274.0 - 2025-06-16
 --------------------
 
