@@ -38,7 +38,7 @@ strawberry = "strawberry.cli:run"
 [project.optional-dependencies]
 aiohttp = ["aiohttp>=3.7.4.post0,<4"]
 asgi = ["starlette>=0.18.0", "python-multipart>=0.0.7"]
-debug = ["rich>=12.0.0", "libcst>=0.4.7,<1.8.0"]
+debug = ["rich>=12.0.0", "libcst"]
 debug-server = [
   "starlette>=0.18.0",
   "uvicorn>=0.11.6",
@@ -47,7 +47,7 @@ debug-server = [
   "typer>=0.7.0",
   "pygments~=2.3",
   "rich>=12.0.0",
-  "libcst>=0.4.7,<1.8.0",
+  "libcst",
 ]
 django = ["Django>=3.2", "asgiref~=3.2"]
 channels = ["channels>=3.0.5", "asgiref~=3.2"]
@@ -58,7 +58,7 @@ pydantic = ["pydantic>1.6.1"]
 sanic = ["sanic>=20.12.2"]
 fastapi = ["fastapi>=0.65.2", "python-multipart>=0.0.7"]
 chalice = ["chalice~=1.22"]
-cli = ["typer>=0.7.0", "pygments~=2.3", "rich>=12.0.0", "libcst>=0.4.7,<1.8.0"]
+cli = ["typer>=0.7.0", "pygments~=2.3", "rich>=12.0.0", "libcst"]
 litestar = ["litestar>=2; python_version~='3.10'"]
 pyinstrument = ["pyinstrument>=4.0.0"]
 
@@ -71,7 +71,7 @@ ruff = "^0.11.4"
 asgiref = "^3.2"
 email-validator = { version = ">=1.1.3,<3.0.0", optional = false }
 freezegun = "^1.2.1"
-libcst = { version = ">=1.0.0", optional = false }
+libcst = { version = "^1.8.2", optional = false }
 MarkupSafe = "2.1.3"
 nox = "^2024.4.15"
 nox-poetry = "^1.0.3"
