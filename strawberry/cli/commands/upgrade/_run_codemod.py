@@ -13,7 +13,9 @@ try:  # pragma: no cover - compatibility with LibCST <1.8
 except (
     ImportError
 ):  # pragma: no cover - support LibCST >=1.8 where DummyPool was renamed
-    from libcst.codemod._dummy_pool import DummyExecutor as DummyPool
+    from libcst.codemod._dummy_pool import (
+        DummyExecutor as DummyPool,  # type: ignore[attr-defined]
+    )
 from rich.progress import Progress
 
 from ._fake_progress import FakeProgress
