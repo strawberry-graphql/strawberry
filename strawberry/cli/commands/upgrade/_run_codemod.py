@@ -7,7 +7,13 @@ from multiprocessing import Pool, cpu_count
 from typing import TYPE_CHECKING, Any, Union
 
 from libcst.codemod._cli import ExecutionConfig, ExecutionResult, _execute_transform
-from libcst.codemod._dummy_pool import DummyPool
+
+try:  # pragma: no cover - compatibility with LibCST <1.8
+    from libcst.codemod._dummy_pool import DummyPool
+except (
+    ImportError
+):  # pragma: no cover - support LibCST >=1.8 where DummyPool was renamed
+    from libcst.codemod._dummy_pool import DummyExecutor as DummyPool
 from rich.progress import Progress
 
 from ._fake_progress import FakeProgress
