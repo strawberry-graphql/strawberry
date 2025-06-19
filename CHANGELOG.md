@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.274.3 - 2025-06-19
+--------------------
+
+This release adds compatibility with LibCST v1.8
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #3921](https://github.com/strawberry-graphql/strawberry/pull/3921/)
+
+
 0.274.2 - 2025-06-18
 --------------------
 
