@@ -1,3 +1,3 @@
 Release type: patch
 
-Adds a new CLI command `strawberry locate-definition` that allows you to find the source location of a definition in the schema.
+Adds compatibility with LibCST v1.8 by falling back to `DummyExecutor` when `DummyPool` is missing.
