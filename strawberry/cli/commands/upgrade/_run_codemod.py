@@ -7,15 +7,6 @@ from multiprocessing import Pool, cpu_count
 from typing import TYPE_CHECKING, Any, Union
 
 from libcst.codemod._cli import ExecutionConfig, ExecutionResult, _execute_transform
-
-try:  # pragma: no cover - compatibility with LibCST <1.8
-    from libcst.codemod._dummy_pool import DummyPool
-except (
-    ImportError
-):  # pragma: no cover - support LibCST >=1.8 where DummyPool was renamed
-    from libcst.codemod._dummy_pool import (
-        DummyExecutor as DummyPool,  # type: ignore[attr-defined]
-    )
 from rich.progress import Progress
 
 from ._fake_progress import FakeProgress
@@ -26,7 +17,6 @@ if TYPE_CHECKING:
     from libcst.codemod import Codemod
 
 ProgressType = Union[type[Progress], type[FakeProgress]]
-PoolType = Union[type[Pool], type[DummyPool]]  # type: ignore
 
 
 def _get_libcst_version() -> tuple[int, int, int]:
@@ -45,27 +35,19 @@ def _execute_transform_wrap(
 ) -> ExecutionResult:
     additional_kwargs: dict[str, Any] = {}
 
-    if _get_libcst_version() >= (1, 4, 0):
+    libcst_version = _get_libcst_version()
+
+    if (1, 4, 0) <= libcst_version < (1, 8, 0):
         additional_kwargs["scratch"] = {}
+
+    if libcst_version >= (1, 8, 0):
+        additional_kwargs["original_scratch"] = {}
+        additional_kwargs["codemod_args"] = {}
+        additional_kwargs["repo_manager"] = None
 
     # TODO: maybe capture warnings?
     with open(os.devnull, "w") as null, contextlib.redirect_stderr(null):  # noqa: PTH123
         return _execute_transform(**job, **additional_kwargs)
-
-
-def _get_progress_and_pool(
-    total_files: int, jobs: int
-) -> tuple[PoolType, ProgressType]:
-    poll_impl: PoolType = Pool  # type: ignore
-    progress_impl: ProgressType = Progress
-
-    if total_files == 1 or jobs == 1:
-        poll_impl = DummyPool
-
-    if total_files == 1:
-        progress_impl = FakeProgress
-
-    return poll_impl, progress_impl
 
 
 def run_codemod(
@@ -78,8 +60,6 @@ def run_codemod(
 
     config = ExecutionConfig()
 
-    pool_impl, progress_impl = _get_progress_and_pool(total, jobs)
-
     tasks = [
         {
             "transformer": codemod,
@@ -89,7 +69,7 @@ def run_codemod(
         for filename in files
     ]
 
-    with pool_impl(processes=jobs) as p, progress_impl() as progress:  # type: ignore
+    with Pool(processes=jobs) as p, Progress() as progress:
         task_id = progress.add_task("[cyan]Updating...", total=len(tasks))
 
         for result in p.imap_unordered(
