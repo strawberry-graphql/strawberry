@@ -1,3 +1,4 @@
+from inline_snapshot import snapshot
 from typer import Typer
 from typer.testing import CliRunner
 
@@ -7,15 +8,40 @@ def test_schema_export(cli_app: Typer, cli_runner: CliRunner):
     result = cli_runner.invoke(cli_app, ["export-schema", selector])
 
     assert result.exit_code == 0
-    assert result.stdout == (
-        "type Query {\n"
-        "  user: User!\n"
-        "}\n"
-        "\n"
-        "type User {\n"
-        "  name: String!\n"
-        "  age: Int!\n"
-        "}\n"
+    assert result.stdout == snapshot(
+        """\
+type A {
+  name: String!
+}
+
+type B {
+  a: A!
+}
+
+scalar ExampleScalar
+
+union InlineUnion = A | B
+
+type Query {
+  user: User!
+}
+
+enum Role {
+  ADMIN
+  USER
+}
+
+union UnionExample = A | B
+
+type User {
+  name: String!
+  age: Int!
+  role: Role!
+  exampleScalar: ExampleScalar!
+  unionExample: UnionExample!
+  inlineUnion: InlineUnion!
+}
+"""
     )
 
 
@@ -86,13 +112,38 @@ def test_output_option(cli_app: Typer, cli_runner: CliRunner, tmp_path):
         )
 
         assert result.exit_code == 0
-        assert output.read_text() == (
-            "type Query {\n"
-            "  user: User!\n"
-            "}\n"
-            "\n"
-            "type User {\n"
-            "  name: String!\n"
-            "  age: Int!\n"
-            "}\n"
+        assert output.read_text() == snapshot(
+            """\
+type A {
+  name: String!
+}
+
+type B {
+  a: A!
+}
+
+scalar ExampleScalar
+
+union InlineUnion = A | B
+
+type Query {
+  user: User!
+}
+
+enum Role {
+  ADMIN
+  USER
+}
+
+union UnionExample = A | B
+
+type User {
+  name: String!
+  age: Int!
+  role: Role!
+  exampleScalar: ExampleScalar!
+  unionExample: UnionExample!
+  inlineUnion: InlineUnion!
+}
+"""
         )
