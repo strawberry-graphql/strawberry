@@ -29,7 +29,7 @@ You can create a script to do this, for example:
 
 ```sh
 # ./locate-definition.sh
-strawberry locate-definition "$2"
+strawberry locate-definition path.to.schema:schema "$2"
 ```
 
 Then, you can set the `relay.pathToLocateCommand` setting to the path of the
