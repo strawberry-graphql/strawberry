@@ -1,6 +1,26 @@
 CHANGELOG
 =========
 
+0.275.0 - 2025-06-20
+--------------------
+
+Adds a new CLI command `strawberry locate-definition` that allows you to find the source location of a definition in the schema.
+
+```
+strawberry locate-definition path.to.schema:schema ObjectName
+```
+
+```
+strawberry locate-definition path.to.schema:schema ObjectName.fieldName
+```
+
+Results take the form of `path/to/file.py:line:column`, for example: `src/models/user.py:45:12`.
+
+This can be used, for example, with the go to definition feature of VS Code's Relay extension (configured via the `relay.pathToLocateCommand` setting).
+
+Contributed by [Sam Millar](https://github.com/millar) via [PR #3902](https://github.com/strawberry-graphql/strawberry/pull/3902/)
+
+
 0.274.3 - 2025-06-19
 --------------------
 
