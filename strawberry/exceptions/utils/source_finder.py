@@ -571,7 +571,7 @@ class LibCSTSourceFinder:
         call_node: Any,
         scalar_definition: ScalarDefinition,
         is_newtype: bool,
-    ) -> ExceptionSource:
+    ) -> Optional[ExceptionSource]:
         """Helper method to create ExceptionSource for scalar calls."""
         import libcst.matchers as m
 
