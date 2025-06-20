@@ -23,6 +23,8 @@ def locate_definition(schema_symbol: Schema, symbol: str) -> str | None:
         return None
 
     location = (
+        # TODO: store the GraphQL name on the schema once we generate the schema
+        # so we don't have to convert names
         finder.find_class_attribute_from_object(
             schema_type.origin,
             to_snake_case(field)

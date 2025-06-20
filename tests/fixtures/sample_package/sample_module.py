@@ -1,3 +1,5 @@
+from enum import Enum
+
 import strawberry
 
 
@@ -6,10 +8,17 @@ class SampleClass:
         self.schema = schema
 
 
+@strawberry.enum
+class Role(Enum):
+    ADMIN = "ADMIN"
+    USER = "USER"
+
+
 @strawberry.type
 class User:
     name: str
     age: int
+    role: Role
 
 
 @strawberry.type
