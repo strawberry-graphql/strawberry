@@ -3,6 +3,8 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from strawberry.exceptions.utils.source_finder import SourceFinder
+from strawberry.types.scalar import ScalarDefinition
+from strawberry.types.union import StrawberryUnion
 from strawberry.utils.str_converters import to_snake_case
 
 if TYPE_CHECKING:
@@ -22,18 +24,19 @@ def locate_definition(schema_symbol: Schema, symbol: str) -> str | None:
     if not schema_type:
         return None
 
-    location = (
-        # TODO: store the GraphQL name on the schema once we generate the schema
-        # so we don't have to convert names
-        finder.find_class_attribute_from_object(
+    if field:
+        location = finder.find_class_attribute_from_object(
             schema_type.origin,
             to_snake_case(field)
             if schema_symbol.config.name_converter.auto_camel_case
             else field,
         )
-        if field
-        else finder.find_class_from_object(schema_type.origin)
-    )
+    elif isinstance(schema_type, StrawberryUnion):
+        location = finder.find_annotated_union(schema_type, None)
+    elif isinstance(schema_type, ScalarDefinition):
+        location = finder.find_scalar_call(schema_type)
+    else:
+        location = finder.find_class_from_object(schema_type.origin)
 
     if not location:
         return None

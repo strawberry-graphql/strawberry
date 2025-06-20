@@ -1,6 +1,26 @@
 from enum import Enum
+from typing import Annotated, NewType
 
 import strawberry
+
+ExampleScalar = strawberry.scalar(
+    NewType("ExampleScalar", object),
+    serialize=lambda v: v,
+    parse_value=lambda v: v,
+)
+
+
+@strawberry.type
+class A:
+    name: str
+
+
+@strawberry.type
+class B:
+    a: A
+
+
+UnionExample = Annotated[A | B, strawberry.union("UnionExample")]
 
 
 class SampleClass:
@@ -19,6 +39,9 @@ class User:
     name: str
     age: int
     role: Role
+    example_scalar: ExampleScalar
+    union_example: UnionExample
+    inline_union: Annotated[A | B, strawberry.union("InlineUnion")]
 
 
 @strawberry.type
