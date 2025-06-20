@@ -4,6 +4,9 @@ from inline_snapshot import snapshot
 
 from strawberry.utils.importer import import_module_symbol
 from strawberry.utils.locate_definition import locate_definition
+from tests.typecheckers.utils.marks import skip_on_windows
+
+pytestmark = skip_on_windows
 
 
 def _simplify_path(path: str) -> str:

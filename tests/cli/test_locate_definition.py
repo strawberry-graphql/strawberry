@@ -4,6 +4,10 @@ from inline_snapshot import snapshot
 from typer import Typer
 from typer.testing import CliRunner
 
+from tests.typecheckers.utils.marks import skip_on_windows
+
+pytestmark = skip_on_windows
+
 
 def _simplify_path(path: str) -> str:
     path = Path(path)
