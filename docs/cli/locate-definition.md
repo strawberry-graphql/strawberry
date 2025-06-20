@@ -22,7 +22,8 @@ If found, the result will be printed to the console in the form of
 
 ## Using with VS Code's Relay extension
 
-You can use this command with the go to definition feature of VS Code's Relay extension (configured via the `relay.pathToLocateCommand` setting).
+You can use this command with the go to definition feature of VS Code's Relay
+extension (configured via the `relay.pathToLocateCommand` setting).
 
 You can create a script to do this, for example:
 
@@ -31,10 +32,12 @@ You can create a script to do this, for example:
 strawberry locate-definition "$2"
 ```
 
-Then, you can set the `relay.pathToLocateCommand` setting to the path of the script, e.g.:
+Then, you can set the `relay.pathToLocateCommand` setting to the path of the
+script, e.g.:
 
 ```json
 "relay.pathToLocateCommand": "./locate-definition.sh"
 ```
 
-You can then use the go to definition feature to navigate to the definition of a model or field.
+You can then use the go to definition feature to navigate to the definition of a
+model or field.
