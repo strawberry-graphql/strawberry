@@ -1,6 +1,15 @@
 CHANGELOG
 =========
 
+0.275.2 - 2025-06-22
+--------------------
+
+Fixes a bug that caused merged unions with duplicated entries to fail the schema validation when merging two
+`strawberry.union` types.
+
+Contributed by [Erik Wrede](https://github.com/erikwrede) via [PR #3923](https://github.com/strawberry-graphql/strawberry/pull/3923/)
+
+
 0.275.1 - 2025-06-22
 --------------------
 
