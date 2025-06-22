@@ -1064,9 +1064,7 @@ def test_union_merging_without_annotated():
 
     @strawberry.type
     class Query:
-        @strawberry.field
-        def union_field(self) -> c:
-            return A(a=1)
+        union_field: c
 
     schema = strawberry.Schema(query=Query)
 
@@ -1117,9 +1115,7 @@ def test_union_merging_with_annotated():
 
     @strawberry.type
     class Query:
-        @strawberry.field
-        def union_field(self) -> c:
-            return A(a=1)
+        union_field: c
 
     schema = strawberry.Schema(query=Query)
 
@@ -1170,9 +1166,7 @@ def test_union_merging_with_annotated_annotated_merge():
 
     @strawberry.type
     class Query:
-        @strawberry.field
-        def union_field(self) -> c:
-            return A(a=1)
+        union_field: c
 
     schema = strawberry.Schema(query=Query)
 
