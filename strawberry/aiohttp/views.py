@@ -109,7 +109,7 @@ class AiohttpWebSocketAdapter(AsyncWebSocketAdapter):
     async def send_json(self, message: Mapping[str, object]) -> None:
         try:
             await self.ws.send_str(self.view.encode_json(message))
-        except RuntimeError as exc:
+        except (RuntimeError, ConnectionResetError) as exc:
             raise WebSocketDisconnected from exc
 
     async def close(self, code: int, reason: str) -> None:
