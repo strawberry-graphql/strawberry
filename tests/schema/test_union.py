@@ -1131,7 +1131,7 @@ def test_union_merging_with_annotated():
           a: Int!
         }
 
-        union ABC = A | B | C
+        union AorBBorC = A | B | C
 
         type B {
           b: Int!
@@ -1142,7 +1142,7 @@ def test_union_merging_with_annotated():
         }
 
         type Query {
-          unionField: ABC!
+          unionField: AorBBorC!
         }
     """
         ).strip()
