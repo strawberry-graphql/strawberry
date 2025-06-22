@@ -1,6 +1,16 @@
 CHANGELOG
 =========
 
+0.275.1 - 2025-06-22
+--------------------
+
+In this release, we updated the `aiohttp` integration to handle
+`aiohttp.ClientConnectionResetError`s, which can occur when a WebSocket
+connection is unexpectedly closed, gracefully.
+
+Contributed by [Jonathan Ehwald](https://github.com/DoctorJohn) via [PR #3922](https://github.com/strawberry-graphql/strawberry/pull/3922/)
+
+
 0.275.0 - 2025-06-20
 --------------------
 
