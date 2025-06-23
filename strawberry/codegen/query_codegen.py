@@ -910,10 +910,13 @@ class QueryCodegen:
         # guaranteed for all python implementations in python3.7+, so that
         # should be pretty safe.
         if parent_type.type_var_map:
-            return "".join(
-                c.__name__  # type: ignore[union-attr]
-                for c in parent_type.type_var_map.values()
-            ) + parent_type.name
+            return (
+                "".join(
+                    c.__name__  # type: ignore[union-attr]
+                    for c in parent_type.type_var_map.values()
+                )
+                + parent_type.name
+            )
         return parent_type.name
 
 
