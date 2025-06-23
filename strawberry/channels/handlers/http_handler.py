@@ -360,7 +360,7 @@ class SyncGraphQLHTTPConsumer(
     def run(
         self,
         request: ChannelsRequest,
-        context: Optional[Context] = UNSET,
+        context: Context = UNSET,
         root_value: Optional[RootValue] = UNSET,
     ) -> ChannelsResponse | MultipartChannelsResponse:
         return super().run(request, context, root_value)

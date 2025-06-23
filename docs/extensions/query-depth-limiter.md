@@ -14,6 +14,14 @@ This extension adds a validator to limit the query depth of GraphQL operations.
 import strawberry
 from strawberry.extensions import QueryDepthLimiter
 
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def hello(self) -> str:
+        return "Hello, world!"
+
+
 schema = strawberry.Schema(
     Query,
     extensions=[
@@ -63,7 +71,33 @@ should be ignored or not by the attributes of the `IgnoreContext` class.
 
 ```python
 import strawberry
-from strawberry.extensions import QueryDepthLimiter
+from strawberry.extensions import QueryDepthLimiter, IgnoreContext
+
+
+@strawberry.type
+class Book:
+    title: str
+    author: "User"
+
+
+@strawberry.type
+class User:
+    favourite_books: list[Book]
+    published_books: list[Book]
+
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def book(self) -> Book:
+        return Book(
+            title="The Hitchhiker's Guide to the Strawberry Fields",
+            author=User(favourite_books=[], published_books=[]),
+        )
+
+    @strawberry.field
+    def user(self) -> User:
+        return User(favourite_books=[], published_books=[])
 
 
 def should_ignore(ignore: IgnoreContext):
@@ -80,33 +114,33 @@ schema = strawberry.Schema(
 # This query fails
 schema.execute(
     """
-  query TooDeep {
-    book {
-      author {
-        publishedBooks {
-          title
+    query TooDeep {
+        book {
+            author {
+                publishedBooks {
+                    title
+                }
+            }
         }
-      }
     }
-  }
-"""
+    """
 )
 
 # This query succeeds because the `user` field is ignored
 schema.execute(
     """
-  query NotTooDeep {
-    user {
-      favouriteBooks {
-        author {
-          publishedBooks {
-            title
-          }
+    query NotTooDeep {
+        user {
+            favouriteBooks {
+                author {
+                    publishedBooks {
+                        title
+                    }
+                }
+            }
         }
-      }
     }
-  }
-"""
+    """
 )
 ```
 
@@ -114,7 +148,34 @@ schema.execute(
 
 ```python
 import strawberry
-from strawberry.extensions import QueryDepthLimiter
+from strawberry.extensions import QueryDepthLimiter, IgnoreContext
+
+
+@strawberry.type
+class Book:
+    title: str
+    author: "User"
+
+
+@strawberry.type
+class User:
+    name: str | None
+    favourite_books: list[Book]
+    published_books: list[Book]
+
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def book(self) -> Book:
+        return Book(
+            title="The Hitchhiker's Guide to the Strawberry Fields",
+            author=User(favourite_books=[], published_books=[]),
+        )
+
+    @strawberry.field
+    def user(self, name: str | None = None) -> User:
+        return User(name=name, favourite_books=[], published_books=[])
 
 
 def should_ignore(ignore: IgnoreContext):
@@ -131,32 +192,32 @@ schema = strawberry.Schema(
 # This query fails
 schema.execute(
     """
-  query TooDeep {
-    book {
-      author {
-        publishedBooks {
-          title
+    query TooDeep {
+        book {
+            author {
+                publishedBooks {
+                    title
+                }
+            }
         }
-      }
     }
-  }
-"""
+    """
 )
 
 # This query succeeds because the `user` field is ignored
 schema.execute(
     """
-  query NotTooDeep {
-    user(name:"matt") {
-      favouriteBooks {
-        author {
-          publishedBooks {
-            title
-          }
+    query NotTooDeep {
+        user(name:"matt") {
+            favouriteBooks {
+                author {
+                    publishedBooks {
+                        title
+                    }
+                }
+            }
         }
-      }
     }
-  }
-"""
+    """
 )
 ```

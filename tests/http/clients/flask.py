@@ -84,14 +84,21 @@ class FlaskHttpClient(HttpClient):
     async def _graphql_request(
         self,
         method: Literal["get", "post"],
-        query: str,
+        query: Optional[str] = None,
+        operation_name: Optional[str] = None,
         variables: Optional[dict[str, object]] = None,
         files: Optional[dict[str, BytesIO]] = None,
         headers: Optional[dict[str, str]] = None,
+        extensions: Optional[dict[str, Any]] = None,
         **kwargs: Any,
     ) -> Response:
         body = self._build_body(
-            query=query, variables=variables, files=files, method=method
+            query=query,
+            operation_name=operation_name,
+            variables=variables,
+            files=files,
+            method=method,
+            extensions=extensions,
         )
 
         data: Union[dict[str, object], str, None] = None
@@ -132,7 +139,7 @@ class FlaskHttpClient(HttpClient):
     async def request(
         self,
         url: str,
-        method: Literal["get", "post", "patch", "put", "delete"],
+        method: Literal["head", "get", "post", "patch", "put", "delete"],
         headers: Optional[dict[str, str]] = None,
         **kwargs: Any,
     ) -> Response:

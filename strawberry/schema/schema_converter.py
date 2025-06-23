@@ -270,10 +270,7 @@ class GraphQLCoreConverter:
                 GlobalID,
                 name=global_id_name,
                 description=GraphQLID.description,
-                parse_literal=lambda v, vars=None: GlobalID.from_id(  # noqa: A006
-                    GraphQLID.parse_literal(v, vars)
-                ),
-                parse_value=GlobalID.from_id,
+                parse_value=lambda v: v,
                 serialize=str,
                 specified_by_url=("https://relay.dev/graphql/objectidentification.htm"),
             )
@@ -803,6 +800,13 @@ class GraphQLCoreConverter:
         return _resolver
 
     def from_scalar(self, scalar: type) -> GraphQLScalarType:
+        from strawberry.relay.types import GlobalID
+
+        if not self.config.relay_use_legacy_global_id and scalar is GlobalID:
+            from strawberry import ID
+
+            return self.from_scalar(ID)
+
         scalar_definition: ScalarDefinition
 
         if scalar in self.scalar_registry:
@@ -818,19 +822,11 @@ class GraphQLCoreConverter:
         scalar_name = self.config.name_converter.from_type(scalar_definition)
 
         if scalar_name not in self.type_map:
-            from strawberry.relay import GlobalID
-
-            if scalar is GlobalID and hasattr(GraphQLNamedType, "reserved_types"):
-                GraphQLNamedType.reserved_types.pop("ID")
-
             implementation = (
                 scalar_definition.implementation
                 if scalar_definition.implementation is not None
                 else _make_scalar_type(scalar_definition)
             )
-
-            if scalar is GlobalID and hasattr(GraphQLNamedType, "reserved_types"):
-                GraphQLNamedType.reserved_types["ID"] = implementation
 
             self.type_map[scalar_name] = ConcreteType(
                 definition=scalar_definition, implementation=implementation
@@ -922,8 +918,11 @@ class GraphQLCoreConverter:
 
             # If the graphql_type is a GraphQLUnionType, merge its child types
             if isinstance(graphql_type, GraphQLUnionType):
-                # Add the child types of the GraphQLUnionType to the list of graphql_types
-                graphql_types.extend(graphql_type.types)
+                # Add the child types of the GraphQLUnionType to the list of graphql_types,
+                # filter out any duplicates
+                for child_type in graphql_type.types:
+                    if child_type not in graphql_types:
+                        graphql_types.append(child_type)
             else:
                 graphql_types.append(graphql_type)
 
@@ -972,8 +971,11 @@ class GraphQLCoreConverter:
     def validate_same_type_definition(
         self, name: str, type_definition: StrawberryType, cached_type: ConcreteType
     ) -> None:
-        # if the type definitions are the same we can return
-        if cached_type.definition == type_definition:
+        # Skip validation if _unsafe_disable_same_type_validation is True
+        if (
+            self.config._unsafe_disable_same_type_validation
+            or cached_type.definition == type_definition
+        ):
             return
 
         # otherwise we need to check if we are dealing with different instances

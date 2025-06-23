@@ -16,6 +16,14 @@ response for [Apollo Engine](https://www.apollographql.com/platform/).
 import strawberry
 from strawberry.extensions.tracing import ApolloTracingExtension
 
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def hello(self) -> str:
+        return "Hello, world!"
+
+
 schema = strawberry.Schema(
     Query,
     extensions=[
@@ -32,6 +40,14 @@ version:
 ```python
 import strawberry
 from strawberry.extensions.tracing import ApolloTracingExtensionSync
+
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def hello(self) -> str:
+        return "Hello, world!"
+
 
 schema = strawberry.Schema(
     Query,

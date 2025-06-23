@@ -166,7 +166,8 @@ class LibCSTSourceFinder:
         attribute_definitions = m.findall(
             class_def,
             m.AssignTarget(target=m.Name(value=attribute_name))
-            | m.AnnAssign(target=m.Name(value=attribute_name)),
+            | m.AnnAssign(target=m.Name(value=attribute_name))
+            | m.FunctionDef(name=m.Name(value=attribute_name)),
         )
 
         if not attribute_definitions:
@@ -511,7 +512,8 @@ class LibCSTSourceFinder:
         path = Path(scalar_definition._source_file)
         source = path.read_text()
 
-        matcher = m.Call(
+        # Try to find direct strawberry.scalar() calls with name parameter
+        direct_matcher = m.Call(
             func=m.Attribute(value=m.Name(value="strawberry"), attr=m.Name("scalar"))
             | m.Name("scalar"),
             args=[
@@ -525,31 +527,89 @@ class LibCSTSourceFinder:
             ],
         )
 
-        scalar_calls = self._find(source, matcher)
+        direct_calls = self._find(source, direct_matcher)
+        if direct_calls:
+            return self._create_scalar_exception_source(
+                path, source, direct_calls[0], scalar_definition, is_newtype=False
+            )
 
-        if not scalar_calls:
-            return None  # pragma: no cover
-
-        scalar_call_node = scalar_calls[0]
-
-        argument_node = m.findall(
-            scalar_call_node,
-            m.Arg(
-                keyword=m.Name(value="name"),
-            ),
+        # Try to find strawberry.scalar() calls with NewType pattern
+        newtype_matcher = m.Call(
+            func=m.Attribute(value=m.Name(value="strawberry"), attr=m.Name("scalar"))
+            | m.Name("scalar"),
+            args=[
+                m.Arg(
+                    value=m.Call(
+                        func=m.Name(value="NewType"),
+                        args=[
+                            m.Arg(
+                                value=m.SimpleString(
+                                    value=f"'{scalar_definition.name}'"
+                                )
+                                | m.SimpleString(value=f'"{scalar_definition.name}"'),
+                            ),
+                            m.ZeroOrMore(),
+                        ],
+                    )
+                ),
+                m.ZeroOrMore(),
+            ],
         )
 
-        position = self._position_metadata[scalar_call_node]
-        argument_node_position = self._position_metadata[argument_node[0]]
+        newtype_calls = self._find(source, newtype_matcher)
+        if newtype_calls:
+            return self._create_scalar_exception_source(
+                path, source, newtype_calls[0], scalar_definition, is_newtype=True
+            )
+
+        return None  # pragma: no cover
+
+    def _create_scalar_exception_source(
+        self,
+        path: Path,
+        source: str,
+        call_node: Any,
+        scalar_definition: ScalarDefinition,
+        is_newtype: bool,
+    ) -> Optional[ExceptionSource]:
+        """Helper method to create ExceptionSource for scalar calls."""
+        import libcst.matchers as m
+
+        if is_newtype:
+            # For NewType pattern, find the string argument within the NewType call
+            newtype_nodes = m.findall(call_node, m.Call(func=m.Name(value="NewType")))
+            if not newtype_nodes:
+                return None  # pragma: no cover
+
+            target_node = newtype_nodes[0]
+            string_nodes = m.findall(
+                target_node,
+                m.SimpleString(value=f"'{scalar_definition.name}'")
+                | m.SimpleString(value=f'"{scalar_definition.name}"'),
+            )
+            if not string_nodes:
+                return None  # pragma: no cover
+
+            target_node = string_nodes[0]
+        else:
+            # For direct calls, find the name argument
+            target_nodes = m.findall(call_node, m.Arg(keyword=m.Name(value="name")))
+            if not target_nodes:
+                return None  # pragma: no cover
+
+            target_node = target_nodes[0]
+
+        position = self._position_metadata[call_node]
+        target_position = self._position_metadata[target_node]
 
         return ExceptionSource(
             path=path,
             code=source,
             start_line=position.start.line,
             end_line=position.end.line,
-            error_line=argument_node_position.start.line,
-            error_column=argument_node_position.start.column,
-            error_column_end=argument_node_position.end.column,
+            error_line=target_position.start.line,
+            error_column=target_position.start.column,
+            error_column_end=target_position.end.column,
         )
 
 

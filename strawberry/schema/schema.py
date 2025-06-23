@@ -9,6 +9,7 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
+    NamedTuple,
     Optional,
     Union,
     cast,
@@ -19,12 +20,17 @@ from graphql import (
     ExecutionResult as OriginalExecutionResult,
 )
 from graphql import (
+    FieldNode,
+    FragmentDefinitionNode,
     GraphQLBoolean,
     GraphQLError,
     GraphQLField,
     GraphQLNamedType,
     GraphQLNonNull,
+    GraphQLObjectType,
+    GraphQLOutputType,
     GraphQLSchema,
+    OperationDefinitionNode,
     get_introspection_query,
     parse,
     validate_schema,
@@ -56,7 +62,7 @@ from strawberry.types.execution import (
     PreExecutionError,
 )
 from strawberry.types.graphql import OperationType
-from strawberry.utils import IS_GQL_32
+from strawberry.utils import IS_GQL_32, IS_GQL_33
 from strawberry.utils.aio import aclosing
 from strawberry.utils.await_maybe import await_maybe
 
@@ -72,14 +78,16 @@ from ._graphql_core import (
 )
 from .base import BaseSchema
 from .config import StrawberryConfig
-from .exceptions import InvalidOperationTypeError
+from .exceptions import CannotGetOperationTypeError, InvalidOperationTypeError
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Mapping
     from typing_extensions import TypeAlias
 
-    from graphql import ExecutionContext as GraphQLExecutionContext
+    from graphql.execution.collect_fields import FieldGroup  # type: ignore
     from graphql.language import DocumentNode
+    from graphql.pyutils import Path
+    from graphql.type import GraphQLResolveInfo
     from graphql.validation import ASTValidationRule
 
     from strawberry.directive import StrawberryDirective
@@ -144,6 +152,62 @@ def _coerce_error(error: Union[GraphQLError, Exception]) -> GraphQLError:
     return GraphQLError(str(error), original_error=error)
 
 
+class _OperationContextAwareGraphQLResolveInfo(NamedTuple):  # pyright: ignore
+    field_name: str
+    field_nodes: list[FieldNode]
+    return_type: GraphQLOutputType
+    parent_type: GraphQLObjectType
+    path: Path
+    schema: GraphQLSchema
+    fragments: dict[str, FragmentDefinitionNode]
+    root_value: Any
+    operation: OperationDefinitionNode
+    variable_values: dict[str, Any]
+    context: Any
+    is_awaitable: Callable[[Any], bool]
+    operation_extensions: dict[str, Any]
+
+
+class StrawberryGraphQLCoreExecutionContext(GraphQLExecutionContext):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        operation_extensions = kwargs.pop("operation_extensions", None)
+
+        super().__init__(*args, **kwargs)
+
+        self.operation_extensions = operation_extensions
+
+    def build_resolve_info(
+        self,
+        field_def: GraphQLField,
+        field_group: FieldGroup,
+        parent_type: GraphQLObjectType,
+        path: Path,
+    ) -> GraphQLResolveInfo:
+        if IS_GQL_33:
+            return _OperationContextAwareGraphQLResolveInfo(  # type: ignore
+                field_group.fields[0].node.name.value,
+                field_group.to_nodes(),
+                field_def.type,
+                parent_type,
+                path,
+                self.schema,
+                self.fragments,
+                self.root_value,
+                self.operation,
+                self.variable_values,
+                self.context_value,
+                self.is_awaitable,
+                self.operation_extensions,
+            )
+
+        return super().build_resolve_info(
+            field_def,
+            field_group,
+            parent_type,
+            path,
+        )
+
+
 class Schema(BaseSchema):
     def __init__(
         self,
@@ -203,7 +267,9 @@ class Schema(BaseSchema):
 
         self.extensions = extensions
         self._cached_middleware_manager: MiddlewareManager | None = None
-        self.execution_context_class = execution_context_class
+        self.execution_context_class = (
+            execution_context_class or StrawberryGraphQLCoreExecutionContext
+        )
         self.config = config or StrawberryConfig()
 
         self.schema_converter = GraphQLCoreConverter(
@@ -333,6 +399,14 @@ class Schema(BaseSchema):
             extensions=extensions,
         )
 
+    def _get_custom_context_kwargs(
+        self, operation_extensions: Optional[dict[str, Any]] = None
+    ) -> dict[str, Any]:
+        if not IS_GQL_33:
+            return {}
+
+        return {"operation_extensions": operation_extensions}
+
     def _get_middleware_manager(
         self, extensions: list[SchemaExtension]
     ) -> MiddlewareManager:
@@ -351,6 +425,7 @@ class Schema(BaseSchema):
         context_value: Optional[Any] = None,
         root_value: Optional[Any] = None,
         operation_name: Optional[str] = None,
+        operation_extensions: Optional[dict[str, Any]] = None,
     ) -> ExecutionContext:
         return ExecutionContext(
             query=query,
@@ -360,6 +435,7 @@ class Schema(BaseSchema):
             root_value=root_value,
             variables=variable_values,
             provided_operation_name=operation_name,
+            operation_extensions=operation_extensions,
         )
 
     @lru_cache
@@ -434,8 +510,13 @@ class Schema(BaseSchema):
                 context.errors = [error]
                 return PreExecutionError(data=None, errors=[error])
 
-        if context.operation_type not in context.allowed_operations:
-            raise InvalidOperationTypeError(context.operation_type)
+        try:
+            operation_type = context.operation_type
+        except RuntimeError as error:
+            raise CannotGetOperationTypeError(context.operation_name) from error
+
+        if operation_type not in context.allowed_operations:
+            raise InvalidOperationTypeError(operation_type)
 
         async with extensions_runner.validation():
             _run_validation(context)
@@ -480,6 +561,7 @@ class Schema(BaseSchema):
         root_value: Optional[Any] = None,
         operation_name: Optional[str] = None,
         allowed_operation_types: Optional[Iterable[OperationType]] = None,
+        operation_extensions: Optional[dict[str, Any]] = None,
     ) -> ExecutionResult:
         if allowed_operation_types is None:
             allowed_operation_types = DEFAULT_ALLOWED_OPERATION_TYPES
@@ -491,6 +573,7 @@ class Schema(BaseSchema):
             context_value=context_value,
             root_value=root_value,
             operation_name=operation_name,
+            operation_extensions=operation_extensions,
         )
         extensions = self.get_extensions()
         # TODO (#3571): remove this when we implement execution context as parameter.
@@ -510,6 +593,8 @@ class Schema(BaseSchema):
                     "Incremental execution is enabled but experimental_execute_incrementally is not available, "
                     "please install graphql-core>=3.3.0"
                 )
+
+        custom_context_kwargs = self._get_custom_context_kwargs(operation_extensions)
 
         try:
             async with extensions_runner.operation():
@@ -538,6 +623,7 @@ class Schema(BaseSchema):
                                 operation_name=execution_context.operation_name,
                                 context_value=execution_context.context,
                                 execution_context_class=self.execution_context_class,
+                                **custom_context_kwargs,
                             )
                         )
                         execution_context.result = result
@@ -556,7 +642,11 @@ class Schema(BaseSchema):
                         # only return a sanitised version to the client.
                         self._process_errors(result.errors, execution_context)
 
-        except (MissingQueryError, InvalidOperationTypeError):
+        except (
+            MissingQueryError,
+            CannotGetOperationTypeError,
+            InvalidOperationTypeError,
+        ):
             raise
         except Exception as exc:  # noqa: BLE001
             return await self._handle_execution_result(
@@ -577,6 +667,7 @@ class Schema(BaseSchema):
         root_value: Optional[Any] = None,
         operation_name: Optional[str] = None,
         allowed_operation_types: Optional[Iterable[OperationType]] = None,
+        operation_extensions: Optional[dict[str, Any]] = None,
     ) -> ExecutionResult:
         if allowed_operation_types is None:
             allowed_operation_types = DEFAULT_ALLOWED_OPERATION_TYPES
@@ -588,6 +679,7 @@ class Schema(BaseSchema):
             context_value=context_value,
             root_value=root_value,
             operation_name=operation_name,
+            operation_extensions=operation_extensions,
         )
         extensions = self._sync_extensions
         # TODO (#3571): remove this when we implement execution context as parameter.
@@ -607,6 +699,8 @@ class Schema(BaseSchema):
                     "Incremental execution is enabled but experimental_execute_incrementally is not available, "
                     "please install graphql-core>=3.3.0"
                 )
+        custom_context_kwargs = self._get_custom_context_kwargs(operation_extensions)
+
         try:
             with extensions_runner.operation():
                 # Note: In graphql-core the schema would be validated here but in
@@ -631,8 +725,15 @@ class Schema(BaseSchema):
                             extensions=extensions_runner.get_extensions_results_sync(),
                         )
 
-                if execution_context.operation_type not in allowed_operation_types:
-                    raise InvalidOperationTypeError(execution_context.operation_type)  # noqa: TRY301
+                try:
+                    operation_type = execution_context.operation_type
+                except RuntimeError as error:
+                    raise CannotGetOperationTypeError(
+                        execution_context.operation_name
+                    ) from error
+
+                if operation_type not in execution_context.allowed_operations:
+                    raise InvalidOperationTypeError(operation_type)  # noqa: TRY301
 
                 with extensions_runner.validation():
                     _run_validation(execution_context)
@@ -657,6 +758,7 @@ class Schema(BaseSchema):
                             operation_name=execution_context.operation_name,
                             context_value=execution_context.context,
                             execution_context_class=self.execution_context_class,
+                            **custom_context_kwargs,
                         )
 
                         if isawaitable(result):
@@ -678,7 +780,11 @@ class Schema(BaseSchema):
                             # extension). That way we can log the original errors but
                             # only return a sanitised version to the client.
                             self._process_errors(result.errors, execution_context)
-        except (MissingQueryError, InvalidOperationTypeError):
+        except (
+            MissingQueryError,
+            CannotGetOperationTypeError,
+            InvalidOperationTypeError,
+        ):
             raise
         except Exception as exc:  # noqa: BLE001
             errors = [_coerce_error(exc)]
@@ -701,6 +807,7 @@ class Schema(BaseSchema):
         extensions_runner: SchemaExtensionsRunner,
         middleware_manager: MiddlewareManager,
         execution_context_class: type[GraphQLExecutionContext] | None = None,
+        operation_extensions: Optional[dict[str, Any]] = None,
     ) -> AsyncGenerator[ExecutionResult, None]:
         async with extensions_runner.operation():
             if initial_error := await self._parse_and_validate_async(
@@ -719,6 +826,7 @@ class Schema(BaseSchema):
                     gql_33_kwargs = {
                         "middleware": middleware_manager,
                         "execution_context_class": execution_context_class,
+                        "operation_extensions": operation_extensions,
                     }
                     try:
                         # Might not be awaitable for pre-execution errors.
@@ -783,6 +891,7 @@ class Schema(BaseSchema):
         context_value: Optional[Any] = None,
         root_value: Optional[Any] = None,
         operation_name: Optional[str] = None,
+        operation_extensions: Optional[dict[str, Any]] = None,
     ) -> SubscriptionResult:
         execution_context = self._create_execution_context(
             query=query,
@@ -804,6 +913,7 @@ class Schema(BaseSchema):
             ),
             middleware_manager=self._get_middleware_manager(extensions),
             execution_context_class=self.execution_context_class,
+            operation_extensions=operation_extensions,
         )
 
     def _resolve_node_ids(self) -> None:

@@ -170,6 +170,11 @@ def convert_argument(
         ]
 
     if is_scalar(type_, scalar_registry):
+        from strawberry.relay.types import GlobalID
+
+        if type_ is GlobalID:
+            return GlobalID.from_id(value)  # type: ignore
+
         return value
 
     if isinstance(type_, EnumDefinition):

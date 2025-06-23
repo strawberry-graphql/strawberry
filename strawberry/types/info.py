@@ -114,6 +114,11 @@ class Info(Generic[ContextType, RootValueType]):
         return self._raw_info.context
 
     @property
+    def input_extensions(self) -> dict[str, Any]:
+        """The input extensions passed to the query execution."""
+        return self._raw_info.operation_extensions  # type: ignore
+
+    @property
     def root_value(self) -> RootValueType:
         """The root value passed to the query execution."""
         return self._raw_info.root_value
