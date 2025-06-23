@@ -625,10 +625,11 @@ class QueryCodegen:
     def _field_from_selection(
         self, selection: FieldNode, parent_type: StrawberryObjectDefinition
     ) -> GraphQLField:
+        parent_type_name = self._parent_type_name(parent_type)
         if selection.name.value == "__typename":
             return GraphQLField("__typename", None, GraphQLScalar("String", None))
-        field = self.schema.get_field_for_type(selection.name.value, parent_type.name)
-        assert field, f"{parent_type.name},{selection.name.value}"
+        field = self.schema.get_field_for_type(selection.name.value, parent_type_name)
+        assert field, f"{parent_type_name},{selection.name.value}"
 
         field_type = self._get_field_type(field.type)
 
@@ -672,24 +673,7 @@ class QueryCodegen:
     ) -> GraphQLField:
         assert selection.selection_set is not None
 
-        parent_type_name = parent_type.name
-
-        # Check if the parent type is generic.
-        # This seems to be tracked by `strawberry` in the `type_var_map`
-        # If the type is generic, then the strawberry generated schema
-        # naming convention is <GenericType,...><ClassName>
-        # The implementation here assumes that the `type_var_map` is ordered,
-        # but insertion order is maintained in python3.6+ (for CPython) and
-        # guaranteed for all python implementations in python3.7+, so that
-        # should be pretty safe.
-        if parent_type.type_var_map:
-            parent_type_name = (
-                "".join(
-                    c.__name__  # type: ignore[union-attr]
-                    for c in parent_type.type_var_map.values()
-                )
-                + parent_type.name
-            )
+        parent_type_name = self._parent_type_name(parent_type)
 
         selected_field = self.schema.get_field_for_type(
             selection.name.value, parent_type_name
@@ -915,6 +899,22 @@ class QueryCodegen:
         )
         self._collect_type(graphql_enum)
         return graphql_enum
+
+    def _parent_type_name(self, parent_type: StrawberryObjectDefinition) -> str:
+        # Check if the parent type is generic.
+        # This seems to be tracked by `strawberry` in the `type_var_map`
+        # If the type is generic, then the strawberry generated schema
+        # naming convention is <GenericType,...><ClassName>
+        # The implementation here assumes that the `type_var_map` is ordered,
+        # but insertion order is maintained in python3.6+ (for CPython) and
+        # guaranteed for all python implementations in python3.7+, so that
+        # should be pretty safe.
+        if parent_type.type_var_map:
+            return "".join(
+                c.__name__  # type: ignore[union-attr]
+                for c in parent_type.type_var_map.values()
+            ) + parent_type.name
+        return parent_type.name
 
 
 __all__ = [
