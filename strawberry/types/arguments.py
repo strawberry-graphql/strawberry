@@ -210,7 +210,7 @@ def convert_argument(
         ) or _is_optional_leaf_type(
             type_.of_type, scalar_registry, skip_classes=(GlobalID,)
         ):
-            return list(value_list)
+            return value_list
 
         value_list = cast("Iterable", value)
 
