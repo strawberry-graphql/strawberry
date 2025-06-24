@@ -45,6 +45,10 @@ class EnumDefinition(StrawberryType):
     def is_graphql_generic(self) -> bool:
         return False
 
+    @property
+    def origin(self) -> type:
+        return self.wrapped_cls
+
 
 # TODO: remove duplication of EnumValueDefinition and EnumValue
 @dataclasses.dataclass

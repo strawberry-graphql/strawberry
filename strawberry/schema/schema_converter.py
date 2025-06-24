@@ -918,8 +918,11 @@ class GraphQLCoreConverter:
 
             # If the graphql_type is a GraphQLUnionType, merge its child types
             if isinstance(graphql_type, GraphQLUnionType):
-                # Add the child types of the GraphQLUnionType to the list of graphql_types
-                graphql_types.extend(graphql_type.types)
+                # Add the child types of the GraphQLUnionType to the list of graphql_types,
+                # filter out any duplicates
+                for child_type in graphql_type.types:
+                    if child_type not in graphql_types:
+                        graphql_types.append(child_type)
             else:
                 graphql_types.append(graphql_type)
 
@@ -968,8 +971,11 @@ class GraphQLCoreConverter:
     def validate_same_type_definition(
         self, name: str, type_definition: StrawberryType, cached_type: ConcreteType
     ) -> None:
-        # if the type definitions are the same we can return
-        if cached_type.definition == type_definition:
+        # Skip validation if _unsafe_disable_same_type_validation is True
+        if (
+            self.config._unsafe_disable_same_type_validation
+            or cached_type.definition == type_definition
+        ):
             return
 
         # otherwise we need to check if we are dealing with different instances

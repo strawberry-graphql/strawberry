@@ -71,7 +71,7 @@ from strawberry.utils.await_maybe import await_maybe
 from . import compat
 from .base import BaseSchema
 from .config import StrawberryConfig
-from .exceptions import InvalidOperationTypeError
+from .exceptions import CannotGetOperationTypeError, InvalidOperationTypeError
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Mapping
@@ -412,6 +412,7 @@ class Schema(BaseSchema):
         context_value: Optional[Any] = None,
         root_value: Optional[Any] = None,
         operation_name: Optional[str] = None,
+        operation_extensions: Optional[dict[str, Any]] = None,
     ) -> ExecutionContext:
         return ExecutionContext(
             query=query,
@@ -421,6 +422,7 @@ class Schema(BaseSchema):
             root_value=root_value,
             variables=variable_values,
             provided_operation_name=operation_name,
+            operation_extensions=operation_extensions,
         )
 
     @lru_cache
@@ -495,8 +497,13 @@ class Schema(BaseSchema):
                 context.errors = [error]
                 return PreExecutionError(data=None, errors=[error])
 
-        if context.operation_type not in context.allowed_operations:
-            raise InvalidOperationTypeError(context.operation_type)
+        try:
+            operation_type = context.operation_type
+        except RuntimeError as error:
+            raise CannotGetOperationTypeError(context.operation_name) from error
+
+        if operation_type not in context.allowed_operations:
+            raise InvalidOperationTypeError(operation_type)
 
         async with extensions_runner.validation():
             _run_validation(context)
@@ -549,6 +556,7 @@ class Schema(BaseSchema):
             context_value=context_value,
             root_value=root_value,
             operation_name=operation_name,
+            operation_extensions=operation_extensions,
         )
         extensions = self.get_extensions()
         # TODO (#3571): remove this when we implement execution context as parameter.
@@ -604,7 +612,11 @@ class Schema(BaseSchema):
                         # only return a sanitised version to the client.
                         self._process_errors(result.errors, execution_context)
 
-        except (MissingQueryError, InvalidOperationTypeError):
+        except (
+            MissingQueryError,
+            CannotGetOperationTypeError,
+            InvalidOperationTypeError,
+        ):
             raise
         except Exception as exc:  # noqa: BLE001
             return await self._handle_execution_result(
@@ -637,6 +649,7 @@ class Schema(BaseSchema):
             context_value=context_value,
             root_value=root_value,
             operation_name=operation_name,
+            operation_extensions=operation_extensions,
         )
         extensions = self._sync_extensions
         # TODO (#3571): remove this when we implement execution context as parameter.
@@ -672,8 +685,15 @@ class Schema(BaseSchema):
                             extensions=extensions_runner.get_extensions_results_sync(),
                         )
 
-                if execution_context.operation_type not in allowed_operation_types:
-                    raise InvalidOperationTypeError(execution_context.operation_type)  # noqa: TRY301
+                try:
+                    operation_type = execution_context.operation_type
+                except RuntimeError as error:
+                    raise CannotGetOperationTypeError(
+                        execution_context.operation_name
+                    ) from error
+
+                if operation_type not in execution_context.allowed_operations:
+                    raise InvalidOperationTypeError(operation_type)  # noqa: TRY301
 
                 with extensions_runner.validation():
                     _run_validation(execution_context)
@@ -720,7 +740,11 @@ class Schema(BaseSchema):
                             # extension). That way we can log the original errors but
                             # only return a sanitised version to the client.
                             self._process_errors(result.errors, execution_context)
-        except (MissingQueryError, InvalidOperationTypeError):
+        except (
+            MissingQueryError,
+            CannotGetOperationTypeError,
+            InvalidOperationTypeError,
+        ):
             raise
         except Exception as exc:  # noqa: BLE001
             errors = [_coerce_error(exc)]

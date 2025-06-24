@@ -11,7 +11,6 @@ from typing import (
 
 from graphql import GraphQLError
 
-from strawberry import UNSET
 from strawberry.exceptions import MissingQueryError
 from strawberry.file_uploads.utils import replace_placeholders_with_files
 from strawberry.http import (
@@ -21,9 +20,13 @@ from strawberry.http import (
 )
 from strawberry.http.ides import GraphQL_IDE
 from strawberry.schema import BaseSchema
-from strawberry.schema.exceptions import InvalidOperationTypeError
+from strawberry.schema.exceptions import (
+    CannotGetOperationTypeError,
+    InvalidOperationTypeError,
+)
 from strawberry.types import ExecutionResult
 from strawberry.types.graphql import OperationType
+from strawberry.types.unset import UNSET
 
 from .base import BaseView
 from .exceptions import HTTPException
@@ -166,7 +169,7 @@ class SyncBaseHTTPView(
     def run(
         self,
         request: Request,
-        context: Optional[Context] = UNSET,
+        context: Context = UNSET,
         root_value: Optional[RootValue] = UNSET,
     ) -> Response:
         request_adapter = self.request_adapter_class(request)
@@ -187,14 +190,14 @@ class SyncBaseHTTPView(
         )
         root_value = self.get_root_value(request) if root_value is UNSET else root_value
 
-        assert context
-
         try:
             result = self.execute_operation(
                 request=request,
                 context=context,
                 root_value=root_value,
             )
+        except CannotGetOperationTypeError as e:
+            raise HTTPException(400, e.as_http_error_reason()) from e
         except InvalidOperationTypeError as e:
             raise HTTPException(
                 400, e.as_http_error_reason(request_adapter.method)

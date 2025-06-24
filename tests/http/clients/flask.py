@@ -85,6 +85,7 @@ class FlaskHttpClient(HttpClient):
         self,
         method: Literal["get", "post"],
         query: Optional[str] = None,
+        operation_name: Optional[str] = None,
         variables: Optional[dict[str, object]] = None,
         files: Optional[dict[str, BytesIO]] = None,
         headers: Optional[dict[str, str]] = None,
@@ -93,6 +94,7 @@ class FlaskHttpClient(HttpClient):
     ) -> Response:
         body = self._build_body(
             query=query,
+            operation_name=operation_name,
             variables=variables,
             files=files,
             method=method,
@@ -137,7 +139,7 @@ class FlaskHttpClient(HttpClient):
     async def request(
         self,
         url: str,
-        method: Literal["get", "post", "patch", "put", "delete"],
+        method: Literal["head", "get", "post", "patch", "put", "delete"],
         headers: Optional[dict[str, str]] = None,
         **kwargs: Any,
     ) -> Response:

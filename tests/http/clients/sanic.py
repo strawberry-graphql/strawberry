@@ -66,15 +66,13 @@ class SanicHttpClient(HttpClient):
             result_override=result_override,
             multipart_uploads_enabled=multipart_uploads_enabled,
         )
-        self.app.add_route(
-            view,
-            "/graphql",
-        )
+        self.app.add_route(view, "/graphql")
 
     async def _graphql_request(
         self,
         method: Literal["get", "post"],
         query: Optional[str] = None,
+        operation_name: Optional[str] = None,
         variables: Optional[dict[str, object]] = None,
         files: Optional[dict[str, BytesIO]] = None,
         headers: Optional[dict[str, str]] = None,
@@ -83,6 +81,7 @@ class SanicHttpClient(HttpClient):
     ) -> Response:
         body = self._build_body(
             query=query,
+            operation_name=operation_name,
             variables=variables,
             files=files,
             method=method,
@@ -114,7 +113,7 @@ class SanicHttpClient(HttpClient):
     async def request(
         self,
         url: str,
-        method: Literal["get", "post", "patch", "put", "delete"],
+        method: Literal["head", "get", "post", "patch", "put", "delete"],
         headers: Optional[dict[str, str]] = None,
     ) -> Response:
         request, response = await self.app.asgi_client.request(
@@ -143,7 +142,8 @@ class SanicHttpClient(HttpClient):
         json: Optional[JSON] = None,
         headers: Optional[dict[str, str]] = None,
     ) -> Response:
-        body = data or dumps(json)
+        body = dumps(json) if json is not None else data
+
         request, response = await self.app.asgi_client.request(
             "post", url, content=body, headers=headers
         )

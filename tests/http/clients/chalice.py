@@ -73,6 +73,7 @@ class ChaliceHttpClient(HttpClient):
         self,
         method: Literal["get", "post"],
         query: Optional[str] = None,
+        operation_name: Optional[str] = None,
         variables: Optional[dict[str, object]] = None,
         files: Optional[dict[str, BytesIO]] = None,
         headers: Optional[dict[str, str]] = None,
@@ -81,6 +82,7 @@ class ChaliceHttpClient(HttpClient):
     ) -> Response:
         body = self._build_body(
             query=query,
+            operation_name=operation_name,
             variables=variables,
             files=files,
             method=method,
@@ -118,7 +120,7 @@ class ChaliceHttpClient(HttpClient):
     async def request(
         self,
         url: str,
-        method: Literal["get", "post", "patch", "put", "delete"],
+        method: Literal["head", "get", "post", "patch", "put", "delete"],
         headers: Optional[dict[str, str]] = None,
     ) -> Response:
         with Client(self.app) as client:
@@ -144,7 +146,7 @@ class ChaliceHttpClient(HttpClient):
         json: Optional[JSON] = None,
         headers: Optional[dict[str, str]] = None,
     ) -> Response:
-        body = data or dumps(json)
+        body = dumps(json) if json is not None else data
 
         with Client(self.app) as client:
             response = client.http.post(url, headers=headers, body=body)
