@@ -14,8 +14,8 @@ title: Strawberry docs
 - [Subscriptions](./general/subscriptions.md)
 - [Multipart Subscriptions](./general/multipart-subscriptions.md)
 - [Errors](./errors)
-- [Breaking changes](./breaking-changes.md)
 - [Upgrading Strawberry](./general/upgrades.md)
+- [Breaking changes](./breaking-changes.md)
 - [FAQ](./faq.md)
 
 ## Types
