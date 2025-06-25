@@ -208,7 +208,7 @@ async def test_requests_with_invalid_query_parameter_are_rejected(
     )
 
     assert response.status_code == 400
-    message = "GraphQL operations must contain a non-empty `query` or a `persistedQuery` extension."
+    message = "The GraphQL operation's `query` must be a string or null, if provided."
 
     if isinstance(http_client, ChaliceHttpClient):
         # Our Chalice integration purposely wraps errors messages with a JSON object

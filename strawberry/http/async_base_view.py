@@ -533,7 +533,7 @@ class AsyncBaseHTTPView(
         if not isinstance(query, (str, type(None))):
             raise HTTPException(
                 400,
-                "GraphQL operations must contain a non-empty `query` or a `persistedQuery` extension.",
+                "The GraphQL operation's `query` must be a string or null, if provided.",
             )
 
         return GraphQLRequestData(
