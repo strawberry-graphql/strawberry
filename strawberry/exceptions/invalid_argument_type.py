@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from functools import cached_property
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from strawberry.types.base import get_object_definition
 
@@ -55,7 +55,7 @@ class InvalidArgumentTypeError(StrawberryException):
         )
 
     @cached_property
-    def exception_source(self) -> Optional[ExceptionSource]:
+    def exception_source(self) -> ExceptionSource | None:
         if self.function is None:
             return None  # pragma: no cover
 

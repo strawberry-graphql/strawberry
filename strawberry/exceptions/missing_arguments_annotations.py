@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from functools import cached_property
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from .exception import StrawberryException
 from .utils.source_finder import SourceFinder
@@ -52,7 +52,7 @@ class MissingArgumentsAnnotationsError(StrawberryException):
         return f'arguments "{head}" and "{arguments[-1]}"'
 
     @cached_property
-    def exception_source(self) -> Optional[ExceptionSource]:
+    def exception_source(self) -> ExceptionSource | None:
         if self.function is None:
             return None  # pragma: no cover
 

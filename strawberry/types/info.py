@@ -7,7 +7,6 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Generic,
-    Optional,
     Union,
 )
 from typing_extensions import TypeVar
@@ -131,7 +130,7 @@ class Info(Generic[ContextType, RootValueType]):
     @property
     def return_type(
         self,
-    ) -> Optional[Union[type[WithStrawberryObjectDefinition], StrawberryType]]:
+    ) -> Union[type[WithStrawberryObjectDefinition], StrawberryType] | None:
         """The return type of the current field being resolved."""
         return self._field.type
 
@@ -154,7 +153,7 @@ class Info(Generic[ContextType, RootValueType]):
     # TODO: parent_type as strawberry types
 
     # Helper functions
-    def get_argument_definition(self, name: str) -> Optional[StrawberryArgument]:
+    def get_argument_definition(self, name: str) -> StrawberryArgument | None:
         """Get the StrawberryArgument definition for the current field by name."""
         try:
             return next(arg for arg in self._field.arguments if arg.python_name == name)

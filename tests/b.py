@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Annotated, Optional
+from typing import TYPE_CHECKING, Annotated
 
 import strawberry
 
@@ -37,7 +37,7 @@ class B:
     @strawberry.field
     async def optional_a2(
         self,
-    ) -> Optional[Annotated[A, strawberry.lazy("tests.a"), object()]]:
+    ) -> Annotated[A, strawberry.lazy("tests.a"), object()] | None:
         from tests.a import A
 
         return A(id=self.id)

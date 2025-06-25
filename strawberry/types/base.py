@@ -7,7 +7,6 @@ from typing import (
     Any,
     Callable,
     ClassVar,
-    Optional,
     TypeVar,
     Union,
     overload,
@@ -229,14 +228,14 @@ def get_object_definition(
     obj: Any,
     *,
     strict: bool = False,
-) -> Optional[StrawberryObjectDefinition]: ...
+) -> StrawberryObjectDefinition | None: ...
 
 
 def get_object_definition(
     obj: Any,
     *,
     strict: bool = False,
-) -> Optional[StrawberryObjectDefinition]:
+) -> StrawberryObjectDefinition | None:
     definition = obj.__strawberry_definition__ if has_object_definition(obj) else None
     if strict and definition is None:
         raise TypeError(f"{obj!r} does not have a StrawberryObjectDefinition")
@@ -256,18 +255,16 @@ class StrawberryObjectDefinition(StrawberryType):
     is_input: bool
     is_interface: bool
     origin: type[Any]
-    description: Optional[str]
+    description: str | None
     interfaces: list[StrawberryObjectDefinition]
     extend: bool
-    directives: Optional[Sequence[object]]
-    is_type_of: Optional[Callable[[Any, GraphQLResolveInfo], bool]]
-    resolve_type: Optional[
-        Callable[[Any, GraphQLResolveInfo, GraphQLAbstractType], str]
-    ]
+    directives: Sequence[object] | None
+    is_type_of: Callable[[Any, GraphQLResolveInfo], bool] | None
+    resolve_type: Callable[[Any, GraphQLResolveInfo, GraphQLAbstractType], str] | None
 
     fields: list[StrawberryField]
 
-    concrete_of: Optional[StrawberryObjectDefinition] = None
+    concrete_of: StrawberryObjectDefinition | None = None
     """Concrete implementations of Generic TypeDefinitions fill this in"""
     type_var_map: Mapping[str, Union[StrawberryType, type]] = dataclasses.field(
         default_factory=dict
@@ -332,7 +329,7 @@ class StrawberryObjectDefinition(StrawberryType):
 
         return new_type
 
-    def get_field(self, python_name: str) -> Optional[StrawberryField]:
+    def get_field(self, python_name: str) -> StrawberryField | None:
         return next(
             (field for field in self.fields if field.python_name == python_name), None
         )
@@ -354,7 +351,7 @@ class StrawberryObjectDefinition(StrawberryType):
         )
 
     @property
-    def specialized_type_var_map(self) -> Optional[dict[str, type]]:
+    def specialized_type_var_map(self) -> dict[str, type] | None:
         return get_specialized_type_var_map(self.origin)
 
     @property

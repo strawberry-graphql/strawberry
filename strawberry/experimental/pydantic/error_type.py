@@ -67,10 +67,10 @@ def field_type_to_type(type_: type) -> Union[Any, list[Any], None]:
 def error_type(
     model: type[BaseModel],
     *,
-    fields: Optional[list[str]] = None,
-    name: Optional[str] = None,
-    description: Optional[str] = None,
-    directives: Optional[Sequence[object]] = (),
+    fields: list[str] | None = None,
+    name: str | None = None,
+    description: str | None = None,
+    directives: Sequence[object] | None = (),
     all_fields: bool = False,
 ) -> Callable[..., type]:
     def wrap(cls: type) -> type:

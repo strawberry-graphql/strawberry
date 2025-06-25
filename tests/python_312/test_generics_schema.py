@@ -1,5 +1,3 @@
-# ruff: noqa: F821
-
 import sys
 import textwrap
 from enum import Enum

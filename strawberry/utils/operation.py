@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from graphql.language import OperationDefinitionNode
 
@@ -12,7 +12,7 @@ if TYPE_CHECKING:
 
 def get_first_operation(
     graphql_document: DocumentNode,
-) -> Optional[OperationDefinitionNode]:
+) -> OperationDefinitionNode | None:
     for definition in graphql_document.definitions:
         if isinstance(definition, OperationDefinitionNode):
             return definition
@@ -21,9 +21,9 @@ def get_first_operation(
 
 
 def get_operation_type(
-    graphql_document: DocumentNode, operation_name: Optional[str] = None
+    graphql_document: DocumentNode, operation_name: str | None = None
 ) -> OperationType:
-    definition: Optional[OperationDefinitionNode] = None
+    definition: OperationDefinitionNode | None = None
 
     if operation_name is not None:
         for d in graphql_document.definitions:

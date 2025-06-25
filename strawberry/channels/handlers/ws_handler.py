@@ -5,7 +5,6 @@ import datetime
 import json
 from typing import (
     TYPE_CHECKING,
-    Optional,
     TypedDict,
     Union,
 )
@@ -114,7 +113,7 @@ class GraphQLWSConsumer(
             GRAPHQL_TRANSPORT_WS_PROTOCOL,
             GRAPHQL_WS_PROTOCOL,
         ),
-        connection_init_wait_timeout: Optional[datetime.timedelta] = None,
+        connection_init_wait_timeout: datetime.timedelta | None = None,
     ) -> None:
         if connection_init_wait_timeout is None:
             connection_init_wait_timeout = datetime.timedelta(minutes=1)
@@ -125,7 +124,7 @@ class GraphQLWSConsumer(
         self.debug = debug
         self.protocols = subscription_protocols
         self.message_queue: asyncio.Queue[MessageQueueData] = asyncio.Queue()
-        self.run_task: Optional[asyncio.Task] = None
+        self.run_task: asyncio.Task | None = None
 
         super().__init__()
 
@@ -133,7 +132,7 @@ class GraphQLWSConsumer(
         self.run_task = asyncio.create_task(self.run(self))
 
     async def receive(
-        self, text_data: Optional[str] = None, bytes_data: Optional[bytes] = None
+        self, text_data: str | None = None, bytes_data: bytes | None = None
     ) -> None:
         if text_data:
             self.message_queue.put_nowait({"message": text_data, "disconnected": False})
@@ -145,7 +144,7 @@ class GraphQLWSConsumer(
         assert self.run_task
         await self.run_task
 
-    async def get_root_value(self, request: GraphQLWSConsumer) -> Optional[RootValue]:
+    async def get_root_value(self, request: GraphQLWSConsumer) -> RootValue | None:
         return None
 
     async def get_context(
@@ -178,14 +177,14 @@ class GraphQLWSConsumer(
 
     async def pick_websocket_subprotocol(
         self, request: GraphQLWSConsumer
-    ) -> Optional[str]:
+    ) -> str | None:
         protocols = request.scope["subprotocols"]
         intersection = set(protocols) & set(self.protocols)
         sorted_intersection = sorted(intersection, key=protocols.index)
         return next(iter(sorted_intersection), None)
 
     async def create_websocket_response(
-        self, request: GraphQLWSConsumer, subprotocol: Optional[str]
+        self, request: GraphQLWSConsumer, subprotocol: str | None
     ) -> GraphQLWSConsumer:
         await request.accept(subprotocol=subprotocol)
         return request

@@ -10,7 +10,6 @@ from typing import (
     Annotated,
     Any,
     ForwardRef,
-    Optional,
     TypeVar,
     Union,
     cast,
@@ -59,12 +58,12 @@ class StrawberryAnnotation:
         self,
         annotation: Union[object, str],
         *,
-        namespace: Optional[dict[str, Any]] = None,
+        namespace: dict[str, Any] | None = None,
     ) -> None:
         self.raw_annotation = annotation
         self.namespace = namespace
 
-        self.__resolve_cache__: Optional[Union[StrawberryType, type]] = None
+        self.__resolve_cache__: Union[StrawberryType, type] | None = None
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, StrawberryAnnotation):
@@ -77,8 +76,8 @@ class StrawberryAnnotation:
 
     @staticmethod
     def from_annotation(
-        annotation: object, namespace: Optional[dict[str, Any]] = None
-    ) -> Optional[StrawberryAnnotation]:
+        annotation: object, namespace: dict[str, Any] | None = None
+    ) -> StrawberryAnnotation | None:
         if annotation is None:
             return None
 

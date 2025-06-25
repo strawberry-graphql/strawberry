@@ -207,7 +207,7 @@ class NodeExtension(FieldExtension):
 class ConnectionExtension(FieldExtension):
     connection_type: type[Connection[Node]]
 
-    def __init__(self, max_results: Optional[int] = None) -> None:
+    def __init__(self, max_results: int | None = None) -> None:
         self.max_results = max_results
 
     def apply(self, field: StrawberryField) -> None:
@@ -302,10 +302,10 @@ class ConnectionExtension(FieldExtension):
         source: Any,
         info: Info,
         *,
-        before: Optional[str] = None,
-        after: Optional[str] = None,
-        first: Optional[int] = None,
-        last: Optional[int] = None,
+        before: str | None = None,
+        after: str | None = None,
+        first: int | None = None,
+        last: int | None = None,
         **kwargs: Any,
     ) -> Any:
         assert self.connection_type is not None
@@ -325,10 +325,10 @@ class ConnectionExtension(FieldExtension):
         source: Any,
         info: Info,
         *,
-        before: Optional[str] = None,
-        after: Optional[str] = None,
-        first: Optional[int] = None,
-        last: Optional[int] = None,
+        before: str | None = None,
+        after: str | None = None,
+        first: int | None = None,
+        last: int | None = None,
         **kwargs: Any,
     ) -> Any:
         assert self.connection_type is not None
@@ -374,20 +374,20 @@ ConnectionGraphQLType = Any
 
 
 def connection(
-    graphql_type: Optional[ConnectionGraphQLType] = None,
+    graphql_type: ConnectionGraphQLType | None = None,
     *,
-    resolver: Optional[_RESOLVER_TYPE[Any]] = None,
-    name: Optional[str] = None,
+    resolver: _RESOLVER_TYPE[Any] | None = None,
+    name: str | None = None,
     is_subscription: bool = False,
-    description: Optional[str] = None,
-    permission_classes: Optional[list[type[BasePermission]]] = None,
-    deprecation_reason: Optional[str] = None,
+    description: str | None = None,
+    permission_classes: list[type[BasePermission]] | None = None,
+    deprecation_reason: str | None = None,
     default: Any = dataclasses.MISSING,
     default_factory: Union[Callable[..., object], object] = dataclasses.MISSING,
-    metadata: Optional[Mapping[Any, Any]] = None,
-    directives: Optional[Sequence[object]] = (),
+    metadata: Mapping[Any, Any] | None = None,
+    directives: Sequence[object] | None = (),
     extensions: list[FieldExtension] | None = None,
-    max_results: Optional[int] = None,
+    max_results: int | None = None,
     # This init parameter is used by pyright to determine whether this field
     # is added in the constructor or not. It is not used to change
     # any behaviour at the moment.
