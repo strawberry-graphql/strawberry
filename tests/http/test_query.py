@@ -196,6 +196,30 @@ async def test_missing_query(http_client: HttpClient):
     assert "No GraphQL query found in the request" in response.text
 
 
+@pytest.mark.parametrize(
+    "not_stringified_json",
+    [{"obj": "ect"}, 0, False, ["array"]],
+)
+async def test_requests_with_invalid_query_parameter_are_rejected(
+    http_client: HttpClient, not_stringified_json
+):
+    response = await http_client.query(
+        query=not_stringified_json,
+    )
+
+    assert response.status_code == 400
+    message = "GraphQL operations must contain a non-empty `query` or a `persistedQuery` extension."
+
+    if isinstance(http_client, ChaliceHttpClient):
+        # Our Chalice integration purposely wraps errors messages with a JSON object
+        assert response.json == {
+            "Code": "BadRequestError",
+            "Message": message,
+        }
+    else:
+        assert response.data == message.encode()
+
+
 @pytest.mark.parametrize("method", ["get", "post"])
 async def test_query_context(method: Literal["get", "post"], http_client: HttpClient):
     response = await http_client.query(

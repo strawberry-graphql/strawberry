@@ -154,8 +154,15 @@ class SyncBaseHTTPView(
         else:
             raise HTTPException(400, "Unsupported content type")
 
+        query = data.get("query")
+        if not isinstance(query, (str, type(None))):
+            raise HTTPException(
+                400,
+                "GraphQL operations must contain a non-empty `query` or a `persistedQuery` extension.",
+            )
+
         return GraphQLRequestData(
-            query=data.get("query"),
+            query=query,
             variables=data.get("variables"),
             operation_name=data.get("operationName"),
             extensions=data.get("extensions"),
