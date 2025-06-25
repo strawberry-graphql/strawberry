@@ -1,12 +1,12 @@
 ---
-title: Custom extensions
+title: Schema extensions
 ---
 
-# Custom extensions
+# Schema extensions
 
-Strawberry provides support for adding extensions. Extensions can be used to
-hook into different parts of the GraphQL execution and to provide additional
-results to the GraphQL response.
+Strawberry provides support for adding extensions to your schema. Schema
+extensions can be used to hook into different parts of the GraphQL execution and
+to provide additional results to the GraphQL response.
 
 To create a custom extensions you can use extend from our `SchemaExtension` base
 class:
