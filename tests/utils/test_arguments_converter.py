@@ -56,6 +56,8 @@ def test_list():
     args = {
         "integerList": [1, 2],
         "stringList": ["abc", "cde"],
+        "optionalIntegerList": [1, 2],
+        "optionalStringList": ["abc", "cde", None],
     }
 
     arguments = [
@@ -69,6 +71,16 @@ def test_list():
             python_name="string_list",
             type_annotation=StrawberryAnnotation(list[str]),
         ),
+        StrawberryArgument(
+            graphql_name="optionalIntegerList",
+            python_name="optional_integer_list",
+            type_annotation=StrawberryAnnotation(list[Optional[int]]),
+        ),
+        StrawberryArgument(
+            graphql_name="optionalStringList",
+            python_name="optional_string_list",
+            type_annotation=StrawberryAnnotation(list[Optional[str]]),
+        ),
     ]
 
     assert convert_arguments(
@@ -79,6 +91,8 @@ def test_list():
     ) == {
         "integer_list": [1, 2],
         "string_list": ["abc", "cde"],
+        "optional_integer_list": [1, 2],
+        "optional_string_list": ["abc", "cde", None],
     }
 
 
