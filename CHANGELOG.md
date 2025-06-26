@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.275.5 - 2025-06-26
+--------------------
+
+This release improves performance of argument conversion for lists of primitives.
+
+Contributed by [blothmann](https://github.com/blothmann) via [PR #3773](https://github.com/strawberry-graphql/strawberry/pull/3773/)
+
+
 0.275.4 - 2025-06-26
 --------------------
 
