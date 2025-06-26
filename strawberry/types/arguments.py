@@ -146,7 +146,7 @@ class StrawberryArgument:
 
 def _is_leaf_type(
     type_: Union[StrawberryType, type],
-    scalar_registry: dict[object, Union[ScalarWrapper, ScalarDefinition]],
+    scalar_registry: Mapping[object, Union[ScalarWrapper, ScalarDefinition]],
     skip_classes: tuple[type, ...] = (),
 ) -> bool:
     if type_ in skip_classes:
@@ -170,7 +170,7 @@ def _is_leaf_type(
 
 def _is_optional_leaf_type(
     type_: Union[StrawberryType, type],
-    scalar_registry: dict[object, Union[ScalarWrapper, ScalarDefinition]],
+    scalar_registry: Mapping[object, Union[ScalarWrapper, ScalarDefinition]],
     skip_classes: tuple[type, ...] = (),
 ) -> bool:
     if type_ in skip_classes:
