@@ -87,6 +87,48 @@ async def test_graphql_can_pass_variables(
     assert data["hello"] == "Hello Jake"
 
 
+@pytest.mark.parametrize("extra_kwargs", [{"variables": None}, {}])
+async def test_operation_variables_may_be_null_or_omitted(
+    http_client: HttpClient, extra_kwargs
+):
+    response = await http_client.query(
+        query="{ __typename }",
+        **extra_kwargs,
+    )
+    data = response.json["data"]
+
+    assert response.status_code == 200
+    assert isinstance(data, dict)
+    assert data["__typename"] == "Query"
+
+
+@pytest.mark.parametrize(
+    "not_an_object_or_null",
+    ["string", 0, False, ["array"]],
+)
+async def test_requests_with_invalid_variables_parameter_are_rejected(
+    http_client: HttpClient, not_an_object_or_null
+):
+    response = await http_client.query(
+        query="{ __typename }",
+        variables=not_an_object_or_null,
+    )
+
+    assert response.status_code == 400
+    message = (
+        "The GraphQL operation's `variables` must be an object or null, if provided."
+    )
+
+    if isinstance(http_client, ChaliceHttpClient):
+        # Our Chalice integration purposely wraps errors messages with a JSON object
+        assert response.json == {
+            "Code": "BadRequestError",
+            "Message": message,
+        }
+    else:
+        assert response.data == message.encode()
+
+
 @pytest.mark.parametrize("method", ["get", "post"])
 async def test_root_value(method: Literal["get", "post"], http_client: HttpClient):
     response = await http_client.query(

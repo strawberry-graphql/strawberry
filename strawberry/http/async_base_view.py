@@ -536,9 +536,16 @@ class AsyncBaseHTTPView(
                 "The GraphQL operation's `query` must be a string or null, if provided.",
             )
 
+        variables = data.get("variables")
+        if not isinstance(variables, (dict, type(None))):
+            raise HTTPException(
+                400,
+                "The GraphQL operation's `variables` must be an object or null, if provided.",
+            )
+
         return GraphQLRequestData(
             query=query,
-            variables=data.get("variables"),
+            variables=variables,
             operation_name=data.get("operationName"),
             extensions=data.get("extensions"),
             protocol=protocol,
