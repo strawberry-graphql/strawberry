@@ -369,9 +369,6 @@ async def test_022_(http_client, parameter):
     assert "errors" not in response.json
 
 
-@pytest.mark.xfail(
-    reason="OPTIONAL - Currently results in lots of TypeErrors", raises=AssertionError
-)
 @pytest.mark.parametrize(
     "invalid",
     ["string", 0, False, ["array"]],
