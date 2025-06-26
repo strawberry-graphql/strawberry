@@ -1,6 +1,17 @@
 CHANGELOG
 =========
 
+0.275.4 - 2025-06-26
+--------------------
+
+In this release, we updated Strawberry to gracefully handle requests containing
+an invalid `variables` parameter. Previously, such requests could result in
+internal server errors. Now, Strawberry will return a 400 Bad Request response
+with a clear error message, conforming to the GraphQL over HTTP specification.
+
+Contributed by [Jonathan Ehwald](https://github.com/DoctorJohn) via [PR #3932](https://github.com/strawberry-graphql/strawberry/pull/3932/)
+
+
 0.275.3 - 2025-06-25
 --------------------
 
