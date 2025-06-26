@@ -291,7 +291,7 @@ class AsyncBaseHTTPView(
                     view=self,
                     websocket=websocket,
                     context=context,
-                    root_value=root_value,  # type: ignore
+                    root_value=root_value,
                     schema=self.schema,
                     debug=self.debug,
                     connection_init_wait_timeout=self.connection_init_wait_timeout,
@@ -301,7 +301,7 @@ class AsyncBaseHTTPView(
                     view=self,
                     websocket=websocket,
                     context=context,
-                    root_value=root_value,  # type: ignore
+                    root_value=root_value,
                     schema=self.schema,
                     debug=self.debug,
                     keep_alive=self.keep_alive,
