@@ -120,7 +120,7 @@ async def test_requests_with_invalid_variables_parameter_are_rejected(
     )
 
     if isinstance(http_client, ChaliceHttpClient):
-        # Our Chalice integration purposely wraps errors messages with a JSON object
+        # Our Chalice integration purposely wraps error messages with a JSON object
         assert response.json == {
             "Code": "BadRequestError",
             "Message": message,
