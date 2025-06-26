@@ -236,7 +236,7 @@ async def test_query_context(method: Literal["get", "post"], http_client: HttpCl
     assert data["valueFromContext"] == "a value from context"
 
 
-@skip_if_gql_32
+@skip_if_gql_32("formatting is different in gql 3.2")
 @pytest.mark.parametrize("method", ["get", "post"])
 async def test_query_extensions(
     method: Literal["get", "post"], http_client: HttpClient
