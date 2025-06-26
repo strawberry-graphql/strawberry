@@ -246,6 +246,100 @@ urlpatterns = [
 You'd also need to add `strawberry_django` to the `INSTALLED_APPS` of your
 project, this is needed to provide the template for the GraphiQL interface.
 
+## Important Note: Django ORM and Async Context
+
+When using `AsyncGraphQLView`, you may encounter a `SynchronousOnlyOperation`
+error if your resolvers access Django's ORM directly:
+
+```text
+django.core.exceptions.SynchronousOnlyOperation: You cannot call this from an async context - use a thread or sync_to_async.
+```
+
+This occurs because Django's ORM is synchronous by default and cannot be called
+directly from async contexts like the `AsyncGraphQLView`. Here are two
+solutions:
+
+### Solution 1: Use the async version of the ORM methods
+
+Instead of using the standard version of the ORM methods, you can usually use an
+async version, for example, in addition to `get` Django also provides `aget`
+than can be used in an async context:
+
+```python
+import strawberry
+from django.contrib.auth.models import User
+
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    @staticmethod
+    async def user_name(id: strawberry.ID) -> str:
+        # Note: this is a simple example, you'd normally just return
+        # a full user instead of making a resolver to get a user's name
+        # by id. This is just to explain the async issues with Django :)
+
+        user = await User.objects.aget(id)
+        # This would cause SynchronousOnlyOperation error:
+        # user = User.objects.get(id)
+
+        return user.name
+```
+
+You can find all the supported methods in the
+[Asynchronous support guide](https://docs.djangoproject.com/en/5.2/topics/async/)
+on Django's website.
+
+### Solution 2: Use `sync_to_async`
+
+While some ORM methods have an async equivalent, not all of them do, in that
+case you can wrap your ORM operations with Django's `sync_to_async`:
+
+```python
+import strawberry
+from django.contrib.auth.models import User
+from asgiref.sync import sync_to_async
+
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    async def users(self) -> list[str]:
+        # This would cause SynchronousOnlyOperation error:
+        # return [user.username for user in User.objects.all()]
+
+        # Correct way using sync_to_async:
+        users = await sync_to_async(list)(User.objects.all())
+
+        return [user.username for user in users]
+```
+
+### Solution 3: Use `strawberry_django` (Recommended)
+
+The `strawberry_django` package automatically handles async/sync compatibility.
+Use `strawberry_django.field` instead of `strawberry.field`:
+
+```python
+import strawberry_django
+from django.contrib.auth.models import User
+
+
+@strawberry_django.type(User)
+class UserType:
+    username: str
+    email: str
+
+
+@strawberry.type
+class Query:
+    # This automatically works with both sync and async views
+    users: list[UserType] = strawberry_django.field()
+```
+
+We recommend using the `strawberry_django` package for Django ORM integration as
+it provides automatic async/sync compatibility and additional Django-specific
+features.
+
 ## Options
 
 The `AsyncGraphQLView` accepts the following arguments:

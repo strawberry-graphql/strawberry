@@ -53,7 +53,7 @@ class BaseGraphQLTransportWSHandler(Generic[Context, RootValue]):
         view: AsyncBaseHTTPView[Any, Any, Any, Any, Any, Context, RootValue],
         websocket: AsyncWebSocketAdapter,
         context: Context,
-        root_value: RootValue,
+        root_value: Optional[RootValue],
         schema: BaseSchema,
         debug: bool,
         connection_init_wait_timeout: timedelta,
