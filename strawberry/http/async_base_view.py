@@ -198,8 +198,6 @@ class AsyncBaseHTTPView(
         if not self.allow_queries_via_get and request_adapter.method == "GET":
             allowed_operation_types = allowed_operation_types - {OperationType.QUERY}
 
-        assert self.schema
-
         if request_data.protocol == "multipart-subscription":
             return await self.schema.subscribe(
                 request_data.query,  # type: ignore

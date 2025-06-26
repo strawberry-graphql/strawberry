@@ -116,8 +116,6 @@ class SyncBaseHTTPView(
         if not self.allow_queries_via_get and request_adapter.method == "GET":
             allowed_operation_types = allowed_operation_types - {OperationType.QUERY}
 
-        assert self.schema
-
         return self.schema.execute_sync(
             request_data.query,
             root_value=root_value,
