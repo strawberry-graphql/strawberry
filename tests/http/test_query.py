@@ -23,6 +23,7 @@ async def test_graphql_query(method: Literal["get", "post"], http_client: HttpCl
     data = response.json["data"]
 
     assert response.status_code == 200
+    assert isinstance(data, dict)
     assert data["hello"] == "Hello world"
 
 
@@ -84,6 +85,7 @@ async def test_graphql_can_pass_variables(
     data = response.json["data"]
 
     assert response.status_code == 200
+    assert isinstance(data, dict)
     assert data["hello"] == "Hello Jake"
 
 
@@ -96,6 +98,7 @@ async def test_root_value(method: Literal["get", "post"], http_client: HttpClien
     data = response.json["data"]
 
     assert response.status_code == 200
+    assert isinstance(data, dict)
     assert data["rootName"] == "Query"
 
 
@@ -229,6 +232,7 @@ async def test_query_context(method: Literal["get", "post"], http_client: HttpCl
     data = response.json["data"]
 
     assert response.status_code == 200
+    assert isinstance(data, dict)
     assert data["valueFromContext"] == "a value from context"
 
 
@@ -245,6 +249,7 @@ async def test_query_extensions(
     data = response.json["data"]
 
     assert response.status_code == 200
+    assert isinstance(data, dict)
     assert data["valueFromExtensions"] == "hello"
 
 
