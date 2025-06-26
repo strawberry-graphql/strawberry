@@ -11,4 +11,5 @@ async def test_mutation(http_client: HttpClient):
     data = response.json["data"]
 
     assert response.status_code == 200
+    assert isinstance(data, dict)
     assert data["hello"] == "strawberry"
