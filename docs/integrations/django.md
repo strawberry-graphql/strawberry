@@ -259,9 +259,11 @@ This occurs because Django's ORM is synchronous by default and cannot be called
 directly from async contexts like the `AsyncGraphQLView`. Here are two
 solutions:
 
-### Solution 1: Use the async version of the ORM method
+### Solution 1: Use the async version of the ORM methods
 
-Wrap your ORM operations with Django's `sync_to_async`:
+Instead of using the standard version of the ORM methods, you can usually use an
+async version, for example, in addition to `get` Django also provides `aget`
+than can be used in an async context:
 
 ```python
 import strawberry
@@ -283,6 +285,10 @@ class Query:
 
         return user.name
 ```
+
+You can find all the supported methods in the
+[Asynchronous support guide](https://docs.djangoproject.com/en/5.2/topics/async/)
+on Django's website.
 
 ### Solution 2: Use `sync_to_async`
 
