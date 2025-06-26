@@ -6,7 +6,7 @@ title: Extensions
 
 Extensions allow you, as an application developer, to customise the GraphQL
 execution flow based on your needs. Strawberry provides multiple built in
-extensions that allow you extend the capability of your GraphQL server.
+extensions that allow you to extend the capability of your GraphQL server.
 
 If you can't find what you need among the
 [built-in extensions](#built-in-extensions), you can also build your own custom
