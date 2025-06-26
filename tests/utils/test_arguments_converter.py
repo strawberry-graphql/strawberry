@@ -74,12 +74,12 @@ def test_list():
         StrawberryArgument(
             graphql_name="optionalIntegerList",
             python_name="optional_integer_list",
-            type_annotation=StrawberryAnnotation(list[int | None]),
+            type_annotation=StrawberryAnnotation(list[Optional[int]]),
         ),
         StrawberryArgument(
             graphql_name="optionalStringList",
             python_name="optional_string_list",
-            type_annotation=StrawberryAnnotation(list[str | None]),
+            type_annotation=StrawberryAnnotation(list[Optional[str]]),
         ),
     ]
 
