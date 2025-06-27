@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Optional
+from typing import Any, Optional
 from typing_extensions import Literal, TypedDict
 
-if TYPE_CHECKING:
-    from strawberry.types import ExecutionResult
+from strawberry.schema._graphql_core import (
+    GraphQLIncrementalExecutionResults,
+    ResultType,
+)
 
 
 class GraphQLHTTPResponse(TypedDict, total=False):
@@ -14,13 +16,16 @@ class GraphQLHTTPResponse(TypedDict, total=False):
     extensions: Optional[dict[str, object]]
 
 
-def process_result(result: ExecutionResult) -> GraphQLHTTPResponse:
-    data: GraphQLHTTPResponse = {"data": result.data}
+def process_result(result: ResultType) -> GraphQLHTTPResponse:
+    if isinstance(result, GraphQLIncrementalExecutionResults):
+        return result
 
-    if result.errors:
-        data["errors"] = [err.formatted for err in result.errors]
-    if result.extensions:
-        data["extensions"] = result.extensions
+    errors, extensions = result.errors, result.extensions
+    data: GraphQLHTTPResponse = {
+        "data": result.data,
+        **({"errors": [err.formatted for err in errors]} if errors else {}),
+        **({"extensions": extensions} if extensions else {}),
+    }
 
     return data
 
