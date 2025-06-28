@@ -455,9 +455,6 @@ async def test_6a70(http_client):
     assert "errors" not in response.json
 
 
-@pytest.mark.xfail(
-    reason="OPTIONAL - Currently not supported by Strawberry", raises=AssertionError
-)
 @pytest.mark.parametrize(
     "invalid",
     ["string", 0, False, ["array"]],
