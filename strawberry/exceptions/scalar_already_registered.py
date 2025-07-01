@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from functools import cached_property
 from pathlib import Path
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from strawberry.exceptions.utils.source_finder import SourceFinder
 
@@ -45,7 +45,7 @@ class ScalarAlreadyRegisteredError(StrawberryException):
         super().__init__(self.message)
 
     @cached_property
-    def exception_source(self) -> Optional[ExceptionSource]:
+    def exception_source(self) -> ExceptionSource | None:
         if not all(
             (self.scalar_definition._source_file, self.scalar_definition._source_line)
         ):

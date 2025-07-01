@@ -9,7 +9,6 @@ from typing import (
     Annotated,
     Any,
     NoReturn,
-    Optional,
     TypeVar,
     Union,
     cast,
@@ -48,14 +47,14 @@ if TYPE_CHECKING:
 
 class StrawberryUnion(StrawberryType):
     # used for better error messages
-    _source_file: Optional[str] = None
-    _source_line: Optional[int] = None
+    _source_file: str | None = None
+    _source_line: int | None = None
 
     def __init__(
         self,
-        name: Optional[str] = None,
+        name: str | None = None,
         type_annotations: tuple[StrawberryAnnotation, ...] = (),
-        description: Optional[str] = None,
+        description: str | None = None,
         directives: Iterable[object] = (),
     ) -> None:
         self.graphql_name = name
@@ -64,7 +63,7 @@ class StrawberryUnion(StrawberryType):
         self.directives = directives
         self._source_file = None
         self._source_line = None
-        self.concrete_of: Optional[StrawberryUnion] = None
+        self.concrete_of: StrawberryUnion | None = None
 
     def __eq__(self, other: object) -> bool:
         if isinstance(other, StrawberryType):
@@ -189,7 +188,7 @@ class StrawberryUnion(StrawberryType):
                 # Couldn't resolve using `is_type_of`
                 raise WrongReturnTypeForUnion(info.field_name, str(type(root)))
 
-            return_type: Optional[GraphQLType]
+            return_type: GraphQLType | None
 
             # Iterate over all of our known types and find the first concrete
             # type that implements the type. We prioritise checking types named in the
@@ -242,9 +241,9 @@ class StrawberryUnion(StrawberryType):
 
 def union(
     name: str,
-    types: Optional[Collection[type[Any]]] = None,
+    types: Collection[type[Any]] | None = None,
     *,
-    description: Optional[str] = None,
+    description: str | None = None,
     directives: Iterable[object] = (),
 ) -> StrawberryUnion:
     """Creates a new named Union type.

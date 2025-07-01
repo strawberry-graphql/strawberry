@@ -6,7 +6,6 @@ from json import JSONDecodeError
 from typing import (
     TYPE_CHECKING,
     Callable,
-    Optional,
     Union,
     cast,
 )
@@ -67,7 +66,7 @@ class ASGIRequestAdapter(AsyncHTTPRequestAdapter):
         return self.request.headers
 
     @property
-    def content_type(self) -> Optional[str]:
+    def content_type(self) -> str | None:
         return self.request.headers.get("content-type")
 
     async def get_body(self) -> bytes:
@@ -133,8 +132,8 @@ class GraphQL(
     def __init__(
         self,
         schema: BaseSchema,
-        graphiql: Optional[bool] = None,
-        graphql_ide: Optional[GraphQL_IDE] = "graphiql",
+        graphiql: bool | None = None,
+        graphql_ide: GraphQL_IDE | None = "graphiql",
         allow_queries_via_get: bool = True,
         keep_alive: bool = False,
         keep_alive_interval: float = 1,
@@ -183,7 +182,7 @@ class GraphQL(
 
     async def get_root_value(
         self, request: Union[Request, WebSocket]
-    ) -> Optional[RootValue]:
+    ) -> RootValue | None:
         return None
 
     async def get_context(
@@ -244,14 +243,14 @@ class GraphQL(
     ) -> TypeGuard[WebSocket]:
         return request.scope["type"] == "websocket"
 
-    async def pick_websocket_subprotocol(self, request: WebSocket) -> Optional[str]:
+    async def pick_websocket_subprotocol(self, request: WebSocket) -> str | None:
         protocols = request["subprotocols"]
         intersection = set(protocols) & set(self.protocols)
         sorted_intersection = sorted(intersection, key=protocols.index)
         return next(iter(sorted_intersection), None)
 
     async def create_websocket_response(
-        self, request: WebSocket, subprotocol: Optional[str]
+        self, request: WebSocket, subprotocol: str | None
     ) -> WebSocket:
         await request.accept(subprotocol=subprotocol)
         return request

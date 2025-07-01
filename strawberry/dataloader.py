@@ -10,7 +10,6 @@ from typing import (
     Any,
     Callable,
     Generic,
-    Optional,
     TypeVar,
     Union,
     overload,
@@ -65,7 +64,7 @@ class AbstractCache(Generic[K, T], ABC):
 
 
 class DefaultCache(AbstractCache[K, T]):
-    def __init__(self, cache_key_fn: Optional[Callable[[K], Hashable]] = None) -> None:
+    def __init__(self, cache_key_fn: Callable[[K], Hashable] | None = None) -> None:
         self.cache_key_fn: Callable[[K], Hashable] = (
             cache_key_fn if cache_key_fn is not None else lambda x: x
         )
@@ -85,7 +84,7 @@ class DefaultCache(AbstractCache[K, T]):
 
 
 class DataLoader(Generic[K, T]):
-    batch: Optional[Batch[K, T]] = None
+    batch: Batch[K, T] | None = None
     cache: bool = False
     cache_map: AbstractCache[K, T]
 
@@ -94,11 +93,11 @@ class DataLoader(Generic[K, T]):
         self,
         # any BaseException is rethrown in 'load', so should be excluded from the T type
         load_fn: Callable[[list[K]], Awaitable[Sequence[Union[T, BaseException]]]],
-        max_batch_size: Optional[int] = None,
+        max_batch_size: int | None = None,
         cache: bool = True,
-        loop: Optional[AbstractEventLoop] = None,
-        cache_map: Optional[AbstractCache[K, T]] = None,
-        cache_key_fn: Optional[Callable[[K], Hashable]] = None,
+        loop: AbstractEventLoop | None = None,
+        cache_map: AbstractCache[K, T] | None = None,
+        cache_key_fn: Callable[[K], Hashable] | None = None,
     ) -> None: ...
 
     # fallback if load_fn is untyped and there's no other info for inference
@@ -106,21 +105,21 @@ class DataLoader(Generic[K, T]):
     def __init__(
         self: DataLoader[K, Any],
         load_fn: Callable[[list[K]], Awaitable[list[Any]]],
-        max_batch_size: Optional[int] = None,
+        max_batch_size: int | None = None,
         cache: bool = True,
-        loop: Optional[AbstractEventLoop] = None,
-        cache_map: Optional[AbstractCache[K, T]] = None,
-        cache_key_fn: Optional[Callable[[K], Hashable]] = None,
+        loop: AbstractEventLoop | None = None,
+        cache_map: AbstractCache[K, T] | None = None,
+        cache_key_fn: Callable[[K], Hashable] | None = None,
     ) -> None: ...
 
     def __init__(
         self,
         load_fn: Callable[[list[K]], Awaitable[Sequence[Union[T, BaseException]]]],
-        max_batch_size: Optional[int] = None,
+        max_batch_size: int | None = None,
         cache: bool = True,
-        loop: Optional[AbstractEventLoop] = None,
-        cache_map: Optional[AbstractCache[K, T]] = None,
-        cache_key_fn: Optional[Callable[[K], Hashable]] = None,
+        loop: AbstractEventLoop | None = None,
+        cache_map: AbstractCache[K, T] | None = None,
+        cache_key_fn: Callable[[K], Hashable] | None = None,
     ):
         self.load_fn = load_fn
         self.max_batch_size = max_batch_size

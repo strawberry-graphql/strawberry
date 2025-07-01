@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from functools import cached_property
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from .exception import StrawberryException
 from .utils.source_finder import SourceFinder
@@ -36,6 +36,6 @@ class InvalidSuperclassInterfaceError(StrawberryException):
         super().__init__(self.message)
 
     @cached_property
-    def exception_source(self) -> Optional[ExceptionSource]:
+    def exception_source(self) -> ExceptionSource | None:
         source_finder = SourceFinder()
         return source_finder.find_class_from_object(self.cls)

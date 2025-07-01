@@ -7,7 +7,6 @@ from inspect import iscoroutinefunction
 from typing import (
     TYPE_CHECKING,
     Any,
-    Optional,
     Union,
 )
 
@@ -50,13 +49,13 @@ class BasePermission(abc.ABC):
     ```
     """
 
-    message: Optional[str] = None
+    message: str | None = None
 
-    error_extensions: Optional[GraphQLErrorExtensions] = None
+    error_extensions: GraphQLErrorExtensions | None = None
 
     error_class: type[GraphQLError] = StrawberryGraphQLError
 
-    _schema_directive: Optional[object] = None
+    _schema_directive: object | None = None
 
     @abc.abstractmethod
     def has_permission(

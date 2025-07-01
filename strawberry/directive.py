@@ -8,7 +8,6 @@ from typing import (
     Any,
     Callable,
     Generic,
-    Optional,
     TypeVar,
 )
 
@@ -82,17 +81,17 @@ class StrawberryDirectiveResolver(StrawberryResolver[T]):
     )
 
     @cached_property
-    def value_parameter(self) -> Optional[inspect.Parameter]:
+    def value_parameter(self) -> inspect.Parameter | None:
         return self.reserved_parameters.get(VALUE_PARAMSPEC)
 
 
 @dataclasses.dataclass
 class StrawberryDirective(Generic[T]):
     python_name: str
-    graphql_name: Optional[str]
+    graphql_name: str | None
     resolver: StrawberryDirectiveResolver[T]
     locations: list[DirectiveLocation]
-    description: Optional[str] = None
+    description: str | None = None
 
     @cached_property
     def arguments(self) -> list[StrawberryArgument]:
@@ -102,8 +101,8 @@ class StrawberryDirective(Generic[T]):
 def directive(
     *,
     locations: list[DirectiveLocation],
-    description: Optional[str] = None,
-    name: Optional[str] = None,
+    description: str | None = None,
+    name: str | None = None,
 ) -> Callable[[Callable[..., T]], StrawberryDirective[T]]:
     """Decorator to create a GraphQL operation directive.
 

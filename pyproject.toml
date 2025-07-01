@@ -67,7 +67,7 @@ packages = [{ include = "strawberry" }]
 include = ["strawberry/py.typed"]
 
 [tool.poetry.group.dev.dependencies]
-ruff = "^0.11.4"
+ruff = "^0.12.1"
 asgiref = "^3.2"
 email-validator = { version = ">=1.1.3,<3.0.0", optional = false }
 freezegun = "^1.2.1"
@@ -209,6 +209,7 @@ exclude = [
   "node_modules",
   "venv",
   "tests/*/snapshots",
+  "tests/python_312/*", # Ruff gives a SyntaxError because of new syntax not supported by Python 3.9
 ]
 src = ["strawberry", "tests"]
 
@@ -266,6 +267,9 @@ ignore = [
 
   # Do not force adding _co to covariant typevars
   "PLC0105",
+
+  # Allow imports inside functions, we have a lot of those
+  "PLC0415",
 
   # Allow private access to attributes
   "SLF001",
@@ -348,6 +352,7 @@ ignore = [
   "PLR2004",
   "PLW0603",
   "PT011",
+  "PT030",
   "RUF012",
   "S105",
   "S106",

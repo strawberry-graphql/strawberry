@@ -13,7 +13,7 @@ def test_auto_fields():
 
     class UserModel(pydantic.BaseModel):
         age: int
-        password: Optional[str]
+        password: Optional[str]  # noqa: UP045
         other: float
 
     @strawberry.experimental.pydantic.type(UserModel)

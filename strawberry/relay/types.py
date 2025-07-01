@@ -19,7 +19,6 @@ from typing import (
     ClassVar,
     ForwardRef,
     Generic,
-    Optional,
     TypeVar,
     Union,
     cast,
@@ -158,7 +157,7 @@ class GlobalID:
         *,
         required: bool = ...,
         ensure_type: None = ...,
-    ) -> Optional[Node]: ...
+    ) -> Node | None: ...
 
     async def resolve_node(self, info, *, required=False, ensure_type=None) -> Any:
         """Resolve the type name and node id info to the node itself.
@@ -268,7 +267,7 @@ class GlobalID:
         *,
         required: bool = ...,
         ensure_type: None = ...,
-    ) -> Optional[Node]: ...
+    ) -> Node | None: ...
 
     def resolve_node_sync(self, info, *, required=False, ensure_type=None) -> Any:
         """Resolve the type name and node id info to the node itself.
@@ -378,7 +377,7 @@ class Node:
     ```
     """
 
-    _id_attr: ClassVar[Optional[str]] = None
+    _id_attr: ClassVar[str | None] = None
 
     @field(name="id", description="The Globally Unique ID of this object")
     @classmethod
@@ -513,7 +512,7 @@ class Node:
         info: Info,
         node_ids: Iterable[str],
         required: Literal[False] = ...,
-    ) -> AwaitableOrValue[Iterable[Optional[Self]]]: ...
+    ) -> AwaitableOrValue[Iterable[Self | None]]: ...
 
     @overload
     @classmethod
@@ -525,7 +524,7 @@ class Node:
         required: bool,
     ) -> Union[
         AwaitableOrValue[Iterable[Self]],
-        AwaitableOrValue[Iterable[Optional[Self]]],
+        AwaitableOrValue[Iterable[Self | None]],
     ]: ...
 
     @classmethod
@@ -577,7 +576,7 @@ class Node:
         *,
         info: Info,
         required: Literal[False] = ...,
-    ) -> AwaitableOrValue[Optional[Self]]: ...
+    ) -> AwaitableOrValue[Self | None]: ...
 
     @overload
     @classmethod
@@ -587,7 +586,7 @@ class Node:
         *,
         info: Info,
         required: bool,
-    ) -> AwaitableOrValue[Optional[Self]]: ...
+    ) -> AwaitableOrValue[Self | None]: ...
 
     @classmethod
     def resolve_node(
@@ -596,7 +595,7 @@ class Node:
         *,
         info: Info,
         required: bool = False,
-    ) -> AwaitableOrValue[Optional[Self]]:
+    ) -> AwaitableOrValue[Self | None]:
         """Resolve a node given its id.
 
         This method is a convenience method that calls `resolve_nodes` for
@@ -641,10 +640,10 @@ class PageInfo:
     has_previous_page: bool = field(
         description="When paginating backwards, are there more items?",
     )
-    start_cursor: Optional[str] = field(
+    start_cursor: str | None = field(
         description="When paginating backwards, the cursor to continue.",
     )
-    end_cursor: Optional[str] = field(
+    end_cursor: str | None = field(
         description="When paginating forwards, the cursor to continue.",
     )
 
@@ -715,11 +714,11 @@ class Connection(Generic[NodeType]):
         nodes: NodeIterableType[NodeType],
         *,
         info: Info,
-        before: Optional[str] = None,
-        after: Optional[str] = None,
-        first: Optional[int] = None,
-        last: Optional[int] = None,
-        max_results: Optional[int] = None,
+        before: str | None = None,
+        after: str | None = None,
+        first: int | None = None,
+        last: int | None = None,
+        max_results: int | None = None,
         **kwargs: Any,
     ) -> AwaitableOrValue[Self]:
         """Resolve a connection from nodes.
@@ -767,11 +766,11 @@ class ListConnection(Connection[NodeType]):
         nodes: NodeIterableType[NodeType],
         *,
         info: Info,
-        before: Optional[str] = None,
-        after: Optional[str] = None,
-        first: Optional[int] = None,
-        last: Optional[int] = None,
-        max_results: Optional[int] = None,
+        before: str | None = None,
+        after: str | None = None,
+        first: int | None = None,
+        last: int | None = None,
+        max_results: int | None = None,
         **kwargs: Any,
     ) -> AwaitableOrValue[Self]:
         """Resolve a connection from the list of nodes.

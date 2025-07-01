@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Optional, Union, cast
+from typing import TYPE_CHECKING, Union, cast
 from typing_extensions import Protocol
 
 from strawberry.directive import StrawberryDirective
@@ -26,7 +26,7 @@ if TYPE_CHECKING:
 
 class HasGraphQLName(Protocol):
     python_name: str
-    graphql_name: Optional[str]
+    graphql_name: str | None
 
 
 class NameConverter:

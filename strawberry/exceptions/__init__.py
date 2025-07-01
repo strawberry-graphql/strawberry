@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from functools import cached_property
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING, Union
 
 from graphql import GraphQLError
 
@@ -85,7 +85,7 @@ class UnsupportedTypeError(StrawberryException):
         super().__init__(message)
 
     @cached_property
-    def exception_source(self) -> Optional[ExceptionSource]:
+    def exception_source(self) -> ExceptionSource | None:
         return None
 
 

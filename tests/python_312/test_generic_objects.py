@@ -1,5 +1,3 @@
-# ruff: noqa: F821
-
 import datetime
 import sys
 from typing import Annotated, Optional, Union

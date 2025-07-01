@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from functools import cached_property
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from strawberry.utils.str_converters import to_kebab_case
 
@@ -40,7 +40,7 @@ class StrawberryException(Exception, ABC):
 
     @cached_property
     @abstractmethod
-    def exception_source(self) -> Optional[ExceptionSource]:
+    def exception_source(self) -> ExceptionSource | None:
         return None
 
     @property
@@ -61,7 +61,7 @@ class StrawberryException(Exception, ABC):
             f"[link={self.documentation_url}]{self.documentation_url}"
         ).strip()
 
-    def __rich__(self) -> Optional[RenderableType]:
+    def __rich__(self) -> RenderableType | None:
         from rich.box import SIMPLE
         from rich.console import Group
         from rich.panel import Panel
