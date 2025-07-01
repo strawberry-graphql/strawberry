@@ -561,9 +561,9 @@ def print_schema_definition(
 def print_directive(
     directive: GraphQLDirective, *, schema: BaseSchema
 ) -> Optional[str]:
-    strawberry_directive = directive.extensions["strawberry-definition"]
+    strawberry_directive = directive.extensions.get("strawberry-definition")
 
-    if (
+    if strawberry_directive is None or (
         isinstance(strawberry_directive, StrawberrySchemaDirective)
         and not strawberry_directive.print_definition
     ):
@@ -620,6 +620,14 @@ def print_schema(schema: BaseSchema) -> str:
         for directive in filtered_directives
         if (printed_directive := print_directive(directive, schema=schema)) is not None
     ]
+
+    if schema.config.enable_experimental_incremental_execution:
+        directives.append(
+            "directive @defer(if: Boolean, label: String) on FRAGMENT_SPREAD | INLINE_FRAGMENT"
+        )
+        directives.append(
+            "directive @stream(if: Boolean, label: String, initialCount: Int = 0) on FIELD"
+        )
 
     def _name_getter(type_: Any) -> str:
         if hasattr(type_, "name"):
