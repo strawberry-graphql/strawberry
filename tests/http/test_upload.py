@@ -80,7 +80,7 @@ async def test_file_list_upload(enabled_http_client: HttpClient):
     )
 
     data = response.json["data"]
-
+    assert isinstance(data, dict)
     assert len(data["readFiles"]) == 2
     assert data["readFiles"][0] == "strawberry1"
     assert data["readFiles"][1] == "strawberry2"
@@ -98,6 +98,7 @@ async def test_nested_file_list(enabled_http_client: HttpClient):
     )
 
     data = response.json["data"]
+    assert isinstance(data, dict)
     assert len(data["readFolder"]) == 2
     assert data["readFolder"][0] == "strawberry1"
     assert data["readFolder"][1] == "strawberry2"
@@ -121,6 +122,7 @@ async def test_upload_single_and_list_file_together(enabled_http_client: HttpCli
     )
 
     data = response.json["data"]
+    assert isinstance(data, dict)
     assert len(data["readFiles"]) == 2
     assert data["readFiles"][0] == "strawberry1"
     assert data["readFiles"][1] == "strawberry2"

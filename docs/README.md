@@ -13,9 +13,9 @@ title: Strawberry docs
 - [Mutations](./general/mutations.md)
 - [Subscriptions](./general/subscriptions.md)
 - [Multipart Subscriptions](./general/multipart-subscriptions.md)
-- [Why](./general/why.md)
-- [Breaking changes](./breaking-changes.md)
+- [Errors](./errors)
 - [Upgrading Strawberry](./general/upgrades.md)
+- [Breaking changes](./breaking-changes.md)
 - [FAQ](./faq.md)
 
 ## Types
@@ -41,10 +41,6 @@ title: Strawberry docs
 - [Schema codegen](./codegen/schema-codegen.md)
 - [Query codegen](./codegen/query-codegen.md)
 
-## [Extensions](./extensions)
-
-## [Errors](./errors)
-
 ## Guides
 
 - [Accessing parent data](./guides/accessing-parent-data.md)
@@ -54,8 +50,6 @@ title: Strawberry docs
 - [Federation](./guides/federation.md)
 - [Federation V1](./guides/federation-v1.md)
 - [Relay](./guides/relay.md)
-- [Custom extensions](./guides/custom-extensions.md)
-- [Field extensions](./guides/field-extensions.md)
 - [File upload](./guides/file-upload.md)
 - [Pagination](./guides/pagination/overview.md)
   - [Implementing Offset Pagination](./guides/pagination/offset-based.md)
@@ -66,6 +60,12 @@ title: Strawberry docs
 - [Tools](./guides/tools.md)
 - [Schema export](./guides/schema-export.md)
 - [Convert to dictionary](./guides/convert-to-dictionary.md)
+
+## Extensions
+
+- [Introduction](./extensions)
+- [Schema extensions](./guides/custom-extensions.md)
+- [Field extensions](./guides/field-extensions.md)
 
 ## Editor integration
 

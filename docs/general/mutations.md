@@ -98,8 +98,11 @@ Mutations with void-result go against
 It is usually useful to use a pattern of defining a mutation that receives a
 single [input type](../types/input-types) argument called `input`.
 
-Strawberry provides a helper to create a mutation that automatically creates an
-input type for you, whose attributes are the same as the args in the resolver.
+Strawberry provides the
+[`InputMutationExtension`](../extensions/input-mutation.md), a
+[field extension](../guides/field-extensions.md) that automatically creates an
+input type for you, whose attributes are the same as the arguments in the
+resolver.
 
 For example, suppose we want the mutation defined in the section above to be an
 input mutation. We can add the `InputMutationExtension` to the field like this:
