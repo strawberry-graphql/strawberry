@@ -1,6 +1,6 @@
 import sys
 from collections.abc import Iterable
-from typing import Any, Optional
+from typing import Any, Optional, Annotated
 from typing_extensions import Self
 
 import pytest
@@ -68,6 +68,30 @@ def test_nullable_connection_with_optional():
             }
         }
     """
+
+    result = schema.execute_sync(query)
+    assert result.data == {"users": None}
+    assert not result.errors
+
+def test_lazy_optional_connection():
+    @strawberry.type
+    class Query:
+        @strawberry.relay.connection(Optional[Annotated["UserConnection", strawberry.lazy("tests.relay.test_connection")]])
+        def users(self) -> Optional[list[User]]:
+            return None
+
+    schema = strawberry.Schema(query=Query)
+    query = """
+            query {
+                users {
+                    edges {
+                        node {
+                            name
+                        }
+                    }
+                }
+            }
+        """
 
     result = schema.execute_sync(query)
     assert result.data == {"users": None}
