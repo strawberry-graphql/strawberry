@@ -7,8 +7,8 @@ import pytest
 
 import strawberry
 from strawberry.permission import BasePermission
-from strawberry.relay import Connection, Node
-from strawberry.relay.types import ListConnection
+from strawberry.relay import Connection, Node, PageInfo, to_base64
+from strawberry.relay.types import ListConnection, Edge
 from strawberry.schema.config import StrawberryConfig
 
 
@@ -22,6 +22,24 @@ class User(Node):
         cls, *, info: strawberry.Info, node_ids: list[Any], required: bool
     ) -> list[Self]:
         return [cls() for _ in node_ids]
+
+
+@strawberry.type
+class EmptyUserConnection(Connection[User]):
+    @classmethod
+    def resolve_connection(
+        cls,
+        nodes: Iterable[User],
+        *,
+        info: Any,
+        after: Optional[str] = None,
+        before: Optional[str] = None,
+        first: Optional[int] = None,
+        last: Optional[int] = None,
+        max_results: Optional[int] = None,
+        **kwargs: Any,
+    ) -> Optional[Self]:
+        return None
 
 
 @strawberry.type
@@ -39,8 +57,21 @@ class UserConnection(Connection[User]):
         max_results: Optional[int] = None,
         **kwargs: Any,
     ) -> Optional[Self]:
-        return None
-
+        user_node_id = to_base64(User, "1")
+        return cls(
+            page_info=PageInfo(
+                has_next_page=False,
+                has_previous_page=False,
+                start_cursor=None,
+                end_cursor=None,
+            ),
+            edges=[Edge(
+                cursor=user_node_id,
+                node=User(
+                    id=user_node_id
+                )
+            )],
+        )
 
 class TestPermission(BasePermission):
     message = "Not allowed"
@@ -52,7 +83,7 @@ class TestPermission(BasePermission):
 def test_nullable_connection_with_optional():
     @strawberry.type
     class Query:
-        @strawberry.relay.connection(Optional[UserConnection])
+        @strawberry.relay.connection(Optional[EmptyUserConnection])
         def users(self) -> Optional[list[User]]:
             return None
 
@@ -74,13 +105,44 @@ def test_nullable_connection_with_optional():
     assert not result.errors
 
 
-def test_lazy_optional_connection():
+def test_lazy_connection():
     @strawberry.type
     class Query:
         @strawberry.relay.connection(
             Optional[
                 Annotated[
                     "UserConnection", strawberry.lazy("tests.relay.test_connection")
+                ]
+            ]
+        )
+        def users(self) -> Optional[list[User]]:
+            return None
+
+    schema = strawberry.Schema(query=Query)
+    query = """
+            query {
+                users {
+                    edges {
+                        node {
+                            name
+                        }
+                    }
+                }
+            }
+        """
+
+    result = schema.execute_sync(query)
+    assert result.data == {"users": {"edges": [{"node": {"name": "John"}}]}}
+    assert not result.errors
+
+
+def test_lazy_optional_connection():
+    @strawberry.type
+    class Query:
+        @strawberry.relay.connection(
+            Optional[
+                Annotated[
+                    "EmptyUserConnection", strawberry.lazy("tests.relay.test_connection")
                 ]
             ]
         )
@@ -112,7 +174,7 @@ def test_lazy_optional_connection():
 def test_nullable_connection_with_pipe():
     @strawberry.type
     class Query:
-        @strawberry.relay.connection(UserConnection | None)
+        @strawberry.relay.connection(EmptyUserConnection | None)
         def users(self) -> list[User] | None:
             return None
 
@@ -138,7 +200,7 @@ def test_nullable_connection_with_permission():
     @strawberry.type
     class Query:
         @strawberry.relay.connection(
-            Optional[UserConnection], permission_classes=[TestPermission]
+            Optional[EmptyUserConnection], permission_classes=[TestPermission]
         )
         def users(self) -> Optional[list[User]]:  # pragma: no cover
             pytest.fail("Should not have been called...")
