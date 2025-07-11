@@ -8,7 +8,7 @@ import pytest
 import strawberry
 from strawberry.permission import BasePermission
 from strawberry.relay import Connection, Node, PageInfo, to_base64
-from strawberry.relay.types import ListConnection, Edge
+from strawberry.relay.types import Edge, ListConnection
 from strawberry.schema.config import StrawberryConfig
 
 
@@ -65,13 +65,9 @@ class UserConnection(Connection[User]):
                 start_cursor=None,
                 end_cursor=None,
             ),
-            edges=[Edge(
-                cursor=user_node_id,
-                node=User(
-                    id=user_node_id
-                )
-            )],
+            edges=[Edge(cursor=user_node_id, node=User(id=user_node_id))],
         )
+
 
 class TestPermission(BasePermission):
     message = "Not allowed"
@@ -142,7 +138,8 @@ def test_lazy_optional_connection():
         @strawberry.relay.connection(
             Optional[
                 Annotated[
-                    "EmptyUserConnection", strawberry.lazy("tests.relay.test_connection")
+                    "EmptyUserConnection",
+                    strawberry.lazy("tests.relay.test_connection"),
                 ]
             ]
         )
