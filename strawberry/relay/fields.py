@@ -261,7 +261,12 @@ class ConnectionExtension(FieldExtension):
         if isinstance(f_type, StrawberryOptional):
             f_type = f_type.of_type
 
+        if isinstance(f_type, LazyType):
+            f_type = f_type.resolve_type()
+
         type_origin = get_origin(f_type) if is_generic_alias(f_type) else f_type
+        if isinstance(type_origin, LazyType):
+            type_origin = type_origin.resolve_type()
 
         if not isinstance(type_origin, type) or not issubclass(type_origin, Connection):
             raise RelayWrongAnnotationError(field.name, cast("type", field.origin))
