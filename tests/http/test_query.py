@@ -295,6 +295,33 @@ async def test_query_extensions(
     assert data["valueFromExtensions"] == "hello"
 
 
+@pytest.mark.parametrize(
+    "not_an_object_or_null",
+    ["string", 0, False, ["array"]],
+)
+async def test_requests_with_invalid_extension_parameter_are_rejected(
+    http_client: HttpClient, not_an_object_or_null
+):
+    response = await http_client.query(
+        query="{ __typename }",
+        extensions=not_an_object_or_null,
+    )
+
+    assert response.status_code == 400
+    message = (
+        "The GraphQL operation's `extensions` must be an object or null, if provided."
+    )
+
+    if isinstance(http_client, ChaliceHttpClient):
+        # Our Chalice integration purposely wraps error messages with a JSON object
+        assert response.json == {
+            "Code": "BadRequestError",
+            "Message": message,
+        }
+    else:
+        assert response.data == message.encode()
+
+
 @pytest.mark.parametrize("method", ["get", "post"])
 async def test_returning_status_code(
     method: Literal["get", "post"], http_client: HttpClient
