@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import dataclasses
 import sys
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.exceptions import (
@@ -15,9 +15,16 @@ from strawberry.types.field import StrawberryField
 from strawberry.types.private import is_private
 from strawberry.types.unset import UNSET
 
+if TYPE_CHECKING:
+    from collections.abc import Sequence
+
+    from strawberry.types.type_extension import TypeExtension
+
 
 def _get_fields(
-    cls: type[Any], original_type_annotations: dict[str, type[Any]]
+    cls: type[Any],
+    original_type_annotations: dict[str, type[Any]],
+    extensions: Sequence[TypeExtension] = (),
 ) -> list[StrawberryField]:
     """Get all the strawberry fields off a strawberry.type cls.
 
@@ -81,6 +88,12 @@ def _get_fields(
 
     # then we can proceed with finding the fields for the current class
     for field in dataclasses.fields(cls):  # type: ignore
+        if field.name in original_type_annotations:
+            field.type = original_type_annotations[field.name]
+
+        for extension in extensions:
+            field = extension.on_field(field)  # type: ignore # noqa: PLW2901
+
         if isinstance(field, StrawberryField):
             # Check that the field type is not Private
             if is_private(field.type):
@@ -156,10 +169,6 @@ def _get_fields(
 
         assert_message = "Field must have a name by the time the schema is generated"
         assert field_name is not None, assert_message
-
-        if field.name in original_type_annotations:
-            field.type = original_type_annotations[field.name]
-            field.type_annotation = StrawberryAnnotation(annotation=field.type)
 
         # TODO: Raise exception if field_name already in fields
         fields[field_name] = field

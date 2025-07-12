@@ -194,3 +194,6 @@ $RECYCLE.BIN/
 .vscode/
 .idea/
 node_modules/
+
+# Nix related
+shell.nix
