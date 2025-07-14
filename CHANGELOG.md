@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.275.7 - 2025-07-14
+--------------------
+
+This release adds support for lazy types in ConnectionExtension.
+
+Contributed by [Radosław Cybulski](https://github.com/rcybulski1122012) via [PR #3941](https://github.com/strawberry-graphql/strawberry/pull/3941/)
+
+
 0.275.6 - 2025-07-13
 --------------------
 
