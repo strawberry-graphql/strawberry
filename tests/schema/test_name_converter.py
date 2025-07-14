@@ -1,6 +1,6 @@
 import textwrap
 from enum import Enum
-from typing import Generic, Optional, TypeVar, Union, Annotated
+from typing import Annotated, Generic, Optional, TypeVar, Union
 
 import strawberry
 from strawberry.directive import StrawberryDirective
@@ -120,7 +120,12 @@ class Query:
 
     enum: MyEnum = MyEnum.A
     field: Optional[MyGeneric[str]] = None
-    field_with_lazy: MyGeneric[Annotated["TypeWithDifferentNameThanClass", strawberry.lazy("tests.schema.test_name_converter")]] = None
+    field_with_lazy: MyGeneric[
+        Annotated[
+            "TypeWithDifferentNameThanClass",
+            strawberry.lazy("tests.schema.test_name_converter"),
+        ]
+    ] = None
 
     @strawberry.field
     def print(self, enum: MyEnum) -> str:
