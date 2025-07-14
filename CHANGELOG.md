@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.276.0 - 2025-07-14
+--------------------
+
+This release fixes NameConverter to properly handle lazy types.
+
+Contributed by [Radosław Cybulski](https://github.com/rcybulski1122012) via [PR #3944](https://github.com/strawberry-graphql/strawberry/pull/3944/)
+
+
 0.275.7 - 2025-07-14
 --------------------
 
