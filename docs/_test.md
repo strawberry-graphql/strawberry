@@ -3,6 +3,8 @@ title: Test doc page
 toc: true
 ---
 
+import { Code } from '@astrojs/starlight/components';
+
 # This is a test doc page
 
 Some examples of things you can do in docs.
@@ -13,14 +15,17 @@ Code blocks now support:
 
 ### Highlighting words individually
 
-```python highlight=strawberry,str
+export const exampleCode = `
 import strawberry
-
 
 @strawberry.type
 class X:
     name: str
-```
+`
+export const fileName = 'example.py';
+export const highlights = ['strawberry', 'str'];
+
+<Code code={exampleCode} lang="python" title={fileName} mark={highlights} />
 
 ### Highlighting lines
 
