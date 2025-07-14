@@ -222,18 +222,3 @@ def test_can_use_enum_value_with_variable():
     assert not result.errors
 
     assert result.data == {"printX": "a"}
-
-
-# def test_lazy_type_with_different_name_in_generic():
-#     @strawberry.type
-#     class GenericType(Generic[T]):
-#         item: T
-#
-#     @strawberry.type
-#     class _Query:
-#         specialized: GenericType[Annotated["TypeWithDifferentNameThanClass", strawberry.lazy("tests.schema.test_name_converter")]]
-#
-#     _schema = strawberry.Schema(query=_Query)
-#
-#     assert "MyTypeGenericType" in str(_schema)
-#     assert "TypeWithDifferentNameThanClassGenericType" not in str(_schema)
