@@ -41,9 +41,9 @@ class TypeB:
         ([TypeA], "TypeAExample"),
         ([CustomInt], "CustomIntExample"),
         ([TypeA, TypeB], "TypeATypeBExample"),
-        ([TypeA, LazyType["TypeB", "test_names"]], "TypeATypeBExample"),  # type: ignore
+        ([TypeA, LazyType["TypeB", "tests.objects.generics.test_names"]], "TypeATypeBExample"),  # type: ignore
         (
-            [TypeA, Annotated["TypeB", strawberry.lazy("test_names")]],
+            [TypeA, Annotated["TypeB", strawberry.lazy("tests.objects.generics.test_names")]],
             "TypeATypeBExample",
         ),
     ],

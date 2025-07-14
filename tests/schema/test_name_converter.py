@@ -1,6 +1,6 @@
 import textwrap
 from enum import Enum
-from typing import Generic, Optional, TypeVar, Union
+from typing import Generic, Optional, TypeVar, Union, Annotated
 
 import strawberry
 from strawberry.directive import StrawberryDirective
@@ -78,6 +78,11 @@ class User:
     name: str
 
 
+@strawberry.type(name="MyType")
+class TypeWithDifferentNameThanClass:
+    name: str
+
+
 @strawberry.type
 class Error:
     message: str
@@ -115,6 +120,7 @@ class Query:
 
     enum: MyEnum = MyEnum.A
     field: Optional[MyGeneric[str]] = None
+    field_with_lazy: MyGeneric[Annotated["TypeWithDifferentNameThanClass", strawberry.lazy("tests.schema.test_name_converter")]] = None
 
     @strawberry.field
     def print(self, enum: MyEnum) -> str:
@@ -141,6 +147,14 @@ def test_name_converter():
       BX
     }
 
+    type MyTypeMyGenericXX {
+      valueX: MyTypeX!
+    }
+
+    type MyTypeX {
+      nameX: String!
+    }
+
     interface NodeXX {
       idX: ID!
     }
@@ -148,6 +162,7 @@ def test_name_converter():
     type QueryX {
       enumX: MyEnumX!
       fieldX: StrMyGenericXX
+      fieldWithLazyX: MyTypeMyGenericXX!
       userX(inputX: UserInputX!): UserXErrorXX! @myDirectiveX(name: "my-directive")
       printX(enumX: MyEnumX!): String!
     }
@@ -202,3 +217,18 @@ def test_can_use_enum_value_with_variable():
     assert not result.errors
 
     assert result.data == {"printX": "a"}
+
+
+# def test_lazy_type_with_different_name_in_generic():
+#     @strawberry.type
+#     class GenericType(Generic[T]):
+#         item: T
+#
+#     @strawberry.type
+#     class _Query:
+#         specialized: GenericType[Annotated["TypeWithDifferentNameThanClass", strawberry.lazy("tests.schema.test_name_converter")]]
+#
+#     _schema = strawberry.Schema(query=_Query)
+#
+#     assert "MyTypeGenericType" in str(_schema)
+#     assert "TypeWithDifferentNameThanClassGenericType" not in str(_schema)
