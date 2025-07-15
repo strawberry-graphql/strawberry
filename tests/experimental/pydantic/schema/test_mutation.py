@@ -1,7 +1,6 @@
 from typing import Union
 
 import pydantic
-
 import strawberry
 from strawberry.experimental.pydantic._compat import IS_PYDANTIC_V2
 

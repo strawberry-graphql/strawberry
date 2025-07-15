@@ -18,9 +18,10 @@ from strawberry.types.private import is_private
 
 if TYPE_CHECKING:
     from pydantic import BaseModel
+    from pydantic.fields import FieldInfo
 
 
-def get_type_for_field(field, is_input: bool, compat: PydanticCompat):
+def get_type_for_field(field: FieldInfo, is_input: bool, compat: PydanticCompat) -> Any:
     """Get the GraphQL type for a Pydantic field."""
     outer_type = field.outer_type_
 
@@ -31,6 +32,7 @@ def get_type_for_field(field, is_input: bool, compat: PydanticCompat):
         should_add_optional: bool = field.allow_none
         if should_add_optional:
             from typing import Optional
+
             return Optional[replaced_type]
 
     return replaced_type
@@ -43,18 +45,18 @@ def _get_pydantic_fields(
     include_computed: bool = False,
 ) -> list[StrawberryField]:
     """Extract StrawberryFields from a Pydantic BaseModel class.
-    
+
     This function processes a Pydantic BaseModel and extracts its fields,
     converting them to StrawberryField instances that can be used in GraphQL schemas.
     All fields from the Pydantic model are included by default, except those marked
     with strawberry.Private.
-    
+
     Args:
         cls: The Pydantic BaseModel class to extract fields from
         original_type_annotations: Type annotations that may override field types
         is_input: Whether this is for an input type
         include_computed: Whether to include computed fields
-        
+
     Returns:
         List of StrawberryField instances
     """
@@ -86,7 +88,9 @@ def _get_pydantic_fields(
         if isinstance(custom_field, StrawberryField):
             # Use the custom field but update its type if needed
             strawberry_field = custom_field
-            strawberry_field.type_annotation = StrawberryAnnotation.from_annotation(field_type)
+            strawberry_field.type_annotation = StrawberryAnnotation.from_annotation(
+                field_type
+            )
         else:
             # Create a new StrawberryField
             graphql_name = None
@@ -98,7 +102,9 @@ def _get_pydantic_fields(
                 graphql_name=graphql_name,
                 type_annotation=StrawberryAnnotation.from_annotation(field_type),
                 description=pydantic_field.description,
-                default_factory=get_default_factory_for_field(pydantic_field, compat=compat),
+                default_factory=get_default_factory_for_field(
+                    pydantic_field, compat=compat
+                ),
             )
 
         # Set the origin module for proper type resolution

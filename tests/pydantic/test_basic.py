@@ -301,7 +301,7 @@ def test_strawberry_private_fields():
 
     field_names = {f.python_name for f in definition.fields}
     assert field_names == {"id", "name", "age"}
-    
+
     # password field should not be in the GraphQL schema
     assert "password" not in field_names
 
@@ -330,19 +330,19 @@ def test_strawberry_private_fields_access():
 
     field_names = {f.python_name for f in definition.fields}
     assert field_names == {"id", "name"}
-    
+
     # Test that the private field is still accessible on the instance
     user = User(id=1, name="John", password="secret")
     assert user.id == 1
     assert user.name == "John"
     assert user.password == "secret"
-    
+
     # Test that we can use the private field in Python logic
     def has_password(user: User) -> bool:
         return bool(user.password)
-    
+
     assert has_password(user) is True
-    
+
     user_no_password = User(id=2, name="Jane", password="")
     assert has_password(user_no_password) is False
 
@@ -365,7 +365,7 @@ def test_strawberry_private_fields_input_types():
 
     field_names = {f.python_name for f in definition.fields}
     assert field_names == {"name", "age"}
-    
+
     # But the Python object should still have the internal_id field
     user_input = CreateUserInput(name="John", age=30, internal_id="internal_123")
     assert user_input.name == "John"

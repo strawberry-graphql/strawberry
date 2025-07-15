@@ -4,7 +4,9 @@ title: Pydantic support
 
 # Pydantic support
 
-Strawberry provides first-class support for [Pydantic](https://pydantic.dev/) models, allowing you to directly decorate your Pydantic `BaseModel` classes to create GraphQL types without writing code twice.
+Strawberry provides first-class support for [Pydantic](https://pydantic.dev/)
+models, allowing you to directly decorate your Pydantic `BaseModel` classes to
+create GraphQL types without writing code twice.
 
 ## Installation
 
@@ -14,11 +16,13 @@ pip install strawberry-graphql[pydantic]
 
 ## Basic Usage
 
-The simplest way to use Pydantic with Strawberry is to decorate your Pydantic models directly:
+The simplest way to use Pydantic with Strawberry is to decorate your Pydantic
+models directly:
 
 ```python
 import strawberry
 from pydantic import BaseModel
+
 
 @strawberry.pydantic.type
 class User(BaseModel):
@@ -26,16 +30,19 @@ class User(BaseModel):
     name: str
     email: str
 
+
 @strawberry.type
 class Query:
     @strawberry.field
     def get_user(self) -> User:
         return User(id=1, name="John", email="john@example.com")
 
+
 schema = strawberry.Schema(query=Query)
 ```
 
-This automatically creates a GraphQL type that includes all fields from your Pydantic model.
+This automatically creates a GraphQL type that includes all fields from your
+Pydantic model.
 
 ## Type Decorators
 
@@ -62,15 +69,12 @@ class CreateUserInput(BaseModel):
     age: int
     email: str
 
+
 @strawberry.type
 class Mutation:
     @strawberry.field
     def create_user(self, input: CreateUserInput) -> User:
-        return User(
-            name=input.name,
-            age=input.age,
-            email=input.email
-        )
+        return User(name=input.name, age=input.age, email=input.email)
 ```
 
 ### `@strawberry.pydantic.interface`
@@ -81,6 +85,7 @@ Creates a GraphQL interface from a Pydantic model:
 @strawberry.pydantic.interface
 class Node(BaseModel):
     id: str
+
 
 @strawberry.pydantic.type
 class User(BaseModel):
@@ -112,6 +117,7 @@ Pydantic field descriptions are automatically preserved in the GraphQL schema:
 ```python
 from pydantic import Field
 
+
 @strawberry.pydantic.type
 class User(BaseModel):
     name: str = Field(description="The user's full name")
@@ -136,6 +142,7 @@ Pydantic optional fields are properly handled:
 ```python
 from typing import Optional
 
+
 @strawberry.pydantic.type
 class User(BaseModel):
     name: str
@@ -145,10 +152,12 @@ class User(BaseModel):
 
 ### Private Fields
 
-You can use `strawberry.Private` to mark fields that should not be exposed in the GraphQL schema but are still accessible in your Python code:
+You can use `strawberry.Private` to mark fields that should not be exposed in
+the GraphQL schema but are still accessible in your Python code:
 
 ```python
 import strawberry
+
 
 @strawberry.pydantic.type
 class User(BaseModel):
@@ -168,7 +177,8 @@ type User {
 }
 ```
 
-The private fields are still accessible in Python code for use in resolvers or business logic:
+The private fields are still accessible in Python code for use in resolvers or
+business logic:
 
 ```python
 @strawberry.type
@@ -195,6 +205,7 @@ class Address(BaseModel):
     city: str
     zipcode: str
 
+
 @strawberry.pydantic.type
 class User(BaseModel):
     name: str
@@ -208,19 +219,18 @@ Lists of Pydantic models work seamlessly:
 ```python
 from typing import List
 
+
 @strawberry.pydantic.type
 class User(BaseModel):
     name: str
     age: int
 
+
 @strawberry.type
 class Query:
     @strawberry.field
     def get_users(self) -> List[User]:
-        return [
-            User(name="John", age=30),
-            User(name="Jane", age=25)
-        ]
+        return [User(name="John", age=30), User(name="Jane", age=25)]
 ```
 
 ### Validation
@@ -230,15 +240,16 @@ Pydantic validation is automatically applied to input types:
 ```python
 from pydantic import validator
 
+
 @strawberry.pydantic.input
 class CreateUserInput(BaseModel):
     name: str
     age: int
-    
-    @validator('age')
+
+    @validator("age")
     def validate_age(cls, v):
         if v < 0:
-            raise ValueError('Age must be non-negative')
+            raise ValueError("Age must be non-negative")
         return v
 ```
 
@@ -251,6 +262,7 @@ Decorated models automatically get conversion methods:
 class User(BaseModel):
     name: str
     age: int
+
 
 # Create from existing Pydantic instance
 pydantic_user = User(name="John", age=30)
@@ -269,9 +281,11 @@ If you're using the experimental Pydantic integration, here's how to migrate:
 ```python
 from strawberry.experimental.pydantic import type as pydantic_type
 
+
 class UserModel(BaseModel):
     name: str
     age: int
+
 
 @pydantic_type(UserModel, all_fields=True)
 class User:
@@ -294,6 +308,7 @@ from pydantic import BaseModel, Field, validator
 from typing import List, Optional
 import strawberry
 
+
 @strawberry.pydantic.type
 class User(BaseModel):
     id: int
@@ -303,18 +318,20 @@ class User(BaseModel):
     is_active: bool = True
     tags: List[str] = Field(default_factory=list)
 
+
 @strawberry.pydantic.input
 class CreateUserInput(BaseModel):
     name: str
     email: str
     age: int
     tags: Optional[List[str]] = None
-    
-    @validator('age')
+
+    @validator("age")
     def validate_age(cls, v):
         if v < 0:
-            raise ValueError('Age must be non-negative')
+            raise ValueError("Age must be non-negative")
         return v
+
 
 @strawberry.type
 class Query:
@@ -325,8 +342,9 @@ class Query:
             name="John Doe",
             email="john@example.com",
             age=30,
-            tags=["developer", "python"]
+            tags=["developer", "python"],
         )
+
 
 @strawberry.type
 class Mutation:
@@ -337,8 +355,9 @@ class Mutation:
             name=input.name,
             email=input.email,
             age=input.age,
-            tags=input.tags or []
+            tags=input.tags or [],
         )
+
 
 schema = strawberry.Schema(query=Query, mutation=Mutation)
 ```
@@ -347,7 +366,8 @@ schema = strawberry.Schema(query=Query, mutation=Mutation)
 
 # Experimental Pydantic Support (Deprecated)
 
-The experimental Pydantic integration is deprecated in favor of the first-class support above. The experimental integration will be removed in a future version.
+The experimental Pydantic integration is deprecated in favor of the first-class
+support above. The experimental integration will be removed in a future version.
 
 ## Experimental Usage
 
@@ -356,17 +376,20 @@ The experimental integration required creating separate wrapper classes:
 ```python
 from strawberry.experimental.pydantic import type as pydantic_type
 
+
 class UserModel(BaseModel):
     id: int
     name: str
     signup_ts: Optional[datetime] = None
     friends: List[int] = []
 
+
 @pydantic_type(model=UserModel)
 class UserType:
     id: strawberry.auto
     name: strawberry.auto
     friends: strawberry.auto
+
 
 # Or include all fields
 @pydantic_type(model=UserModel, all_fields=True)

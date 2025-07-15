@@ -6,9 +6,11 @@ into GraphQL types, inputs, and interfaces without requiring a separate wrapper 
 
 from __future__ import annotations
 
-import builtins
-from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any, Callable, Optional, Union, overload
+
+if TYPE_CHECKING:
+    import builtins
+    from collections.abc import Sequence
 
 from strawberry.experimental.pydantic._compat import PydanticCompat
 from strawberry.experimental.pydantic.conversion import (
@@ -50,7 +52,7 @@ def _process_pydantic_type(
     include_computed: bool = False,
 ) -> type[BaseModel]:
     """Process a Pydantic BaseModel class and add GraphQL metadata.
-    
+
     Args:
         cls: The Pydantic BaseModel class to process
         name: The GraphQL type name (defaults to class name)
@@ -59,7 +61,7 @@ def _process_pydantic_type(
         description: The GraphQL type description
         directives: GraphQL directives to apply
         include_computed: Whether to include computed fields
-        
+
     Returns:
         The processed BaseModel class with GraphQL metadata
     """
@@ -68,10 +70,6 @@ def _process_pydantic_type(
 
     # Get compatibility layer for this model
     compat = PydanticCompat.from_model(cls)
-    model_fields = compat.get_model_fields(cls, include_computed=include_computed)
-
-    # Get annotations from the class to check for strawberry.Private and other custom fields
-    existing_annotations = getattr(cls, "__annotations__", {})
 
     # Extract fields using our custom function
     # All fields from the Pydantic model are included by default, except strawberry.Private fields
@@ -180,28 +178,29 @@ def type(
     include_computed: bool = False,
 ) -> Union[type[BaseModel], Callable[[type[BaseModel]], type[BaseModel]]]:
     """Decorator to convert a Pydantic BaseModel directly into a GraphQL type.
-    
+
     This decorator allows you to use Pydantic models directly as GraphQL types
     without needing to create a separate wrapper class.
-    
+
     Args:
         cls: The Pydantic BaseModel class to convert
         name: The GraphQL type name (defaults to class name)
         description: The GraphQL type description
         directives: GraphQL directives to apply to the type
         include_computed: Whether to include computed fields
-        
+
     Returns:
         The decorated BaseModel class with GraphQL metadata
-        
+
     Example:
         @strawberry.pydantic.type
         class User(BaseModel):
             name: str
             age: int
-            
+
         # All fields from the Pydantic model will be included in the GraphQL type
     """
+
     def wrap(cls: type[BaseModel]) -> type[BaseModel]:
         return _process_pydantic_type(
             cls,
@@ -246,27 +245,28 @@ def input(
     directives: Optional[Sequence[object]] = (),
 ) -> Union[type[BaseModel], Callable[[type[BaseModel]], type[BaseModel]]]:
     """Decorator to convert a Pydantic BaseModel directly into a GraphQL input type.
-    
+
     This decorator allows you to use Pydantic models directly as GraphQL input types
     without needing to create a separate wrapper class.
-    
+
     Args:
         cls: The Pydantic BaseModel class to convert
         name: The GraphQL input type name (defaults to class name)
         description: The GraphQL input type description
         directives: GraphQL directives to apply to the input type
-        
+
     Returns:
         The decorated BaseModel class with GraphQL input metadata
-        
+
     Example:
         @strawberry.pydantic.input
         class CreateUserInput(BaseModel):
             name: str
             age: int
-            
+
         # All fields from the Pydantic model will be included in the GraphQL input type
     """
+
     def wrap(cls: type[BaseModel]) -> type[BaseModel]:
         return _process_pydantic_type(
             cls,
@@ -314,25 +314,26 @@ def interface(
     include_computed: bool = False,
 ) -> Union[type[BaseModel], Callable[[type[BaseModel]], type[BaseModel]]]:
     """Decorator to convert a Pydantic BaseModel directly into a GraphQL interface.
-    
+
     This decorator allows you to use Pydantic models directly as GraphQL interfaces
     without needing to create a separate wrapper class.
-    
+
     Args:
         cls: The Pydantic BaseModel class to convert
         name: The GraphQL interface name (defaults to class name)
         description: The GraphQL interface description
         directives: GraphQL directives to apply to the interface
         include_computed: Whether to include computed fields
-        
+
     Returns:
         The decorated BaseModel class with GraphQL interface metadata
-        
+
     Example:
         @strawberry.pydantic.interface
         class Node(BaseModel):
             id: str
     """
+
     def wrap(cls: type[BaseModel]) -> type[BaseModel]:
         return _process_pydantic_type(
             cls,

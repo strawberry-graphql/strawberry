@@ -12,9 +12,8 @@ We have already support for pydantic, but it is experimental, and works like thi
 class UserModel(BaseModel):
     age: int
 
-@strawberry.experimental.pydantic.type(
-    UserModel, all_fields=True
-)
+
+@strawberry.experimental.pydantic.type(UserModel, all_fields=True)
 class User: ...
 ```
 
