@@ -214,10 +214,6 @@ async def test_423l(http_client):
     assert response.status_code == 400
 
 
-@pytest.mark.xfail(
-    reason="OPTIONAL - Currently results in lots of TypeErrors",
-    raises=AssertionError,
-)
 @pytest.mark.parametrize(
     "invalid",
     [{"obj": "ect"}, 0, False, ["array"]],
@@ -373,9 +369,6 @@ async def test_022_(http_client, parameter):
     assert "errors" not in response.json
 
 
-@pytest.mark.xfail(
-    reason="OPTIONAL - Currently results in lots of TypeErrors", raises=AssertionError
-)
 @pytest.mark.parametrize(
     "invalid",
     ["string", 0, False, ["array"]],
@@ -462,9 +455,6 @@ async def test_6a70(http_client):
     assert "errors" not in response.json
 
 
-@pytest.mark.xfail(
-    reason="OPTIONAL - Currently not supported by Strawberry", raises=AssertionError
-)
 @pytest.mark.parametrize(
     "invalid",
     ["string", 0, False, ["array"]],

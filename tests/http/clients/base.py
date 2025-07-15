@@ -206,10 +206,10 @@ class HttpClient(abc.ABC):
         if operation_name is not None:
             body["operationName"] = operation_name
 
-        if variables:
+        if variables is not None:
             body["variables"] = variables
 
-        if extensions:
+        if extensions is not None:
             body["extensions"] = extensions
 
         if files:

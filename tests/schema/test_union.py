@@ -1041,3 +1041,156 @@ def test_annoted_union_with_two_generics():
             """
         ).strip()
     )
+
+
+def test_union_merging_without_annotated():
+    @strawberry.type
+    class A:
+        a: int
+
+    @strawberry.type
+    class B:
+        b: int
+
+    @strawberry.type
+    class C:
+        c: int
+
+    a = Union[A, B]
+
+    b = Union[B, C]
+
+    c = Union[a, b]
+
+    @strawberry.type
+    class Query:
+        union_field: c
+
+    schema = strawberry.Schema(query=Query)
+
+    assert (
+        str(schema)
+        == textwrap.dedent(
+            """
+        type A {
+          a: Int!
+        }
+
+        union ABC = A | B | C
+
+        type B {
+          b: Int!
+        }
+
+        type C {
+          c: Int!
+        }
+
+        type Query {
+          unionField: ABC!
+        }
+    """
+        ).strip()
+    )
+
+
+def test_union_merging_with_annotated():
+    @strawberry.type
+    class A:
+        a: int
+
+    @strawberry.type
+    class B:
+        b: int
+
+    @strawberry.type
+    class C:
+        c: int
+
+    a = Annotated[Union[A, B], strawberry.union("AorB")]
+
+    b = Annotated[Union[B, C], strawberry.union("BorC")]
+
+    c = Union[a, b]
+
+    @strawberry.type
+    class Query:
+        union_field: c
+
+    schema = strawberry.Schema(query=Query)
+
+    assert (
+        str(schema)
+        == textwrap.dedent(
+            """
+        type A {
+          a: Int!
+        }
+
+        union AorBBorC = A | B | C
+
+        type B {
+          b: Int!
+        }
+
+        type C {
+          c: Int!
+        }
+
+        type Query {
+          unionField: AorBBorC!
+        }
+    """
+        ).strip()
+    )
+
+
+def test_union_merging_with_annotated_annotated_merge():
+    @strawberry.type
+    class A:
+        a: int
+
+    @strawberry.type
+    class B:
+        b: int
+
+    @strawberry.type
+    class C:
+        c: int
+
+    a = Annotated[Union[A, B], strawberry.union("AorB")]
+
+    b = Annotated[Union[B, C], strawberry.union("BorC")]
+
+    c = Annotated[Union[a, b], strawberry.union("ABC")]
+
+    @strawberry.type
+    class Query:
+        union_field: c
+
+    schema = strawberry.Schema(query=Query)
+
+    assert (
+        str(schema)
+        == textwrap.dedent(
+            """
+        type A {
+          a: Int!
+        }
+
+        union ABC = A | B | C
+
+        type B {
+          b: Int!
+        }
+
+        type C {
+          c: Int!
+        }
+
+        type Query {
+          unionField: ABC!
+        }
+    """
+        ).strip()
+    )

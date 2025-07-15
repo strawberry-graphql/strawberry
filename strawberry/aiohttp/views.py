@@ -15,7 +15,7 @@ from typing import (
 )
 from typing_extensions import TypeGuard
 
-from aiohttp import http, web
+from aiohttp import ClientConnectionResetError, http, web
 from aiohttp.multipart import BodyPartReader
 from strawberry.http.async_base_view import (
     AsyncBaseHTTPView,
@@ -109,7 +109,7 @@ class AiohttpWebSocketAdapter(AsyncWebSocketAdapter):
     async def send_json(self, message: Mapping[str, object]) -> None:
         try:
             await self.ws.send_str(self.view.encode_json(message))
-        except RuntimeError as exc:
+        except (RuntimeError, ClientConnectionResetError) as exc:
             raise WebSocketDisconnected from exc
 
     async def close(self, code: int, reason: str) -> None:

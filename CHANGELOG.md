@@ -1,6 +1,102 @@
 CHANGELOG
 =========
 
+0.276.0 - 2025-07-14
+--------------------
+
+This release fixes NameConverter to properly handle lazy types.
+
+Contributed by [Radosław Cybulski](https://github.com/rcybulski1122012) via [PR #3944](https://github.com/strawberry-graphql/strawberry/pull/3944/)
+
+
+0.275.7 - 2025-07-14
+--------------------
+
+This release adds support for lazy types in ConnectionExtension.
+
+Contributed by [Radosław Cybulski](https://github.com/rcybulski1122012) via [PR #3941](https://github.com/strawberry-graphql/strawberry/pull/3941/)
+
+
+0.275.6 - 2025-07-13
+--------------------
+
+In this release, we updated Strawberry to gracefully handle requests containing
+an invalid `extensions` parameter. Previously, such requests could result in
+internal server errors. Now, Strawberry will return a 400 Bad Request response
+with a clear error message, conforming to the GraphQL over HTTP specification.
+
+Contributed by [Jonathan Ehwald](https://github.com/DoctorJohn) via [PR #3943](https://github.com/strawberry-graphql/strawberry/pull/3943/)
+
+
+0.275.5 - 2025-06-26
+--------------------
+
+This release improves performance of argument conversion for lists of primitives.
+
+Contributed by [blothmann](https://github.com/blothmann) via [PR #3773](https://github.com/strawberry-graphql/strawberry/pull/3773/)
+
+
+0.275.4 - 2025-06-26
+--------------------
+
+In this release, we updated Strawberry to gracefully handle requests containing
+an invalid `variables` parameter. Previously, such requests could result in
+internal server errors. Now, Strawberry will return a 400 Bad Request response
+with a clear error message, conforming to the GraphQL over HTTP specification.
+
+Contributed by [Jonathan Ehwald](https://github.com/DoctorJohn) via [PR #3932](https://github.com/strawberry-graphql/strawberry/pull/3932/)
+
+
+0.275.3 - 2025-06-25
+--------------------
+
+In this release, we updated Strawberry to gracefully handle requests containing
+an invalid `query` parameter. Previously, such requests could result in internal
+server errors, but now they will return a 400 Bad Request response with an
+appropriate error message, conforming to the GraphQL over HTTP specification.
+
+Contributed by [Jonathan Ehwald](https://github.com/DoctorJohn) via [PR #3927](https://github.com/strawberry-graphql/strawberry/pull/3927/)
+
+
+0.275.2 - 2025-06-22
+--------------------
+
+Fixes a bug that caused merged unions with duplicated entries to fail the schema validation when merging two
+`strawberry.union` types.
+
+Contributed by [Erik Wrede](https://github.com/erikwrede) via [PR #3923](https://github.com/strawberry-graphql/strawberry/pull/3923/)
+
+
+0.275.1 - 2025-06-22
+--------------------
+
+In this release, we updated the `aiohttp` integration to handle
+`aiohttp.ClientConnectionResetError`s, which can occur when a WebSocket
+connection is unexpectedly closed, gracefully.
+
+Contributed by [Jonathan Ehwald](https://github.com/DoctorJohn) via [PR #3922](https://github.com/strawberry-graphql/strawberry/pull/3922/)
+
+
+0.275.0 - 2025-06-20
+--------------------
+
+Adds a new CLI command `strawberry locate-definition` that allows you to find the source location of a definition in the schema.
+
+```
+strawberry locate-definition path.to.schema:schema ObjectName
+```
+
+```
+strawberry locate-definition path.to.schema:schema ObjectName.fieldName
+```
+
+Results take the form of `path/to/file.py:line:column`, for example: `src/models/user.py:45:12`.
+
+This can be used, for example, with the go to definition feature of VS Code's Relay extension (configured via the `relay.pathToLocateCommand` setting).
+
+Contributed by [Sam Millar](https://github.com/millar) via [PR #3902](https://github.com/strawberry-graphql/strawberry/pull/3902/)
+
+
 0.274.3 - 2025-06-19
 --------------------
 

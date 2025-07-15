@@ -144,12 +144,52 @@ class StrawberryArgument:
         return isinstance(self.type, StrawberryMaybe)
 
 
+def _is_leaf_type(
+    type_: Union[StrawberryType, type],
+    scalar_registry: Mapping[object, Union[ScalarWrapper, ScalarDefinition]],
+    skip_classes: tuple[type, ...] = (),
+) -> bool:
+    if type_ in skip_classes:
+        return False
+
+    if is_scalar(type_, scalar_registry):
+        return True
+
+    if isinstance(type_, EnumDefinition):
+        return True
+
+    if isinstance(type_, LazyType):
+        return _is_leaf_type(type_.resolve_type(), scalar_registry)
+
+    if hasattr(type_, "_enum_definition"):
+        enum_definition: EnumDefinition = type_._enum_definition
+        return _is_leaf_type(enum_definition, scalar_registry)
+
+    return False
+
+
+def _is_optional_leaf_type(
+    type_: Union[StrawberryType, type],
+    scalar_registry: Mapping[object, Union[ScalarWrapper, ScalarDefinition]],
+    skip_classes: tuple[type, ...] = (),
+) -> bool:
+    if type_ in skip_classes:
+        return False
+
+    if isinstance(type_, StrawberryOptional):
+        return _is_leaf_type(type_.of_type, scalar_registry, skip_classes)
+
+    return False
+
+
 def convert_argument(
     value: object,
     type_: Union[StrawberryType, type],
     scalar_registry: Mapping[object, Union[ScalarWrapper, ScalarDefinition]],
     config: StrawberryConfig,
 ) -> object:
+    from strawberry.relay.types import GlobalID
+
     # TODO: move this somewhere else and make it first class
     if isinstance(type_, StrawberryOptional):
         res = convert_argument(value, type_.of_type, scalar_registry, config)
@@ -164,20 +204,25 @@ def convert_argument(
 
     if isinstance(type_, StrawberryList):
         value_list = cast("Iterable", value)
+
+        if _is_leaf_type(
+            type_.of_type, scalar_registry, skip_classes=(GlobalID,)
+        ) or _is_optional_leaf_type(
+            type_.of_type, scalar_registry, skip_classes=(GlobalID,)
+        ):
+            return value_list
+
+        value_list = cast("Iterable", value)
+
         return [
             convert_argument(x, type_.of_type, scalar_registry, config)
             for x in value_list
         ]
 
-    if is_scalar(type_, scalar_registry):
-        from strawberry.relay.types import GlobalID
-
+    if _is_leaf_type(type_, scalar_registry):
         if type_ is GlobalID:
             return GlobalID.from_id(value)  # type: ignore
 
-        return value
-
-    if isinstance(type_, EnumDefinition):
         return value
 
     if isinstance(type_, LazyType):

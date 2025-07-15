@@ -283,6 +283,10 @@ def union(
             union._source_file = frame.f_code.co_filename
             union._source_line = frame.f_lineno
 
+            # TODO: here union._source_file could be "<string>"
+            # (when using future annotations)
+            # we should find a better way to handle this
+
         return union
 
     warnings.warn(
