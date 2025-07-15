@@ -7,7 +7,8 @@ from typing import TYPE_CHECKING, Any, Union
 from typing_extensions import Self, assert_never
 
 from strawberry.types.base import StrawberryObjectDefinition
-from strawberry.types.nodes import InlineFragment, Selection
+from strawberry.types.info import Info
+from strawberry.types.nodes import InlineFragment
 
 if TYPE_CHECKING:
     from strawberry.types.info import Info
@@ -83,31 +84,23 @@ def should_resolve_list_connection_edges(info: Info) -> bool:
 
     """
     resolve_for_field_names = {"edges", "pageInfo"}
-
-    def _check_selection(selection: Selection) -> bool:
-        """Recursively inspect the selection to check if the user requested to resolve the `edges` field.
-
-        Args:
-            selection (Selection): The selection to check.
-
-        Returns:
-            bool: True if the user requested to resolve the `edges` field of a connection, False otherwise.
-        """
+    # Use a stack for iterative DFS, much faster than recursion
+    stack = []
+    for selection_field in info.selected_fields:
+        # Push all top-level selections onto the stack
+        stack.extend(selection_field.selections)
+    while stack:
+        selection = stack.pop()
         if (
             not isinstance(selection, InlineFragment)
             and selection.name in resolve_for_field_names
         ):
             return True
-        if selection.selections:
-            return any(
-                _check_selection(selection) for selection in selection.selections
-            )
-        return False
-
-    for selection_field in info.selected_fields:
-        for selection in selection_field.selections:
-            if _check_selection(selection):
-                return True
+        # InlineFragment or any other Selection: examine nested selections (if any)
+        # Use getattr to avoid attribute error if selections doesn't exist
+        nested_selections = getattr(selection, "selections", None)
+        if nested_selections:
+            stack.extend(nested_selections)
     return False
 
 
