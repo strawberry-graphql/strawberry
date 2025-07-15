@@ -17,14 +17,9 @@ import strawberry
 
 
 def in_async_context() -> bool:
-    # Based on the way django checks if there's an event loop in the current thread
+    # Faster check for an event loop in the current thread using private API
     # https://github.com/django/django/blob/main/django/utils/asyncio.py
-    try:
-        asyncio.get_running_loop()
-    except RuntimeError:
-        return False
-    else:
-        return True
+    return asyncio._get_running_loop() is not None
 
 
 @lru_cache(maxsize=250)
