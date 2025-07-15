@@ -629,3 +629,62 @@ async def test_async_execution_with_pydantic():
             "age": 30
         }
     }
+
+
+def test_strawberry_private_fields_not_in_schema():
+    """Test that strawberry.Private fields are not exposed in GraphQL schema."""
+    
+    @strawberry.pydantic.type
+    class User(pydantic.BaseModel):
+        id: int
+        name: str
+        password: strawberry.Private[str]
+        
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def get_user(self) -> User:
+            return User(id=1, name="John", password="secret123")
+    
+    schema = strawberry.Schema(query=Query)
+    
+    # Check that password field is not in the schema
+    schema_str = str(schema)
+    assert "password" not in schema_str
+    assert "id: Int!" in schema_str
+    assert "name: String!" in schema_str
+    
+    # Test that we can query the exposed fields
+    query = """
+        query {
+            getUser {
+                id
+                name
+            }
+        }
+    """
+    
+    result = schema.execute_sync(query)
+    
+    assert not result.errors
+    assert result.data == {
+        "getUser": {
+            "id": 1,
+            "name": "John"
+        }
+    }
+    
+    # Test that querying the private field fails
+    query_with_private = """
+        query {
+            getUser {
+                id
+                name
+                password
+            }
+        }
+    """
+    
+    result = schema.execute_sync(query_with_private)
+    assert result.errors
+    assert "Cannot query field 'password'" in str(result.errors[0])

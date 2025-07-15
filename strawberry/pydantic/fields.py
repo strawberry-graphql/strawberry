@@ -89,23 +89,27 @@ def _get_pydantic_fields(
 
         pydantic_field = model_fields[field_name]
 
-        # Check if this is a private field
-        field_type = (
-            get_type_for_field(pydantic_field, is_input, compat=compat)
-            if field_name in auto_fields_set
-            else existing_annotations.get(field_name)
-        )
+        # Check if this is a private field - check both auto fields and class annotations
+        field_type = None
+        
+        # First check if there's a custom annotation on the class (may be strawberry.Private)
+        if field_name in existing_annotations:
+            field_type = existing_annotations[field_name]
+        elif field_name in auto_fields_set:
+            # If no custom annotation, but it's an auto field, get the Pydantic type
+            field_type = get_type_for_field(pydantic_field, is_input, compat=compat)
 
+        # Skip private fields - they shouldn't be included in GraphQL schema
         if field_type and is_private(field_type):
             continue
 
-        # Get the appropriate field type
+        # Get the appropriate field type for the GraphQL schema
         if field_name in auto_fields_set:
-            # This is a field that should use the Pydantic type (for all_fields=True)
+            # This is a field that should use the Pydantic type (for experimental all_fields=True)
             field_type = get_type_for_field(pydantic_field, is_input, compat=compat)
         else:
-            # This must be a custom field, skip processing the Pydantic field
-            continue
+            # For new first-class integration, include all Pydantic fields by default
+            field_type = get_type_for_field(pydantic_field, is_input, compat=compat)
 
         # Check if there's a custom field definition on the class
         custom_field = getattr(cls, field_name, None)

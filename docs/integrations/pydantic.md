@@ -144,6 +144,45 @@ class User(BaseModel):
     age: Optional[int] = None
 ```
 
+### Private Fields
+
+You can use `strawberry.Private` to mark fields that should not be exposed in the GraphQL schema but are still accessible in your Python code:
+
+```python
+import strawberry
+
+@strawberry.pydantic.type
+class User(BaseModel):
+    id: int
+    name: str
+    password: strawberry.Private[str]  # Not exposed in GraphQL
+    email: str
+```
+
+This generates a GraphQL schema with only the public fields:
+
+```graphql
+type User {
+  id: Int!
+  name: String!
+  email: String!
+}
+```
+
+The private fields are still accessible in Python code for use in resolvers or business logic:
+
+```python
+@strawberry.type
+class Query:
+    @strawberry.field
+    def get_user(self) -> User:
+        user = User(id=1, name="John", password="secret", email="john@example.com")
+        # Can access private field in Python
+        if user.password:
+            return user
+        return None
+```
+
 ## Advanced Usage
 
 ### Nested Types

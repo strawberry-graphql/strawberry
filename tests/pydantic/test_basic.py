@@ -281,3 +281,93 @@ def test_schema_generation():
     schema_str = str(schema)
     assert "type User" in schema_str
     assert "input CreateUserInput" in schema_str
+
+
+def test_strawberry_private_fields():
+    """Test that strawberry.Private fields are excluded from the GraphQL schema."""
+
+    @strawberry.pydantic.type
+    class User(pydantic.BaseModel):
+        id: int
+        name: str
+        age: int
+        password: strawberry.Private[str]
+
+    definition: StrawberryObjectDefinition = User.__strawberry_definition__
+    assert definition.name == "User"
+
+    # Should have three fields (id, name, age) - password should be excluded
+    assert len(definition.fields) == 3
+
+    field_names = {f.python_name for f in definition.fields}
+    assert field_names == {"id", "name", "age"}
+    
+    # password field should not be in the GraphQL schema
+    assert "password" not in field_names
+
+    # But the python object should still have the password field
+    user = User(id=1, name="John", age=30, password="secret")
+    assert user.id == 1
+    assert user.name == "John"
+    assert user.age == 30
+    assert user.password == "secret"
+
+
+def test_strawberry_private_fields_access():
+    """Test that strawberry.Private fields can be accessed in Python code."""
+
+    @strawberry.pydantic.type
+    class User(pydantic.BaseModel):
+        id: int
+        name: str
+        password: strawberry.Private[str]
+
+    definition: StrawberryObjectDefinition = User.__strawberry_definition__
+    assert definition.name == "User"
+
+    # Should have two fields (id, name) - password should be excluded
+    assert len(definition.fields) == 2
+
+    field_names = {f.python_name for f in definition.fields}
+    assert field_names == {"id", "name"}
+    
+    # Test that the private field is still accessible on the instance
+    user = User(id=1, name="John", password="secret")
+    assert user.id == 1
+    assert user.name == "John"
+    assert user.password == "secret"
+    
+    # Test that we can use the private field in Python logic
+    def has_password(user: User) -> bool:
+        return bool(user.password)
+    
+    assert has_password(user) is True
+    
+    user_no_password = User(id=2, name="Jane", password="")
+    assert has_password(user_no_password) is False
+
+
+def test_strawberry_private_fields_input_types():
+    """Test that strawberry.Private fields work with input types."""
+
+    @strawberry.pydantic.input
+    class CreateUserInput(pydantic.BaseModel):
+        name: str
+        age: int
+        internal_id: strawberry.Private[str]
+
+    definition: StrawberryObjectDefinition = CreateUserInput.__strawberry_definition__
+    assert definition.name == "CreateUserInput"
+    assert definition.is_input is True
+
+    # Should have two fields (name, age) - internal_id should be excluded
+    assert len(definition.fields) == 2
+
+    field_names = {f.python_name for f in definition.fields}
+    assert field_names == {"name", "age"}
+    
+    # But the Python object should still have the internal_id field
+    user_input = CreateUserInput(name="John", age=30, internal_id="internal_123")
+    assert user_input.name == "John"
+    assert user_input.age == 30
+    assert user_input.internal_id == "internal_123"
