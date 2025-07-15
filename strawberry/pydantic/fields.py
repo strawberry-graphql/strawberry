@@ -40,7 +40,6 @@ def _get_pydantic_fields(
     cls: type[BaseModel],
     original_type_annotations: dict[str, type[Any]],
     is_input: bool = False,
-    use_pydantic_alias: bool = True,
     include_computed: bool = False,
 ) -> list[StrawberryField]:
     """Extract StrawberryFields from a Pydantic BaseModel class.
@@ -54,7 +53,6 @@ def _get_pydantic_fields(
         cls: The Pydantic BaseModel class to extract fields from
         original_type_annotations: Type annotations that may override field types
         is_input: Whether this is for an input type
-        use_pydantic_alias: Whether to use Pydantic field aliases
         include_computed: Whether to include computed fields
         
     Returns:
@@ -88,12 +86,11 @@ def _get_pydantic_fields(
         if isinstance(custom_field, StrawberryField):
             # Use the custom field but update its type if needed
             strawberry_field = custom_field
-            if field_name in auto_fields_set:
-                strawberry_field.type_annotation = StrawberryAnnotation.from_annotation(field_type)
+            strawberry_field.type_annotation = StrawberryAnnotation.from_annotation(field_type)
         else:
             # Create a new StrawberryField
             graphql_name = None
-            if pydantic_field.has_alias and use_pydantic_alias:
+            if pydantic_field.has_alias:
                 graphql_name = pydantic_field.alias
 
             strawberry_field = StrawberryField(

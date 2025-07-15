@@ -97,7 +97,6 @@ All decorators accept optional configuration parameters:
 @strawberry.pydantic.type(
     name="CustomUser",  # Override the GraphQL type name
     description="A user in the system",  # Add type description
-    use_pydantic_alias=True  # Use Pydantic field aliases
 )
 class User(BaseModel):
     name: str = Field(alias="fullName")
@@ -121,10 +120,10 @@ class User(BaseModel):
 
 ### Field Aliases
 
-You can use Pydantic field aliases as GraphQL field names:
+Pydantic field aliases are automatically used as GraphQL field names:
 
 ```python
-@strawberry.pydantic.type(use_pydantic_alias=True)
+@strawberry.pydantic.type
 class User(BaseModel):
     name: str = Field(alias="fullName")
     age: int = Field(alias="yearsOld")

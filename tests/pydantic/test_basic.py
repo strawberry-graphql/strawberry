@@ -128,7 +128,7 @@ def test_pydantic_field_descriptions():
 def test_pydantic_field_aliases():
     """Test that Pydantic field aliases are used as GraphQL names."""
 
-    @strawberry.pydantic.type(use_pydantic_alias=True)
+    @strawberry.pydantic.type
     class User(pydantic.BaseModel):
         age: int = pydantic.Field(alias="userAge")
         name: str = pydantic.Field(alias="userName")
@@ -142,10 +142,10 @@ def test_pydantic_field_aliases():
     assert name_field.graphql_name == "userName"
 
 
-def test_pydantic_field_aliases_disabled():
-    """Test that Pydantic field aliases can be disabled."""
+def test_pydantic_field_aliases_always_used():
+    """Test that Pydantic field aliases are always used in the new implementation."""
 
-    @strawberry.pydantic.type(use_pydantic_alias=False)
+    @strawberry.pydantic.type
     class User(pydantic.BaseModel):
         age: int = pydantic.Field(alias="userAge")
         name: str = pydantic.Field(alias="userName")
@@ -155,8 +155,8 @@ def test_pydantic_field_aliases_disabled():
     age_field = next(f for f in definition.fields if f.python_name == "age")
     name_field = next(f for f in definition.fields if f.python_name == "name")
 
-    assert age_field.graphql_name is None
-    assert name_field.graphql_name is None
+    assert age_field.graphql_name == "userAge"
+    assert name_field.graphql_name == "userName"
 
 
 def test_basic_type_includes_all_pydantic_fields():

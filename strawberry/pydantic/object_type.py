@@ -48,7 +48,6 @@ def _process_pydantic_type(
     description: Optional[str] = None,
     directives: Optional[Sequence[object]] = (),
     include_computed: bool = False,
-    use_pydantic_alias: bool = True,
 ) -> type[BaseModel]:
     """Process a Pydantic BaseModel class and add GraphQL metadata.
     
@@ -59,9 +58,7 @@ def _process_pydantic_type(
         is_interface: Whether this is an interface type
         description: The GraphQL type description
         directives: GraphQL directives to apply
-        all_fields: Whether to include all fields from the model
         include_computed: Whether to include computed fields
-        use_pydantic_alias: Whether to use Pydantic field aliases
         
     Returns:
         The processed BaseModel class with GraphQL metadata
@@ -82,7 +79,6 @@ def _process_pydantic_type(
         cls=cls,
         original_type_annotations={},
         is_input=is_input,
-        use_pydantic_alias=use_pydantic_alias,
         include_computed=include_computed,
     )
 
@@ -162,7 +158,6 @@ def type(
     description: Optional[str] = None,
     directives: Optional[Sequence[object]] = (),
     include_computed: bool = False,
-    use_pydantic_alias: bool = True,
 ) -> type[BaseModel]: ...
 
 
@@ -173,7 +168,6 @@ def type(
     description: Optional[str] = None,
     directives: Optional[Sequence[object]] = (),
     include_computed: bool = False,
-    use_pydantic_alias: bool = True,
 ) -> Callable[[type[BaseModel]], type[BaseModel]]: ...
 
 
@@ -184,7 +178,6 @@ def type(
     description: Optional[str] = None,
     directives: Optional[Sequence[object]] = (),
     include_computed: bool = False,
-    use_pydantic_alias: bool = True,
 ) -> Union[type[BaseModel], Callable[[type[BaseModel]], type[BaseModel]]]:
     """Decorator to convert a Pydantic BaseModel directly into a GraphQL type.
     
@@ -196,9 +189,7 @@ def type(
         name: The GraphQL type name (defaults to class name)
         description: The GraphQL type description
         directives: GraphQL directives to apply to the type
-        all_fields: Whether to include all fields from the model
         include_computed: Whether to include computed fields
-        use_pydantic_alias: Whether to use Pydantic field aliases
         
     Returns:
         The decorated BaseModel class with GraphQL metadata
@@ -220,7 +211,6 @@ def type(
             description=description,
             directives=directives,
             include_computed=include_computed,
-            use_pydantic_alias=use_pydantic_alias,
         )
 
     if cls is None:
@@ -236,7 +226,6 @@ def input(
     name: Optional[str] = None,
     description: Optional[str] = None,
     directives: Optional[Sequence[object]] = (),
-    use_pydantic_alias: bool = True,
 ) -> type[BaseModel]: ...
 
 
@@ -246,7 +235,6 @@ def input(
     name: Optional[str] = None,
     description: Optional[str] = None,
     directives: Optional[Sequence[object]] = (),
-    use_pydantic_alias: bool = True,
 ) -> Callable[[type[BaseModel]], type[BaseModel]]: ...
 
 
@@ -256,7 +244,6 @@ def input(
     name: Optional[str] = None,
     description: Optional[str] = None,
     directives: Optional[Sequence[object]] = (),
-    use_pydantic_alias: bool = True,
 ) -> Union[type[BaseModel], Callable[[type[BaseModel]], type[BaseModel]]]:
     """Decorator to convert a Pydantic BaseModel directly into a GraphQL input type.
     
@@ -268,8 +255,6 @@ def input(
         name: The GraphQL input type name (defaults to class name)
         description: The GraphQL input type description
         directives: GraphQL directives to apply to the input type
-        all_fields: Whether to include all fields from the model
-        use_pydantic_alias: Whether to use Pydantic field aliases
         
     Returns:
         The decorated BaseModel class with GraphQL input metadata
@@ -291,7 +276,6 @@ def input(
             description=description,
             directives=directives,
             include_computed=False,  # Input types don't need computed fields
-            use_pydantic_alias=use_pydantic_alias,
         )
 
     if cls is None:
@@ -308,7 +292,6 @@ def interface(
     description: Optional[str] = None,
     directives: Optional[Sequence[object]] = (),
     include_computed: bool = False,
-    use_pydantic_alias: bool = True,
 ) -> type[BaseModel]: ...
 
 
@@ -319,7 +302,6 @@ def interface(
     description: Optional[str] = None,
     directives: Optional[Sequence[object]] = (),
     include_computed: bool = False,
-    use_pydantic_alias: bool = True,
 ) -> Callable[[type[BaseModel]], type[BaseModel]]: ...
 
 
@@ -330,7 +312,6 @@ def interface(
     description: Optional[str] = None,
     directives: Optional[Sequence[object]] = (),
     include_computed: bool = False,
-    use_pydantic_alias: bool = True,
 ) -> Union[type[BaseModel], Callable[[type[BaseModel]], type[BaseModel]]]:
     """Decorator to convert a Pydantic BaseModel directly into a GraphQL interface.
     
@@ -342,9 +323,7 @@ def interface(
         name: The GraphQL interface name (defaults to class name)
         description: The GraphQL interface description
         directives: GraphQL directives to apply to the interface
-        all_fields: Whether to include all fields from the model
         include_computed: Whether to include computed fields
-        use_pydantic_alias: Whether to use Pydantic field aliases
         
     Returns:
         The decorated BaseModel class with GraphQL interface metadata
@@ -363,7 +342,6 @@ def interface(
             description=description,
             directives=directives,
             include_computed=include_computed,
-            use_pydantic_alias=use_pydantic_alias,
         )
 
     if cls is None:

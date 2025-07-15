@@ -335,7 +335,7 @@ def test_pydantic_field_descriptions_in_schema():
 def test_pydantic_field_aliases_in_execution():
     """Test that Pydantic field aliases work in GraphQL execution."""
     
-    @strawberry.pydantic.type(use_pydantic_alias=True)
+    @strawberry.pydantic.type
     class User(pydantic.BaseModel):
         name: str = pydantic.Field(alias="fullName")
         age: int = pydantic.Field(alias="yearsOld")
