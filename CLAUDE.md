@@ -5,25 +5,26 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Common Commands
 
 ### Testing
-- `nox -s tests`: Run full test suite
-- `nox -s "tests-3.12"`: Run tests with specific Python version
-- `pytest tests/`: Run tests with pytest directly
-- `pytest tests/path/to/test.py::test_function`: Run specific test
+- `poetry run nox -s tests`: Run full test suite
+- `poetry run nox -s "tests-3.12"`: Run tests with specific Python version
+- `poetry run pytest tests/`: Run tests with pytest directly
+- `poetry run pytest tests/path/to/test.py::test_function`: Run specific test
 
 ### Code Quality
-- `ruff check`: Run linting (configured in pyproject.toml)
-- `ruff format`: Format code
-- `mypy strawberry/`: Type checking
-- `pyright`: Alternative type checker
+- `poetry run ruff check`: Run linting (configured in pyproject.toml)
+- `poetry run ruff format`: Format code
+- `poetry run mypy strawberry/`: Type checking
+- `poetry run pyright`: Alternative type checker
 
 ### Development
 - `poetry install --with integrations`: Install dependencies
-- `strawberry server app`: Run development server
-- `strawberry export-schema`: Export GraphQL schema
-- `strawberry codegen`: Generate TypeScript types
+- `poetry run strawberry server app`: Run development server
+- `poetry run strawberry export-schema`: Export GraphQL schema
+- `poetry run strawberry codegen`: Generate TypeScript types
 
 ## Common Development Practices
-- Always use poetry to run python tasks
+- Always use poetry to run python tasks and tests
+- Use `poetry run` prefix for all Python commands to ensure correct virtual environment
 
 ## Architecture Overview
 

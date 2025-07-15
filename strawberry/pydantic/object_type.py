@@ -73,28 +73,15 @@ def _process_pydantic_type(
     compat = PydanticCompat.from_model(cls)
     model_fields = compat.get_model_fields(cls, include_computed=include_computed)
 
-    # Get annotations from the class to check for strawberry.auto and strawberry.Private
+    # Get annotations from the class to check for strawberry.Private and other custom fields
     existing_annotations = getattr(cls, "__annotations__", {})
 
-    # In direct integration, we always include all fields from the Pydantic model
-    fields_set = set(model_fields.keys())
-    # For the new direct integration, we need to check if there are any class annotations
-    # If there are class annotations, we only treat as "auto" fields those that aren't annotated
-    # This allows for strawberry.Private fields to be handled properly
-    if existing_annotations:
-        # Fields that don't have custom annotations should use Pydantic types
-        auto_fields_set = set(model_fields.keys()) - set(existing_annotations.keys())
-    else:
-        # No annotations, so all fields should use Pydantic types
-        auto_fields_set = set(model_fields.keys())
-
     # Extract fields using our custom function
+    # All fields from the Pydantic model are included by default, except strawberry.Private fields
     fields = _get_pydantic_fields(
         cls=cls,
         original_type_annotations={},
         is_input=is_input,
-        fields_set=fields_set,
-        auto_fields_set=auto_fields_set,
         use_pydantic_alias=use_pydantic_alias,
         include_computed=include_computed,
     )
