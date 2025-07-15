@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(nox:*)",
+      "WebFetch(domain:github.com)",
+      "Bash(find:*)",
+      "Bash(grep:*)",
+      "Bash(poetry run pytest:*)",
+      "Bash(poetry run:*)",
+      "Bash(python test:*)",
+      "Bash(mkdir:*)",
+      "Bash(ruff check:*)"
+    ],
+    "deny": []
+  }
+}

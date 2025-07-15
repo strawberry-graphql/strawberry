@@ -4,7 +4,7 @@ Strawberry is a Python library for GraphQL that aims to stay close to the GraphQ
 specification and allow for a more natural way of defining GraphQL schemas.
 """
 
-from . import experimental, federation, relay
+from . import experimental, federation, pydantic, relay
 from .directive import directive, directive_field
 from .parent import Parent
 from .permission import BasePermission
@@ -52,6 +52,7 @@ __all__ = [
     "interface",
     "lazy",
     "mutation",
+    "pydantic",
     "relay",
     "scalar",
     "schema_directive",
