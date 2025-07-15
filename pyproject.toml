@@ -220,6 +220,7 @@ ignore = [
   # after we drop support for Python 3.9
   "UP006",
   "UP007",
+  "UP045",
 
   # we use asserts in tests and to hint mypy
   "S101",
@@ -308,6 +309,9 @@ ignore = [
   # Don't force if branches to be converted to "or"
   "SIM114",
 
+  # Allow imports inside functions
+  "PLC0415",
+
   # ruff formatter recommends to disable those, as they conflict with it
   # we don't need to ever enable those.
   "COM812",
@@ -324,6 +328,7 @@ ignore = [
   "Q003",
   "W191",
 ]
+exclude = ["tests/python_312/*"] # SyntaxError because we support Python 3.9+
 
 [tool.ruff.lint.per-file-ignores]
 ".github/*" = ["INP001"]

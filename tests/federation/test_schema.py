@@ -329,7 +329,7 @@ def test_federation_schema_warning():
         price: Optional[int]
         weight: Optional[int]
 
-    with pytest.warns(UserWarning) as record:
+    with pytest.warns(UserWarning) as record:  # noqa: PT030
         strawberry.Schema(
             query=ProductFed,
         )

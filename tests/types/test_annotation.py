@@ -50,7 +50,7 @@ def test_annotation_hash(type1: Union[object, str], type2: Union[object, str]):
 
 
 def test_eq_on_other_type():
-    class Foo:
+    class Foo:  # noqa: PLW1641
         def __eq__(self, other):
             # Anything that is a strawberry annotation is equal to Foo
             return isinstance(other, StrawberryAnnotation)
