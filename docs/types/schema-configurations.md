@@ -125,3 +125,33 @@ class CustomInfo(Info):
 
 schema = strawberry.Schema(query=Query, config=StrawberryConfig(info_class=CustomInfo))
 ```
+
+### enable_experimental_incremental_execution
+
+<Note>
+
+This is an experimental feature that requires `graphql-core>=3.3.0a9`. The API
+and behavior may change in future releases.
+
+</Note>
+
+By default, Strawberry executes GraphQL queries synchronously and returns the
+complete result. When you enable experimental incremental execution, Strawberry
+adds support for the `@defer` and `@stream` directives, allowing parts of the
+response to be delivered incrementally.
+
+```python
+schema = strawberry.Schema(
+    query=Query, config=StrawberryConfig(enable_experimental_incremental_execution=True)
+)
+```
+
+When enabled:
+
+- The `@defer` directive becomes available for deferred field resolution
+- The `@stream` directive becomes available for streaming list fields
+- Fields returning `strawberry.Streamable[T]` can be streamed incrementally
+- The schema uses `graphql.experimental_execute_incrementally` for execution
+
+For more information on using these directives, see the
+[Defer and Stream](./defer-and-stream) documentation.
