@@ -42,6 +42,19 @@ def _get_interfaces(cls: builtins.type[Any]) -> list[StrawberryObjectDefinition]
     return interfaces
 
 
+def _get_annotations(cls: builtins.type[Any]) -> dict[str, Any]:
+    try:
+        import annotationlib
+
+        annotations = annotationlib.get_annotations(
+            cls, format=annotationlib.Format.FORWARDREF
+        )
+    except ImportError:
+        annotations = cls.__dict__.get("__annotations__", {})
+
+    return annotations
+
+
 def _check_field_annotations(cls: builtins.type[Any]) -> None:
     """Are any of the dataclass Fields missing type annotations?
 
@@ -51,7 +64,8 @@ def _check_field_annotations(cls: builtins.type[Any]) -> None:
 
     https://github.com/python/cpython/blob/6fed3c85402c5ca704eb3f3189ca3f5c67a08d19/Lib/dataclasses.py#L881-L884
     """
-    cls_annotations = cls.__dict__.get("__annotations__", {})
+    cls_annotations = _get_annotations(cls)
+    # TODO: do we need this?
     cls.__annotations__ = cls_annotations
 
     for field_name, field_ in cls.__dict__.items():
