@@ -264,7 +264,7 @@ class AsyncBaseHTTPView(
         root_value: Optional[RootValue] = UNSET,
     ) -> WebSocketResponse: ...
 
-    async def run(  # noqa: PLR0915
+    async def run(
         self,
         request: Union[Request, WebSocketRequest],
         context: Context = UNSET,
