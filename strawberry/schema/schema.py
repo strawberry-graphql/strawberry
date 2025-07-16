@@ -322,7 +322,7 @@ class Schema(BaseSchema):
                 graphql_types.append(graphql_type)
 
         try:
-            directives = specified_directives + tuple(graphql_directives)
+            directives = specified_directives + tuple(graphql_directives)  # type: ignore
 
             if self.config.enable_experimental_incremental_execution:
                 directives = tuple(directives) + tuple(incremental_execution_directives)
@@ -331,7 +331,7 @@ class Schema(BaseSchema):
                 query=query_type,
                 mutation=mutation_type,
                 subscription=subscription_type if subscription else None,
-                directives=directives,
+                directives=directives,  # type: ignore
                 types=graphql_types,
                 extensions={
                     GraphQLCoreConverter.DEFINITION_BACKREF: self,

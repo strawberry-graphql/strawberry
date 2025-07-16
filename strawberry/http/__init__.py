@@ -14,6 +14,11 @@ class GraphQLHTTPResponse(TypedDict, total=False):
     data: Optional[dict[str, object]]
     errors: Optional[list[object]]
     extensions: Optional[dict[str, object]]
+    hasNext: Optional[bool]
+    completed: Optional[list[Any]]
+    pending: Optional[list[Any]]
+    initial: Optional[list[Any]]
+    incremental: Optional[list[Any]]
 
 
 def process_result(result: ResultType) -> GraphQLHTTPResponse:

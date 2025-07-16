@@ -7,11 +7,13 @@ from graphql.execution import execute, subscribe
 from strawberry.types import ExecutionResult
 
 try:
-    from graphql import (
+    from graphql import (  # type: ignore[attr-defined]
         ExperimentalIncrementalExecutionResults as GraphQLIncrementalExecutionResults,
     )
-    from graphql.execution import experimental_execute_incrementally
-    from graphql.type.directives import (
+    from graphql.execution import (  # type: ignore[attr-defined]
+        experimental_execute_incrementally,
+    )
+    from graphql.type.directives import (  # type: ignore[attr-defined]
         GraphQLDeferDirective,
         GraphQLStreamDirective,
     )
@@ -24,7 +26,7 @@ try:
 except ImportError:
     GraphQLIncrementalExecutionResults = type(None)
 
-    incremental_execution_directives = []
+    incremental_execution_directives = ()  # type: ignore
     experimental_execute_incrementally = None
 
 
