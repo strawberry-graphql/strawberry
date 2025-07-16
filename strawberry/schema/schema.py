@@ -84,7 +84,6 @@ if TYPE_CHECKING:
     from collections.abc import Iterable, Mapping
     from typing_extensions import TypeAlias
 
-    from graphql.execution.collect_fields import FieldGroup  # type: ignore
     from graphql.language import DocumentNode
     from graphql.pyutils import Path
     from graphql.type import GraphQLResolveInfo
@@ -176,17 +175,18 @@ class StrawberryGraphQLCoreExecutionContext(GraphQLExecutionContext):
 
         self.operation_extensions = operation_extensions
 
-    def build_resolve_info(
-        self,
-        field_def: GraphQLField,
-        field_group: FieldGroup,
-        parent_type: GraphQLObjectType,
-        path: Path,
-    ) -> GraphQLResolveInfo:
-        if IS_GQL_33:
+    if IS_GQL_33:
+
+        def build_resolve_info(
+            self,
+            field_def: GraphQLField,
+            field_nodes: list[FieldNode],
+            parent_type: GraphQLObjectType,
+            path: Path,
+        ) -> GraphQLResolveInfo:
             return _OperationContextAwareGraphQLResolveInfo(  # type: ignore
-                field_group.fields[0].node.name.value,
-                field_group.to_nodes(),
+                field_nodes[0].name.value,
+                field_nodes,
                 field_def.type,
                 parent_type,
                 path,
@@ -199,13 +199,6 @@ class StrawberryGraphQLCoreExecutionContext(GraphQLExecutionContext):
                 self.is_awaitable,
                 self.operation_extensions,
             )
-
-        return super().build_resolve_info(
-            field_def,
-            field_group,
-            parent_type,
-            path,
-        )
 
 
 class Schema(BaseSchema):
