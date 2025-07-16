@@ -226,28 +226,6 @@ def test_is_type_of_method():
     assert User.is_type_of(other_instance, None) is False
 
 
-def test_strawberry_type_registration():
-    """Test that _strawberry_type is registered on the BaseModel."""
-
-    @strawberry.pydantic.type
-    class User(pydantic.BaseModel):
-        age: int
-
-    assert hasattr(User, "_strawberry_type")
-    assert User._strawberry_type is User
-
-
-def test_strawberry_input_type_registration():
-    """Test that _strawberry_input_type is registered on input BaseModels."""
-
-    @strawberry.pydantic.input
-    class CreateUserInput(pydantic.BaseModel):
-        age: int
-
-    assert hasattr(CreateUserInput, "_strawberry_input_type")
-    assert CreateUserInput._strawberry_input_type is CreateUserInput
-
-
 def test_schema_generation():
     """Test that the decorated models work in schema generation."""
 

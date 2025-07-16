@@ -139,12 +139,6 @@ def _process_pydantic_type(
     if not hasattr(cls, "to_pydantic"):
         cls.to_pydantic = to_pydantic  # type: ignore
 
-    # Register the type for schema generation
-    if is_input:
-        cls._strawberry_input_type = cls  # type: ignore
-    else:
-        cls._strawberry_type = cls  # type: ignore
-
     return cls
 
 

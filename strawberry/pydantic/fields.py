@@ -11,14 +11,78 @@ from typing import TYPE_CHECKING, Any
 
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.experimental.pydantic._compat import PydanticCompat
-from strawberry.experimental.pydantic.fields import replace_types_recursively
 from strawberry.experimental.pydantic.utils import get_default_factory_for_field
 from strawberry.types.field import StrawberryField
 from strawberry.types.private import is_private
+from strawberry.utils.typing import get_args, get_origin, is_union
 
 if TYPE_CHECKING:
     from pydantic import BaseModel
     from pydantic.fields import FieldInfo
+
+from strawberry.experimental.pydantic._compat import lenient_issubclass
+
+
+def replace_pydantic_types(type_: Any, is_input: bool) -> Any:
+    """Replace Pydantic types with their Strawberry equivalents for first-class integration."""
+    from pydantic import BaseModel
+
+    if lenient_issubclass(type_, BaseModel):
+        # For first-class integration, check if the type has been decorated
+        if hasattr(type_, "__strawberry_definition__"):
+            # Return the type itself as it's already a Strawberry type
+            return type_
+        # If not decorated, raise an error
+        from strawberry.experimental.pydantic.exceptions import (
+            UnregisteredTypeException,
+        )
+
+        raise UnregisteredTypeException(type_)
+
+    return type_
+
+
+def replace_types_recursively(
+    type_: Any,
+    is_input: bool,
+    compat: PydanticCompat,
+) -> Any:
+    """Recursively replace Pydantic types with their Strawberry equivalents."""
+    # For now, use a simpler approach similar to the experimental module
+    basic_type = compat.get_basic_type(type_)
+    replaced_type = replace_pydantic_types(basic_type, is_input)
+
+    origin = get_origin(type_)
+
+    if not origin or not hasattr(type_, "__args__"):
+        return replaced_type
+
+    converted = tuple(
+        replace_types_recursively(t, is_input=is_input, compat=compat)
+        for t in get_args(replaced_type)
+    )
+
+    # Handle special cases for typing generics
+    from typing import Union as TypingUnion
+    from typing import _GenericAlias as TypingGenericAlias
+
+    if isinstance(replaced_type, TypingGenericAlias):
+        return TypingGenericAlias(origin, converted)
+    if is_union(replaced_type):
+        return TypingUnion[converted]
+
+    # Handle Annotated types
+    from typing import Annotated
+
+    if origin is Annotated and converted:
+        converted = (converted[0],)
+
+    # For other types, try to use copy_with if available
+    if hasattr(replaced_type, "copy_with"):
+        return replaced_type.copy_with(converted)
+
+    # Fallback to origin[converted] for standard generic types
+    return origin[converted]
 
 
 def get_type_for_field(field: FieldInfo, is_input: bool, compat: PydanticCompat) -> Any:
@@ -131,4 +195,8 @@ def _get_pydantic_fields(
     return fields
 
 
-__all__ = ["_get_pydantic_fields"]
+__all__ = [
+    "_get_pydantic_fields",
+    "replace_pydantic_types",
+    "replace_types_recursively",
+]
