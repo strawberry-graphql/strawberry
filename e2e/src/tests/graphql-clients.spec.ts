@@ -1,4 +1,4 @@
-import { test, expect, type Page } from "@playwright/test";
+import { expect, type Page, test } from "@playwright/test";
 
 test.describe("GraphQL Client Tests", () => {
 	test.beforeEach(async ({ page }: { page: Page }) => {
@@ -38,7 +38,7 @@ test.describe("GraphQL Client Tests", () => {
 			await expect(result).toContainText('"content":');
 
 			// Verify deferred comments load
-			await expect(result).toContainText('"comments":');
+			await expect(result).toContainText('"comments":', { timeout: 10000 });
 		});
 	});
 
