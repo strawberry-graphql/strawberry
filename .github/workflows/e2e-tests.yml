@@ -33,7 +33,7 @@ jobs:
       - name: Run Playwright tests
         run: |
           cd e2e
-          bun test
+          bunx playwright test
 
       - uses: actions/upload-artifact@v4
         if: always()
