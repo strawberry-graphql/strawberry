@@ -49,7 +49,13 @@ jobs:
         run: |
           cd e2e
           poetry run strawberry server app:schema --port 8000 &
+          echo $! > server.pid
           sleep 5  # Wait for server to start
+
+      - name: Check if server is running
+        run: |
+          curl -f http://localhost:8000/graphql || (echo "Server is not running" && exit 1)
+          echo "GraphQL server is running successfully"
 
       - name: Run Playwright tests
         run: |
