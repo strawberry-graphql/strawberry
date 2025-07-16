@@ -143,7 +143,7 @@ class Query:
         return Hero(id=strawberry.ID("1"), name="Thiago Bellini")
 
     @strawberry.field
-    async def streambable_field(self) -> strawberry.Streamable[str]:
+    async def streamable_field(self) -> strawberry.Streamable[str]:
         for i in range(2):
             yield f"Hello {i}"
             await asyncio.sleep(0.1)

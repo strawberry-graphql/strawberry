@@ -65,7 +65,7 @@ async def test_basic_stream(http_client: HttpClient):
         method="get",
         query="""
         query Stream {
-            streambableField @stream
+            streamableField @stream
         }
         """,
     )
@@ -75,9 +75,9 @@ async def test_basic_stream(http_client: HttpClient):
 
         assert initial == snapshot(
             {
-                "data": {"streambableField": []},
+                "data": {"streamableField": []},
                 "hasNext": True,
-                "pending": [{"id": "0", "path": ["streambableField"]}],
+                "pending": [{"id": "0", "path": ["streamableField"]}],
                 "extensions": None,
             }
         )
@@ -92,7 +92,7 @@ async def test_basic_stream(http_client: HttpClient):
                     {
                         "items": ["Hello 0"],
                         "id": "0",
-                        "path": ["streambableField"],
+                        "path": ["streamableField"],
                         "label": None,
                     }
                 ],
@@ -109,7 +109,7 @@ async def test_basic_stream(http_client: HttpClient):
                     {
                         "items": ["Hello 1"],
                         "id": "0",
-                        "path": ["streambableField"],
+                        "path": ["streamableField"],
                         "label": None,
                     }
                 ],
