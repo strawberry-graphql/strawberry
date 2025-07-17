@@ -73,7 +73,14 @@ class DebugInfo:
 @strawberry.type
 class Hero:
     id: strawberry.ID
-    name: str
+
+    @strawberry.field
+    @staticmethod
+    def name(fail: bool = False) -> str:
+        if fail:
+            raise ValueError("Failed to get name")
+
+        return "Thiago Bellini"
 
 
 @strawberry.type
@@ -140,7 +147,7 @@ class Query:
 
     @strawberry.field
     def character(self) -> Hero:
-        return Hero(id=strawberry.ID("1"), name="Thiago Bellini")
+        return Hero(id=strawberry.ID("1"))
 
     @strawberry.field
     async def streamable_field(self) -> strawberry.Streamable[str]:
