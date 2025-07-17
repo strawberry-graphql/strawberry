@@ -56,17 +56,13 @@ def multipart_subscriptions_batch_http_client(
             )
 
     return http_client_class(
-        schema_config=StrawberryConfig(
-            batching_config={"enabled": True, "share_context": True}
-        )
+        schema_config=StrawberryConfig(batching_config={"enabled": True})
     )
 
 
 async def test_batch_graphql_query(http_client_class: type[HttpClient]):
     http_client = http_client_class(
-        schema_config=StrawberryConfig(
-            batching_config={"enabled": True, "share_context": True}
-        )
+        schema_config=StrawberryConfig(batching_config={"enabled": True})
     )
 
     response = await http_client.post(
@@ -89,9 +85,7 @@ async def test_returns_error_when_batching_is_disabled(
     http_client_class: type[HttpClient],
 ):
     http_client = http_client_class(
-        schema_config=StrawberryConfig(
-            batching_config={"enabled": False, "share_context": True}
-        )
+        schema_config=StrawberryConfig(batching_config={"enabled": False})
     )
 
     response = await http_client.post(
@@ -115,7 +109,6 @@ async def test_returns_error_when_trying_too_many_operations(
             batching_config={
                 "enabled": True,
                 "max_operations": 2,
-                "share_context": True,
             }
         )
     )

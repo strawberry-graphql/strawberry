@@ -124,10 +124,6 @@ class SyncBaseHTTPView(
 
         if isinstance(request_data, list):
             # batch GraphQL requests
-            if not self.schema.config.batching_config["share_context"]:
-                raise ValueError(
-                    "Disabling context sharing is not supported currently."
-                )
             return [
                 self.execute_single(
                     request=request,
