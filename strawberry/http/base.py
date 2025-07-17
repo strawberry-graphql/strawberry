@@ -92,7 +92,6 @@ class BaseView(Generic[Request]):
             raise HTTPException(400, "Batching is not enabled")
 
         if protocol == "multipart-subscription":
-            # note: multipart-subscriptions are not supported in batch requests
             raise HTTPException(
                 400, "Batching is not supported for multipart subscriptions"
             )

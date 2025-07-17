@@ -209,7 +209,7 @@ class SyncBaseHTTPView(
             raise HTTPException(400, "Unsupported content type")
 
         if isinstance(data, list):
-            self.validate_batch_request(data, protocol="http")
+            self._validate_batch_request(data, protocol="http")
             return [
                 GraphQLRequestData(
                     query=item.get("query"),
@@ -247,11 +247,6 @@ class SyncBaseHTTPView(
             operation_name=data.get("operationName"),
             extensions=extensions,
         )
-
-    def validate_batch_request(
-        self, request_data: list[GraphQLRequestData], protocol: str
-    ) -> None:
-        self._validate_batch_request(request_data=request_data, protocol=protocol)
 
     def _handle_errors(
         self, errors: list[GraphQLError], response_data: GraphQLHTTPResponse
