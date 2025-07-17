@@ -11,6 +11,7 @@ try:
         ExperimentalIncrementalExecutionResults as GraphQLIncrementalExecutionResults,
     )
     from graphql.execution import (  # type: ignore[attr-defined]
+        InitialIncrementalExecutionResult,
         experimental_execute_incrementally,
     )
     from graphql.type.directives import (  # type: ignore[attr-defined]
@@ -22,6 +23,10 @@ try:
         GraphQLDeferDirective,
         GraphQLStreamDirective,
     )
+
+    GraphQLExecutionResult = Union[
+        GraphQLExecutionResult, InitialIncrementalExecutionResult
+    ]
 
 except ImportError:
     GraphQLIncrementalExecutionResults = type(None)

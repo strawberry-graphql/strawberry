@@ -111,6 +111,10 @@ class Query:
         raise ValueError(message)
 
     @strawberry.field
+    async def some_error(self) -> Optional[str]:
+        raise ValueError("Some error")
+
+    @strawberry.field
     def teapot(self, info: strawberry.Info[Any, None]) -> str:
         info.context["response"].status_code = 418
 

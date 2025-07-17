@@ -18,11 +18,11 @@ if TYPE_CHECKING:
     from typing_extensions import NotRequired
 
     from graphql import ASTValidationRule
-    from graphql import ExecutionResult as GraphQLExecutionResult
     from graphql.error.graphql_error import GraphQLError
     from graphql.language import DocumentNode, OperationDefinitionNode
 
     from strawberry.schema import Schema
+    from strawberry.schema._graphql_core import GraphQLExecutionResult
 
     from .graphql import OperationType
 
