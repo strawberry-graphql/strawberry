@@ -642,6 +642,32 @@ def test_lazy_union():
     assert result.data["b"]["__typename"] == "TypeB"
 
 
+def test_lazy_union_with_generic():
+    UnionValue = Annotated["UnionValue", lazy("tests.schema.test_lazy.type_e")]
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def a(self) -> UnionValue:
+            from tests.schema.test_lazy.type_e import MyEnum, ValueContainer
+
+            return ValueContainer(value=MyEnum.ONE)
+
+    schema = strawberry.Schema(query=Query)
+
+    query = """
+     {
+        a {
+            __typename
+        }
+    }
+    """
+
+    result = schema.execute_sync(query)
+
+    assert result.data["a"]["__typename"] == "MyEnumValueContainer"
+
+
 @pytest.mark.raises_strawberry_exception(
     InvalidUnionTypeError, match="Type `int` cannot be used in a GraphQL Union"
 )
@@ -1013,5 +1039,158 @@ def test_annoted_union_with_two_generics():
               byId(id: ID!): SomeTypeOtherTypeByIdResult!
             }
             """
+        ).strip()
+    )
+
+
+def test_union_merging_without_annotated():
+    @strawberry.type
+    class A:
+        a: int
+
+    @strawberry.type
+    class B:
+        b: int
+
+    @strawberry.type
+    class C:
+        c: int
+
+    a = Union[A, B]
+
+    b = Union[B, C]
+
+    c = Union[a, b]
+
+    @strawberry.type
+    class Query:
+        union_field: c
+
+    schema = strawberry.Schema(query=Query)
+
+    assert (
+        str(schema)
+        == textwrap.dedent(
+            """
+        type A {
+          a: Int!
+        }
+
+        union ABC = A | B | C
+
+        type B {
+          b: Int!
+        }
+
+        type C {
+          c: Int!
+        }
+
+        type Query {
+          unionField: ABC!
+        }
+    """
+        ).strip()
+    )
+
+
+def test_union_merging_with_annotated():
+    @strawberry.type
+    class A:
+        a: int
+
+    @strawberry.type
+    class B:
+        b: int
+
+    @strawberry.type
+    class C:
+        c: int
+
+    a = Annotated[Union[A, B], strawberry.union("AorB")]
+
+    b = Annotated[Union[B, C], strawberry.union("BorC")]
+
+    c = Union[a, b]
+
+    @strawberry.type
+    class Query:
+        union_field: c
+
+    schema = strawberry.Schema(query=Query)
+
+    assert (
+        str(schema)
+        == textwrap.dedent(
+            """
+        type A {
+          a: Int!
+        }
+
+        union AorBBorC = A | B | C
+
+        type B {
+          b: Int!
+        }
+
+        type C {
+          c: Int!
+        }
+
+        type Query {
+          unionField: AorBBorC!
+        }
+    """
+        ).strip()
+    )
+
+
+def test_union_merging_with_annotated_annotated_merge():
+    @strawberry.type
+    class A:
+        a: int
+
+    @strawberry.type
+    class B:
+        b: int
+
+    @strawberry.type
+    class C:
+        c: int
+
+    a = Annotated[Union[A, B], strawberry.union("AorB")]
+
+    b = Annotated[Union[B, C], strawberry.union("BorC")]
+
+    c = Annotated[Union[a, b], strawberry.union("ABC")]
+
+    @strawberry.type
+    class Query:
+        union_field: c
+
+    schema = strawberry.Schema(query=Query)
+
+    assert (
+        str(schema)
+        == textwrap.dedent(
+            """
+        type A {
+          a: Int!
+        }
+
+        union ABC = A | B | C
+
+        type B {
+          b: Int!
+        }
+
+        type C {
+          c: Int!
+        }
+
+        type Query {
+          unionField: ABC!
+        }
+    """
         ).strip()
     )

@@ -1,14 +1,14 @@
 ---
-title: Custom extensions
+title: Schema extensions
 ---
 
-# Custom extensions
+# Schema extensions
 
-Strawberry provides support for adding extensions. Extensions can be used to
-hook into different parts of the GraphQL execution and to provide additional
-results to the GraphQL response.
+Strawberry provides support for adding extensions to your schema. Schema
+extensions can be used to hook into different parts of the GraphQL execution and
+to provide additional results to the GraphQL response.
 
-To create a custom extensions you can use extend from our `SchemaExtension` base
+To create a custom extension you can extend from our `SchemaExtension` base
 class:
 
 ```python
@@ -226,6 +226,42 @@ schema = strawberry.Schema(
     Query,
     extensions=[
         RejectSomeQueries,
+    ],
+)
+```
+
+</details>
+
+<details>
+  <summary>Operation Extensions (Requires GraphQL 3.3)</summary>
+
+```python
+import time
+import strawberry
+from strawberry.extensions import SchemaExtension
+
+
+class QueryStatsExtension(SchemaExtension):
+    def on_operation(self):
+        execution_context = self.execution_context
+
+        if execution_context.operation_extensions:
+            if execution_context.operation_extensions.get("stats", False):
+                start_time = time.time()
+                yield
+                end_time = time.time()
+                self.execution_context.extensions_results["stats"] = {
+                    "query_time": end_time - start_time
+                }
+                return
+
+        yield
+
+
+schema = strawberry.Schema(
+    Query,
+    extensions=[
+        QueryStatsExtension,
     ],
 )
 ```

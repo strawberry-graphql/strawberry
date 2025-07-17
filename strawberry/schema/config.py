@@ -21,8 +21,10 @@ class StrawberryConfig:
     name_converter: NameConverter = field(default_factory=NameConverter)
     default_resolver: Callable[[Any, str], object] = getattr
     relay_max_results: int = 100
+    relay_use_legacy_global_id: bool = False
     disable_field_suggestions: bool = False
     info_class: type[Info] = Info
+    _unsafe_disable_same_type_validation: bool = False
 
     batching_config: BatchingConfig = None  # type: ignore
 

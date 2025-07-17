@@ -15,6 +15,14 @@ improve performance by caching the validation errors in memory.
 import strawberry
 from strawberry.extensions import ValidationCache
 
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def hello(self) -> str:
+        return "Hello, world!"
+
+
 schema = strawberry.Schema(
     Query,
     extensions=[
@@ -44,6 +52,14 @@ More info: https://docs.python.org/3/library/functools.html#functools.lru_cache
 ```python
 import strawberry
 from strawberry.extensions import ValidationCache
+
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def hello(self) -> str:
+        return "Hello, world!"
+
 
 schema = strawberry.Schema(
     Query,

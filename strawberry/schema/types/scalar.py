@@ -12,10 +12,9 @@ from graphql import (
 )
 
 from strawberry.file_uploads.scalars import Upload
-from strawberry.relay.types import GlobalID
 from strawberry.scalars import ID
 from strawberry.schema.types import base_scalars
-from strawberry.types.scalar import ScalarDefinition, scalar
+from strawberry.types.scalar import ScalarDefinition
 
 
 def _make_scalar_type(definition: ScalarDefinition) -> GraphQLScalarType:
@@ -41,6 +40,7 @@ def _make_scalar_definition(scalar_type: GraphQLScalarType) -> ScalarDefinition:
         parse_literal=scalar_type.parse_literal,
         parse_value=scalar_type.parse_value,
         implementation=scalar_type,
+        origin=scalar_type,
     )
 
 
@@ -62,21 +62,8 @@ DEFAULT_SCALAR_REGISTRY: dict[object, ScalarDefinition] = {
     datetime.datetime: _get_scalar_definition(base_scalars.DateTime),
     datetime.time: _get_scalar_definition(base_scalars.Time),
     decimal.Decimal: _get_scalar_definition(base_scalars.Decimal),
-    # We can't wrap GlobalID with @scalar because it has custom attributes/methods
-    GlobalID: _get_scalar_definition(
-        scalar(
-            GlobalID,
-            name="GlobalID",
-            description=GraphQLID.description,
-            parse_literal=lambda v, vars=None: GlobalID.from_id(  # noqa: A006
-                GraphQLID.parse_literal(v, vars)
-            ),
-            parse_value=GlobalID.from_id,
-            serialize=str,
-            specified_by_url=("https://relay.dev/graphql/objectidentification.htm"),
-        )
-    ),
 }
+
 
 __all__ = [
     "DEFAULT_SCALAR_REGISTRY",

@@ -19,6 +19,7 @@ from typing_extensions import Self, get_args, get_origin
 
 from strawberry.types.base import (
     StrawberryList,
+    StrawberryMaybe,
     StrawberryObjectDefinition,
     StrawberryOptional,
     StrawberryTypeVar,
@@ -28,6 +29,7 @@ from strawberry.types.base import (
 from strawberry.types.enum import EnumDefinition
 from strawberry.types.enum import enum as strawberry_enum
 from strawberry.types.lazy_type import LazyType
+from strawberry.types.maybe import _annotation_is_maybe
 from strawberry.types.private import is_private
 from strawberry.types.scalar import ScalarDefinition
 from strawberry.types.unset import UNSET
@@ -143,6 +145,8 @@ class StrawberryAnnotation:
             return evaled_type
         if self._is_list(evaled_type):
             return self.create_list(evaled_type)
+        if self._is_maybe(evaled_type):
+            return self.create_maybe(evaled_type)
 
         if self._is_graphql_generic(evaled_type):
             if any(is_type_var(type_) for type_ in get_args(evaled_type)):
@@ -217,6 +221,17 @@ class StrawberryAnnotation:
         ).resolve()
 
         return StrawberryOptional(of_type)
+
+    def create_maybe(self, evaled_type: Any) -> StrawberryMaybe:
+        # we expect a single arg to the evaled type,
+        # as unions on input types are not supported
+        # and maybe[t] already represents t | None
+        inner_type = get_args(evaled_type)[0]
+
+        of_type = StrawberryAnnotation(
+            annotation=inner_type, namespace=self.namespace
+        ).resolve()
+        return StrawberryMaybe(of_type)
 
     def create_type_var(self, evaled_type: TypeVar) -> StrawberryTypeVar:
         return StrawberryTypeVar(evaled_type)
@@ -312,6 +327,10 @@ class StrawberryAnnotation:
             or annotation_origin is abc.Sequence
             or is_list
         )
+
+    @classmethod
+    def _is_maybe(cls, annotation: Any) -> bool:
+        return _annotation_is_maybe(annotation)
 
     @classmethod
     def _is_strawberry_type(cls, evaled_type: Any) -> bool:

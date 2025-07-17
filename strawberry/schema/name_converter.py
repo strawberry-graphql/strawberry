@@ -150,8 +150,9 @@ class NameConverter:
         type_ = eval_type(type_)
 
         if isinstance(type_, LazyType):
-            name = type_.type_name
-        elif isinstance(type_, EnumDefinition):
+            type_ = type_.resolve_type()
+
+        if isinstance(type_, EnumDefinition):
             name = type_.name
         elif isinstance(type_, StrawberryUnion):
             name = type_.graphql_name if type_.graphql_name else self.from_union(type_)

@@ -54,15 +54,20 @@ class DjangoHttpClient(HttpClient):
         multipart_uploads_enabled: bool = False,
         schema_config: Optional[StrawberryConfig] = None,
     ):
-        self.schema_config = schema_config
-        self.graphiql = graphiql
-        self.graphql_ide = graphql_ide
-        self.allow_queries_via_get = allow_queries_via_get
-        self.result_override = result_override
-        self.multipart_uploads_enabled = multipart_uploads_enabled
+        self.view = GraphQLView.as_view(
+            schema=get_schema(schema_config),
+            graphiql=graphiql,
+            graphql_ide=graphql_ide,
+            allow_queries_via_get=allow_queries_via_get,
+            result_override=result_override,
+            multipart_uploads_enabled=multipart_uploads_enabled,
+        )
 
     def _get_header_name(self, key: str) -> str:
         return f"HTTP_{key.upper().replace('-', '_')}"
+
+    def _to_django_headers(self, headers: dict[str, str]) -> dict[str, str]:
+        return {self._get_header_name(key): value for key, value in headers.items()}
 
     def _get_headers(
         self,
@@ -71,22 +76,13 @@ class DjangoHttpClient(HttpClient):
         files: Optional[dict[str, BytesIO]],
     ) -> dict[str, str]:
         headers = headers or {}
-        headers = {self._get_header_name(key): value for key, value in headers.items()}
+        headers = self._to_django_headers(headers)
 
         return super()._get_headers(method=method, headers=headers, files=files)
 
     async def _do_request(self, request: HttpRequest) -> Response:
-        view = GraphQLView.as_view(
-            schema=get_schema(self.schema_config),
-            graphiql=self.graphiql,
-            graphql_ide=self.graphql_ide,
-            allow_queries_via_get=self.allow_queries_via_get,
-            result_override=self.result_override,
-            multipart_uploads_enabled=self.multipart_uploads_enabled,
-        )
-
         try:
-            response = view(request)
+            response = self.view(request)
         except Http404:
             return Response(status_code=404, data=b"Not found")
         except (BadRequest, SuspiciousOperation) as e:
@@ -101,17 +97,24 @@ class DjangoHttpClient(HttpClient):
     async def _graphql_request(
         self,
         method: Literal["get", "post"],
-        query: str,
+        query: Optional[str] = None,
+        operation_name: Optional[str] = None,
         variables: Optional[dict[str, object]] = None,
         files: Optional[dict[str, BytesIO]] = None,
         headers: Optional[dict[str, str]] = None,
+        extensions: Optional[dict[str, Any]] = None,
         **kwargs: Any,
     ) -> Response:
         headers = self._get_headers(method=method, headers=headers, files=files)
         additional_arguments = {**kwargs, **headers}
 
         body = self._build_body(
-            query=query, variables=variables, files=files, method=method
+            query=query,
+            operation_name=operation_name,
+            variables=variables,
+            files=files,
+            method=method,
+            extensions=extensions,
         )
 
         data: Union[dict[str, object], str, None] = None
@@ -141,7 +144,7 @@ class DjangoHttpClient(HttpClient):
     async def request(
         self,
         url: str,
-        method: Literal["get", "post", "patch", "put", "delete"],
+        method: Literal["head", "get", "post", "patch", "put", "delete"],
         headers: Optional[dict[str, str]] = None,
     ) -> Response:
         headers = headers or {}
@@ -156,13 +159,8 @@ class DjangoHttpClient(HttpClient):
         url: str,
         headers: Optional[dict[str, str]] = None,
     ) -> Response:
-        headers = self._get_headers(
-            method="get",
-            headers=headers,
-            files=None,
-        )
-
-        return await self.request(url, "get", headers=headers)
+        django_headers = self._to_django_headers(headers or {})
+        return await self.request(url, "get", headers=django_headers)
 
     async def post(
         self,
@@ -171,20 +169,17 @@ class DjangoHttpClient(HttpClient):
         json: Optional[JSON] = None,
         headers: Optional[dict[str, str]] = None,
     ) -> Response:
-        headers = self._get_headers(method="post", headers=headers, files=None)
+        django_headers = self._to_django_headers(headers or {})
+        content_type = django_headers.pop("HTTP_CONTENT_TYPE", "")
 
-        additional_arguments = {**headers}
-
-        body = data or dumps(json)
-
-        if headers.get("HTTP_CONTENT_TYPE"):
-            additional_arguments["content_type"] = headers["HTTP_CONTENT_TYPE"]
+        body = dumps(json) if json is not None else data
 
         factory = RequestFactory()
         request = factory.post(
             url,
             data=body,
-            **additional_arguments,
+            content_type=content_type,
+            headers=django_headers,
         )
 
         return await self._do_request(request)

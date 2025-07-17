@@ -23,6 +23,7 @@ from graphql import (
     GraphQLEnumValue,
     GraphQLError,
     GraphQLField,
+    GraphQLID,
     GraphQLInputField,
     GraphQLInputObjectType,
     GraphQLInterfaceType,
@@ -30,6 +31,7 @@ from graphql import (
     GraphQLNamedType,
     GraphQLNonNull,
     GraphQLObjectType,
+    GraphQLScalarType,
     GraphQLType,
     GraphQLUnionType,
     Undefined,
@@ -48,10 +50,16 @@ from strawberry.exceptions import (
     UnresolvedFieldTypeError,
 )
 from strawberry.extensions.field_extension import build_field_extension_resolvers
-from strawberry.schema.types.scalar import _make_scalar_type
+from strawberry.relay.types import GlobalID
+from strawberry.schema.types.scalar import (
+    DEFAULT_SCALAR_REGISTRY,
+    _get_scalar_definition,
+    _make_scalar_type,
+)
 from strawberry.types.arguments import StrawberryArgument, convert_arguments
 from strawberry.types.base import (
     StrawberryList,
+    StrawberryMaybe,
     StrawberryObjectDefinition,
     StrawberryOptional,
     StrawberryType,
@@ -63,7 +71,7 @@ from strawberry.types.enum import EnumDefinition
 from strawberry.types.field import UNRESOLVED
 from strawberry.types.lazy_type import LazyType
 from strawberry.types.private import is_private
-from strawberry.types.scalar import ScalarWrapper
+from strawberry.types.scalar import ScalarWrapper, scalar
 from strawberry.types.union import StrawberryUnion
 from strawberry.types.unset import UNSET
 from strawberry.utils.await_maybe import await_maybe
@@ -72,14 +80,13 @@ from . import compat
 from .types.concrete_type import ConcreteType
 
 if TYPE_CHECKING:
-    from collections.abc import Awaitable
+    from collections.abc import Awaitable, Mapping
 
     from graphql import (
         GraphQLInputType,
         GraphQLNullableType,
         GraphQLOutputType,
         GraphQLResolveInfo,
-        GraphQLScalarType,
     )
 
     from strawberry.directive import StrawberryDirective
@@ -185,7 +192,7 @@ def get_arguments(
     info: Info,
     kwargs: Any,
     config: StrawberryConfig,
-    scalar_registry: dict[object, Union[ScalarWrapper, ScalarDefinition]],
+    scalar_registry: Mapping[object, Union[ScalarWrapper, ScalarDefinition]],
 ) -> tuple[list[Any], dict[str, Any]]:
     # TODO: An extension might have changed the resolver arguments,
     # but we need them here since we are calling it.
@@ -242,19 +249,47 @@ class GraphQLCoreConverter:
     def __init__(
         self,
         config: StrawberryConfig,
-        scalar_registry: dict[object, Union[ScalarWrapper, ScalarDefinition]],
+        scalar_overrides: Mapping[object, Union[ScalarWrapper, ScalarDefinition]],
         get_fields: Callable[[StrawberryObjectDefinition], list[StrawberryField]],
     ) -> None:
         self.type_map: dict[str, ConcreteType] = {}
         self.config = config
-        self.scalar_registry = scalar_registry
+        self.scalar_registry = self._get_scalar_registry(scalar_overrides)
         self.get_fields = get_fields
+
+    def _get_scalar_registry(
+        self,
+        scalar_overrides: Mapping[object, Union[ScalarWrapper, ScalarDefinition]],
+    ) -> Mapping[object, Union[ScalarWrapper, ScalarDefinition]]:
+        scalar_registry = {**DEFAULT_SCALAR_REGISTRY}
+
+        global_id_name = "GlobalID" if self.config.relay_use_legacy_global_id else "ID"
+
+        scalar_registry[GlobalID] = _get_scalar_definition(
+            scalar(
+                GlobalID,
+                name=global_id_name,
+                description=GraphQLID.description,
+                parse_value=lambda v: v,
+                serialize=str,
+                specified_by_url=("https://relay.dev/graphql/objectidentification.htm"),
+            )
+        )
+
+        if scalar_overrides:
+            # TODO: check that the overrides are valid
+            scalar_registry.update(scalar_overrides)  # type: ignore
+
+        return scalar_registry
 
     def from_argument(self, argument: StrawberryArgument) -> GraphQLArgument:
         argument_type = cast(
             "GraphQLInputType", self.from_maybe_optional(argument.type)
         )
-        default_value = Undefined if argument.default is UNSET else argument.default
+        if argument.is_maybe:
+            default_value: Any = Undefined
+        else:
+            default_value = Undefined if argument.default is UNSET else argument.default
 
         return GraphQLArgument(
             type_=argument_type,
@@ -419,8 +454,9 @@ class GraphQLCoreConverter:
             ),
         )
         default_value: object
-
-        if field.default_value is UNSET or field.default_value is dataclasses.MISSING:
+        if isinstance(field.type, StrawberryMaybe):
+            default_value = Undefined
+        elif field.default_value is UNSET or field.default_value is dataclasses.MISSING:
             default_value = Undefined
         else:
             default_value = field.default_value
@@ -764,6 +800,13 @@ class GraphQLCoreConverter:
         return _resolver
 
     def from_scalar(self, scalar: type) -> GraphQLScalarType:
+        from strawberry.relay.types import GlobalID
+
+        if not self.config.relay_use_legacy_global_id and scalar is GlobalID:
+            from strawberry import ID
+
+            return self.from_scalar(ID)
+
         scalar_definition: ScalarDefinition
 
         if scalar in self.scalar_registry:
@@ -875,8 +918,11 @@ class GraphQLCoreConverter:
 
             # If the graphql_type is a GraphQLUnionType, merge its child types
             if isinstance(graphql_type, GraphQLUnionType):
-                # Add the child types of the GraphQLUnionType to the list of graphql_types
-                graphql_types.extend(graphql_type.types)
+                # Add the child types of the GraphQLUnionType to the list of graphql_types,
+                # filter out any duplicates
+                for child_type in graphql_type.types:
+                    if child_type not in graphql_types:
+                        graphql_types.append(child_type)
             else:
                 graphql_types.append(graphql_type)
 
@@ -925,8 +971,11 @@ class GraphQLCoreConverter:
     def validate_same_type_definition(
         self, name: str, type_definition: StrawberryType, cached_type: ConcreteType
     ) -> None:
-        # if the type definitions are the same we can return
-        if cached_type.definition == type_definition:
+        # Skip validation if _unsafe_disable_same_type_validation is True
+        if (
+            self.config._unsafe_disable_same_type_validation
+            or cached_type.definition == type_definition
+        ):
             return
 
         # otherwise we need to check if we are dealing with different instances

@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import contextlib
 import json
-from collections.abc import AsyncGenerator
+from collections.abc import AsyncGenerator, Sequence
+from datetime import timedelta
 from io import BytesIO
 from typing import Any, Optional
 from typing_extensions import Literal
@@ -13,6 +14,10 @@ from strawberry.fastapi import GraphQLRouter as BaseGraphQLRouter
 from strawberry.http import GraphQLHTTPResponse
 from strawberry.http.ides import GraphQL_IDE
 from strawberry.schema.config import StrawberryConfig
+from strawberry.subscriptions import (
+    GRAPHQL_TRANSPORT_WS_PROTOCOL,
+    GRAPHQL_WS_PROTOCOL,
+)
 from strawberry.types import ExecutionResult
 from tests.http.context import get_context
 from tests.views.schema import Query, get_schema
@@ -75,6 +80,14 @@ class FastAPIHttpClient(HttpClient):
         graphiql: Optional[bool] = None,
         graphql_ide: Optional[GraphQL_IDE] = "graphiql",
         allow_queries_via_get: bool = True,
+        keep_alive: bool = False,
+        keep_alive_interval: float = 1,
+        debug: bool = False,
+        subscription_protocols: Sequence[str] = (
+            GRAPHQL_TRANSPORT_WS_PROTOCOL,
+            GRAPHQL_WS_PROTOCOL,
+        ),
+        connection_init_wait_timeout: timedelta = timedelta(minutes=1),
         result_override: ResultOverrideFunction = None,
         multipart_uploads_enabled: bool = False,
         schema_config: Optional[StrawberryConfig] = None,
@@ -86,20 +99,17 @@ class FastAPIHttpClient(HttpClient):
             self.schema,
             graphiql=graphiql,
             graphql_ide=graphql_ide,
+            allow_queries_via_get=allow_queries_via_get,
+            keep_alive=keep_alive,
+            keep_alive_interval=keep_alive_interval,
+            debug=debug,
+            subscription_protocols=subscription_protocols,
+            connection_init_wait_timeout=connection_init_wait_timeout,
+            multipart_uploads_enabled=multipart_uploads_enabled,
             context_getter=fastapi_get_context,
             root_value_getter=get_root_value,
-            allow_queries_via_get=allow_queries_via_get,
-            keep_alive=False,
-            multipart_uploads_enabled=multipart_uploads_enabled,
         )
         graphql_app.result_override = result_override
-        self.app.include_router(graphql_app, prefix="/graphql")
-
-        self.client = TestClient(self.app)
-
-    def create_app(self, **kwargs: Any) -> None:
-        self.app = FastAPI()
-        graphql_app = GraphQLRouter(schema=self.schema, **kwargs)
         self.app.include_router(graphql_app, prefix="/graphql")
 
         self.client = TestClient(self.app)
@@ -115,14 +125,21 @@ class FastAPIHttpClient(HttpClient):
     async def _graphql_request(
         self,
         method: Literal["get", "post"],
-        query: str,
+        query: Optional[str] = None,
+        operation_name: Optional[str] = None,
         variables: Optional[dict[str, object]] = None,
         files: Optional[dict[str, BytesIO]] = None,
         headers: Optional[dict[str, str]] = None,
+        extensions: Optional[dict[str, Any]] = None,
         **kwargs: Any,
     ) -> Response:
         body = self._build_body(
-            query=query, variables=variables, files=files, method=method
+            query=query,
+            operation_name=operation_name,
+            variables=variables,
+            files=files,
+            method=method,
+            extensions=extensions,
         )
 
         if body:
@@ -147,7 +164,7 @@ class FastAPIHttpClient(HttpClient):
     async def request(
         self,
         url: str,
-        method: Literal["get", "post", "patch", "put", "delete"],
+        method: Literal["head", "get", "post", "patch", "put", "delete"],
         headers: Optional[dict[str, str]] = None,
     ) -> Response:
         response = getattr(self.client, method)(url, headers=headers)

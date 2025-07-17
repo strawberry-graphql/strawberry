@@ -11,13 +11,15 @@ need to make updates to the public API. While we try to deprecate APIs before
 removing them, we also want to make it as easy as possible to upgrade to the
 latest version of Strawberry.
 
-For this reason we provide a CLI command that can automatically upgrade your
-codebase to use the updated APIs.
+For this reason, we provide a CLI command to run Codemods that can automatically
+upgrade your codebase to use the updated APIs.
 
-At the moment we only support updating unions to use the new syntax with
-annotated, but in future we plan to add more commands to help with upgrading.
+Keep an eye on our release notes and the
+[breaking changes](../breaking-changes.md) page to see if a new Codemod is
+available, or if manual changes are required.
 
-Here's how you can use the command to upgrade your codebase:
+Here's an example of how to upgrade your codebase by running a Codemod using the
+Strawberry CLI's `upgrade` command:
 
 ```shell
 strawberry upgrade annotated-union .

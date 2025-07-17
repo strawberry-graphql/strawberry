@@ -15,7 +15,7 @@ from typing import (
 )
 from typing_extensions import TypeGuard
 
-from aiohttp import http, web
+from aiohttp import ClientConnectionResetError, http, web
 from aiohttp.multipart import BodyPartReader
 from strawberry.http.async_base_view import (
     AsyncBaseHTTPView,
@@ -36,14 +36,14 @@ from strawberry.http.typevars import (
 from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
 
 if TYPE_CHECKING:
-    from collections.abc import AsyncGenerator, Iterable, Mapping
+    from collections.abc import AsyncGenerator, Mapping, Sequence
 
     from strawberry.http import GraphQLHTTPResponse
     from strawberry.http.ides import GraphQL_IDE
     from strawberry.schema import BaseSchema
 
 
-class AioHTTPRequestAdapter(AsyncHTTPRequestAdapter):
+class AiohttpHTTPRequestAdapter(AsyncHTTPRequestAdapter):
     def __init__(self, request: web.Request) -> None:
         self.request = request
 
@@ -68,7 +68,7 @@ class AioHTTPRequestAdapter(AsyncHTTPRequestAdapter):
         data: dict[str, Any] = {}
         files: dict[str, Any] = {}
 
-        async for field in reader:
+        while field := await reader.next():
             assert isinstance(field, BodyPartReader)
             assert field.name
 
@@ -84,7 +84,7 @@ class AioHTTPRequestAdapter(AsyncHTTPRequestAdapter):
         return self.headers.get("content-type")
 
 
-class AioHTTPWebSocketAdapter(AsyncWebSocketAdapter):
+class AiohttpWebSocketAdapter(AsyncWebSocketAdapter):
     def __init__(
         self, view: AsyncBaseHTTPView, request: web.Request, ws: web.WebSocketResponse
     ) -> None:
@@ -109,7 +109,7 @@ class AioHTTPWebSocketAdapter(AsyncWebSocketAdapter):
     async def send_json(self, message: Mapping[str, object]) -> None:
         try:
             await self.ws.send_str(self.view.encode_json(message))
-        except RuntimeError as exc:
+        except (RuntimeError, ClientConnectionResetError) as exc:
             raise WebSocketDisconnected from exc
 
     async def close(self, code: int, reason: str) -> None:
@@ -132,8 +132,8 @@ class GraphQLView(
     _is_coroutine = asyncio.coroutines._is_coroutine  # type: ignore[attr-defined]
 
     allow_queries_via_get = True
-    request_adapter_class = AioHTTPRequestAdapter
-    websocket_adapter_class = AioHTTPWebSocketAdapter
+    request_adapter_class = AiohttpHTTPRequestAdapter
+    websocket_adapter_class = AiohttpWebSocketAdapter
 
     def __init__(
         self,
@@ -144,7 +144,7 @@ class GraphQLView(
         keep_alive: bool = True,
         keep_alive_interval: float = 1,
         debug: bool = False,
-        subscription_protocols: Iterable[str] = (
+        subscription_protocols: Sequence[str] = (
             GRAPHQL_TRANSPORT_WS_PROTOCOL,
             GRAPHQL_WS_PROTOCOL,
         ),

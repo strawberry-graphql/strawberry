@@ -111,6 +111,10 @@ class Query:
         return info.context["custom_value"]
 
     @strawberry.field
+    def value_from_extensions(self, info: strawberry.Info, key: str) -> str:
+        return info.input_extensions[key]
+
+    @strawberry.field
     def returns_401(self, info: strawberry.Info) -> str:
         response = info.context["response"]
         if hasattr(response, "set_status"):

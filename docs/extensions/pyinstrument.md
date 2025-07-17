@@ -14,6 +14,14 @@ This extension allows you to instrument your schema and inspect the call stack.
 import strawberry
 from strawberry.extensions import pyinstrument
 
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def hello(self) -> str:
+        return "Hello, world!"
+
+
 schema = strawberry.Schema(
     Query,
     extensions=[

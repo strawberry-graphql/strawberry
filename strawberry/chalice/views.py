@@ -126,7 +126,10 @@ class GraphQLView(
         return Response(
             body=self.encode_json(response_data),
             status_code=status_code,
-            headers=sub_response.headers,  # type: ignore[arg-type]
+            headers={
+                "Content-Type": "application/json",
+                **sub_response.headers,
+            },
         )
 
     def execute_request(self, request: Request) -> Response:

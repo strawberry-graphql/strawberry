@@ -9,8 +9,10 @@ can use to serve your GraphQL schema:
 
 ```python
 import strawberry
+import asyncio
 from aiohttp import web
 from strawberry.aiohttp.views import GraphQLView
+from typing import AsyncGenerator
 
 
 @strawberry.type
@@ -20,11 +22,21 @@ class Query:
         return f"Hello, {name}!"
 
 
-schema = strawberry.Schema(query=Query)
+@strawberry.type
+class Subscription:
+    @strawberry.subscription
+    async def count(self, to: int = 100) -> AsyncGenerator[int, None]:
+        for i in range(to):
+            yield i
+            await asyncio.sleep(1)
+
+
+schema = strawberry.Schema(query=Query, subscription=Subscription)
 
 app = web.Application()
-
 app.router.add_route("*", "/graphql", GraphQLView(schema=schema))
+
+web.run_app(app)
 ```
 
 ## Options

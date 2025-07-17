@@ -11,7 +11,6 @@ from typing import (
 
 from graphql import GraphQLError
 
-from strawberry import UNSET
 from strawberry.exceptions import MissingQueryError
 from strawberry.file_uploads.utils import replace_placeholders_with_files
 from strawberry.http import (
@@ -21,9 +20,13 @@ from strawberry.http import (
 )
 from strawberry.http.ides import GraphQL_IDE
 from strawberry.schema import BaseSchema
-from strawberry.schema.exceptions import InvalidOperationTypeError
+from strawberry.schema.exceptions import (
+    CannotGetOperationTypeError,
+    InvalidOperationTypeError,
+)
 from strawberry.types import ExecutionResult
 from strawberry.types.graphql import OperationType
+from strawberry.types.unset import UNSET
 
 from .base import BaseView
 from .exceptions import HTTPException
@@ -119,8 +122,6 @@ class SyncBaseHTTPView(
         if not self.allow_queries_via_get and request_adapter.method == "GET":
             allowed_operation_types = allowed_operation_types - {OperationType.QUERY}
 
-        assert self.schema
-
         if isinstance(request_data, list):
             # batch GraphQL requests
             if not self.schema.config.batching_config["share_context"]:
@@ -162,8 +163,6 @@ class SyncBaseHTTPView(
         if not self.allow_queries_via_get and request_adapter.method == "GET":
             allowed_operation_types = allowed_operation_types - {OperationType.QUERY}
 
-        assert self.schema
-
         try:
             result = self.schema.execute_sync(
                 request_data.query,
@@ -172,7 +171,10 @@ class SyncBaseHTTPView(
                 context_value=context,
                 operation_name=request_data.operation_name,
                 allowed_operation_types=allowed_operation_types,
+                operation_extensions=request_data.extensions,
             )
+        except CannotGetOperationTypeError as e:
+            raise HTTPException(400, e.as_http_error_reason()) from e
         except InvalidOperationTypeError as e:
             raise HTTPException(
                 400, e.as_http_error_reason(request_adapter.method)
@@ -217,13 +219,37 @@ class SyncBaseHTTPView(
                     query=item.get("query"),
                     variables=item.get("variables"),
                     operation_name=item.get("operationName"),
+                    extensions=item.get("extensions"),
                 )
                 for item in data
             ]
+
+        query = data.get("query")
+        if not isinstance(query, (str, type(None))):
+            raise HTTPException(
+                400,
+                "The GraphQL operation's `query` must be a string or null, if provided.",
+            )
+
+        variables = data.get("variables")
+        if not isinstance(variables, (dict, type(None))):
+            raise HTTPException(
+                400,
+                "The GraphQL operation's `variables` must be an object or null, if provided.",
+            )
+
+        extensions = data.get("extensions")
+        if not isinstance(extensions, (dict, type(None))):
+            raise HTTPException(
+                400,
+                "The GraphQL operation's `extensions` must be an object or null, if provided.",
+            )
+
         return GraphQLRequestData(
-            query=data.get("query"),
-            variables=data.get("variables"),
+            query=query,
+            variables=variables,
             operation_name=data.get("operationName"),
+            extensions=extensions,
         )
 
     def validate_batch_request(
@@ -239,7 +265,7 @@ class SyncBaseHTTPView(
     def run(
         self,
         request: Request,
-        context: Optional[Context] = UNSET,
+        context: Context = UNSET,
         root_value: Optional[RootValue] = UNSET,
     ) -> Response:
         request_adapter = self.request_adapter_class(request)
@@ -259,8 +285,6 @@ class SyncBaseHTTPView(
             else context
         )
         root_value = self.get_root_value(request) if root_value is UNSET else root_value
-
-        assert context
 
         result = self.execute_operation(
             request=request,

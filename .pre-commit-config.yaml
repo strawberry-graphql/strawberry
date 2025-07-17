@@ -1,6 +1,6 @@
 repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.11.6
+    rev: v0.12.3
     hooks:
       - id: ruff-format
         exclude: ^tests/\w+/snapshots/
@@ -36,3 +36,8 @@ repos:
       - id: blacken-docs
         args: [--skip-errors]
         files: '\.(rst|md|markdown|py|mdx)$'
+
+  - repo: https://github.com/ComPWA/taplo-pre-commit
+    rev: v0.9.3
+    hooks:
+      - id: taplo-format

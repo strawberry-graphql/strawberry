@@ -32,6 +32,7 @@ class GraphQLRequestData:
     query: Optional[str]
     variables: Optional[dict[str, Any]]
     operation_name: Optional[str]
+    extensions: Optional[dict[str, Any]]
     protocol: Literal["http", "multipart-subscription"] = "http"
 
 

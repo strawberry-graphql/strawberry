@@ -15,11 +15,13 @@ from typing import (
 from typing_extensions import dataclass_transform
 
 from strawberry.exceptions import (
+    InvalidSuperclassInterfaceError,
     MissingFieldAnnotationError,
     MissingReturnAnnotationError,
     ObjectIsNotClassError,
 )
 from strawberry.types.base import get_object_definition
+from strawberry.types.maybe import _annotation_is_maybe
 from strawberry.utils.deprecations import DEPRECATION_MESSAGES, DeprecatedDescriptor
 from strawberry.utils.str_converters import to_camel_case
 
@@ -122,6 +124,15 @@ def _wrap_dataclass(cls: builtins.type[T]) -> builtins.type[T]:
     return dclass
 
 
+def _inject_default_for_maybe_annotations(
+    cls: builtins.type[T], annotations: dict[str, Any]
+) -> None:
+    """Inject `= None` for fields with `Maybe` annotations and no default value."""
+    for name, annotation in annotations.copy().items():
+        if _annotation_is_maybe(annotation) and not hasattr(cls, name):
+            setattr(cls, name, None)
+
+
 def _process_type(
     cls: T,
     *,
@@ -140,6 +151,11 @@ def _process_type(
     fields = _get_fields(cls, original_type_annotations)
     is_type_of = getattr(cls, "is_type_of", None)
     resolve_type = getattr(cls, "resolve_type", None)
+
+    if is_input and interfaces:
+        raise InvalidSuperclassInterfaceError(
+            cls=cls, input_name=name, interfaces=interfaces
+        )
 
     cls.__strawberry_definition__ = StrawberryObjectDefinition(  # type: ignore[attr-defined]
         name=name,
@@ -286,7 +302,8 @@ def type(
 
             if field and isinstance(field, StrawberryField) and field.type_annotation:
                 original_type_annotations[field_name] = field.type_annotation.annotation
-
+        if is_input:
+            _inject_default_for_maybe_annotations(cls, annotations)
         wrapped = _wrap_dataclass(cls)
 
         return _process_type(  # type: ignore

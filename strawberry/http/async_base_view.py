@@ -26,7 +26,10 @@ from strawberry.http import (
 )
 from strawberry.http.ides import GraphQL_IDE
 from strawberry.schema.base import BaseSchema
-from strawberry.schema.exceptions import InvalidOperationTypeError
+from strawberry.schema.exceptions import (
+    CannotGetOperationTypeError,
+    InvalidOperationTypeError,
+)
 from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
 from strawberry.subscriptions.protocols.graphql_transport_ws.handlers import (
     BaseGraphQLTransportWSHandler,
@@ -201,8 +204,6 @@ class AsyncBaseHTTPView(
         if not self.allow_queries_via_get and request_adapter.method == "GET":
             allowed_operation_types = allowed_operation_types - {OperationType.QUERY}
 
-        assert self.schema
-
         if isinstance(request_data, list):
             # batch GraphQL requests
             if not self.schema.config.batching_config["share_context"]:
@@ -230,6 +231,7 @@ class AsyncBaseHTTPView(
                 context_value=context,
                 root_value=root_value,
                 operation_name=request_data.operation_name,
+                operation_extensions=request_data.extensions,
             )
 
         return await self.execute_single(
@@ -255,8 +257,6 @@ class AsyncBaseHTTPView(
         if not self.allow_queries_via_get and request_adapter.method == "GET":
             allowed_operation_types = allowed_operation_types - {OperationType.QUERY}
 
-        assert self.schema
-
         try:
             result = await self.schema.execute(
                 request_data.query,
@@ -265,7 +265,10 @@ class AsyncBaseHTTPView(
                 context_value=context,
                 operation_name=request_data.operation_name,
                 allowed_operation_types=allowed_operation_types,
+                operation_extensions=request_data.extensions,
             )
+        except CannotGetOperationTypeError as e:
+            raise HTTPException(400, e.as_http_error_reason()) from e
         except InvalidOperationTypeError as e:
             raise HTTPException(
                 400, e.as_http_error_reason(request_adapter.method)
@@ -306,7 +309,7 @@ class AsyncBaseHTTPView(
     async def run(
         self,
         request: Request,
-        context: Optional[Context] = UNSET,
+        context: Context = UNSET,
         root_value: Optional[RootValue] = UNSET,
     ) -> Response: ...
 
@@ -314,14 +317,14 @@ class AsyncBaseHTTPView(
     async def run(
         self,
         request: WebSocketRequest,
-        context: Optional[Context] = UNSET,
+        context: Context = UNSET,
         root_value: Optional[RootValue] = UNSET,
     ) -> WebSocketResponse: ...
 
     async def run(
         self,
         request: Union[Request, WebSocketRequest],
-        context: Optional[Context] = UNSET,
+        context: Context = UNSET,
         root_value: Optional[RootValue] = UNSET,
     ) -> Union[Response, WebSocketResponse]:
         root_value = (
@@ -345,8 +348,8 @@ class AsyncBaseHTTPView(
                 await self.graphql_transport_ws_handler_class(
                     view=self,
                     websocket=websocket,
-                    context=context,  # type: ignore
-                    root_value=root_value,  # type: ignore
+                    context=context,
+                    root_value=root_value,
                     schema=self.schema,
                     debug=self.debug,
                     connection_init_wait_timeout=self.connection_init_wait_timeout,
@@ -355,8 +358,8 @@ class AsyncBaseHTTPView(
                 await self.graphql_ws_handler_class(
                     view=self,
                     websocket=websocket,
-                    context=context,  # type: ignore
-                    root_value=root_value,  # type: ignore
+                    context=context,
+                    root_value=root_value,
                     schema=self.schema,
                     debug=self.debug,
                     keep_alive=self.keep_alive,
@@ -375,8 +378,6 @@ class AsyncBaseHTTPView(
             if context is UNSET
             else context
         )
-
-        assert context
 
         if not self.is_request_allowed(request_adapter):
             raise HTTPException(405, "GraphQL only supports GET and POST requests.")
@@ -436,26 +437,71 @@ class AsyncBaseHTTPView(
         )
 
     def _stream_with_heartbeat(
-        self, stream: Callable[[], AsyncGenerator[str, None]]
+        self, stream: Callable[[], AsyncGenerator[str, None]], separator: str
     ) -> Callable[[], AsyncGenerator[str, None]]:
-        """Adds a heartbeat to the stream, to prevent the connection from closing when there are no messages being sent."""
-        queue: asyncio.Queue[tuple[bool, Any]] = asyncio.Queue(1)
+        """Add heartbeat messages to a GraphQL stream to prevent connection timeouts.
 
+        This method wraps an async stream generator with heartbeat functionality by:
+        1. Creating a queue to coordinate between data and heartbeat messages
+        2. Running two concurrent tasks: one for original stream data, one for heartbeats
+        3. Merging both message types into a single output stream
+
+        Messages in the queue are tuples of (raised, done, data) where:
+        - raised (bool): True if this contains an exception to be re-raised
+        - done (bool): True if this is the final signal indicating stream completion
+        - data: The actual message content to yield, or exception if raised=True
+               Note: data is always None when done=True and can be ignored
+
+        Note: This implementation addresses two critical concerns:
+
+        1. Race condition: There's a potential race between checking task.done() and
+           processing the final message. We solve this by having the drain task send
+           an explicit (False, True, None) completion signal as its final action.
+           Without this signal, we might exit before processing the final boundary.
+
+           Since the queue size is 1 and the drain task will only complete after
+           successfully queueing the done signal, task.done() guarantees the done
+           signal is either in the queue or has already been processed. This ensures
+           we never miss the final boundary.
+
+        2. Flow control: The queue has maxsize=1, which is essential because:
+           - It provides natural backpressure between producers and consumer
+           - Prevents heartbeat messages from accumulating when drain is active
+           - Ensures proper task coordination without complex synchronization
+           - Guarantees the done signal is queued before drain task completes
+
+        Heartbeats are sent every 5 seconds when the drain task isn't sending data.
+
+        Note: Due to the asynchronous nature of the heartbeat task, an extra heartbeat
+        message may be sent after the final stream boundary message. This is safe because
+        both the MIME specification (RFC 2046) and Apollo's GraphQL Multipart HTTP protocol
+        require clients to ignore any content after the final boundary marker. Additionally,
+        Apollo's protocol defines heartbeats as empty JSON objects that clients must
+        silently ignore.
+        """
+        queue: asyncio.Queue[tuple[bool, bool, Any]] = asyncio.Queue(
+            maxsize=1,  # Critical: maxsize=1 for flow control.
+        )
         cancelling = False
 
         async def drain() -> None:
             try:
                 async for item in stream():
-                    await queue.put((False, item))
+                    await queue.put((False, False, item))
             except Exception as e:
                 if not cancelling:
-                    await queue.put((True, e))
+                    await queue.put((True, False, e))
                 else:
                     raise
+            # Send completion signal to prevent race conditions. The queue.put()
+            # blocks until space is available (due to maxsize=1), guaranteeing that
+            # when task.done() is True, the final stream message has been dequeued.
+            await queue.put((False, True, None))  # Always use None with done=True
 
         async def heartbeat() -> None:
             while True:
-                await queue.put((False, self.encode_multipart_data({}, "graphql")))
+                item = self.encode_multipart_data({}, separator)
+                await queue.put((False, False, item))
 
                 await asyncio.sleep(5)
 
@@ -477,8 +523,19 @@ class AsyncBaseHTTPView(
                     await heartbeat_task
 
             try:
+                # When task.done() is True, the final stream message has been
+                # dequeued due to queue size 1 and the blocking nature of queue.put().
                 while not task.done():
-                    raised, data = await queue.get()
+                    raised, done, data = await queue.get()
+
+                    if done:
+                        # Received done signal (data is None), stream is complete.
+                        # Note that we may not get here because of the race between
+                        # task.done() and queue.get(), but that's OK because if
+                        # task.done() is True, the actual final message (including any
+                        # exception) has been consumed. The only intent here is to
+                        # ensure that data=None is not yielded.
+                        break
 
                     if raised:
                         await cancel_tasks()
@@ -503,7 +560,7 @@ class AsyncBaseHTTPView(
 
             yield f"\r\n--{separator}--\r\n"
 
-        return self._stream_with_heartbeat(stream)
+        return self._stream_with_heartbeat(stream, separator)
 
     async def parse_multipart_subscriptions(
         self, request: AsyncHTTPRequestAdapter
@@ -541,14 +598,38 @@ class AsyncBaseHTTPView(
                     query=item.get("query"),
                     variables=item.get("variables"),
                     operation_name=item.get("operationName"),
+                    extensions=item.get("extensions"),
                     protocol=protocol,
                 )
                 for item in data
             ]
+
+        query = data.get("query")
+        if not isinstance(query, (str, type(None))):
+            raise HTTPException(
+                400,
+                "The GraphQL operation's `query` must be a string or null, if provided.",
+            )
+
+        variables = data.get("variables")
+        if not isinstance(variables, (dict, type(None))):
+            raise HTTPException(
+                400,
+                "The GraphQL operation's `variables` must be an object or null, if provided.",
+            )
+
+        extensions = data.get("extensions")
+        if not isinstance(extensions, (dict, type(None))):
+            raise HTTPException(
+                400,
+                "The GraphQL operation's `extensions` must be an object or null, if provided.",
+            )
+
         return GraphQLRequestData(
-            query=data.get("query"),
-            variables=data.get("variables"),
+            query=query,
+            variables=variables,
             operation_name=data.get("operationName"),
+            extensions=extensions,
             protocol=protocol,
         )
 

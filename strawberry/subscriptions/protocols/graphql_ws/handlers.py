@@ -14,6 +14,7 @@ from typing import (
 from strawberry.exceptions import ConnectionRejectionError
 from strawberry.http.exceptions import NonTextMessageReceived, WebSocketDisconnected
 from strawberry.http.typevars import Context, RootValue
+from strawberry.schema.exceptions import CannotGetOperationTypeError
 from strawberry.subscriptions.protocols.graphql_ws.types import (
     CompleteMessage,
     ConnectionInitMessage,
@@ -41,7 +42,7 @@ class BaseGraphQLWSHandler(Generic[Context, RootValue]):
         view: AsyncBaseHTTPView[Any, Any, Any, Any, Any, Context, RootValue],
         websocket: AsyncWebSocketAdapter,
         context: Context,
-        root_value: RootValue,
+        root_value: Optional[RootValue],
         schema: BaseSchema,
         debug: bool,
         keep_alive: bool,
@@ -193,6 +194,14 @@ class BaseGraphQLWSHandler(Generic[Context, RootValue]):
 
             await self.send_message(CompleteMessage(type="complete", id=operation_id))
 
+        except CannotGetOperationTypeError as e:
+            await self.send_message(
+                ErrorMessage(
+                    type="error",
+                    id=operation_id,
+                    payload={"message": e.as_http_error_reason()},
+                )
+            )
         except asyncio.CancelledError:
             await self.send_message(CompleteMessage(type="complete", id=operation_id))
 
