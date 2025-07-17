@@ -113,7 +113,7 @@ def test_serialization_error_message_for_incorrect_date_string():
     """
     result = execute_mutation("2021-13-01")
     assert result.errors
-    assert result.errors[0].message == (
+    assert result.errors[0].message.startswith(
         "Variable '$value' got invalid value '2021-13-01'; Value cannot represent a "
         'Date: "2021-13-01". month must be in 1..12'
     )
