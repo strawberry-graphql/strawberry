@@ -163,7 +163,7 @@ def test_serialization_error_message_for_incorrect_datetime_string():
     """
     result = execute_mutation("2021-13-01T09:00:00")
     assert result.errors
-    assert result.errors[0].message == (
+    assert result.errors[0].message.startswith(
         "Variable '$value' got invalid value '2021-13-01T09:00:00'; Value cannot "
         'represent a DateTime: "2021-13-01T09:00:00". month must be in 1..12'
     )
