@@ -15,13 +15,14 @@ from litestar.testing.websocket_test_session import WebSocketTestSession
 from strawberry.http import GraphQLHTTPResponse
 from strawberry.http.ides import GraphQL_IDE
 from strawberry.litestar import make_graphql_controller
+from strawberry.schema import Schema
 from strawberry.subscriptions import (
     GRAPHQL_TRANSPORT_WS_PROTOCOL,
     GRAPHQL_WS_PROTOCOL,
 )
 from strawberry.types import ExecutionResult
 from tests.http.context import get_context
-from tests.views.schema import Query, schema
+from tests.views.schema import Query
 from tests.websockets.views import OnWSConnectMixin
 
 from .base import (
@@ -51,6 +52,7 @@ async def get_root_value(request: Request = None):
 class LitestarHttpClient(HttpClient):
     def __init__(
         self,
+        schema: Schema,
         graphiql: Optional[bool] = None,
         graphql_ide: Optional[GraphQL_IDE] = "graphiql",
         allow_queries_via_get: bool = True,

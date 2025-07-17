@@ -3,6 +3,8 @@ from typing_extensions import Literal
 
 import pytest
 
+from tests.views.schema import schema
+
 from .clients.base import HttpClient
 
 
@@ -13,7 +15,7 @@ async def test_renders_graphql_ide(
     http_client_class: type[HttpClient],
     graphql_ide: Literal["graphiql", "apollo-sandbox", "pathfinder"],
 ):
-    http_client = http_client_class(graphql_ide=graphql_ide)
+    http_client = http_client_class(schema, graphql_ide=graphql_ide)
 
     response = await http_client.get("/graphql", headers={"Accept": header_value})
     content_type = response.headers.get(
@@ -41,7 +43,7 @@ async def test_renders_graphql_ide_deprecated(
     with pytest.deprecated_call(
         match=r"The `graphiql` argument is deprecated in favor of `graphql_ide`"
     ):
-        http_client = http_client_class(graphiql=True)
+        http_client = http_client_class(schema, graphiql=True)
 
         response = await http_client.get("/graphql", headers={"Accept": header_value})
 
@@ -59,7 +61,7 @@ async def test_renders_graphql_ide_deprecated(
 async def test_does_not_render_graphiql_if_wrong_accept(
     http_client_class: type[HttpClient],
 ):
-    http_client = http_client_class()
+    http_client = http_client_class(schema)
     response = await http_client.get("/graphql", headers={"Accept": "text/xml"})
 
     # THIS might need to be changed to 404
@@ -72,7 +74,7 @@ async def test_renders_graphiql_disabled(
     http_client_class: type[HttpClient],
     graphql_ide: Union[bool, None],
 ):
-    http_client = http_client_class(graphql_ide=graphql_ide)
+    http_client = http_client_class(schema, graphql_ide=graphql_ide)
     response = await http_client.get("/graphql", headers={"Accept": "text/html"})
 
     assert response.status_code == 404
@@ -84,7 +86,7 @@ async def test_renders_graphiql_disabled_deprecated(
     with pytest.deprecated_call(
         match=r"The `graphiql` argument is deprecated in favor of `graphql_ide`"
     ):
-        http_client = http_client_class(graphiql=False)
+        http_client = http_client_class(schema, graphiql=False)
         response = await http_client.get("/graphql", headers={"Accept": "text/html"})
 
     assert response.status_code == 404

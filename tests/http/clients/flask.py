@@ -15,9 +15,10 @@ from flask import Response as FlaskResponse
 from strawberry.flask.views import GraphQLView as BaseGraphQLView
 from strawberry.http import GraphQLHTTPResponse
 from strawberry.http.ides import GraphQL_IDE
+from strawberry.schema import Schema
 from strawberry.types import ExecutionResult
 from tests.http.context import get_context
-from tests.views.schema import Query, schema
+from tests.views.schema import Query
 
 from .base import JSON, HttpClient, Response, ResultOverrideFunction
 
@@ -57,6 +58,7 @@ class GraphQLView(BaseGraphQLView[dict[str, object], object]):
 class FlaskHttpClient(HttpClient):
     def __init__(
         self,
+        schema: Schema,
         graphiql: Optional[bool] = None,
         graphql_ide: Optional[GraphQL_IDE] = "graphiql",
         allow_queries_via_get: bool = True,

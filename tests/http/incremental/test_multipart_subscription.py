@@ -5,6 +5,7 @@ import pytest
 
 from strawberry.http.base import BaseView
 from tests.http.clients.base import HttpClient
+from tests.views.schema import schema
 
 
 @pytest.fixture
@@ -53,7 +54,7 @@ def http_client(http_client_class: type[HttpClient]) -> HttpClient:
                 reason="ChaliceHttpClient doesn't support multipart subscriptions"
             )
 
-    return http_client_class()
+    return http_client_class(schema)
 
 
 @pytest.mark.parametrize("method", ["get", "post"])

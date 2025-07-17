@@ -3,10 +3,13 @@ import contextlib
 import pytest
 
 from tests.http.clients.base import HttpClient
+from tests.views.schema import schema
 
 
 @pytest.fixture
-def http_client(http_client_class: type[HttpClient]) -> HttpClient:
+def incremental_http_client_class(
+    http_client_class: type[HttpClient],
+) -> type[HttpClient]:
     with contextlib.suppress(ImportError):
         import django
 
@@ -41,4 +44,9 @@ def http_client(http_client_class: type[HttpClient]) -> HttpClient:
         if http_client_class is ChaliceHttpClient:
             pytest.skip(reason="ChaliceHttpClient doesn't support streaming")
 
-    return http_client_class()
+    return http_client_class
+
+
+@pytest.fixture
+def http_client(incremental_http_client_class: type[HttpClient]) -> HttpClient:
+    return incremental_http_client_class(schema)
