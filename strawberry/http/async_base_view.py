@@ -206,19 +206,19 @@ class AsyncBaseHTTPView(
 
         if isinstance(request_data, list):
             # batch GraphQL requests
-            tasks = [
-                self.execute_single(
-                    request=request,
-                    request_adapter=request_adapter,
-                    sub_response=sub_response,
-                    context=context,
-                    root_value=root_value,
-                    request_data=data,
-                )
-                for data in request_data
-            ]
-
-            return await asyncio.gather(*tasks)
+            return await asyncio.gather(
+                *[
+                    self.execute_single(
+                        request=request,
+                        request_adapter=request_adapter,
+                        sub_response=sub_response,
+                        context=context,
+                        root_value=root_value,
+                        request_data=data,
+                    )
+                    for data in request_data
+                ]
+            )
 
         if request_data.protocol == "multipart-subscription":
             return await self.schema.subscribe(
