@@ -762,7 +762,7 @@ class ListConnection(Connection[NodeType]):
     )
 
     @classmethod
-    def resolve_connection(  # noqa: PLR0915
+    def resolve_connection(
         cls,
         nodes: NodeIterableType[NodeType],
         *,

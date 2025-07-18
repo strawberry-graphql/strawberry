@@ -4,6 +4,8 @@ from typing import Any
 
 import pytest
 
+from tests.views.schema import schema
+
 from .clients.base import HttpClient
 
 
@@ -53,4 +55,4 @@ def http_client_class(request: Any) -> type[HttpClient]:
 
 @pytest.fixture
 def http_client(http_client_class: type[HttpClient]) -> HttpClient:
-    return http_client_class()
+    return http_client_class(schema)

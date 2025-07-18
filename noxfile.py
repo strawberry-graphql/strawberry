@@ -12,7 +12,7 @@ PYTHON_VERSIONS = ["3.13", "3.12", "3.11", "3.10", "3.9"]
 
 GQL_CORE_VERSIONS = [
     "3.2.3",
-    "3.3.0a8",
+    "3.3.0a9",
 ]
 
 COMMON_PYTEST_OPTIONS = [

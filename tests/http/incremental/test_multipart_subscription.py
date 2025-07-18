@@ -4,8 +4,8 @@ from typing_extensions import Literal
 import pytest
 
 from strawberry.http.base import BaseView
-
-from .clients.base import HttpClient
+from tests.http.clients.base import HttpClient
+from tests.views.schema import schema
 
 
 @pytest.fixture
@@ -16,7 +16,7 @@ def http_client(http_client_class: type[HttpClient]) -> HttpClient:
         if django.VERSION < (4, 2):
             pytest.skip(reason="Django < 4.2 doesn't async streaming responses")
 
-        from .clients.django import DjangoHttpClient
+        from tests.http.clients.django import DjangoHttpClient
 
         if http_client_class is DjangoHttpClient:
             pytest.skip(
@@ -24,7 +24,7 @@ def http_client(http_client_class: type[HttpClient]) -> HttpClient:
             )
 
     with contextlib.suppress(ImportError):
-        from .clients.channels import SyncChannelsHttpClient
+        from tests.http.clients.channels import SyncChannelsHttpClient
 
         # TODO: why do we have a sync channels client?
         if http_client_class is SyncChannelsHttpClient:
@@ -33,8 +33,8 @@ def http_client(http_client_class: type[HttpClient]) -> HttpClient:
             )
 
     with contextlib.suppress(ImportError):
-        from .clients.async_flask import AsyncFlaskHttpClient
-        from .clients.flask import FlaskHttpClient
+        from tests.http.clients.async_flask import AsyncFlaskHttpClient
+        from tests.http.clients.flask import FlaskHttpClient
 
         if http_client_class is FlaskHttpClient:
             pytest.skip(
@@ -47,14 +47,14 @@ def http_client(http_client_class: type[HttpClient]) -> HttpClient:
             )
 
     with contextlib.suppress(ImportError):
-        from .clients.chalice import ChaliceHttpClient
+        from tests.http.clients.chalice import ChaliceHttpClient
 
         if http_client_class is ChaliceHttpClient:
             pytest.skip(
                 reason="ChaliceHttpClient doesn't support multipart subscriptions"
             )
 
-    return http_client_class()
+    return http_client_class(schema)
 
 
 @pytest.mark.parametrize("method", ["get", "post"])
