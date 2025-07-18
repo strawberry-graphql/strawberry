@@ -1003,43 +1003,11 @@ class GraphQLCoreConverter:
         first_type_definition = cached_type.definition
         second_type_definition = type_definition
 
-        # TODO: maybe move this on the StrawberryType class
-        if (
-            isinstance(first_type_definition, StrawberryObjectDefinition)
-            and isinstance(second_type_definition, StrawberryObjectDefinition)
-            and first_type_definition.concrete_of is not None
-            and first_type_definition.concrete_of == second_type_definition.concrete_of
-            and (
-                first_type_definition.type_var_map.keys()
-                == second_type_definition.type_var_map.keys()
-            )
+        if self.is_same_type_definition(
+            first_type_definition,
+            second_type_definition,
         ):
-            # manually compare type_var_maps while resolving any lazy types
-            # so that they're considered equal to the actual types they're referencing
-            equal = True
-            for type_var, type1 in first_type_definition.type_var_map.items():
-                type2 = second_type_definition.type_var_map[type_var]
-                # both lazy types are always resolved because two different lazy types
-                # may be referencing the same actual type
-                if isinstance(type1, LazyType):
-                    type1 = type1.resolve_type()  # noqa: PLW2901
-                elif isinstance(type1, StrawberryOptional) and isinstance(
-                    type1.of_type, LazyType
-                ):
-                    type1.of_type = type1.of_type.resolve_type()
-
-                if isinstance(type2, LazyType):
-                    type2 = type2.resolve_type()
-                elif isinstance(type2, StrawberryOptional) and isinstance(
-                    type2.of_type, LazyType
-                ):
-                    type2.of_type = type2.of_type.resolve_type()
-
-                if type1 != type2:
-                    equal = False
-                    break
-            if equal:
-                return
+            return
 
         if isinstance(second_type_definition, StrawberryObjectDefinition):
             first_origin = second_type_definition.origin
@@ -1056,6 +1024,64 @@ class GraphQLCoreConverter:
             second_origin = None
 
         raise DuplicatedTypeName(first_origin, second_origin, name)
+
+    def is_same_type_definition(
+        self,
+        first_type_definition: StrawberryObjectDefinition | StrawberryType,
+        second_type_definition: StrawberryObjectDefinition | StrawberryType,
+    ) -> bool:
+        # TODO: maybe move this on the StrawberryType class
+        if (
+            not isinstance(first_type_definition, StrawberryObjectDefinition)
+            or not isinstance(second_type_definition, StrawberryObjectDefinition)
+            or first_type_definition.concrete_of is None
+            or first_type_definition.concrete_of != second_type_definition.concrete_of
+            or (
+                first_type_definition.type_var_map.keys()
+                != second_type_definition.type_var_map.keys()
+            )
+        ):
+            return False
+
+        # manually compare type_var_maps while resolving any lazy types
+        # so that they're considered equal to the actual types they're referencing
+        for type_var, type1 in first_type_definition.type_var_map.items():
+            type2 = second_type_definition.type_var_map[type_var]
+
+            # both lazy types are always resolved because two different lazy types
+            # may be referencing the same actual type
+            if isinstance(type1, LazyType):
+                type1 = type1.resolve_type()  # noqa: PLW2901
+            elif isinstance(type1, StrawberryOptional) and isinstance(
+                type1.of_type, LazyType
+            ):
+                type1.of_type = type1.of_type.resolve_type()
+
+            if isinstance(type2, LazyType):
+                type2 = type2.resolve_type()
+            elif isinstance(type2, StrawberryOptional) and isinstance(
+                type2.of_type, LazyType
+            ):
+                type2.of_type = type2.of_type.resolve_type()
+
+            same_type = type1 == type2
+            # If both types have object definitions, we are handling a nested generic
+            # type like `Foo[Foo[int]]`, meaning we need to compare their type definitions
+            # as they will actually be different instances of the type
+            if (
+                not same_type
+                and has_object_definition(type1)
+                and has_object_definition(type2)
+            ):
+                same_type = self.is_same_type_definition(
+                    type1.__strawberry_definition__,
+                    type2.__strawberry_definition__,
+                )
+
+            if not same_type:
+                return False
+
+        return True
 
 
 __all__ = ["GraphQLCoreConverter"]
