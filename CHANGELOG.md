@@ -1,6 +1,39 @@
 CHANGELOG
 =========
 
+0.276.1 - 2025-07-18
+--------------------
+
+This release fixes an issue where `DuplicatedTypeName` exception would be raised
+for nested generics like in the example below:
+
+```python
+from typing import Generic, TypeVar
+
+import strawberry
+
+T = TypeVar("T")
+
+
+@strawberry.type
+class Wrapper(Generic[T]):
+    value: T
+
+
+@strawberry.type
+class Query:
+    a: Wrapper[Wrapper[int]]
+    b: Wrapper[Wrapper[int]]
+
+
+schema = strawberry.Schema(query=Query)
+```
+
+This piece of code and similar ones will now work correctly.
+
+Contributed by [Thiago Bellini Ribeiro](https://github.com/bellini666) via [PR #3946](https://github.com/strawberry-graphql/strawberry/pull/3946/)
+
+
 0.276.0 - 2025-07-14
 --------------------
 
