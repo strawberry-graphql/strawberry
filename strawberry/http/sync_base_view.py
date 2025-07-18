@@ -192,7 +192,15 @@ class SyncBaseHTTPView(
     def parse_http_body(
         self, request: SyncHTTPRequestAdapter
     ) -> Union[GraphQLRequestData, list[GraphQLRequestData]]:
+        headers = {key.lower(): value for key, value in request.headers.items()}
         content_type, params = parse_content_type(request.content_type or "")
+        accept = headers.get("accept", "")
+
+        protocol = (
+            "multipart-subscription"
+            if self._is_multipart_subscriptions(*parse_content_type(accept))
+            else "http"
+        )
 
         if request.method == "GET":
             data = self.parse_query_params(request.query_params)
@@ -209,7 +217,7 @@ class SyncBaseHTTPView(
             raise HTTPException(400, "Unsupported content type")
 
         if isinstance(data, list):
-            self._validate_batch_request(data, protocol="http")
+            self._validate_batch_request(data, protocol=protocol)
             return [
                 GraphQLRequestData(
                     query=item.get("query"),

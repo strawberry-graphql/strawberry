@@ -13,7 +13,7 @@ from typing import (
     cast,
     overload,
 )
-from typing_extensions import Literal, TypeGuard
+from typing_extensions import TypeGuard
 
 from graphql import GraphQLError
 
@@ -573,10 +573,11 @@ class AsyncBaseHTTPView(
         content_type, _ = parse_content_type(request.content_type or "")
         accept = headers.get("accept", "")
 
-        protocol: Literal["http", "multipart-subscription"] = "http"
-
-        if self._is_multipart_subscriptions(*parse_content_type(accept)):
-            protocol = "multipart-subscription"
+        protocol = (
+            "multipart-subscription"
+            if self._is_multipart_subscriptions(*parse_content_type(accept))
+            else "http"
+        )
 
         if request.method == "GET":
             data = self.parse_query_params(request.query_params)

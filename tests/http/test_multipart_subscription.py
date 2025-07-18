@@ -4,6 +4,7 @@ from typing_extensions import Literal
 import pytest
 
 from strawberry.http.base import BaseView
+from strawberry.schema.config import StrawberryConfig
 
 from .clients.base import HttpClient
 
@@ -111,3 +112,32 @@ async def test_multipart_subscription_use_the_views_decode_json_method(
     assert response.status_code == 200
 
     assert spy.call_count == 1
+
+
+async def test_returns_error_when_trying_to_use_batching_with_multipart_subscriptions(
+    http_client_class: type[HttpClient],
+):
+    http_client = http_client_class(
+        schema_config=StrawberryConfig(
+            batching_config={
+                "enabled": True,
+                "max_operations": 10,
+            }
+        )
+    )
+
+    response = await http_client.post(
+        url="/graphql",
+        json=[
+            {"query": 'subscription { echo(message: "Hello world", delay: 0.2) }'},
+            {"query": 'subscription { echo(message: "Hello world", delay: 0.2) }'},
+            {"query": 'subscription { echo(message: "Hello world", delay: 0.2) }'},
+        ],
+        headers={
+            "content-type": "application/json",
+            "accept": "multipart/mixed;boundary=graphql;subscriptionSpec=1.0,application/json",
+        },
+    )
+
+    assert response.status_code == 400
+    assert "Batching is not supported for multipart subscriptions" in response.text
