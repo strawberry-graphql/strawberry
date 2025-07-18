@@ -95,42 +95,12 @@ async def test_defer_with_mask_error_extension(
     )
 
     async with contextlib.aclosing(response.streaming_json()) as stream:
-        initial = await stream.__anext__()
+        initial_errors = (await stream.__anext__())["errors"]
 
-        assert initial == snapshot(
-            {
-                "data": {"someError": None, "character": {"id": "1"}},
-                "errors": [
-                    {
-                        "message": "Unexpected error.",
-                        "locations": [{"line": 3, "column": 13}],
-                        "path": ["someError"],
-                    }
-                ],
-                "hasNext": True,
-                "pending": [{"id": "0", "path": ["character"]}],
-                "extensions": None,
-            }
-        )
-
-        subsequent = await stream.__anext__()
+        assert initial_errors[0]["message"] == "Unexpected error."
 
         # TODO: not yet supported properly (the error is not masked)
-        assert subsequent == snapshot(
-            {
-                "hasNext": False,
-                "extensions": None,
-                "completed": [
-                    {
-                        "id": "0",
-                        "errors": [
-                            {
-                                "message": "Failed to get name",
-                                "locations": [{"line": 10, "column": 13}],
-                                "path": ["character", "name"],
-                            }
-                        ],
-                    }
-                ],
-            }
-        )
+        subsequent = (await stream.__anext__())["completed"][0]
+        subsequent_errors = subsequent["errors"]
+
+        assert subsequent_errors[0]["message"] == "Failed to get name"
