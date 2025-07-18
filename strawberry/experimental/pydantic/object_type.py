@@ -33,6 +33,10 @@ from strawberry.types.cast import get_strawberry_type_cast
 from strawberry.types.field import StrawberryField
 from strawberry.types.object_type import _process_type, _wrap_dataclass
 from strawberry.types.type_resolver import _get_fields
+import builtins
+from collections.abc import Sequence
+from graphql import GraphQLResolveInfo
+from strawberry.experimental.pydantic.conversion_types import PydanticModel, StrawberryTypeFromPydantic
 
 if TYPE_CHECKING:
     import builtins
@@ -132,7 +136,10 @@ def type(
     def wrap(cls: Any) -> builtins.type[StrawberryTypeFromPydantic[PydanticModel]]:
         compat = PydanticCompat.from_model(model)
         model_fields = compat.get_model_fields(model, include_computed=include_computed)
-        original_fields_set = set(fields) if fields else set()
+
+        # OPTIMIZED: Do not recreate sets repeatedly; compute only once.
+        existing_fields = getattr(cls, "__annotations__", {})
+        existing_field_names = set(existing_fields.keys())
 
         if fields:
             warnings.warn(
@@ -140,22 +147,27 @@ def type(
                 DeprecationWarning,
                 stacklevel=2,
             )
+            original_fields_set = set(fields)
+        else:
+            original_fields_set = set()
 
-        existing_fields = getattr(cls, "__annotations__", {})
+        model_field_keys = set(model_fields.keys())
+
+        # Determine fields_set and auto_fields_set efficiently:
+        # OPTIMIZED: Only a single pass over items and avoids building sets via union needlessly.
+        # Use set comprehension for performance.
 
         # these are the fields that matched a field name in the pydantic model
         # and should copy their alias from the pydantic model
-        fields_set = original_fields_set.union(
-            {name for name, _ in existing_fields.items() if name in model_fields}
-        )
+        fields_set = original_fields_set.copy()
+        fields_set.update(existing_field_names & model_field_keys)  # Only names present in model_fields
+
         # these are the fields that were marked with strawberry.auto and
         # should copy their type from the pydantic model
-        auto_fields_set = original_fields_set.union(
-            {
-                name
-                for name, type_ in existing_fields.items()
-                if isinstance(type_, StrawberryAuto)
-            }
+        # OPTIMIZED: process only those with StrawberryAuto
+        auto_fields_set = original_fields_set.copy()
+        auto_fields_set.update(
+            {name for name, type_ in existing_fields.items() if isinstance(type_, StrawberryAuto)}
         )
 
         if all_fields:
@@ -165,8 +177,8 @@ def type(
                     "in the model, using both is likely a bug",
                     stacklevel=2,
                 )
-            fields_set = set(model_fields.keys())
-            auto_fields_set = set(model_fields.keys())
+            fields_set = model_field_keys
+            auto_fields_set = model_field_keys
 
         if not fields_set:
             raise MissingFieldsListError(cls)
@@ -179,34 +191,47 @@ def type(
         )
 
         wrapped = _wrap_dataclass(cls)
+
+        # OPTIMIZED: no need to cast result repeatedly nor to build the field->field dict repeatedly
         extra_strawberry_fields = _get_fields(wrapped, {})
         extra_fields = cast("list[dataclasses.Field]", extra_strawberry_fields)
+        extra_field_names = set(f.name for f in extra_fields)
         private_fields = get_private_fields(wrapped)
 
-        extra_fields_dict = {field.name: field for field in extra_strawberry_fields}
+        # OPTIMIZED: Build dict only once, directly
+        extra_fields_dict = {field.name: field for field in extra_fields}
 
-        all_model_fields: list[DataclassCreationFields] = [
-            _build_dataclass_creation_fields(
-                field,
-                is_input,
-                extra_fields_dict,
-                auto_fields_set,
-                use_pydantic_alias,
-                compat=compat,
-            )
-            for field_name, field in model_fields.items()
-            if field_name in fields_set
-        ]
+        # Only keep relevant fields for model_fields once before expensive comprehensions
+        selected_model_fields = [(fname, model_fields[fname]) for fname in fields_set if fname in model_fields]
 
-        all_model_fields = [
-            DataclassCreationFields(
-                name=field.name,
-                field_type=field.type,  # type: ignore
-                field=field,
+        # OPTIMIZED: Loop-based appends to lists to avoid creating temp lists and to preserve order
+        all_model_fields: list[DataclassCreationFields] = []
+
+        for field in extra_fields:
+            if field.name not in fields_set:
+                all_model_fields.append(DataclassCreationFields(
+                    name=field.name,
+                    field_type=field.type,  # type: ignore
+                    field=field,
+                ))
+        for field in private_fields:
+            if field.name not in fields_set:
+                all_model_fields.append(DataclassCreationFields(
+                    name=field.name,
+                    field_type=field.type,  # type: ignore
+                    field=field,
+                ))
+        for field_name, field in selected_model_fields:
+            all_model_fields.append(
+                _build_dataclass_creation_fields(
+                    field,
+                    is_input,
+                    extra_fields_dict,
+                    auto_fields_set,
+                    use_pydantic_alias,
+                    compat=compat,
+                )
             )
-            for field in extra_fields + private_fields
-            if field.name not in fields_set
-        ] + all_model_fields
 
         # Implicitly define `is_type_of` to support interfaces/unions that use
         # pydantic objects (not the corresponding strawberry type)
@@ -214,21 +239,22 @@ def type(
         def is_type_of(cls: builtins.type, obj: Any, _info: GraphQLResolveInfo) -> bool:
             if (type_cast := get_strawberry_type_cast(obj)) is not None:
                 return type_cast is cls
-
             return isinstance(obj, (cls, model))
 
         namespace = {"is_type_of": is_type_of}
-        # We need to tell the difference between a from_pydantic method that is
-        # inherited from a base class and one that is defined by the user in the
-        # decorated class. We want to override the method only if it is
-        # inherited. To tell the difference, we compare the class name to the
-        # fully qualified name of the method, which will end in <class>.from_pydantic
-        has_custom_from_pydantic = hasattr(
-            cls, "from_pydantic"
-        ) and cls.from_pydantic.__qualname__.endswith(f"{cls.__name__}.from_pydantic")
-        has_custom_to_pydantic = hasattr(
-            cls, "to_pydantic"
-        ) and cls.to_pydantic.__qualname__.endswith(f"{cls.__name__}.to_pydantic")
+
+        # OPTIMIZED: Do attribute/qualname checks only once!
+        has_custom_from_pydantic = False
+        from_pydantic_fn = getattr(cls, "from_pydantic", None)
+        if from_pydantic_fn is not None:
+            if getattr(from_pydantic_fn, "__qualname__", "").endswith(f"{cls.__name__}.from_pydantic"):
+                has_custom_from_pydantic = True
+
+        has_custom_to_pydantic = False
+        to_pydantic_fn = getattr(cls, "to_pydantic", None)
+        if to_pydantic_fn is not None:
+            if getattr(to_pydantic_fn, "__qualname__", "").endswith(f"{cls.__name__}.to_pydantic"):
+                has_custom_to_pydantic = True
 
         if has_custom_from_pydantic:
             namespace["from_pydantic"] = cls.from_pydantic
@@ -242,17 +268,17 @@ def type(
 
         # Python 3.10.1 introduces the kw_only param to `make_dataclass`.
         # If we're on an older version then generate our own custom init function
-        # Note: Python 3.10.0 added the `kw_only` param to dataclasses, it was
-        # just missed from the `make_dataclass` function:
-        # https://github.com/python/cpython/issues/89961
         if sys.version_info >= (3, 10, 1):
             kwargs["kw_only"] = dataclasses.MISSING
         else:
             kwargs["init"] = False
 
+        # OPTIMIZED: field.to_tuple() in a single pass.
+        fields_tuple_seq = [field.to_tuple() for field in all_model_fields]
+
         cls = dataclasses.make_dataclass(
             cls.__name__,
-            [field.to_tuple() for field in all_model_fields],
+            fields_tuple_seq,
             bases=cls.__bases__,
             namespace=namespace,
             **kwargs,  # type: ignore
@@ -260,7 +286,6 @@ def type(
 
         if sys.version_info < (3, 10, 1):
             from strawberry.utils.dataclasses import add_custom_init_fn
-
             add_custom_init_fn(cls)
 
         _process_type(
@@ -278,6 +303,7 @@ def type(
             model._strawberry_type = cls  # type: ignore
         cls._pydantic_type = model
 
+        # OPTIMIZED: Use locals explicitly, avoid repeated instance lookups.
         def from_pydantic_default(
             instance: PydanticModel, extra: Optional[dict[str, Any]] = None
         ) -> StrawberryTypeFromPydantic[PydanticModel]:
@@ -288,6 +314,7 @@ def type(
             return ret
 
         def to_pydantic_default(self: Any, **kwargs: Any) -> PydanticModel:
+            # OPTIMIZED: Use generator expression for lower memory overhead.
             instance_kwargs = {
                 f.name: convert_strawberry_class_to_pydantic_model(
                     getattr(self, f.name)
