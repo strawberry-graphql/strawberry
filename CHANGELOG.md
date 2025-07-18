@@ -1,6 +1,34 @@
 CHANGELOG
 =========
 
+0.277.0 - 2025-07-18
+--------------------
+
+This release adds experimental support for GraphQL's `@defer` and `@stream` directives, enabling incremental delivery of response data.
+
+Note: this only works when using Strawberry with `graphql-core>=3.3.0a9`.
+
+## Features
+
+- **`@defer` directive**: Allows fields to be resolved asynchronously and delivered incrementally
+- **`@stream` directive**: Enables streaming of list fields using the new `strawberry.Streamable` type
+- **`strawberry.Streamable[T]`**: A new generic type for defining streamable fields that work with `@stream`
+
+## Configuration
+
+To enable these experimental features, configure your schema with:
+
+```python
+from strawberry.schema.config import StrawberryConfig
+
+schema = strawberry.Schema(
+    query=Query, config=StrawberryConfig(enable_experimental_incremental_execution=True)
+)
+```
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #3819](https://github.com/strawberry-graphql/strawberry/pull/3819/)
+
+
 0.276.2 - 2025-07-18
 --------------------
 
