@@ -14,6 +14,14 @@ rather than waiting for the entire response to be ready.
 This feature requires `graphql-core>=3.3.0a9` and is currently experimental. The
 API and behavior may change in future releases.
 
+**Important limitations:**
+
+- Extensions (most importantly `MaskErrors`) are not fully supported yet.
+  Extensions currently only process the initial result and do not handle
+  incremental payloads delivered by `@defer` and `@stream`.
+- This means error masking and other extension functionality will only apply to
+  the initial response, not to deferred or streamed data.
+
 </Note>
 
 ## Enabling Defer and Stream
