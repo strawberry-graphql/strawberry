@@ -14,7 +14,6 @@ Example:
 
 ```python
 import strawberry
-from dataclasses import dataclass
 
 
 @strawberry.type
