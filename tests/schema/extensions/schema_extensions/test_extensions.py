@@ -132,7 +132,7 @@ def test_extension_access_to_errors():
         def on_operation(self):
             nonlocal execution_errors
             yield
-            execution_errors = self.execution_context.errors
+            execution_errors = self.execution_context.pre_execution_errors
 
     @strawberry.type
     class Person:
@@ -823,7 +823,7 @@ def test_on_parsing_end_is_called_with_parsing_errors():
             nonlocal execution_errors
             yield
             execution_context = self.execution_context
-            execution_errors = execution_context.errors
+            execution_errors = execution_context.pre_execution_errors
 
     @strawberry.type
     class Query:
