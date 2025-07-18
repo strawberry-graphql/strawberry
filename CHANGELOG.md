@@ -1,6 +1,78 @@
 CHANGELOG
 =========
 
+0.276.2 - 2025-07-18
+--------------------
+
+This release renames the `ExecutionContext.errors` attribute to `ExecutionContext.pre_execution_errors` to better reflect its purpose. The old `errors` attribute is now deprecated but still available for backward compatibility.
+
+The `pre_execution_errors` attribute specifically stores errors that occur during the pre-execution phase (parsing and validation), making the distinction clearer from errors that might occur during the actual execution phase.
+
+For backward compatibility, accessing `ExecutionContext.errors` will now emit a deprecation warning and return the value of `pre_execution_errors`.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #3947](https://github.com/strawberry-graphql/strawberry/pull/3947/)
+
+
+0.276.1 - 2025-07-18
+--------------------
+
+This release fixes an issue where `DuplicatedTypeName` exception would be raised
+for nested generics like in the example below:
+
+```python
+from typing import Generic, TypeVar
+
+import strawberry
+
+T = TypeVar("T")
+
+
+@strawberry.type
+class Wrapper(Generic[T]):
+    value: T
+
+
+@strawberry.type
+class Query:
+    a: Wrapper[Wrapper[int]]
+    b: Wrapper[Wrapper[int]]
+
+
+schema = strawberry.Schema(query=Query)
+```
+
+This piece of code and similar ones will now work correctly.
+
+Contributed by [Thiago Bellini Ribeiro](https://github.com/bellini666) via [PR #3946](https://github.com/strawberry-graphql/strawberry/pull/3946/)
+
+
+0.276.0 - 2025-07-14
+--------------------
+
+This release fixes NameConverter to properly handle lazy types.
+
+Contributed by [Radosław Cybulski](https://github.com/rcybulski1122012) via [PR #3944](https://github.com/strawberry-graphql/strawberry/pull/3944/)
+
+
+0.275.7 - 2025-07-14
+--------------------
+
+This release adds support for lazy types in ConnectionExtension.
+
+Contributed by [Radosław Cybulski](https://github.com/rcybulski1122012) via [PR #3941](https://github.com/strawberry-graphql/strawberry/pull/3941/)
+
+
+0.275.6 - 2025-07-13
+--------------------
+
+In this release, we updated Strawberry to gracefully handle requests containing
+an invalid `extensions` parameter. Previously, such requests could result in
+internal server errors. Now, Strawberry will return a 400 Bad Request response
+with a clear error message, conforming to the GraphQL over HTTP specification.
+
+Contributed by [Jonathan Ehwald](https://github.com/DoctorJohn) via [PR #3943](https://github.com/strawberry-graphql/strawberry/pull/3943/)
+
+
 0.275.5 - 2025-06-26
 --------------------
 

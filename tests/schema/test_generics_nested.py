@@ -363,3 +363,36 @@ def test_supports_generic_in_unions_with_nesting():
             "edge": {"__typename": "UserEdge", "node": {"name": "Patrick"}},
         }
     }
+
+
+def test_does_not_raise_duplicated_type_error():
+    T = TypeVar("T")
+
+    @strawberry.type
+    class Wrapper(Generic[T]):
+        value: T
+
+    @strawberry.type
+    class Query:
+        a: Wrapper[Wrapper[int]]
+        b: Wrapper[Wrapper[int]]
+
+    schema = strawberry.Schema(query=Query)
+
+    expected_schema = textwrap.dedent(
+        """
+        type IntWrapper {
+          value: Int!
+        }
+
+        type IntWrapperWrapper {
+          value: IntWrapper!
+        }
+
+        type Query {
+          a: IntWrapperWrapper!
+          b: IntWrapperWrapper!
+        }
+    """
+    ).strip()
+    assert str(schema) == expected_schema

@@ -136,9 +136,12 @@ def validate_document(
 def _run_validation(execution_context: ExecutionContext) -> None:
     # Check if there are any validation rules or if validation has
     # already been run by an extension
-    if len(execution_context.validation_rules) > 0 and execution_context.errors is None:
+    if (
+        len(execution_context.validation_rules) > 0
+        and execution_context.pre_execution_errors is None
+    ):
         assert execution_context.graphql_document
-        execution_context.errors = validate_document(
+        execution_context.pre_execution_errors = validate_document(
             execution_context.schema._schema,
             execution_context.graphql_document,
             execution_context.validation_rules,
@@ -495,12 +498,12 @@ class Schema(BaseSchema):
                     context.graphql_document = parse(context.query)
 
             except GraphQLError as error:
-                context.errors = [error]
+                context.pre_execution_errors = [error]
                 return PreExecutionError(data=None, errors=[error])
 
             except Exception as error:  # noqa: BLE001
                 error = GraphQLError(str(error), original_error=error)
-                context.errors = [error]
+                context.pre_execution_errors = [error]
                 return PreExecutionError(data=None, errors=[error])
 
         try:
@@ -513,10 +516,10 @@ class Schema(BaseSchema):
 
         async with extensions_runner.validation():
             _run_validation(context)
-            if context.errors:
+            if context.pre_execution_errors:
                 return PreExecutionError(
                     data=None,
-                    errors=context.errors,
+                    errors=context.pre_execution_errors,
                 )
 
         return None
@@ -537,7 +540,7 @@ class Schema(BaseSchema):
         # Set errors on the context so that it's easier
         # to access in extensions
         if result.errors:
-            context.errors = result.errors
+            context.pre_execution_errors = result.errors
             if not skip_process_errors:
                 self._process_errors(result.errors, context)
         if isinstance(result, GraphQLExecutionResult):
@@ -627,7 +630,7 @@ class Schema(BaseSchema):
 
                     # TODO: maybe here use the first result from incremental execution if it exists
                     if isinstance(result, GraphQLExecutionResult) and result.errors:
-                        execution_context.errors = result.errors
+                        execution_context.pre_execution_errors = result.errors
 
                         # Run the `Schema.process_errors` function here before
                         # extensions have a chance to modify them (see the MaskErrors
@@ -710,7 +713,7 @@ class Schema(BaseSchema):
                             )
 
                     except GraphQLError as error:
-                        execution_context.errors = [error]
+                        execution_context.pre_execution_errors = [error]
                         self._process_errors([error], execution_context)
                         return ExecutionResult(
                             data=None,
@@ -730,13 +733,13 @@ class Schema(BaseSchema):
 
                 with extensions_runner.validation():
                     _run_validation(execution_context)
-                    if execution_context.errors:
+                    if execution_context.pre_execution_errors:
                         self._process_errors(
-                            execution_context.errors, execution_context
+                            execution_context.pre_execution_errors, execution_context
                         )
                         return ExecutionResult(
                             data=None,
-                            errors=execution_context.errors,
+                            errors=execution_context.pre_execution_errors,
                             extensions=extensions_runner.get_extensions_results_sync(),
                         )
 
@@ -766,7 +769,7 @@ class Schema(BaseSchema):
                         # Also set errors on the context so that it's easier
                         # to access in extensions
                         if result.errors:
-                            execution_context.errors = result.errors
+                            execution_context.pre_execution_errors = result.errors
 
                             # Run the `Schema.process_errors` function here before
                             # extensions have a chance to modify them (see the MaskErrors
@@ -781,7 +784,7 @@ class Schema(BaseSchema):
             raise
         except Exception as exc:  # noqa: BLE001
             errors = [_coerce_error(exc)]
-            execution_context.errors = errors
+            execution_context.pre_execution_errors = errors
             self._process_errors(errors, execution_context)
             return ExecutionResult(
                 data=None,

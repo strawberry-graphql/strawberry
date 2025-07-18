@@ -7,7 +7,7 @@ from typing import (
     Optional,
     runtime_checkable,
 )
-from typing_extensions import Protocol, TypedDict
+from typing_extensions import Protocol, TypedDict, deprecated
 
 from graphql import specified_rules
 
@@ -48,7 +48,7 @@ class ExecutionContext:
     # Values that get populated during the GraphQL execution so that they can be
     # accessed by extensions
     graphql_document: Optional[DocumentNode] = None
-    errors: Optional[list[GraphQLError]] = None
+    pre_execution_errors: Optional[list[GraphQLError]] = None
     result: Optional[GraphQLExecutionResult] = None
     extensions_results: dict[str, Any] = dataclasses.field(default_factory=dict)
 
@@ -85,6 +85,12 @@ class ExecutionContext:
             return None
 
         return get_first_operation(graphql_document)
+
+    @property
+    @deprecated("Use 'pre_execution_errors' instead")
+    def errors(self) -> Optional[list[GraphQLError]]:
+        """Deprecated: Use pre_execution_errors instead."""
+        return self.pre_execution_errors
 
 
 @dataclasses.dataclass
