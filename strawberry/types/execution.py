@@ -48,7 +48,7 @@ class ExecutionContext:
     # Values that get populated during the GraphQL execution so that they can be
     # accessed by extensions
     graphql_document: Optional[DocumentNode] = None
-    errors: Optional[list[GraphQLError]] = None
+    pre_execution_errors: Optional[list[GraphQLError]] = None
     result: Optional[GraphQLExecutionResult] = None
     extensions_results: dict[str, Any] = dataclasses.field(default_factory=dict)
 
