@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import builtins
 import dataclasses
 import sys
 import warnings
+from collections.abc import Sequence
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -10,6 +12,8 @@ from typing import (
     Optional,
     cast,
 )
+
+from graphql import GraphQLResolveInfo
 
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.experimental.pydantic._compat import (
@@ -19,6 +23,10 @@ from strawberry.experimental.pydantic._compat import (
 from strawberry.experimental.pydantic.conversion import (
     convert_pydantic_model_to_strawberry_class,
     convert_strawberry_class_to_pydantic_model,
+)
+from strawberry.experimental.pydantic.conversion_types import (
+    PydanticModel,
+    StrawberryTypeFromPydantic,
 )
 from strawberry.experimental.pydantic.exceptions import MissingFieldsListError
 from strawberry.experimental.pydantic.fields import replace_types_recursively
@@ -33,10 +41,6 @@ from strawberry.types.cast import get_strawberry_type_cast
 from strawberry.types.field import StrawberryField
 from strawberry.types.object_type import _process_type, _wrap_dataclass
 from strawberry.types.type_resolver import _get_fields
-import builtins
-from collections.abc import Sequence
-from graphql import GraphQLResolveInfo
-from strawberry.experimental.pydantic.conversion_types import PydanticModel, StrawberryTypeFromPydantic
 
 if TYPE_CHECKING:
     import builtins
@@ -160,14 +164,20 @@ def type(
         # these are the fields that matched a field name in the pydantic model
         # and should copy their alias from the pydantic model
         fields_set = original_fields_set.copy()
-        fields_set.update(existing_field_names & model_field_keys)  # Only names present in model_fields
+        fields_set.update(
+            existing_field_names & model_field_keys
+        )  # Only names present in model_fields
 
         # these are the fields that were marked with strawberry.auto and
         # should copy their type from the pydantic model
         # OPTIMIZED: process only those with StrawberryAuto
         auto_fields_set = original_fields_set.copy()
         auto_fields_set.update(
-            {name for name, type_ in existing_fields.items() if isinstance(type_, StrawberryAuto)}
+            {
+                name
+                for name, type_ in existing_fields.items()
+                if isinstance(type_, StrawberryAuto)
+            }
         )
 
         if all_fields:
@@ -202,25 +212,33 @@ def type(
         extra_fields_dict = {field.name: field for field in extra_fields}
 
         # Only keep relevant fields for model_fields once before expensive comprehensions
-        selected_model_fields = [(fname, model_fields[fname]) for fname in fields_set if fname in model_fields]
+        selected_model_fields = [
+            (fname, model_fields[fname])
+            for fname in fields_set
+            if fname in model_fields
+        ]
 
         # OPTIMIZED: Loop-based appends to lists to avoid creating temp lists and to preserve order
         all_model_fields: list[DataclassCreationFields] = []
 
         for field in extra_fields:
             if field.name not in fields_set:
-                all_model_fields.append(DataclassCreationFields(
-                    name=field.name,
-                    field_type=field.type,  # type: ignore
-                    field=field,
-                ))
+                all_model_fields.append(
+                    DataclassCreationFields(
+                        name=field.name,
+                        field_type=field.type,  # type: ignore
+                        field=field,
+                    )
+                )
         for field in private_fields:
             if field.name not in fields_set:
-                all_model_fields.append(DataclassCreationFields(
-                    name=field.name,
-                    field_type=field.type,  # type: ignore
-                    field=field,
-                ))
+                all_model_fields.append(
+                    DataclassCreationFields(
+                        name=field.name,
+                        field_type=field.type,  # type: ignore
+                        field=field,
+                    )
+                )
         for field_name, field in selected_model_fields:
             all_model_fields.append(
                 _build_dataclass_creation_fields(
@@ -247,13 +265,17 @@ def type(
         has_custom_from_pydantic = False
         from_pydantic_fn = getattr(cls, "from_pydantic", None)
         if from_pydantic_fn is not None:
-            if getattr(from_pydantic_fn, "__qualname__", "").endswith(f"{cls.__name__}.from_pydantic"):
+            if getattr(from_pydantic_fn, "__qualname__", "").endswith(
+                f"{cls.__name__}.from_pydantic"
+            ):
                 has_custom_from_pydantic = True
 
         has_custom_to_pydantic = False
         to_pydantic_fn = getattr(cls, "to_pydantic", None)
         if to_pydantic_fn is not None:
-            if getattr(to_pydantic_fn, "__qualname__", "").endswith(f"{cls.__name__}.to_pydantic"):
+            if getattr(to_pydantic_fn, "__qualname__", "").endswith(
+                f"{cls.__name__}.to_pydantic"
+            ):
                 has_custom_to_pydantic = True
 
         if has_custom_from_pydantic:
@@ -286,6 +308,7 @@ def type(
 
         if sys.version_info < (3, 10, 1):
             from strawberry.utils.dataclasses import add_custom_init_fn
+
             add_custom_init_fn(cls)
 
         _process_type(
