@@ -56,7 +56,7 @@ class MaskErrors(SchemaExtension):
 
         if isinstance(result, ExecutionResult):
             self._process_result(result)
-        else:
+        elif result:
             self._process_result(result.initial_result)
 
 

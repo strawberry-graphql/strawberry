@@ -546,7 +546,7 @@ class Schema(BaseSchema):
         if isinstance(result, GraphQLExecutionResult):
             result = ExecutionResult(data=result.data, errors=result.errors)
         result.extensions = await extensions_runner.get_extensions_results(context)
-        context.result = result  # type: ignore  # mypy failed to deduce correct type.
+        context.result = result
         return result
 
     async def execute(

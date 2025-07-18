@@ -1,7 +1,7 @@
 from typing import Union
 
 from graphql.execution import ExecutionContext as GraphQLExecutionContext
-from graphql.execution import ExecutionResult as GraphQLExecutionResult
+from graphql.execution import ExecutionResult as OriginalGraphQLExecutionResult
 from graphql.execution import execute, subscribe
 
 from strawberry.types import ExecutionResult
@@ -25,11 +25,12 @@ try:
     )
 
     GraphQLExecutionResult = Union[
-        GraphQLExecutionResult, InitialIncrementalExecutionResult
+        OriginalGraphQLExecutionResult, InitialIncrementalExecutionResult
     ]
 
 except ImportError:
     GraphQLIncrementalExecutionResults = type(None)
+    GraphQLExecutionResult = OriginalGraphQLExecutionResult  # type: ignore
 
     incremental_execution_directives = ()  # type: ignore
     experimental_execute_incrementally = None
@@ -37,13 +38,14 @@ except ImportError:
 
 # TODO: give this a better name, maybe also a better place
 ResultType = Union[
-    GraphQLExecutionResult,
+    OriginalGraphQLExecutionResult,
     GraphQLIncrementalExecutionResults,
     ExecutionResult,
 ]
 
 __all__ = [
     "GraphQLExecutionContext",
+    "GraphQLExecutionResult",
     "GraphQLIncrementalExecutionResults",
     "ResultType",
     "execute",
