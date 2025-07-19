@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from dataclasses import InitVar, dataclass, field
 from typing import Any, Callable, Optional, TypedDict
-from typing_extensions import Required
 
 from strawberry.types.info import Info
 
@@ -10,7 +9,7 @@ from .name_converter import NameConverter
 
 
 class BatchingConfig(TypedDict):
-    max_operations: Required[int]
+    max_operations: int
 
 
 @dataclass
