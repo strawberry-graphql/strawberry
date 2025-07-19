@@ -298,7 +298,9 @@ class SyncBaseHTTPView(
         if isinstance(result, list):
             response_data = []
             for execution_result in result:
-                processed_result = self.process_result(request=request, result=execution_result)
+                processed_result = self.process_result(
+                    request=request, result=execution_result
+                )
                 if execution_result.errors:
                     self._handle_errors(execution_result.errors, processed_result)
                 response_data.append(processed_result)
