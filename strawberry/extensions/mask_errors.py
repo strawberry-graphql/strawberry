@@ -1,7 +1,8 @@
 from collections.abc import Iterator
-from typing import Callable
+from typing import Any, Callable
 
 from graphql.error import GraphQLError
+from graphql.execution import ExecutionResult
 
 from strawberry.extensions.base_extension import SchemaExtension
 
@@ -33,18 +34,30 @@ class MaskErrors(SchemaExtension):
             original_error=None,
         )
 
+    # TODO: proper typing
+    def _process_result(self, result: Any) -> None:
+        if not result.errors:
+            return
+
+        processed_errors: list[GraphQLError] = []
+
+        for error in result.errors:
+            if self.should_mask_error(error):
+                processed_errors.append(self.anonymise_error(error))
+            else:
+                processed_errors.append(error)
+
+        result.errors = processed_errors
+
     def on_operation(self) -> Iterator[None]:
         yield
-        result = self.execution_context.result
-        if result and result.errors:
-            processed_errors: list[GraphQLError] = []
-            for error in result.errors:
-                if self.should_mask_error(error):
-                    processed_errors.append(self.anonymise_error(error))
-                else:
-                    processed_errors.append(error)
 
-            result.errors = processed_errors
+        result = self.execution_context.result
+
+        if isinstance(result, ExecutionResult):
+            self._process_result(result)
+        elif result:
+            self._process_result(result.initial_result)
 
 
 __all__ = ["MaskErrors"]

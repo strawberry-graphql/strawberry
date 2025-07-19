@@ -1,0 +1,72 @@
+name: 🎭 E2E Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+    paths:
+      - "e2e/**"
+      - ".github/workflows/e2e-tests.yml"
+
+jobs:
+  e2e-tests:
+    name: 🎭 Run E2E Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Install dependencies
+        run: |
+          cd e2e
+          bun install
+
+      - name: Install Playwright browsers
+        run: |
+          cd e2e
+          bunx playwright install --with-deps
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: latest
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+
+      - name: Install Python dependencies
+        run: |
+          poetry install --extras debug-server
+          poetry run pip install graphql-core==3.3.0a9
+
+      - name: Start Strawberry server
+        run: |
+          cd e2e
+          poetry run strawberry server app:schema --port 8000 &
+          echo $! > server.pid
+          sleep 5  # Wait for server to start
+
+      - name: Check if server is running
+        run: |
+          curl -f http://localhost:8000/graphql || (echo "Server is not running" && exit 1)
+          echo "GraphQL server is running successfully"
+
+      - name: Run Playwright tests
+        run: |
+          cd e2e
+          bunx playwright test
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report
+          path: e2e/playwright-report/
+          retention-days: 30

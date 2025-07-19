@@ -16,13 +16,35 @@ All Directives are proceeded by `@` symbol
 
 # Default Operation directives
 
-Strawberry provides two default operation directives:
+Strawberry provides the following default operation directives:
 
 - `@skip(if: Boolean!)` - if Boolean is true, the given item is NOT resolved by
   the GraphQL Server
 
 - `@include(if: Boolean!)` - if Boolean is false, the given item is NOT resolved
   by the GraphQL Server
+
+## Experimental Directives
+
+When
+[experimental incremental execution](./schema-configurations#enable_experimental_incremental_execution)
+is enabled, these additional directives become available:
+
+- `@defer(if: Boolean, label: String)` - Allows fields to be resolved
+  asynchronously and delivered incrementally. The field will be omitted from the
+  initial response and sent in a subsequent payload.
+
+- `@stream(if: Boolean, label: String, initialCount: Int)` - Enables streaming
+  of list fields. The list will be delivered incrementally, with `initialCount`
+  items in the initial response and remaining items in subsequent payloads.
+
+<Note>
+
+These experimental directives require `graphql-core>=3.3.0a9` and must be
+enabled via schema configuration. See [Defer and Stream](./defer-and-stream) for
+detailed usage information.
+
+</Note>
 
 <Note>
 

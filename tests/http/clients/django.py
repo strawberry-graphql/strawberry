@@ -13,10 +13,10 @@ from django.test.client import RequestFactory
 from strawberry.django.views import GraphQLView as BaseGraphQLView
 from strawberry.http import GraphQLHTTPResponse
 from strawberry.http.ides import GraphQL_IDE
-from strawberry.schema.config import StrawberryConfig
+from strawberry.schema import Schema
 from strawberry.types import ExecutionResult
 from tests.http.context import get_context
-from tests.views.schema import Query, get_schema
+from tests.views.schema import Query
 
 from .base import JSON, HttpClient, Response, ResultOverrideFunction
 
@@ -47,15 +47,15 @@ class GraphQLView(BaseGraphQLView[dict[str, object], object]):
 class DjangoHttpClient(HttpClient):
     def __init__(
         self,
+        schema: Schema,
         graphiql: Optional[bool] = None,
         graphql_ide: Optional[GraphQL_IDE] = "graphiql",
         allow_queries_via_get: bool = True,
         result_override: ResultOverrideFunction = None,
         multipart_uploads_enabled: bool = False,
-        schema_config: Optional[StrawberryConfig] = None,
     ):
         self.view = GraphQLView.as_view(
-            schema=get_schema(schema_config),
+            schema=schema,
             graphiql=graphiql,
             graphql_ide=graphql_ide,
             allow_queries_via_get=allow_queries_via_get,

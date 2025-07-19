@@ -3,7 +3,7 @@ from typing import Any
 from litestar import Litestar, Request
 from litestar.di import Provide
 from strawberry.litestar import make_graphql_controller
-from tests.views.schema import get_schema
+from tests.views.schema import schema
 
 
 def custom_context_dependency() -> str:
@@ -18,7 +18,7 @@ async def get_context(app_dependency: str, request: Request = None):
     return {"custom_value": app_dependency, "request": request}
 
 
-def create_app(schema=get_schema(), **kwargs: Any):
+def create_app(schema=schema, **kwargs: Any):
     GraphQLController = make_graphql_controller(
         schema,
         path="/graphql",

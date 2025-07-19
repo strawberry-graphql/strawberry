@@ -14,7 +14,7 @@ from strawberry.subscriptions.protocols.graphql_transport_ws.types import (
     NextMessage,
     SubscribeMessage,
 )
-from tests.views.schema import get_schema
+from tests.views.schema import schema
 
 if TYPE_CHECKING:
     from channels.testing import WebsocketCommunicator
@@ -26,7 +26,7 @@ async def ws() -> AsyncGenerator[WebsocketCommunicator, None]:
     from strawberry.channels import GraphQLWSConsumer
 
     client = WebsocketCommunicator(
-        GraphQLWSConsumer.as_asgi(schema=get_schema()),
+        GraphQLWSConsumer.as_asgi(schema=schema),
         "/graphql",
         subprotocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL],
     )

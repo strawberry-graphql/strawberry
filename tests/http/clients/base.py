@@ -12,7 +12,7 @@ from typing_extensions import Literal
 
 from strawberry.http import GraphQLHTTPResponse
 from strawberry.http.ides import GraphQL_IDE
-from strawberry.schema.config import StrawberryConfig
+from strawberry.schema import Schema
 from strawberry.subscriptions.protocols.graphql_transport_ws.handlers import (
     BaseGraphQLTransportWSHandler,
 )
@@ -99,6 +99,7 @@ class HttpClient(abc.ABC):
     @abc.abstractmethod
     def __init__(
         self,
+        schema: Schema,
         graphiql: Optional[bool] = None,
         graphql_ide: Optional[GraphQL_IDE] = "graphiql",
         allow_queries_via_get: bool = True,
@@ -109,7 +110,6 @@ class HttpClient(abc.ABC):
         connection_init_wait_timeout: timedelta = timedelta(minutes=1),
         result_override: ResultOverrideFunction = None,
         multipart_uploads_enabled: bool = False,
-        schema_config: Optional[StrawberryConfig] = None,
     ): ...
 
     @abc.abstractmethod

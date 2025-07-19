@@ -2,7 +2,7 @@ from unittest import mock
 
 import pytest
 
-from tests.views.schema import get_schema
+from tests.views.schema import schema
 
 
 def _fake_asgi():
@@ -21,7 +21,7 @@ def test_included_paths(ws_asgi: mock.Mock, http_asgi: mock.Mock, pattern: str):
     ws_ret = _fake_asgi()
     ws_asgi.return_value = ws_ret
 
-    router = GraphQLProtocolTypeRouter(get_schema(), url_pattern=pattern)
+    router = GraphQLProtocolTypeRouter(schema, url_pattern=pattern)
     assert set(router.application_mapping) == {"http", "websocket"}
 
     assert len(router.application_mapping["http"].routes) == 1
@@ -53,7 +53,7 @@ def test_included_paths_with_django_app(
 
     django_app = _fake_asgi()
     router = GraphQLProtocolTypeRouter(
-        get_schema(),
+        schema,
         django_application=django_app,
         url_pattern=pattern,
     )

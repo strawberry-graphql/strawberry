@@ -1,11 +1,18 @@
+import strawberry
 from strawberry.schema.config import StrawberryConfig
-
-from .clients.base import HttpClient
+from tests.http.clients.base import HttpClient
+from tests.views.schema import Mutation, MyExtension, Query, Subscription
 
 
 async def test_batch_graphql_query(http_client_class: type[HttpClient]):
     http_client = http_client_class(
-        schema_config=StrawberryConfig(batching_config={"max_operations": 10})
+        schema=strawberry.Schema(
+            query=Query,
+            mutation=Mutation,
+            subscription=Subscription,
+            extensions=[MyExtension],
+            config=StrawberryConfig(batching_config={"max_operations": 10}),
+        )
     )
 
     response = await http_client.post(
@@ -28,7 +35,13 @@ async def test_returns_error_when_batching_is_disabled(
     http_client_class: type[HttpClient],
 ):
     http_client = http_client_class(
-        schema_config=StrawberryConfig(batching_config=None)
+        schema=strawberry.Schema(
+            query=Query,
+            mutation=Mutation,
+            subscription=Subscription,
+            extensions=[MyExtension],
+            config=StrawberryConfig(batching_config=None),
+        )
     )
 
     response = await http_client.post(
@@ -48,11 +61,12 @@ async def test_returns_error_when_trying_too_many_operations(
     http_client_class: type[HttpClient],
 ):
     http_client = http_client_class(
-        schema_config=StrawberryConfig(
-            batching_config={
-                "enabled": True,
-                "max_operations": 2,
-            }
+        schema=strawberry.Schema(
+            query=Query,
+            mutation=Mutation,
+            subscription=Subscription,
+            extensions=[MyExtension],
+            config=StrawberryConfig(batching_config={"max_operations": 2}),
         )
     )
 

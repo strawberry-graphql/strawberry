@@ -1,8 +1,10 @@
+from tests.views.schema import schema
+
 from .clients.base import HttpClient
 
 
 async def test_sending_get_with_content_type_passes(http_client_class):
-    http_client = http_client_class()
+    http_client = http_client_class(schema)
 
     response = await http_client.query(
         method="get",
@@ -18,7 +20,7 @@ async def test_sending_get_with_content_type_passes(http_client_class):
 
 
 async def test_sending_empty_query(http_client_class):
-    http_client = http_client_class()
+    http_client = http_client_class(schema)
 
     response = await http_client.query(
         method="get", query="", variables={"fake": "variable"}
@@ -36,7 +38,7 @@ async def test_does_not_allow_mutation(http_client: HttpClient):
 
 
 async def test_fails_if_allow_queries_via_get_false(http_client_class):
-    http_client = http_client_class(allow_queries_via_get=False)
+    http_client = http_client_class(schema, allow_queries_via_get=False)
 
     response = await http_client.query(method="get", query="{ hello }")
 

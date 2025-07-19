@@ -1,6 +1,79 @@
 CHANGELOG
 =========
 
+0.277.0 - 2025-07-18
+--------------------
+
+This release adds experimental support for GraphQL's `@defer` and `@stream` directives, enabling incremental delivery of response data.
+
+Note: this only works when using Strawberry with `graphql-core>=3.3.0a9`.
+
+## Features
+
+- **`@defer` directive**: Allows fields to be resolved asynchronously and delivered incrementally
+- **`@stream` directive**: Enables streaming of list fields using the new `strawberry.Streamable` type
+- **`strawberry.Streamable[T]`**: A new generic type for defining streamable fields that work with `@stream`
+
+## Configuration
+
+To enable these experimental features, configure your schema with:
+
+```python
+from strawberry.schema.config import StrawberryConfig
+
+schema = strawberry.Schema(
+    query=Query, config=StrawberryConfig(enable_experimental_incremental_execution=True)
+)
+```
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #3819](https://github.com/strawberry-graphql/strawberry/pull/3819/)
+
+
+0.276.2 - 2025-07-18
+--------------------
+
+This release renames the `ExecutionContext.errors` attribute to `ExecutionContext.pre_execution_errors` to better reflect its purpose. The old `errors` attribute is now deprecated but still available for backward compatibility.
+
+The `pre_execution_errors` attribute specifically stores errors that occur during the pre-execution phase (parsing and validation), making the distinction clearer from errors that might occur during the actual execution phase.
+
+For backward compatibility, accessing `ExecutionContext.errors` will now emit a deprecation warning and return the value of `pre_execution_errors`.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #3947](https://github.com/strawberry-graphql/strawberry/pull/3947/)
+
+
+0.276.1 - 2025-07-18
+--------------------
+
+This release fixes an issue where `DuplicatedTypeName` exception would be raised
+for nested generics like in the example below:
+
+```python
+from typing import Generic, TypeVar
+
+import strawberry
+
+T = TypeVar("T")
+
+
+@strawberry.type
+class Wrapper(Generic[T]):
+    value: T
+
+
+@strawberry.type
+class Query:
+    a: Wrapper[Wrapper[int]]
+    b: Wrapper[Wrapper[int]]
+
+
+schema = strawberry.Schema(query=Query)
+```
+
+This piece of code and similar ones will now work correctly.
+
+Contributed by [Thiago Bellini Ribeiro](https://github.com/bellini666) via [PR #3946](https://github.com/strawberry-graphql/strawberry/pull/3946/)
+
+
 0.276.0 - 2025-07-14
 --------------------
 

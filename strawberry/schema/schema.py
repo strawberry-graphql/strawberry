@@ -15,7 +15,6 @@ from typing import (
     cast,
 )
 
-from graphql import ExecutionContext as GraphQLExecutionContext
 from graphql import ExecutionResult as GraphQLExecutionResult
 from graphql import (
     ExecutionResult as OriginalExecutionResult,
@@ -36,7 +35,6 @@ from graphql import (
     parse,
     validate_schema,
 )
-from graphql.execution import execute, subscribe
 from graphql.execution.middleware import MiddlewareManager
 from graphql.type.directives import specified_directives
 from graphql.validation import validate
@@ -69,6 +67,15 @@ from strawberry.utils.aio import aclosing
 from strawberry.utils.await_maybe import await_maybe
 
 from . import compat
+from ._graphql_core import (
+    GraphQLExecutionContext,
+    GraphQLIncrementalExecutionResults,
+    ResultType,
+    execute,
+    experimental_execute_incrementally,
+    incremental_execution_directives,
+    subscribe,
+)
 from .base import BaseSchema
 from .config import StrawberryConfig
 from .exceptions import CannotGetOperationTypeError, InvalidOperationTypeError
@@ -77,7 +84,6 @@ if TYPE_CHECKING:
     from collections.abc import Iterable, Mapping
     from typing_extensions import TypeAlias
 
-    from graphql.execution.collect_fields import FieldGroup  # type: ignore
     from graphql.language import DocumentNode
     from graphql.pyutils import Path
     from graphql.type import GraphQLResolveInfo
@@ -98,6 +104,7 @@ OriginSubscriptionResult = Union[
     OriginalExecutionResult,
     AsyncIterator[OriginalExecutionResult],
 ]
+
 
 DEFAULT_ALLOWED_OPERATION_TYPES = {
     OperationType.QUERY,
@@ -129,9 +136,12 @@ def validate_document(
 def _run_validation(execution_context: ExecutionContext) -> None:
     # Check if there are any validation rules or if validation has
     # already been run by an extension
-    if len(execution_context.validation_rules) > 0 and execution_context.errors is None:
+    if (
+        len(execution_context.validation_rules) > 0
+        and execution_context.pre_execution_errors is None
+    ):
         assert execution_context.graphql_document
-        execution_context.errors = validate_document(
+        execution_context.pre_execution_errors = validate_document(
             execution_context.schema._schema,
             execution_context.graphql_document,
             execution_context.validation_rules,
@@ -168,17 +178,18 @@ class StrawberryGraphQLCoreExecutionContext(GraphQLExecutionContext):
 
         self.operation_extensions = operation_extensions
 
-    def build_resolve_info(
-        self,
-        field_def: GraphQLField,
-        field_group: FieldGroup,
-        parent_type: GraphQLObjectType,
-        path: Path,
-    ) -> GraphQLResolveInfo:
-        if IS_GQL_33:
+    if IS_GQL_33:
+
+        def build_resolve_info(
+            self,
+            field_def: GraphQLField,
+            field_nodes: list[FieldNode],
+            parent_type: GraphQLObjectType,
+            path: Path,
+        ) -> GraphQLResolveInfo:
             return _OperationContextAwareGraphQLResolveInfo(  # type: ignore
-                field_group.fields[0].node.name.value,
-                field_group.to_nodes(),
+                field_nodes[0].name.value,
+                field_nodes,
                 field_def.type,
                 parent_type,
                 path,
@@ -191,13 +202,6 @@ class StrawberryGraphQLCoreExecutionContext(GraphQLExecutionContext):
                 self.is_awaitable,
                 self.operation_extensions,
             )
-
-        return super().build_resolve_info(
-            field_def,
-            field_group,
-            parent_type,
-            path,
-        )
 
 
 class Schema(BaseSchema):
@@ -321,11 +325,16 @@ class Schema(BaseSchema):
                 graphql_types.append(graphql_type)
 
         try:
+            directives = specified_directives + tuple(graphql_directives)  # type: ignore
+
+            if self.config.enable_experimental_incremental_execution:
+                directives = tuple(directives) + tuple(incremental_execution_directives)
+
             self._schema = GraphQLSchema(
                 query=query_type,
                 mutation=mutation_type,
                 subscription=subscription_type if subscription else None,
-                directives=specified_directives + tuple(graphql_directives),
+                directives=directives,  # type: ignore
                 types=graphql_types,
                 extensions={
                     GraphQLCoreConverter.DEFINITION_BACKREF: self,
@@ -489,12 +498,12 @@ class Schema(BaseSchema):
                     context.graphql_document = parse(context.query)
 
             except GraphQLError as error:
-                context.errors = [error]
+                context.pre_execution_errors = [error]
                 return PreExecutionError(data=None, errors=[error])
 
             except Exception as error:  # noqa: BLE001
                 error = GraphQLError(str(error), original_error=error)
-                context.errors = [error]
+                context.pre_execution_errors = [error]
                 return PreExecutionError(data=None, errors=[error])
 
         try:
@@ -507,10 +516,10 @@ class Schema(BaseSchema):
 
         async with extensions_runner.validation():
             _run_validation(context)
-            if context.errors:
+            if context.pre_execution_errors:
                 return PreExecutionError(
                     data=None,
-                    errors=context.errors,
+                    errors=context.pre_execution_errors,
                 )
 
         return None
@@ -518,22 +527,26 @@ class Schema(BaseSchema):
     async def _handle_execution_result(
         self,
         context: ExecutionContext,
-        result: Union[GraphQLExecutionResult, ExecutionResult],
+        result: ResultType,
         extensions_runner: SchemaExtensionsRunner,
         *,
         # TODO: can we remove this somehow, see comment in execute
         skip_process_errors: bool = False,
     ) -> ExecutionResult:
+        # TODO: handle this, also, why do we have both GraphQLExecutionResult and ExecutionResult?
+        if isinstance(result, GraphQLIncrementalExecutionResults):
+            return result
+
         # Set errors on the context so that it's easier
         # to access in extensions
         if result.errors:
-            context.errors = result.errors
+            context.pre_execution_errors = result.errors
             if not skip_process_errors:
                 self._process_errors(result.errors, context)
         if isinstance(result, GraphQLExecutionResult):
             result = ExecutionResult(data=result.data, errors=result.errors)
         result.extensions = await extensions_runner.get_extensions_results(context)
-        context.result = result  # type: ignore  # mypy failed to deduce correct type.
+        context.result = result
         return result
 
     async def execute(
@@ -566,6 +579,17 @@ class Schema(BaseSchema):
         extensions_runner = self.create_extensions_runner(execution_context, extensions)
         middleware_manager = self._get_middleware_manager(extensions)
 
+        execute_function = execute
+
+        if self.config.enable_experimental_incremental_execution:
+            execute_function = experimental_execute_incrementally
+
+            if execute_function is None:
+                raise RuntimeError(
+                    "Incremental execution is enabled but experimental_execute_incrementally is not available, "
+                    "please install graphql-core>=3.3.0"
+                )
+
         custom_context_kwargs = self._get_custom_context_kwargs(operation_extensions)
 
         try:
@@ -586,7 +610,7 @@ class Schema(BaseSchema):
                 async with extensions_runner.executing():
                     if not execution_context.result:
                         result = await await_maybe(
-                            execute(
+                            execute_function(
                                 self._schema,
                                 execution_context.graphql_document,
                                 root_value=execution_context.root_value,
@@ -603,8 +627,10 @@ class Schema(BaseSchema):
                         result = execution_context.result
                     # Also set errors on the execution_context so that it's easier
                     # to access in extensions
-                    if result.errors:
-                        execution_context.errors = result.errors
+
+                    # TODO: maybe here use the first result from incremental execution if it exists
+                    if isinstance(result, GraphQLExecutionResult) and result.errors:
+                        execution_context.pre_execution_errors = result.errors
 
                         # Run the `Schema.process_errors` function here before
                         # extensions have a chance to modify them (see the MaskErrors
@@ -659,6 +685,16 @@ class Schema(BaseSchema):
         extensions_runner = self.create_extensions_runner(execution_context, extensions)
         middleware_manager = self._get_middleware_manager(extensions)
 
+        execute_function = execute
+
+        if self.config.enable_experimental_incremental_execution:
+            execute_function = experimental_execute_incrementally
+
+            if execute_function is None:
+                raise RuntimeError(
+                    "Incremental execution is enabled but experimental_execute_incrementally is not available, "
+                    "please install graphql-core>=3.3.0"
+                )
         custom_context_kwargs = self._get_custom_context_kwargs(operation_extensions)
 
         try:
@@ -677,7 +713,7 @@ class Schema(BaseSchema):
                             )
 
                     except GraphQLError as error:
-                        execution_context.errors = [error]
+                        execution_context.pre_execution_errors = [error]
                         self._process_errors([error], execution_context)
                         return ExecutionResult(
                             data=None,
@@ -697,19 +733,19 @@ class Schema(BaseSchema):
 
                 with extensions_runner.validation():
                     _run_validation(execution_context)
-                    if execution_context.errors:
+                    if execution_context.pre_execution_errors:
                         self._process_errors(
-                            execution_context.errors, execution_context
+                            execution_context.pre_execution_errors, execution_context
                         )
                         return ExecutionResult(
                             data=None,
-                            errors=execution_context.errors,
+                            errors=execution_context.pre_execution_errors,
                             extensions=extensions_runner.get_extensions_results_sync(),
                         )
 
                 with extensions_runner.executing():
                     if not execution_context.result:
-                        result = execute(
+                        result = execute_function(
                             self._schema,
                             execution_context.graphql_document,
                             root_value=execution_context.root_value,
@@ -733,7 +769,7 @@ class Schema(BaseSchema):
                         # Also set errors on the context so that it's easier
                         # to access in extensions
                         if result.errors:
-                            execution_context.errors = result.errors
+                            execution_context.pre_execution_errors = result.errors
 
                             # Run the `Schema.process_errors` function here before
                             # extensions have a chance to modify them (see the MaskErrors
@@ -748,7 +784,7 @@ class Schema(BaseSchema):
             raise
         except Exception as exc:  # noqa: BLE001
             errors = [_coerce_error(exc)]
-            execution_context.errors = errors
+            execution_context.pre_execution_errors = errors
             self._process_errors(errors, execution_context)
             return ExecutionResult(
                 data=None,

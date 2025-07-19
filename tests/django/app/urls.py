@@ -1,7 +1,7 @@
 from django.urls import path
 
 from strawberry.django.views import GraphQLView as BaseGraphQLView
-from tests.views.schema import Query, get_schema
+from tests.views.schema import Query, schema
 
 
 class GraphQLView(BaseGraphQLView):
@@ -10,5 +10,5 @@ class GraphQLView(BaseGraphQLView):
 
 
 urlpatterns = [
-    path("graphql/", GraphQLView.as_view(schema=get_schema())),
+    path("graphql/", GraphQLView.as_view(schema=schema)),
 ]

@@ -5,6 +5,7 @@ from enum import Enum
 from typing import Any, Optional, Union
 
 from graphql import GraphQLError
+from graphql.version import VersionInfo, version_info
 
 import strawberry
 from strawberry.extensions import SchemaExtension
@@ -70,6 +71,19 @@ class DebugInfo:
 
 
 @strawberry.type
+class Hero:
+    id: strawberry.ID
+
+    @strawberry.field
+    @staticmethod
+    def name(fail: bool = False) -> str:
+        if fail:
+            raise ValueError("Failed to get name")
+
+        return "Thiago Bellini"
+
+
+@strawberry.type
 class Query:
     @strawberry.field
     def greetings(self) -> str:
@@ -95,6 +109,10 @@ class Query:
     @strawberry.field
     async def exception(self, message: str) -> str:
         raise ValueError(message)
+
+    @strawberry.field
+    async def some_error(self) -> Optional[str]:
+        raise ValueError("Some error")
 
     @strawberry.field
     def teapot(self, info: strawberry.Info[Any, None]) -> str:
@@ -130,6 +148,16 @@ class Query:
         response.headers["X-Name"] = name
 
         return name
+
+    @strawberry.field
+    def character(self) -> Hero:
+        return Hero(id=strawberry.ID("1"))
+
+    @strawberry.field
+    async def streamable_field(self) -> strawberry.Streamable[str]:
+        for i in range(2):
+            yield f"Hello {i}"
+            await asyncio.sleep(0.1)
 
 
 @strawberry.type
@@ -293,11 +321,14 @@ class Schema(strawberry.Schema):
         return super().process_errors(errors, execution_context)
 
 
-def get_schema(config: Optional[StrawberryConfig] = None) -> strawberry.Schema:
-    return Schema(
-        query=Query,
-        mutation=Mutation,
-        subscription=Subscription,
-        extensions=[MyExtension],
-        config=config,
-    )
+schema = Schema(
+    query=Query,
+    mutation=Mutation,
+    subscription=Subscription,
+    extensions=[MyExtension],
+    config=StrawberryConfig(
+        enable_experimental_incremental_execution=(
+            version_info >= VersionInfo.from_str("3.3.0a0")
+        )
+    ),
+)

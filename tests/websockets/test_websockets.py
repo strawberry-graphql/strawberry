@@ -4,11 +4,12 @@ from strawberry.subscriptions.protocols.graphql_transport_ws.types import (
     ConnectionAckMessage,
 )
 from tests.http.clients.base import HttpClient
+from tests.views.schema import schema
 
 
 async def test_turning_off_graphql_ws(http_client_class: type[HttpClient]):
     http_client = http_client_class(
-        subscription_protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL]
+        schema, subscription_protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL]
     )
 
     async with http_client.ws_connect(
@@ -21,7 +22,9 @@ async def test_turning_off_graphql_ws(http_client_class: type[HttpClient]):
 
 
 async def test_turning_off_graphql_transport_ws(http_client_class: type[HttpClient]):
-    http_client = http_client_class(subscription_protocols=[GRAPHQL_WS_PROTOCOL])
+    http_client = http_client_class(
+        schema, subscription_protocols=[GRAPHQL_WS_PROTOCOL]
+    )
 
     async with http_client.ws_connect(
         "/graphql", protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL]
@@ -33,7 +36,7 @@ async def test_turning_off_graphql_transport_ws(http_client_class: type[HttpClie
 
 
 async def test_turning_off_all_subprotocols(http_client_class: type[HttpClient]):
-    http_client = http_client_class(subscription_protocols=[])
+    http_client = http_client_class(schema, subscription_protocols=[])
 
     async with http_client.ws_connect(
         "/graphql", protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL]
@@ -64,7 +67,8 @@ async def test_generally_unsupported_subprotocols_are_rejected(http_client: Http
 
 async def test_clients_can_prefer_subprotocols(http_client_class: type[HttpClient]):
     http_client = http_client_class(
-        subscription_protocols=[GRAPHQL_WS_PROTOCOL, GRAPHQL_TRANSPORT_WS_PROTOCOL]
+        schema,
+        subscription_protocols=[GRAPHQL_WS_PROTOCOL, GRAPHQL_TRANSPORT_WS_PROTOCOL],
     )
 
     async with http_client.ws_connect(
