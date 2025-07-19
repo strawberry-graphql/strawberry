@@ -61,6 +61,7 @@ title: Strawberry docs
 - [Tools](./guides/tools.md)
 - [Schema export](./guides/schema-export.md)
 - [Convert to dictionary](./guides/convert-to-dictionary.md)
+- [Query Batching](./guides/query-batching.md)
 
 ## Extensions
 

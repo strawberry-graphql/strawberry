@@ -1,11 +1,15 @@
 from __future__ import annotations
 
 from dataclasses import InitVar, dataclass, field
-from typing import Any, Callable
+from typing import Any, Callable, Optional, TypedDict
 
 from strawberry.types.info import Info
 
 from .name_converter import NameConverter
+
+
+class BatchingConfig(TypedDict):
+    max_operations: int
 
 
 @dataclass
@@ -19,6 +23,7 @@ class StrawberryConfig:
     info_class: type[Info] = Info
     enable_experimental_incremental_execution: bool = False
     _unsafe_disable_same_type_validation: bool = False
+    batching_config: Optional[BatchingConfig] = None
 
     def __post_init__(
         self,

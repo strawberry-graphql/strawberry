@@ -169,8 +169,8 @@ class DjangoHttpClient(HttpClient):
         json: Optional[JSON] = None,
         headers: Optional[dict[str, str]] = None,
     ) -> Response:
-        django_headers = self._to_django_headers(headers or {})
-        content_type = django_headers.pop("HTTP_CONTENT_TYPE", "")
+        headers = headers or {}
+        content_type = headers.pop("Content-Type", "")
 
         body = dumps(json) if json is not None else data
 
@@ -179,7 +179,7 @@ class DjangoHttpClient(HttpClient):
             url,
             data=body,
             content_type=content_type,
-            headers=django_headers,
+            headers=headers,
         )
 
         return await self._do_request(request)

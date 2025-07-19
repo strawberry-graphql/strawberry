@@ -25,7 +25,7 @@ from strawberry.types import ExecutionResult
 
 logger = logging.getLogger("strawberry.test.http_client")
 
-JSON = dict[str, object]
+JSON = Union[dict[str, "JSON"], list["JSON"], str, int, float, bool, None]
 ResultOverrideFunction = Optional[Callable[[ExecutionResult], GraphQLHTTPResponse]]
 
 

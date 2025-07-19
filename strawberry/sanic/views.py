@@ -7,6 +7,7 @@ from typing import (
     Any,
     Callable,
     Optional,
+    Union,
     cast,
 )
 from typing_extensions import TypeGuard
@@ -158,7 +159,9 @@ class GraphQLView(
         return TemporalResponse()
 
     def create_response(
-        self, response_data: GraphQLHTTPResponse, sub_response: TemporalResponse
+        self,
+        response_data: Union[GraphQLHTTPResponse, list[GraphQLHTTPResponse]],
+        sub_response: TemporalResponse,
     ) -> HTTPResponse:
         status_code = sub_response.status_code
 

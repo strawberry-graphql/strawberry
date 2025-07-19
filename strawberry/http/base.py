@@ -3,8 +3,10 @@ from collections.abc import Mapping
 from typing import Any, Generic, Optional, Union
 from typing_extensions import Protocol
 
+from strawberry.http import GraphQLRequestData
 from strawberry.http.ides import GraphQL_IDE, get_graphql_ide_html
 from strawberry.http.types import HTTPMethod, QueryParams
+from strawberry.schema.base import BaseSchema
 
 from .exceptions import HTTPException
 from .typevars import Request
@@ -24,6 +26,7 @@ class BaseRequestProtocol(Protocol):
 class BaseView(Generic[Request]):
     graphql_ide: Optional[GraphQL_IDE]
     multipart_uploads_enabled: bool = False
+    schema: BaseSchema
 
     def should_render_graphql_ide(self, request: BaseRequestProtocol) -> bool:
         return (
@@ -81,6 +84,20 @@ class BaseView(Generic[Request]):
             return False
 
         return params.get("subscriptionspec", "").startswith("1.0")
+
+    def _validate_batch_request(
+        self, request_data: list[GraphQLRequestData], protocol: str
+    ) -> None:
+        if self.schema.config.batching_config is None:
+            raise HTTPException(400, "Batching is not enabled")
+
+        if protocol == "multipart-subscription":
+            raise HTTPException(
+                400, "Batching is not supported for multipart subscriptions"
+            )
+
+        if len(request_data) > self.schema.config.batching_config["max_operations"]:
+            raise HTTPException(400, "Too many operations")
 
 
 __all__ = ["BaseView"]

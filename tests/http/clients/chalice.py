@@ -14,6 +14,7 @@ from strawberry.chalice.views import GraphQLView as BaseGraphQLView
 from strawberry.http import GraphQLHTTPResponse
 from strawberry.http.ides import GraphQL_IDE
 from strawberry.http.temporal_response import TemporalResponse
+from strawberry.schema.config import StrawberryConfig
 from strawberry.types import ExecutionResult
 from tests.http.context import get_context
 from tests.views.schema import Query
@@ -53,6 +54,7 @@ class ChaliceHttpClient(HttpClient):
         allow_queries_via_get: bool = True,
         result_override: ResultOverrideFunction = None,
         multipart_uploads_enabled: bool = False,
+        schema_config: Optional[StrawberryConfig] = None,
     ):
         self.app = Chalice(app_name="TheStackBadger")
 
