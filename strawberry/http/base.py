@@ -96,9 +96,7 @@ class BaseView(Generic[Request]):
                 400, "Batching is not supported for multipart subscriptions"
             )
 
-        if len(request_data) > self.schema.config.batching_config.get(
-            "max_operations", 3
-        ):
+        if len(request_data) > self.schema.config.batching_config["max_operations"]:
             raise HTTPException(400, "Too many operations")
 
 
