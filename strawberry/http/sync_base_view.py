@@ -5,6 +5,7 @@ from typing import (
     Any,
     Callable,
     Generic,
+    Literal,
     Optional,
     Union,
 )
@@ -196,7 +197,7 @@ class SyncBaseHTTPView(
         content_type, params = parse_content_type(request.content_type or "")
         accept = headers.get("accept", "")
 
-        protocol = (
+        protocol: Literal["http", "multipart-subscription"] = (
             "multipart-subscription"
             if self._is_multipart_subscriptions(*parse_content_type(accept))
             else "http"

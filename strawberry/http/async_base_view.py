@@ -8,6 +8,7 @@ from typing import (
     Any,
     Callable,
     Generic,
+    Literal,
     Optional,
     Union,
     cast,
@@ -649,7 +650,7 @@ class AsyncBaseHTTPView(
         content_type, _ = parse_content_type(request.content_type or "")
         accept = headers.get("accept", "")
 
-        protocol = (
+        protocol: Literal["http", "multipart-subscription"] = (
             "multipart-subscription"
             if self._is_multipart_subscriptions(*parse_content_type(accept))
             else "http"
