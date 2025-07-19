@@ -110,10 +110,8 @@ http://127.0.0.1:8000/graphql
 If batching is not enabled in the server configuration and a batch request is
 sent, the server will respond with a 400 status code and an error message:
 
-```json
-{
-  "error": "Batching is not enabled"
-}
+```text
+Batching is not enabled
 ```
 
 #### Too Many Operations
@@ -121,10 +119,8 @@ sent, the server will respond with a 400 status code and an error message:
 If the number of operations in a batch exceeds the `max_operations` limit, the
 server will return a 400 status code and an error message:
 
-```json
-{
-  "error": "Too many operations"
-}
+```text
+Too many operations
 ```
 
 ### Limitations
