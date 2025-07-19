@@ -293,13 +293,15 @@ class SyncBaseHTTPView(
             sub_response=sub_response,
         )
 
+        response_data: Union[GraphQLHTTPResponse, list[GraphQLHTTPResponse]]
+
         if isinstance(result, list):
             response_data = []
             for execution_result in result:
-                result = self.process_result(request=request, result=execution_result)
+                processed_result = self.process_result(request=request, result=execution_result)
                 if execution_result.errors:
-                    self._handle_errors(execution_result.errors, result)
-                response_data.append(result)
+                    self._handle_errors(execution_result.errors, processed_result)
+                response_data.append(processed_result)
         else:
             response_data = self.process_result(request=request, result=result)
 
