@@ -3,7 +3,7 @@ Release type: minor
 ## Add GraphQL Query batching support
 
 GraphQL query batching is now supported across all frameworks (sync and async)
-To enable query batching, set `batching_config.enabled` to True in the schema configuration.
+To enable query batching, add a valid `batching_config` to the schema configuration.
 
 This makes your GraphQL API compatible with batching features supported by various
 client side libraries, such as [Apollo GraphQL](https://www.apollographql.com/docs/react/api/link/apollo-link-batch-http) and [Relay](https://github.com/relay-tools/react-relay-network-modern?tab=readme-ov-file#batching-several-requests-into-one).
@@ -26,7 +26,7 @@ class Query:
 
 
 schema = strawberry.Schema(
-    Query, config=StrawberryConfig(batching_config={"enabled": True})
+    Query, config=StrawberryConfig(batching_config={"max_operations": 10})
 )
 
 graphql_app = GraphQLRouter(schema)
@@ -53,7 +53,7 @@ class Query:
 
 
 schema = strawberry.Schema(
-    Query, config=StrawberryConfig(batching_config={"enabled": True})
+    Query, config=StrawberryConfig(batching_config={"max_operations": 10})
 )
 
 app.add_url_rule(

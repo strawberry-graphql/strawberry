@@ -37,9 +37,3 @@ def test_config_post_init_info_class_is_not_subclass():
         StrawberryConfig(info_class=object)
 
     assert str(exc_info.value) == "`info_class` must be a subclass of strawberry.Info"
-
-
-def test_config_post_init_batching_config():
-    config = StrawberryConfig(batching_config=None)
-
-    assert isinstance(config.batching_config, dict)

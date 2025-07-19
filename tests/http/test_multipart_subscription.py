@@ -120,7 +120,6 @@ async def test_returns_error_when_trying_to_use_batching_with_multipart_subscrip
     http_client = http_client_class(
         schema_config=StrawberryConfig(
             batching_config={
-                "enabled": True,
                 "max_operations": 10,
             }
         )

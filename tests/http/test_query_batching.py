@@ -5,7 +5,7 @@ from .clients.base import HttpClient
 
 async def test_batch_graphql_query(http_client_class: type[HttpClient]):
     http_client = http_client_class(
-        schema_config=StrawberryConfig(batching_config={"enabled": True})
+        schema_config=StrawberryConfig(batching_config={"max_operations": 10})
     )
 
     response = await http_client.post(
@@ -28,7 +28,7 @@ async def test_returns_error_when_batching_is_disabled(
     http_client_class: type[HttpClient],
 ):
     http_client = http_client_class(
-        schema_config=StrawberryConfig(batching_config={"enabled": False})
+        schema_config=StrawberryConfig(batching_config=None)
     )
 
     response = await http_client.post(
