@@ -125,8 +125,10 @@ class Query:
         return type(self).__name__
 
     @strawberry.field
-    def value_from_context(self, info: strawberry.Info) -> str:
-        return info.context["custom_value"]
+    def value_from_context(
+        self, info: strawberry.Info, key: str = "custom_value"
+    ) -> str:
+        return info.context[key]
 
     @strawberry.field
     def value_from_extensions(self, info: strawberry.Info, key: str) -> str:
@@ -186,6 +188,11 @@ class Mutation:
     def match_text(self, text_file: Upload, pattern: str) -> str:
         text = text_file.read().decode()
         return pattern if pattern in text else ""
+
+    @strawberry.mutation
+    def update_context(self, info: strawberry.Info, key: str, value: str) -> bool:
+        info.context[key] = value
+        return True
 
 
 @strawberry.type
