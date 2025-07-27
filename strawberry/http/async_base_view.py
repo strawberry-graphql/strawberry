@@ -113,7 +113,6 @@ class AsyncBaseHTTPView(
 ):
     schema: BaseSchema
     graphql_ide: Optional[GraphQL_IDE]
-    debug: bool
     keep_alive = False
     keep_alive_interval: Optional[float] = None
     connection_init_wait_timeout: timedelta = timedelta(minutes=1)
@@ -351,7 +350,6 @@ class AsyncBaseHTTPView(
                     context=context,
                     root_value=root_value,
                     schema=self.schema,
-                    debug=self.debug,
                     connection_init_wait_timeout=self.connection_init_wait_timeout,
                 ).handle()
             elif websocket_subprotocol == GRAPHQL_WS_PROTOCOL:
@@ -361,7 +359,6 @@ class AsyncBaseHTTPView(
                     context=context,
                     root_value=root_value,
                     schema=self.schema,
-                    debug=self.debug,
                     keep_alive=self.keep_alive,
                     keep_alive_interval=self.keep_alive_interval,
                 ).handle()

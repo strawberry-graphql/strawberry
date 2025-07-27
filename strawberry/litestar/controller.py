@@ -251,7 +251,6 @@ class GraphQLController(
     allow_queries_via_get: bool = True
     graphiql_allowed_accept: frozenset[str] = frozenset({"text/html", "*/*"})
     graphql_ide: Optional[GraphQL_IDE] = "graphiql"
-    debug: bool = False
     connection_init_wait_timeout: timedelta = timedelta(minutes=1)
     protocols: Sequence[str] = (
         GRAPHQL_TRANSPORT_WS_PROTOCOL,
@@ -408,7 +407,6 @@ def make_graphql_controller(
     allow_queries_via_get: bool = True,
     keep_alive: bool = False,
     keep_alive_interval: float = 1,
-    debug: bool = False,
     # TODO: root typevar
     root_value_getter: Optional[AnyCallable] = None,
     # TODO: context typevar
@@ -458,7 +456,6 @@ def make_graphql_controller(
 
     _GraphQLController.keep_alive = keep_alive
     _GraphQLController.keep_alive_interval = keep_alive_interval
-    _GraphQLController.debug = debug
     _GraphQLController.protocols = subscription_protocols
     _GraphQLController.connection_init_wait_timeout = connection_init_wait_timeout
     _GraphQLController.graphiql_allowed_accept = frozenset({"text/html", "*/*"})
