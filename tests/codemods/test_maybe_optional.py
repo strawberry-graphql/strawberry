@@ -15,11 +15,12 @@ class TestConvertMaybeToOptional(CodemodTest):
 
         after = """
             from strawberry import Maybe
+            from typing import Union
 
-            field: Maybe[str | None]
+            field: Maybe[Union[str, None]]
         """
 
-        self.assertCodemod(before, after, use_pipe_syntax=True)
+        self.assertCodemod(before, after, use_pipe_syntax=False)
 
     def test_simple_maybe_union_syntax(self) -> None:
         before = """
@@ -30,6 +31,7 @@ class TestConvertMaybeToOptional(CodemodTest):
 
         after = """
             from strawberry import Maybe
+            from typing import Union
 
             field: Maybe[Union[str, None]]
         """
@@ -45,11 +47,12 @@ class TestConvertMaybeToOptional(CodemodTest):
 
         after = """
             import strawberry
+            from typing import Union
 
-            field: strawberry.Maybe[int | None]
+            field: strawberry.Maybe[Union[int, None]]
         """
 
-        self.assertCodemod(before, after, use_pipe_syntax=True)
+        self.assertCodemod(before, after, use_pipe_syntax=False)
 
     def test_nested_type(self) -> None:
         before = """
@@ -60,26 +63,27 @@ class TestConvertMaybeToOptional(CodemodTest):
 
         after = """
             from strawberry import Maybe
+            from typing import Union
 
-            field: Maybe[List[str] | None]
+            field: Maybe[Union[List[str], None]]
         """
 
-        self.assertCodemod(before, after, use_pipe_syntax=True)
+        self.assertCodemod(before, after, use_pipe_syntax=False)
 
     def test_already_has_none_pipe(self) -> None:
         before = """
             from strawberry import Maybe
 
-            field: Maybe[str | None]
+            field: Maybe[Union[str, None]]
         """
 
         after = """
             from strawberry import Maybe
 
-            field: Maybe[str | None]
+            field: Maybe[Union[str, None]]
         """
 
-        self.assertCodemod(before, after, use_pipe_syntax=True)
+        self.assertCodemod(before, after, use_pipe_syntax=False)
 
     def test_already_has_none_union(self) -> None:
         before = """
@@ -96,7 +100,7 @@ class TestConvertMaybeToOptional(CodemodTest):
             field: Maybe[Union[str, None]]
         """
 
-        self.assertCodemod(before, after, use_pipe_syntax=True)
+        self.assertCodemod(before, after, use_pipe_syntax=False)
 
     def test_multiple_maybe_fields(self) -> None:
         before = """
@@ -111,15 +115,16 @@ class TestConvertMaybeToOptional(CodemodTest):
 
         after = """
             from strawberry import Maybe
+            from typing import Union
 
             @strawberry.type
             class User:
-                name: Maybe[str | None]
-                age: Maybe[int | None]
-                email: Maybe[str | None]
+                name: Maybe[Union[str, None]]
+                age: Maybe[Union[int, None]]
+                email: Maybe[Union[str, None]]
         """
 
-        self.assertCodemod(before, after, use_pipe_syntax=True)
+        self.assertCodemod(before, after, use_pipe_syntax=False)
 
     def test_function_annotation(self) -> None:
         before = """
@@ -131,12 +136,13 @@ class TestConvertMaybeToOptional(CodemodTest):
 
         after = """
             from strawberry import Maybe
+            from typing import Union
 
-            def get_user() -> Maybe[User | None]:
+            def get_user() -> Maybe[Union[User, None]]:
                 return None
         """
 
-        self.assertCodemod(before, after, use_pipe_syntax=True)
+        self.assertCodemod(before, after, use_pipe_syntax=False)
 
     def test_generic_type(self) -> None:
         before = """
@@ -147,11 +153,12 @@ class TestConvertMaybeToOptional(CodemodTest):
 
         after = """
             from strawberry import Maybe
+            from typing import Union
 
-            field: Maybe[Dict[str, Any] | None]
+            field: Maybe[Union[Dict[str, Any], None]]
         """
 
-        self.assertCodemod(before, after, use_pipe_syntax=True)
+        self.assertCodemod(before, after, use_pipe_syntax=False)
 
     def test_union_type_inside_maybe(self) -> None:
         before = """
@@ -165,7 +172,7 @@ class TestConvertMaybeToOptional(CodemodTest):
             from strawberry import Maybe
             from typing import Union
 
-            field: Maybe[Union[str, int] | None]
+            field: Maybe[Union[Union[str, int], None]]
         """
 
-        self.assertCodemod(before, after, use_pipe_syntax=True)
+        self.assertCodemod(before, after, use_pipe_syntax=False)

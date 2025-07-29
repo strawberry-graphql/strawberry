@@ -4,6 +4,7 @@ import libcst as cst
 import libcst.matchers as m
 from libcst._nodes.expression import BaseExpression  # noqa: TC002
 from libcst.codemod import CodemodContext, VisitorBasedCodemodCommand
+from libcst.codemod.visitors import AddImportsVisitor
 
 
 class ConvertMaybeToOptional(VisitorBasedCodemodCommand):
@@ -15,7 +16,7 @@ class ConvertMaybeToOptional(VisitorBasedCodemodCommand):
     def __init__(
         self,
         context: CodemodContext,
-        use_pipe_syntax: bool = True,
+        use_pipe_syntax: bool = True,  # Default to pipe syntax for modern Python
     ) -> None:
         self.use_pipe_syntax = use_pipe_syntax
         super().__init__(context)
@@ -69,6 +70,7 @@ class ConvertMaybeToOptional(VisitorBasedCodemodCommand):
             )
         else:
             # Use Union[T, None] syntax
+            AddImportsVisitor.add_needed_import(self.context, "typing", "Union")
             new_type = cst.Subscript(
                 value=cst.Name("Union"),
                 slice=[
