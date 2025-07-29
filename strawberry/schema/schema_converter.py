@@ -854,6 +854,8 @@ class GraphQLCoreConverter:
         NoneType = type(None)
         if type_ is None or type_ is NoneType:
             return self.from_type(type_)
+        if isinstance(type_, StrawberryMaybe):
+            return self.from_maybe_optional(type_.of_type)
         if isinstance(type_, StrawberryOptional):
             return self.from_type(type_.of_type)
         return GraphQLNonNull(self.from_type(type_))
