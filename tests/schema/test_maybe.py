@@ -23,7 +23,7 @@ def maybe_schema() -> strawberry.Schema:
 
     @strawberry.input
     class UpdateUserInput:
-        phone: strawberry.Maybe[str]
+        phone: strawberry.Maybe[str | None]
 
     @strawberry.type
     class Mutation:
@@ -107,7 +107,7 @@ def test_optional_argument_maybe() -> None:
     @strawberry.type
     class Query:
         @strawberry.field
-        def hello(self, name: strawberry.Maybe[str] = None) -> str:
+        def hello(self, name: strawberry.Maybe[str | None] = None) -> str:
             if name:
                 return "None" if name.value is None else name.value
 
@@ -154,7 +154,7 @@ def test_optional_argument_maybe() -> None:
 def test_maybe_list():
     @strawberry.input
     class InputData:
-        items: strawberry.Maybe[list[str]]
+        items: strawberry.Maybe[list[str] | None]
 
     @strawberry.type
     class Query:

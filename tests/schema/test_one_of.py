@@ -8,8 +8,8 @@ from strawberry.schema_directives import OneOf
 
 @strawberry.input(one_of=True)
 class ExampleInputTagged:
-    a: strawberry.Maybe[str]
-    b: strawberry.Maybe[int]
+    a: strawberry.Maybe[str | None]
+    b: strawberry.Maybe[int | None]
 
 
 @strawberry.type
@@ -210,8 +210,8 @@ def test_works_with_camelcasing():
 
     @strawberry.input(directives=[OneOf()])
     class ExampleWithLongerNames:
-        a_field: strawberry.Maybe[str]
-        b_field: strawberry.Maybe[int]
+        a_field: strawberry.Maybe[str | None]
+        b_field: strawberry.Maybe[int | None]
 
     @strawberry.type
     class Result:
