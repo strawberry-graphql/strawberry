@@ -61,6 +61,7 @@ class ConvertMaybeToOptional(VisitorBasedCodemodCommand):
             return original_node
 
         # Create the new union type with None
+        new_type: BaseExpression
         if self.use_pipe_syntax:
             new_type = cst.BinaryOperation(
                 left=inner_type,
