@@ -1,13 +1,9 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
 import libcst as cst
 import libcst.matchers as m
+from libcst._nodes.expression import BaseExpression  # noqa: TC002
 from libcst.codemod import CodemodContext, VisitorBasedCodemodCommand
-
-if TYPE_CHECKING:
-    from libcst._nodes.expression import BaseExpression
 
 
 class ConvertMaybeToOptional(VisitorBasedCodemodCommand):
