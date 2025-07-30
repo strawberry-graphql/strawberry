@@ -199,16 +199,8 @@ def convert_argument(
             res = convert_argument(value, type_.of_type, scalar_registry, config)
 
             return Some(res)
-        # This is Maybe[T] - should reject explicit null values
-        if value is None:
-            # Format the type name nicely for the error message
-            type_name = (
-                type_.of_type.__name__
-                if hasattr(type_.of_type, "__name__")
-                else str(type_.of_type)
-            )
-            raise ValueError(f"Expected value of type '{type_name}', found null.")
 
+        # This is Maybe[T] - validation for null values is handled by MaybeNullValidationRule
         # Convert the value and wrap in Some()
         res = convert_argument(value, type_.of_type, scalar_registry, config)
 
