@@ -191,10 +191,32 @@ def convert_argument(
     from strawberry.relay.types import GlobalID
 
     # TODO: move this somewhere else and make it first class
-    if isinstance(type_, StrawberryOptional):
+    # Handle StrawberryMaybe first, since it extends StrawberryOptional
+    if isinstance(type_, StrawberryMaybe):
+        # Check if this is Maybe[T | None] (has StrawberryOptional as of_type)
+        if isinstance(type_.of_type, StrawberryOptional):
+            # This is Maybe[T | None] - allows null values
+            res = convert_argument(value, type_.of_type, scalar_registry, config)
+
+            return Some(res)
+        # This is Maybe[T] - should reject explicit null values
+        if value is None:
+            # Format the type name nicely for the error message
+            type_name = (
+                type_.of_type.__name__
+                if hasattr(type_.of_type, "__name__")
+                else str(type_.of_type)
+            )
+            raise ValueError(f"Expected value of type '{type_name}', found null.")
+
+        # Convert the value and wrap in Some()
         res = convert_argument(value, type_.of_type, scalar_registry, config)
 
-        return Some(res) if isinstance(type_, StrawberryMaybe) else res
+        return Some(res)
+
+    # Handle regular StrawberryOptional (not Maybe)
+    if isinstance(type_, StrawberryOptional):
+        return convert_argument(value, type_.of_type, scalar_registry, config)
 
     if value is None:
         return None
