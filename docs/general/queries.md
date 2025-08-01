@@ -117,7 +117,7 @@ class Query:
     def fruit(
         self,
         startswith: Annotated[
-            str, strawberry.argument(description="a prefix by which to filter fruits ")
+            str, strawberry.argument(description="Prefix to filter fruits by.")
         ],
     ) -> str | None: ...
 ```
