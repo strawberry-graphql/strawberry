@@ -101,3 +101,23 @@ class Query:
                 return fruit
         return None
 ```
+
+### Argument Descriptions
+
+Use `Annotated` to give a field argument a description:
+
+```python
+from typing import Annotated
+import strawberry
+
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def fruit(
+        self,
+        startswith: Annotated[
+            str, strawberry.argument(description="Prefix to filter fruits by.")
+        ],
+    ) -> str | None: ...
+```
