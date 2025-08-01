@@ -84,42 +84,10 @@ type Point2D {
 
 </CodeGrid>
 
-When you need to distinguish between a field being set to `null` or its value
-and the field being absent, optional arguments would not suffice. In this case
-you can use `strawberry.Maybe` like so:
-
-<CodeGrid>
-
-```python
-import strawberry
-from typing import Optional
-
-
-@strawberry.input
-class UpdateUserInput:
-    name: str | None = None
-    phone: strawberry.Maybe[str]
-
-
-@strawberry.type
-class Mutation:
-    def update_user(self, user_id: strawberry.ID, input: UpdateUserInput) -> User:
-        if name := input.name:
-            ...  # update name...
-        if input.phone:
-            phone = input.phone.value  # can be  str | None
-            ...  # update phone...
-```
-
-```graphql
-type UpdateUserInput {
-  name: String = null
-  phone: String
-
-}
-```
-
-</CodeGrid>
+When you need to distinguish between a field being set to `null` versus being
+completely absent (common in update operations), you can use `strawberry.Maybe`.
+See the [Maybe documentation](./maybe.md) for comprehensive examples and usage
+patterns.
 
 ## API
 
@@ -162,6 +130,14 @@ input SearchBy @oneOf {
 
 </CodeGrid>
 
+<Note>
+
+OneOf inputs use `strawberry.Maybe` to distinguish between fields that are
+explicitly not provided versus those that might be set to null. See the
+[Maybe documentation](./maybe.md) for more details on this usage pattern.
+
+</Note>
+
 ## Deprecating fields
 
 Fields can be deprecated using the argument `deprecation_reason`.
@@ -188,7 +164,7 @@ class Point2D:
     z: Optional[float] = strawberry.field(
         deprecation_reason="3D coordinates are deprecated"
     )
-    label: strawberry.Maybe[str]
+    label: Optional[str] = None
 ```
 
 ```graphql
@@ -196,7 +172,7 @@ input Point2D {
   x: Float!
   y: Float!
   z: Float @deprecated(reason: "3D coordinates are deprecated")
-  label: String
+  label: String = null
 }
 ```
 
