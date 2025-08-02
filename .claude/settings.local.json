@@ -9,7 +9,8 @@
       "Bash(poetry run:*)",
       "Bash(python test:*)",
       "Bash(mkdir:*)",
-      "Bash(ruff check:*)"
+      "Bash(ruff check:*)",
+      "WebFetch(domain:docs.pydantic.dev)"
     ],
     "deny": []
   }

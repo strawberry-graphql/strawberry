@@ -10,6 +10,7 @@ Example:
         age: int
 """
 
+from .error import Error
 from .object_type import input as input_decorator
 from .object_type import interface
 from .object_type import type as type_decorator
@@ -18,4 +19,4 @@ from .object_type import type as type_decorator
 input = input_decorator
 type = type_decorator
 
-__all__ = ["input", "interface", "type"]
+__all__ = ["Error", "input", "interface", "type"]
