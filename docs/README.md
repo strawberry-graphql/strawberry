@@ -35,6 +35,7 @@ title: Strawberry docs
 - [Lazy types](./types/lazy.md)
 - [Exceptions](./types/exceptions.md)
 - [Private/External Fields](./types/private.md)
+- [Defer and Stream](./types/defer-and-stream.md)
 
 ## Codegen
 
@@ -60,6 +61,7 @@ title: Strawberry docs
 - [Tools](./guides/tools.md)
 - [Schema export](./guides/schema-export.md)
 - [Convert to dictionary](./guides/convert-to-dictionary.md)
+- [Query Batching](./guides/query-batching.md)
 
 ## Extensions
 

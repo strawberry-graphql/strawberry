@@ -11,6 +11,7 @@ from .permission import BasePermission
 from .scalars import ID
 from .schema import Schema
 from .schema_directive import schema_directive
+from .streamable import Streamable
 from .types.arguments import argument
 from .types.auto import auto
 from .types.cast import cast
@@ -37,6 +38,7 @@ __all__ = [
     "Private",
     "Schema",
     "Some",
+    "Streamable",
     "argument",
     "asdict",
     "auto",

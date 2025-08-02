@@ -17,6 +17,7 @@ from typing import (
 )
 from typing_extensions import Self, get_args, get_origin
 
+from strawberry.streamable import StrawberryStreamable
 from strawberry.types.base import (
     StrawberryList,
     StrawberryMaybe,
@@ -124,16 +125,44 @@ class StrawberryAnnotation:
 
         return evaled_type, []
 
-    def resolve(self) -> Union[StrawberryType, type]:
+    def resolve(
+        self,
+        *,
+        type_definition: Optional[StrawberryObjectDefinition] = None,
+    ) -> Union[StrawberryType, type]:
         """Return resolved (transformed) annotation."""
-        if self.__resolve_cache__ is None:
-            self.__resolve_cache__ = self._resolve()
+        if (resolved := self.__resolve_cache__) is None:
+            resolved = self._resolve()
+            self.__resolve_cache__ = resolved
 
-        return self.__resolve_cache__
+        # If this is a generic field, try to resolve it using its origin's
+        # specialized type_var_map
+        if self._is_type_generic(resolved) and type_definition is not None:
+            from strawberry.types.base import StrawberryType
+
+            specialized_type_var_map = type_definition.specialized_type_var_map
+            if specialized_type_var_map and isinstance(resolved, StrawberryType):
+                resolved = resolved.copy_with(specialized_type_var_map)
+
+            # If the field is still generic, try to resolve it from the type_definition
+            # that is asking for it.
+            if (
+                self._is_type_generic(resolved)
+                and type_definition.type_var_map
+                and isinstance(resolved, StrawberryType)
+            ):
+                resolved = resolved.copy_with(type_definition.type_var_map)
+
+            # Resolve the type again to resolve any `Annotated` types
+            resolved = self._resolve_evaled_type(resolved)
+
+        return resolved
 
     def _resolve(self) -> Union[StrawberryType, type]:
         evaled_type = cast("Any", self.evaluate())
+        return self._resolve_evaled_type(evaled_type)
 
+    def _resolve_evaled_type(self, evaled_type: Any) -> Union[StrawberryType, type]:
         if is_private(evaled_type):
             return evaled_type
 
@@ -143,6 +172,8 @@ class StrawberryAnnotation:
 
         if self._is_lazy_type(evaled_type):
             return evaled_type
+        if self._is_streamable(evaled_type, args):
+            return self.create_list(list[evaled_type])
         if self._is_list(evaled_type):
             return self.create_list(evaled_type)
         if self._is_maybe(evaled_type):
@@ -290,6 +321,20 @@ class StrawberryAnnotation:
         return issubclass(annotation, Enum)
 
     @classmethod
+    def _is_type_generic(cls, type_: Union[StrawberryType, type]) -> bool:
+        """Returns True if `resolver_type` is generic else False."""
+        from strawberry.types.base import StrawberryType
+
+        if isinstance(type_, StrawberryType):
+            return type_.is_graphql_generic
+
+        # solves the Generic subclass case
+        if has_object_definition(type_):
+            return type_.__strawberry_definition__.is_graphql_generic
+
+        return False
+
+    @classmethod
     def _is_graphql_generic(cls, annotation: Any) -> bool:
         if hasattr(annotation, "__origin__"):
             if definition := get_object_definition(annotation.__origin__):
@@ -331,6 +376,10 @@ class StrawberryAnnotation:
     @classmethod
     def _is_maybe(cls, annotation: Any) -> bool:
         return _annotation_is_maybe(annotation)
+
+    @classmethod
+    def _is_streamable(cls, annotation: Any, args: list[Any]) -> bool:
+        return any(isinstance(arg, StrawberryStreamable) for arg in args)
 
     @classmethod
     def _is_strawberry_type(cls, evaled_type: Any) -> bool:

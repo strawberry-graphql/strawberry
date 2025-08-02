@@ -302,7 +302,9 @@ class GraphQLController(
         return Response(self.graphql_ide_html, media_type=MediaType.HTML)
 
     def create_response(
-        self, response_data: GraphQLHTTPResponse, sub_response: Response[bytes]
+        self,
+        response_data: Union[GraphQLHTTPResponse, list[GraphQLHTTPResponse]],
+        sub_response: Response[bytes],
     ) -> Response[bytes]:
         response = Response(
             self.encode_json(response_data).encode(),

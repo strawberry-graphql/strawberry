@@ -1,6 +1,203 @@
 CHANGELOG
 =========
 
+0.278.0 - 2025-07-19
+--------------------
+
+## Add GraphQL Query batching support
+
+GraphQL query batching is now supported across all frameworks (sync and async)
+To enable query batching, add a valid `batching_config` to the schema configuration.
+
+This makes your GraphQL API compatible with batching features supported by various
+client side libraries, such as [Apollo GraphQL](https://www.apollographql.com/docs/react/api/link/apollo-link-batch-http) and [Relay](https://github.com/relay-tools/react-relay-network-modern?tab=readme-ov-file#batching-several-requests-into-one).
+
+Example (FastAPI):
+
+```py
+import strawberry
+
+from fastapi import FastAPI
+from strawberry.fastapi import GraphQLRouter
+from strawberry.schema.config import StrawberryConfig
+
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def hello(self) -> str:
+        return "Hello World"
+
+
+schema = strawberry.Schema(
+    Query, config=StrawberryConfig(batching_config={"max_operations": 10})
+)
+
+graphql_app = GraphQLRouter(schema)
+
+app = FastAPI()
+app.include_router(graphql_app, prefix="/graphql")
+```
+
+Example (Flask):
+```py
+import strawberry
+
+from flask import Flask
+from strawberry.flask.views import GraphQLView
+
+app = Flask(__name__)
+
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def hello(self) -> str:
+        return "Hello World"
+
+
+schema = strawberry.Schema(
+    Query, config=StrawberryConfig(batching_config={"max_operations": 10})
+)
+
+app.add_url_rule(
+    "/graphql/batch",
+    view_func=GraphQLView.as_view("graphql_view", schema=schema),
+)
+
+if __name__ == "__main__":
+    app.run()
+```
+
+Note: Query Batching is not supported for multipart subscriptions
+
+Contributed by [Aryan Iyappan](https://github.com/aryaniyaps) via [PR #3755](https://github.com/strawberry-graphql/strawberry/pull/3755/)
+
+
+0.277.1 - 2025-07-19
+--------------------
+
+This release fixes the resolution of `Generics` when specializing using a union
+defined with `Annotated`, like in the example below:
+
+```python
+from typing import Annotated, Generic, TypeVar, Union
+import strawberry
+
+T = TypeVar("T")
+
+
+@strawberry.type
+class User:
+    name: str
+    age: int
+
+
+@strawberry.type
+class ProUser:
+    name: str
+    age: float
+
+
+@strawberry.type
+class GenType(Generic[T]):
+    data: T
+
+
+GeneralUser = Annotated[Union[User, ProUser], strawberry.union("GeneralUser")]
+
+
+@strawberry.type
+class Response(GenType[GeneralUser]): ...
+
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def user(self) -> Response: ...
+
+
+schema = strawberry.Schema(query=Query)
+```
+
+Before this would raise a `TypeError`, now it works as expected.
+
+Contributed by [Thiago Bellini Ribeiro](https://github.com/bellini666) via [PR #3950](https://github.com/strawberry-graphql/strawberry/pull/3950/)
+
+
+0.277.0 - 2025-07-18
+--------------------
+
+This release adds experimental support for GraphQL's `@defer` and `@stream` directives, enabling incremental delivery of response data.
+
+Note: this only works when using Strawberry with `graphql-core>=3.3.0a9`.
+
+## Features
+
+- **`@defer` directive**: Allows fields to be resolved asynchronously and delivered incrementally
+- **`@stream` directive**: Enables streaming of list fields using the new `strawberry.Streamable` type
+- **`strawberry.Streamable[T]`**: A new generic type for defining streamable fields that work with `@stream`
+
+## Configuration
+
+To enable these experimental features, configure your schema with:
+
+```python
+from strawberry.schema.config import StrawberryConfig
+
+schema = strawberry.Schema(
+    query=Query, config=StrawberryConfig(enable_experimental_incremental_execution=True)
+)
+```
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #3819](https://github.com/strawberry-graphql/strawberry/pull/3819/)
+
+
+0.276.2 - 2025-07-18
+--------------------
+
+This release renames the `ExecutionContext.errors` attribute to `ExecutionContext.pre_execution_errors` to better reflect its purpose. The old `errors` attribute is now deprecated but still available for backward compatibility.
+
+The `pre_execution_errors` attribute specifically stores errors that occur during the pre-execution phase (parsing and validation), making the distinction clearer from errors that might occur during the actual execution phase.
+
+For backward compatibility, accessing `ExecutionContext.errors` will now emit a deprecation warning and return the value of `pre_execution_errors`.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #3947](https://github.com/strawberry-graphql/strawberry/pull/3947/)
+
+
+0.276.1 - 2025-07-18
+--------------------
+
+This release fixes an issue where `DuplicatedTypeName` exception would be raised
+for nested generics like in the example below:
+
+```python
+from typing import Generic, TypeVar
+
+import strawberry
+
+T = TypeVar("T")
+
+
+@strawberry.type
+class Wrapper(Generic[T]):
+    value: T
+
+
+@strawberry.type
+class Query:
+    a: Wrapper[Wrapper[int]]
+    b: Wrapper[Wrapper[int]]
+
+
+schema = strawberry.Schema(query=Query)
+```
+
+This piece of code and similar ones will now work correctly.
+
+Contributed by [Thiago Bellini Ribeiro](https://github.com/bellini666) via [PR #3946](https://github.com/strawberry-graphql/strawberry/pull/3946/)
+
+
 0.276.0 - 2025-07-14
 --------------------
 

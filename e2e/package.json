@@ -1,0 +1,52 @@
+{
+  "name": "e2e",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "relay-compiler --validate && tsc -b && vite build",
+    "lint": "eslint .",
+    "preview": "vite preview",
+    "relay": "relay-compiler",
+    "test": "@playwright/test"
+  },
+  "dependencies": {
+    "@apollo/client": "^3.13.8",
+    "@radix-ui/react-slot": "^1.2.3",
+    "@tailwindcss/vite": "^4.1.11",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "graphql": "^16.11.0",
+    "graphql-http": "^1.22.4",
+    "lucide-react": "^0.484.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "react-relay": "^18.2.0",
+    "relay-runtime": "^18.2.0",
+    "tailwind-merge": "^3.3.1",
+    "tailwindcss": "^4.1.11",
+    "tailwindcss-animate": "^1.0.7",
+    "tw-animate-css": "^1.3.5"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.31.0",
+    "@playwright/test": "^1.54.1",
+    "@types/node": "^22.16.4",
+    "@types/react": "^19.1.8",
+    "@types/react-dom": "^19.1.6",
+    "@types/react-relay": "^18.2.1",
+    "@types/relay-runtime": "^18.2.5",
+    "@vitejs/plugin-react": "^4.6.0",
+    "babel-plugin-relay": "^18.2.0",
+    "eslint": "^9.31.0",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "eslint-plugin-react-refresh": "^0.4.20",
+    "globals": "^15.15.0",
+    "relay-compiler": "^18.2.0",
+    "typescript": "~5.7.3",
+    "typescript-eslint": "^8.37.0",
+    "vite": "^6.3.5",
+    "vite-plugin-relay": "^2.1.0"
+  }
+}

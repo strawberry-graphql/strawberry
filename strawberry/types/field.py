@@ -13,7 +13,6 @@ from typing import (
     Optional,
     TypeVar,
     Union,
-    cast,
     overload,
 )
 
@@ -348,33 +347,13 @@ class StrawberryField(dataclasses.Field):
         with contextlib.suppress(NameError):
             # Prioritise the field type over the resolver return type
             if self.type_annotation is not None:
-                resolved = self.type_annotation.resolve()
+                resolved = self.type_annotation.resolve(type_definition=type_definition)
             elif self.base_resolver is not None and self.base_resolver.type is not None:
                 # Handle unannotated functions (such as lambdas)
                 # Generics will raise MissingTypesForGenericError later
                 # on if we let it be returned. So use `type_annotation` instead
                 # which is the same behaviour as having no type information.
                 resolved = self.base_resolver.type
-
-        # If this is a generic field, try to resolve it using its origin's
-        # specialized type_var_map
-        # TODO: should we check arguments here too?
-        if _is_generic(resolved):  # type: ignore
-            specialized_type_var_map = (
-                type_definition and type_definition.specialized_type_var_map
-            )
-            if specialized_type_var_map and isinstance(resolved, StrawberryType):
-                resolved = resolved.copy_with(specialized_type_var_map)
-
-            # If the field is still generic, try to resolve it from the type_definition
-            # that is asking for it.
-            if (
-                _is_generic(cast("Union[StrawberryType, type]", resolved))
-                and type_definition is not None
-                and type_definition.type_var_map
-                and isinstance(resolved, StrawberryType)
-            ):
-                resolved = resolved.copy_with(type_definition.type_var_map)
 
         return resolved
 

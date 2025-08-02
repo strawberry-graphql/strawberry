@@ -13,9 +13,10 @@ from django.test.client import RequestFactory
 from strawberry.django.views import GraphQLView as BaseGraphQLView
 from strawberry.http import GraphQLHTTPResponse
 from strawberry.http.ides import GraphQL_IDE
+from strawberry.schema import Schema
 from strawberry.types import ExecutionResult
 from tests.http.context import get_context
-from tests.views.schema import Query, schema
+from tests.views.schema import Query
 
 from .base import JSON, HttpClient, Response, ResultOverrideFunction
 
@@ -46,6 +47,7 @@ class GraphQLView(BaseGraphQLView[dict[str, object], object]):
 class DjangoHttpClient(HttpClient):
     def __init__(
         self,
+        schema: Schema,
         graphiql: Optional[bool] = None,
         graphql_ide: Optional[GraphQL_IDE] = "graphiql",
         allow_queries_via_get: bool = True,
@@ -167,8 +169,8 @@ class DjangoHttpClient(HttpClient):
         json: Optional[JSON] = None,
         headers: Optional[dict[str, str]] = None,
     ) -> Response:
-        django_headers = self._to_django_headers(headers or {})
-        content_type = django_headers.pop("HTTP_CONTENT_TYPE", "")
+        headers = headers or {}
+        content_type = headers.pop("Content-Type", "")
 
         body = dumps(json) if json is not None else data
 
@@ -177,7 +179,7 @@ class DjangoHttpClient(HttpClient):
             url,
             data=body,
             content_type=content_type,
-            headers=django_headers,
+            headers=headers,
         )
 
         return await self._do_request(request)
