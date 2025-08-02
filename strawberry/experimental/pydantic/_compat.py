@@ -8,7 +8,6 @@ from uuid import UUID
 import pydantic
 from pydantic import BaseModel
 from pydantic.version import VERSION as PYDANTIC_VERSION
-
 from strawberry.experimental.pydantic.exceptions import UnsupportedTypeError
 
 if TYPE_CHECKING:
