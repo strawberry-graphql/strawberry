@@ -66,9 +66,6 @@ class TemporalHttpResponse(JsonResponse):
         )
 
 
-# Django adapters are now imported from lia
-
-
 class BaseView:
     graphql_ide_html: str
 

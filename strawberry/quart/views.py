@@ -31,9 +31,6 @@ if TYPE_CHECKING:
     from strawberry.schema.base import BaseSchema
 
 
-# Quart adapter is now imported from lia
-
-
 class QuartWebSocketAdapter(AsyncWebSocketAdapter):
     def __init__(
         self, view: AsyncBaseHTTPView, request: Websocket, response: Response

@@ -17,9 +17,6 @@ if TYPE_CHECKING:
     from strawberry.schema import BaseSchema
 
 
-# Chalice adapter is now imported from lia
-
-
 class GraphQLView(
     SyncBaseHTTPView[Request, Response, TemporalResponse, Context, RootValue]
 ):

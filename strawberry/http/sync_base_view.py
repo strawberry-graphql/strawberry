@@ -9,8 +9,7 @@ from typing import (
 )
 
 from graphql import GraphQLError
-from lia import HTTPException
-from lia import SyncHTTPRequestAdapter as LiaSyncHTTPRequestAdapter
+from lia import HTTPException, SyncHTTPRequestAdapter
 
 from strawberry.exceptions import MissingQueryError
 from strawberry.file_uploads.utils import replace_placeholders_with_files
@@ -33,9 +32,6 @@ from .base import BaseView
 from .parse_content_type import parse_content_type
 from .typevars import Context, Request, Response, RootValue, SubResponse
 
-# Re-export the adapter from lia for backward compatibility
-SyncHTTPRequestAdapter = LiaSyncHTTPRequestAdapter
-
 
 class SyncBaseHTTPView(
     abc.ABC,
@@ -45,7 +41,7 @@ class SyncBaseHTTPView(
     schema: BaseSchema
     graphiql: Optional[bool]
     graphql_ide: Optional[GraphQL_IDE]
-    request_adapter_class: Callable[[Request], LiaSyncHTTPRequestAdapter]
+    request_adapter_class: Callable[[Request], SyncHTTPRequestAdapter]
 
     # Methods that need to be implemented by individual frameworks
 

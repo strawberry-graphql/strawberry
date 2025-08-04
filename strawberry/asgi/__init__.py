@@ -11,8 +11,7 @@ from typing import (
 )
 from typing_extensions import TypeGuard
 
-from lia import HTTPException
-from lia import StarletteRequestAdapter as LiaStarletteRequestAdapter
+from lia import HTTPException, StarletteRequestAdapter
 from starlette import status
 from starlette.requests import Request
 from starlette.responses import (
@@ -46,10 +45,6 @@ if TYPE_CHECKING:
     from strawberry.http import GraphQLHTTPResponse
     from strawberry.http.ides import GraphQL_IDE
     from strawberry.schema import BaseSchema
-
-
-# Use lia's StarletteRequestAdapter directly
-ASGIRequestAdapter = LiaStarletteRequestAdapter
 
 
 class ASGIWebSocketAdapter(AsyncWebSocketAdapter):
@@ -97,7 +92,7 @@ class GraphQL(
     ]
 ):
     allow_queries_via_get = True
-    request_adapter_class = ASGIRequestAdapter
+    request_adapter_class = StarletteRequestAdapter
     websocket_adapter_class = ASGIWebSocketAdapter
 
     def __init__(

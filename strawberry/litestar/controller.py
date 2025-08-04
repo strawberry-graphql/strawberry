@@ -151,9 +151,6 @@ class GraphQLResource(Struct):
     extensions: Optional[dict[str, object]]
 
 
-# Litestar adapter is now imported from lia
-
-
 class LitestarWebSocketAdapter(AsyncWebSocketAdapter):
     def __init__(
         self, view: AsyncBaseHTTPView, request: WebSocket, response: WebSocket

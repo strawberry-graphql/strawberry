@@ -39,9 +39,6 @@ if TYPE_CHECKING:
     from strawberry.schema import BaseSchema
 
 
-# Aiohttp adapter is now imported from lia
-
-
 class AiohttpWebSocketAdapter(AsyncWebSocketAdapter):
     def __init__(
         self, view: AsyncBaseHTTPView, request: web.Request, ws: web.WebSocketResponse

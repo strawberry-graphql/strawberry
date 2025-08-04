@@ -17,8 +17,7 @@ from typing import (
 from typing_extensions import TypeGuard
 
 from graphql import GraphQLError
-from lia import AsyncHTTPRequestAdapter as LiaAsyncHTTPRequestAdapter
-from lia import HTTPException
+from lia import AsyncHTTPRequestAdapter, HTTPException
 
 from strawberry.exceptions import MissingQueryError
 from strawberry.file_uploads.utils import replace_placeholders_with_files
@@ -57,9 +56,6 @@ from .typevars import (
     WebSocketResponse,
 )
 
-# Re-export the adapter from lia for backward compatibility
-AsyncHTTPRequestAdapter = LiaAsyncHTTPRequestAdapter
-
 
 class AsyncWebSocketAdapter(abc.ABC):
     def __init__(self, view: "AsyncBaseHTTPView") -> None:
@@ -96,7 +92,7 @@ class AsyncBaseHTTPView(
     keep_alive = False
     keep_alive_interval: Optional[float] = None
     connection_init_wait_timeout: timedelta = timedelta(minutes=1)
-    request_adapter_class: Callable[[Request], LiaAsyncHTTPRequestAdapter]
+    request_adapter_class: Callable[[Request], AsyncHTTPRequestAdapter]
     websocket_adapter_class: Callable[
         [
             "AsyncBaseHTTPView[Any, Any, Any, Any, Any, Context, RootValue]",
@@ -263,8 +259,15 @@ class AsyncBaseHTTPView(
         except ValueError as e:
             raise HTTPException(400, "Unable to parse the multipart body") from e
 
-        operations = form_data["form"].get("operations", "{}")
-        files_map = form_data["form"].get("map", "{}")
+        # Handle legacy case where form_data might be a dict
+        if isinstance(form_data, dict):
+            operations = form_data.get("form", {}).get("operations", "{}")
+            files_map = form_data.get("form", {}).get("map", "{}")
+            files = form_data.get("files", {})
+        else:
+            operations = form_data.form.get("operations", "{}")
+            files_map = form_data.form.get("map", "{}")
+            files = form_data.files
 
         if isinstance(operations, (bytes, str)):
             operations = self.parse_json(operations)
@@ -273,9 +276,7 @@ class AsyncBaseHTTPView(
             files_map = self.parse_json(files_map)
 
         try:
-            return replace_placeholders_with_files(
-                operations, files_map, form_data["files"]
-            )
+            return replace_placeholders_with_files(operations, files_map, files)
         except KeyError as e:
             raise HTTPException(400, "File(s) missing in form data") from e
 

@@ -133,7 +133,35 @@ class ChannelsRequestAdapter(BaseChannelsRequestAdapter, AsyncHTTPRequestAdapter
         return self.request.body
 
     async def get_form_data(self) -> FormData:
-        return self.request.form_data
+        form_data = self.request.form_data
+        # Handle legacy case where form_data might be a dict
+        if isinstance(form_data, dict):
+            return FormData(
+                files=form_data.get("files", {}), form=form_data.get("form", {})
+            )
+        return form_data
+
+    @property
+    def url(self) -> str:
+        scheme = self.request.consumer.scope["scheme"]
+        host = self.headers.get("host", "localhost")
+        path = self.request.consumer.scope["path"]
+        query_string = self.request.consumer.scope["query_string"]
+        url = f"{scheme}://{host}{path}"
+        if query_string:
+            url += f"?{query_string.decode()}"
+        return url
+
+    @property
+    def cookies(self) -> Mapping[str, str]:
+        cookie_header = self.headers.get("cookie", "")
+        cookies = {}
+        if cookie_header:
+            for cookie in cookie_header.split(";"):
+                if "=" in cookie:
+                    key, value = cookie.split("=", 1)
+                    cookies[key.strip()] = value.strip()
+        return cookies
 
 
 class SyncChannelsRequestAdapter(BaseChannelsRequestAdapter, SyncHTTPRequestAdapter):
@@ -143,11 +171,50 @@ class SyncChannelsRequestAdapter(BaseChannelsRequestAdapter, SyncHTTPRequestAdap
 
     @property
     def post_data(self) -> Mapping[str, Union[str, bytes]]:
-        return self.request.form_data["form"]
+        form_data = self.request.form_data
+        # Handle legacy case where form_data might be a dict
+        if isinstance(form_data, dict):
+            return form_data.get("form", {})
+        return form_data.form
 
     @property
     def files(self) -> Mapping[str, Any]:
-        return self.request.form_data["files"]
+        form_data = self.request.form_data
+        # Handle legacy case where form_data might be a dict
+        if isinstance(form_data, dict):
+            return form_data.get("files", {})
+        return form_data.files
+
+    def get_form_data(self) -> FormData:
+        form_data = self.request.form_data
+        # Handle legacy case where form_data might be a dict
+        if isinstance(form_data, dict):
+            return FormData(
+                files=form_data.get("files", {}), form=form_data.get("form", {})
+            )
+        return form_data
+
+    @property
+    def url(self) -> str:
+        scheme = self.request.consumer.scope["scheme"]
+        host = self.headers.get("host", "localhost")
+        path = self.request.consumer.scope["path"]
+        query_string = self.request.consumer.scope["query_string"]
+        url = f"{scheme}://{host}{path}"
+        if query_string:
+            url += f"?{query_string.decode()}"
+        return url
+
+    @property
+    def cookies(self) -> Mapping[str, str]:
+        cookie_header = self.headers.get("cookie", "")
+        cookies = {}
+        if cookie_header:
+            for cookie in cookie_header.split(";"):
+                if "=" in cookie:
+                    key, value = cookie.split("=", 1)
+                    cookies[key.strip()] = value.strip()
+        return cookies
 
 
 class BaseGraphQLHTTPConsumer(ChannelsConsumer, AsyncHttpConsumer):

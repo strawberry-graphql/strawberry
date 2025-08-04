@@ -32,9 +32,6 @@ if TYPE_CHECKING:
     from strawberry.schema import BaseSchema
 
 
-# Sanic adapter is now imported from lia
-
-
 class GraphQLView(
     AsyncBaseHTTPView[
         Request,

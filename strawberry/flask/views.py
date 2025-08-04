@@ -25,9 +25,6 @@ if TYPE_CHECKING:
     from strawberry.schema.base import BaseSchema
 
 
-# Flask adapters are now imported from lia
-
-
 class BaseGraphQLView:
     graphql_ide: Optional[GraphQL_IDE]
 
@@ -93,9 +90,6 @@ class GraphQLView(
 
     def render_graphql_ide(self, request: Request) -> Response:
         return render_template_string(self.graphql_ide_html)  # type: ignore
-
-
-# Async Flask adapter is now imported from lia
 
 
 class AsyncGraphQLView(
