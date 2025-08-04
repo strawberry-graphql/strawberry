@@ -17,6 +17,8 @@ from typing import (
 from typing_extensions import TypeGuard
 
 from graphql import GraphQLError
+from lia import AsyncHTTPRequestAdapter as LiaAsyncHTTPRequestAdapter
+from lia import HTTPException
 
 from strawberry.exceptions import MissingQueryError
 from strawberry.file_uploads.utils import replace_placeholders_with_files
@@ -44,9 +46,7 @@ from strawberry.types.graphql import OperationType
 from strawberry.types.unset import UNSET, UnsetType
 
 from .base import BaseView
-from .exceptions import HTTPException
 from .parse_content_type import parse_content_type
-from .types import FormData, HTTPMethod, QueryParams
 from .typevars import (
     Context,
     Request,
@@ -57,29 +57,8 @@ from .typevars import (
     WebSocketResponse,
 )
 
-
-class AsyncHTTPRequestAdapter(abc.ABC):
-    @property
-    @abc.abstractmethod
-    def query_params(self) -> QueryParams: ...
-
-    @property
-    @abc.abstractmethod
-    def method(self) -> HTTPMethod: ...
-
-    @property
-    @abc.abstractmethod
-    def headers(self) -> Mapping[str, str]: ...
-
-    @property
-    @abc.abstractmethod
-    def content_type(self) -> Optional[str]: ...
-
-    @abc.abstractmethod
-    async def get_body(self) -> Union[str, bytes]: ...
-
-    @abc.abstractmethod
-    async def get_form_data(self) -> FormData: ...
+# Re-export the adapter from lia for backward compatibility
+AsyncHTTPRequestAdapter = LiaAsyncHTTPRequestAdapter
 
 
 class AsyncWebSocketAdapter(abc.ABC):
@@ -117,7 +96,7 @@ class AsyncBaseHTTPView(
     keep_alive = False
     keep_alive_interval: Optional[float] = None
     connection_init_wait_timeout: timedelta = timedelta(minutes=1)
-    request_adapter_class: Callable[[Request], AsyncHTTPRequestAdapter]
+    request_adapter_class: Callable[[Request], LiaAsyncHTTPRequestAdapter]
     websocket_adapter_class: Callable[
         [
             "AsyncBaseHTTPView[Any, Any, Any, Any, Any, Context, RootValue]",

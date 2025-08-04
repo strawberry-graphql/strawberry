@@ -1,9 +1,7 @@
-class HTTPException(Exception):
-    def __init__(self, status_code: int, reason: str) -> None:
-        self.status_code = status_code
-        self.reason = reason
+from lia import HTTPException
 
 
+# WebSocket-specific exceptions that remain in Strawberry
 class NonTextMessageReceived(Exception):
     pass
 
@@ -16,4 +14,9 @@ class WebSocketDisconnected(Exception):
     pass
 
 
-__all__ = ["HTTPException"]
+__all__ = [
+    "HTTPException",
+    "NonJsonMessageReceived",
+    "NonTextMessageReceived",
+    "WebSocketDisconnected",
+]

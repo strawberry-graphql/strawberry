@@ -9,6 +9,8 @@ from strawberry.schema._graphql_core import (
     ResultType,
 )
 
+from .exceptions import HTTPException
+
 
 class GraphQLHTTPResponse(TypedDict, total=False):
     data: Optional[dict[str, object]]
@@ -49,5 +51,6 @@ class GraphQLRequestData:
 __all__ = [
     "GraphQLHTTPResponse",
     "GraphQLRequestData",
+    "HTTPException",
     "process_result",
 ]

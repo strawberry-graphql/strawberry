@@ -3,12 +3,13 @@ from collections.abc import Mapping
 from typing import Any, Generic, Optional, Union
 from typing_extensions import Protocol
 
+from lia import HTTPException
+
 from strawberry.http import GraphQLRequestData
 from strawberry.http.ides import GraphQL_IDE, get_graphql_ide_html
 from strawberry.http.types import HTTPMethod, QueryParams
 from strawberry.schema.base import BaseSchema
 
-from .exceptions import HTTPException
 from .typevars import Request
 
 
