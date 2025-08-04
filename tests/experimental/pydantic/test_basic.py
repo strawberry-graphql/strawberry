@@ -2,9 +2,9 @@ import dataclasses
 from enum import Enum
 from typing import Annotated, Any, Optional, Union
 
+import pydantic
 import pytest
 
-import pydantic
 import strawberry
 from strawberry.experimental.pydantic.exceptions import MissingFieldsListError
 from strawberry.schema_directive import Location

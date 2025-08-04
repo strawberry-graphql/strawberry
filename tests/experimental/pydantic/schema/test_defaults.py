@@ -2,6 +2,7 @@ import textwrap
 from typing import Optional
 
 import pydantic
+
 import strawberry
 from strawberry.printer import print_schema
 from tests.conftest import skip_if_gql_32

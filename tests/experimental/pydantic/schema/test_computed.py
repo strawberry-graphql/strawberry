@@ -1,10 +1,10 @@
 import textwrap
 
-import pytest
-
 import pydantic
-import strawberry
+import pytest
 from pydantic.version import VERSION as PYDANTIC_VERSION
+
+import strawberry
 
 IS_PYDANTIC_V2: bool = PYDANTIC_VERSION.startswith("2.")
 
