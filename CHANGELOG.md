@@ -1,6 +1,15 @@
 CHANGELOG
 =========
 
+0.278.1 - 2025-08-05
+--------------------
+
+This release removes some internal code in favour of using an external dependency,
+this will help us with maintaining the codebase in the future 😊
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #3967](https://github.com/strawberry-graphql/strawberry/pull/3967/)
+
+
 0.278.0 - 2025-07-19
 --------------------
 
