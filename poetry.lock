@@ -2250,14 +2250,14 @@ type = ["pygobject-stubs", "pytest-mypy", "shtab", "types-pywin32"]
 
 [[package]]
 name = "lia-web"
-version = "0.2.0"
+version = "0.2.1"
 description = "A library for working with web frameworks"
 optional = false
 python-versions = ">=3.9"
 groups = ["main"]
 files = [
-    {file = "lia_web-0.2.0-py3-none-any.whl", hash = "sha256:2964cf16a9453cc367247cc832acde27106a943200c471d82270210325f741ce"},
-    {file = "lia_web-0.2.0.tar.gz", hash = "sha256:a7d6f86bae8759e89b8cc61fbbec1375ec49bd5280a633df6943c700ff2d2761"},
+    {file = "lia_web-0.2.1-py3-none-any.whl", hash = "sha256:2ef5a10c43bd6e4270038a4bc594d49efcde9a4d8b5ad0439eb2133ddec3e381"},
+    {file = "lia_web-0.2.1.tar.gz", hash = "sha256:1dd8630e02c71f74b2eb797d65129ab4763758c771e2807cf2f2df83de683901"},
 ]
 
 [package.dependencies]
@@ -6133,4 +6133,4 @@ sanic = ["sanic"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.9,<4.0"
-content-hash = "8c56a0b033c7ec58043f518e044c98d460abb197c5514118b44699a314c7ae5e"
+content-hash = "772032a1d0d69410f155f1c83bb99da0609ea4ea14f4a30d9d593b6b41b10dba"

@@ -259,15 +259,9 @@ class AsyncBaseHTTPView(
         except ValueError as e:
             raise HTTPException(400, "Unable to parse the multipart body") from e
 
-        # Handle legacy case where form_data might be a dict
-        if isinstance(form_data, dict):
-            operations = form_data.get("form", {}).get("operations", "{}")
-            files_map = form_data.get("form", {}).get("map", "{}")
-            files = form_data.get("files", {})
-        else:
-            operations = form_data.form.get("operations", "{}")
-            files_map = form_data.form.get("map", "{}")
-            files = form_data.files
+        operations = form_data.form.get("operations", "{}")
+        files_map = form_data.form.get("map", "{}")
+        files = form_data.files
 
         if isinstance(operations, (bytes, str)):
             operations = self.parse_json(operations)
