@@ -1,18 +1,15 @@
 # type: ignore
 from __future__ import annotations
 
-import sys
 import textwrap
-from typing import List
-from typing_extensions import Annotated
-
-import pytest
+from typing import Annotated
 
 import strawberry
 from strawberry.printer import print_schema
 from strawberry.scalars import JSON
-from strawberry.type import StrawberryList, StrawberryOptional
+from strawberry.types.base import StrawberryList, StrawberryOptional
 from tests.a import A
+from tests.d import D
 
 
 def test_forward_reference():
@@ -52,15 +49,11 @@ def test_forward_reference():
     del MyType
 
 
-@pytest.mark.skipif(
-    sys.version_info < (3, 9),
-    reason="Python 3.8 and previous can't properly resolve this.",
-)
 def test_lazy_forward_reference():
     @strawberry.type
     class Query:
         @strawberry.field
-        async def a(self) -> A:
+        async def a(self) -> A:  # pragma: no cover
             return A(id=strawberry.ID("1"))
 
     expected_representation = """
@@ -74,12 +67,39 @@ def test_lazy_forward_reference():
     type B {
       id: ID!
       a: A!
+      aList: [A!]!
       optionalA: A
       optionalA2: A
     }
 
     type Query {
       a: A!
+    }
+    """
+
+    schema = strawberry.Schema(query=Query)
+    assert print_schema(schema) == textwrap.dedent(expected_representation).strip()
+
+
+def test_lazy_forward_reference_schema_with_a_list_only():
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        async def d(self) -> D:  # pragma: no cover
+            return D(id=strawberry.ID("1"))
+
+    expected_representation = """
+    type C {
+      id: ID!
+    }
+
+    type D {
+      id: ID!
+      cList: [C!]!
+    }
+
+    type Query {
+      d: D!
     }
     """
 
@@ -94,12 +114,12 @@ def test_with_resolver():
     class User:
         name: str
 
-    def get_users() -> List[User]:
+    def get_users() -> list[User]:  # pragma: no cover
         return []
 
     @strawberry.type
     class Query:
-        users: List[User] = strawberry.field(resolver=get_users)
+        users: list[User] = strawberry.field(resolver=get_users)
 
     definition = Query.__strawberry_definition__
     assert definition.name == "Query"
@@ -120,12 +140,12 @@ def test_union_or_notation():
     class User:
         name: str
 
-    def get_users() -> List[User] | None:
+    def get_users() -> list[User] | None:  # pragma: no cover
         return []
 
     @strawberry.type
     class Query:
-        users: List[User] | None = strawberry.field(resolver=get_users)
+        users: list[User] | None = strawberry.field(resolver=get_users)
 
     definition = Query.__strawberry_definition__
     assert definition.name == "Query"
@@ -140,10 +160,6 @@ def test_union_or_notation():
     del User
 
 
-@pytest.mark.skipif(
-    sys.version_info < (3, 9),
-    reason="generic type alias only available on python 3.9+",
-)
 def test_union_or_notation_generic_type_alias():
     global User
 
@@ -151,7 +167,7 @@ def test_union_or_notation_generic_type_alias():
     class User:
         name: str
 
-    def get_users() -> list[User] | None:
+    def get_users() -> list[User] | None:  # pragma: no cover
         return []
 
     @strawberry.type
@@ -178,12 +194,12 @@ def test_annotated():
     class User:
         name: str
 
-    def get_users() -> List[User]:
+    def get_users() -> list[User]:  # pragma: no cover
         return []
 
     @strawberry.type
     class Query:
-        users: Annotated[List[User], object()] = strawberry.field(resolver=get_users)
+        users: Annotated[list[User], object()] = strawberry.field(resolver=get_users)
 
     definition = Query.__strawberry_definition__
     assert definition.name == "Query"
@@ -204,12 +220,12 @@ def test_annotated_or_notation():
     class User:
         name: str
 
-    def get_users() -> List[User] | None:
+    def get_users() -> list[User] | None:  # pragma: no cover
         return []
 
     @strawberry.type
     class Query:
-        users: Annotated[List[User] | None, object()] = strawberry.field(
+        users: Annotated[list[User] | None, object()] = strawberry.field(
             resolver=get_users
         )
 
@@ -226,10 +242,6 @@ def test_annotated_or_notation():
     del User
 
 
-@pytest.mark.skipif(
-    sys.version_info < (3, 9),
-    reason="generic type alias only available on python 3.9+",
-)
 def test_annotated_or_notation_generic_type_alias():
     global User
 
@@ -237,7 +249,7 @@ def test_annotated_or_notation_generic_type_alias():
     class User:
         name: str
 
-    def get_users() -> list[User]:
+    def get_users() -> list[User]:  # pragma: no cover
         return []
 
     @strawberry.type

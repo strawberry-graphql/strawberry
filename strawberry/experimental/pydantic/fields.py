@@ -1,6 +1,5 @@
 import builtins
-from typing import Any, Union
-from typing_extensions import Annotated
+from typing import Annotated, Any, Union
 
 from pydantic import BaseModel
 
@@ -13,7 +12,7 @@ from strawberry.experimental.pydantic._compat import (
 from strawberry.experimental.pydantic.exceptions import (
     UnregisteredTypeException,
 )
-from strawberry.types.types import StrawberryObjectDefinition
+from strawberry.types.base import StrawberryObjectDefinition
 
 try:
     from types import UnionType as TypingUnionType
@@ -25,17 +24,7 @@ except ImportError:
     else:
         raise
 
-try:
-    from typing import GenericAlias as TypingGenericAlias  # type: ignore
-except ImportError:
-    import sys
-
-    # python < 3.9 does not have GenericAlias (list[int], tuple[str, ...] and so on)
-    # we do this under a conditional to avoid a mypy :)
-    if sys.version_info < (3, 9):
-        TypingGenericAlias = ()
-    else:
-        raise
+from typing import GenericAlias as TypingGenericAlias  # type: ignore
 
 
 def replace_pydantic_types(type_: Any, is_input: bool) -> Any:
@@ -43,15 +32,14 @@ def replace_pydantic_types(type_: Any, is_input: bool) -> Any:
         attr = "_strawberry_input_type" if is_input else "_strawberry_type"
         if hasattr(type_, attr):
             return getattr(type_, attr)
-        else:
-            raise UnregisteredTypeException(type_)
+        raise UnregisteredTypeException(type_)
     return type_
 
 
 def replace_types_recursively(
     type_: Any, is_input: bool, compat: PydanticCompat
 ) -> Any:
-    """Runs the conversions recursively into the arguments of generic types if any"""
+    """Runs the conversions recursively into the arguments of generic types if any."""
     basic_type = compat.get_basic_type(type_)
     replaced_type = replace_pydantic_types(basic_type, is_input)
 

@@ -1,4 +1,4 @@
-from typing import Type, Union
+from typing import Union
 
 from graphql import (
     ExecutableDefinitionNode,
@@ -13,36 +13,35 @@ from strawberry.extensions.add_validation_rules import AddValidationRules
 
 
 class MaxAliasesLimiter(AddValidationRules):
-    """
-    Add a validator to limit the number of aliases used.
+    """Add a validator to limit the number of aliases used.
 
     Example:
 
-    >>> import strawberry
-    >>> from strawberry.extensions import MaxAliasesLimiter
-    >>>
-    >>> schema = strawberry.Schema(
-    ...     Query,
-    ...     extensions=[
-    ...         MaxAliasesLimiter(max_alias_count=15)
-    ...     ]
-    ... )
+    ```python
+    import strawberry
+    from strawberry.extensions import MaxAliasesLimiter
 
-    Arguments:
-
-    `max_alias_count: int`
-        The maximum number of aliases allowed in a GraphQL document.
+    schema = strawberry.Schema(Query, extensions=[MaxAliasesLimiter(max_alias_count=15)])
+    ```
     """
 
-    def __init__(
-        self,
-        max_alias_count: int,
-    ) -> None:
+    def __init__(self, max_alias_count: int) -> None:
+        """Initialize the MaxAliasesLimiter.
+
+        Args:
+            max_alias_count: The maximum number of aliases allowed in a GraphQL document.
+        """
         validator = create_validator(max_alias_count)
         super().__init__([validator])
 
 
-def create_validator(max_alias_count: int) -> Type[ValidationRule]:
+def create_validator(max_alias_count: int) -> type[ValidationRule]:
+    """Create a validator that checks the number of aliases in a document.
+
+    Args:
+        max_alias_count: The maximum number of aliases allowed in a GraphQL document.
+    """
+
     class MaxAliasesValidator(ValidationRule):
         def __init__(self, validation_context: ValidationContext) -> None:
             document = validation_context.document
@@ -82,3 +81,6 @@ def count_fields_with_alias(
             result += count_fields_with_alias(selection)
 
     return result
+
+
+__all__ = ["MaxAliasesLimiter"]

@@ -3,20 +3,20 @@ from __future__ import annotations
 from functools import cached_property
 from inspect import getframeinfo, stack
 from pathlib import Path
-from typing import TYPE_CHECKING, Optional, Type
+from typing import TYPE_CHECKING, Optional
 
 from strawberry.exceptions.utils.source_finder import SourceFinder
 
 from .exception import StrawberryException
 
 if TYPE_CHECKING:
-    from strawberry.union import StrawberryUnion
+    from strawberry.types.union import StrawberryUnion
 
     from .exception_source import ExceptionSource
 
 
 class InvalidUnionTypeError(StrawberryException):
-    """The union is constructed with an invalid type"""
+    """The union is constructed with an invalid type."""
 
     invalid_type: object
 
@@ -26,8 +26,8 @@ class InvalidUnionTypeError(StrawberryException):
         invalid_type: object,
         union_definition: Optional[StrawberryUnion] = None,
     ) -> None:
-        from strawberry.custom_scalar import ScalarWrapper
-        from strawberry.type import StrawberryList
+        from strawberry.types.base import StrawberryList
+        from strawberry.types.scalar import ScalarWrapper
 
         self.union_name = union_name
         self.invalid_type = invalid_type
@@ -78,10 +78,9 @@ class InvalidUnionTypeError(StrawberryException):
 
 
 class InvalidTypeForUnionMergeError(StrawberryException):
-    """A specialized version of InvalidUnionTypeError for when trying
-    to merge unions using the pipe operator."""
+    """A specialized version of InvalidUnionTypeError for when trying to merge unions using the pipe operator."""
 
-    invalid_type: Type
+    invalid_type: type
 
     def __init__(self, union: StrawberryUnion, other: object) -> None:
         self.union = union

@@ -6,7 +6,8 @@ from rich.progress import TaskID
 class FakeProgress:
     """A fake progress bar that does nothing.
 
-    This is used when the user has only one file to process."""
+    This is used when the user has only one file to process.
+    """
 
     def advance(self, task_id: TaskID) -> None:
         pass

@@ -1,5 +1,4 @@
 import re
-from typing import List
 from typing_extensions import Literal
 
 import pydantic
@@ -8,8 +7,7 @@ from pydantic import BaseModel, ValidationError, conlist
 
 import strawberry
 from strawberry.experimental.pydantic._compat import IS_PYDANTIC_V1
-from strawberry.type import StrawberryOptional
-from strawberry.types.types import StrawberryObjectDefinition
+from strawberry.types.base import StrawberryObjectDefinition, StrawberryOptional
 from tests.experimental.pydantic.utils import needs_pydantic_v1, needs_pydantic_v2
 
 
@@ -155,7 +153,7 @@ def test_constrained_list():
     assert UserType.__strawberry_definition__.fields[0].name == "friends"
     assert (
         UserType.__strawberry_definition__.fields[0].type_annotation.raw_annotation
-        == List[str]
+        == list[str]
     )
 
     data = UserType(friends=[])
@@ -182,7 +180,7 @@ def test_constrained_list_nested():
     assert UserType.__strawberry_definition__.fields[0].name == "friends"
     assert (
         UserType.__strawberry_definition__.fields[0].type_annotation.raw_annotation
-        == List[List[int]]
+        == list[list[int]]
     )
 
 

@@ -1,9 +1,8 @@
 from __future__ import annotations
 
 import glob
-import pathlib  # noqa: TCH003
+import pathlib  # noqa: TC003
 import sys
-from typing import List
 
 import rich
 import typer
@@ -11,11 +10,13 @@ from libcst.codemod import CodemodContext
 
 from strawberry.cli.app import app
 from strawberry.codemods.annotated_unions import ConvertUnionToAnnotatedUnion
+from strawberry.codemods.update_imports import UpdateImportsCodemod
 
 from ._run_codemod import run_codemod
 
 codemods = {
     "annotated-union": ConvertUnionToAnnotatedUnion,
+    "update-imports": UpdateImportsCodemod,
 }
 
 
@@ -27,7 +28,7 @@ def upgrade(
         autocompletion=lambda: list(codemods.keys()),
         help="Name of the upgrade to run",
     ),
-    paths: List[pathlib.Path] = typer.Argument(..., file_okay=True, dir_okay=True),
+    paths: list[pathlib.Path] = typer.Argument(..., file_okay=True, dir_okay=True),
     python_target: str = typer.Option(
         ".".join(str(x) for x in sys.version_info[:2]),
         "--python-target",
@@ -46,11 +47,17 @@ def upgrade(
 
     python_target_version = tuple(int(x) for x in python_target.split("."))
 
-    transformer = ConvertUnionToAnnotatedUnion(
-        CodemodContext(),
-        use_pipe_syntax=python_target_version >= (3, 10),
-        use_typing_extensions=use_typing_extensions,
-    )
+    transformer: ConvertUnionToAnnotatedUnion | UpdateImportsCodemod
+
+    if codemod == "update-imports":
+        transformer = UpdateImportsCodemod(context=CodemodContext())
+
+    else:
+        transformer = ConvertUnionToAnnotatedUnion(
+            CodemodContext(),
+            use_pipe_syntax=python_target_version >= (3, 10),
+            use_typing_extensions=use_typing_extensions,
+        )
 
     files: list[str] = []
 

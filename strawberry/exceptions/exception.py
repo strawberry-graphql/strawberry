@@ -67,7 +67,7 @@ class StrawberryException(Exception, ABC):
         from rich.panel import Panel
 
         if self.exception_source is None:
-            raise UnableToFindExceptionSource() from self
+            raise UnableToFindExceptionSource from self
 
         content = (
             self.__rich_header__,

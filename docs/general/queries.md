@@ -55,6 +55,30 @@ class Query:
         return "Strawberry"
 ```
 
+The decorator syntax supports specifying a `graphql_type` for cases when the
+return type of the function does not match the GraphQL type:
+
+```python
+class User:
+    id: str
+    name: str
+
+    def __init__(self, id: str, name: str):
+        self.id = id
+        self.name = name
+
+@strawberry.type(name="User")
+class UserType:
+    id: strawberry.ID
+    name: str
+
+@strawberry.type
+class Query:
+    @strawberry.field(graphql_type=UserType)
+    def user(self) -> User
+        return User(id="ringo", name="Ringo")
+```
+
 ## Arguments
 
 GraphQL fields can accept arguments, usually to filter out or retrieve specific
@@ -78,23 +102,22 @@ class Query:
         return None
 ```
 
-Additional metadata can be added to arguments, for example a custom name and
-description using `strawberry.argument` with
-[typing.Annotated](https://docs.python.org/3/library/typing.html#typing.Annotated):
+### Argument Descriptions
+
+Use `Annotated` to give a field argument a description:
 
 ```python
+from typing import Annotated
+import strawberry
+
+
 @strawberry.type
 class Query:
     @strawberry.field
-    def fruits(
+    def fruit(
         self,
-        is_tasty: Annotated[
-            bool | None,
-            strawberry.argument(
-                description="Filters out fruits by whenever they're tasty or not",
-                deprecation_reason="isTasty argument is deprecated, "
-                "use fruits(taste:SWEET) instead",
-            ),
-        ] = None,
-    ) -> list[str]: ...
+        startswith: Annotated[
+            str, strawberry.argument(description="Prefix to filter fruits by.")
+        ],
+    ) -> str | None: ...
 ```

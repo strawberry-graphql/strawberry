@@ -70,14 +70,17 @@ The `GraphQLView` accepts two options at the moment:
 
 ## Extending the view
 
-We allow to extend the base `GraphQLView`, by overriding the following methods:
+The base `GraphQLView` class can be extended by overriding any of the following
+methods:
 
-- `get_context(self, request: Request, response: TemporalResponse) -> Any`
-- `get_root_value(self, request: Request) -> Any`
-- `process_result(self, request: Request, result: ExecutionResult) -> GraphQLHTTPResponse`
-- `encode_json(self, response_data: GraphQLHTTPResponse) -> str`
+- `def get_context(self, request: Request, response: TemporalResponse) -> Context`
+- `def get_root_value(self, request: Request) -> Optional[RootValue]`
+- `def process_result(self, request: Request, result: ExecutionResult) -> GraphQLHTTPResponse`
+- `def decode_json(self, data: Union[str, bytes]) -> object`
+- `def encode_json(self, data: object) -> str`
+- `def render_graphql_ide(self, request: Request) -> Response`
 
-## get_context
+### get_context
 
 `get_context` allows to provide a custom context object that can be used in your
 resolver. You can return anything here, by default we return a dictionary with
@@ -85,8 +88,14 @@ the request. By default; the `Response` object from `flask` is injected via the
 parameters.
 
 ```python
+import strawberry
+from strawberry.chalice.views import GraphQLView
+from strawberry.http.temporal import TemporalResponse
+from chalice.app import Request
+
+
 class MyGraphQLView(GraphQLView):
-    def get_context(self, response: Response) -> Any:
+    def get_context(self, request: Request, response: TemporalResponse):
         return {"example": 1}
 
 
@@ -103,7 +112,7 @@ called "example".
 Then we use the context in a resolver, the resolver will return "1" in this
 case.
 
-## get_root_value
+### get_root_value
 
 `get_root_value` allows to provide a custom root value for your schema, this is
 probably not used a lot but it might be useful in certain situations.
@@ -111,8 +120,12 @@ probably not used a lot but it might be useful in certain situations.
 Here's an example:
 
 ```python
+import strawberry
+from strawberry.chalice.views import GraphQLView
+
+
 class MyGraphQLView(GraphQLView):
-    def get_root_value(self) -> Any:
+    def get_root_value(self):
         return Query(name="Patrick")
 
 
@@ -124,7 +137,7 @@ class Query:
 Here we are returning a Query where the name is "Patrick", so we when requesting
 the field name we'll return "Patrick" in this case.
 
-## process_result
+### process_result
 
 `process_result` allows to customize and/or process results before they are sent
 to the clients. This can be useful logging errors or hiding them (for example to
@@ -136,6 +149,7 @@ result.
 ```python
 from strawberry.http import GraphQLHTTPResponse
 from strawberry.types import ExecutionResult
+from strawberry.chalice.views import GraphQLView
 
 
 class MyGraphQLView(GraphQLView):
@@ -151,13 +165,55 @@ class MyGraphQLView(GraphQLView):
 In this case we are doing the default processing of the result, but it can be
 tweaked based on your needs.
 
-## encode_json
+### decode_json
 
-`encode_json` allows to customize the encoding of the JSON response. By default
-we use `json.dumps` but you can override this method to use a different encoder.
+`decode_json` allows to customize the decoding of HTTP JSON requests. By default
+we use `json.loads` but you can override this method to use a different decoder.
 
 ```python
+from strawberry.chalice.views import GraphQLView
+from typing import Union
+import orjson
+
+
 class MyGraphQLView(GraphQLView):
-    def encode_json(self, data: GraphQLHTTPResponse) -> str:
+    def decode_json(self, data: Union[str, bytes]) -> object:
+        return orjson.loads(data)
+```
+
+Make sure your code raises `json.JSONDecodeError` or a subclass of it if the
+JSON cannot be decoded. The library shown in the example above, `orjson`, does
+this by default.
+
+### encode_json
+
+`encode_json` allows to customize the encoding of HTTP and WebSocket JSON
+responses. By default we use `json.dumps` but you can override this method to
+use a different encoder.
+
+```python
+import json
+from strawberry.chalice.views import GraphQLView
+
+
+class MyGraphQLView(GraphQLView):
+    def encode_json(self, data: object) -> str:
         return json.dumps(data, indent=2)
+```
+
+### render_graphql_ide
+
+In case you need more control over the rendering of the GraphQL IDE than the
+`graphql_ide` option provides, you can override the `render_graphql_ide` method.
+
+```python
+from strawberry.chalice.views import GraphQLView
+from chalice.app import Request, Response
+
+
+class MyGraphQLView(GraphQLView):
+    def render_graphql_ide(self, request: Request) -> Response:
+        custom_html = """<html><body><h1>Custom GraphQL IDE</h1></body></html>"""
+
+        return Response(custom_html, headers={"Content-Type": "text/html"})
 ```

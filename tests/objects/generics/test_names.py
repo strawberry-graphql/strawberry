@@ -1,15 +1,14 @@
 import textwrap
-from typing import Generic, List, NewType, TypeVar
-from typing_extensions import Annotated
+from typing import Annotated, Generic, NewType, TypeVar
 
 import pytest
 
 import strawberry
-from strawberry.enum import EnumDefinition
-from strawberry.lazy_type import LazyType
 from strawberry.schema.config import StrawberryConfig
-from strawberry.type import StrawberryList, StrawberryOptional
-from strawberry.union import StrawberryUnion
+from strawberry.types.base import StrawberryList, StrawberryOptional
+from strawberry.types.enum import EnumDefinition
+from strawberry.types.lazy_type import LazyType
+from strawberry.types.union import StrawberryUnion
 
 T = TypeVar("T")
 K = TypeVar("K")
@@ -42,9 +41,17 @@ class TypeB:
         ([TypeA], "TypeAExample"),
         ([CustomInt], "CustomIntExample"),
         ([TypeA, TypeB], "TypeATypeBExample"),
-        ([TypeA, LazyType["TypeB", "test_names"]], "TypeATypeBExample"),  # type: ignore
         (
-            [TypeA, Annotated["TypeB", strawberry.lazy("test_names")]],
+            [TypeA, LazyType["TypeB", "tests.objects.generics.test_names"]],
+            "TypeATypeBExample",
+        ),  # type: ignore
+        (
+            [
+                TypeA,
+                Annotated[
+                    "TypeB", strawberry.lazy("tests.objects.generics.test_names")
+                ],
+            ],
             "TypeATypeBExample",
         ),
     ],
@@ -70,7 +77,7 @@ def test_nested_generics():
 
     @strawberry.type
     class Connection(Generic[T]):
-        edges: List[T]
+        edges: list[T]
 
     type_definition = Connection.__strawberry_definition__  # type: ignore
 
@@ -87,7 +94,8 @@ def test_nested_generics():
 
 def test_nested_generics_aliases_with_schema():
     """This tests is similar to the previous test, but it also tests against
-    the schema, since the resolution of the type name might be different."""
+    the schema, since the resolution of the type name might be different.
+    """
     config = StrawberryConfig()
 
     @strawberry.type
@@ -113,7 +121,7 @@ def test_nested_generics_aliases_with_schema():
 
     @strawberry.type
     class Query:
-        d: Value[List[DictItem[int, str]]]
+        d: Value[list[DictItem[int, str]]]
 
     schema = strawberry.Schema(query=Query)
 

@@ -1,40 +1,98 @@
-from typing import Any, Dict, List, Optional, Union
-from typing_extensions import TypedDict
+from typing import TypedDict, Union
+from typing_extensions import Literal, NotRequired
 
 from graphql import GraphQLFormattedError
 
-ConnectionInitPayload = Dict[str, Any]
+
+class ConnectionInitMessage(TypedDict):
+    type: Literal["connection_init"]
+    payload: NotRequired[dict[str, object]]
 
 
-ConnectionErrorPayload = Dict[str, Any]
-
-
-class StartPayload(TypedDict, total=False):
+class StartMessagePayload(TypedDict):
     query: str
-    variables: Optional[Dict[str, Any]]
-    operationName: Optional[str]
+    variables: NotRequired[dict[str, object]]
+    operationName: NotRequired[str]
 
 
-class DataPayload(TypedDict, total=False):
-    data: Any
-
-    # Optional list of formatted graphql.GraphQLError objects
-    errors: Optional[List[GraphQLFormattedError]]
-
-
-ErrorPayload = GraphQLFormattedError
+class StartMessage(TypedDict):
+    type: Literal["start"]
+    id: str
+    payload: StartMessagePayload
 
 
-OperationMessagePayload = Union[
-    ConnectionInitPayload,
-    ConnectionErrorPayload,
-    StartPayload,
-    DataPayload,
-    ErrorPayload,
+class StopMessage(TypedDict):
+    type: Literal["stop"]
+    id: str
+
+
+class ConnectionTerminateMessage(TypedDict):
+    type: Literal["connection_terminate"]
+
+
+class ConnectionErrorMessage(TypedDict):
+    type: Literal["connection_error"]
+    payload: NotRequired[dict[str, object]]
+
+
+class ConnectionAckMessage(TypedDict):
+    type: Literal["connection_ack"]
+    payload: NotRequired[dict[str, object]]
+
+
+class DataMessagePayload(TypedDict):
+    data: object
+    errors: NotRequired[list[GraphQLFormattedError]]
+
+    # Non-standard field:
+    extensions: NotRequired[dict[str, object]]
+
+
+class DataMessage(TypedDict):
+    type: Literal["data"]
+    id: str
+    payload: DataMessagePayload
+
+
+class ErrorMessage(TypedDict):
+    type: Literal["error"]
+    id: str
+    payload: GraphQLFormattedError
+
+
+class CompleteMessage(TypedDict):
+    type: Literal["complete"]
+    id: str
+
+
+class ConnectionKeepAliveMessage(TypedDict):
+    type: Literal["ka"]
+
+
+OperationMessage = Union[
+    ConnectionInitMessage,
+    StartMessage,
+    StopMessage,
+    ConnectionTerminateMessage,
+    ConnectionErrorMessage,
+    ConnectionAckMessage,
+    DataMessage,
+    ErrorMessage,
+    CompleteMessage,
+    ConnectionKeepAliveMessage,
 ]
 
 
-class OperationMessage(TypedDict, total=False):
-    type: str
-    id: str
-    payload: OperationMessagePayload
+__all__ = [
+    "CompleteMessage",
+    "ConnectionAckMessage",
+    "ConnectionErrorMessage",
+    "ConnectionInitMessage",
+    "ConnectionKeepAliveMessage",
+    "ConnectionTerminateMessage",
+    "DataMessage",
+    "ErrorMessage",
+    "OperationMessage",
+    "StartMessage",
+    "StopMessage",
+]

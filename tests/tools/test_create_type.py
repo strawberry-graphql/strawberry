@@ -4,9 +4,9 @@ import pytest
 
 import strawberry
 from strawberry.annotation import StrawberryAnnotation
-from strawberry.field import StrawberryField
 from strawberry.tools import create_type
-from strawberry.type import get_object_definition
+from strawberry.types.base import get_object_definition
+from strawberry.types.field import StrawberryField
 
 
 def test_create_type():
@@ -25,7 +25,7 @@ def test_create_type():
 
     assert definition.fields[0].python_name == "name"
     assert definition.fields[0].graphql_name is None
-    assert definition.fields[0].type == str
+    assert definition.fields[0].type is str
 
 
 def test_create_type_extend_and_directives():
@@ -52,7 +52,7 @@ def test_create_type_extend_and_directives():
 
     assert definition.fields[0].python_name == "name"
     assert definition.fields[0].graphql_name is None
-    assert definition.fields[0].type == str
+    assert definition.fields[0].type is str
 
 
 def test_create_input_type():
@@ -73,7 +73,7 @@ def test_create_input_type():
 
     assert definition.fields[0].python_name == "name"
     assert definition.fields[0].graphql_name is None
-    assert definition.fields[0].type == str
+    assert definition.fields[0].type is str
 
 
 def test_create_interface_type():
@@ -95,7 +95,7 @@ def test_create_interface_type():
 
     assert definition.fields[0].python_name == "name"
     assert definition.fields[0].graphql_name is None
-    assert definition.fields[0].type == str
+    assert definition.fields[0].type is str
 
 
 def test_create_variable_type():
@@ -111,7 +111,7 @@ def test_create_variable_type():
 
     assert definition.fields[0].python_name == "get_name"
     assert definition.fields[0].graphql_name == "name"
-    assert definition.fields[0].type == str
+    assert definition.fields[0].type is str
 
 
 def test_create_type_empty_list():
@@ -119,11 +119,50 @@ def test_create_type_empty_list():
         create_type("MyType", [])
 
 
-def test_create_type_field_no_name():
+def test_requires_resolver_or_name_to_create_type_field():
     name = strawberry.field()
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="Field doesn't have a name"):
         create_type("MyType", [name])
+
+
+def test_can_create_type_field_from_resolver_only():
+    def get_name() -> str:
+        return "foo"  # pragma: no cover
+
+    name = strawberry.field(resolver=get_name)
+
+    MyType = create_type("MyType", [name])
+
+    definition = get_object_definition(MyType, strict=True)
+    assert len(definition.fields) == 1
+    assert definition.fields[0].python_name == "get_name"
+    assert definition.fields[0].graphql_name is None
+
+
+def test_can_create_type_field_from_name_only():
+    first_name = strawberry.field(name="firstName", graphql_type=str)
+
+    MyType = create_type("MyType", [first_name])
+
+    definition = get_object_definition(MyType, strict=True)
+    assert len(definition.fields) == 1
+    assert definition.fields[0].python_name == "firstName"
+    assert definition.fields[0].graphql_name == "firstName"
+
+
+def test_can_create_type_field_from_resolver_and_name():
+    def get_first_name() -> str:
+        return "foo"  # pragma: no cover
+
+    first_name = strawberry.field(name="firstName", resolver=get_first_name)
+
+    MyType = create_type("MyType", [first_name])
+
+    definition = get_object_definition(MyType, strict=True)
+    assert len(definition.fields) == 1
+    assert definition.fields[0].python_name == "get_first_name"
+    assert definition.fields[0].graphql_name == "firstName"
 
 
 def test_create_type_field_invalid():
@@ -137,7 +176,7 @@ def test_create_mutation_type():
         username: str
 
     @strawberry.mutation
-    def make_user(info, username: str) -> User:
+    def make_user(username: str) -> User:
         return User(username=username)
 
     Mutation = create_type("Mutation", [make_user])
@@ -156,7 +195,7 @@ def test_create_mutation_type_with_params():
         username: str
 
     @strawberry.mutation(name="makeNewUser", description="Make a new user")
-    def make_user(info, username: str) -> User:
+    def make_user(username: str) -> User:
         return User(username=username)
 
     Mutation = create_type("Mutation", [make_user])
@@ -176,7 +215,7 @@ def test_create_schema():
         id: strawberry.ID
 
     @strawberry.field
-    def get_user_by_id(info, id: strawberry.ID) -> User:
+    def get_user_by_id(id: strawberry.ID) -> User:
         return User(id=id)
 
     Query = create_type("Query", [get_user_by_id])

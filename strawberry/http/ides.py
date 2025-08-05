@@ -1,4 +1,3 @@
-import json
 import pathlib
 from typing import Optional
 from typing_extensions import Literal
@@ -7,8 +6,6 @@ GraphQL_IDE = Literal["graphiql", "apollo-sandbox", "pathfinder"]
 
 
 def get_graphql_ide_html(
-    subscription_enabled: bool = True,
-    replace_variables: bool = True,
     graphql_ide: Optional[GraphQL_IDE] = "graphiql",
 ) -> str:
     here = pathlib.Path(__file__).parents[1]
@@ -20,11 +17,7 @@ def get_graphql_ide_html(
     else:
         path = here / "static/graphiql.html"
 
-    template = path.read_text(encoding="utf-8")
+    return path.read_text(encoding="utf-8")
 
-    if replace_variables:
-        template = template.replace(
-            "{{ SUBSCRIPTION_ENABLED }}", json.dumps(subscription_enabled)
-        )
 
-    return template
+__all__ = ["GraphQL_IDE", "get_graphql_ide_html"]

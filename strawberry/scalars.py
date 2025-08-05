@@ -1,15 +1,18 @@
 from __future__ import annotations
 
 import base64
-from typing import TYPE_CHECKING, Any, Dict, NewType, Union
+from typing import TYPE_CHECKING, Any, NewType, Union
 
-from .custom_scalar import scalar
+from strawberry.types.scalar import scalar
 
 if TYPE_CHECKING:
-    from .custom_scalar import ScalarDefinition, ScalarWrapper
+    from collections.abc import Mapping
+
+    from strawberry.types.scalar import ScalarDefinition, ScalarWrapper
 
 
 ID = NewType("ID", str)
+"""Represent the GraphQL `ID` scalar type."""
 
 JSON = scalar(
     NewType("JSON", object),  # mypy doesn't like `NewType("name", Any)`
@@ -56,9 +59,12 @@ Base64 = scalar(
 
 def is_scalar(
     annotation: Any,
-    scalar_registry: Dict[object, Union[ScalarWrapper, ScalarDefinition]],
+    scalar_registry: Mapping[object, Union[ScalarWrapper, ScalarDefinition]],
 ) -> bool:
     if annotation in scalar_registry:
         return True
 
     return hasattr(annotation, "_scalar_definition")
+
+
+__all__ = ["ID", "JSON", "Base16", "Base32", "Base64", "is_scalar"]

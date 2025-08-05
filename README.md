@@ -93,17 +93,6 @@ urlpatterns = [
 ]
 ```
 
-## WebSockets
-
-To support graphql Subscriptions over WebSockets you need to provide a WebSocket
-enabled server. The debug server can be made to support WebSockets with these
-commands:
-
-```shell
-pip install 'strawberry-graphql[debug-server]'
-pip install 'uvicorn[standard]'
-```
-
 ## Examples
 
 * [Various examples on how to use Strawberry](https://github.com/strawberry-graphql/examples)

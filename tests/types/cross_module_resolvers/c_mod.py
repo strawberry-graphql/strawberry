@@ -1,23 +1,19 @@
-from typing import List
-
-import a_mod
-import b_mod
-import x_mod
-from a_mod import AObject as C_AObject
-from b_mod import BObject as C_BObject
-
 import strawberry
 
+from . import a_mod, b_mod, x_mod
+from .a_mod import AObject as C_AObject
+from .b_mod import BObject as C_BObject
 
-def c_inheritance_resolver() -> List["CInheritance"]:
+
+def c_inheritance_resolver() -> list["CInheritance"]:
     pass
 
 
-def c_composition_resolver() -> List["CComposition"]:
+def c_composition_resolver() -> list["CComposition"]:
     pass
 
 
-def c_composition_by_name_resolver() -> List["CCompositionByName"]:
+def c_composition_by_name_resolver() -> list["CCompositionByName"]:
     pass
 
 
@@ -28,34 +24,34 @@ class CInheritance(a_mod.AObject, b_mod.BObject):
 
 @strawberry.type
 class CComposition:
-    a_list: List[a_mod.AObject]
-    b_list: List[b_mod.BObject]
+    a_list: list[a_mod.AObject]
+    b_list: list[b_mod.BObject]
 
 
 @strawberry.type
 class CCompositionByName:
-    a_list: List["C_AObject"]
-    b_list: List["C_BObject"]
+    a_list: list["C_AObject"]
+    b_list: list["C_BObject"]
 
     @strawberry.field
-    def a_method(self) -> List["C_AObject"]:
+    def a_method(self) -> list["C_AObject"]:
         return self.a_list
 
     @strawberry.field
-    def b_method(self) -> List["C_BObject"]:
+    def b_method(self) -> list["C_BObject"]:
         return self.b_list
 
 
 @strawberry.type
 class CCompositionByNameWithResolvers:
-    a_list: List["C_AObject"] = strawberry.field(resolver=a_mod.a_resolver)
-    b_list: List["C_BObject"] = strawberry.field(resolver=b_mod.b_resolver)
+    a_list: list["C_AObject"] = strawberry.field(resolver=a_mod.a_resolver)
+    b_list: list["C_BObject"] = strawberry.field(resolver=b_mod.b_resolver)
 
 
 @strawberry.type
 class CCompositionByNameWithTypelessResolvers:
-    a_list: List["C_AObject"] = strawberry.field(resolver=x_mod.typeless_resolver)
-    b_list: List["C_BObject"] = strawberry.field(resolver=x_mod.typeless_resolver)
+    a_list: list["C_AObject"] = strawberry.field(resolver=x_mod.typeless_resolver)
+    b_list: list["C_BObject"] = strawberry.field(resolver=x_mod.typeless_resolver)
 
 
 @strawberry.type

@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 
 
 class MissingReturnAnnotationError(StrawberryException):
-    """The field is missing the return annotation"""
+    """The field is missing the return annotation."""
 
     def __init__(
         self,
@@ -27,7 +27,7 @@ class MissingReturnAnnotationError(StrawberryException):
             "did you forget to add it?"
         )
         self.rich_message = (
-            "[bold red]Missing annotation for field " f"`[underline]{resolver.name}[/]`"
+            f"[bold red]Missing annotation for field `[underline]{resolver.name}[/]`"
         )
 
         self.suggestion = (

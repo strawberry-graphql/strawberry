@@ -6,6 +6,7 @@ import pytest
 
 from strawberry.http import GraphQLHTTPResponse
 from strawberry.types import ExecutionResult
+from tests.views.schema import schema
 
 from .clients.base import HttpClient
 
@@ -19,9 +20,9 @@ def process_result(result: ExecutionResult) -> GraphQLHTTPResponse:
     return {}
 
 
-@pytest.fixture()
+@pytest.fixture
 def http_client(http_client_class) -> HttpClient:
-    return http_client_class(result_override=process_result)
+    return http_client_class(schema, result_override=process_result)
 
 
 @pytest.mark.parametrize("method", ["get", "post"])

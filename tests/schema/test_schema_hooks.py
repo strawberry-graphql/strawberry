@@ -1,9 +1,8 @@
 import textwrap
-from typing import List
 
 import strawberry
-from strawberry.field import StrawberryField
-from strawberry.types.types import StrawberryObjectDefinition
+from strawberry.types.base import StrawberryObjectDefinition
+from strawberry.types.field import StrawberryField
 
 
 def test_can_change_which_fields_are_exposed():
@@ -22,7 +21,7 @@ def test_can_change_which_fields_are_exposed():
     class PublicSchema(strawberry.Schema):
         def get_fields(
             self, type_definition: StrawberryObjectDefinition
-        ) -> List[StrawberryField]:
+        ) -> list[StrawberryField]:
             fields = super().get_fields(type_definition)
             return list(filter(public_field_filter, fields))
 

@@ -77,17 +77,24 @@ don’t have fields in common, use a [Union](/docs/types/union) instead.
 
 Interfaces are defined using the `@strawberry.interface` decorator:
 
-```python+schema
+<CodeGrid>
+
+```python
 import strawberry
+
 
 @strawberry.interface
 class Customer:
     name: str
----
+```
+
+```graphql
 interface Customer {
   name: String!
 }
 ```
+
+</CodeGrid>
 
 <Note>
 
@@ -130,24 +137,31 @@ schema = strawberry.Schema(query=Query, types=[Individual, Company])
 
 Interfaces can also implement other interfaces:
 
-```python+schema
+<CodeGrid>
+
+```python
 import strawberry
+
 
 @strawberry.interface
 class Error:
     message: str
+
 
 @strawberry.interface
 class FieldError(Error):
     message: str
     field: str
 
+
 @strawberry.type
 class PasswordTooShort(FieldError):
     message: str
     field: str
     min_length: int
----
+```
+
+```graphql
 interface Error {
   message: String!
 }
@@ -163,6 +177,8 @@ type PasswordTooShort implements FieldError & Error {
   minLength: Int!
 }
 ```
+
+</CodeGrid>
 
 ## Implementing fields
 

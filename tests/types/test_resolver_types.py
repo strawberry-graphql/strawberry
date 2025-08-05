@@ -1,5 +1,7 @@
 from enum import Enum
-from typing import List, Optional, TypeVar, Union
+from typing import Optional, TypeVar, Union
+
+from asgiref.sync import sync_to_async
 
 import strawberry
 from strawberry.types.fields.resolver import StrawberryResolver
@@ -37,11 +39,11 @@ def test_forward_references():
 
 
 def test_list():
-    def get_collection_types() -> List[str]:
+    def get_collection_types() -> list[str]:
         return ["list", "tuple", "dict", "set"]
 
     resolver = StrawberryResolver(get_collection_types)
-    assert resolver.type == List[str]
+    assert resolver.type == list[str]
 
 
 def test_literal():
@@ -94,3 +96,12 @@ def test_union():
 
     resolver = StrawberryResolver(get_overlap)
     assert resolver.type == Union[Venn, Diagram]
+
+
+def test_sync_to_async_resolver():
+    @sync_to_async
+    def async_resolver() -> str:
+        return "patrick"
+
+    resolver = StrawberryResolver(async_resolver)
+    assert resolver.is_async

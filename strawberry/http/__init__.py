@@ -1,27 +1,36 @@
 from __future__ import annotations
 
-import json
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Dict, List, Mapping, Optional
-from typing_extensions import TypedDict
+from typing import Any, Optional
+from typing_extensions import Literal, TypedDict
 
-if TYPE_CHECKING:
-    from strawberry.types import ExecutionResult
+from strawberry.schema._graphql_core import (
+    GraphQLIncrementalExecutionResults,
+    ResultType,
+)
 
 
 class GraphQLHTTPResponse(TypedDict, total=False):
-    data: Optional[Dict[str, object]]
-    errors: Optional[List[object]]
-    extensions: Optional[Dict[str, object]]
+    data: Optional[dict[str, object]]
+    errors: Optional[list[object]]
+    extensions: Optional[dict[str, object]]
+    hasNext: Optional[bool]
+    completed: Optional[list[Any]]
+    pending: Optional[list[Any]]
+    initial: Optional[list[Any]]
+    incremental: Optional[list[Any]]
 
 
-def process_result(result: ExecutionResult) -> GraphQLHTTPResponse:
-    data: GraphQLHTTPResponse = {"data": result.data}
+def process_result(result: ResultType) -> GraphQLHTTPResponse:
+    if isinstance(result, GraphQLIncrementalExecutionResults):
+        return result
 
-    if result.errors:
-        data["errors"] = [err.formatted for err in result.errors]
-    if result.extensions:
-        data["extensions"] = result.extensions
+    errors, extensions = result.errors, result.extensions
+    data: GraphQLHTTPResponse = {
+        "data": result.data,
+        **({"errors": [err.formatted for err in errors]} if errors else {}),
+        **({"extensions": extensions} if extensions else {}),
+    }
 
     return data
 
@@ -31,20 +40,14 @@ class GraphQLRequestData:
     # query is optional here as it can be added by an extensions
     # (for example an extension for persisted queries)
     query: Optional[str]
-    variables: Optional[Dict[str, Any]]
+    variables: Optional[dict[str, Any]]
     operation_name: Optional[str]
+    extensions: Optional[dict[str, Any]]
+    protocol: Literal["http", "multipart-subscription"] = "http"
 
 
-def parse_query_params(params: Dict[str, str]) -> Dict[str, Any]:
-    if "variables" in params:
-        params["variables"] = json.loads(params["variables"])
-
-    return params
-
-
-def parse_request_data(data: Mapping[str, Any]) -> GraphQLRequestData:
-    return GraphQLRequestData(
-        query=data.get("query"),
-        variables=data.get("variables"),
-        operation_name=data.get("operationName"),
-    )
+__all__ = [
+    "GraphQLHTTPResponse",
+    "GraphQLRequestData",
+    "process_result",
+]

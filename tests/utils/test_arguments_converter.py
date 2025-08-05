@@ -1,17 +1,16 @@
 from enum import Enum
-from typing import List, Optional
-from typing_extensions import Annotated
+from typing import Annotated, Optional
 
 import pytest
 
 import strawberry
 from strawberry.annotation import StrawberryAnnotation
-from strawberry.arguments import StrawberryArgument, convert_arguments
 from strawberry.exceptions import UnsupportedTypeError
-from strawberry.lazy_type import LazyType
 from strawberry.schema.config import StrawberryConfig
 from strawberry.schema.types.scalar import DEFAULT_SCALAR_REGISTRY
-from strawberry.unset import UNSET
+from strawberry.types.arguments import StrawberryArgument, convert_arguments
+from strawberry.types.lazy_type import LazyType
+from strawberry.types.unset import UNSET
 
 
 def test_simple_types():
@@ -57,18 +56,30 @@ def test_list():
     args = {
         "integerList": [1, 2],
         "stringList": ["abc", "cde"],
+        "optionalIntegerList": [1, 2],
+        "optionalStringList": ["abc", "cde", None],
     }
 
     arguments = [
         StrawberryArgument(
             graphql_name="integerList",
             python_name="integer_list",
-            type_annotation=StrawberryAnnotation(List[int]),
+            type_annotation=StrawberryAnnotation(list[int]),
         ),
         StrawberryArgument(
             graphql_name="stringList",
             python_name="string_list",
-            type_annotation=StrawberryAnnotation(List[str]),
+            type_annotation=StrawberryAnnotation(list[str]),
+        ),
+        StrawberryArgument(
+            graphql_name="optionalIntegerList",
+            python_name="optional_integer_list",
+            type_annotation=StrawberryAnnotation(list[Optional[int]]),
+        ),
+        StrawberryArgument(
+            graphql_name="optionalStringList",
+            python_name="optional_string_list",
+            type_annotation=StrawberryAnnotation(list[Optional[str]]),
         ),
     ]
 
@@ -80,6 +91,8 @@ def test_list():
     ) == {
         "integer_list": [1, 2],
         "string_list": ["abc", "cde"],
+        "optional_integer_list": [1, 2],
+        "optional_string_list": ["abc", "cde", None],
     }
 
 
@@ -196,7 +209,7 @@ def test_list_of_input_types():
         StrawberryArgument(
             graphql_name="inputList",
             python_name="input_list",
-            type_annotation=StrawberryAnnotation(List[MyInput]),
+            type_annotation=StrawberryAnnotation(list[MyInput]),
         ),
     ]
 
@@ -219,7 +232,7 @@ def test_optional_list_of_input_types():
         StrawberryArgument(
             graphql_name="inputList",
             python_name="input_list",
-            type_annotation=StrawberryAnnotation(Optional[List[MyInput]]),
+            type_annotation=StrawberryAnnotation(Optional[list[MyInput]]),
         ),
     ]
     assert convert_arguments(
@@ -321,7 +334,7 @@ def test_nested_list_of_complex_types():
 
     @strawberry.input
     class Input:
-        numbers: List[Number]
+        numbers: list[Number]
 
     args = {"input": {"numbers": [{"value": 1}, {"value": 2}]}}
 
@@ -425,7 +438,7 @@ def test_when_optional():
 )
 def test_fails_when_passing_non_strawberry_classes():
     class Input:
-        numbers: List[int]
+        numbers: list[int]
 
     args = {
         "input": {

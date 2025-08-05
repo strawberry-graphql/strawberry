@@ -69,17 +69,22 @@ It is also possible to write a mutation that doesn't return anything.
 
 This is mapped to a `Void` GraphQL scalar, and always returns `null`
 
-```python+schema
+<CodeGrid>
+```python
 @strawberry.type
 class Mutation:
     @strawberry.mutation
     def restart() -> None:
-        print(f'Restarting the server')
----
+        print(f"Restarting the server")
+```
+
+```graphql
 type Mutation {
   restart: Void
 }
 ```
+
+</CodeGrid>
 
 <Note>
 
@@ -93,8 +98,11 @@ Mutations with void-result go against
 It is usually useful to use a pattern of defining a mutation that receives a
 single [input type](../types/input-types) argument called `input`.
 
-Strawberry provides a helper to create a mutation that automatically creates an
-input type for you, whose attributes are the same as the args in the resolver.
+Strawberry provides the
+[`InputMutationExtension`](../extensions/input-mutation.md), a
+[field extension](../guides/field-extensions.md) that automatically creates an
+input type for you, whose attributes are the same as the arguments in the
+resolver.
 
 For example, suppose we want the mutation defined in the section above to be an
 input mutation. We can add the `InputMutationExtension` to the field like this:
@@ -166,12 +174,10 @@ import strawberry
 @strawberry.type
 class FruitMutations:
     @strawberry.mutation
-    def add(self, info, input: AddFruitInput) -> Fruit:
-        # ...
+    def add(self, info, input: AddFruitInput) -> Fruit: ...
 
     @strawberry.mutation
-    def update_weight(self, info, input: UpdateFruitWeightInput) -> Fruit:
-        # ...
+    def update_weight(self, info, input: UpdateFruitWeightInput) -> Fruit: ...
 
 
 @strawberry.type
@@ -211,4 +217,5 @@ For more details, see
 [Apollo's guide on Namespaces for serial mutations](https://www.apollographql.com/docs/technotes/TN0012-namespacing-by-separation-of-concern/#namespaces-for-serial-mutations)
 and
 [Rapid API's Interactive Guide to GraphQL Queries: Aliases and Variables](https://rapidapi.com/guides/graphql-aliases-variables).
+
 </Note>

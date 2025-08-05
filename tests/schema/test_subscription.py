@@ -1,20 +1,19 @@
 # ruff: noqa: F821
 from __future__ import annotations
 
-import sys
 from collections import abc  # noqa: F401
-from typing import (  # noqa: F401
+from collections.abc import AsyncGenerator, AsyncIterable, AsyncIterator  # noqa: F401
+from typing import (
+    Annotated,
     Any,
-    AsyncGenerator,
-    AsyncIterable,
-    AsyncIterator,
     Union,
 )
-from typing_extensions import Annotated
 
 import pytest
 
 import strawberry
+from strawberry.types.execution import PreExecutionError
+from strawberry.utils.aio import aclosing
 
 
 @pytest.mark.asyncio
@@ -33,8 +32,8 @@ async def test_subscription():
 
     query = "subscription { example }"
 
-    sub = await schema.subscribe(query)
-    result = await sub.__anext__()
+    async with aclosing(await schema.subscribe(query)) as sub_result:
+        result = await sub_result.__anext__()
 
     assert not result.errors
     assert result.data["example"] == "Hi"
@@ -66,8 +65,8 @@ async def test_subscription_with_permission():
 
     query = "subscription { example }"
 
-    sub = await schema.subscribe(query)
-    result = await sub.__anext__()
+    async with aclosing(await schema.subscribe(query)) as sub_result:
+        result = await sub_result.__anext__()
 
     assert not result.errors
     assert result.data["example"] == "Hi"
@@ -89,29 +88,23 @@ async def test_subscription_with_arguments():
 
     query = 'subscription { example(name: "Nina") }'
 
-    sub = await schema.subscribe(query)
-    result = await sub.__anext__()
+    async with aclosing(await schema.subscribe(query)) as sub_result:
+        result = await sub_result.__anext__()
 
     assert not result.errors
     assert result.data["example"] == "Hi Nina"
 
 
-requires_builtin_generics = pytest.mark.skipif(
-    sys.version_info < (3, 9),
-    reason="built-in generic annotations were added in python 3.9",
-)
-
-
 @pytest.mark.parametrize(
     "return_annotation",
-    (
+    [
         "AsyncGenerator[str, None]",
         "AsyncIterable[str]",
         "AsyncIterator[str]",
-        pytest.param("abc.AsyncIterator[str]", marks=requires_builtin_generics),
-        pytest.param("abc.AsyncGenerator[str, None]", marks=requires_builtin_generics),
-        pytest.param("abc.AsyncIterable[str]", marks=requires_builtin_generics),
-    ),
+        "abc.AsyncIterator[str]",
+        "abc.AsyncGenerator[str, None]",
+        "abc.AsyncIterable[str]",
+    ],
 )
 @pytest.mark.asyncio
 async def test_subscription_return_annotations(return_annotation: str):
@@ -132,8 +125,8 @@ async def test_subscription_return_annotations(return_annotation: str):
 
     query = "subscription { example }"
 
-    sub = await schema.subscribe(query)
-    result = await sub.__anext__()
+    async with aclosing(await schema.subscribe(query)) as sub_result:
+        result = await sub_result.__anext__()
 
     assert not result.errors
     assert result.data["example"] == "Hi"
@@ -165,8 +158,8 @@ async def test_subscription_with_unions():
 
     query = "subscription { exampleWithUnion { ... on A { a } } }"
 
-    sub = await schema.subscribe(query)
-    result = await sub.__anext__()
+    async with aclosing(await schema.subscribe(query)) as sub_result:
+        result = await sub_result.__anext__()
 
     assert not result.errors
     assert result.data["exampleWithUnion"]["a"] == "Hi"
@@ -204,8 +197,8 @@ async def test_subscription_with_unions_and_annotated():
 
     query = "subscription { exampleWithAnnotatedUnion { ... on C { c } } }"
 
-    sub = await schema.subscribe(query)
-    result = await sub.__anext__()
+    async with aclosing(await schema.subscribe(query)) as sub_result:
+        result = await sub_result.__anext__()
 
     assert not result.errors
     assert result.data["exampleWithAnnotatedUnion"]["c"] == "Hi"
@@ -231,8 +224,59 @@ async def test_subscription_with_annotated():
 
     query = "subscription { example }"
 
-    sub = await schema.subscribe(query)
-    result = await sub.__anext__()
+    async with aclosing(await schema.subscribe(query)) as sub_result:
+        result = await sub_result.__anext__()
 
     assert not result.errors
     assert result.data["example"] == "Hi"
+
+
+async def test_subscription_immediate_error():
+    @strawberry.type
+    class Query:
+        x: str = "Hello"
+
+    @strawberry.type
+    class Subscription:
+        @strawberry.subscription()
+        async def example(self) -> AsyncGenerator[str, None]:
+            return "fds"
+
+    schema = strawberry.Schema(query=Query, subscription=Subscription)
+
+    query = """#graphql
+        subscription { example }
+    """
+
+    async with aclosing(await schema.subscribe(query)) as sub_result:
+        result = await sub_result.__anext__()
+
+    assert isinstance(result, PreExecutionError)
+    assert result.errors
+
+
+async def test_wrong_operation_variables():
+    @strawberry.type
+    class Query:
+        x: str = "Hello"
+
+    @strawberry.type
+    class Subscription:
+        @strawberry.subscription
+        async def example(self, name: str) -> AsyncGenerator[str, None]:
+            yield f"Hi {name}"  # pragma: no cover
+
+    schema = strawberry.Schema(query=Query, subscription=Subscription)
+
+    query = """#graphql
+        subscription subOp($opVar: String!){ example(name: $opVar) }
+    """
+
+    async with aclosing(await schema.subscribe(query)) as sub_result:
+        result = await sub_result.__anext__()
+
+    assert result.errors
+    assert (
+        result.errors[0].message
+        == "Variable '$opVar' of required type 'String!' was not provided."
+    )

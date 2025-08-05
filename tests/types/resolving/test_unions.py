@@ -1,14 +1,13 @@
 import sys
-from typing import Generic, TypeVar, Union
-from typing_extensions import Annotated
+from typing import Annotated, Generic, TypeVar, Union
 
 import pytest
 
 import strawberry
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.exceptions import InvalidUnionTypeError
-from strawberry.type import get_object_definition
-from strawberry.union import StrawberryUnion, union
+from strawberry.types.base import get_object_definition
+from strawberry.types.union import StrawberryUnion, union
 
 
 def test_python_union():
@@ -124,7 +123,7 @@ def test_error_with_scalar_types():
     class Query:
         something: Something
 
-    schema = strawberry.Schema(query=Query)
+    strawberry.Schema(query=Query)
 
 
 @pytest.mark.raises_strawberry_exception(
@@ -146,4 +145,4 @@ def test_error_with_scalar_types_pipe():
     class Query:
         something: Something2
 
-    schema = strawberry.Schema(query=Query)
+    strawberry.Schema(query=Query)

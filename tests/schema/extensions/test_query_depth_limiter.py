@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Optional, Union
 
 import pytest
 from graphql import (
@@ -47,7 +47,7 @@ class Human:
     name: str
     email: str
     address: Address
-    pets: List[Pet]
+    pets: list[Pet]
 
 
 @strawberry.input
@@ -69,7 +69,7 @@ class Query:
         pass
 
     @strawberry.field
-    def users(self, names: Optional[List[str]]) -> List[Human]:
+    def users(self, names: Optional[list[str]]) -> list[Human]:
         pass
 
     @strawberry.field
@@ -87,7 +87,7 @@ schema = strawberry.Schema(Query)
 
 def run_query(
     query: str, max_depth: int, should_ignore: ShouldIgnoreType = None
-) -> Tuple[List[GraphQLError], Union[Dict[str, int], None]]:
+) -> tuple[list[GraphQLError], Union[dict[str, int], None]]:
     document = parse(query)
 
     result = None
@@ -245,11 +245,6 @@ def test_should_catch_query_thats_too_deep():
 
 
 def test_should_raise_invalid_ignore():
-    query = """
-    query read1 {
-      user { address { city } }
-    }
-    """
     with pytest.raises(
         TypeError,
         match="The `should_ignore` argument to `QueryDepthLimiter` must be a callable.",
@@ -272,11 +267,7 @@ def test_should_ignore_field_by_name():
     """
 
     def should_ignore(ignore: IgnoreContext) -> bool:
-        return (
-            ignore.field_name == "user1"
-            or ignore.field_name == "user2"
-            or ignore.field_name == "user3"
-        )
+        return ignore.field_name in ("user1", "user2", "user3")
 
     errors, result = run_query(query, 10, should_ignore=should_ignore)
 

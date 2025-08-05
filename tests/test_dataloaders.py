@@ -1,6 +1,7 @@
 import asyncio
 from asyncio.futures import Future
-from typing import Any, Awaitable, Callable, Dict, List, Optional, Tuple, Union, cast
+from collections.abc import Awaitable
+from typing import Any, Callable, Optional, Union, cast
 
 import pytest
 from pytest_mock import MockerFixture
@@ -8,10 +9,10 @@ from pytest_mock import MockerFixture
 from strawberry.dataloader import AbstractCache, DataLoader
 from strawberry.exceptions import WrongNumberOfResultsReturned
 
-IDXType = Callable[[List[int]], Awaitable[List[int]]]
+IDXType = Callable[[list[int]], Awaitable[list[int]]]
 
 
-async def idx(keys: List[int]) -> List[int]:
+async def idx(keys: list[int]) -> list[int]:
     return keys
 
 
@@ -36,7 +37,7 @@ async def test_loading():
 async def test_gathering(mocker: MockerFixture):
     mock_loader = mocker.Mock(side_effect=idx)
 
-    loader = DataLoader(load_fn=cast(IDXType, mock_loader))
+    loader = DataLoader(load_fn=cast("IDXType", mock_loader))
 
     [value_a, value_b, value_c] = await asyncio.gather(
         loader.load(1),
@@ -55,7 +56,7 @@ async def test_gathering(mocker: MockerFixture):
 async def test_max_batch_size(mocker: MockerFixture):
     mock_loader = mocker.Mock(side_effect=idx)
 
-    loader = DataLoader(load_fn=cast(IDXType, mock_loader), max_batch_size=2)
+    loader = DataLoader(load_fn=cast("IDXType", mock_loader), max_batch_size=2)
 
     [value_a, value_b, value_c] = await asyncio.gather(
         loader.load(1),
@@ -72,7 +73,7 @@ async def test_max_batch_size(mocker: MockerFixture):
 
 @pytest.mark.asyncio
 async def test_error():
-    async def idx(keys: List[int]) -> List[Union[int, ValueError]]:
+    async def idx(keys: list[int]) -> list[Union[int, ValueError]]:
         return [ValueError()]
 
     loader = DataLoader(load_fn=idx)
@@ -83,7 +84,7 @@ async def test_error():
 
 @pytest.mark.asyncio
 async def test_error_and_values():
-    async def idx(keys: List[int]) -> List[Union[int, ValueError]]:
+    async def idx(keys: list[int]) -> list[Union[int, ValueError]]:
         return [2] if keys == [2] else [ValueError()]
 
     loader = DataLoader(load_fn=idx)
@@ -96,7 +97,7 @@ async def test_error_and_values():
 
 @pytest.mark.asyncio
 async def test_when_raising_error_in_loader():
-    async def idx(keys: List[int]) -> List[Union[int, ValueError]]:
+    async def idx(keys: list[int]) -> list[Union[int, ValueError]]:
         raise ValueError
 
     loader = DataLoader(load_fn=idx)
@@ -114,7 +115,7 @@ async def test_when_raising_error_in_loader():
 
 @pytest.mark.asyncio
 async def test_returning_wrong_number_of_results():
-    async def idx(keys: List[int]) -> List[int]:
+    async def idx(keys: list[int]) -> list[int]:
         return [1, 2]
 
     loader = DataLoader(load_fn=idx)
@@ -122,8 +123,7 @@ async def test_returning_wrong_number_of_results():
     with pytest.raises(
         WrongNumberOfResultsReturned,
         match=(
-            "Received wrong number of results in dataloader, "
-            "expected: 1, received: 2"
+            "Received wrong number of results in dataloader, expected: 1, received: 2"
         ),
     ):
         await loader.load(1)
@@ -133,7 +133,7 @@ async def test_returning_wrong_number_of_results():
 async def test_caches_by_id(mocker: MockerFixture):
     mock_loader = mocker.Mock(side_effect=idx)
 
-    loader = DataLoader(load_fn=cast(IDXType, mock_loader), cache=True)
+    loader = DataLoader(load_fn=cast("IDXType", mock_loader), cache=True)
 
     a = loader.load(1)
     b = loader.load(1)
@@ -150,14 +150,14 @@ async def test_caches_by_id(mocker: MockerFixture):
 async def test_caches_by_id_when_loading_many(mocker: MockerFixture):
     mock_loader = mocker.Mock(side_effect=idx)
 
-    loader = DataLoader(load_fn=cast(IDXType, mock_loader), cache=True)
+    loader = DataLoader(load_fn=cast("IDXType", mock_loader), cache=True)
 
     a = loader.load(1)
     b = loader.load(1)
 
     assert a == b
 
-    assert [1, 1] == await asyncio.gather(a, b)
+    assert await asyncio.gather(a, b) == [1, 1]
 
     mock_loader.assert_called_once_with([1])
 
@@ -166,7 +166,7 @@ async def test_caches_by_id_when_loading_many(mocker: MockerFixture):
 async def test_cache_disabled(mocker: MockerFixture):
     mock_loader = mocker.Mock(side_effect=idx)
 
-    loader = DataLoader(load_fn=cast(IDXType, mock_loader), cache=False)
+    loader = DataLoader(load_fn=cast("IDXType", mock_loader), cache=False)
 
     a = loader.load(1)
     b = loader.load(1)
@@ -183,7 +183,7 @@ async def test_cache_disabled(mocker: MockerFixture):
 async def test_cache_disabled_immediate_await(mocker: MockerFixture):
     mock_loader = mocker.Mock(side_effect=idx)
 
-    loader = DataLoader(load_fn=cast(IDXType, mock_loader), cache=False)
+    loader = DataLoader(load_fn=cast("IDXType", mock_loader), cache=False)
 
     a = await loader.load(1)
     b = await loader.load(1)
@@ -195,7 +195,7 @@ async def test_cache_disabled_immediate_await(mocker: MockerFixture):
 
 @pytest.mark.asyncio
 async def test_prime():
-    async def idx(keys: List[Union[int, float]]) -> List[Union[int, float]]:
+    async def idx(keys: list[Union[int, float]]) -> list[Union[int, float]]:
         assert keys, "At least one key must be specified"
         return keys
 
@@ -241,7 +241,7 @@ async def test_prime():
 
 @pytest.mark.asyncio
 async def test_prime_nocache():
-    async def idx(keys: List[Union[int, float]]) -> List[Union[int, float]]:
+    async def idx(keys: list[Union[int, float]]) -> list[Union[int, float]]:
         assert keys, "At least one key must be specified"
         return keys
 
@@ -266,7 +266,7 @@ async def test_prime_nocache():
 async def test_clear():
     batch_num = 0
 
-    async def idx(keys: List[int]) -> List[Tuple[int, int]]:
+    async def idx(keys: list[int]) -> list[tuple[int, int]]:
         """Maps key => (key, batch_num)"""
         nonlocal batch_num
         batch_num += 1
@@ -293,7 +293,7 @@ async def test_clear():
 async def test_clear_nocache():
     batch_num = 0
 
-    async def idx(keys: List[int]) -> List[Tuple[int, int]]:
+    async def idx(keys: list[int]) -> list[tuple[int, int]]:
         """Maps key => (key, batch_num)"""
         nonlocal batch_num
         batch_num += 1
@@ -318,7 +318,7 @@ async def test_clear_nocache():
 
 @pytest.mark.asyncio
 async def test_dont_dispatch_cancelled():
-    async def idx(keys: List[int]) -> List[int]:
+    async def idx(keys: list[int]) -> list[int]:
         await asyncio.sleep(0.2)
         return keys
 
@@ -329,8 +329,8 @@ async def test_dont_dispatch_cancelled():
     value_b = cast("Future[Any]", loader.load(2))
     value_b.cancel()
     # value_c will be cancelled by the timeout
+    value_c = cast("Future[Any]", loader.load(3))
     with pytest.raises(asyncio.TimeoutError):
-        value_c = cast("Future[Any]", loader.load(3))
         await asyncio.wait_for(value_c, 0.1)
     value_d = await loader.load(4)
 
@@ -363,7 +363,7 @@ async def test_dont_dispatch_cancelled():
 async def test_cache_override():
     class TestCache(AbstractCache[int, int]):
         def __init__(self):
-            self.cache: Dict[int, Future[int]] = {}
+            self.cache: dict[int, Future[int]] = {}
 
         def get(self, key: int) -> Optional["Future[int]"]:
             return self.cache.get(key)
@@ -391,7 +391,7 @@ async def test_cache_override():
 
     loader.clear(1)
     assert len(custom_cache.cache) == 2
-    assert sorted(list(custom_cache.cache.keys())) == [2, 3]
+    assert sorted(custom_cache.cache.keys()) == [2, 3]
 
     loader.clear_all()
     assert len(custom_cache.cache) == 0
@@ -423,12 +423,12 @@ async def test_cache_override():
 
 @pytest.mark.asyncio
 async def test_custom_cache_key_fn():
-    def custom_cache_key(key: List[int]) -> str:
+    def custom_cache_key(key: list[int]) -> str:
         return ",".join(str(k) for k in key)
 
     loader = DataLoader(load_fn=idx, cache_key_fn=custom_cache_key)
     data = await loader.load([1, 2, "test"])
-    assert [1, 2, "test"] == data
+    assert data == [1, 2, "test"]
 
 
 @pytest.mark.asyncio
@@ -452,7 +452,7 @@ async def test_user_class_custom_cache_key_fn():
 
 def test_works_when_created_in_a_different_loop(mocker: MockerFixture):
     mock_loader = mocker.Mock(side_effect=idx)
-    loader = DataLoader(load_fn=cast(IDXType, mock_loader), cache=False)
+    loader = DataLoader(load_fn=cast("IDXType", mock_loader), cache=False)
 
     loop = asyncio.new_event_loop()
 

@@ -3,7 +3,7 @@ from __future__ import annotations
 from io import BytesIO
 from json import dumps
 from random import randint
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 from typing_extensions import Literal
 
 from sanic import Sanic
@@ -12,10 +12,11 @@ from strawberry.http import GraphQLHTTPResponse
 from strawberry.http.ides import GraphQL_IDE
 from strawberry.http.temporal_response import TemporalResponse
 from strawberry.sanic.views import GraphQLView as BaseGraphQLView
+from strawberry.schema import Schema
 from strawberry.types import ExecutionResult
-from tests.views.schema import Query, schema
+from tests.http.context import get_context
+from tests.views.schema import Query
 
-from ..context import get_context
 from .base import JSON, HttpClient, Response, ResultOverrideFunction
 
 
@@ -49,10 +50,12 @@ class GraphQLView(BaseGraphQLView[object, Query]):
 class SanicHttpClient(HttpClient):
     def __init__(
         self,
+        schema: Schema,
         graphiql: Optional[bool] = None,
         graphql_ide: Optional[GraphQL_IDE] = "graphiql",
         allow_queries_via_get: bool = True,
         result_override: ResultOverrideFunction = None,
+        multipart_uploads_enabled: bool = False,
     ):
         self.app = Sanic(
             f"test_{int(randint(0, 1000))}",  # noqa: S311
@@ -63,33 +66,37 @@ class SanicHttpClient(HttpClient):
             graphql_ide=graphql_ide,
             allow_queries_via_get=allow_queries_via_get,
             result_override=result_override,
+            multipart_uploads_enabled=multipart_uploads_enabled,
         )
-        self.app.add_route(
-            view,
-            "/graphql",
-        )
+        self.app.add_route(view, "/graphql")
 
     async def _graphql_request(
         self,
         method: Literal["get", "post"],
         query: Optional[str] = None,
-        variables: Optional[Dict[str, object]] = None,
-        files: Optional[Dict[str, BytesIO]] = None,
-        headers: Optional[Dict[str, str]] = None,
+        operation_name: Optional[str] = None,
+        variables: Optional[dict[str, object]] = None,
+        files: Optional[dict[str, BytesIO]] = None,
+        headers: Optional[dict[str, str]] = None,
+        extensions: Optional[dict[str, Any]] = None,
         **kwargs: Any,
     ) -> Response:
         body = self._build_body(
-            query=query, variables=variables, files=files, method=method
+            query=query,
+            operation_name=operation_name,
+            variables=variables,
+            files=files,
+            method=method,
+            extensions=extensions,
         )
 
         if body:
             if method == "get":
                 kwargs["params"] = body
+            elif files:
+                kwargs["data"] = body
             else:
-                if files:
-                    kwargs["data"] = body
-                else:
-                    kwargs["content"] = dumps(body)
+                kwargs["content"] = dumps(body)
 
         request, response = await self.app.asgi_client.request(
             method,
@@ -108,8 +115,8 @@ class SanicHttpClient(HttpClient):
     async def request(
         self,
         url: str,
-        method: Literal["get", "post", "patch", "put", "delete"],
-        headers: Optional[Dict[str, str]] = None,
+        method: Literal["head", "get", "post", "patch", "put", "delete"],
+        headers: Optional[dict[str, str]] = None,
     ) -> Response:
         request, response = await self.app.asgi_client.request(
             method,
@@ -126,7 +133,7 @@ class SanicHttpClient(HttpClient):
     async def get(
         self,
         url: str,
-        headers: Optional[Dict[str, str]] = None,
+        headers: Optional[dict[str, str]] = None,
     ) -> Response:
         return await self.request(url, "get", headers=headers)
 
@@ -135,9 +142,10 @@ class SanicHttpClient(HttpClient):
         url: str,
         data: Optional[bytes] = None,
         json: Optional[JSON] = None,
-        headers: Optional[Dict[str, str]] = None,
+        headers: Optional[dict[str, str]] = None,
     ) -> Response:
-        body = data or dumps(json)
+        body = dumps(json) if json is not None else data
+
         request, response = await self.app.asgi_client.request(
             "post", url, content=body, headers=headers
         )

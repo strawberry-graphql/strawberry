@@ -6,7 +6,7 @@ import pytest
 import strawberry
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.exceptions import PrivateStrawberryFieldError
-from strawberry.field import StrawberryField
+from strawberry.types.field import StrawberryField
 
 
 def test_private_field():
@@ -22,7 +22,7 @@ def test_private_field():
 
     assert definition.fields[0].python_name == "name"
     assert definition.fields[0].graphql_name is None
-    assert definition.fields[0].type == str
+    assert definition.fields[0].type is str
 
     instance = Query(name="Luke", age=22)
     assert instance.name == "Luke"
@@ -79,7 +79,6 @@ class SensitiveData:
 
 def test_private_field_with_str_annotations():
     """Check compatibility of strawberry.Private with annotations as string."""
-
     schema = strawberry.Schema(query=Query)
 
     result = schema.execute_sync(
@@ -98,7 +97,6 @@ def test_private_field_with_str_annotations():
 
 def test_private_field_defined_outside_module_scope():
     """Check compatibility of strawberry.Private when defined outside module scope."""
-
     global LocallyScopedSensitiveData
 
     @strawberry.type
@@ -126,7 +124,6 @@ def test_private_field_type_resolution_with_generic_type():
 
     Refer to: https://github.com/strawberry-graphql/strawberry/issues/1938
     """
-
     T = TypeVar("T")
 
     class GenericPrivateType(Generic[T]):

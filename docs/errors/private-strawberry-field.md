@@ -28,11 +28,11 @@ the GraphQL schema, so using `strawberry.field` on that field won't be useful,
 since it is meant to be used to change information about a field that is exposed
 in the GraphQL schema.
 
-<!--
-    note: this makes sense, but now we don't have a way to do something like:
-    strawberry.Private[list[str]] = strawberry.field(default_factory=list)
-    (workaround is to use dataclasses.field, explained below)
--->
+<Note>
+  This makes sense, but now we don't have a way to do something like:
+  strawberry.Private[list[str]] = strawberry.field(default_factory=list)
+  (workaround is to use dataclasses.field, explained below)
+</Note>
 
 ## How to fix this error
 

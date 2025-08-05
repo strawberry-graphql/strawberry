@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Optional, cast
+from typing import TYPE_CHECKING, Optional
 
 from graphql.language import OperationDefinitionNode
 
@@ -25,9 +25,10 @@ def get_operation_type(
 ) -> OperationType:
     definition: Optional[OperationDefinitionNode] = None
 
-    if operation_name:
+    if operation_name is not None:
         for d in graphql_document.definitions:
-            d = cast(OperationDefinitionNode, d)
+            if not isinstance(d, OperationDefinitionNode):
+                continue
             if d.name and d.name.value == operation_name:
                 definition = d
                 break
@@ -38,3 +39,6 @@ def get_operation_type(
         raise RuntimeError("Can't get GraphQL operation type")
 
     return OperationType(definition.operation.value)
+
+
+__all__ = ["get_first_operation", "get_operation_type"]

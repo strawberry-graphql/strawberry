@@ -2,9 +2,9 @@ import contextlib
 import os
 import re
 from collections import defaultdict
+from collections.abc import Generator
 from dataclasses import dataclass
 from pathlib import Path
-from typing import DefaultDict, Generator, List, Type
 
 import pytest
 import rich
@@ -32,14 +32,16 @@ def suppress_output(verbosity_level: int = 0) -> Generator[None, None, None]:
 
         return
 
-    with Path(os.devnull).open("w", encoding="utf-8") as devnull:
-        with contextlib.redirect_stdout(devnull):
-            yield
+    with (
+        Path(os.devnull).open("w", encoding="utf-8") as devnull,
+        contextlib.redirect_stdout(devnull),
+    ):
+        yield
 
 
 class StrawberryExceptionsPlugin:
     def __init__(self, verbosity_level: int) -> None:
-        self._info: DefaultDict[Type[StrawberryException], List[Result]] = defaultdict(
+        self._info: defaultdict[type[StrawberryException], list[Result]] = defaultdict(
             list
         )
         self.verbosity_level = verbosity_level

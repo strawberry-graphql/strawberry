@@ -20,11 +20,15 @@ GraphQL is strongly typed and so Strawberry validates all queries before
 executing them. If a query is invalid it isn’t executed and instead the response
 contains an `errors` list:
 
-```graphql+response
+<CodeGrid>
+
+```graphql
 {
   hi
 }
----
+```
+
+```json
 {
   "data": null,
   "errors": [
@@ -41,6 +45,8 @@ contains an `errors` list:
   ]
 }
 ```
+
+</CodeGrid>
 
 Each error has a message, line, column and path to help you identify what part
 of the query caused the error.
@@ -69,11 +75,15 @@ class Query:
 schema = strawberry.Schema(query=Query)
 ```
 
-```graphql+response
+<CodeGrid>
+
+```graphql
 {
   hello
 }
----
+```
+
+```json
 {
   "data": null,
   "errors": [
@@ -85,13 +95,13 @@ schema = strawberry.Schema(query=Query)
           "column": 3
         }
       ],
-      "path": [
-        "hello"
-      ]
+      "path": ["hello"]
     }
   ]
 }
 ```
+
+</CodeGrid>
 
 Each error has a message, line, column and path to help you identify what part
 of the query caused the error.
@@ -121,13 +131,17 @@ class Query:
 schema = strawberry.Schema(query=Query)
 ```
 
-```graphql+response
+<CodeGrid>
+
+```graphql
 {
   user {
     name
   }
 }
----
+```
+
+```json
 {
   "data": null,
   "errors": [
@@ -139,13 +153,70 @@ schema = strawberry.Schema(query=Query)
           "column": 2
         }
       ],
-      "path": [
-        "user"
-      ]
+      "path": ["user"]
     }
   ]
 }
 ```
+
+</CodeGrid>
+
+## Partial responses for failed resolvers
+
+By default, GraphQL allows partial responses when a resolver fails. This means
+that successfully resolved fields are still returned alongside errors. However,
+this applies only when the erroneous field is defined as optional.
+
+Consider the following example:
+
+```python
+from typing import Optional
+import strawberry
+
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def successful_field(self) -> Optional[str]:
+        return "This field works"
+
+    @strawberry.field
+    def error_field(self) -> Optional[str]:
+        raise Exception("This field fails")
+
+
+schema = strawberry.Schema(query=Query)
+```
+
+<CodeGrid>
+
+```graphql
+{
+  successfulField
+  errorField
+}
+```
+
+```json
+{
+  "data": {
+    "successfulField": "This field works",
+    "errorField": null
+  },
+  "errors": [
+    {
+      "message": "This field fails",
+      "locations": [{ "line": 3, "column": 3 }],
+      "path": ["errorField"]
+    }
+  ]
+}
+```
+
+</CodeGrid>
+
+The response includes both successfully resolved data and error details,
+demonstrating GraphQL's ability to return partial results.
 
 ## Expected errors
 
@@ -227,8 +298,10 @@ mutation RegisterUser($username: String!, $password: String!) {
       alternativeUsername
     }
     ... on RegisterUserSuccess {
-      id
-      username
+      user {
+        id
+        username
+      }
     }
   }
 }

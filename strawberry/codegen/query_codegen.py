@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import MISSING, dataclass
 from enum import Enum
 from functools import cmp_to_key, partial
@@ -8,13 +9,7 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
-    Iterable,
-    List,
-    Mapping,
     Optional,
-    Sequence,
-    Tuple,
-    Type,
     Union,
     cast,
 )
@@ -42,19 +37,19 @@ from graphql import (
     parse,
 )
 
-from strawberry.custom_scalar import ScalarDefinition, ScalarWrapper
-from strawberry.enum import EnumDefinition
-from strawberry.lazy_type import LazyType
-from strawberry.type import (
+from strawberry.types.base import (
     StrawberryList,
+    StrawberryObjectDefinition,
     StrawberryOptional,
     StrawberryType,
     get_object_definition,
     has_object_definition,
 )
-from strawberry.types.types import StrawberryObjectDefinition
-from strawberry.union import StrawberryUnion
-from strawberry.unset import UNSET
+from strawberry.types.enum import EnumDefinition
+from strawberry.types.lazy_type import LazyType
+from strawberry.types.scalar import ScalarDefinition, ScalarWrapper
+from strawberry.types.union import StrawberryUnion
+from strawberry.types.unset import UNSET
 from strawberry.utils.str_converters import capitalize_first, to_camel_case
 
 from .exceptions import (
@@ -114,7 +109,7 @@ class CodegenFile:
 
 @dataclass
 class CodegenResult:
-    files: List[CodegenFile]
+    files: list[CodegenFile]
 
     def to_string(self) -> str:
         return "\n".join(f.content for f in self.files) + "\n"
@@ -144,15 +139,15 @@ class QueryCodegenPlugin:
     def on_end(self, result: CodegenResult) -> None: ...
 
     def generate_code(
-        self, types: List[GraphQLType], operation: GraphQLOperation
-    ) -> List[CodegenFile]:
+        self, types: list[GraphQLType], operation: GraphQLOperation
+    ) -> list[CodegenFile]:
         return []
 
 
 class ConsolePlugin:
     def __init__(self, output_dir: Path) -> None:
         self.output_dir = output_dir
-        self.files_generated: List[Path] = []
+        self.files_generated: list[Path] = []
 
     def before_any_start(self) -> None:
         rich.print(
@@ -207,7 +202,7 @@ def _get_deps(t: GraphQLType) -> Iterable[GraphQLType]:
             yield from _get_deps(gql_type)
     else:
         # Want to make sure that all types are covered.
-        raise ValueError(f"Unknown GraphQLType: {t}")
+        raise ValueError(f"Unknown GraphQLType: {t}")  # noqa: TRY004
 
 
 _TYPE_TO_GRAPHQL_TYPE = {
@@ -238,13 +233,13 @@ def _py_to_graphql_value(obj: Any) -> GraphQLArgumentValue:
 class QueryCodegenPluginManager:
     def __init__(
         self,
-        plugins: List[QueryCodegenPlugin],
+        plugins: list[QueryCodegenPlugin],
         console_plugin: Optional[ConsolePlugin] = None,
     ) -> None:
         self.plugins = plugins
         self.console_plugin = console_plugin
 
-    def _sort_types(self, types: List[GraphQLType]) -> List[GraphQLType]:
+    def _sort_types(self, types: list[GraphQLType]) -> list[GraphQLType]:
         """Sort the types.
 
         t1 < t2 iff t2 has a dependency on t1.
@@ -254,19 +249,20 @@ class QueryCodegenPluginManager:
         def type_cmp(t1: GraphQLType, t2: GraphQLType) -> int:
             """Compare the types."""
             if t1 is t2:
-                return 0
-
-            if t1 in _get_deps(t2):
-                return -1
+                retval = 0
+            elif t1 in _get_deps(t2):
+                retval = -1
             elif t2 in _get_deps(t1):
-                return 1
+                retval = 1
             else:
-                return 0
+                retval = 0
+
+            return retval
 
         return sorted(types, key=cmp_to_key(type_cmp))
 
     def generate_code(
-        self, types: List[GraphQLType], operation: GraphQLOperation
+        self, types: list[GraphQLType], operation: GraphQLOperation
     ) -> CodegenResult:
         result = CodegenResult(files=[])
 
@@ -301,12 +297,12 @@ class QueryCodegen:
     def __init__(
         self,
         schema: Schema,
-        plugins: List[QueryCodegenPlugin],
+        plugins: list[QueryCodegenPlugin],
         console_plugin: Optional[ConsolePlugin] = None,
     ) -> None:
         self.schema = schema
         self.plugin_manager = QueryCodegenPluginManager(plugins, console_plugin)
-        self.types: List[GraphQLType] = []
+        self.types: list[GraphQLType] = []
 
     def run(self, query: str) -> CodegenResult:
         self.plugin_manager.on_start()
@@ -316,15 +312,15 @@ class QueryCodegen:
         operations = self._get_operations(ast)
 
         if not operations:
-            raise NoOperationProvidedError()
+            raise NoOperationProvidedError
 
         if len(operations) > 1:
-            raise MultipleOperationsProvidedError()
+            raise MultipleOperationsProvidedError
 
         operation = operations[0]
 
         if operation.name is None:
-            raise NoOperationNameProvidedError()
+            raise NoOperationNameProvidedError
 
         # Look for any free-floating fragments and create types out of them
         # These types can then be referenced and included later via the
@@ -351,9 +347,9 @@ class QueryCodegen:
         )
         for fd in fragment_definitions:
             query_type = self.schema.get_type_by_name(fd.type_condition.name.value)
-            assert isinstance(
-                query_type, StrawberryObjectDefinition
-            ), f"{fd.type_condition.name.value!r} is not a type in the graphql schema!"
+            assert isinstance(query_type, StrawberryObjectDefinition), (
+                f"{fd.type_condition.name.value!r} is not a type in the graphql schema!"
+            )
 
             typename = fd.type_condition.name.value
             graph_ql_object_type_factory = partial(
@@ -366,7 +362,7 @@ class QueryCodegen:
                 # The FragmentDefinitionNode has a non-Optional `SelectionSetNode` but
                 # the Protocol wants an `Optional[SelectionSetNode]` so this doesn't
                 # quite conform.
-                cast(HasSelectionSet, fd),
+                cast("HasSelectionSet", fd),
                 parent_type=query_type,
                 class_name=fd.name.value,
                 graph_ql_object_type_factory=graph_ql_object_type_factory,
@@ -395,7 +391,7 @@ class QueryCodegen:
 
     def _convert_selection_set(
         self, selection_set: Optional[SelectionSetNode]
-    ) -> List[GraphQLSelection]:
+    ) -> list[GraphQLSelection]:
         if selection_set is None:
             return []
 
@@ -442,7 +438,7 @@ class QueryCodegen:
 
     def _convert_arguments(
         self, arguments: Iterable[ArgumentNode]
-    ) -> List[GraphQLArgument]:
+    ) -> list[GraphQLArgument]:
         return [
             GraphQLArgument(argument.name.value, self._convert_value(argument.value))
             for argument in arguments
@@ -450,7 +446,7 @@ class QueryCodegen:
 
     def _convert_directives(
         self, directives: Iterable[DirectiveNode]
-    ) -> List[GraphQLDirective]:
+    ) -> list[GraphQLDirective]:
         return [
             GraphQLDirective(
                 directive.name.value,
@@ -472,13 +468,13 @@ class QueryCodegen:
         result_class_name = f"{operation_name}Result"
 
         operation_type = self._collect_types(
-            cast(HasSelectionSet, operation_definition),
+            cast("HasSelectionSet", operation_definition),
             parent_type=query_type,
             class_name=result_class_name,
         )
 
         operation_kind = cast(
-            Literal["query", "mutation", "subscription"],
+            "Literal['query', 'mutation', 'subscription']",
             operation_definition.operation.value,
         )
 
@@ -500,7 +496,7 @@ class QueryCodegen:
         self,
         variable_definitions: Optional[Iterable[VariableDefinitionNode]],
         operation_name: str,
-    ) -> Tuple[List[GraphQLVariable], Optional[GraphQLObjectType]]:
+    ) -> tuple[list[GraphQLVariable], Optional[GraphQLObjectType]]:
         if not variable_definitions:
             return [], None
 
@@ -508,7 +504,7 @@ class QueryCodegen:
 
         self._collect_type(type_)
 
-        variables: List[GraphQLVariable] = []
+        variables: list[GraphQLVariable] = []
 
         for variable_definition in variable_definitions:
             variable_type = self._collect_type_from_variable(variable_definition.type)
@@ -522,7 +518,7 @@ class QueryCodegen:
 
         return variables, type_
 
-    def _get_operations(self, ast: DocumentNode) -> List[OperationDefinitionNode]:
+    def _get_operations(self, ast: DocumentNode) -> list[OperationDefinitionNode]:
         return [
             definition
             for definition in ast.definitions
@@ -555,7 +551,7 @@ class QueryCodegen:
         if isinstance(field_type, ScalarDefinition):
             return self._collect_scalar(field_type, None)
 
-        elif isinstance(field_type, EnumDefinition):
+        if isinstance(field_type, EnumDefinition):
             return self._collect_enum(field_type)
 
         raise ValueError(f"Unsupported type: {field_type}")  # pragma: no cover
@@ -642,23 +638,25 @@ class QueryCodegen:
 
     def _unwrap_type(
         self, type_: Union[type, StrawberryType]
-    ) -> Tuple[
+    ) -> tuple[
         Union[type, StrawberryType], Optional[Callable[[GraphQLType], GraphQLType]]
     ]:
-        wrapper = None
+        wrapper: Optional[Callable[[GraphQLType], GraphQLType]] = None
 
         if isinstance(type_, StrawberryOptional):
-            type_, wrapper = self._unwrap_type(type_.of_type)
+            type_, previous_wrapper = self._unwrap_type(type_.of_type)
             wrapper = (
                 GraphQLOptional
-                if wrapper is None
-                else lambda t: GraphQLOptional(wrapper(t))  # type: ignore[misc]
+                if previous_wrapper is None
+                else lambda t: GraphQLOptional(previous_wrapper(t))  # type: ignore[misc]
             )
 
         elif isinstance(type_, StrawberryList):
-            type_, wrapper = self._unwrap_type(type_.of_type)
+            type_, previous_wrapper = self._unwrap_type(type_.of_type)
             wrapper = (
-                GraphQLList if wrapper is None else lambda t: GraphQLList(wrapper(t))
+                GraphQLList
+                if previous_wrapper is None
+                else lambda t: GraphQLList(previous_wrapper(t))
             )
 
         elif isinstance(type_, LazyType):
@@ -697,9 +695,9 @@ class QueryCodegen:
             selection.name.value, parent_type_name
         )
 
-        assert (
-            selected_field
-        ), f"Couldn't find {parent_type_name}.{selection.name.value}"
+        assert selected_field, (
+            f"Couldn't find {parent_type_name}.{selection.name.value}"
+        )
 
         selected_field_type, wrapper = self._unwrap_type(selected_field.type)
         name = capitalize_first(to_camel_case(selection.name.value))
@@ -775,7 +773,7 @@ class QueryCodegen:
             )
 
         current_type = graph_ql_object_type_factory(class_name)
-        fields: List[Union[GraphQLFragmentSpread, GraphQLField]] = []
+        fields: list[Union[GraphQLFragmentSpread, GraphQLField]] = []
 
         for sub_selection in selection_set.selections:
             if isinstance(sub_selection, FragmentSpreadNode):
@@ -803,7 +801,7 @@ class QueryCodegen:
         # `GraphQLField` or `GraphQLFragmentSpread`
         # and the suite above will cause this statement to be
         # skipped if there are any `GraphQLFragmentSpread`.
-        current_type.fields = cast(List[GraphQLField], fields)
+        current_type.fields = cast("list[GraphQLField]", fields)
 
         self._collect_type(current_type)
 
@@ -819,12 +817,12 @@ class QueryCodegen:
         selection: HasSelectionSet,
         parent_type: StrawberryObjectDefinition,
         class_name: str,
-    ) -> List[GraphQLObjectType]:
+    ) -> list[GraphQLObjectType]:
         assert selection.selection_set
 
-        common_fields: List[GraphQLField] = []
-        fragments: List[InlineFragmentNode] = []
-        sub_types: List[GraphQLObjectType] = []
+        common_fields: list[GraphQLField] = []
+        fragments: list[InlineFragmentNode] = []
+        sub_types: list[GraphQLObjectType] = []
 
         for sub_selection in selection.selection_set.selections:
             if isinstance(sub_selection, FieldNode):
@@ -846,7 +844,7 @@ class QueryCodegen:
                 list(common_fields),
                 graphql_typename=type_condition_name,
             )
-            fields: List[Union[GraphQLFragmentSpread, GraphQLField]] = []
+            fields: list[Union[GraphQLFragmentSpread, GraphQLField]] = []
 
             for sub_selection in fragment.selection_set.selections:
                 if isinstance(sub_selection, FragmentSpreadNode):
@@ -856,7 +854,7 @@ class QueryCodegen:
                 assert isinstance(sub_selection, FieldNode)
 
                 parent_type = cast(
-                    StrawberryObjectDefinition,
+                    "StrawberryObjectDefinition",
                     self.schema.get_type_by_name(type_condition_name),
                 )
 
@@ -891,7 +889,7 @@ class QueryCodegen:
             # `GraphQLField` or `GraphQLFragmentSpread`
             # and the suite above will cause this statement to be
             # skipped if there are any `GraphQLFragmentSpread`.
-            current_type.fields.extend(cast(List[GraphQLField], fields))
+            current_type.fields.extend(cast("list[GraphQLField]", fields))
 
             sub_types.append(current_type)
 
@@ -901,7 +899,7 @@ class QueryCodegen:
         return sub_types
 
     def _collect_scalar(
-        self, scalar_definition: ScalarDefinition, python_type: Optional[Type]
+        self, scalar_definition: ScalarDefinition, python_type: Optional[type]
     ) -> GraphQLScalar:
         graphql_scalar = GraphQLScalar(scalar_definition.name, python_type=python_type)
 
@@ -917,3 +915,12 @@ class QueryCodegen:
         )
         self._collect_type(graphql_enum)
         return graphql_enum
+
+
+__all__ = [
+    "CodegenFile",
+    "CodegenResult",
+    "ConsolePlugin",
+    "QueryCodegen",
+    "QueryCodegenPlugin",
+]

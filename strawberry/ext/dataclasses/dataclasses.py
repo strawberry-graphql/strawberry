@@ -11,17 +11,18 @@ from dataclasses import (  # type: ignore
     _field_init,
     _init_param,
 )
-from typing import Any, Dict, List
+from typing import Any
 
 
 def dataclass_init_fn(
-    fields: List[Any],
+    fields: list[Any],
     frozen: bool,
     has_post_init: bool,
     self_name: str,
-    globals_: Dict[str, Any],
+    globals_: dict[str, Any],
 ) -> Any:
-    """
+    """Create an __init__ function for a dataclass.
+
     We create a custom __init__ function for the dataclasses that back
     Strawberry object types to only accept keyword arguments. This allows us to
     avoid the problem where a type cannot define a field with a default value

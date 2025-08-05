@@ -25,6 +25,14 @@ pip install 'strawberry-graphql[opentelemetry]'
 import strawberry
 from strawberry.extensions.tracing import OpenTelemetryExtension
 
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def hello(self) -> str:
+        return "Hello, world!"
+
+
 schema = strawberry.Schema(
     Query,
     extensions=[
@@ -41,6 +49,14 @@ version:
 ```python
 import strawberry
 from strawberry.extensions.tracing import OpenTelemetryExtensionSync
+
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def hello(self) -> str:
+        return "Hello, world!"
+
 
 schema = strawberry.Schema(
     Query,
@@ -77,9 +93,16 @@ import strawberry
 from strawberry.extensions.tracing import OpenTelemetryExtensionSync
 
 
+@strawberry.type
+class Query:
+    @strawberry.field
+    def hello(self) -> str:
+        return "Hello, world!"
+
+
 def arg_filter(kwargs, info):
     filtered_kwargs = {}
-    for name, value in kwargs:
+    for name, value in kwargs.items():
         # Never include any arguments called "password"
         if name == "password":
             continue
@@ -93,6 +116,39 @@ schema = strawberry.Schema(
     extensions=[
         OpenTelemetryExtensionSync(
             arg_filter=arg_filter,
+        ),
+    ],
+)
+```
+
+</details>
+
+<details>
+  <summary>Using `tracer_provider`</summary>
+
+```python
+import strawberry
+from opentelemetry.trace import TracerProvider
+from strawberry.extensions.tracing import OpenTelemetryExtension
+
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def hello(self) -> str:
+        return "Hello, world!"
+
+
+class MyTracerProvider(TracerProvider):
+    def get_tracer(self, name, version=None, schema_url=None):
+        return super().get_tracer(name, version, schema_url)
+
+
+schema = strawberry.Schema(
+    Query,
+    extensions=[
+        OpenTelemetryExtension(
+            tracer_provider=MyTracerProvider(),
         ),
     ],
 )

@@ -1,7 +1,7 @@
 import datetime
 import json
 from json import JSONEncoder
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 
 class StrawberryJSONEncoder(JSONEncoder):
@@ -10,12 +10,12 @@ class StrawberryJSONEncoder(JSONEncoder):
 
 
 def pretty_print_graphql_operation(
-    operation_name: Optional[str], query: str, variables: Optional[Dict["str", Any]]
+    operation_name: Optional[str], query: str, variables: Optional[dict["str", Any]]
 ) -> None:
     """Pretty print a GraphQL operation using pygments.
 
-    Won't print introspection operation to prevent noise in the output."""
-
+    Won't print introspection operation to prevent noise in the output.
+    """
     try:
         from pygments import highlight, lexers
         from pygments.formatters import Terminal256Formatter
@@ -30,7 +30,7 @@ def pretty_print_graphql_operation(
     if operation_name == "IntrospectionQuery":
         return
 
-    now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")  # noqa: DTZ005
 
     print(f"[{now}]: {operation_name or 'No operation name'}")  # noqa: T201
     print(highlight(query, GraphQLLexer(), Terminal256Formatter()))  # noqa: T201
@@ -41,3 +41,6 @@ def pretty_print_graphql_operation(
         print(  # noqa: T201
             highlight(variables_json, lexers.JsonLexer(), Terminal256Formatter())
         )
+
+
+__all__ = ["pretty_print_graphql_operation"]

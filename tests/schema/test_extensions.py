@@ -1,6 +1,5 @@
 from enum import Enum, auto
-from typing import Union, cast
-from typing_extensions import Annotated
+from typing import Annotated, Union, cast
 
 from graphql import (
     DirectiveLocation,
@@ -11,10 +10,11 @@ from graphql import (
 )
 
 import strawberry
+from strawberry.directive import DirectiveValue
 from strawberry.scalars import JSON
 from strawberry.schema.schema_converter import GraphQLCoreConverter
 from strawberry.schema_directive import Location
-from strawberry.type import get_object_definition
+from strawberry.types.base import get_object_definition
 
 DEFINITION_BACKREF = GraphQLCoreConverter.DEFINITION_BACKREF
 
@@ -52,7 +52,7 @@ def test_extensions_schema_directive():
 
 def test_directive():
     @strawberry.directive(locations=[DirectiveLocation.FIELD])
-    def uppercase(value: str, foo: str):
+    def uppercase(value: DirectiveValue[str], foo: str):  # pragma: no cover
         return value.upper()
 
     @strawberry.type()
@@ -83,7 +83,7 @@ def test_enum():
     schema = strawberry.Schema(query=Query)
     graphql_schema: GraphQLSchema = schema._schema
 
-    graphql_thing_type = cast(GraphQLEnumType, graphql_schema.get_type("ThingType"))
+    graphql_thing_type = cast("GraphQLEnumType", graphql_schema.get_type("ThingType"))
     assert (
         graphql_thing_type.extensions[DEFINITION_BACKREF] is ThingType._enum_definition
     )
@@ -184,7 +184,7 @@ def test_object_types():
         is Query.__strawberry_definition__.get_field("hello").arguments[0]
     )
 
-    graphql_input = cast(GraphQLInputType, graphql_schema.get_type("Input"))
+    graphql_input = cast("GraphQLInputType", graphql_schema.get_type("Input"))
     assert graphql_input.fields["name"].extensions[
         DEFINITION_BACKREF
     ] is Input.__strawberry_definition__.get_field("name")

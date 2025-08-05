@@ -5,16 +5,20 @@ title: Scalars
 # Scalars
 
 Scalar types represent concrete values at the leaves of a query. For example in
-the following query the name field will resolve to a scalar type (in this case
+the following query the `name` field will resolve to a scalar type (in this case
 it's a `String` type):
 
-```graphql+response
+<CodeGrid>
+
+```graphql "name"
 {
   user {
     name
   }
 }
----
+```
+
+```json '"name": "Patrick"'
 {
   "data": {
     "user": {
@@ -23,6 +27,8 @@ it's a `String` type):
   }
 }
 ```
+
+</CodeGrid>
 
 There are several built-in scalars, and you can define custom scalars too.
 ([Enums](/docs/types/enums) are also leaf values.) The built in scalars are:
@@ -55,11 +61,14 @@ There are several built-in scalars, and you can define custom scalars too.
 
 Fields can return built-in scalars by using the Python equivalent:
 
-```python+schema
+<CodeGrid>
+
+```python
 import datetime
 import decimal
 import uuid
 import strawberry
+
 
 @strawberry.type
 class Product:
@@ -72,7 +81,9 @@ class Product:
     created_at: datetime.datetime
     price: decimal.Decimal
     void: None
----
+```
+
+```graphql
 type Product {
   id: UUID!
   name: String!
@@ -86,9 +97,11 @@ type Product {
 }
 ```
 
+</CodeGrid>
+
 Scalar types can also be used as inputs:
 
-```python
+```python 'date_input: datetime.date'
 import datetime
 import strawberry
 
@@ -175,11 +188,15 @@ class Query:
         return {"hello": {"a": 1}, "someNumbers": [1, 2, 3]}
 ```
 
-```graphql+response
+<CodeGrid>
+
+```graphql
 query ExampleDataQuery {
   data
 }
----
+```
+
+```json
 {
   "data": {
     "hello": {
@@ -189,6 +206,8 @@ query ExampleDataQuery {
   }
 }
 ```
+
+</CodeGrid>
 
 <Note>
 
@@ -300,10 +319,12 @@ You can adapt your schema to automatically use this scalar for all integers by
 using the `scalar_overrides` parameter
 
 <Tip>
-Only use this override if you expect most of your integers to be 64-bit. Since most GraphQL schemas
-follow standardized design patterns and most clients require additional effort to handle all numbers
-as strings, it makes more sense to reserve BigInt for numbers that actually exceed the 32-bit limit.
-You can achieve this by annotating `BigInt` instead of `int` in your resolvers handling large python integers.
+  Only use this override if you expect most of your integers to be 64-bit. Since
+  most GraphQL schemas follow standardized design patterns and most clients
+  require additional effort to handle all numbers as strings, it makes more
+  sense to reserve BigInt for numbers that actually exceed the 32-bit limit. You
+  can achieve this by annotating `BigInt` instead of `int` in your resolvers
+  handling large python integers.
 </Tip>
 
 ```python

@@ -15,6 +15,14 @@ sensitive details. By default it masks all errors raised in any field resolver.
 import strawberry
 from strawberry.extensions import MaskErrors
 
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def hidden_error(self) -> str:
+        raise KeyError("This error will not be visible")
+
+
 schema = strawberry.Schema(
     Query,
     extensions=[
@@ -62,6 +70,13 @@ class VisibleError(Exception):
     pass
 
 
+@strawberry.type
+class Query:
+    @strawberry.field
+    def visible_error(self) -> str:
+        raise VisibleError("This error will be visible")
+
+
 def should_mask_error(error: GraphQLError) -> bool:
     original_error = error.original_error
     if original_error and isinstance(original_error, VisibleError):
@@ -86,6 +101,14 @@ schema = strawberry.Schema(
 ```python
 import strawberry
 from strawberry.extensions import MaskErrors
+
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def hidden_error(self) -> str:
+        raise KeyError("This error will not be visible")
+
 
 schema = strawberry.Schema(
     Query,

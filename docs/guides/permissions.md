@@ -181,13 +181,14 @@ client. To return `None` or `[]` instead of raising an error, the
 `fail_silently ` keyword argument on `PermissionExtension` can be set to `True`:
 
 <Warning>
-Note that this will only work if the field returns a type that
-is nullable or a list, e.g. `Optional[str]` or `List[str]`.
+  Note that this will only work if the field returns a type that is nullable or
+  a list, e.g. `Optional[str]` or `List[str]`.
 </Warning>
 
 ```python
 import strawberry
 from strawberry.permission import PermissionExtension, BasePermission
+from typing import Optional
 
 
 @strawberry.type
@@ -197,7 +198,7 @@ class Query:
             PermissionExtension(permissions=[IsAuthenticated()], fail_silently=True)
         ]
     )
-    def name(self) -> str:
+    def name(self) -> Optional[str]:
         return "ABC"
 ```
 
@@ -225,9 +226,7 @@ from strawberry.permission import PermissionExtension, BasePermission
 class Query:
     @strawberry.field(
         extensions=[
-            PermissionExtension(
-                permissions=[(IsAdmin() | IsOwner())], fail_silently=True
-            )
+            PermissionExtension(permissions=[IsAdmin() | IsOwner()], fail_silently=True)
         ]
     )
     def name(self) -> str:

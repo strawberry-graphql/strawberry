@@ -1,6 +1,7 @@
-from typing import Iterable, Optional
+from collections.abc import Iterable
+from typing import Optional
 
-from strawberry.arguments import StrawberryArgumentAnnotation
+from strawberry.types.arguments import StrawberryArgumentAnnotation
 
 
 def argument(
@@ -27,3 +28,6 @@ def argument(
         deprecation_reason=deprecation_reason,
         directives=directives,
     )
+
+
+__all__ = ["argument"]

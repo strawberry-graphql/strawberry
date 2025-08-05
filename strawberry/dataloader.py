@@ -8,16 +8,9 @@ from dataclasses import dataclass
 from typing import (
     TYPE_CHECKING,
     Any,
-    Awaitable,
     Callable,
-    Dict,
     Generic,
-    Hashable,
-    Iterable,
-    List,
-    Mapping,
     Optional,
-    Sequence,
     TypeVar,
     Union,
     overload,
@@ -27,6 +20,7 @@ from .exceptions import WrongNumberOfResultsReturned
 
 if TYPE_CHECKING:
     from asyncio.events import AbstractEventLoop
+    from collections.abc import Awaitable, Hashable, Iterable, Mapping, Sequence
 
 
 T = TypeVar("T")
@@ -41,7 +35,7 @@ class LoaderTask(Generic[K, T]):
 
 @dataclass
 class Batch(Generic[K, T]):
-    tasks: List[LoaderTask] = dataclasses.field(default_factory=list)
+    tasks: list[LoaderTask] = dataclasses.field(default_factory=list)
     dispatched: bool = False
 
     def add_task(self, key: Any, future: Future) -> None:
@@ -75,7 +69,7 @@ class DefaultCache(AbstractCache[K, T]):
         self.cache_key_fn: Callable[[K], Hashable] = (
             cache_key_fn if cache_key_fn is not None else lambda x: x
         )
-        self.cache_map: Dict[Hashable, Future[T]] = {}
+        self.cache_map: dict[Hashable, Future[T]] = {}
 
     def get(self, key: K) -> Union[Future[T], None]:
         return self.cache_map.get(self.cache_key_fn(key))
@@ -99,7 +93,7 @@ class DataLoader(Generic[K, T]):
     def __init__(
         self,
         # any BaseException is rethrown in 'load', so should be excluded from the T type
-        load_fn: Callable[[List[K]], Awaitable[Sequence[Union[T, BaseException]]]],
+        load_fn: Callable[[list[K]], Awaitable[Sequence[Union[T, BaseException]]]],
         max_batch_size: Optional[int] = None,
         cache: bool = True,
         loop: Optional[AbstractEventLoop] = None,
@@ -111,7 +105,7 @@ class DataLoader(Generic[K, T]):
     @overload
     def __init__(
         self: DataLoader[K, Any],
-        load_fn: Callable[[List[K]], Awaitable[List[Any]]],
+        load_fn: Callable[[list[K]], Awaitable[list[Any]]],
         max_batch_size: Optional[int] = None,
         cache: bool = True,
         loop: Optional[AbstractEventLoop] = None,
@@ -121,7 +115,7 @@ class DataLoader(Generic[K, T]):
 
     def __init__(
         self,
-        load_fn: Callable[[List[K]], Awaitable[Sequence[Union[T, BaseException]]]],
+        load_fn: Callable[[list[K]], Awaitable[Sequence[Union[T, BaseException]]]],
         max_batch_size: Optional[int] = None,
         cache: bool = True,
         loop: Optional[AbstractEventLoop] = None,
@@ -164,7 +158,7 @@ class DataLoader(Generic[K, T]):
 
         return future
 
-    def load_many(self, keys: Iterable[K]) -> Awaitable[List[T]]:
+    def load_many(self, keys: Iterable[K]) -> Awaitable[list[T]]:
         return gather(*map(self.load, keys))
 
     def clear(self, key: K) -> None:
@@ -208,14 +202,10 @@ class DataLoader(Generic[K, T]):
 
 
 def should_create_new_batch(loader: DataLoader, batch: Batch) -> bool:
-    if (
+    return bool(
         batch.dispatched
-        or loader.max_batch_size
-        and len(batch) >= loader.max_batch_size
-    ):
-        return True
-
-    return False
+        or (loader.max_batch_size and len(batch) >= loader.max_batch_size)
+    )
 
 
 def get_current_batch(loader: DataLoader) -> Batch:
@@ -250,7 +240,7 @@ async def dispatch_batch(loader: DataLoader, batch: Batch) -> None:
         values = list(values)
 
         if len(values) != len(batch):
-            raise WrongNumberOfResultsReturned(
+            raise WrongNumberOfResultsReturned(  # noqa: TRY301
                 expected=len(batch), received=len(values)
             )
 
@@ -264,6 +254,19 @@ async def dispatch_batch(loader: DataLoader, batch: Batch) -> None:
                 task.future.set_exception(value)
             else:
                 task.future.set_result(value)
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         for task in batch.tasks:
             task.future.set_exception(e)
+
+
+__all__ = [
+    "AbstractCache",
+    "Batch",
+    "DataLoader",
+    "DefaultCache",
+    "LoaderTask",
+    "dispatch",
+    "dispatch_batch",
+    "get_current_batch",
+    "should_create_new_batch",
+]

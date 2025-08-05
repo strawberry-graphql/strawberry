@@ -1,3 +1,7 @@
+---
+title: Strawberry docs
+---
+
 # Strawberry docs
 
 - [Getting started](./index.md)
@@ -8,9 +12,10 @@
 - [Queries](./general/queries.md)
 - [Mutations](./general/mutations.md)
 - [Subscriptions](./general/subscriptions.md)
-- [Why](./general/why.md)
-- [Breaking changes](./breaking-changes.md)
+- [Multipart Subscriptions](./general/multipart-subscriptions.md)
+- [Errors](./errors)
 - [Upgrading Strawberry](./general/upgrades.md)
+- [Breaking changes](./breaking-changes.md)
 - [FAQ](./faq.md)
 
 ## Types
@@ -30,15 +35,12 @@
 - [Lazy types](./types/lazy.md)
 - [Exceptions](./types/exceptions.md)
 - [Private/External Fields](./types/private.md)
+- [Defer and Stream](./types/defer-and-stream.md)
 
 ## Codegen
 
 - [Schema codegen](./codegen/schema-codegen.md)
 - [Query codegen](./codegen/query-codegen.md)
-
-## [Extensions](./extensions)
-
-## [Errors](./errors/)
 
 ## Guides
 
@@ -49,8 +51,6 @@
 - [Federation](./guides/federation.md)
 - [Federation V1](./guides/federation-v1.md)
 - [Relay](./guides/relay.md)
-- [Custom extensions](./guides/custom-extensions.md)
-- [Field extensions](./guides/field-extensions.md)
 - [File upload](./guides/file-upload.md)
 - [Pagination](./guides/pagination/overview.md)
   - [Implementing Offset Pagination](./guides/pagination/offset-based.md)
@@ -61,6 +61,13 @@
 - [Tools](./guides/tools.md)
 - [Schema export](./guides/schema-export.md)
 - [Convert to dictionary](./guides/convert-to-dictionary.md)
+- [Query Batching](./guides/query-batching.md)
+
+## Extensions
+
+- [Introduction](./extensions)
+- [Schema extensions](./guides/custom-extensions.md)
+- [Field extensions](./guides/field-extensions.md)
 
 ## Editor integration
 
@@ -84,7 +91,6 @@
 - [Sanic](./integrations/sanic.md)
 - [Chalice](./integrations/chalice.md)
 - [Starlette](./integrations/starlette.md)
-- [Starlite](./integrations/starlite.md)
 - [Litestar](./integrations/litestar.md)
 - [Creating an integration](./integrations/creating-an-integration.md)
 - [Pydantic **experimental**](./integrations/pydantic.md)

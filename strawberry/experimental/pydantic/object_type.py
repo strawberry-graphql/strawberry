@@ -7,17 +7,11 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
-    Dict,
-    List,
     Optional,
-    Sequence,
-    Set,
-    Type,
     cast,
 )
 
 from strawberry.annotation import StrawberryAnnotation
-from strawberry.auto import StrawberryAuto
 from strawberry.experimental.pydantic._compat import (
     CompatModelField,
     PydanticCompat,
@@ -34,12 +28,16 @@ from strawberry.experimental.pydantic.utils import (
     get_default_factory_for_field,
     get_private_fields,
 )
-from strawberry.field import StrawberryField
-from strawberry.object_type import _process_type, _wrap_dataclass
+from strawberry.types.auto import StrawberryAuto
+from strawberry.types.cast import get_strawberry_type_cast
+from strawberry.types.field import StrawberryField
+from strawberry.types.object_type import _process_type, _wrap_dataclass
 from strawberry.types.type_resolver import _get_fields
-from strawberry.utils.dataclasses import add_custom_init_fn
 
 if TYPE_CHECKING:
+    import builtins
+    from collections.abc import Sequence
+
     from graphql import GraphQLResolveInfo
 
 
@@ -60,8 +58,8 @@ def get_type_for_field(field: CompatModelField, is_input: bool, compat: Pydantic
 def _build_dataclass_creation_fields(
     field: CompatModelField,
     is_input: bool,
-    existing_fields: Dict[str, StrawberryField],
-    auto_fields_set: Set[str],
+    existing_fields: dict[str, StrawberryField],
+    auto_fields_set: set[str],
     use_pydantic_alias: bool,
     compat: PydanticCompat,
 ) -> DataclassCreationFields:
@@ -91,7 +89,7 @@ def _build_dataclass_creation_fields(
             graphql_name=graphql_name,
             # always unset because we use default_factory instead
             default=dataclasses.MISSING,
-            default_factory=get_default_factory_for_field(field),
+            default_factory=get_default_factory_for_field(field, compat=compat),
             type_annotation=StrawberryAnnotation.from_annotation(field_type),
             description=field.description,
             deprecation_reason=(
@@ -106,7 +104,7 @@ def _build_dataclass_creation_fields(
 
     return DataclassCreationFields(
         name=field.name,
-        field_type=field_type,
+        field_type=field_type,  # type: ignore
         field=strawberry_field,
     )
 
@@ -119,20 +117,21 @@ if TYPE_CHECKING:
 
 
 def type(
-    model: Type[PydanticModel],
+    model: builtins.type[PydanticModel],
     *,
-    fields: Optional[List[str]] = None,
+    fields: Optional[list[str]] = None,
     name: Optional[str] = None,
     is_input: bool = False,
     is_interface: bool = False,
     description: Optional[str] = None,
     directives: Optional[Sequence[object]] = (),
     all_fields: bool = False,
+    include_computed: bool = False,
     use_pydantic_alias: bool = True,
-) -> Callable[..., Type[StrawberryTypeFromPydantic[PydanticModel]]]:
-    def wrap(cls: Any) -> Type[StrawberryTypeFromPydantic[PydanticModel]]:
+) -> Callable[..., builtins.type[StrawberryTypeFromPydantic[PydanticModel]]]:
+    def wrap(cls: Any) -> builtins.type[StrawberryTypeFromPydantic[PydanticModel]]:
         compat = PydanticCompat.from_model(model)
-        model_fields = compat.get_model_fields(model)
+        model_fields = compat.get_model_fields(model, include_computed=include_computed)
         original_fields_set = set(fields) if fields else set()
 
         if fields:
@@ -173,17 +172,20 @@ def type(
             raise MissingFieldsListError(cls)
 
         ensure_all_auto_fields_in_pydantic(
-            model=model, auto_fields=auto_fields_set, cls_name=cls.__name__
+            model=model,
+            auto_fields=auto_fields_set,
+            cls_name=cls.__name__,
+            include_computed=include_computed,
         )
 
         wrapped = _wrap_dataclass(cls)
         extra_strawberry_fields = _get_fields(wrapped, {})
-        extra_fields = cast(List[dataclasses.Field], extra_strawberry_fields)
+        extra_fields = cast("list[dataclasses.Field]", extra_strawberry_fields)
         private_fields = get_private_fields(wrapped)
 
         extra_fields_dict = {field.name: field for field in extra_strawberry_fields}
 
-        all_model_fields: List[DataclassCreationFields] = [
+        all_model_fields: list[DataclassCreationFields] = [
             _build_dataclass_creation_fields(
                 field,
                 is_input,
@@ -199,7 +201,7 @@ def type(
         all_model_fields = [
             DataclassCreationFields(
                 name=field.name,
-                field_type=field.type,
+                field_type=field.type,  # type: ignore
                 field=field,
             )
             for field in extra_fields + private_fields
@@ -209,7 +211,10 @@ def type(
         # Implicitly define `is_type_of` to support interfaces/unions that use
         # pydantic objects (not the corresponding strawberry type)
         @classmethod  # type: ignore
-        def is_type_of(cls: Type, obj: Any, _info: GraphQLResolveInfo) -> bool:
+        def is_type_of(cls: builtins.type, obj: Any, _info: GraphQLResolveInfo) -> bool:
+            if (type_cast := get_strawberry_type_cast(obj)) is not None:
+                return type_cast is cls
+
             return isinstance(obj, (cls, model))
 
         namespace = {"is_type_of": is_type_of}
@@ -233,7 +238,7 @@ def type(
         if hasattr(cls, "resolve_reference"):
             namespace["resolve_reference"] = cls.resolve_reference
 
-        kwargs: Dict[str, object] = {}
+        kwargs: dict[str, object] = {}
 
         # Python 3.10.1 introduces the kw_only param to `make_dataclass`.
         # If we're on an older version then generate our own custom init function
@@ -254,6 +259,8 @@ def type(
         )
 
         if sys.version_info < (3, 10, 1):
+            from strawberry.utils.dataclasses import add_custom_init_fn
+
             add_custom_init_fn(cls)
 
         _process_type(
@@ -272,7 +279,7 @@ def type(
         cls._pydantic_type = model
 
         def from_pydantic_default(
-            instance: PydanticModel, extra: Optional[Dict[str, Any]] = None
+            instance: PydanticModel, extra: Optional[dict[str, Any]] = None
         ) -> StrawberryTypeFromPydantic[PydanticModel]:
             ret = convert_pydantic_model_to_strawberry_class(
                 cls=cls, model_instance=instance, extra=extra
@@ -301,19 +308,21 @@ def type(
 
 
 def input(
-    model: Type[PydanticModel],
+    model: builtins.type[PydanticModel],
     *,
-    fields: Optional[List[str]] = None,
+    fields: Optional[list[str]] = None,
     name: Optional[str] = None,
     is_interface: bool = False,
     description: Optional[str] = None,
     directives: Optional[Sequence[object]] = (),
     all_fields: bool = False,
     use_pydantic_alias: bool = True,
-) -> Callable[..., Type[StrawberryTypeFromPydantic[PydanticModel]]]:
+) -> Callable[..., builtins.type[StrawberryTypeFromPydantic[PydanticModel]]]:
     """Convenience decorator for creating an input type from a Pydantic model.
-    Equal to partial(type, is_input=True)
-    See https://github.com/strawberry-graphql/strawberry/issues/1830
+
+    Equal to `partial(type, is_input=True)`
+
+    See https://github.com/strawberry-graphql/strawberry/issues/1830.
     """
     return type(
         model=model,
@@ -329,19 +338,21 @@ def input(
 
 
 def interface(
-    model: Type[PydanticModel],
+    model: builtins.type[PydanticModel],
     *,
-    fields: Optional[List[str]] = None,
+    fields: Optional[list[str]] = None,
     name: Optional[str] = None,
     is_input: bool = False,
     description: Optional[str] = None,
     directives: Optional[Sequence[object]] = (),
     all_fields: bool = False,
     use_pydantic_alias: bool = True,
-) -> Callable[..., Type[StrawberryTypeFromPydantic[PydanticModel]]]:
+) -> Callable[..., builtins.type[StrawberryTypeFromPydantic[PydanticModel]]]:
     """Convenience decorator for creating an interface type from a Pydantic model.
-    Equal to partial(type, is_interface=True)
-    See https://github.com/strawberry-graphql/strawberry/issues/1830
+
+    Equal to `partial(type, is_interface=True)`
+
+    See https://github.com/strawberry-graphql/strawberry/issues/1830.
     """
     return type(
         model=model,

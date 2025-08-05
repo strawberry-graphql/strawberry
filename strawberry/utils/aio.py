@@ -1,25 +1,37 @@
 import sys
+from collections.abc import AsyncGenerator, AsyncIterable, AsyncIterator, Awaitable
+from contextlib import asynccontextmanager, suppress
 from typing import (
     Any,
-    AsyncGenerator,
-    AsyncIterable,
-    AsyncIterator,
-    Awaitable,
     Callable,
-    List,
     Optional,
-    Tuple,
     TypeVar,
     Union,
+    cast,
 )
 
 _T = TypeVar("_T")
 _R = TypeVar("_R")
 
 
+@asynccontextmanager
+async def aclosing(thing: _T) -> AsyncGenerator[_T, None]:
+    """Ensure that an async generator is closed properly.
+
+    Port from the stdlib contextlib.asynccontextmanager. Can be removed
+    and replaced with the stdlib version when we drop support for Python
+    versions before 3.10.
+    """
+    try:
+        yield thing
+    finally:
+        with suppress(Exception):
+            await cast("AsyncGenerator", thing).aclose()
+
+
 async def aenumerate(
     iterable: Union[AsyncIterator[_T], AsyncIterable[_T]],
-) -> AsyncIterator[Tuple[int, _T]]:
+) -> AsyncIterator[tuple[int, _T]]:
     """Async version of enumerate."""
     i = 0
     async for element in iterable:
@@ -47,16 +59,18 @@ async def aislice(
     except StopIteration:
         return
 
+    i = 0
     try:
-        async for i, element in aenumerate(aiterable):
+        async for element in aiterable:
             if i == nexti:
                 yield element
                 nexti = next(it)
+            i += 1
     except StopIteration:
         return
 
 
-async def asyncgen_to_list(generator: AsyncGenerator[_T, Any]) -> List[_T]:
+async def asyncgen_to_list(generator: AsyncGenerator[_T, Any]) -> list[_T]:
     """Convert an async generator to a list."""
     return [element async for element in generator]
 
@@ -67,3 +81,11 @@ async def resolve_awaitable(
 ) -> _R:
     """Resolves an awaitable object and calls a callback with the resolved value."""
     return callback(await awaitable)
+
+
+__all__ = [
+    "aenumerate",
+    "aislice",
+    "asyncgen_to_list",
+    "resolve_awaitable",
+]

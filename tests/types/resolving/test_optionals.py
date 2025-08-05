@@ -1,9 +1,9 @@
-from typing import List, Optional, Union
+from typing import Optional, Union
 
 import strawberry
 from strawberry.annotation import StrawberryAnnotation
-from strawberry.type import StrawberryOptional
-from strawberry.unset import UnsetType
+from strawberry.types.base import StrawberryOptional
+from strawberry.types.unset import UnsetType
 
 
 def test_basic_optional():
@@ -28,6 +28,17 @@ def test_optional_with_unset():
     assert resolved == Optional[str]
 
 
+def test_optional_with_type_of_unset():
+    annotation = StrawberryAnnotation(Union[type[strawberry.UNSET], Optional[str]])
+    resolved = annotation.resolve()
+
+    assert isinstance(resolved, StrawberryOptional)
+    assert resolved.of_type is str
+
+    assert resolved == StrawberryOptional(of_type=str)
+    assert resolved == Optional[str]
+
+
 def test_optional_with_unset_as_union():
     annotation = StrawberryAnnotation(Union[UnsetType, None, str])
     resolved = annotation.resolve()
@@ -40,14 +51,14 @@ def test_optional_with_unset_as_union():
 
 
 def test_optional_list():
-    annotation = StrawberryAnnotation(Optional[List[bool]])
+    annotation = StrawberryAnnotation(Optional[list[bool]])
     resolved = annotation.resolve()
 
     assert isinstance(resolved, StrawberryOptional)
-    assert resolved.of_type == List[bool]
+    assert resolved.of_type == list[bool]
 
-    assert resolved == StrawberryOptional(of_type=List[bool])
-    assert resolved == Optional[List[bool]]
+    assert resolved == StrawberryOptional(of_type=list[bool])
+    assert resolved == Optional[list[bool]]
 
 
 def test_optional_optional():

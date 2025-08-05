@@ -1,14 +1,13 @@
 import warnings
 from collections import Counter
 from itertools import chain
-from typing import Tuple
 
 import strawberry
-from strawberry.type import has_object_definition
+from strawberry.types.base import has_object_definition
 
 
-def merge_types(name: str, types: Tuple[type, ...]) -> type:
-    """Merge multiple Strawberry types into one
+def merge_types(name: str, types: tuple[type, ...]) -> type:
+    """Merge multiple Strawberry types into one.
 
     For example, given two queries `A` and `B`, one can merge them into a
     super type as follows:
@@ -20,7 +19,6 @@ def merge_types(name: str, types: Tuple[type, ...]) -> type:
         class SuperQuery(B, A):
             ...
     """
-
     if not types:
         raise ValueError("Can't merge types if none are supplied")
 
@@ -35,3 +33,6 @@ def merge_types(name: str, types: Tuple[type, ...]) -> type:
         )
 
     return strawberry.type(type(name, types, {}))
+
+
+__all__ = ["merge_types"]

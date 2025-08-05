@@ -3,14 +3,24 @@ from __future__ import annotations
 import hashlib
 from functools import cached_property
 from inspect import isawaitable
-from typing import TYPE_CHECKING, Any, Callable, Generator, Iterator, Optional
+from typing import TYPE_CHECKING, Any, Callable, Optional
 
-from ddtrace import Span, tracer
+import ddtrace
+from packaging import version
 
 from strawberry.extensions import LifecycleStep, SchemaExtension
 from strawberry.extensions.tracing.utils import should_skip_tracing
 
+parsed_ddtrace_version = version.parse(ddtrace.__version__)
+if parsed_ddtrace_version >= version.parse("3.0.0"):
+    from ddtrace.trace import Span, tracer
+else:
+    from ddtrace import Span, tracer
+
+
 if TYPE_CHECKING:
+    from collections.abc import Generator, Iterator
+
     from graphql import GraphQLResolveInfo
 
     from strawberry.types.execution import ExecutionContext
@@ -43,18 +53,20 @@ class DatadogTracingExtension(SchemaExtension):
         name: str,
         **kwargs: Any,
     ) -> Span:
-        """
-        Create a span with the given name and kwargs.
+        """Create a span with the given name and kwargs.
+
         You can  override this if you want to add more tags to the span.
 
         Example:
 
+        ```python
         class CustomExtension(DatadogTracingExtension):
             def create_span(self, lifecycle_step, name, **kwargs):
                 span = super().create_span(lifecycle_step, name, **kwargs)
                 if lifecycle_step == LifeCycleStep.OPERATION:
                     span.set_tag("graphql.query", self.execution_context.query)
                 return span
+        ```
         """
         return tracer.trace(
             name,
@@ -63,7 +75,7 @@ class DatadogTracingExtension(SchemaExtension):
         )
 
     def hash_query(self, query: str) -> str:
-        return hashlib.md5(query.encode("utf-8")).hexdigest()
+        return hashlib.md5(query.encode("utf-8")).hexdigest()  # noqa: S324
 
     def on_operation(self) -> Iterator[None]:
         self._operation_name = self.execution_context.operation_name
@@ -173,3 +185,6 @@ class DatadogTracingExtensionSync(DatadogTracingExtension):
             span.set_tag("graphql.path", ".".join(map(str, info.path.as_list())))
 
             return _next(root, info, *args, **kwargs)
+
+
+__all__ = ["DatadogTracingExtension", "DatadogTracingExtensionSync"]

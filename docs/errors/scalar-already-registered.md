@@ -36,10 +36,10 @@ strawberry.Schema(Query)
 This happens because different types in Strawberry (and GraphQL) cannot have the
 same name.
 
-<!--
-    note: this error might happen also when trying to defined a scalar
-    with the same name as a type.
--->
+<Note>
+  This error might happen also when trying to defined a scalar with the same
+  name as a type.
+</Note>
 
 ## How to fix this error
 

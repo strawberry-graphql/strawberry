@@ -1,8 +1,8 @@
 import warnings
-from typing import Type
 
 from .add_validation_rules import AddValidationRules
 from .base_extension import LifecycleStep, SchemaExtension
+from .disable_introspection import DisableIntrospection
 from .disable_validation import DisableValidation
 from .field_extension import FieldExtension
 from .mask_errors import MaskErrors
@@ -13,7 +13,7 @@ from .query_depth_limiter import IgnoreContext, QueryDepthLimiter
 from .validation_cache import ValidationCache
 
 
-def __getattr__(name: str) -> Type[SchemaExtension]:
+def __getattr__(name: str) -> type[SchemaExtension]:
     if name == "Extension":
         warnings.warn(
             (
@@ -29,16 +29,17 @@ def __getattr__(name: str) -> Type[SchemaExtension]:
 
 
 __all__ = [
-    "FieldExtension",
-    "SchemaExtension",
-    "LifecycleStep",
     "AddValidationRules",
+    "DisableIntrospection",
     "DisableValidation",
-    "ParserCache",
-    "QueryDepthLimiter",
+    "FieldExtension",
     "IgnoreContext",
-    "ValidationCache",
+    "LifecycleStep",
     "MaskErrors",
     "MaxAliasesLimiter",
     "MaxTokensLimiter",
+    "ParserCache",
+    "QueryDepthLimiter",
+    "SchemaExtension",
+    "ValidationCache",
 ]

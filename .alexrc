@@ -9,8 +9,11 @@
     "executed",
     "executes",
     "execution",
+    "reject",
     "special",
     "primitive",
-    "invalid"
+    "invalid",
+    "failed",
+    "crash"
   ]
 }

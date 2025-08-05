@@ -1,18 +1,20 @@
 import dataclasses
 from enum import Enum
-from typing import Any, List, Optional, Union
-from typing_extensions import Annotated
+from typing import Annotated, Any, Optional, Union
 
 import pydantic
 import pytest
 
 import strawberry
-from strawberry.enum import EnumDefinition
 from strawberry.experimental.pydantic.exceptions import MissingFieldsListError
 from strawberry.schema_directive import Location
-from strawberry.type import StrawberryList, StrawberryOptional
-from strawberry.types.types import StrawberryObjectDefinition
-from strawberry.union import StrawberryUnion
+from strawberry.types.base import (
+    StrawberryList,
+    StrawberryObjectDefinition,
+    StrawberryOptional,
+)
+from strawberry.types.enum import EnumDefinition
+from strawberry.types.union import StrawberryUnion
 
 
 def test_basic_type_field_list():
@@ -108,7 +110,7 @@ def test_basic_type_auto_fields():
 
 
 def test_auto_fields_other_sentinel():
-    class other_sentinel:
+    class OtherSentinel:
         pass
 
     class User(pydantic.BaseModel):
@@ -120,7 +122,7 @@ def test_auto_fields_other_sentinel():
     class UserType:
         age: strawberry.auto
         password: strawberry.auto
-        other: other_sentinel  # this should be a private field, not an auto field
+        other: OtherSentinel  # this should be a private field, not an auto field
 
     definition: StrawberryObjectDefinition = UserType.__strawberry_definition__
     assert definition.name == "UserType"
@@ -138,7 +140,7 @@ def test_auto_fields_other_sentinel():
 
     assert field3.python_name == "other"
     assert field3.graphql_name is None
-    assert field3.type is other_sentinel
+    assert field3.type is OtherSentinel
 
 
 def test_referencing_other_models_fails_when_not_registered():
@@ -218,7 +220,7 @@ def test_referencing_other_registered_models():
 
 def test_list():
     class User(pydantic.BaseModel):
-        friend_names: List[str]
+        friend_names: list[str]
 
     @strawberry.experimental.pydantic.type(User)
     class UserType:
@@ -239,7 +241,7 @@ def test_list_of_types():
         name: str
 
     class User(pydantic.BaseModel):
-        friends: Optional[List[Optional[Friend]]]
+        friends: Optional[list[Optional[Friend]]]
 
     @strawberry.experimental.pydantic.type(Friend)
     class FriendType:
@@ -350,7 +352,7 @@ def test_optional_and_default():
         name: str = pydantic.Field("Michael", description="The user name")
         password: Optional[str] = pydantic.Field(default="ABC")
         passwordtwo: Optional[str] = None
-        some_list: Optional[List[str]] = pydantic.Field(default_factory=list)
+        some_list: Optional[list[str]] = pydantic.Field(default_factory=list)
         check: Optional[bool] = False
 
     @strawberry.experimental.pydantic.type(UserModel, all_fields=True)
@@ -397,8 +399,8 @@ def test_type_with_fields_mutable_default():
     empty_list = []
 
     class User(pydantic.BaseModel):
-        groups: List[str]
-        friends: List[str] = empty_list
+        groups: list[str]
+        friends: list[str] = empty_list
 
     @strawberry.experimental.pydantic.type(User)
     class UserType:
@@ -630,7 +632,7 @@ def test_both_output_and_input_type():
         work: Optional[Work] = None
 
     class Group(pydantic.BaseModel):
-        users: List[User]
+        users: list[User]
 
     # Test both definition orders
     @strawberry.experimental.pydantic.input(Work)
@@ -661,12 +663,12 @@ def test_both_output_and_input_type():
 
     @strawberry.type
     class Query:
-        groups: List[GroupOutput]
+        groups: list[GroupOutput]
 
     @strawberry.type
     class Mutation:
         @strawberry.mutation
-        def updateGroup(group: GroupInput) -> GroupOutput:
+        def update_group(group: GroupInput) -> GroupOutput:
             pass
 
     # This triggers the exception from #1504
@@ -936,7 +938,7 @@ def test_annotated():
 def test_nested_annotated():
     class User(pydantic.BaseModel):
         a: Optional[Annotated[int, "metadata"]]
-        b: Optional[List[Annotated[int, "metadata"]]]
+        b: Optional[list[Annotated[int, "metadata"]]]
 
     @strawberry.experimental.pydantic.input(User, all_fields=True)
     class UserType:

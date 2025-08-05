@@ -522,18 +522,24 @@ GraphQLWebsocketCommunicator(
   to disable it by passing `None`.
 - `allow_queries_via_get`: optional, defaults to `True`, whether to enable
   queries via `GET` requests
-- `subscriptions_enabled`: optional boolean paramenter enabling subscriptions in
-  the GraphiQL interface, defaults to `True`
+- `multipart_uploads_enabled`: optional, defaults to `False`, controls whether
+  to enable multipart uploads. Please make sure to consider the
+  [security implications mentioned in the GraphQL Multipart Request Specification](https://github.com/jaydenseric/graphql-multipart-request-spec/blob/master/readme.md#security)
+  when enabling this feature.
 
 ### Extending the consumer
 
-We allow to extend `GraphQLHTTPConsumer`, by overriding the following methods:
+The base `GraphQLHTTPConsumer` class can be extended by overriding any of the
+following methods:
 
 - `async def get_context(self, request: ChannelsRequest, response: TemporalResponse) -> Context`
 - `async def get_root_value(self, request: ChannelsRequest) -> Optional[RootValue]`
-- `async def process_result(self, request: Request, result: ExecutionResult) -> GraphQLHTTPResponse:`.
+- `async def process_result(self, request: Request, result: ExecutionResult) -> GraphQLHTTPResponse`
+- `def decode_json(self, data: Union[str, bytes]) -> object`
+- `def encode_json(self, data: object) -> str`
+- `async def render_graphql_ide(self, request: ChannelsRequest) -> ChannelsResponse`
 
-### Context
+#### Context
 
 The default context returned by `get_context()` is a `dict` that includes the
 following keys by default:
@@ -550,6 +556,22 @@ following keys by default:
     errors (defaults to `200`)
   - `headers`: Any additional headers that should be send with the response
 
+#### render_graphql_ide
+
+In case you need more control over the rendering of the GraphQL IDE than the
+`graphql_ide` option provides, you can override the `render_graphql_ide` method.
+
+```python
+from strawberry.channels import GraphQLHTTPConsumer, ChannelsRequest, ChannelsResponse
+
+
+class MyGraphQLHTTPConsumer(GraphQLHTTPConsumer):
+    async def render_graphql_ide(self, request: ChannelsRequest) -> ChannelsResponse:
+        custom_html = """<html><body><h1>Custom GraphQL IDE</h1></body></html>"""
+
+        return ChannelsResponse(content=custom_html, content_type="text/html")
+```
+
 ## GraphQLWSConsumer (WebSockets / Subscriptions)
 
 ### Options
@@ -563,10 +585,58 @@ following keys by default:
 
 ### Extending the consumer
 
-We allow to extend `GraphQLWSConsumer`, by overriding the following methods:
+The base `GraphQLWSConsumer` class can be extended by overriding any of the
+following methods:
 
-- `async def get_context(self, request: ChannelsConsumer, connection_params: Any) -> Context`
-- `async def get_root_value(self, request: ChannelsConsumer) -> Optional[RootValue]`
+- `async def get_context(self, request: GraphQLWSConsumer, response: GraphQLWSConsumer) -> Context`
+- `async def get_root_value(self, request: GraphQLWSConsumer) -> Optional[RootValue]`
+- `def decode_json(self, data: Union[str, bytes]) -> object`
+- `def encode_json(self, data: object) -> str`
+- `async def on_ws_connect(self, context: Context) -> Union[UnsetType, None, Dict[str, object]]`
+
+### on_ws_connect
+
+By overriding `on_ws_connect` you can customize the behavior when a `graphql-ws`
+or `graphql-transport-ws` connection is established. This is particularly useful
+for authentication and authorization. By default, all connections are accepted.
+
+To manually accept a connection, return `strawberry.UNSET` or a connection
+acknowledgment payload. The acknowledgment payload will be sent to the client.
+
+Note that the legacy protocol does not support `None`/`null` acknowledgment
+payloads, while the new protocol does. Our implementation will treat
+`None`/`null` payloads the same as `strawberry.UNSET` in the context of the
+legacy protocol.
+
+To reject a connection, raise a `ConnectionRejectionError`. You can optionally
+provide a custom error payload that will be sent to the client when the legacy
+GraphQL over WebSocket protocol is used.
+
+```python
+from typing import Dict
+from strawberry.exceptions import ConnectionRejectionError
+from strawberry.channels import GraphQLWSConsumer
+
+
+class MyGraphQLWSConsumer(GraphQLWSConsumer):
+    async def on_ws_connect(self, context: Dict[str, object]):
+        connection_params = context["connection_params"]
+
+        if not isinstance(connection_params, dict):
+            # Reject without a custom graphql-ws error payload
+            raise ConnectionRejectionError()
+
+        if connection_params.get("password") != "secret":
+            # Reject with a custom graphql-ws error payload
+            raise ConnectionRejectionError({"reason": "Invalid password"})
+
+        if username := connection_params.get("username"):
+            # Accept with a custom acknowledgment payload
+            return {"message": f"Hello, {username}!"}
+
+        # Accept without a acknowledgment payload
+        return await super().on_ws_connect(context)
+```
 
 ### Context
 

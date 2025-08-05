@@ -63,6 +63,22 @@ class UserType:
     pass
 ```
 
+By default, computed fields are excluded. To also include all computed fields
+pass `include_computed=True` to the decorator.
+
+```python
+import strawberry
+
+from .models import User
+
+
+@strawberry.experimental.pydantic.type(
+    model=User, all_fields=True, include_computed=True
+)
+class UserType:
+    pass
+```
+
 ## Input types
 
 Input types are similar to types; we can create one by using the
@@ -129,9 +145,12 @@ In addition to object types and input types, Strawberry allows you to create
 "error types". You can use these error types to have a typed representation of
 Pydantic errors in GraphQL. Let's see an example:
 
-```python+schema
+<CodeGrid>
+
+```python
 from pydantic import BaseModel, constr
 import strawberry
+
 
 class User(BaseModel):
     id: int
@@ -139,14 +158,15 @@ class User(BaseModel):
     signup_ts: Optional[datetime] = None
     friends: List[int] = []
 
+
 @strawberry.experimental.pydantic.error_type(model=User)
 class UserError:
     id: strawberry.auto
     name: strawberry.auto
     friends: strawberry.auto
+```
 
----
-
+```graphql
 type UserError {
   id: [String!]
   name: [String!]
@@ -154,39 +174,47 @@ type UserError {
 }
 ```
 
+</CodeGrid>
+
 where each field will hold a list of error messages
 
-### Extending types
+## Extending types
 
 You can use the usual Strawberry syntax to add additional new fields to the
 GraphQL type that aren't defined in the pydantic model
 
-```python+schema
+<CodeGrid>
+
+```python
 import strawberry
 from pydantic import BaseModel
 
 from .models import User
 
+
 class User(BaseModel):
     id: int
     name: str
+
 
 @strawberry.experimental.pydantic.type(model=User)
 class User:
     id: strawberry.auto
     name: strawberry.auto
     age: int
+```
 
----
-
+```graphql
 type User {
-    id: Int!
-    name: String!
-    age: Int!
+  id: Int!
+  name: String!
+  age: Int!
 }
 ```
 
-### Converting types
+</CodeGrid>
+
+## Converting types
 
 The generated types won't run any pydantic validation. This is to prevent
 confusion when extending types and also to be able to run validation exactly
@@ -277,23 +305,27 @@ input_data = UserInput(id="abc", name="Jake")
 instance = input_data.to_pydantic()
 ```
 
-### Constrained types
+## Constrained types
 
 Strawberry supports
 [pydantic constrained types](https://pydantic-docs.helpmanual.io/usage/types/#constrained-types).
 Note that constraint is not enforced in the graphql type. Thus, we recommend
 always working on the pydantic type such that the validation is enforced.
 
-```python+schema
+<CodeGrid>
+
+```python
 from pydantic import BaseModel, conlist
 import strawberry
+
 
 class Example(BaseModel):
     friends: conlist(str, min_items=1)
 
+
 @strawberry.experimental.pydantic.input(model=Example, all_fields=True)
-class ExampleGQL:
-    ...
+class ExampleGQL: ...
+
 
 @strawberry.type
 class Query:
@@ -305,9 +337,11 @@ class Query:
         # an error if friends is empty
         print(example.to_pydantic().friends)
 
-schema = strawberry.Schema(query=Query)
 
----
+schema = strawberry.Schema(query=Query)
+```
+
+```graphql
 input ExampleGQL {
   friends: [String!]!
 }
@@ -317,7 +351,9 @@ type Query {
 }
 ```
 
-### Classes with `__get_validators__`
+</CodeGrid>
+
+## Classes with `__get_validators__`
 
 Pydantic BaseModels may define a custom type with
 [`__get_validators__`](https://pydantic-docs.helpmanual.io/usage/types/#classes-with-__get_validators__)
@@ -366,7 +402,7 @@ class Query:
 schema = strawberry.Schema(query=Query, scalar_overrides={MyCustomType: MyScalarType})
 ```
 
-### Custom Conversion Logic
+## Custom Conversion Logic
 
 Sometimes you might not want to translate your Pydantic model into Strawberry
 using the logic provided in the library. Sometimes types in Pydantic are

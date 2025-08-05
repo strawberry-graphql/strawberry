@@ -49,26 +49,34 @@ In Strawberry there are two ways to define a union:
 You can use the `Union` type from the `typing` module which will autogenerate
 the type name from the names of the union members:
 
-```python+schema
+<CodeGrid>
+
+```python
 from typing import Union
 import strawberry
+
 
 @strawberry.type
 class Audio:
     duration: int
 
+
 @strawberry.type
 class Video:
     thumbnail_url: str
+
 
 @strawberry.type
 class Image:
     src: str
 
+
 @strawberry.type
 class Query:
     latest_media: Union[Audio, Video, Image]
----
+```
+
+```graphql
 union AudioVideoImage = Audio | Video | Image
 
 type Query {
@@ -88,18 +96,25 @@ type Image {
 }
 ```
 
+</CodeGrid>
+
 Or if you need to specify a name or a description for a union you can use
 Annotated with the `strawberry.union` function:
 
-```python+schema
+<CodeGrid>
+
+```python
 import strawberry
 
 from typing import Union, Annotated
 
+
 @strawberry.type
 class Query:
     latest_media: Annotated[Union[Audio, Video, Image], strawberry.union("MediaItem")]
----
+```
+
+```graphql
 union MediaItem = Audio | Video | Image
 
 type Query {
@@ -118,6 +133,8 @@ type Image {
   src: String!
 }
 ```
+
+</CodeGrid>
 
 ## Resolving a union
 
@@ -150,25 +167,30 @@ Python's `typing.Union` does not really support this use case, but using
 Annotated and `strawberry.union` you can tell Strawberry that you want to define
 a union with only one member:
 
-```python+schema
+<CodeGrid>
+
+```python
 import strawberry
 
 from typing import Annotated
+
 
 @strawberry.type
 class Audio:
     duration: int
 
+
 @strawberry.type
 class Query:
     latest_media: Annotated[Audio, strawberry.union("MediaItem")]
+```
 
-
-schema = strawberry.Schema(query=Query)
----
+```graphql
 union MediaItem = Audio
 
 type Query {
   latestMedia: MediaItem!
 }
 ```
+
+</CodeGrid>

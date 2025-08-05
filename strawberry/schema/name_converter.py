@@ -1,27 +1,27 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, List, Optional, Union, cast
+from typing import TYPE_CHECKING, Optional, Union, cast
 from typing_extensions import Protocol
 
-from strawberry.custom_scalar import ScalarDefinition
 from strawberry.directive import StrawberryDirective
-from strawberry.enum import EnumDefinition, EnumValue
-from strawberry.lazy_type import LazyType
 from strawberry.schema_directive import StrawberrySchemaDirective
-from strawberry.type import (
+from strawberry.types.base import (
     StrawberryList,
+    StrawberryObjectDefinition,
     StrawberryOptional,
     has_object_definition,
 )
-from strawberry.types.types import StrawberryObjectDefinition
-from strawberry.union import StrawberryUnion
+from strawberry.types.enum import EnumDefinition, EnumValue
+from strawberry.types.lazy_type import LazyType
+from strawberry.types.scalar import ScalarDefinition
+from strawberry.types.union import StrawberryUnion
 from strawberry.utils.str_converters import capitalize_first, to_camel_case
 from strawberry.utils.typing import eval_type
 
 if TYPE_CHECKING:
-    from strawberry.arguments import StrawberryArgument
-    from strawberry.field import StrawberryField
-    from strawberry.type import StrawberryType
+    from strawberry.types.arguments import StrawberryArgument
+    from strawberry.types.base import StrawberryType
+    from strawberry.types.field import StrawberryField
 
 
 class HasGraphQLName(Protocol):
@@ -47,18 +47,17 @@ class NameConverter:
             return self.from_directive(type_)
         if isinstance(type_, EnumDefinition):  # TODO: Replace with StrawberryEnum
             return self.from_enum(type_)
-        elif isinstance(type_, StrawberryObjectDefinition):
+        if isinstance(type_, StrawberryObjectDefinition):
             if type_.is_input:
                 return self.from_input_object(type_)
             if type_.is_interface:
                 return self.from_interface(type_)
             return self.from_object(type_)
-        elif isinstance(type_, StrawberryUnion):
+        if isinstance(type_, StrawberryUnion):
             return self.from_union(type_)
-        elif isinstance(type_, ScalarDefinition):  # TODO: Replace with StrawberryScalar
+        if isinstance(type_, ScalarDefinition):  # TODO: Replace with StrawberryScalar
             return self.from_scalar(type_)
-        else:
-            return str(type_)
+        return str(type_)
 
     def from_argument(self, argument: StrawberryArgument) -> str:
         return self.get_graphql_name(argument)
@@ -107,8 +106,14 @@ class NameConverter:
             return union.graphql_name
 
         name = ""
+        types: tuple[StrawberryType, ...] = union.types
 
-        for type_ in union.types:
+        if union.concrete_of and union.concrete_of.graphql_name:
+            concrete_of_types = set(union.concrete_of.types)
+
+            types = tuple(type_ for type_ in types if type_ not in concrete_of_types)
+
+        for type_ in types:
             if isinstance(type_, LazyType):
                 type_ = cast("StrawberryType", type_.resolve_type())  # noqa: PLW2901
 
@@ -121,36 +126,40 @@ class NameConverter:
 
             name += type_name
 
+        if union.concrete_of and union.concrete_of.graphql_name:
+            name += union.concrete_of.graphql_name
+
         return name
 
     def from_generic(
         self,
         generic_type: StrawberryObjectDefinition,
-        types: List[Union[StrawberryType, type]],
+        types: list[Union[StrawberryType, type]],
     ) -> str:
         generic_type_name = generic_type.name
 
-        names: List[str] = []
+        names: list[str] = []
 
         for type_ in types:
-            name = self.get_from_type(type_)
+            name = self.get_name_from_type(type_)
             names.append(name)
 
         return "".join(names) + generic_type_name
 
-    def get_from_type(self, type_: Union[StrawberryType, type]) -> str:
+    def get_name_from_type(self, type_: Union[StrawberryType, type]) -> str:
         type_ = eval_type(type_)
 
         if isinstance(type_, LazyType):
-            name = type_.type_name
-        elif isinstance(type_, EnumDefinition):
+            type_ = type_.resolve_type()
+
+        if isinstance(type_, EnumDefinition):
             name = type_.name
         elif isinstance(type_, StrawberryUnion):
             name = type_.graphql_name if type_.graphql_name else self.from_union(type_)
         elif isinstance(type_, StrawberryList):
-            name = self.get_from_type(type_.of_type) + "List"
+            name = self.get_name_from_type(type_.of_type) + "List"
         elif isinstance(type_, StrawberryOptional):
-            name = self.get_from_type(type_.of_type) + "Optional"
+            name = self.get_name_from_type(type_.of_type) + "Optional"
         elif hasattr(type_, "_scalar_definition"):
             strawberry_type = type_._scalar_definition
 
@@ -184,3 +193,6 @@ class NameConverter:
         assert obj.python_name
 
         return self.apply_naming_config(obj.python_name)
+
+
+__all__ = ["NameConverter"]

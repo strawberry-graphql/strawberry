@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, List, Union
+from typing import TYPE_CHECKING, Union
 
 if TYPE_CHECKING:
     from graphql import GraphQLResolveInfo
@@ -26,7 +26,7 @@ def is_introspection_field(info: GraphQLResolveInfo) -> bool:
     return False
 
 
-def get_path_from_info(info: GraphQLResolveInfo) -> List[str]:
+def get_path_from_info(info: GraphQLResolveInfo) -> list[str]:
     path = info.path
     elements = []
 
@@ -35,3 +35,6 @@ def get_path_from_info(info: GraphQLResolveInfo) -> List[str]:
         path = path.prev
 
     return elements[::-1]
+
+
+__all__ = ["get_path_from_info", "is_introspection_field", "is_introspection_key"]

@@ -4,27 +4,25 @@ import dataclasses
 from typing import (
     TYPE_CHECKING,
     Any,
-    Dict,
-    List,
     Optional,
-    Tuple,
-    Type,
+    runtime_checkable,
 )
-from typing_extensions import TypedDict
+from typing_extensions import Protocol, TypedDict, deprecated
 
 from graphql import specified_rules
 
 from strawberry.utils.operation import get_first_operation, get_operation_type
 
 if TYPE_CHECKING:
+    from collections.abc import Iterable
     from typing_extensions import NotRequired
 
     from graphql import ASTValidationRule
-    from graphql import ExecutionResult as GraphQLExecutionResult
     from graphql.error.graphql_error import GraphQLError
     from graphql.language import DocumentNode, OperationDefinitionNode
 
     from strawberry.schema import Schema
+    from strawberry.schema._graphql_core import GraphQLExecutionResult
 
     from .graphql import OperationType
 
@@ -33,13 +31,14 @@ if TYPE_CHECKING:
 class ExecutionContext:
     query: Optional[str]
     schema: Schema
+    allowed_operations: Iterable[OperationType]
     context: Any = None
-    variables: Optional[Dict[str, Any]] = None
+    variables: Optional[dict[str, Any]] = None
     parse_options: ParseOptions = dataclasses.field(
         default_factory=lambda: ParseOptions()
     )
     root_value: Optional[Any] = None
-    validation_rules: Tuple[Type[ASTValidationRule], ...] = dataclasses.field(
+    validation_rules: tuple[type[ASTValidationRule], ...] = dataclasses.field(
         default_factory=lambda: tuple(specified_rules)
     )
 
@@ -49,15 +48,18 @@ class ExecutionContext:
     # Values that get populated during the GraphQL execution so that they can be
     # accessed by extensions
     graphql_document: Optional[DocumentNode] = None
-    errors: Optional[List[GraphQLError]] = None
+    pre_execution_errors: Optional[list[GraphQLError]] = None
     result: Optional[GraphQLExecutionResult] = None
+    extensions_results: dict[str, Any] = dataclasses.field(default_factory=dict)
+
+    operation_extensions: Optional[dict[str, Any]] = None
 
     def __post_init__(self, provided_operation_name: str | None) -> None:
         self._provided_operation_name = provided_operation_name
 
     @property
     def operation_name(self) -> Optional[str]:
-        if self._provided_operation_name:
+        if self._provided_operation_name is not None:
             return self._provided_operation_name
 
         definition = self._get_first_operation()
@@ -84,13 +86,48 @@ class ExecutionContext:
 
         return get_first_operation(graphql_document)
 
+    @property
+    @deprecated("Use 'pre_execution_errors' instead")
+    def errors(self) -> Optional[list[GraphQLError]]:
+        """Deprecated: Use pre_execution_errors instead."""
+        return self.pre_execution_errors
+
 
 @dataclasses.dataclass
 class ExecutionResult:
-    data: Optional[Dict[str, Any]]
-    errors: Optional[List[GraphQLError]]
-    extensions: Optional[Dict[str, Any]] = None
+    data: Optional[dict[str, Any]]
+    errors: Optional[list[GraphQLError]]
+    extensions: Optional[dict[str, Any]] = None
+
+
+@dataclasses.dataclass
+class PreExecutionError(ExecutionResult):
+    """Differentiate between a normal execution result and an immediate error.
+
+    Immediate errors are errors that occur before the execution phase i.e validation errors,
+    or any other error that occur before we interact with resolvers.
+
+    These errors are required by `graphql-ws-transport` protocol in order to close the operation
+    right away once the error is encountered.
+    """
 
 
 class ParseOptions(TypedDict):
     max_tokens: NotRequired[int]
+
+
+@runtime_checkable
+class SubscriptionExecutionResult(Protocol):
+    def __aiter__(self) -> SubscriptionExecutionResult:  # pragma: no cover
+        ...
+
+    async def __anext__(self) -> Any:  # pragma: no cover
+        ...
+
+
+__all__ = [
+    "ExecutionContext",
+    "ExecutionResult",
+    "ParseOptions",
+    "SubscriptionExecutionResult",
+]

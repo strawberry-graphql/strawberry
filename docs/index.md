@@ -11,7 +11,7 @@ This tutorial will help you:
 - Run the Strawberry server that lets you execute queries against your schema
 
 This tutorial assumes that you are familiar with the command line and Python,
-and that you have a recent version of Python (3.8+) installed.
+and that you have a recent version of Python (3.9+) installed.
 
 Strawberry is built on top of Python’s
 [dataclasses](https://realpython.com/python-data-classes/) and
@@ -181,6 +181,6 @@ Well done! You just created your first GraphQL API using Strawberry 🙌!
 
 Check out the following resources to learn more about GraphQL and Strawberry.
 
-- [Schema Basics](/docs/general/schema-basics.md)
-- [Resolvers](/docs/types/resolvers.md)
-- [Deployment](/docs/operations/deployment.md)
+- [Schema Basics](./general/schema-basics.md)
+- [Resolvers](./types/resolvers.md)
+- [Deployment](./operations/deployment.md)

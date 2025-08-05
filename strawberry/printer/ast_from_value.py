@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import re
+from collections.abc import Mapping
 from math import isfinite
-from typing import TYPE_CHECKING, Any, Mapping, Optional, cast
+from typing import TYPE_CHECKING, Any, Optional, cast
 
 from graphql.language import (
     BooleanValueNode,
@@ -27,7 +28,7 @@ from graphql.type import (
 )
 
 import strawberry
-from strawberry.type import has_object_definition
+from strawberry.types.base import has_object_definition
 
 if TYPE_CHECKING:
     from graphql.language import ValueNode
@@ -55,8 +56,7 @@ def ast_from_leaf_type(
         return IntValueNode(value=str(serialized))
     if isinstance(serialized, float) and isfinite(serialized):
         value = str(serialized)
-        if value.endswith(".0"):
-            value = value[:-2]
+        value = value.removesuffix(".0")
         return FloatValueNode(value=value)
 
     if isinstance(serialized, str):
@@ -149,3 +149,6 @@ def ast_from_value(value: Any, type_: GraphQLInputType) -> Optional[ValueNode]:
 
     # Not reachable. All possible input types have been considered.
     raise TypeError(f"Unexpected input type: {inspect(type_)}.")  # pragma: no cover
+
+
+__all__ = ["ast_from_value"]

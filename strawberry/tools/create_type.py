@@ -1,28 +1,45 @@
 import types
-from typing import List, Optional, Sequence, Type
+from collections.abc import Sequence
+from typing import Optional
 
 import strawberry
-from strawberry.field import StrawberryField
+from strawberry.types.field import StrawberryField
 
 
 def create_type(
     name: str,
-    fields: List[StrawberryField],
+    fields: list[StrawberryField],
     is_input: bool = False,
     is_interface: bool = False,
     description: Optional[str] = None,
     directives: Optional[Sequence[object]] = (),
     extend: bool = False,
-) -> Type:
-    """Create a Strawberry type from a list of StrawberryFields
+) -> type:
+    """Create a Strawberry type from a list of StrawberryFields.
 
-    >>> @strawberry.field
-    >>> def hello(info) -> str:
-    >>>     return "World"
-    >>>
-    >>> Query = create_type(name="Query", fields=[hello])
+    Args:
+        name: The GraphQL name of the type.
+        fields: The fields of the type.
+        is_input: Whether the type is an input type.
+        is_interface: Whether the type is an interface.
+        description: The GraphQL description of the type.
+        directives: The directives to attach to the type.
+        extend: Whether the type is an extension.
+
+    Example usage:
+
+    ```python
+    import strawberry
+
+
+    @strawberry.field
+    def hello(info) -> str:
+        return "World"
+
+
+    Query = create_type(name="Query", fields=[hello])
+    ```
     """
-
     if not fields:
         raise ValueError(f'Can\'t create type "{name}" with no fields')
 
@@ -33,15 +50,20 @@ def create_type(
         if not isinstance(field, StrawberryField):
             raise TypeError("Field is not an instance of StrawberryField")
 
-        if field.python_name is None:
+        # Fields created using `strawberry.field` without a resolver don't have a
+        # `python_name`. In that case, we fall back to the field's `graphql_name`
+        # set via the `name` argument passed to `strawberry.field`.
+        field_name = field.python_name or field.graphql_name
+
+        if field_name is None:
             raise ValueError(
                 "Field doesn't have a name. Fields passed to "
                 "`create_type` must define a name by passing the "
                 "`name` argument to `strawberry.field`."
             )
 
-        namespace[field.python_name] = field
-        annotations[field.python_name] = field.type
+        namespace[field_name] = field
+        annotations[field_name] = field.type
 
     namespace["__annotations__"] = annotations  # type: ignore
 
@@ -55,3 +77,6 @@ def create_type(
         directives=directives,
         extend=extend,
     )
+
+
+__all__ = ["create_type"]

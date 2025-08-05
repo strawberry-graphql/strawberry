@@ -9,7 +9,9 @@ Make sure to check our introduction to pagination [here](./overview.md)!
 Let us implement cursor based pagination in GraphQL. By the end of this
 tutorial, we should be able to return a paginated list of users when requested.
 
-```graphql+response
+<CodeGrid>
+
+```graphql
 query getUsers {
   getUsers(limit: 2) {
     users {
@@ -23,7 +25,9 @@ query getUsers {
     }
   }
 }
----
+```
+
+```json
 {
   "data": {
     "getUsers": {
@@ -42,12 +46,14 @@ query getUsers {
         }
       ],
       "pageMeta": {
-          "nextCursor": "dXNlcjoz",
+        "nextCursor": "dXNlcjoz"
       }
     }
   }
 }
 ```
+
+</CodeGrid>
 
 The server needs to return a `cursor` along with the sliced user data, so that
 our client can know what to query for next. The client could also provide a
@@ -66,11 +72,8 @@ import strawberry
 @strawberry.type
 class User:
     id: str = strawberry.field(description="ID of the user.")
-
     name: str = strawberry.field(description="The name of the user.")
-
     occupation: str = strawberry.field(description="The occupation of the user.")
-
     age: int = strawberry.field(description="The age of the user.")
 
     @staticmethod
@@ -143,11 +146,8 @@ user_data = [
 @strawberry.type
 class User:
     id: str = strawberry.field(description="ID of the user.")
-
     name: str = strawberry.field(description="The name of the user.")
-
     occupation: str = strawberry.field(description="The occupation of the user.")
-
     age: int = strawberry.field(description="The age of the user.")
 
     @staticmethod
@@ -167,7 +167,6 @@ class PageMeta:
 @strawberry.type
 class UserResponse:
     users: List[User] = strawberry.field(description="The list of users.")
-
     page_meta: PageMeta = strawberry.field(description="Metadata to aid in pagination.")
 
 
@@ -258,11 +257,8 @@ def decode_user_cursor(cursor: str) -> int:
 @strawberry.type
 class User:
     id: str = strawberry.field(description="ID of the user.")
-
     name: str = strawberry.field(description="The name of the user.")
-
     occupation: str = strawberry.field(description="The occupation of the user.")
-
     age: int = strawberry.field(description="The age of the user.")
 
     @staticmethod
@@ -282,7 +278,6 @@ class PageMeta:
 @strawberry.type
 class UserResponse:
     users: List[User] = strawberry.field(description="The list of users.")
-
     page_meta: PageMeta = strawberry.field(description="Metadata to aid in pagination.")
 
 
@@ -363,11 +358,8 @@ def decode_user_cursor(cursor: str) -> int:
 @strawberry.type
 class User:
     id: str = strawberry.field(description="ID of the user.")
-
     name: str = strawberry.field(description="The name of the user.")
-
     occupation: str = strawberry.field(description="The occupation of the user.")
-
     age: int = strawberry.field(description="The age of the user.")
 
     @staticmethod
@@ -387,7 +379,6 @@ class PageMeta:
 @strawberry.type
 class UserResponse:
     users: List[User] = strawberry.field(description="The list of users.")
-
     page_meta: PageMeta = strawberry.field(description="Metadata to aid in pagination.")
 
 

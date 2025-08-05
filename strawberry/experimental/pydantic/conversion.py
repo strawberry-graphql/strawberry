@@ -2,26 +2,26 @@ from __future__ import annotations
 
 import copy
 import dataclasses
-from typing import TYPE_CHECKING, Any, Type, Union, cast
+from typing import TYPE_CHECKING, Any, Union, cast
 
-from strawberry.enum import EnumDefinition
-from strawberry.type import (
+from strawberry.types.base import (
     StrawberryList,
     StrawberryOptional,
     has_object_definition,
 )
-from strawberry.union import StrawberryUnion
+from strawberry.types.enum import EnumDefinition
+from strawberry.types.union import StrawberryUnion
 
 if TYPE_CHECKING:
-    from strawberry.field import StrawberryField
-    from strawberry.type import StrawberryType
+    from strawberry.types.base import StrawberryType
+    from strawberry.types.field import StrawberryField
 
 
 def _convert_from_pydantic_to_strawberry_type(
     type_: Union[StrawberryType, type],
     data_from_model=None,  # noqa: ANN001
     extra=None,  # noqa: ANN001
-):
+) -> Any:
     data = data_from_model if data_from_model is not None else extra
 
     if isinstance(type_, StrawberryOptional):
@@ -35,7 +35,7 @@ def _convert_from_pydantic_to_strawberry_type(
             if hasattr(option_type, "_pydantic_type"):
                 source_type = option_type._pydantic_type
             else:
-                source_type = cast(type, option_type)
+                source_type = cast("type", option_type)
             if isinstance(data, source_type):
                 return _convert_from_pydantic_to_strawberry_type(
                     option_type, data_from_model=data, extra=extra
@@ -83,14 +83,14 @@ def convert_pydantic_model_to_strawberry_class(
         field = cast("StrawberryField", field_)
         python_name = field.python_name
 
-        data_from_extra = extra.get(python_name, None)
-        data_from_model = (
-            getattr(model_instance, python_name, None) if model_instance else None
-        )
-
         # only convert and add fields to kwargs if they are present in the `__init__`
         # method of the class
         if field.init:
+            data_from_extra = extra.get(python_name, None)
+            data_from_model = (
+                getattr(model_instance, python_name, None) if model_instance else None
+            )
+
             kwargs[python_name] = _convert_from_pydantic_to_strawberry_type(
                 field.type, data_from_model, extra=data_from_extra
             )
@@ -98,20 +98,20 @@ def convert_pydantic_model_to_strawberry_class(
     return cls(**kwargs)
 
 
-def convert_strawberry_class_to_pydantic_model(obj: Type) -> Any:
+def convert_strawberry_class_to_pydantic_model(obj: type) -> Any:
     if hasattr(obj, "to_pydantic"):
         return obj.to_pydantic()
-    elif dataclasses.is_dataclass(obj):
+    if dataclasses.is_dataclass(obj):
         result = []
         for f in dataclasses.fields(obj):
             value = convert_strawberry_class_to_pydantic_model(getattr(obj, f.name))
             result.append((f.name, value))
         return dict(result)
-    elif isinstance(obj, (list, tuple)):
+    if isinstance(obj, (list, tuple)):
         # Assume we can create an object of this type by passing in a
         # generator (which is not true for namedtuples, not supported).
         return type(obj)(convert_strawberry_class_to_pydantic_model(v) for v in obj)
-    elif isinstance(obj, dict):
+    if isinstance(obj, dict):
         return type(obj)(
             (
                 convert_strawberry_class_to_pydantic_model(k),
@@ -119,5 +119,4 @@ def convert_strawberry_class_to_pydantic_model(obj: Type) -> Any:
             )
             for k, v in obj.items()
         )
-    else:
-        return copy.deepcopy(obj)
+    return copy.deepcopy(obj)

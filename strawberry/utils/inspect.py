@@ -4,14 +4,16 @@ from functools import lru_cache
 from typing import (
     Any,
     Callable,
-    Dict,
-    List,
+    Generic,
     Optional,
+    Protocol,
     TypeVar,
+    Union,
+    get_args,
+    get_origin,
 )
-from typing_extensions import get_args
 
-from strawberry.type import has_object_definition
+import strawberry
 
 
 def in_async_context() -> bool:
@@ -26,9 +28,8 @@ def in_async_context() -> bool:
 
 
 @lru_cache(maxsize=250)
-def get_func_args(func: Callable[[Any], Any]) -> List[str]:
-    """Returns a list of arguments for the function"""
-
+def get_func_args(func: Callable[[Any], Any]) -> list[str]:
+    """Returns a list of arguments for the function."""
     sig = inspect.signature(func)
 
     return [
@@ -38,72 +39,97 @@ def get_func_args(func: Callable[[Any], Any]) -> List[str]:
     ]
 
 
-def get_specialized_type_var_map(cls: type) -> Optional[Dict[str, type]]:
+def get_specialized_type_var_map(cls: type) -> Optional[dict[str, type]]:
     """Get a type var map for specialized types.
 
     Consider the following:
 
-        >>> class Foo(Generic[T]):
-        ...     ...
-        ...
-        >>> class Bar(Generic[K]):
-        ...     ...
-        ...
-        >>> class IntBar(Bar[int]):
-        ...     ...
-        ...
-        >>> class IntBarSubclass(IntBar):
-        ...     ...
-        ...
-        >>> class IntBarFoo(IntBar, Foo[str]):
-        ...     ...
-        ...
+    ```python
+    class Foo(Generic[T]): ...
+
+
+    class Bar(Generic[K]): ...
+
+
+    class IntBar(Bar[int]): ...
+
+
+    class IntBarSubclass(IntBar): ...
+
+
+    class IntBarFoo(IntBar, Foo[str]): ...
+    ```
 
     This would return:
 
-        >>> get_specialized_type_var_map(object)
-        None
-        >>> get_specialized_type_var_map(Foo)
-        {}
-        >>> get_specialized_type_var_map(Bar)
-        {~T: ~T}
-        >>> get_specialized_type_var_map(IntBar)
-        {~T: int}
-        >>> get_specialized_type_var_map(IntBarSubclass)
-        {~T: int}
-        >>> get_specialized_type_var_map(IntBarFoo)
-        {~T: int, ~K: str}
+    ```python
+    get_specialized_type_var_map(object)
+    # None
 
+    get_specialized_type_var_map(Foo)
+    # {}
+
+    get_specialized_type_var_map(Bar)
+    # {}
+
+    get_specialized_type_var_map(IntBar)
+    # {~T: int, ~K: int}
+
+    get_specialized_type_var_map(IntBarSubclass)
+    # {~T: int, ~K: int}
+
+    get_specialized_type_var_map(IntBarFoo)
+    # {~T: int, ~K: str}
+    ```
     """
-    orig_bases = getattr(cls, "__orig_bases__", None)
-    if orig_bases is None:
-        # Not a specialized type
-        return None
+    from strawberry.types.base import has_object_definition
 
-    type_var_map = {}
+    param_args: dict[TypeVar, Union[TypeVar, type]] = {}
 
-    # only get type vars for base generics (ie. Generic[T]) and for strawberry types
+    types: list[type] = [cls]
+    while types:
+        tp = types.pop(0)
+        if (origin := get_origin(tp)) is None or origin in (Generic, Protocol):
+            origin = tp
 
-    orig_bases = [b for b in orig_bases if has_object_definition(b)]
-
-    for base in orig_bases:
-        # Recursively get type var map from base classes
-        base_type_var_map = get_specialized_type_var_map(base)
-        if base_type_var_map is not None:
-            type_var_map.update(base_type_var_map)
-
-        args = get_args(base)
-        origin = getattr(base, "__origin__", None)
-
-        params = origin and getattr(origin, "__parameters__", None)
-        if params is None:
-            params = getattr(base, "__parameters__", None)
-
-        if not params:
+        # only get type vars for base generics (i.e. Generic[T]) and for strawberry types
+        if not has_object_definition(origin):
             continue
 
-        type_var_map.update(
-            {p.__name__: a for p, a in zip(params, args) if not isinstance(a, TypeVar)}
-        )
+        if (type_params := getattr(origin, "__parameters__", None)) is not None:
+            args = get_args(tp)
+            if args:
+                for type_param, arg in zip(type_params, args):
+                    if type_param not in param_args:
+                        param_args[type_param] = arg
+            else:
+                for type_param in type_params:
+                    if type_param not in param_args:
+                        param_args[type_param] = strawberry.UNSET
 
-    return type_var_map
+        if orig_bases := getattr(origin, "__orig_bases__", None):
+            types.extend(orig_bases)
+    if not param_args:
+        return None
+
+    for type_param, arg in list(param_args.items()):
+        resolved_arg = arg
+        while (
+            isinstance(resolved_arg, TypeVar) and resolved_arg is not strawberry.UNSET
+        ):
+            resolved_arg = (
+                param_args.get(resolved_arg, strawberry.UNSET)
+                if resolved_arg is not type_param
+                else strawberry.UNSET
+            )
+
+        param_args[type_param] = resolved_arg
+
+    return {
+        k.__name__: v
+        for k, v in reversed(param_args.items())
+        if v is not strawberry.UNSET and not isinstance(v, TypeVar)
+    }
+
+
+__all__ = ["get_func_args", "get_specialized_type_var_map", "in_async_context"]

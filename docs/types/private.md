@@ -55,7 +55,9 @@ class Query:
 Queries can then select the fields and formats desired, but formatting only
 happens as requested:
 
-```graphql+json
+<CodeGrid>
+
+```graphql
 {
   now {
     format(template: "{my.year}")
@@ -63,9 +65,9 @@ happens as requested:
     repr
   }
 }
+```
 
----
-
+```json
 {
   "data": {
     "now": {
@@ -76,3 +78,5 @@ happens as requested:
   }
 }
 ```
+
+</CodeGrid>

@@ -1,7 +1,7 @@
 import re
 import textwrap
 import typing
-from typing import List, Optional
+from typing import Optional
 
 import pytest
 
@@ -12,6 +12,7 @@ from strawberry.exceptions.permission_fail_silently_requires_optional import (
 )
 from strawberry.permission import BasePermission, PermissionExtension
 from strawberry.printer import print_schema
+from strawberry.utils.aio import aclosing
 
 
 def test_raises_graphql_error_when_permission_method_is_missing():
@@ -587,16 +588,15 @@ async def test_raises_permission_error_for_subscription():
     @strawberry.type
     class Subscription:
         @strawberry.subscription(permission_classes=[IsAdmin])
-        async def user(
-            self, info
-        ) -> typing.AsyncGenerator[str, None]:  # pragma: no cover
+        async def user(self) -> typing.AsyncGenerator[str, None]:  # pragma: no cover
             yield "Hello"
 
     schema = strawberry.Schema(query=Query, subscription=Subscription)
 
     query = "subscription { user }"
 
-    result = await schema.subscribe(query)
+    async with aclosing(await schema.subscribe(query)) as sub_result:
+        result = await sub_result.__anext__()
 
     assert result.errors[0].message == "You are not authorized"
 
@@ -959,7 +959,7 @@ def test_silent_permissions_optional_list():
         @strawberry.field(
             extensions=[PermissionExtension([IsAuthorized()], fail_silently=True)]
         )
-        def names(self) -> Optional[List[str]]:  # pragma: no cover
+        def names(self) -> Optional[list[str]]:  # pragma: no cover
             return ["ABC"]
 
     schema = strawberry.Schema(query=Query)
@@ -982,7 +982,7 @@ def test_silent_permissions_list():
         @strawberry.field(
             extensions=[PermissionExtension([IsAuthorized()], fail_silently=True)]
         )
-        def names(self) -> List[str]:  # pragma: no cover
+        def names(self) -> list[str]:  # pragma: no cover
             return ["ABC"]
 
     schema = strawberry.Schema(query=Query)
@@ -1017,10 +1017,6 @@ def test_silent_permissions_incompatible_types():
         )
         def name(self) -> User:  # pragma: no cover
             return User(name="ABC")
-
-    error = re.escape(
-        "Cannot use fail_silently=True with a non-optional " "or non-list field"
-    )
 
     strawberry.Schema(query=Query)
 
@@ -1084,10 +1080,7 @@ def test_basic_permission_access_inputs():
         def has_permission(
             self, source, info, **kwargs: typing.Any
         ) -> bool:  # pragma: no cover
-            if kwargs["a_key"] == "secret":
-                return True
-
-            return False
+            return kwargs["a_key"] == "secret"
 
     @strawberry.type
     class Query:

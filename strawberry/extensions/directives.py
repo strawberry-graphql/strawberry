@@ -1,9 +1,8 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Callable, Dict, Tuple
+from typing import TYPE_CHECKING, Any, Callable
 
 from strawberry.extensions import SchemaExtension
-from strawberry.types import Info
 from strawberry.types.nodes import convert_arguments
 from strawberry.utils.await_maybe import await_maybe
 
@@ -11,8 +10,8 @@ if TYPE_CHECKING:
     from graphql import DirectiveNode, GraphQLResolveInfo
 
     from strawberry.directive import StrawberryDirective
-    from strawberry.field import StrawberryField
     from strawberry.schema.schema import Schema
+    from strawberry.types.field import StrawberryField
     from strawberry.utils.await_maybe import AwaitableOrValue
 
 
@@ -30,7 +29,9 @@ class DirectivesExtension(SchemaExtension):
     ) -> AwaitableOrValue[Any]:
         value = await await_maybe(_next(root, info, *args, **kwargs))
 
-        for directive in info.field_nodes[0].directives:
+        nodes = list(info.field_nodes)
+
+        for directive in nodes[0].directives:
             if directive.name.value in SPECIFIED_DIRECTIVES:
                 continue
             strawberry_directive, arguments = process_directive(directive, value, info)
@@ -50,7 +51,9 @@ class DirectivesExtensionSync(SchemaExtension):
     ) -> AwaitableOrValue[Any]:
         value = _next(root, info, *args, **kwargs)
 
-        for directive in info.field_nodes[0].directives:
+        nodes = list(info.field_nodes)
+
+        for directive in nodes[0].directives:
             if directive.name.value in SPECIFIED_DIRECTIVES:
                 continue
             strawberry_directive, arguments = process_directive(directive, value, info)
@@ -63,7 +66,7 @@ def process_directive(
     directive: DirectiveNode,
     value: Any,
     info: GraphQLResolveInfo,
-) -> Tuple[StrawberryDirective, Dict[str, Any]]:
+) -> tuple[StrawberryDirective, dict[str, Any]]:
     """Get a `StrawberryDirective` from ``directive` and prepare its arguments."""
     directive_name = directive.name.value
     schema: Schema = info.schema._strawberry_schema  # type: ignore
@@ -81,7 +84,12 @@ def process_directive(
             field_name=info.field_name,
             type_name=info.parent_type.name,
         )
-        arguments[info_parameter.name] = Info(_raw_info=info, _field=field)
+        arguments[info_parameter.name] = schema.config.info_class(
+            _raw_info=info, _field=field
+        )
     if value_parameter:
         arguments[value_parameter.name] = value
     return strawberry_directive, arguments
+
+
+__all__ = ["DirectivesExtension", "DirectivesExtensionSync"]

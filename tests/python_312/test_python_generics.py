@@ -1,6 +1,4 @@
-"""
-These tests are for Generics that don't expose any generic parts to the schema.
-"""
+"""These tests are for Generics that don't expose any generic parts to the schema."""
 
 import sys
 import textwrap
@@ -77,7 +75,7 @@ def test_with_interface():
 
         @strawberry.field
         def value(self) -> str:
-            raise NotImplementedError()
+            raise NotImplementedError
 
     @strawberry.type
     class ImplementationOne(GenericInterface[str]):
@@ -134,7 +132,7 @@ def test_with_interface_and_type():
 
         @strawberry.field
         def value(self) -> str:
-            raise NotImplementedError()
+            raise NotImplementedError
 
     @strawberry.type
     class ImplementationOne(GenericInterface[str]):

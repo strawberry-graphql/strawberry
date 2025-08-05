@@ -2,7 +2,7 @@ import dataclasses
 from dataclasses import dataclass
 from decimal import Decimal
 from functools import cached_property
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Type
+from typing import TYPE_CHECKING, Any, Callable, Optional
 from uuid import UUID
 
 import pydantic
@@ -12,7 +12,7 @@ from pydantic.version import VERSION as PYDANTIC_VERSION
 from strawberry.experimental.pydantic.exceptions import UnsupportedTypeError
 
 if TYPE_CHECKING:
-    from pydantic.fields import FieldInfo
+    from pydantic.fields import ComputedFieldInfo, FieldInfo
 
 IS_PYDANTIC_V2: bool = PYDANTIC_VERSION.startswith("2.")
 IS_PYDANTIC_V1: bool = not IS_PYDANTIC_V2
@@ -91,6 +91,10 @@ ATTR_TO_TYPE_MAP_Pydantic_V2 = {
     "SecretStr": str,
     "SecretBytes": bytes,
     "AnyUrl": str,
+    "AnyHttpUrl": str,
+    "HttpUrl": str,
+    "PostgresDsn": str,
+    "RedisDsn": str,
 }
 
 ATTR_TO_TYPE_MAP_Pydantic_Core_V2 = {
@@ -98,7 +102,7 @@ ATTR_TO_TYPE_MAP_Pydantic_Core_V2 = {
 }
 
 
-def get_fields_map_for_v2() -> Dict[Any, Any]:
+def get_fields_map_for_v2() -> dict[Any, Any]:
     import pydantic_core
 
     fields_map = {
@@ -119,23 +123,25 @@ def get_fields_map_for_v2() -> Dict[Any, Any]:
 
 class PydanticV2Compat:
     @property
-    def PYDANTIC_MISSING_TYPE(self) -> Any:
+    def PYDANTIC_MISSING_TYPE(self) -> Any:  # noqa: N802
         from pydantic_core import PydanticUndefined
 
         return PydanticUndefined
 
-    def get_model_fields(self, model: Type[BaseModel]) -> Dict[str, CompatModelField]:
-        field_info: dict[str, FieldInfo] = model.model_fields
+    def get_model_computed_fields(
+        self, model: type[BaseModel]
+    ) -> dict[str, CompatModelField]:
+        computed_field_info: dict[str, ComputedFieldInfo] = model.model_computed_fields
         new_fields = {}
         # Convert it into CompatModelField
-        for name, field in field_info.items():
+        for name, field in computed_field_info.items():
             new_fields[name] = CompatModelField(
                 name=name,
-                type_=field.annotation,
-                outer_type_=field.annotation,
-                default=field.default,
-                default_factory=field.default_factory,
-                required=field.is_required(),
+                type_=field.return_type,
+                outer_type_=field.return_type,
+                default=None,
+                default_factory=None,
+                required=False,
                 alias=field.alias,
                 # v2 doesn't have allow_none
                 allow_none=False,
@@ -146,29 +152,61 @@ class PydanticV2Compat:
             )
         return new_fields
 
+    def get_model_fields(
+        self, model: type[BaseModel], include_computed: bool = False
+    ) -> dict[str, CompatModelField]:
+        field_info: dict[str, FieldInfo] = model.model_fields
+        new_fields = {}
+        # Convert it into CompatModelField
+        for name, field in field_info.items():
+            new_fields[name] = CompatModelField(
+                name=name,
+                type_=field.annotation,
+                outer_type_=field.annotation,
+                default=field.default,
+                default_factory=field.default_factory,  # type: ignore
+                required=field.is_required(),
+                alias=field.alias,
+                # v2 doesn't have allow_none
+                allow_none=False,
+                has_alias=field is not None,
+                description=field.description,
+                _missing_type=self.PYDANTIC_MISSING_TYPE,
+                is_v1=False,
+            )
+        if include_computed:
+            new_fields |= self.get_model_computed_fields(model)
+        return new_fields
+
     @cached_property
-    def fields_map(self) -> Dict[Any, Any]:
+    def fields_map(self) -> dict[Any, Any]:
         return get_fields_map_for_v2()
 
-    def get_basic_type(self, type_: Any) -> Type[Any]:
+    def get_basic_type(self, type_: Any) -> type[Any]:
         if type_ in self.fields_map:
             type_ = self.fields_map[type_]
 
             if type_ is None:
-                raise UnsupportedTypeError()
+                raise UnsupportedTypeError
 
         if is_new_type(type_):
             return new_type_supertype(type_)
 
         return type_
 
+    def model_dump(self, model_instance: BaseModel) -> dict[Any, Any]:
+        return model_instance.model_dump()
+
 
 class PydanticV1Compat:
     @property
-    def PYDANTIC_MISSING_TYPE(self) -> Any:
+    def PYDANTIC_MISSING_TYPE(self) -> Any:  # noqa: N802
         return dataclasses.MISSING
 
-    def get_model_fields(self, model: Type[BaseModel]) -> Dict[str, CompatModelField]:
+    def get_model_fields(
+        self, model: type[BaseModel], include_computed: bool = False
+    ) -> dict[str, CompatModelField]:
+        """`include_computed` is a noop for PydanticV1Compat."""
         new_fields = {}
         # Convert it into CompatModelField
         for name, field in model.__fields__.items():  # type: ignore[attr-defined]
@@ -189,7 +227,7 @@ class PydanticV1Compat:
         return new_fields
 
     @cached_property
-    def fields_map(self) -> Dict[Any, Any]:
+    def fields_map(self) -> dict[Any, Any]:
         if IS_PYDANTIC_V2:
             return {
                 getattr(pydantic.v1, field_name): type
@@ -203,7 +241,7 @@ class PydanticV1Compat:
             if hasattr(pydantic, field_name)
         }
 
-    def get_basic_type(self, type_: Any) -> Type[Any]:
+    def get_basic_type(self, type_: Any) -> type[Any]:
         if IS_PYDANTIC_V1:
             ConstrainedInt = pydantic.ConstrainedInt
             ConstrainedFloat = pydantic.ConstrainedFloat
@@ -215,25 +253,28 @@ class PydanticV1Compat:
             ConstrainedStr = pydantic.v1.ConstrainedStr
             ConstrainedList = pydantic.v1.ConstrainedList
 
-        if lenient_issubclass(type_, ConstrainedInt):
+        if lenient_issubclass(type_, ConstrainedInt):  # type: ignore
             return int
-        if lenient_issubclass(type_, ConstrainedFloat):
+        if lenient_issubclass(type_, ConstrainedFloat):  # type: ignore
             return float
-        if lenient_issubclass(type_, ConstrainedStr):
+        if lenient_issubclass(type_, ConstrainedStr):  # type: ignore
             return str
-        if lenient_issubclass(type_, ConstrainedList):
-            return List[self.get_basic_type(type_.item_type)]  # type: ignore
+        if lenient_issubclass(type_, ConstrainedList):  # type: ignore
+            return list[self.get_basic_type(type_.item_type)]  # type: ignore
 
         if type_ in self.fields_map:
             type_ = self.fields_map[type_]
 
             if type_ is None:
-                raise UnsupportedTypeError()
+                raise UnsupportedTypeError
 
         if is_new_type(type_):
             return new_type_supertype(type_)
 
         return type_
+
+    def model_dump(self, model_instance: BaseModel) -> dict[Any, Any]:
+        return model_instance.dict()
 
 
 class PydanticCompat:
@@ -244,7 +285,7 @@ class PydanticCompat:
             self._compat = PydanticV1Compat()  # type: ignore[assignment]
 
     @classmethod
-    def from_model(cls, model: Type[BaseModel]) -> "PydanticCompat":
+    def from_model(cls, model: type[BaseModel]) -> "PydanticCompat":
         if hasattr(model, "model_fields"):
             return cls(is_v2=True)
 
@@ -257,8 +298,8 @@ class PydanticCompat:
 if IS_PYDANTIC_V2:
     from typing_extensions import get_args, get_origin
 
-    from pydantic._internal._typing_extra import is_new_type
-    from pydantic._internal._utils import lenient_issubclass, smart_deepcopy
+    from pydantic.v1.typing import is_new_type
+    from pydantic.v1.utils import lenient_issubclass, smart_deepcopy
 
     def new_type_supertype(type_: Any) -> Any:
         return type_.__supertype__
@@ -274,13 +315,12 @@ else:
         smart_deepcopy,
     )
 
-
 __all__ = [
     "PydanticCompat",
+    "get_args",
+    "get_origin",
     "is_new_type",
     "lenient_issubclass",
-    "get_origin",
-    "get_args",
     "new_type_supertype",
     "smart_deepcopy",
 ]

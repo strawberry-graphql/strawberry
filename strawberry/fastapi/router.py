@@ -6,26 +6,22 @@ from inspect import signature
 from typing import (
     TYPE_CHECKING,
     Any,
-    Awaitable,
     Callable,
-    Dict,
-    List,
-    Mapping,
     Optional,
-    Sequence,
-    Type,
     Union,
     cast,
 )
+from typing_extensions import TypeGuard
 
 from starlette import status
-from starlette.background import BackgroundTasks  # noqa: TCH002
+from starlette.background import BackgroundTasks  # noqa: TC002
 from starlette.requests import HTTPConnection, Request
 from starlette.responses import (
     HTMLResponse,
     JSONResponse,
     PlainTextResponse,
     Response,
+    StreamingResponse,
 )
 from starlette.websockets import WebSocket
 
@@ -33,22 +29,16 @@ from fastapi import APIRouter, Depends, params
 from fastapi.datastructures import Default
 from fastapi.routing import APIRoute
 from fastapi.utils import generate_unique_id
+from strawberry.asgi import ASGIRequestAdapter, ASGIWebSocketAdapter
 from strawberry.exceptions import InvalidCustomContext
 from strawberry.fastapi.context import BaseContext, CustomContext
-from strawberry.fastapi.handlers import GraphQLTransportWSHandler, GraphQLWSHandler
-from strawberry.http import (
-    process_result,
-)
-from strawberry.http.async_base_view import AsyncBaseHTTPView, AsyncHTTPRequestAdapter
+from strawberry.http.async_base_view import AsyncBaseHTTPView
 from strawberry.http.exceptions import HTTPException
-from strawberry.http.types import FormData, HTTPMethod, QueryParams
-from strawberry.http.typevars import (
-    Context,
-    RootValue,
-)
+from strawberry.http.typevars import Context, RootValue
 from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
 
 if TYPE_CHECKING:
+    from collections.abc import AsyncIterator, Awaitable, Sequence
     from enum import Enum
 
     from starlette.routing import BaseRoute
@@ -58,45 +48,17 @@ if TYPE_CHECKING:
     from strawberry.http import GraphQLHTTPResponse
     from strawberry.http.ides import GraphQL_IDE
     from strawberry.schema import BaseSchema
-    from strawberry.types import ExecutionResult
-
-
-class FastAPIRequestAdapter(AsyncHTTPRequestAdapter):
-    def __init__(self, request: Request) -> None:
-        self.request = request
-
-    @property
-    def query_params(self) -> QueryParams:
-        return dict(self.request.query_params)
-
-    @property
-    def method(self) -> HTTPMethod:
-        return cast(HTTPMethod, self.request.method.upper())
-
-    @property
-    def headers(self) -> Mapping[str, str]:
-        return self.request.headers
-
-    @property
-    def content_type(self) -> Optional[str]:
-        return self.request.headers.get("Content-Type", None)
-
-    async def get_body(self) -> bytes:
-        return await self.request.body()
-
-    async def get_form_data(self) -> FormData:
-        multipart_data = await self.request.form()
-
-        return FormData(files=multipart_data, form=multipart_data)
 
 
 class GraphQLRouter(
-    AsyncBaseHTTPView[Request, Response, Response, Context, RootValue], APIRouter
+    AsyncBaseHTTPView[
+        Request, Response, Response, WebSocket, WebSocket, Context, RootValue
+    ],
+    APIRouter,
 ):
-    graphql_ws_handler_class = GraphQLWSHandler
-    graphql_transport_ws_handler_class = GraphQLTransportWSHandler
     allow_queries_via_get = True
-    request_adapter_class = FastAPIRequestAdapter
+    request_adapter_class = ASGIRequestAdapter
+    websocket_adapter_class = ASGIWebSocketAdapter
 
     @staticmethod
     async def __get_root_value() -> None:
@@ -114,7 +76,7 @@ class GraphQLRouter(
             connection: HTTPConnection,
             response: Response = None,  # type: ignore
         ) -> MergedContext:
-            request = cast(Union[Request, WebSocket], connection)
+            request = cast("Union[Request, WebSocket]", connection)
             if isinstance(custom_context, BaseContext):
                 custom_context.request = request
                 custom_context.background_tasks = background_tasks
@@ -130,10 +92,9 @@ class GraphQLRouter(
                     **default_context,
                     **custom_context,
                 }
-            elif custom_context is None:
+            if custom_context is None:
                 return default_context
-            else:
-                raise InvalidCustomContext()
+            raise InvalidCustomContext
 
         # replace the signature parameters of dependency...
         # ...with the old parameters minus the first argument as it will be replaced...
@@ -164,23 +125,25 @@ class GraphQLRouter(
         keep_alive_interval: float = 1,
         debug: bool = False,
         root_value_getter: Optional[Callable[[], RootValue]] = None,
-        context_getter: Optional[Callable[..., Optional[Context]]] = None,
+        context_getter: Optional[
+            Callable[..., Union[Optional[Context], Awaitable[Optional[Context]]]]
+        ] = None,
         subscription_protocols: Sequence[str] = (
             GRAPHQL_TRANSPORT_WS_PROTOCOL,
             GRAPHQL_WS_PROTOCOL,
         ),
         connection_init_wait_timeout: timedelta = timedelta(minutes=1),
         prefix: str = "",
-        tags: Optional[List[Union[str, Enum]]] = None,
+        tags: Optional[list[Union[str, Enum]]] = None,
         dependencies: Optional[Sequence[params.Depends]] = None,
-        default_response_class: Type[Response] = Default(JSONResponse),
-        responses: Optional[Dict[Union[int, str], Dict[str, Any]]] = None,
-        callbacks: Optional[List[BaseRoute]] = None,
-        routes: Optional[List[BaseRoute]] = None,
+        default_response_class: type[Response] = Default(JSONResponse),
+        responses: Optional[dict[Union[int, str], dict[str, Any]]] = None,
+        callbacks: Optional[list[BaseRoute]] = None,
+        routes: Optional[list[BaseRoute]] = None,
         redirect_slashes: bool = True,
         default: Optional[ASGIApp] = None,
         dependency_overrides_provider: Optional[Any] = None,
-        route_class: Type[APIRoute] = APIRoute,
+        route_class: type[APIRoute] = APIRoute,
         on_startup: Optional[Sequence[Callable[[], Any]]] = None,
         on_shutdown: Optional[Sequence[Callable[[], Any]]] = None,
         lifespan: Optional[Lifespan[Any]] = None,
@@ -189,6 +152,7 @@ class GraphQLRouter(
         generate_unique_id_function: Callable[[APIRoute], str] = Default(
             generate_unique_id
         ),
+        multipart_uploads_enabled: bool = False,
         **kwargs: Any,
     ) -> None:
         super().__init__(
@@ -223,6 +187,7 @@ class GraphQLRouter(
         )
         self.protocols = subscription_protocols
         self.connection_init_wait_timeout = connection_init_wait_timeout
+        self.multipart_uploads_enabled = multipart_uploads_enabled
 
         if graphiql is not None:
             warnings.warn(
@@ -291,61 +256,19 @@ class GraphQLRouter(
             websocket: WebSocket,
             context: Context = Depends(self.context_getter),
             root_value: RootValue = Depends(self.root_value_getter),
-        ):
-            async def _get_context():
-                return context
-
-            async def _get_root_value():
-                return root_value
-
-            preferred_protocol = self.pick_preferred_protocol(websocket)
-            if preferred_protocol == GRAPHQL_TRANSPORT_WS_PROTOCOL:
-                await self.graphql_transport_ws_handler_class(
-                    schema=self.schema,
-                    debug=self.debug,
-                    connection_init_wait_timeout=self.connection_init_wait_timeout,
-                    get_context=_get_context,
-                    get_root_value=_get_root_value,
-                    ws=websocket,
-                ).handle()
-            elif preferred_protocol == GRAPHQL_WS_PROTOCOL:
-                await self.graphql_ws_handler_class(
-                    schema=self.schema,
-                    debug=self.debug,
-                    keep_alive=self.keep_alive,
-                    keep_alive_interval=self.keep_alive_interval,
-                    get_context=_get_context,
-                    get_root_value=_get_root_value,
-                    ws=websocket,
-                ).handle()
-            else:
-                # Code 4406 is "Subprotocol not acceptable"
-                await websocket.close(code=4406)
-
-    def pick_preferred_protocol(self, ws: WebSocket) -> Optional[str]:
-        protocols = ws["subprotocols"]
-        intersection = set(protocols) & set(self.protocols)
-        return min(
-            intersection,
-            key=lambda i: protocols.index(i),
-            default=None,
-        )
+        ) -> None:
+            await self.run(request=websocket, context=context, root_value=root_value)
 
     async def render_graphql_ide(self, request: Request) -> HTMLResponse:
         return HTMLResponse(self.graphql_ide_html)
 
-    async def process_result(
-        self, request: Request, result: ExecutionResult
-    ) -> GraphQLHTTPResponse:
-        return process_result(result)
-
     async def get_context(
-        self, request: Request, response: Response
+        self, request: Union[Request, WebSocket], response: Union[Response, WebSocket]
     ) -> Context:  # pragma: no cover
         raise ValueError("`get_context` is not used by FastAPI GraphQL Router")
 
     async def get_root_value(
-        self, request: Request
+        self, request: Union[Request, WebSocket]
     ) -> Optional[RootValue]:  # pragma: no cover
         raise ValueError("`get_root_value` is not used by FastAPI GraphQL Router")
 
@@ -353,7 +276,9 @@ class GraphQLRouter(
         return self.temporal_response
 
     def create_response(
-        self, response_data: GraphQLHTTPResponse, sub_response: Response
+        self,
+        response_data: Union[GraphQLHTTPResponse, list[GraphQLHTTPResponse]],
+        sub_response: Response,
     ) -> Response:
         response = Response(
             self.encode_json(response_data),
@@ -364,3 +289,39 @@ class GraphQLRouter(
         response.headers.raw.extend(sub_response.headers.raw)
 
         return response
+
+    async def create_streaming_response(
+        self,
+        request: Request,
+        stream: Callable[[], AsyncIterator[str]],
+        sub_response: Response,
+        headers: dict[str, str],
+    ) -> Response:
+        return StreamingResponse(
+            stream(),
+            status_code=sub_response.status_code or status.HTTP_200_OK,
+            headers={
+                **sub_response.headers,
+                **headers,
+            },
+        )
+
+    def is_websocket_request(
+        self, request: Union[Request, WebSocket]
+    ) -> TypeGuard[WebSocket]:
+        return request.scope["type"] == "websocket"
+
+    async def pick_websocket_subprotocol(self, request: WebSocket) -> Optional[str]:
+        protocols = request["subprotocols"]
+        intersection = set(protocols) & set(self.protocols)
+        sorted_intersection = sorted(intersection, key=protocols.index)
+        return next(iter(sorted_intersection), None)
+
+    async def create_websocket_response(
+        self, request: WebSocket, subprotocol: Optional[str]
+    ) -> WebSocket:
+        await request.accept(subprotocol=subprotocol)
+        return request
+
+
+__all__ = ["GraphQLRouter"]

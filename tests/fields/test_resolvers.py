@@ -1,6 +1,7 @@
 import dataclasses
+import textwrap
 import types
-from typing import ClassVar, List, no_type_check
+from typing import Any, ClassVar, no_type_check
 
 import pytest
 
@@ -34,7 +35,7 @@ def test_resolver_as_argument():
 
     assert definition.fields[0].python_name == "name"
     assert definition.fields[0].graphql_name is None
-    assert definition.fields[0].type == str
+    assert definition.fields[0].type is str
     assert definition.fields[0].base_resolver.wrapped_func == get_name
 
 
@@ -52,7 +53,7 @@ def test_resolver_fields():
 
     assert definition.fields[0].python_name == "name"
     assert definition.fields[0].graphql_name is None
-    assert definition.fields[0].type == str
+    assert definition.fields[0].type is str
     assert definition.fields[0].base_resolver(None) == Query().name()
 
 
@@ -71,7 +72,7 @@ def test_staticmethod_resolver_fields():
 
     assert definition.fields[0].python_name == "name"
     assert definition.fields[0].graphql_name is None
-    assert definition.fields[0].type == str
+    assert definition.fields[0].type is str
     assert definition.fields[0].base_resolver() == Query.name()
 
     assert Query.name() == "Name"
@@ -95,7 +96,7 @@ def test_classmethod_resolver_fields():
 
     assert definition.fields[0].python_name == "val"
     assert definition.fields[0].graphql_name is None
-    assert definition.fields[0].type == str
+    assert definition.fields[0].type is str
     assert definition.fields[0].base_resolver() == Query.val()
 
     assert Query.val() == "thingy"
@@ -221,7 +222,8 @@ def test_raises_error_when_missing_annotation_and_resolver():
 def test_raises_error_when_missing_type():
     """Test to make sure that if somehow a non-StrawberryField field is added to the cls
     without annotations it raises an exception. This would occur if someone manually
-    uses dataclasses.field"""
+    uses dataclasses.field
+    """
 
     @strawberry.type
     class Query:
@@ -308,13 +310,13 @@ def test_can_reuse_resolver():
     assert definition.fields[0].python_name == "name"
     assert definition.fields[0].graphql_name is None
     assert definition.fields[0].python_name == "name"
-    assert definition.fields[0].type == str
+    assert definition.fields[0].type is str
     assert definition.fields[0].base_resolver.wrapped_func == get_name
 
     assert definition.fields[1].python_name == "name_2"
     assert definition.fields[1].graphql_name is None
     assert definition.fields[1].python_name == "name_2"
-    assert definition.fields[1].type == str
+    assert definition.fields[1].type is str
     assert definition.fields[1].base_resolver.wrapped_func == get_name
 
 
@@ -387,11 +389,11 @@ def parent_and_info(
 
 @pytest.mark.parametrize(
     "resolver_func",
-    (
+    [
         pytest.param(self_and_info),
         pytest.param(root_and_info),
         pytest.param(parent_and_info),
-    ),
+    ],
 )
 def test_resolver_annotations(resolver_func):
     """Ensure only non-reserved annotations are returned."""
@@ -415,7 +417,7 @@ def test_resolver_with_unhashable_default():
     @strawberry.type
     class Query:
         @strawberry.field
-        def field(self, x: List[str] = ["foo"], y: JSON = {"foo": 42}) -> str:
+        def field(self, x: list[str] = ["foo"], y: JSON = {"foo": 42}) -> str:  # noqa: B006
             return f"{x} {y}"
 
     schema = strawberry.Schema(Query)
@@ -453,3 +455,83 @@ def test_parameter_hash_collision():
 
     assert len(parameters_map) == 2
     assert len(parameters_set) == 2
+
+
+def test_annotation_using_parent_annotation():
+    @strawberry.type
+    class FruitType:
+        name: str
+
+        @strawberry.field
+        @staticmethod
+        def name_from_parent(parent: strawberry.Parent[Any]) -> str:
+            return f"Using 'parent': {parent.name}"
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        @staticmethod
+        def fruit() -> FruitType:
+            return FruitType(name="Strawberry")
+
+    schema = strawberry.Schema(query=Query)
+    expected = """\
+      type FruitType {
+        name: String!
+        nameFromParent: String!
+      }
+
+      type Query {
+        fruit: FruitType!
+      }
+    """
+
+    assert textwrap.dedent(str(schema)) == textwrap.dedent(expected).strip()
+
+    result = schema.execute_sync("query { fruit { name nameFromParent } }")
+    assert result.data == {
+        "fruit": {
+            "name": "Strawberry",
+            "nameFromParent": "Using 'parent': Strawberry",
+        }
+    }
+
+
+def test_annotation_using_parent_annotation_but_named_root():
+    @strawberry.type
+    class FruitType:
+        name: str
+
+        @strawberry.field
+        @staticmethod
+        def name_from_parent(root: strawberry.Parent[Any]) -> str:
+            return f"Using 'root': {root.name}"
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        @staticmethod
+        def fruit() -> FruitType:
+            return FruitType(name="Strawberry")
+
+    schema = strawberry.Schema(query=Query)
+    expected = """\
+      type FruitType {
+        name: String!
+        nameFromParent: String!
+      }
+
+      type Query {
+        fruit: FruitType!
+      }
+    """
+
+    assert textwrap.dedent(str(schema)) == textwrap.dedent(expected).strip()
+
+    result = schema.execute_sync("query { fruit { name nameFromParent } }")
+    assert result.data == {
+        "fruit": {
+            "name": "Strawberry",
+            "nameFromParent": "Using 'root': Strawberry",
+        }
+    }

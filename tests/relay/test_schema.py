@@ -1,14 +1,11 @@
 import pathlib
 import textwrap
-from typing import List
 
-from pytest_mock import MockerFixture
 from pytest_snapshot.plugin import Snapshot
 
 import strawberry
 from strawberry import relay
 from strawberry.relay.utils import to_base64
-from strawberry.schema.types.scalar import DEFAULT_SCALAR_REGISTRY
 
 from .schema import schema
 from .schema_future_annotations import schema as schema_future_annotations
@@ -29,14 +26,7 @@ def test_schema_future_annotations(snapshot: Snapshot):
     )
 
 
-def test_node_id_annotation(mocker: MockerFixture):
-    # Avoid E501 errors
-    mocker.patch.object(
-        DEFAULT_SCALAR_REGISTRY[relay.GlobalID],
-        "description",
-        "__GLOBAL_ID_DESC__",
-    )
-
+def test_node_id_annotation():
     @strawberry.type
     class Fruit(relay.Node):
         code: relay.NodeID[int]
@@ -44,7 +34,7 @@ def test_node_id_annotation(mocker: MockerFixture):
     @strawberry.type
     class Query:
         @relay.connection(relay.ListConnection[Fruit])
-        def fruits(self) -> List[Fruit]:
+        def fruits(self) -> list[Fruit]:
             return [Fruit(code=i) for i in range(10)]
 
     schema = strawberry.Schema(query=Query)
@@ -52,7 +42,7 @@ def test_node_id_annotation(mocker: MockerFixture):
         '''
         type Fruit implements Node {
           """The Globally Unique ID of this object"""
-          id: GlobalID!
+          id: ID!
         }
 
         """A connection to a list of items."""
@@ -73,13 +63,10 @@ def test_node_id_annotation(mocker: MockerFixture):
           node: Fruit!
         }
 
-        """__GLOBAL_ID_DESC__"""
-        scalar GlobalID @specifiedBy(url: "https://relay.dev/graphql/objectidentification.htm")
-
         """An object with a Globally Unique ID"""
         interface Node {
           """The Globally Unique ID of this object"""
-          id: GlobalID!
+          id: ID!
         }
 
         """Information to aid in pagination."""
@@ -136,14 +123,7 @@ def test_node_id_annotation(mocker: MockerFixture):
     }
 
 
-def test_node_id_annotation_in_superclass(mocker: MockerFixture):
-    # Avoid E501 errors
-    mocker.patch.object(
-        DEFAULT_SCALAR_REGISTRY[relay.GlobalID],
-        "description",
-        "__GLOBAL_ID_DESC__",
-    )
-
+def test_node_id_annotation_in_superclass():
     @strawberry.type
     class BaseFruit(relay.Node):
         code: relay.NodeID[int]
@@ -154,7 +134,7 @@ def test_node_id_annotation_in_superclass(mocker: MockerFixture):
     @strawberry.type
     class Query:
         @relay.connection(relay.ListConnection[Fruit])
-        def fruits(self) -> List[Fruit]:
+        def fruits(self) -> list[Fruit]:
             return [Fruit(code=i) for i in range(10)]
 
     schema = strawberry.Schema(query=Query)
@@ -162,7 +142,7 @@ def test_node_id_annotation_in_superclass(mocker: MockerFixture):
         '''
         type Fruit implements Node {
           """The Globally Unique ID of this object"""
-          id: GlobalID!
+          id: ID!
         }
 
         """A connection to a list of items."""
@@ -183,13 +163,10 @@ def test_node_id_annotation_in_superclass(mocker: MockerFixture):
           node: Fruit!
         }
 
-        """__GLOBAL_ID_DESC__"""
-        scalar GlobalID @specifiedBy(url: "https://relay.dev/graphql/objectidentification.htm")
-
         """An object with a Globally Unique ID"""
         interface Node {
           """The Globally Unique ID of this object"""
-          id: GlobalID!
+          id: ID!
         }
 
         """Information to aid in pagination."""
@@ -246,14 +223,7 @@ def test_node_id_annotation_in_superclass(mocker: MockerFixture):
     }
 
 
-def test_node_id_annotation_in_superclass_and_subclass(mocker: MockerFixture):
-    # Avoid E501 errors
-    mocker.patch.object(
-        DEFAULT_SCALAR_REGISTRY[relay.GlobalID],
-        "description",
-        "__GLOBAL_ID_DESC__",
-    )
-
+def test_node_id_annotation_in_superclass_and_subclass():
     @strawberry.type
     class BaseFruit(relay.Node):
         code: relay.NodeID[int]
@@ -265,7 +235,7 @@ def test_node_id_annotation_in_superclass_and_subclass(mocker: MockerFixture):
     @strawberry.type
     class Query:
         @relay.connection(relay.ListConnection[Fruit])
-        def fruits(self) -> List[Fruit]:
+        def fruits(self) -> list[Fruit]:
             return [Fruit(code=i, other_code=i) for i in range(10)]
 
     schema = strawberry.Schema(query=Query)
@@ -273,7 +243,7 @@ def test_node_id_annotation_in_superclass_and_subclass(mocker: MockerFixture):
         '''
         type Fruit implements Node {
           """The Globally Unique ID of this object"""
-          id: GlobalID!
+          id: ID!
         }
 
         """A connection to a list of items."""
@@ -294,13 +264,10 @@ def test_node_id_annotation_in_superclass_and_subclass(mocker: MockerFixture):
           node: Fruit!
         }
 
-        """__GLOBAL_ID_DESC__"""
-        scalar GlobalID @specifiedBy(url: "https://relay.dev/graphql/objectidentification.htm")
-
         """An object with a Globally Unique ID"""
         interface Node {
           """The Globally Unique ID of this object"""
-          id: GlobalID!
+          id: ID!
         }
 
         """Information to aid in pagination."""
@@ -357,13 +324,7 @@ def test_node_id_annotation_in_superclass_and_subclass(mocker: MockerFixture):
     }
 
 
-def test_overwrite_resolve_id_and_no_node_id(mocker: MockerFixture):
-    mocker.patch.object(
-        DEFAULT_SCALAR_REGISTRY[relay.GlobalID],
-        "description",
-        "__GLOBAL_ID_DESC__",
-    )
-
+def test_overwrite_resolve_id_and_no_node_id():
     @strawberry.type
     class Fruit(relay.Node):
         color: str
@@ -380,17 +341,14 @@ def test_overwrite_resolve_id_and_no_node_id(mocker: MockerFixture):
         '''
           type Fruit implements Node {
           """The Globally Unique ID of this object"""
-          id: GlobalID!
+          id: ID!
           color: String!
         }
-
-        """__GLOBAL_ID_DESC__"""
-        scalar GlobalID @specifiedBy(url: "https://relay.dev/graphql/objectidentification.htm")
 
         """An object with a Globally Unique ID"""
         interface Node {
           """The Globally Unique ID of this object"""
-          id: GlobalID!
+          id: ID!
         }
 
         type Query {

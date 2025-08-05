@@ -1,40 +1,39 @@
 from __future__ import annotations as _
 
+import asyncio
 import inspect
 import sys
 import warnings
 from functools import cached_property
-from inspect import isasyncgenfunction, iscoroutinefunction
+from inspect import isasyncgenfunction
 from typing import (
     TYPE_CHECKING,
+    Annotated,
     Any,
     Callable,
-    Dict,
     Generic,
-    List,
-    Mapping,
     NamedTuple,
     Optional,
-    Tuple,
     TypeVar,
     Union,
     cast,
 )
-from typing_extensions import Annotated, Protocol, get_origin
+from typing_extensions import Protocol, get_origin
 
 from strawberry.annotation import StrawberryAnnotation
-from strawberry.arguments import StrawberryArgument
 from strawberry.exceptions import (
     ConflictingArgumentsError,
     MissingArgumentsAnnotationsError,
 )
-from strawberry.parent import StrawberryParent
-from strawberry.type import StrawberryType, has_object_definition
+from strawberry.parent import StrawberryParent, resolve_parent_forward_arg
+from strawberry.types.arguments import StrawberryArgument
+from strawberry.types.base import StrawberryType, has_object_definition
 from strawberry.types.info import Info
 from strawberry.utils.typing import type_has_annotation
 
 if TYPE_CHECKING:
     import builtins
+    from collections.abc import Mapping
 
 
 class Parameter(inspect.Parameter):
@@ -62,7 +61,7 @@ class Signature(inspect.Signature):
 class ReservedParameterSpecification(Protocol):
     def find(
         self,
-        parameters: Tuple[inspect.Parameter, ...],
+        parameters: tuple[inspect.Parameter, ...],
         resolver: StrawberryResolver[Any],
     ) -> Optional[inspect.Parameter]:
         """Finds the reserved parameter from ``parameters``."""
@@ -73,7 +72,7 @@ class ReservedName(NamedTuple):
 
     def find(
         self,
-        parameters: Tuple[inspect.Parameter, ...],
+        parameters: tuple[inspect.Parameter, ...],
         resolver: StrawberryResolver[Any],
     ) -> Optional[inspect.Parameter]:
         del resolver
@@ -85,15 +84,14 @@ class ReservedNameBoundParameter(NamedTuple):
 
     def find(
         self,
-        parameters: Tuple[inspect.Parameter, ...],
+        parameters: tuple[inspect.Parameter, ...],
         resolver: StrawberryResolver[Any],
     ) -> Optional[inspect.Parameter]:
         del resolver
         if parameters:  # Add compatibility for resolvers with no arguments
             first_parameter = parameters[0]
             return first_parameter if first_parameter.name == self.name else None
-        else:
-            return None
+        return None
 
 
 class ReservedType(NamedTuple):
@@ -108,7 +106,7 @@ class ReservedType(NamedTuple):
 
     def find(
         self,
-        parameters: Tuple[inspect.Parameter, ...],
+        parameters: tuple[inspect.Parameter, ...],
         resolver: StrawberryResolver[Any],
     ) -> Optional[inspect.Parameter]:
         # Go through all the types even after we've found one so we can
@@ -120,10 +118,17 @@ class ReservedType(NamedTuple):
                 try:
                     evaled_annotation = annotation.evaluate()
                 except NameError:
-                    continue
-                else:
-                    if self.is_reserved_type(evaled_annotation):
-                        type_parameters.append(parameter)
+                    # If this is a strawberry.Parent using ForwardRef, we will fail to
+                    # evaluate at this moment, but at least knowing that it is a reserved
+                    # type is enough for now
+                    # We might want to revisit this in the future, maybe by postponing
+                    # this check to when the schema is actually being created
+                    evaled_annotation = resolve_parent_forward_arg(
+                        annotation.annotation
+                    )
+
+                if self.is_reserved_type(evaled_annotation):
+                    type_parameters.append(parameter)
 
         if len(type_parameters) > 1:
             raise ConflictingArgumentsError(
@@ -146,21 +151,19 @@ class ReservedType(NamedTuple):
             )
             warnings.warn(warning, stacklevel=3)
             return reserved_name
-        else:
-            return None
+        return None
 
     def is_reserved_type(self, other: builtins.type) -> bool:
-        origin = cast(type, get_origin(other)) or other
+        origin = cast("type", get_origin(other)) or other
         if origin is Annotated:
             # Handle annotated arguments such as Private[str] and DirectiveValue[str]
             return type_has_annotation(other, self.type)
-        else:
-            # Handle both concrete and generic types (i.e Info, and Info)
-            return (
-                issubclass(origin, self.type)
-                if isinstance(origin, type)
-                else origin is self.type
-            )
+        # Handle both concrete and generic types (i.e Info, and Info)
+        return (
+            issubclass(origin, self.type)
+            if isinstance(origin, type)
+            else origin is self.type
+        )
 
 
 SELF_PARAMSPEC = ReservedNameBoundParameter("self")
@@ -171,9 +174,16 @@ PARENT_PARAMSPEC = ReservedType(name=None, type=StrawberryParent)
 
 T = TypeVar("T")
 
+# in python >= 3.12 coroutine functions are market using inspect.markcoroutinefunction,
+# which should be checked with inspect.iscoroutinefunction instead of asyncio.iscoroutinefunction
+if hasattr(inspect, "markcoroutinefunction"):
+    iscoroutinefunction = inspect.iscoroutinefunction
+else:
+    iscoroutinefunction = asyncio.iscoroutinefunction  # type: ignore[assignment]
+
 
 class StrawberryResolver(Generic[T]):
-    RESERVED_PARAMSPEC: Tuple[ReservedParameterSpecification, ...] = (
+    RESERVED_PARAMSPEC: tuple[ReservedParameterSpecification, ...] = (
         SELF_PARAMSPEC,
         CLS_PARAMSPEC,
         ROOT_PARAMSPEC,
@@ -210,7 +220,7 @@ class StrawberryResolver(Generic[T]):
     @cached_property
     def strawberry_annotations(
         self,
-    ) -> Dict[inspect.Parameter, Union[StrawberryAnnotation, None]]:
+    ) -> dict[inspect.Parameter, Union[StrawberryAnnotation, None]]:
         return {
             p: (
                 StrawberryAnnotation(p.annotation, namespace=self._namespace)
@@ -223,40 +233,35 @@ class StrawberryResolver(Generic[T]):
     @cached_property
     def reserved_parameters(
         self,
-    ) -> Dict[ReservedParameterSpecification, Optional[inspect.Parameter]]:
+    ) -> dict[ReservedParameterSpecification, Optional[inspect.Parameter]]:
         """Mapping of reserved parameter specification to parameter."""
         parameters = tuple(self.signature.parameters.values())
         return {spec: spec.find(parameters, self) for spec in self.RESERVED_PARAMSPEC}
 
     @cached_property
-    def arguments(self) -> List[StrawberryArgument]:
+    def arguments(self) -> list[StrawberryArgument]:
         """Resolver arguments exposed in the GraphQL Schema."""
-        parameters = self.signature.parameters.values()
-        reserved_parameters = set(self.reserved_parameters.values())
-        populated_reserved_parameters = set(
-            key for key, value in self.reserved_parameters.items() if value is not None
-        )
+        root_parameter = self.reserved_parameters.get(ROOT_PARAMSPEC)
+        parent_parameter = self.reserved_parameters.get(PARENT_PARAMSPEC)
 
+        # TODO: Maybe use SELF_PARAMSPEC in the future? Right now
+        # it would prevent some common pattern for integrations
+        # (e.g. django) of typing the `root` parameters as the
+        # type of the real object being used
         if (
-            conflicting_arguments := (
-                populated_reserved_parameters
-                # TODO: Maybe use SELF_PARAMSPEC in the future? Right now
-                # it would prevent some common pattern for integrations
-                # (e.g. django) of typing the `root` parameters as the
-                # type of the real object being used
-                & {ROOT_PARAMSPEC, PARENT_PARAMSPEC}
-            )
-        ) and len(conflicting_arguments) > 1:
+            root_parameter is not None
+            and parent_parameter is not None
+            and root_parameter.name != parent_parameter.name
+        ):
             raise ConflictingArgumentsError(
                 self,
-                [
-                    cast(Parameter, self.reserved_parameters[key]).name
-                    for key in conflicting_arguments
-                ],
+                [root_parameter.name, parent_parameter.name],
             )
 
-        missing_annotations: List[str] = []
-        arguments: List[StrawberryArgument] = []
+        parameters = self.signature.parameters.values()
+        reserved_parameters = set(self.reserved_parameters.values())
+        missing_annotations: list[str] = []
+        arguments: list[StrawberryArgument] = []
         user_parameters = (p for p in parameters if p not in reserved_parameters)
 
         for param in user_parameters:
@@ -298,7 +303,7 @@ class StrawberryResolver(Generic[T]):
 
     # TODO: consider deprecating
     @cached_property
-    def annotations(self) -> Dict[str, object]:
+    def annotations(self) -> dict[str, object]:
         """Annotations for the resolver.
 
         Does not include special args defined in `RESERVED_PARAMSPEC` (e.g. self, root,
@@ -308,24 +313,20 @@ class StrawberryResolver(Generic[T]):
         reserved_names = {p.name for p in reserved_parameters.values() if p is not None}
 
         annotations = self._unbound_wrapped_func.__annotations__
-        annotations = {
+        return {
             name: annotation
             for name, annotation in annotations.items()
             if name not in reserved_names
         }
-
-        return annotations
 
     @cached_property
     def type_annotation(self) -> Optional[StrawberryAnnotation]:
         return_annotation = self.signature.return_annotation
         if return_annotation is inspect.Signature.empty:
             return None
-        else:
-            type_annotation = StrawberryAnnotation(
-                annotation=return_annotation, namespace=self._namespace
-            )
-        return type_annotation
+        return StrawberryAnnotation(
+            annotation=return_annotation, namespace=self._namespace
+        )
 
     @property
     def type(self) -> Optional[Union[StrawberryType, type]]:
@@ -384,7 +385,7 @@ class StrawberryResolver(Generic[T]):
         return other
 
     @cached_property
-    def _namespace(self) -> Dict[str, Any]:
+    def _namespace(self) -> dict[str, Any]:
         return sys.modules[self._unbound_wrapped_func.__module__].__dict__
 
     @cached_property

@@ -1,7 +1,15 @@
 from __future__ import annotations
 
 import warnings
-from typing import TYPE_CHECKING, Any, List, Mapping, Optional, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    ClassVar,
+    Optional,
+    Union,
+    cast,
+)
+from typing_extensions import TypeGuard
 
 from flask import Request, Response, render_template_string, request
 from flask.views import View
@@ -15,6 +23,8 @@ from strawberry.http.types import FormData, HTTPMethod, QueryParams
 from strawberry.http.typevars import Context, RootValue
 
 if TYPE_CHECKING:
+    from collections.abc import Mapping
+
     from flask.typing import ResponseReturnValue
     from strawberry.http import GraphQLHTTPResponse
     from strawberry.http.ides import GraphQL_IDE
@@ -26,7 +36,7 @@ class FlaskHTTPRequestAdapter(SyncHTTPRequestAdapter):
         self.request = request
 
     @property
-    def query_params(self) -> Mapping[str, Union[str, Optional[List[str]]]]:
+    def query_params(self) -> QueryParams:
         return self.request.args.to_dict()
 
     @property
@@ -35,11 +45,11 @@ class FlaskHTTPRequestAdapter(SyncHTTPRequestAdapter):
 
     @property
     def method(self) -> HTTPMethod:
-        return cast(HTTPMethod, self.request.method.upper())
+        return cast("HTTPMethod", self.request.method.upper())
 
     @property
     def headers(self) -> Mapping[str, str]:
-        return self.request.headers
+        return self.request.headers  # type: ignore
 
     @property
     def post_data(self) -> Mapping[str, Union[str, bytes]]:
@@ -55,7 +65,6 @@ class FlaskHTTPRequestAdapter(SyncHTTPRequestAdapter):
 
 
 class BaseGraphQLView:
-    _ide_subscription_enabled = False
     graphql_ide: Optional[GraphQL_IDE]
 
     def __init__(
@@ -64,10 +73,12 @@ class BaseGraphQLView:
         graphiql: Optional[bool] = None,
         graphql_ide: Optional[GraphQL_IDE] = "graphiql",
         allow_queries_via_get: bool = True,
+        multipart_uploads_enabled: bool = False,
     ) -> None:
         self.schema = schema
         self.graphiql = graphiql
         self.allow_queries_via_get = allow_queries_via_get
+        self.multipart_uploads_enabled = multipart_uploads_enabled
 
         if graphiql is not None:
             warnings.warn(
@@ -80,7 +91,9 @@ class BaseGraphQLView:
             self.graphql_ide = graphql_ide
 
     def create_response(
-        self, response_data: GraphQLHTTPResponse, sub_response: Response
+        self,
+        response_data: Union[GraphQLHTTPResponse, list[GraphQLHTTPResponse]],
+        sub_response: Response,
     ) -> Response:
         sub_response.set_data(self.encode_json(response_data))  # type: ignore
 
@@ -92,7 +105,7 @@ class GraphQLView(
     SyncBaseHTTPView[Request, Response, Response, Context, RootValue],
     View,
 ):
-    methods = ["GET", "POST"]
+    methods: ClassVar[list[str]] = ["GET", "POST"]
     allow_queries_via_get: bool = True
     request_adapter_class = FlaskHTTPRequestAdapter
 
@@ -128,7 +141,7 @@ class AsyncFlaskHTTPRequestAdapter(AsyncHTTPRequestAdapter):
 
     @property
     def method(self) -> HTTPMethod:
-        return cast(HTTPMethod, self.request.method.upper())
+        return cast("HTTPMethod", self.request.method.upper())
 
     @property
     def content_type(self) -> Optional[str]:
@@ -136,7 +149,7 @@ class AsyncFlaskHTTPRequestAdapter(AsyncHTTPRequestAdapter):
 
     @property
     def headers(self) -> Mapping[str, str]:
-        return self.request.headers
+        return self.request.headers  # type: ignore
 
     async def get_body(self) -> str:
         return self.request.data.decode()
@@ -150,10 +163,12 @@ class AsyncFlaskHTTPRequestAdapter(AsyncHTTPRequestAdapter):
 
 class AsyncGraphQLView(
     BaseGraphQLView,
-    AsyncBaseHTTPView[Request, Response, Response, Context, RootValue],
+    AsyncBaseHTTPView[
+        Request, Response, Response, Request, Response, Context, RootValue
+    ],
     View,
 ):
-    methods = ["GET", "POST"]
+    methods: ClassVar[list[str]] = ["GET", "POST"]
     allow_queries_via_get: bool = True
     request_adapter_class = AsyncFlaskHTTPRequestAdapter
 
@@ -176,4 +191,22 @@ class AsyncGraphQLView(
             )
 
     async def render_graphql_ide(self, request: Request) -> Response:
-        return render_template_string(self.graphql_ide_html)  # type: ignore
+        content = render_template_string(self.graphql_ide_html)
+        return Response(content, status=200, content_type="text/html")
+
+    def is_websocket_request(self, request: Request) -> TypeGuard[Request]:
+        return False
+
+    async def pick_websocket_subprotocol(self, request: Request) -> Optional[str]:
+        raise NotImplementedError
+
+    async def create_websocket_response(
+        self, request: Request, subprotocol: Optional[str]
+    ) -> Response:
+        raise NotImplementedError
+
+
+__all__ = [
+    "AsyncGraphQLView",
+    "GraphQLView",
+]

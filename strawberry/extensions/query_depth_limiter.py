@@ -30,12 +30,9 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 from typing import (
+    TYPE_CHECKING,
     Callable,
-    Dict,
-    Iterable,
-    List,
     Optional,
-    Type,
     Union,
 )
 
@@ -61,12 +58,15 @@ from graphql.validation import ValidationContext, ValidationRule
 from strawberry.extensions import AddValidationRules
 from strawberry.extensions.utils import is_introspection_key
 
+if TYPE_CHECKING:
+    from collections.abc import Iterable
+
 IgnoreType = Union[Callable[[str], bool], re.Pattern, str]
 
 FieldArgumentType = Union[
-    bool, int, float, str, List["FieldArgumentType"], Dict[str, "FieldArgumentType"]
+    bool, int, float, str, list["FieldArgumentType"], dict[str, "FieldArgumentType"]
 ]
-FieldArgumentsType = Dict[str, FieldArgumentType]
+FieldArgumentsType = dict[str, FieldArgumentType]
 
 
 @dataclass
@@ -81,40 +81,36 @@ ShouldIgnoreType = Callable[[IgnoreContext], bool]
 
 
 class QueryDepthLimiter(AddValidationRules):
-    """
-    Add a validator to limit the query depth of GraphQL operations
+    """Add a validator to limit the query depth of GraphQL operations.
 
     Example:
 
-    >>> import strawberry
-    >>> from strawberry.extensions import QueryDepthLimiter
-    >>>
-    >>> schema = strawberry.Schema(
-    ...     Query,
-    ...     extensions=[
-    ...         QueryDepthLimiter(max_depth=4)
-    ...     ]
-    ... )
+    ```python
+    import strawberry
+    from strawberry.extensions import QueryDepthLimiter
 
-    Arguments:
-
-    `max_depth: int`
-        The maximum allowed depth for any operation in a GraphQL document.
-    `callback: Optional[Callable[[Dict[str, int]], None]`
-        Called each time validation runs. Receives an Object which is a
-        map of the depths for each operation.
-    `should_ignore: Optional[ShouldIgnoreType]`
-        Stops recursive depth checking based on a field name and arguments.
-        A function that returns a boolean and conforms to the ShouldIgnoreType
-        function signature.
+    schema = strawberry.Schema(
+        Query,
+        extensions=[QueryDepthLimiter(max_depth=4)],
+    )
+    ```
     """
 
     def __init__(
         self,
         max_depth: int,
-        callback: Optional[Callable[[Dict[str, int]], None]] = None,
+        callback: Optional[Callable[[dict[str, int]], None]] = None,
         should_ignore: Optional[ShouldIgnoreType] = None,
     ) -> None:
+        """Initialize the QueryDepthLimiter.
+
+        Args:
+            max_depth: The maximum allowed depth for any operation in a GraphQL document.
+            callback: Called each time validation runs.
+                Receives an Object which is a map of the depths for each operation.
+            should_ignore: Stops recursive depth checking based on a field name and arguments.
+                A function that returns a boolean and conforms to the ShouldIgnoreType function signature.
+        """
         if should_ignore is not None and not callable(should_ignore):
             raise TypeError(
                 "The `should_ignore` argument to "
@@ -127,8 +123,8 @@ class QueryDepthLimiter(AddValidationRules):
 def create_validator(
     max_depth: int,
     should_ignore: Optional[ShouldIgnoreType],
-    callback: Optional[Callable[[Dict[str, int]], None]] = None,
-) -> Type[ValidationRule]:
+    callback: Optional[Callable[[dict[str, int]], None]] = None,
+) -> type[ValidationRule]:
     class DepthLimitValidator(ValidationRule):
         def __init__(self, validation_context: ValidationContext) -> None:
             document = validation_context.document
@@ -158,7 +154,7 @@ def create_validator(
 
 def get_fragments(
     definitions: Iterable[DefinitionNode],
-) -> Dict[str, FragmentDefinitionNode]:
+) -> dict[str, FragmentDefinitionNode]:
     fragments = {}
     for definition in definitions:
         if isinstance(definition, FragmentDefinitionNode):
@@ -171,7 +167,7 @@ def get_fragments(
 # We can basically treat those the same
 def get_queries_and_mutations(
     definitions: Iterable[DefinitionNode],
-) -> Dict[str, OperationDefinitionNode]:
+) -> dict[str, OperationDefinitionNode]:
     operations = {}
 
     for definition in definitions:
@@ -193,18 +189,17 @@ def resolve_field_value(
 ) -> FieldArgumentType:
     if isinstance(value, StringValueNode):
         return value.value
-    elif isinstance(value, IntValueNode):
+    if isinstance(value, IntValueNode):
         return int(value.value)
-    elif isinstance(value, FloatValueNode):
+    if isinstance(value, FloatValueNode):
         return float(value.value)
-    elif isinstance(value, BooleanValueNode):
+    if isinstance(value, BooleanValueNode):
         return value.value
-    elif isinstance(value, ListValueNode):
+    if isinstance(value, ListValueNode):
         return [resolve_field_value(v) for v in value.values]
-    elif isinstance(value, ObjectValueNode):
+    if isinstance(value, ObjectValueNode):
         return {v.name.value: resolve_field_value(v.value) for v in value.fields}
-    else:
-        return {}
+    return {}
 
 
 def get_field_arguments(
@@ -218,7 +213,7 @@ def get_field_arguments(
 
 def determine_depth(
     node: Node,
-    fragments: Dict[str, FragmentDefinitionNode],
+    fragments: dict[str, FragmentDefinitionNode],
     depth_so_far: int,
     max_depth: int,
     context: ValidationContext,
@@ -254,20 +249,18 @@ def determine_depth(
             return 0
 
         return 1 + max(
-            map(
-                lambda selection: determine_depth(
-                    node=selection,
-                    fragments=fragments,
-                    depth_so_far=depth_so_far + 1,
-                    max_depth=max_depth,
-                    context=context,
-                    operation_name=operation_name,
-                    should_ignore=should_ignore,
-                ),
-                node.selection_set.selections,
+            determine_depth(
+                node=selection,
+                fragments=fragments,
+                depth_so_far=depth_so_far + 1,
+                max_depth=max_depth,
+                context=context,
+                operation_name=operation_name,
+                should_ignore=should_ignore,
             )
+            for selection in node.selection_set.selections
         )
-    elif isinstance(node, FragmentSpreadNode):
+    if isinstance(node, FragmentSpreadNode):
         return determine_depth(
             node=fragments[node.name.value],
             fragments=fragments,
@@ -277,28 +270,25 @@ def determine_depth(
             operation_name=operation_name,
             should_ignore=should_ignore,
         )
-    elif isinstance(
+    if isinstance(
         node, (InlineFragmentNode, FragmentDefinitionNode, OperationDefinitionNode)
     ):
         return max(
-            map(
-                lambda selection: determine_depth(
-                    node=selection,
-                    fragments=fragments,
-                    depth_so_far=depth_so_far,
-                    max_depth=max_depth,
-                    context=context,
-                    operation_name=operation_name,
-                    should_ignore=should_ignore,
-                ),
-                node.selection_set.selections,
+            determine_depth(
+                node=selection,
+                fragments=fragments,
+                depth_so_far=depth_so_far,
+                max_depth=max_depth,
+                context=context,
+                operation_name=operation_name,
+                should_ignore=should_ignore,
             )
+            for selection in node.selection_set.selections
         )
-    else:
-        raise TypeError(f"Depth crawler cannot handle: {node.kind}")  # pragma: no cover
+    raise TypeError(f"Depth crawler cannot handle: {node.kind}")  # pragma: no cover
 
 
-def is_ignored(node: FieldNode, ignore: Optional[List[IgnoreType]] = None) -> bool:
+def is_ignored(node: FieldNode, ignore: Optional[list[IgnoreType]] = None) -> bool:
     if ignore is None:
         return False
 
@@ -317,3 +307,6 @@ def is_ignored(node: FieldNode, ignore: Optional[List[IgnoreType]] = None) -> bo
             raise TypeError(f"Invalid ignore option: {rule}")
 
     return False
+
+
+__all__ = ["QueryDepthLimiter"]

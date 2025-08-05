@@ -2,17 +2,16 @@ from __future__ import annotations
 
 import abc
 import inspect
+from collections.abc import Awaitable
 from functools import cached_property
 from inspect import iscoroutinefunction
 from typing import (
     TYPE_CHECKING,
     Any,
-    Awaitable,
     List,
     Literal,
     Optional,
     Tuple,
-    Type,
     TypedDict,
     Union,
 )
@@ -24,18 +23,20 @@ from strawberry.exceptions.permission_fail_silently_requires_optional import (
 )
 from strawberry.extensions import FieldExtension
 from strawberry.schema_directive import Location, StrawberrySchemaDirective
-from strawberry.type import StrawberryList, StrawberryOptional
+from strawberry.types.base import StrawberryList, StrawberryOptional
 from strawberry.utils.await_maybe import await_maybe
 
 if TYPE_CHECKING:
+    from collections.abc import Awaitable
+
     from graphql import GraphQLError, GraphQLErrorExtensions
 
     from strawberry.extensions.field_extension import (
         AsyncExtensionResolver,
         SyncExtensionResolver,
     )
-    from strawberry.field import StrawberryField
     from strawberry.types import Info
+    from strawberry.types.field import StrawberryField
 
 
 def unpack_maybe(
@@ -43,20 +44,31 @@ def unpack_maybe(
 ) -> Tuple[object, object]:
     if isinstance(value, tuple) and len(value) == 2:
         return value
-    else:
-        return value, default
+    return value, default
 
 
 class BasePermission(abc.ABC):
-    """
-    Base class for creating permissions
+    """Base class for permissions. All permissions should inherit from this class.
+
+    Example:
+
+    ```python
+    from strawberry.permission import BasePermission
+
+
+    class IsAuthenticated(BasePermission):
+        message = "User is not authenticated"
+
+        def has_permission(self, source, info, **kwargs):
+            return info.context["user"].is_authenticated
+    ```
     """
 
     message: Optional[str] = None
 
     error_extensions: Optional[GraphQLErrorExtensions] = None
 
-    error_class: Type[GraphQLError] = StrawberryGraphQLError
+    error_class: type[GraphQLError] = StrawberryGraphQLError
 
     _schema_directive: Optional[object] = None
 
@@ -69,8 +81,7 @@ class BasePermission(abc.ABC):
         Tuple[Literal[False], dict],
         Awaitable[Tuple[Literal[False], dict]],
     ]:
-        """
-        This method is a required override in the permission class. It checks if the user has the necessary permissions to access a specific field.
+        """This method is a required override in the permission class. It checks if the user has the necessary permissions to access a specific field.
 
         The method should return a boolean value:
         - True: The user has the necessary permissions.
@@ -93,9 +104,29 @@ class BasePermission(abc.ABC):
         )
 
     def on_unauthorized(self, **kwargs: object) -> None:
-        """
-        Default error raising for permissions.
-        This can be overridden to customize the behavior.
+        """Default error raising for permissions.
+
+        This method can be overridden to customize the error raised when the permission is not granted.
+
+        Example:
+
+        ```python
+        from strawberry.permission import BasePermission
+
+
+        class CustomPermissionError(PermissionError):
+            pass
+
+
+        class IsAuthenticated(BasePermission):
+            message = "User is not authenticated"
+
+            def has_permission(self, source, info, **kwargs):
+                return info.context["user"].is_authenticated
+
+            def on_unauthorized(self) -> None:
+                raise CustomPermissionError(self.message)
+        ```
         """
         # Instantiate error class
         error = self.error_class(self.message or "")
@@ -103,7 +134,7 @@ class BasePermission(abc.ABC):
         if self.error_extensions:
             # Add our extensions to the error
             if not error.extensions:
-                error.extensions = dict()
+                error.extensions = {}
             error.extensions.update(self.error_extensions)
 
         raise error
@@ -234,14 +265,11 @@ class OrPermission(CompositePermission):
 
 
 class PermissionExtension(FieldExtension):
-    """
-    Handles permissions for a field
-    Instantiate this as a field extension with all of the permissions you want to apply
+    """Handles permissions for a field.
 
-    fail_silently: bool = False will return None or [] if the permission fails
-    instead of raising an exception. This is only valid for optional or list fields.
+    Instantiate this as a field extension with all of the permissions you want to apply.
 
-    NOTE:
+    Note:
     Currently, this is automatically added to the field, when using
     field.permission_classes. You are free to use whichever method you prefer.
     Use PermissionExtension if you want additional customization.
@@ -249,20 +277,25 @@ class PermissionExtension(FieldExtension):
 
     def __init__(
         self,
-        permissions: List[BasePermission],
+        permissions: list[BasePermission],
         use_directives: bool = True,
         fail_silently: bool = False,
     ) -> None:
+        """Initialize the permission extension.
+
+        Args:
+            permissions: List of permissions to apply.
+            fail_silently: If True, return None or [] instead of raising an exception.
+                This is only valid for optional or list fields.
+            use_directives: If True, add schema directives to the field.
+        """
         self.permissions = permissions
         self.fail_silently = fail_silently
         self.return_empty_list = False
         self.use_directives = use_directives
 
     def apply(self, field: StrawberryField) -> None:
-        """
-        Applies all the permission directives to the schema
-        and sets up silent permissions
-        """
+        """Applies all of the permission directives (deduped) to the schema and sets up silent permissions."""
         if self.use_directives:
             field.directives.extend(
                 [
@@ -294,13 +327,9 @@ class PermissionExtension(FieldExtension):
         next_: SyncExtensionResolver,
         source: Any,
         info: Info,
-        **kwargs: object[str, Any],
+        **kwargs: dict[str, Any],
     ) -> Any:
-        """
-        Checks if the permission should be accepted and
-        raises an exception if not
-        """
-
+        """Checks if the permission should be accepted and raises an exception if not."""
         for permission in self.permissions:
             has_permission, context = unpack_maybe(
                 permission.has_permission(source, info, **kwargs), {}
@@ -316,7 +345,7 @@ class PermissionExtension(FieldExtension):
         next_: AsyncExtensionResolver,
         source: Any,
         info: Info,
-        **kwargs: object[str, Any],
+        **kwargs: dict[str, Any],
     ) -> Any:
         for permission in self.permissions:
             permission_response = await await_maybe(
@@ -338,6 +367,15 @@ class PermissionExtension(FieldExtension):
 
     @cached_property
     def supports_sync(self) -> bool:
-        """The Permission extension always supports async checking using await_maybe,
-        but only supports sync checking if there are no async permissions"""
+        """Whether this extension can be resolved synchronously or not.
+
+        The Permission extension always supports async checking using await_maybe,
+        but only supports sync checking if there are no async permissions.
+        """
         return all(not permission.is_async for permission in self.permissions)
+
+
+__all__ = [
+    "BasePermission",
+    "PermissionExtension",
+]

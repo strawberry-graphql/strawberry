@@ -14,6 +14,14 @@ This extension does ...
 import strawberry
 from strawberry.extensions import ExtensionName
 
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def hello(self) -> str:
+        return "Hello, world!"
+
+
 schema = strawberry.Schema(
     Query,
     extensions=[

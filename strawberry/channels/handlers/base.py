@@ -2,21 +2,17 @@ import asyncio
 import contextlib
 import warnings
 from collections import defaultdict
+from collections.abc import AsyncGenerator, Awaitable, Sequence
 from typing import (
     Any,
-    AsyncGenerator,
-    Awaitable,
     Callable,
-    DefaultDict,
-    List,
     Optional,
-    Sequence,
 )
 from typing_extensions import Literal, Protocol, TypedDict
 from weakref import WeakSet
 
 from channels.consumer import AsyncConsumer
-from channels.generic.websocket import AsyncJsonWebsocketConsumer
+from channels.generic.websocket import AsyncWebsocketConsumer
 
 
 class ChannelsMessage(TypedDict, total=False):
@@ -31,7 +27,7 @@ class ChannelsLayer(Protocol):  # pragma: no cover
 
     # Default channels API
 
-    extensions: List[Literal["groups", "flush"]]
+    extensions: list[Literal["groups", "flush"]]
 
     async def send(self, channel: str, message: dict) -> None: ...
 
@@ -62,7 +58,7 @@ class ChannelsConsumer(AsyncConsumer):
     channel_receive: Callable[[], Awaitable[dict]]
 
     def __init__(self, *args: str, **kwargs: Any) -> None:
-        self.listen_queues: DefaultDict[str, WeakSet[asyncio.Queue]] = defaultdict(
+        self.listen_queues: defaultdict[str, WeakSet[asyncio.Queue]] = defaultdict(
             WeakSet
         )
         super().__init__(*args, **kwargs)
@@ -92,7 +88,7 @@ class ChannelsConsumer(AsyncConsumer):
         Utility to listen for channels messages for this consumer inside
         a resolver (usually inside a subscription).
 
-        Parameters:
+        Args:
             type:
                 The type of the message to wait for.
             timeout:
@@ -104,7 +100,6 @@ class ChannelsConsumer(AsyncConsumer):
                 execution and then discarded using `self.channel_layer.group_discard`
                 at the end of the execution.
         """
-
         warnings.warn("Use listen_to_channel instead", DeprecationWarning, stacklevel=2)
         if self.channel_layer is None:
             raise RuntimeError(
@@ -152,7 +147,7 @@ class ChannelsConsumer(AsyncConsumer):
         Utility to listen for channels messages for this consumer inside
         a resolver (usually inside a subscription).
 
-        Parameters:
+        Args:
             type:
                 The type of the message to wait for.
             timeout:
@@ -164,7 +159,6 @@ class ChannelsConsumer(AsyncConsumer):
                 execution and then discarded using `self.channel_layer.group_discard`
                 at the end of the execution.
         """
-
         # Code to acquire resource (Channels subscriptions)
         if self.channel_layer is None:
             raise RuntimeError(
@@ -201,7 +195,6 @@ class ChannelsConsumer(AsyncConsumer):
         Seperated to allow user code to be run after subscribing to channels
         and before blocking to wait for incoming channel messages.
         """
-
         while True:
             awaitable = queue.get()
             if timeout is not None:
@@ -213,5 +206,8 @@ class ChannelsConsumer(AsyncConsumer):
                 return
 
 
-class ChannelsWSConsumer(ChannelsConsumer, AsyncJsonWebsocketConsumer):
+class ChannelsWSConsumer(ChannelsConsumer, AsyncWebsocketConsumer):
     """Base channels websocket async consumer."""
+
+
+__all__ = ["ChannelsConsumer", "ChannelsWSConsumer"]

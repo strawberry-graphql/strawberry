@@ -3,24 +3,26 @@ from __future__ import annotations
 import urllib.parse
 from io import BytesIO
 from json import dumps
-from typing import Any, Dict, Optional, Union
+from typing import Any, Optional, Union
 from typing_extensions import Literal
 
 from chalice.app import Chalice
 from chalice.app import Request as ChaliceRequest
 from chalice.test import Client
+from strawberry import Schema
 from strawberry.chalice.views import GraphQLView as BaseGraphQLView
 from strawberry.http import GraphQLHTTPResponse
 from strawberry.http.ides import GraphQL_IDE
 from strawberry.http.temporal_response import TemporalResponse
+from strawberry.schema.config import StrawberryConfig
 from strawberry.types import ExecutionResult
-from tests.views.schema import Query, schema
+from tests.http.context import get_context
+from tests.views.schema import Query
 
-from ..context import get_context
 from .base import JSON, HttpClient, Response, ResultOverrideFunction
 
 
-class GraphQLView(BaseGraphQLView):
+class GraphQLView(BaseGraphQLView[dict[str, object], object]):
     result_override: ResultOverrideFunction = None
 
     def get_root_value(self, request: ChaliceRequest) -> Query:
@@ -29,7 +31,7 @@ class GraphQLView(BaseGraphQLView):
 
     def get_context(
         self, request: ChaliceRequest, response: TemporalResponse
-    ) -> object:
+    ) -> dict[str, object]:
         context = super().get_context(request, response)
 
         return get_context(context)
@@ -46,10 +48,13 @@ class GraphQLView(BaseGraphQLView):
 class ChaliceHttpClient(HttpClient):
     def __init__(
         self,
+        schema: Schema,
         graphiql: Optional[bool] = None,
         graphql_ide: Optional[GraphQL_IDE] = "graphiql",
         allow_queries_via_get: bool = True,
         result_override: ResultOverrideFunction = None,
+        multipart_uploads_enabled: bool = False,
+        schema_config: Optional[StrawberryConfig] = None,
     ):
         self.app = Chalice(app_name="TheStackBadger")
 
@@ -65,22 +70,30 @@ class ChaliceHttpClient(HttpClient):
             "/graphql", methods=["GET", "POST"], content_types=["application/json"]
         )
         def handle_graphql():
+            assert self.app.current_request is not None
             return view.execute_request(self.app.current_request)
 
     async def _graphql_request(
         self,
         method: Literal["get", "post"],
         query: Optional[str] = None,
-        variables: Optional[Dict[str, object]] = None,
-        files: Optional[Dict[str, BytesIO]] = None,
-        headers: Optional[Dict[str, str]] = None,
+        operation_name: Optional[str] = None,
+        variables: Optional[dict[str, object]] = None,
+        files: Optional[dict[str, BytesIO]] = None,
+        headers: Optional[dict[str, str]] = None,
+        extensions: Optional[dict[str, Any]] = None,
         **kwargs: Any,
     ) -> Response:
         body = self._build_body(
-            query=query, variables=variables, files=files, method=method
+            query=query,
+            operation_name=operation_name,
+            variables=variables,
+            files=files,
+            method=method,
+            extensions=extensions,
         )
 
-        data: Union[Dict[str, object], str, None] = None
+        data: Union[dict[str, object], str, None] = None
 
         if body and files:
             body.update({name: (file, name) for name, file in files.items()})
@@ -111,8 +124,8 @@ class ChaliceHttpClient(HttpClient):
     async def request(
         self,
         url: str,
-        method: Literal["get", "post", "patch", "put", "delete"],
-        headers: Optional[Dict[str, str]] = None,
+        method: Literal["head", "get", "post", "patch", "put", "delete"],
+        headers: Optional[dict[str, str]] = None,
     ) -> Response:
         with Client(self.app) as client:
             response = getattr(client.http, method)(url, headers=headers)
@@ -126,7 +139,7 @@ class ChaliceHttpClient(HttpClient):
     async def get(
         self,
         url: str,
-        headers: Optional[Dict[str, str]] = None,
+        headers: Optional[dict[str, str]] = None,
     ) -> Response:
         return await self.request(url, "get", headers=headers)
 
@@ -135,9 +148,9 @@ class ChaliceHttpClient(HttpClient):
         url: str,
         data: Optional[bytes] = None,
         json: Optional[JSON] = None,
-        headers: Optional[Dict[str, str]] = None,
+        headers: Optional[dict[str, str]] = None,
     ) -> Response:
-        body = data or dumps(json)
+        body = dumps(json) if json is not None else data
 
         with Client(self.app) as client:
             response = client.http.post(url, headers=headers, body=body)

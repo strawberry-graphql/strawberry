@@ -60,7 +60,7 @@ subscription {
 
 In this example, the data looks like this as it passes over the websocket:
 
-<img src="../images/subscriptions-count-websocket.png" alt="A view of the data that's been passed via websocket" width="1013" height="267" />
+![A view of the data that's been passed via websocket](../images/subscriptions-count-websocket.png)
 
 This is a very short example of what is possible. Like with queries and
 mutations the subscription can return any GraphQL type, not only scalars as
@@ -254,6 +254,55 @@ schema = strawberry.Schema(query=Query, subscription=Subscription)
 
 [pep-525]: https://www.python.org/dev/peps/pep-0525/
 
+## Unsubscribing subscriptions
+
+In GraphQL, it is possible to unsubscribe from a subscription. Strawberry
+supports this behaviour, and is done using a `try...except` block.
+
+In Apollo-client, closing a subscription can be achieved like the following:
+
+```javascript
+const client = useApolloClient();
+const subscriber = client.subscribe({query: ...}).subscribe({...})
+// ...
+// done with subscription. now unsubscribe
+subscriber.unsubscribe();
+```
+
+Strawberry can capture when a subscriber unsubscribes using an
+`asyncio.CancelledError` exception.
+
+```python
+import asyncio
+from typing import AsyncGenerator
+from uuid import uuid4
+
+import strawberry
+
+# track active subscribers
+event_messages = {}
+
+
+@strawberry.type
+class Subscription:
+    @strawberry.subscription
+    async def message(self) -> AsyncGenerator[int, None]:
+        try:
+            subscription_id = uuid4()
+
+            event_messages[subscription_id] = []
+
+            while True:
+                if len(event_messages[subscription_id]) > 0:
+                    yield event_messages[subscription_id]
+                    event_messages[subscription_id].clear()
+
+                await asyncio.sleep(1)
+        except asyncio.CancelledError:
+            # stop listening to events
+            del event_messages[subscription_id]
+```
+
 ## GraphQL over WebSocket protocols
 
 Strawberry support both the legacy
@@ -279,7 +328,7 @@ Strawberry allows you to choose which protocols you want to accept. All
 integrations supporting subscriptions can be configured with a list of
 `subscription_protocols` to accept. By default, all protocols are accepted.
 
-##### AIOHTTP
+### AIOHTTP
 
 ```python
 from strawberry.aiohttp.views import GraphQLView
@@ -292,7 +341,7 @@ view = GraphQLView(
 )
 ```
 
-##### ASGI
+### ASGI
 
 ```python
 from strawberry.asgi import GraphQL
@@ -309,7 +358,7 @@ app = GraphQL(
 )
 ```
 
-##### Django + Channels
+### Django + Channels
 
 ```python
 import os
@@ -332,10 +381,10 @@ application = GraphQLProtocolTypeRouter(
 )
 ```
 
-Note: Check the [channels integraton](/docs/integrations/channels.md) page for
-more information regarding it.
+Note: Check the [channels integraton](../integrations/channels.md) page for more
+information regarding it.
 
-#### FastAPI
+### FastAPI
 
 ```python
 from strawberry.fastapi import GraphQLRouter
@@ -350,11 +399,38 @@ graphql_router = GraphQLRouter(
         GRAPHQL_WS_PROTOCOL,
     ],
 )
+
 app = FastAPI()
 app.include_router(graphql_router, prefix="/graphql")
 ```
 
-### Single result operations
+### Quart
+
+```python
+from strawberry.quart.views import GraphQLView
+from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
+from quart import Quart
+from api.schema import schema
+
+view = GraphQLView.as_view(
+    "graphql_view",
+    schema=schema,
+    subscription_protocols=[
+        GRAPHQL_TRANSPORT_WS_PROTOCOL,
+        GRAPHQL_WS_PROTOCOL,
+    ],
+)
+
+app = Quart(__name__)
+app.add_url_rule(
+    "/graphql",
+    view_func=view,
+    methods=["GET"],
+    websocket=True,
+)
+```
+
+## Single result operations
 
 In addition to _streaming operations_ (i.e. subscriptions), the
 `graphql-transport-ws` protocol supports so called _single result operations_
@@ -362,7 +438,7 @@ In addition to _streaming operations_ (i.e. subscriptions), the
 
 This enables clients to use one protocol and one connection for queries,
 mutations and subscriptions. Take a look at the
-[protocols repository](https://github.com/enisdenjo/graphql-ws) to learn how to
+[protocol's repository](https://github.com/enisdenjo/graphql-ws) to learn how to
 correctly set up the graphql client of your choice.
 
 Strawberry supports single result operations out of the box when the

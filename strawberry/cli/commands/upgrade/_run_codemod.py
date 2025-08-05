@@ -2,44 +2,52 @@ from __future__ import annotations
 
 import contextlib
 import os
+from importlib.metadata import version
 from multiprocessing import Pool, cpu_count
-from typing import TYPE_CHECKING, Any, Dict, Generator, Sequence, Type, Union
+from typing import TYPE_CHECKING, Any, Union
 
 from libcst.codemod._cli import ExecutionConfig, ExecutionResult, _execute_transform
-from libcst.codemod._dummy_pool import DummyPool
 from rich.progress import Progress
 
 from ._fake_progress import FakeProgress
 
 if TYPE_CHECKING:
+    from collections.abc import Generator, Sequence
+
     from libcst.codemod import Codemod
 
-ProgressType = Union[Type[Progress], Type[FakeProgress]]
-PoolType = Union[Type[Pool], Type[DummyPool]]  # type: ignore
+ProgressType = Union[type[Progress], type[FakeProgress]]
+
+
+def _get_libcst_version() -> tuple[int, int, int]:
+    package_version_str = version("libcst")
+
+    try:
+        major, minor, patch = map(int, package_version_str.split("."))
+    except ValueError:
+        major, minor, patch = (0, 0, 0)
+
+    return major, minor, patch
 
 
 def _execute_transform_wrap(
-    job: Dict[str, Any],
+    job: dict[str, Any],
 ) -> ExecutionResult:
+    additional_kwargs: dict[str, Any] = {}
+
+    libcst_version = _get_libcst_version()
+
+    if (1, 4, 0) <= libcst_version < (1, 8, 0):
+        additional_kwargs["scratch"] = {}
+
+    if libcst_version >= (1, 8, 0):
+        additional_kwargs["original_scratch"] = {}
+        additional_kwargs["codemod_args"] = {}
+        additional_kwargs["repo_manager"] = None
+
     # TODO: maybe capture warnings?
-    with open(os.devnull, "w") as null:  # noqa: PTH123
-        with contextlib.redirect_stderr(null):
-            return _execute_transform(**job)
-
-
-def _get_progress_and_pool(
-    total_files: int, jobs: int
-) -> tuple[PoolType, ProgressType]:
-    poll_impl: PoolType = Pool  # type: ignore
-    progress_impl: ProgressType = Progress
-
-    if total_files == 1 or jobs == 1:
-        poll_impl = DummyPool
-
-    if total_files == 1:
-        progress_impl = FakeProgress
-
-    return poll_impl, progress_impl
+    with open(os.devnull, "w") as null, contextlib.redirect_stderr(null):  # noqa: PTH123
+        return _execute_transform(**job, **additional_kwargs)
 
 
 def run_codemod(
@@ -52,8 +60,6 @@ def run_codemod(
 
     config = ExecutionConfig()
 
-    pool_impl, progress_impl = _get_progress_and_pool(total, jobs)
-
     tasks = [
         {
             "transformer": codemod,
@@ -63,7 +69,7 @@ def run_codemod(
         for filename in files
     ]
 
-    with pool_impl(processes=jobs) as p, progress_impl() as progress:  # type: ignore
+    with Pool(processes=jobs) as p, Progress() as progress:
         task_id = progress.add_task("[cyan]Updating...", total=len(tasks))
 
         for result in p.imap_unordered(

@@ -1,19 +1,18 @@
 import textwrap
 from enum import Enum
-from typing import Generic, List, Optional, TypeVar, Union
+from typing import Annotated, Generic, Optional, TypeVar, Union
 
 import strawberry
-from strawberry.arguments import StrawberryArgument
-from strawberry.custom_scalar import ScalarDefinition
 from strawberry.directive import StrawberryDirective
-from strawberry.enum import EnumDefinition, EnumValue
-from strawberry.field import StrawberryField
 from strawberry.schema.config import StrawberryConfig
 from strawberry.schema.name_converter import NameConverter
 from strawberry.schema_directive import Location, StrawberrySchemaDirective
-from strawberry.type import StrawberryType
-from strawberry.types.types import StrawberryObjectDefinition
-from strawberry.union import StrawberryUnion
+from strawberry.types.arguments import StrawberryArgument
+from strawberry.types.base import StrawberryObjectDefinition, StrawberryType
+from strawberry.types.enum import EnumDefinition, EnumValue
+from strawberry.types.field import StrawberryField
+from strawberry.types.scalar import ScalarDefinition
+from strawberry.types.union import StrawberryUnion
 
 
 class AppendsNameConverter(NameConverter):
@@ -36,7 +35,7 @@ class AppendsNameConverter(NameConverter):
     def from_generic(
         self,
         generic_type: StrawberryObjectDefinition,
-        types: List[Union[StrawberryType, type]],
+        types: list[Union[StrawberryType, type]],
     ) -> str:
         return super().from_generic(generic_type, types) + self.suffix
 
@@ -79,6 +78,11 @@ class User:
     name: str
 
 
+@strawberry.type(name="MyType")
+class TypeWithDifferentNameThanClass:
+    name: str
+
+
 @strawberry.type
 class Error:
     message: str
@@ -116,6 +120,12 @@ class Query:
 
     enum: MyEnum = MyEnum.A
     field: Optional[MyGeneric[str]] = None
+    field_with_lazy: MyGeneric[
+        Annotated[
+            "TypeWithDifferentNameThanClass",
+            strawberry.lazy("tests.schema.test_name_converter"),
+        ]
+    ] = None
 
     @strawberry.field
     def print(self, enum: MyEnum) -> str:
@@ -142,6 +152,14 @@ def test_name_converter():
       BX
     }
 
+    type MyTypeMyGenericXX {
+      valueX: MyTypeX!
+    }
+
+    type MyTypeX {
+      nameX: String!
+    }
+
     interface NodeXX {
       idX: ID!
     }
@@ -149,6 +167,7 @@ def test_name_converter():
     type QueryX {
       enumX: MyEnumX!
       fieldX: StrMyGenericXX
+      fieldWithLazyX: MyTypeMyGenericXX!
       userX(inputX: UserInputX!): UserXErrorXX! @myDirectiveX(name: "my-directive")
       printX(enumX: MyEnumX!): String!
     }

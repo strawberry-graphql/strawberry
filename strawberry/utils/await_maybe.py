@@ -1,5 +1,6 @@
 import inspect
-from typing import AsyncIterator, Awaitable, Iterator, TypeVar, Union, cast
+from collections.abc import AsyncIterator, Awaitable, Iterator
+from typing import TypeVar, Union
 
 T = TypeVar("T")
 
@@ -11,4 +12,7 @@ async def await_maybe(value: AwaitableOrValue[T]) -> T:
     if inspect.isawaitable(value):
         return await value
 
-    return cast(T, value)
+    return value
+
+
+__all__ = ["AsyncIteratorOrIterator", "AwaitableOrValue", "await_maybe"]

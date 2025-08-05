@@ -3,18 +3,17 @@ from __future__ import annotations
 from typing import (
     TYPE_CHECKING,
     Any,
-    Dict,
 )
 
 import strawberry
 from strawberry.annotation import StrawberryAnnotation
-from strawberry.arguments import StrawberryArgument
 from strawberry.extensions.field_extension import (
     AsyncExtensionResolver,
     FieldExtension,
     SyncExtensionResolver,
 )
-from strawberry.field import StrawberryField
+from strawberry.types.arguments import StrawberryArgument
+from strawberry.types.field import StrawberryField
 from strawberry.utils.str_converters import capitalize_first, to_camel_case
 
 if TYPE_CHECKING:
@@ -27,7 +26,7 @@ class InputMutationExtension(FieldExtension):
         assert resolver
 
         name = field.graphql_name or to_camel_case(resolver.name)
-        type_dict: Dict[str, Any] = {
+        type_dict: dict[str, Any] = {
             "__doc__": f"Input data for `{name}` mutation",
             "__annotations__": {},
         }
@@ -90,3 +89,6 @@ class InputMutationExtension(FieldExtension):
             **kwargs,
             **vars(input_args),
         )
+
+
+__all__ = ["InputMutationExtension"]

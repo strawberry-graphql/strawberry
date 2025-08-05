@@ -1,11 +1,20 @@
-from .commands.codegen import codegen as codegen  # noqa
-from .commands.export_schema import export_schema as export_schema  # noqa
-from .commands.server import server as server  # noqa
-from .commands.upgrade import upgrade as upgrade  # noqa
-from .commands.schema_codegen import schema_codegen as schema_codegen  # noqa
+try:
+    from .app import app
+    from .commands.codegen import codegen as codegen
+    from .commands.export_schema import export_schema as export_schema
+    from .commands.locate_definition import (
+        locate_definition as locate_definition,
+    )
+    from .commands.schema_codegen import (
+        schema_codegen as schema_codegen,
+    )
+    from .commands.server import server as server
+    from .commands.upgrade import upgrade as upgrade
 
-from .app import app
+    def run() -> None:
+        app()
 
+except ModuleNotFoundError as exc:
+    from strawberry.exceptions import MissingOptionalDependenciesError
 
-def run() -> None:
-    app()
+    raise MissingOptionalDependenciesError(extras=["cli"]) from exc

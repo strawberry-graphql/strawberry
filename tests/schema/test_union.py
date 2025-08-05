@@ -2,14 +2,13 @@ import sys
 import textwrap
 from dataclasses import dataclass
 from textwrap import dedent
-from typing import Generic, List, Optional, TypeVar, Union
-from typing_extensions import Annotated
+from typing import Annotated, Generic, Optional, TypeVar, Union
 
 import pytest
 
 import strawberry
 from strawberry.exceptions import InvalidUnionTypeError
-from strawberry.lazy_type import lazy
+from strawberry.types.lazy_type import lazy
 
 
 def test_union_as_field():
@@ -467,8 +466,7 @@ def test_union_explicit_type_resolution():
     reason="pipe syntax for union is only available on python 3.10+",
 )
 def test_union_optional_with_or_operator():
-    """
-    Verify that the `|` operator is supported when annotating unions as
+    """Verify that the `|` operator is supported when annotating unions as
     optional in schemas.
     """
 
@@ -502,9 +500,7 @@ def test_union_optional_with_or_operator():
 
 
 def test_union_with_input_types():
-    """
-    Verify that union of input types raises an error
-    """
+    """Verify that union of input types raises an error."""
 
     @strawberry.type
     class User:
@@ -524,22 +520,20 @@ def test_union_with_input_types():
         name: str
         something: Union[A, B]
 
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def user(self, data: Input) -> User:
+            return User(name=data.name, age=100)
+
     with pytest.raises(
         TypeError, match="Union for A is not supported because it is an Input type"
     ):
-
-        @strawberry.type
-        class Query:
-            @strawberry.field
-            def user(self, data: Input) -> User:
-                return User(name=data.name, age=100)
-
         strawberry.Schema(query=Query)
 
 
 def test_union_with_similar_nested_generic_types():
-    """
-    Previously this failed due to an edge case where Strawberry would choose AContainer
+    """Previously this failed due to an edge case where Strawberry would choose AContainer
     as the resolved type for container_b due to the inability to exactly match the
     nested generic `Container.items`.
     """
@@ -547,7 +541,7 @@ def test_union_with_similar_nested_generic_types():
 
     @strawberry.type
     class Container(Generic[T]):
-        items: List[T]
+        items: list[T]
 
     @strawberry.type
     class A:
@@ -611,9 +605,7 @@ def test_union_with_similar_nested_generic_types():
 
 
 def test_lazy_union():
-    """
-    Previously this failed to evaluate generic parameters on lazy types
-    """
+    """Previously this failed to evaluate generic parameters on lazy types"""
     TypeA = Annotated["TypeA", lazy("tests.schema.test_lazy_types.type_a")]
     TypeB = Annotated["TypeB", lazy("tests.schema.test_lazy_types.type_b")]
 
@@ -648,6 +640,32 @@ def test_lazy_union():
 
     assert result.data["a"]["__typename"] == "TypeA"
     assert result.data["b"]["__typename"] == "TypeB"
+
+
+def test_lazy_union_with_generic():
+    UnionValue = Annotated["UnionValue", lazy("tests.schema.test_lazy.type_e")]
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def a(self) -> UnionValue:
+            from tests.schema.test_lazy.type_e import MyEnum, ValueContainer
+
+            return ValueContainer(value=MyEnum.ONE)
+
+    schema = strawberry.Schema(query=Query)
+
+    query = """
+     {
+        a {
+            __typename
+        }
+    }
+    """
+
+    result = schema.execute_sync(query)
+
+    assert result.data["a"]["__typename"] == "MyEnumValueContainer"
 
 
 @pytest.mark.raises_strawberry_exception(
@@ -690,10 +708,6 @@ def test_raises_on_union_with_int():
     InvalidUnionTypeError,
     match=r"Type `list\[...\]` cannot be used in a GraphQL Union",
 )
-@pytest.mark.skipif(
-    sys.version_info < (3, 9, 0),
-    reason="list[str] is only available on python 3.9+",
-)
 def test_raises_on_union_with_list_str():
     global ICanBeInUnion
 
@@ -714,10 +728,6 @@ def test_raises_on_union_with_list_str():
     InvalidUnionTypeError,
     match=r"Type `list\[...\]` cannot be used in a GraphQL Union",
 )
-@pytest.mark.skipif(
-    sys.version_info < (3, 9, 0),
-    reason="list[str] is only available on python 3.9+",
-)
 def test_raises_on_union_with_list_str_38():
     global ICanBeInUnion
 
@@ -727,7 +737,7 @@ def test_raises_on_union_with_list_str_38():
 
     @strawberry.type
     class Query:
-        union: Union[ICanBeInUnion, List[str]]
+        union: Union[ICanBeInUnion, list[str]]
 
     strawberry.Schema(query=Query)
 
@@ -856,3 +866,388 @@ def test_single_union():
 
     assert not result.errors
     assert result.data["something"] == {"__typename": "A", "a": 5}
+
+
+def test_generic_union_with_annotated():
+    @strawberry.type
+    class SomeType:
+        id: strawberry.ID
+        name: str
+
+    @strawberry.type
+    class NotFoundError:
+        id: strawberry.ID
+        message: str
+
+    T = TypeVar("T")
+
+    @strawberry.type
+    class ObjectQueries(Generic[T]):
+        @strawberry.field
+        def by_id(
+            self, id: strawberry.ID
+        ) -> Annotated[Union[T, NotFoundError], strawberry.union("ByIdResult")]: ...
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def some_type_queries(self, id: strawberry.ID) -> ObjectQueries[SomeType]:
+            raise NotImplementedError
+
+    schema = strawberry.Schema(Query)
+
+    assert (
+        str(schema)
+        == textwrap.dedent(
+            """
+            type NotFoundError {
+              id: ID!
+              message: String!
+            }
+
+            type Query {
+              someTypeQueries(id: ID!): SomeTypeObjectQueries!
+            }
+
+            type SomeType {
+              id: ID!
+              name: String!
+            }
+
+            union SomeTypeByIdResult = SomeType | NotFoundError
+
+            type SomeTypeObjectQueries {
+              byId(id: ID!): SomeTypeByIdResult!
+            }
+            """
+        ).strip()
+    )
+
+
+def test_generic_union_with_annotated_inside():
+    @strawberry.type
+    class SomeType:
+        id: strawberry.ID
+        name: str
+
+    @strawberry.type
+    class NotFoundError:
+        id: strawberry.ID
+        message: str
+
+    T = TypeVar("T")
+
+    @strawberry.type
+    class ObjectQueries(Generic[T]):
+        @strawberry.field
+        def by_id(
+            self, id: strawberry.ID
+        ) -> Union[T, Annotated[NotFoundError, strawberry.union("ByIdResult")]]: ...
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def some_type_queries(self, id: strawberry.ID) -> ObjectQueries[SomeType]: ...
+
+    schema = strawberry.Schema(Query)
+
+    assert (
+        str(schema)
+        == textwrap.dedent(
+            """
+            type NotFoundError {
+              id: ID!
+              message: String!
+            }
+
+            type Query {
+              someTypeQueries(id: ID!): SomeTypeObjectQueries!
+            }
+
+            type SomeType {
+              id: ID!
+              name: String!
+            }
+
+            union SomeTypeByIdResult = SomeType | NotFoundError
+
+            type SomeTypeObjectQueries {
+              byId(id: ID!): SomeTypeByIdResult!
+            }
+            """
+        ).strip()
+    )
+
+
+def test_annoted_union_with_two_generics():
+    @strawberry.type
+    class SomeType:
+        a: str
+
+    @strawberry.type
+    class OtherType:
+        b: str
+
+    @strawberry.type
+    class NotFoundError:
+        message: str
+
+    T = TypeVar("T")
+    U = TypeVar("U")
+
+    @strawberry.type
+    class UnionObjectQueries(Generic[T, U]):
+        @strawberry.field
+        def by_id(
+            self, id: strawberry.ID
+        ) -> Union[
+            T, Annotated[Union[U, NotFoundError], strawberry.union("ByIdResult")]
+        ]: ...
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def some_type_queries(
+            self, id: strawberry.ID
+        ) -> UnionObjectQueries[SomeType, OtherType]: ...
+
+    schema = strawberry.Schema(Query)
+
+    assert (
+        str(schema)
+        == textwrap.dedent(
+            """
+            type NotFoundError {
+              message: String!
+            }
+
+            type OtherType {
+              b: String!
+            }
+
+            type Query {
+              someTypeQueries(id: ID!): SomeTypeOtherTypeUnionObjectQueries!
+            }
+
+            type SomeType {
+              a: String!
+            }
+
+            union SomeTypeOtherTypeByIdResult = SomeType | OtherType | NotFoundError
+
+            type SomeTypeOtherTypeUnionObjectQueries {
+              byId(id: ID!): SomeTypeOtherTypeByIdResult!
+            }
+            """
+        ).strip()
+    )
+
+
+def test_union_merging_without_annotated():
+    @strawberry.type
+    class A:
+        a: int
+
+    @strawberry.type
+    class B:
+        b: int
+
+    @strawberry.type
+    class C:
+        c: int
+
+    a = Union[A, B]
+
+    b = Union[B, C]
+
+    c = Union[a, b]
+
+    @strawberry.type
+    class Query:
+        union_field: c
+
+    schema = strawberry.Schema(query=Query)
+
+    assert (
+        str(schema)
+        == textwrap.dedent(
+            """
+        type A {
+          a: Int!
+        }
+
+        union ABC = A | B | C
+
+        type B {
+          b: Int!
+        }
+
+        type C {
+          c: Int!
+        }
+
+        type Query {
+          unionField: ABC!
+        }
+    """
+        ).strip()
+    )
+
+
+def test_union_merging_with_annotated():
+    @strawberry.type
+    class A:
+        a: int
+
+    @strawberry.type
+    class B:
+        b: int
+
+    @strawberry.type
+    class C:
+        c: int
+
+    a = Annotated[Union[A, B], strawberry.union("AorB")]
+
+    b = Annotated[Union[B, C], strawberry.union("BorC")]
+
+    c = Union[a, b]
+
+    @strawberry.type
+    class Query:
+        union_field: c
+
+    schema = strawberry.Schema(query=Query)
+
+    assert (
+        str(schema)
+        == textwrap.dedent(
+            """
+        type A {
+          a: Int!
+        }
+
+        union AorBBorC = A | B | C
+
+        type B {
+          b: Int!
+        }
+
+        type C {
+          c: Int!
+        }
+
+        type Query {
+          unionField: AorBBorC!
+        }
+    """
+        ).strip()
+    )
+
+
+def test_union_merging_with_annotated_annotated_merge():
+    @strawberry.type
+    class A:
+        a: int
+
+    @strawberry.type
+    class B:
+        b: int
+
+    @strawberry.type
+    class C:
+        c: int
+
+    a = Annotated[Union[A, B], strawberry.union("AorB")]
+
+    b = Annotated[Union[B, C], strawberry.union("BorC")]
+
+    c = Annotated[Union[a, b], strawberry.union("ABC")]
+
+    @strawberry.type
+    class Query:
+        union_field: c
+
+    schema = strawberry.Schema(query=Query)
+
+    assert (
+        str(schema)
+        == textwrap.dedent(
+            """
+        type A {
+          a: Int!
+        }
+
+        union ABC = A | B | C
+
+        type B {
+          b: Int!
+        }
+
+        type C {
+          c: Int!
+        }
+
+        type Query {
+          unionField: ABC!
+        }
+    """
+        ).strip()
+    )
+
+
+def test_union_used_inside_generic():
+    T = TypeVar("T")
+
+    @strawberry.type
+    class User:
+        name: str
+        age: int
+
+    @strawberry.type
+    class ProUser:
+        name: str
+        age: float
+
+    @strawberry.type
+    class GenType(Generic[T]):
+        data: T
+
+    GeneralUser = Annotated[Union[User, ProUser], strawberry.union("GeneralUser")]
+
+    @strawberry.type
+    class Response(GenType[GeneralUser]): ...
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def user(self) -> Response: ...
+
+    schema = strawberry.Schema(query=Query)
+
+    assert (
+        str(schema)
+        == textwrap.dedent(
+            """
+        union GeneralUser = User | ProUser
+
+        type ProUser {
+          name: String!
+          age: Float!
+        }
+
+        type Query {
+          user: Response!
+        }
+
+        type Response {
+          data: GeneralUser!
+        }
+
+        type User {
+          name: String!
+          age: Int!
+        }
+    """
+        ).strip()
+    )

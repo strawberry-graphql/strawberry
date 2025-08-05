@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import dataclasses
 import sys
-from typing import Any, Dict, List, Type
+from typing import Any
 
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.exceptions import (
@@ -10,16 +10,16 @@ from strawberry.exceptions import (
     FieldWithResolverAndDefaultValueError,
     PrivateStrawberryFieldError,
 )
-from strawberry.field import StrawberryField
-from strawberry.private import is_private
-from strawberry.type import has_object_definition
-from strawberry.unset import UNSET
+from strawberry.types.base import has_object_definition
+from strawberry.types.field import StrawberryField
+from strawberry.types.private import is_private
+from strawberry.types.unset import UNSET
 
 
 def _get_fields(
-    cls: Type[Any], original_type_annotations: Dict[str, Type[Any]]
-) -> List[StrawberryField]:
-    """Get all the strawberry fields off a strawberry.type cls
+    cls: type[Any], original_type_annotations: dict[str, type[Any]]
+) -> list[StrawberryField]:
+    """Get all the strawberry fields off a strawberry.type cls.
 
     This function returns a list of StrawberryFields (one for each field item), while
     also paying attention the name and typing of the field.
@@ -27,16 +27,19 @@ def _get_fields(
     StrawberryFields can be defined on a strawberry.type class as either a dataclass-
     style field or using strawberry.field as a decorator.
 
-    >>> import strawberry
-    >>> @strawberry.type
-    ... class Query:
-    ...     type_1a: int = 5
-    ...     type_1b: int = strawberry.field(...)
-    ...     type_1c: int = strawberry.field(resolver=...)
-    ...
-    ...     @strawberry.field
-    ...     def type_2(self) -> int:
-    ...         ...
+    ```python
+    import strawberry
+
+
+    @strawberry.type
+    class Query:
+        type_1a: int = 5
+        type_1b: int = strawberry.field(...)
+        type_1c: int = strawberry.field(resolver=...)
+
+        @strawberry.field
+        def type_2(self) -> int: ...
+    ```
 
     Type #1:
         A pure dataclass-style field. Will not have a StrawberryField; one will need to
@@ -51,8 +54,7 @@ def _get_fields(
     passing a named function (i.e. not an anonymous lambda) to strawberry.field
     (typically as a decorator).
     """
-
-    fields: Dict[str, StrawberryField] = {}
+    fields: dict[str, StrawberryField] = {}
 
     # before trying to find any fields, let's first add the fields defined in
     # parent classes, we do this by checking if parents have a type definition
@@ -69,7 +71,7 @@ def _get_fields(
     # Find the class the each field was originally defined on so we can use
     # that scope later when resolving the type, as it may have different names
     # available to it.
-    origins: Dict[str, type] = {field_name: cls for field_name in cls.__annotations__}
+    origins: dict[str, type] = dict.fromkeys(cls.__annotations__, cls)
 
     for base in cls.__mro__:
         if has_object_definition(base):
@@ -163,3 +165,6 @@ def _get_fields(
         fields[field_name] = field
 
     return list(fields.values())
+
+
+__all__ = ["_get_fields"]

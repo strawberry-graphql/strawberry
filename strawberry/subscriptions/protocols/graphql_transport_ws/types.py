@@ -1,113 +1,101 @@
-from __future__ import annotations
+from typing import TypedDict, Union
+from typing_extensions import Literal, NotRequired
 
-from dataclasses import asdict, dataclass
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
-
-from strawberry.unset import UNSET
-
-if TYPE_CHECKING:
-    from graphql import GraphQLFormattedError
+from graphql import GraphQLFormattedError
 
 
-@dataclass
-class GraphQLTransportMessage:
-    def as_dict(self) -> dict:
-        data = asdict(self)
-        if getattr(self, "payload", None) is UNSET:
-            # Unset fields must have a JSON value of "undefined" not "null"
-            data.pop("payload")
-        return data
+class ConnectionInitMessage(TypedDict):
+    """Direction: Client -> Server."""
+
+    type: Literal["connection_init"]
+    payload: NotRequired[Union[dict[str, object], None]]
 
 
-@dataclass
-class ConnectionInitMessage(GraphQLTransportMessage):
-    """
-    Direction: Client -> Server
-    """
+class ConnectionAckMessage(TypedDict):
+    """Direction: Server -> Client."""
 
-    payload: Optional[Dict[str, Any]] = UNSET
-    type: str = "connection_init"
+    type: Literal["connection_ack"]
+    payload: NotRequired[Union[dict[str, object], None]]
 
 
-@dataclass
-class ConnectionAckMessage(GraphQLTransportMessage):
-    """
-    Direction: Server -> Client
-    """
+class PingMessage(TypedDict):
+    """Direction: bidirectional."""
 
-    payload: Optional[Dict[str, Any]] = UNSET
-    type: str = "connection_ack"
+    type: Literal["ping"]
+    payload: NotRequired[Union[dict[str, object], None]]
 
 
-@dataclass
-class PingMessage(GraphQLTransportMessage):
-    """
-    Direction: bidirectional
-    """
+class PongMessage(TypedDict):
+    """Direction: bidirectional."""
 
-    payload: Optional[Dict[str, Any]] = UNSET
-    type: str = "ping"
+    type: Literal["pong"]
+    payload: NotRequired[Union[dict[str, object], None]]
 
 
-@dataclass
-class PongMessage(GraphQLTransportMessage):
-    """
-    Direction: bidirectional
-    """
-
-    payload: Optional[Dict[str, Any]] = UNSET
-    type: str = "pong"
-
-
-@dataclass
-class SubscribeMessagePayload:
+class SubscribeMessagePayload(TypedDict):
+    operationName: NotRequired[Union[str, None]]
     query: str
-    operationName: Optional[str] = None
-    variables: Optional[Dict[str, Any]] = None
-    extensions: Optional[Dict[str, Any]] = None
+    variables: NotRequired[Union[dict[str, object], None]]
+    extensions: NotRequired[Union[dict[str, object], None]]
 
 
-@dataclass
-class SubscribeMessage(GraphQLTransportMessage):
-    """
-    Direction: Client -> Server
-    """
+class SubscribeMessage(TypedDict):
+    """Direction: Client -> Server."""
 
     id: str
+    type: Literal["subscribe"]
     payload: SubscribeMessagePayload
-    type: str = "subscribe"
 
 
-@dataclass
-class NextMessage(GraphQLTransportMessage):
-    """
-    Direction: Server -> Client
-    """
-
-    id: str
-    payload: Dict[str, Any]  # TODO: shape like FormattedExecutionResult
-    type: str = "next"
-
-    def as_dict(self) -> dict:
-        return {"id": self.id, "payload": self.payload, "type": self.type}
+class NextMessagePayload(TypedDict):
+    errors: NotRequired[list[GraphQLFormattedError]]
+    data: NotRequired[Union[dict[str, object], None]]
+    extensions: NotRequired[dict[str, object]]
 
 
-@dataclass
-class ErrorMessage(GraphQLTransportMessage):
-    """
-    Direction: Server -> Client
-    """
+class NextMessage(TypedDict):
+    """Direction: Server -> Client."""
 
     id: str
-    payload: List[GraphQLFormattedError]
-    type: str = "error"
+    type: Literal["next"]
+    payload: NextMessagePayload
 
 
-@dataclass
-class CompleteMessage(GraphQLTransportMessage):
-    """
-    Direction: bidirectional
-    """
+class ErrorMessage(TypedDict):
+    """Direction: Server -> Client."""
 
     id: str
-    type: str = "complete"
+    type: Literal["error"]
+    payload: list[GraphQLFormattedError]
+
+
+class CompleteMessage(TypedDict):
+    """Direction: bidirectional."""
+
+    id: str
+    type: Literal["complete"]
+
+
+Message = Union[
+    ConnectionInitMessage,
+    ConnectionAckMessage,
+    PingMessage,
+    PongMessage,
+    SubscribeMessage,
+    NextMessage,
+    ErrorMessage,
+    CompleteMessage,
+]
+
+
+__all__ = [
+    "CompleteMessage",
+    "ConnectionAckMessage",
+    "ConnectionInitMessage",
+    "ErrorMessage",
+    "Message",
+    "NextMessage",
+    "PingMessage",
+    "PongMessage",
+    "SubscribeMessage",
+]

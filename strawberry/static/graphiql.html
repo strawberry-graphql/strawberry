@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
   <head>
     <title>Strawberry GraphiQL</title>
@@ -61,8 +61,8 @@
     <link
       crossorigin
       rel="stylesheet"
-      href="https://unpkg.com/graphiql@3.0.9/graphiql.min.css"
-      integrity="sha384-yz3/sqpuplkA7msMo0FE4ekg0xdwdvZ8JX9MVZREsxipqjU4h8IRfmAMRcb1QpUy"
+      href="https://unpkg.com/graphiql@3.8.3/graphiql.min.css"
+      integrity="sha384-Mq3vbRBY71jfjQAt/DcjxUIYY33ksal4cgdRt9U/hNPvHBCaT2JfJ/PTRiPKf0aM"
     />
 
     <link
@@ -77,8 +77,8 @@
     <div id="graphiql" class="graphiql-container">Loading...</div>
     <script
       crossorigin
-      src="https://unpkg.com/graphiql@3.0.9/graphiql.min.js"
-      integrity="sha384-Mjte+vxCWz1ZYCzszGHiJqJa5eAxiqI4mc3BErq7eDXnt+UGLXSEW7+i0wmfPiji"
+      src="https://unpkg.com/graphiql@3.8.3/graphiql.min.js"
+      integrity="sha384-HbRVEFG0JGJZeAHCJ9Xm2+tpknBQ7QZmNlO/DgZtkZ0aJSypT96YYGRNod99l9Ie"
     ></script>
     <script
       crossorigin
@@ -131,10 +131,7 @@
         headers["x-csrftoken"] = csrfToken;
       }
 
-      const subscriptionsEnabled = JSON.parse("{{ SUBSCRIPTION_ENABLED }}");
-      const subscriptionUrl = subscriptionsEnabled
-        ? httpUrlToWebSockeUrl(fetchURL)
-        : null;
+      const subscriptionUrl = httpUrlToWebSockeUrl(fetchURL);
 
       const fetcher = GraphiQL.createFetcher({
         url: fetchURL,

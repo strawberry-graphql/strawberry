@@ -1,9 +1,8 @@
-from typing import List
-
 import pytest
 
 import strawberry
-from strawberry import relay
+from strawberry import Info, relay
+from strawberry.relay import GlobalID
 from strawberry.relay.exceptions import (
     NodeIDAnnotationError,
     RelayWrongAnnotationError,
@@ -14,6 +13,52 @@ from strawberry.relay.exceptions import (
 @strawberry.type
 class NonNodeType:
     foo: str
+
+
+def test_raises_error_on_unknown_node_type_in_global_id():
+    @strawberry.type
+    class Query:
+        @strawberry.field()
+        def test(self, info: Info) -> GlobalID:
+            _id = GlobalID("foo", "bar")
+            _id.resolve_type(info)
+            return _id
+
+    schema = strawberry.Schema(query=Query)
+
+    result = schema.execute_sync("""
+        query TestQuery {
+            test
+        }
+    """)
+    assert len(result.errors) == 1
+    assert (
+        result.errors[0].message
+        == "Cannot resolve. GlobalID requires a GraphQL type, received `foo`."
+    )
+
+
+def test_raises_error_on_non_node_type_in_global_id():
+    @strawberry.type
+    class Query:
+        @strawberry.field()
+        def test(self, info: Info) -> GlobalID:
+            _id = GlobalID("NonNodeType", "bar")
+            _id.resolve_type(info)
+            return _id
+
+    schema = strawberry.Schema(query=Query, types=(NonNodeType,))
+
+    result = schema.execute_sync("""
+        query TestQuery {
+            test
+        }
+    """)
+    assert len(result.errors) == 1
+    assert (
+        result.errors[0].message == "Cannot resolve. GlobalID requires a GraphQL Node "
+        "type, received `NonNodeType`."
+    )
 
 
 @pytest.mark.raises_strawberry_exception(
@@ -28,7 +73,7 @@ def test_raises_error_on_missing_node_id_annotation():
     @strawberry.type
     class Query:
         @relay.connection(relay.ListConnection[Fruit])
-        def fruits(self) -> List[Fruit]: ...
+        def fruits(self) -> list[Fruit]: ...  # pragma: no cover
 
     strawberry.Schema(query=Query)
 
@@ -46,7 +91,7 @@ def test_raises_error_on_multiple_node_id_annotation():
     @strawberry.type
     class Query:
         @relay.connection(relay.ListConnection[Fruit])
-        def fruits(self) -> List[Fruit]: ...
+        def fruits(self) -> list[Fruit]: ...  # pragma: no cover
 
     strawberry.Schema(query=Query)
 
@@ -65,7 +110,7 @@ def test_raises_error_on_connection_missing_annotation():
 
     @strawberry.type
     class Query:
-        fruits_conn: List[Fruit] = relay.connection()
+        fruits_conn: list[Fruit] = relay.connection()
 
     strawberry.Schema(query=Query)
 
@@ -84,8 +129,8 @@ def test_raises_error_on_connection_wrong_annotation():
 
     @strawberry.type
     class Query:
-        @relay.connection(List[Fruit])  # type: ignore
-        def custom_resolver(self) -> List[Fruit]: ...
+        @relay.connection(list[Fruit])  # type: ignore
+        def custom_resolver(self) -> list[Fruit]: ...  # pragma: no cover
 
     strawberry.Schema(query=Query)
 
@@ -105,6 +150,6 @@ def test_raises_error_on_connection_resolver_wrong_annotation():
     @strawberry.type
     class Query:
         @relay.connection(relay.Connection[Fruit])  # type: ignore
-        def custom_resolver(self): ...
+        def custom_resolver(self): ...  # pragma: no cover
 
     strawberry.Schema(query=Query)

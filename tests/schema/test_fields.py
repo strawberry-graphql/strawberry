@@ -3,9 +3,9 @@ import textwrap
 from operator import getitem
 
 import strawberry
-from strawberry.field import StrawberryField
 from strawberry.printer import print_schema
 from strawberry.schema.config import StrawberryConfig
+from strawberry.types.field import StrawberryField
 
 
 def test_custom_field():
@@ -84,9 +84,7 @@ def test_field_metadata():
 
 
 def test_field_type_priority():
-    """
-    Prioritise the field annotation on the class over the resolver annotation.
-    """
+    """Prioritise the field annotation on the class over the resolver annotation."""
 
     def my_resolver() -> str:
         return "1.33"

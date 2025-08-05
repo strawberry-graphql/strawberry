@@ -32,17 +32,23 @@ class Page(Generic[T]):
 This example defines a generic type `Page` that can be used to represent a page
 of any type. For example, we can create a page of `User` objects:
 
-```python+schema
+<CodeGrid>
+
+```python
 import strawberry
+
 
 @strawberry.type
 class User:
     name: str
+
 
 @strawberry.type
 class Query:
     users: Page[User]
----
+```
+
+```graphql
 type Query {
   users: UserPage!
 }
@@ -57,11 +63,16 @@ type UserPage {
 }
 ```
 
+</CodeGrid>
+
 It is also possible to use a specialized generic type directly. For example, the
 same example above could be written like this:
 
-```python+schema
+<CodeGrid>
+
+```python
 import strawberry
+
 
 @strawberry.type
 class User:
@@ -69,13 +80,15 @@ class User:
 
 
 @strawberry.type
-class UserPage(Page[User]):
-    ...
+class UserPage(Page[User]): ...
+
 
 @strawberry.type
 class Query:
     users: UserPage
----
+```
+
+```graphql
 type Query {
   users: UserPage!
 }
@@ -89,6 +102,8 @@ type UserPage {
   items: [User!]!
 }
 ```
+
+</CodeGrid>
 
 # Input and Argument Types
 
@@ -97,24 +112,30 @@ Input types. Here we'll define an input type that can serve as a collection of
 anything, then create a specialization by using as a filled-in argument on a
 mutation.
 
-```python+schema
+<CodeGrid>
+
+```python
 import strawberry
 from typing import Generic, List, Optional, TypeVar
 
 T = TypeVar("T")
 
+
 @strawberry.input
 class CollectionInput(Generic[T]):
     values: List[T]
+
 
 @strawberry.input
 class PostInput:
     name: str
 
+
 @strawberry.type
 class Post:
     id: int
     name: str
+
 
 @strawberry.type
 class Mutation:
@@ -122,12 +143,16 @@ class Mutation:
     def add_posts(self, posts: CollectionInput[PostInput]) -> bool:
         return True
 
+
 @strawberry.type
 class Query:
     most_recent_post: Optional[Post] = None
 
+
 schema = strawberry.Schema(query=Query, mutation=Mutation)
----
+```
+
+```graphql
 input PostInputCollectionInput {
   values: [PostInput!]!
 }
@@ -150,6 +175,8 @@ type Mutation {
 }
 ```
 
+</CodeGrid>
+
 > **Note**: Pay attention to the fact that both `CollectionInput` and
 > `PostInput` are Input types. Providing `posts: CollectionInput[Post]` to
 > `add_posts` (i.e. using the non-input `Post` type) would have resulted in an
@@ -165,17 +192,21 @@ type Mutation {
 Using multiple specializations of a Generic type will work as expected. Here we
 define a `Point2D` type and then specialize it for both `int`s and `float`s.
 
-```python+schema
+<CodeGrid>
+
+```python
 from typing import Generic, TypeVar
 
 import strawberry
 
-T = TypeVar('T')
+T = TypeVar("T")
+
 
 @strawberry.input
 class Point2D(Generic[T]):
     x: T
     y: T
+
 
 @strawberry.type
 class Mutation:
@@ -186,7 +217,9 @@ class Mutation:
     @strawberry.mutation
     def store_line_int(self, a: Point2D[int], b: Point2D[int]) -> bool:
         return True
----
+```
+
+```graphql
 type Mutation {
   storeLineFloat(a: FloatPoint2D!, b: FloatPoint2D!): Boolean!
   storeLineInt(a: IntPoint2D!, b: IntPoint2D!): Boolean!
@@ -202,6 +235,8 @@ input IntPoint2D {
   y: Int!
 }
 ```
+
+</CodeGrid>
 
 # Variadic Generics
 

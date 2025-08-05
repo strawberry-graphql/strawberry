@@ -1,13 +1,19 @@
+from __future__ import annotations
+
 import base64
-from typing import Any, Tuple, Union
-from typing_extensions import assert_never
+import dataclasses
+import sys
+from typing import TYPE_CHECKING, Any, Union
+from typing_extensions import Self, assert_never
 
-from strawberry.types.info import Info
+from strawberry.types.base import StrawberryObjectDefinition
 from strawberry.types.nodes import InlineFragment, Selection
-from strawberry.types.types import StrawberryObjectDefinition
+
+if TYPE_CHECKING:
+    from strawberry.types.info import Info
 
 
-def from_base64(value: str) -> Tuple[str, str]:
+def from_base64(value: str) -> tuple[str, str]:
     """Parse the base64 encoded relay value.
 
     Args:
@@ -80,6 +86,7 @@ def should_resolve_list_connection_edges(info: Info) -> bool:
 
     def _check_selection(selection: Selection) -> bool:
         """Recursively inspect the selection to check if the user requested to resolve the `edges` field.
+
         Args:
             selection (Selection): The selection to check.
 
@@ -102,3 +109,99 @@ def should_resolve_list_connection_edges(info: Info) -> bool:
             if _check_selection(selection):
                 return True
     return False
+
+
+@dataclasses.dataclass
+class SliceMetadata:
+    start: int
+    end: int
+    expected: int | None
+
+    @property
+    def overfetch(self) -> int:
+        # Overfetch by 1 to check if we have a next result
+        return self.end + 1 if self.end != sys.maxsize else self.end
+
+    @classmethod
+    def from_arguments(
+        cls,
+        info: Info,
+        *,
+        before: str | None = None,
+        after: str | None = None,
+        first: int | None = None,
+        last: int | None = None,
+        max_results: int | None = None,
+        prefix: str | None = None,
+    ) -> Self:
+        """Get the slice metadata to use on ListConnection."""
+        from strawberry.relay.types import PREFIX
+
+        if prefix is None:
+            prefix = PREFIX
+
+        max_results = (
+            max_results
+            if max_results is not None
+            else info.schema.config.relay_max_results
+        )
+        start = 0
+        end: int | None = None
+
+        if after:
+            after_type, after_parsed = from_base64(after)
+            if after_type != prefix:
+                raise TypeError("Argument 'after' contains a non-existing value.")
+
+            start = int(after_parsed) + 1
+        if before:
+            before_type, before_parsed = from_base64(before)
+            if before_type != prefix:
+                raise TypeError("Argument 'before' contains a non-existing value.")
+            end = int(before_parsed)
+
+        if isinstance(first, int):
+            if first < 0:
+                raise ValueError("Argument 'first' must be a non-negative integer.")
+
+            if first > max_results:
+                raise ValueError(
+                    f"Argument 'first' cannot be higher than {max_results}."
+                )
+
+            if end is not None:
+                start = max(0, end - 1)
+
+            end = start + first
+        if isinstance(last, int):
+            if last < 0:
+                raise ValueError("Argument 'last' must be a non-negative integer.")
+
+            if last > max_results:
+                raise ValueError(
+                    f"Argument 'last' cannot be higher than {max_results}."
+                )
+
+            if end is not None:
+                start = max(start, end - last)
+            else:
+                end = sys.maxsize
+
+        if end is None:
+            end = start + max_results
+
+        expected = end - start if end != sys.maxsize else None
+
+        return cls(
+            start=start,
+            end=end,
+            expected=expected,
+        )
+
+
+__all__ = [
+    "SliceMetadata",
+    "from_base64",
+    "should_resolve_list_connection_edges",
+    "to_base64",
+]

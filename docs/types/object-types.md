@@ -28,46 +28,55 @@ schema (also referred as root types).
 - `Subscription` is the entry point for all the subscriptions.
 
 For a walk-through on how to define schemas, read the
-[schema basics](/docs/general/schema-basics.md).
+[schema basics](../general/schema-basics.md).
 
 ## Defining object types
 
 In Strawberry, you can define object types by using the `@strawberry.type`
 decorator, like this:
 
-```python+schema
+<CodeGrid>
+
+```python
 import strawberry
+
 
 @strawberry.type
 class Character:
     name: str
     age: int
+```
 
----
-
+```graphql
 type Character {
   name: String!
   age: int!
 }
 ```
 
+</CodeGrid>
+
 You can also refer to other types, like this:
 
-```python+schema
+<CodeGrid>
+
+```python
 import strawberry
+
 
 @strawberry.type
 class Character:
     name: str
     age: int
 
+
 @strawberry.type
 class Book:
     title: str
     main_character: Character
+```
 
----
-
+```graphql
 type Character {
   name: String!
   age: Int!
@@ -78,6 +87,8 @@ type Book {
   mainCharacter: Character!
 }
 ```
+
+</CodeGrid>
 
 ## API
 

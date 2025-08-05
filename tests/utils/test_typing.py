@@ -1,9 +1,8 @@
 import typing
-from typing import ClassVar, ForwardRef, Optional, Union
-from typing_extensions import Annotated
+from typing import Annotated, ClassVar, ForwardRef, Optional, Union
 
 import strawberry
-from strawberry.lazy_type import LazyType
+from strawberry.types.lazy_type import LazyType
 from strawberry.utils.typing import eval_type, get_optional_annotation, is_classvar
 
 
@@ -61,6 +60,44 @@ def test_eval_type():
             None,
         )
         == Annotated[strawberry.auto, "foobar"]
+    )
+    assert (
+        eval_type(
+            ForwardRef("Annotated[datetime, strawberry.lazy('datetime')]"),
+            {"strawberry": strawberry, "Annotated": Annotated},
+            None,
+        )
+        == Annotated[
+            LazyType("datetime", "datetime"),
+            strawberry.lazy("datetime"),
+        ]
+    )
+
+
+def test_eval_type_with_deferred_annotations():
+    assert (
+        eval_type(
+            ForwardRef(
+                "Annotated['Fruit', strawberry.lazy('tests.utils.test_typing')]"
+            ),
+            {"strawberry": strawberry, "Annotated": Annotated},
+            None,
+        )
+        == Annotated[
+            LazyType("Fruit", "tests.utils.test_typing"),
+            strawberry.lazy("tests.utils.test_typing"),
+        ]
+    )
+    assert (
+        eval_type(
+            ForwardRef("Annotated['datetime', strawberry.lazy('datetime')]"),
+            {"strawberry": strawberry, "Annotated": Annotated},
+            None,
+        )
+        == Annotated[
+            LazyType("datetime", "datetime"),
+            strawberry.lazy("datetime"),
+        ]
     )
 
 

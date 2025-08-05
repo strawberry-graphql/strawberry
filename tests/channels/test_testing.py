@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Generator
+from collections.abc import AsyncGenerator
+from typing import TYPE_CHECKING, Any
 
 import pytest
 
@@ -14,7 +15,7 @@ if TYPE_CHECKING:
 @pytest.fixture(params=[GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL])
 async def communicator(
     request: Any,
-) -> Generator[GraphQLWebsocketCommunicator, None, None]:
+) -> AsyncGenerator[GraphQLWebsocketCommunicator, None]:
     from strawberry.channels import GraphQLWSConsumer
     from strawberry.channels.testing import GraphQLWebsocketCommunicator
 
@@ -52,4 +53,4 @@ async def test_graphql_error(communicator):
 
 async def test_simple_connection_params(communicator):
     async for res in communicator.subscribe(query="subscription { connectionParams }"):
-        assert res.data["connectionParams"] == "Hi"
+        assert res.data["connectionParams"]["strawberry"] == "Hi"
