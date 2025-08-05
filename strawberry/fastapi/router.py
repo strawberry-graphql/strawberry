@@ -13,7 +13,7 @@ from typing import (
 )
 from typing_extensions import TypeGuard
 
-from lia import StarletteRequestAdapter
+from lia import HTTPException, StarletteRequestAdapter
 from starlette import status
 from starlette.background import BackgroundTasks  # noqa: TC002
 from starlette.requests import HTTPConnection, Request
@@ -30,64 +30,17 @@ from fastapi import APIRouter, Depends, params
 from fastapi.datastructures import Default
 from fastapi.routing import APIRoute
 from fastapi.utils import generate_unique_id
+from strawberry.asgi import ASGIWebSocketAdapter
 from strawberry.exceptions import InvalidCustomContext
 from strawberry.fastapi.context import BaseContext, CustomContext
-from strawberry.http.async_base_view import AsyncBaseHTTPView, AsyncWebSocketAdapter
-from strawberry.http.exceptions import (
-    HTTPException,
-    NonJsonMessageReceived,
-    NonTextMessageReceived,
-    WebSocketDisconnected,
-)
+from strawberry.http.async_base_view import AsyncBaseHTTPView
 from strawberry.http.typevars import Context, RootValue
 from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
 
-
-class ASGIWebSocketAdapter(AsyncWebSocketAdapter):
-    def __init__(
-        self, view: AsyncBaseHTTPView, request: WebSocket, response: WebSocket
-    ) -> None:
-        super().__init__(view)
-        self.ws = response
-
-    async def iter_json(
-        self, *, ignore_parsing_errors: bool = False
-    ) -> AsyncGenerator[object, None]:
-        from json import JSONDecodeError
-
-        from starlette.websockets import WebSocketDisconnect, WebSocketState
-
-        try:
-            while self.ws.application_state != WebSocketState.DISCONNECTED:
-                try:
-                    text = await self.ws.receive_text()
-                    yield self.view.decode_json(text)
-                except JSONDecodeError as e:  # noqa: PERF203
-                    if not ignore_parsing_errors:
-                        raise NonJsonMessageReceived from e
-        except KeyError as e:
-            raise NonTextMessageReceived from e
-        except WebSocketDisconnect:  # pragma: no cover
-            pass
-
-    async def send_json(self, message: Mapping[str, object]) -> None:
-        from starlette.websockets import WebSocketDisconnect
-
-        try:
-            await self.ws.send_text(self.view.encode_json(message))
-        except WebSocketDisconnect as exc:
-            raise WebSocketDisconnected from exc
-
-    async def close(self, code: int, reason: str) -> None:
-        await self.ws.close(code=code, reason=reason)
-
-
 if TYPE_CHECKING:
     from collections.abc import (
-        AsyncGenerator,
         AsyncIterator,
         Awaitable,
-        Mapping,
         Sequence,
     )
     from enum import Enum

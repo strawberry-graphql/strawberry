@@ -6,7 +6,7 @@ from json.decoder import JSONDecodeError
 from typing import TYPE_CHECKING, Callable, ClassVar, Optional, Union
 from typing_extensions import TypeGuard
 
-from lia import QuartHTTPRequestAdapter
+from lia import HTTPException, QuartHTTPRequestAdapter
 
 from quart import Request, Response, Websocket, request, websocket
 from quart.ctx import has_websocket_context
@@ -16,7 +16,6 @@ from strawberry.http.async_base_view import (
     AsyncWebSocketAdapter,
 )
 from strawberry.http.exceptions import (
-    HTTPException,
     NonJsonMessageReceived,
     NonTextMessageReceived,
     WebSocketDisconnected,

@@ -3,10 +3,9 @@ from __future__ import annotations
 import warnings
 from typing import TYPE_CHECKING, Optional, Union
 
-from lia import ChaliceHTTPRequestAdapter
+from lia import ChaliceHTTPRequestAdapter, HTTPException
 
 from chalice.app import Request, Response
-from strawberry.http.exceptions import HTTPException
 from strawberry.http.sync_base_view import SyncBaseHTTPView
 from strawberry.http.temporal_response import TemporalResponse
 from strawberry.http.typevars import Context, RootValue

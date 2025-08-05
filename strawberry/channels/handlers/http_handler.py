@@ -12,12 +12,11 @@ from urllib.parse import parse_qs
 from django.conf import settings
 from django.core.files import uploadhandler
 from django.http.multipartparser import MultiPartParser
-from lia import AsyncHTTPRequestAdapter, FormData, SyncHTTPRequestAdapter
+from lia import AsyncHTTPRequestAdapter, FormData, HTTPException, SyncHTTPRequestAdapter
 
 from channels.db import database_sync_to_async
 from channels.generic.http import AsyncHttpConsumer
 from strawberry.http.async_base_view import AsyncBaseHTTPView
-from strawberry.http.exceptions import HTTPException
 from strawberry.http.sync_base_view import SyncBaseHTTPView
 from strawberry.http.temporal_response import TemporalResponse
 from strawberry.http.typevars import Context, RootValue
@@ -127,20 +126,6 @@ class BaseChannelsRequestAdapter:
     def content_type(self) -> Optional[str]:
         return self.request.content_type
 
-
-class ChannelsRequestAdapter(BaseChannelsRequestAdapter, AsyncHTTPRequestAdapter):
-    async def get_body(self) -> bytes:
-        return self.request.body
-
-    async def get_form_data(self) -> FormData:
-        form_data = self.request.form_data
-        # Handle legacy case where form_data might be a dict
-        if isinstance(form_data, dict):
-            return FormData(
-                files=form_data.get("files", {}), form=form_data.get("form", {})
-            )
-        return form_data
-
     @property
     def url(self) -> str:
         scheme = self.request.consumer.scope["scheme"]
@@ -162,6 +147,14 @@ class ChannelsRequestAdapter(BaseChannelsRequestAdapter, AsyncHTTPRequestAdapter
                     key, value = cookie.split("=", 1)
                     cookies[key.strip()] = value.strip()
         return cookies
+
+
+class ChannelsRequestAdapter(BaseChannelsRequestAdapter, AsyncHTTPRequestAdapter):
+    async def get_body(self) -> bytes:
+        return self.request.body
+
+    async def get_form_data(self) -> FormData:
+        return self.request.form_data
 
 
 class SyncChannelsRequestAdapter(BaseChannelsRequestAdapter, SyncHTTPRequestAdapter):
@@ -171,50 +164,14 @@ class SyncChannelsRequestAdapter(BaseChannelsRequestAdapter, SyncHTTPRequestAdap
 
     @property
     def post_data(self) -> Mapping[str, Union[str, bytes]]:
-        form_data = self.request.form_data
-        # Handle legacy case where form_data might be a dict
-        if isinstance(form_data, dict):
-            return form_data.get("form", {})
-        return form_data.form
+        return self.request.form_data.form
 
     @property
     def files(self) -> Mapping[str, Any]:
-        form_data = self.request.form_data
-        # Handle legacy case where form_data might be a dict
-        if isinstance(form_data, dict):
-            return form_data.get("files", {})
-        return form_data.files
+        return self.request.form_data.files
 
     def get_form_data(self) -> FormData:
-        form_data = self.request.form_data
-        # Handle legacy case where form_data might be a dict
-        if isinstance(form_data, dict):
-            return FormData(
-                files=form_data.get("files", {}), form=form_data.get("form", {})
-            )
-        return form_data
-
-    @property
-    def url(self) -> str:
-        scheme = self.request.consumer.scope["scheme"]
-        host = self.headers.get("host", "localhost")
-        path = self.request.consumer.scope["path"]
-        query_string = self.request.consumer.scope["query_string"]
-        url = f"{scheme}://{host}{path}"
-        if query_string:
-            url += f"?{query_string.decode()}"
-        return url
-
-    @property
-    def cookies(self) -> Mapping[str, str]:
-        cookie_header = self.headers.get("cookie", "")
-        cookies = {}
-        if cookie_header:
-            for cookie in cookie_header.split(";"):
-                if "=" in cookie:
-                    key, value = cookie.split("=", 1)
-                    cookies[key.strip()] = value.strip()
-        return cookies
+        return self.request.form_data
 
 
 class BaseGraphQLHTTPConsumer(ChannelsConsumer, AsyncHttpConsumer):

@@ -9,12 +9,11 @@ from typing import (
 )
 from typing_extensions import TypeGuard
 
-from lia import AsyncFlaskHTTPRequestAdapter, FlaskHTTPRequestAdapter
+from lia import AsyncFlaskHTTPRequestAdapter, FlaskHTTPRequestAdapter, HTTPException
 
 from flask import Request, Response, render_template_string, request
 from flask.views import View
 from strawberry.http.async_base_view import AsyncBaseHTTPView
-from strawberry.http.exceptions import HTTPException
 from strawberry.http.sync_base_view import SyncBaseHTTPView
 from strawberry.http.typevars import Context, RootValue
 

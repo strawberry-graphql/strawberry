@@ -12,7 +12,7 @@ from typing import (
 )
 from typing_extensions import TypeGuard
 
-from lia import AiohttpHTTPRequestAdapter
+from lia import AiohttpHTTPRequestAdapter, HTTPException
 
 from aiohttp import ClientConnectionResetError, http, web
 from strawberry.http.async_base_view import (
@@ -20,7 +20,6 @@ from strawberry.http.async_base_view import (
     AsyncWebSocketAdapter,
 )
 from strawberry.http.exceptions import (
-    HTTPException,
     NonJsonMessageReceived,
     NonTextMessageReceived,
     WebSocketDisconnected,

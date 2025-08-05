@@ -11,13 +11,12 @@ from typing import (
 )
 from typing_extensions import TypeGuard
 
-from lia import SanicHTTPRequestAdapter
+from lia import HTTPException, SanicHTTPRequestAdapter
 
 from sanic.request import Request
 from sanic.response import HTTPResponse, html
 from sanic.views import HTTPMethodView
 from strawberry.http.async_base_view import AsyncBaseHTTPView
-from strawberry.http.exceptions import HTTPException
 from strawberry.http.temporal_response import TemporalResponse
 from strawberry.http.typevars import (
     Context,

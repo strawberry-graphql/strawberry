@@ -16,7 +16,7 @@ from typing import (
 )
 from typing_extensions import TypeGuard
 
-from lia import LitestarRequestAdapter
+from lia import HTTPException, LitestarRequestAdapter
 from msgspec import Struct
 
 from litestar import (
@@ -44,7 +44,6 @@ from strawberry.http.async_base_view import (
     AsyncWebSocketAdapter,
 )
 from strawberry.http.exceptions import (
-    HTTPException,
     NonJsonMessageReceived,
     NonTextMessageReceived,
     WebSocketDisconnected,
