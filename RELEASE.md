@@ -13,9 +13,7 @@ from strawberry.permission import PermissionExtension, BasePermission
 class Query:
     @strawberry.field(
         extensions=[
-            PermissionExtension(
-                permissions=[(IsAdmin() | IsOwner())], fail_silently=True
-            )
+            PermissionExtension(permissions=[IsAdmin() | IsOwner()], fail_silently=True)
         ]
     )
     def name(self) -> str:
