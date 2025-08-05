@@ -17,6 +17,7 @@ from typing import (
 from typing_extensions import TypeGuard
 
 from graphql import GraphQLError
+from lia import AsyncHTTPRequestAdapter, HTTPException
 
 from strawberry.exceptions import MissingQueryError
 from strawberry.file_uploads.utils import replace_placeholders_with_files
@@ -44,9 +45,7 @@ from strawberry.types.graphql import OperationType
 from strawberry.types.unset import UNSET, UnsetType
 
 from .base import BaseView
-from .exceptions import HTTPException
 from .parse_content_type import parse_content_type
-from .types import FormData, HTTPMethod, QueryParams
 from .typevars import (
     Context,
     Request,
@@ -56,30 +55,6 @@ from .typevars import (
     WebSocketRequest,
     WebSocketResponse,
 )
-
-
-class AsyncHTTPRequestAdapter(abc.ABC):
-    @property
-    @abc.abstractmethod
-    def query_params(self) -> QueryParams: ...
-
-    @property
-    @abc.abstractmethod
-    def method(self) -> HTTPMethod: ...
-
-    @property
-    @abc.abstractmethod
-    def headers(self) -> Mapping[str, str]: ...
-
-    @property
-    @abc.abstractmethod
-    def content_type(self) -> Optional[str]: ...
-
-    @abc.abstractmethod
-    async def get_body(self) -> Union[str, bytes]: ...
-
-    @abc.abstractmethod
-    async def get_form_data(self) -> FormData: ...
 
 
 class AsyncWebSocketAdapter(abc.ABC):
@@ -284,8 +259,9 @@ class AsyncBaseHTTPView(
         except ValueError as e:
             raise HTTPException(400, "Unable to parse the multipart body") from e
 
-        operations = form_data["form"].get("operations", "{}")
-        files_map = form_data["form"].get("map", "{}")
+        operations = form_data.form.get("operations", "{}")
+        files_map = form_data.form.get("map", "{}")
+        files = form_data.files
 
         if isinstance(operations, (bytes, str)):
             operations = self.parse_json(operations)
@@ -294,9 +270,7 @@ class AsyncBaseHTTPView(
             files_map = self.parse_json(files_map)
 
         try:
-            return replace_placeholders_with_files(
-                operations, files_map, form_data["files"]
-            )
+            return replace_placeholders_with_files(operations, files_map, files)
         except KeyError as e:
             raise HTTPException(400, "File(s) missing in form data") from e
 

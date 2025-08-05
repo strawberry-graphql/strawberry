@@ -12,14 +12,13 @@ from urllib.parse import parse_qs
 from django.conf import settings
 from django.core.files import uploadhandler
 from django.http.multipartparser import MultiPartParser
+from lia import AsyncHTTPRequestAdapter, FormData, HTTPException, SyncHTTPRequestAdapter
 
 from channels.db import database_sync_to_async
 from channels.generic.http import AsyncHttpConsumer
-from strawberry.http.async_base_view import AsyncBaseHTTPView, AsyncHTTPRequestAdapter
-from strawberry.http.exceptions import HTTPException
-from strawberry.http.sync_base_view import SyncBaseHTTPView, SyncHTTPRequestAdapter
+from strawberry.http.async_base_view import AsyncBaseHTTPView
+from strawberry.http.sync_base_view import SyncBaseHTTPView
 from strawberry.http.temporal_response import TemporalResponse
-from strawberry.http.types import FormData
 from strawberry.http.typevars import Context, RootValue
 from strawberry.types.unset import UNSET
 
@@ -127,6 +126,28 @@ class BaseChannelsRequestAdapter:
     def content_type(self) -> Optional[str]:
         return self.request.content_type
 
+    @property
+    def url(self) -> str:
+        scheme = self.request.consumer.scope["scheme"]
+        host = self.headers.get("host", "localhost")
+        path = self.request.consumer.scope["path"]
+        query_string = self.request.consumer.scope["query_string"]
+        url = f"{scheme}://{host}{path}"
+        if query_string:
+            url += f"?{query_string.decode()}"
+        return url
+
+    @property
+    def cookies(self) -> Mapping[str, str]:
+        cookie_header = self.headers.get("cookie", "")
+        cookies = {}
+        if cookie_header:
+            for cookie in cookie_header.split(";"):
+                if "=" in cookie:
+                    key, value = cookie.split("=", 1)
+                    cookies[key.strip()] = value.strip()
+        return cookies
+
 
 class ChannelsRequestAdapter(BaseChannelsRequestAdapter, AsyncHTTPRequestAdapter):
     async def get_body(self) -> bytes:
@@ -143,11 +164,14 @@ class SyncChannelsRequestAdapter(BaseChannelsRequestAdapter, SyncHTTPRequestAdap
 
     @property
     def post_data(self) -> Mapping[str, Union[str, bytes]]:
-        return self.request.form_data["form"]
+        return self.request.form_data.form
 
     @property
     def files(self) -> Mapping[str, Any]:
-        return self.request.form_data["files"]
+        return self.request.form_data.files
+
+    def get_form_data(self) -> FormData:
+        return self.request.form_data
 
 
 class BaseGraphQLHTTPConsumer(ChannelsConsumer, AsyncHttpConsumer):

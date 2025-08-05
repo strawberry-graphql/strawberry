@@ -8,66 +8,27 @@ from typing import (
     Callable,
     Optional,
     Union,
-    cast,
 )
 from typing_extensions import TypeGuard
+
+from lia import HTTPException, SanicHTTPRequestAdapter
 
 from sanic.request import Request
 from sanic.response import HTTPResponse, html
 from sanic.views import HTTPMethodView
-from strawberry.http.async_base_view import AsyncBaseHTTPView, AsyncHTTPRequestAdapter
-from strawberry.http.exceptions import HTTPException
+from strawberry.http.async_base_view import AsyncBaseHTTPView
 from strawberry.http.temporal_response import TemporalResponse
-from strawberry.http.types import FormData, HTTPMethod, QueryParams
 from strawberry.http.typevars import (
     Context,
     RootValue,
 )
-from strawberry.sanic.utils import convert_request_to_files_dict
 
 if TYPE_CHECKING:
-    from collections.abc import AsyncGenerator, Mapping
+    from collections.abc import AsyncGenerator
 
     from strawberry.http import GraphQLHTTPResponse
     from strawberry.http.ides import GraphQL_IDE
     from strawberry.schema import BaseSchema
-
-
-class SanicHTTPRequestAdapter(AsyncHTTPRequestAdapter):
-    def __init__(self, request: Request) -> None:
-        self.request = request
-
-    @property
-    def query_params(self) -> QueryParams:
-        # Just a heads up, Sanic's request.args uses urllib.parse.parse_qs
-        # to parse query string parameters. This returns a dictionary where
-        # the keys are the unique variable names and the values are lists
-        # of values for each variable name. To ensure consistency, we're
-        # enforcing the use of the first value in each list.
-        args = self.request.get_args(keep_blank_values=True)
-        return {k: args.get(k, None) for k in args}
-
-    @property
-    def method(self) -> HTTPMethod:
-        return cast("HTTPMethod", self.request.method.upper())
-
-    @property
-    def headers(self) -> Mapping[str, str]:
-        return self.request.headers
-
-    @property
-    def content_type(self) -> Optional[str]:
-        return self.request.content_type
-
-    async def get_body(self) -> str:
-        return self.request.body.decode()
-
-    async def get_form_data(self) -> FormData:
-        assert self.request.form is not None
-
-        files = convert_request_to_files_dict(self.request)
-
-        return FormData(form=self.request.form, files=files)
 
 
 class GraphQLView(

@@ -13,10 +13,10 @@ from typing import (
     Optional,
     TypedDict,
     Union,
-    cast,
 )
 from typing_extensions import TypeGuard
 
+from lia import HTTPException, LitestarRequestAdapter
 from msgspec import Struct
 
 from litestar import (
@@ -41,16 +41,13 @@ from litestar.status_codes import HTTP_200_OK
 from strawberry.exceptions import InvalidCustomContext
 from strawberry.http.async_base_view import (
     AsyncBaseHTTPView,
-    AsyncHTTPRequestAdapter,
     AsyncWebSocketAdapter,
 )
 from strawberry.http.exceptions import (
-    HTTPException,
     NonJsonMessageReceived,
     NonTextMessageReceived,
     WebSocketDisconnected,
 )
-from strawberry.http.types import FormData, HTTPMethod, QueryParams
 from strawberry.http.typevars import Context, RootValue
 from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
 
@@ -151,41 +148,6 @@ class GraphQLResource(Struct):
     data: Optional[dict[str, object]]
     errors: Optional[list[object]]
     extensions: Optional[dict[str, object]]
-
-
-class LitestarRequestAdapter(AsyncHTTPRequestAdapter):
-    def __init__(self, request: Request[Any, Any, Any]) -> None:
-        self.request = request
-
-    @property
-    def query_params(self) -> QueryParams:
-        return self.request.query_params
-
-    @property
-    def method(self) -> HTTPMethod:
-        return cast("HTTPMethod", self.request.method.upper())
-
-    @property
-    def headers(self) -> Mapping[str, str]:
-        return self.request.headers
-
-    @property
-    def content_type(self) -> Optional[str]:
-        content_type, params = self.request.content_type
-
-        # combine content type and params
-        if params:
-            content_type += "; " + "; ".join(f"{k}={v}" for k, v in params.items())
-
-        return content_type
-
-    async def get_body(self) -> bytes:
-        return await self.request.body()
-
-    async def get_form_data(self) -> FormData:
-        multipart_data = await self.request.form()
-
-        return FormData(form=multipart_data, files=multipart_data)
 
 
 class LitestarWebSocketAdapter(AsyncWebSocketAdapter):

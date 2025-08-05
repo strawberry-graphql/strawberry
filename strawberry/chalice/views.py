@@ -1,54 +1,19 @@
 from __future__ import annotations
 
 import warnings
-from typing import TYPE_CHECKING, Any, Optional, Union, cast
+from typing import TYPE_CHECKING, Optional, Union
+
+from lia import ChaliceHTTPRequestAdapter, HTTPException
 
 from chalice.app import Request, Response
-from strawberry.http.exceptions import HTTPException
-from strawberry.http.sync_base_view import SyncBaseHTTPView, SyncHTTPRequestAdapter
+from strawberry.http.sync_base_view import SyncBaseHTTPView
 from strawberry.http.temporal_response import TemporalResponse
 from strawberry.http.typevars import Context, RootValue
 
 if TYPE_CHECKING:
-    from collections.abc import Mapping
-
     from strawberry.http import GraphQLHTTPResponse
     from strawberry.http.ides import GraphQL_IDE
-    from strawberry.http.types import HTTPMethod, QueryParams
     from strawberry.schema import BaseSchema
-
-
-class ChaliceHTTPRequestAdapter(SyncHTTPRequestAdapter):
-    def __init__(self, request: Request) -> None:
-        self.request = request
-
-    @property
-    def query_params(self) -> QueryParams:
-        return self.request.query_params or {}
-
-    @property
-    def body(self) -> Union[str, bytes]:
-        return self.request.raw_body
-
-    @property
-    def method(self) -> HTTPMethod:
-        return cast("HTTPMethod", self.request.method.upper())
-
-    @property
-    def headers(self) -> Mapping[str, str]:
-        return self.request.headers
-
-    @property
-    def post_data(self) -> Mapping[str, Union[str, bytes]]:
-        raise NotImplementedError
-
-    @property
-    def files(self) -> Mapping[str, Any]:
-        raise NotImplementedError
-
-    @property
-    def content_type(self) -> Optional[str]:
-        return self.request.headers.get("Content-Type", None)
 
 
 class GraphQLView(

@@ -8,7 +8,6 @@ from typing import (
     Callable,
     Optional,
     Union,
-    cast,
 )
 from typing_extensions import TypeGuard
 
@@ -26,11 +25,10 @@ from django.template.exceptions import TemplateDoesNotExist
 from django.template.loader import render_to_string
 from django.utils.decorators import classonlymethod
 from django.views.generic import View
+from lia import AsyncDjangoHTTPRequestAdapter, DjangoHTTPRequestAdapter, HTTPException
 
-from strawberry.http.async_base_view import AsyncBaseHTTPView, AsyncHTTPRequestAdapter
-from strawberry.http.exceptions import HTTPException
-from strawberry.http.sync_base_view import SyncBaseHTTPView, SyncHTTPRequestAdapter
-from strawberry.http.types import FormData, HTTPMethod, QueryParams
+from strawberry.http.async_base_view import AsyncBaseHTTPView
+from strawberry.http.sync_base_view import SyncBaseHTTPView
 from strawberry.http.typevars import (
     Context,
     RootValue,
@@ -39,7 +37,7 @@ from strawberry.http.typevars import (
 from .context import StrawberryDjangoContext
 
 if TYPE_CHECKING:
-    from collections.abc import AsyncIterator, Mapping
+    from collections.abc import AsyncIterator
 
     from django.template.response import TemplateResponse
 
@@ -64,73 +62,6 @@ class TemporalHttpResponse(JsonResponse):
             cls=self.__class__.__name__,
             status_code=self.status_code,
             content_type=self._content_type_for_repr,  # pyright: ignore
-        )
-
-
-class DjangoHTTPRequestAdapter(SyncHTTPRequestAdapter):
-    def __init__(self, request: HttpRequest) -> None:
-        self.request = request
-
-    @property
-    def query_params(self) -> QueryParams:
-        return self.request.GET.dict()
-
-    @property
-    def body(self) -> Union[str, bytes]:
-        return self.request.body.decode()
-
-    @property
-    def method(self) -> HTTPMethod:
-        assert self.request.method is not None
-
-        return cast("HTTPMethod", self.request.method.upper())
-
-    @property
-    def headers(self) -> Mapping[str, str]:
-        return self.request.headers
-
-    @property
-    def post_data(self) -> Mapping[str, Union[str, bytes]]:
-        return self.request.POST
-
-    @property
-    def files(self) -> Mapping[str, Any]:
-        return self.request.FILES
-
-    @property
-    def content_type(self) -> Optional[str]:
-        return self.request.content_type
-
-
-class AsyncDjangoHTTPRequestAdapter(AsyncHTTPRequestAdapter):
-    def __init__(self, request: HttpRequest) -> None:
-        self.request = request
-
-    @property
-    def query_params(self) -> QueryParams:
-        return self.request.GET.dict()
-
-    @property
-    def method(self) -> HTTPMethod:
-        assert self.request.method is not None
-
-        return cast("HTTPMethod", self.request.method.upper())
-
-    @property
-    def headers(self) -> Mapping[str, str]:
-        return self.request.headers
-
-    @property
-    def content_type(self) -> Optional[str]:
-        return self.headers.get("Content-type")
-
-    async def get_body(self) -> str:
-        return self.request.body.decode()
-
-    async def get_form_data(self) -> FormData:
-        return FormData(
-            files=self.request.FILES,
-            form=self.request.POST,
         )
 
 

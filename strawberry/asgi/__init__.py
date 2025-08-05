@@ -8,10 +8,10 @@ from typing import (
     Callable,
     Optional,
     Union,
-    cast,
 )
 from typing_extensions import TypeGuard
 
+from lia import HTTPException, StarletteRequestAdapter
 from starlette import status
 from starlette.requests import Request
 from starlette.responses import (
@@ -24,16 +24,13 @@ from starlette.websockets import WebSocket, WebSocketDisconnect, WebSocketState
 
 from strawberry.http.async_base_view import (
     AsyncBaseHTTPView,
-    AsyncHTTPRequestAdapter,
     AsyncWebSocketAdapter,
 )
 from strawberry.http.exceptions import (
-    HTTPException,
     NonJsonMessageReceived,
     NonTextMessageReceived,
     WebSocketDisconnected,
 )
-from strawberry.http.types import FormData, HTTPMethod, QueryParams
 from strawberry.http.typevars import (
     Context,
     RootValue,
@@ -48,38 +45,6 @@ if TYPE_CHECKING:
     from strawberry.http import GraphQLHTTPResponse
     from strawberry.http.ides import GraphQL_IDE
     from strawberry.schema import BaseSchema
-
-
-class ASGIRequestAdapter(AsyncHTTPRequestAdapter):
-    def __init__(self, request: Request) -> None:
-        self.request = request
-
-    @property
-    def query_params(self) -> QueryParams:
-        return self.request.query_params
-
-    @property
-    def method(self) -> HTTPMethod:
-        return cast("HTTPMethod", self.request.method.upper())
-
-    @property
-    def headers(self) -> Mapping[str, str]:
-        return self.request.headers
-
-    @property
-    def content_type(self) -> Optional[str]:
-        return self.request.headers.get("content-type")
-
-    async def get_body(self) -> bytes:
-        return await self.request.body()
-
-    async def get_form_data(self) -> FormData:
-        multipart_data = await self.request.form()
-
-        return FormData(
-            files=multipart_data,
-            form=multipart_data,
-        )
 
 
 class ASGIWebSocketAdapter(AsyncWebSocketAdapter):
@@ -127,7 +92,7 @@ class GraphQL(
     ]
 ):
     allow_queries_via_get = True
-    request_adapter_class = ASGIRequestAdapter
+    request_adapter_class = StarletteRequestAdapter
     websocket_adapter_class = ASGIWebSocketAdapter
 
     def __init__(

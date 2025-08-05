@@ -13,6 +13,7 @@ from typing import (
 )
 from typing_extensions import TypeGuard
 
+from lia import HTTPException, StarletteRequestAdapter
 from starlette import status
 from starlette.background import BackgroundTasks  # noqa: TC002
 from starlette.requests import HTTPConnection, Request
@@ -29,16 +30,19 @@ from fastapi import APIRouter, Depends, params
 from fastapi.datastructures import Default
 from fastapi.routing import APIRoute
 from fastapi.utils import generate_unique_id
-from strawberry.asgi import ASGIRequestAdapter, ASGIWebSocketAdapter
+from strawberry.asgi import ASGIWebSocketAdapter
 from strawberry.exceptions import InvalidCustomContext
 from strawberry.fastapi.context import BaseContext, CustomContext
 from strawberry.http.async_base_view import AsyncBaseHTTPView
-from strawberry.http.exceptions import HTTPException
 from strawberry.http.typevars import Context, RootValue
 from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
 
 if TYPE_CHECKING:
-    from collections.abc import AsyncIterator, Awaitable, Sequence
+    from collections.abc import (
+        AsyncIterator,
+        Awaitable,
+        Sequence,
+    )
     from enum import Enum
 
     from starlette.routing import BaseRoute
@@ -57,7 +61,7 @@ class GraphQLRouter(
     APIRouter,
 ):
     allow_queries_via_get = True
-    request_adapter_class = ASGIRequestAdapter
+    request_adapter_class = StarletteRequestAdapter
     websocket_adapter_class = ASGIWebSocketAdapter
 
     @staticmethod

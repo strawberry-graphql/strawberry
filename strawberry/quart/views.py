@@ -3,25 +3,24 @@ import warnings
 from collections.abc import AsyncGenerator, Mapping, Sequence
 from datetime import timedelta
 from json.decoder import JSONDecodeError
-from typing import TYPE_CHECKING, Callable, ClassVar, Optional, Union, cast
+from typing import TYPE_CHECKING, Callable, ClassVar, Optional, Union
 from typing_extensions import TypeGuard
+
+from lia import HTTPException, QuartHTTPRequestAdapter
 
 from quart import Request, Response, Websocket, request, websocket
 from quart.ctx import has_websocket_context
 from quart.views import View
 from strawberry.http.async_base_view import (
     AsyncBaseHTTPView,
-    AsyncHTTPRequestAdapter,
     AsyncWebSocketAdapter,
 )
 from strawberry.http.exceptions import (
-    HTTPException,
     NonJsonMessageReceived,
     NonTextMessageReceived,
     WebSocketDisconnected,
 )
 from strawberry.http.ides import GraphQL_IDE
-from strawberry.http.types import FormData, HTTPMethod, QueryParams
 from strawberry.http.typevars import Context, RootValue
 from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
 
@@ -29,35 +28,6 @@ if TYPE_CHECKING:
     from quart.typing import ResponseReturnValue
     from strawberry.http import GraphQLHTTPResponse
     from strawberry.schema.base import BaseSchema
-
-
-class QuartHTTPRequestAdapter(AsyncHTTPRequestAdapter):
-    def __init__(self, request: Request) -> None:
-        self.request = request
-
-    @property
-    def query_params(self) -> QueryParams:
-        return self.request.args.to_dict()
-
-    @property
-    def method(self) -> HTTPMethod:
-        return cast("HTTPMethod", self.request.method.upper())
-
-    @property
-    def content_type(self) -> Optional[str]:
-        return self.request.content_type
-
-    @property
-    def headers(self) -> Mapping[str, str]:
-        return self.request.headers  # type: ignore
-
-    async def get_body(self) -> str:
-        return (await self.request.data).decode()
-
-    async def get_form_data(self) -> FormData:
-        files = await self.request.files
-        form = await self.request.form
-        return FormData(files=files, form=form)
 
 
 class QuartWebSocketAdapter(AsyncWebSocketAdapter):

@@ -3,65 +3,25 @@ from __future__ import annotations
 import warnings
 from typing import (
     TYPE_CHECKING,
-    Any,
     ClassVar,
     Optional,
     Union,
-    cast,
 )
 from typing_extensions import TypeGuard
 
+from lia import AsyncFlaskHTTPRequestAdapter, FlaskHTTPRequestAdapter, HTTPException
+
 from flask import Request, Response, render_template_string, request
 from flask.views import View
-from strawberry.http.async_base_view import AsyncBaseHTTPView, AsyncHTTPRequestAdapter
-from strawberry.http.exceptions import HTTPException
-from strawberry.http.sync_base_view import (
-    SyncBaseHTTPView,
-    SyncHTTPRequestAdapter,
-)
-from strawberry.http.types import FormData, HTTPMethod, QueryParams
+from strawberry.http.async_base_view import AsyncBaseHTTPView
+from strawberry.http.sync_base_view import SyncBaseHTTPView
 from strawberry.http.typevars import Context, RootValue
 
 if TYPE_CHECKING:
-    from collections.abc import Mapping
-
     from flask.typing import ResponseReturnValue
     from strawberry.http import GraphQLHTTPResponse
     from strawberry.http.ides import GraphQL_IDE
     from strawberry.schema.base import BaseSchema
-
-
-class FlaskHTTPRequestAdapter(SyncHTTPRequestAdapter):
-    def __init__(self, request: Request) -> None:
-        self.request = request
-
-    @property
-    def query_params(self) -> QueryParams:
-        return self.request.args.to_dict()
-
-    @property
-    def body(self) -> Union[str, bytes]:
-        return self.request.data.decode()
-
-    @property
-    def method(self) -> HTTPMethod:
-        return cast("HTTPMethod", self.request.method.upper())
-
-    @property
-    def headers(self) -> Mapping[str, str]:
-        return self.request.headers  # type: ignore
-
-    @property
-    def post_data(self) -> Mapping[str, Union[str, bytes]]:
-        return self.request.form
-
-    @property
-    def files(self) -> Mapping[str, Any]:
-        return self.request.files
-
-    @property
-    def content_type(self) -> Optional[str]:
-        return self.request.content_type
 
 
 class BaseGraphQLView:
@@ -129,36 +89,6 @@ class GraphQLView(
 
     def render_graphql_ide(self, request: Request) -> Response:
         return render_template_string(self.graphql_ide_html)  # type: ignore
-
-
-class AsyncFlaskHTTPRequestAdapter(AsyncHTTPRequestAdapter):
-    def __init__(self, request: Request) -> None:
-        self.request = request
-
-    @property
-    def query_params(self) -> QueryParams:
-        return self.request.args.to_dict()
-
-    @property
-    def method(self) -> HTTPMethod:
-        return cast("HTTPMethod", self.request.method.upper())
-
-    @property
-    def content_type(self) -> Optional[str]:
-        return self.request.content_type
-
-    @property
-    def headers(self) -> Mapping[str, str]:
-        return self.request.headers  # type: ignore
-
-    async def get_body(self) -> str:
-        return self.request.data.decode()
-
-    async def get_form_data(self) -> FormData:
-        return FormData(
-            files=self.request.files,
-            form=self.request.form,
-        )
 
 
 class AsyncGraphQLView(

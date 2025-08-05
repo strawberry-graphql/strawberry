@@ -3,32 +3,27 @@ from __future__ import annotations
 import asyncio
 import warnings
 from datetime import timedelta
-from io import BytesIO
 from json.decoder import JSONDecodeError
 from typing import (
     TYPE_CHECKING,
-    Any,
     Callable,
     Optional,
     Union,
-    cast,
 )
 from typing_extensions import TypeGuard
 
+from lia import AiohttpHTTPRequestAdapter, HTTPException
+
 from aiohttp import ClientConnectionResetError, http, web
-from aiohttp.multipart import BodyPartReader
 from strawberry.http.async_base_view import (
     AsyncBaseHTTPView,
-    AsyncHTTPRequestAdapter,
     AsyncWebSocketAdapter,
 )
 from strawberry.http.exceptions import (
-    HTTPException,
     NonJsonMessageReceived,
     NonTextMessageReceived,
     WebSocketDisconnected,
 )
-from strawberry.http.types import FormData, HTTPMethod, QueryParams
 from strawberry.http.typevars import (
     Context,
     RootValue,
@@ -41,47 +36,6 @@ if TYPE_CHECKING:
     from strawberry.http import GraphQLHTTPResponse
     from strawberry.http.ides import GraphQL_IDE
     from strawberry.schema import BaseSchema
-
-
-class AiohttpHTTPRequestAdapter(AsyncHTTPRequestAdapter):
-    def __init__(self, request: web.Request) -> None:
-        self.request = request
-
-    @property
-    def query_params(self) -> QueryParams:
-        return self.request.query.copy()  # type: ignore[attr-defined]
-
-    async def get_body(self) -> str:
-        return (await self.request.content.read()).decode()
-
-    @property
-    def method(self) -> HTTPMethod:
-        return cast("HTTPMethod", self.request.method.upper())
-
-    @property
-    def headers(self) -> Mapping[str, str]:
-        return self.request.headers
-
-    async def get_form_data(self) -> FormData:
-        reader = await self.request.multipart()
-
-        data: dict[str, Any] = {}
-        files: dict[str, Any] = {}
-
-        while field := await reader.next():
-            assert isinstance(field, BodyPartReader)
-            assert field.name
-
-            if field.filename:
-                files[field.name] = BytesIO(await field.read(decode=False))
-            else:
-                data[field.name] = await field.text()
-
-        return FormData(files=files, form=data)
-
-    @property
-    def content_type(self) -> Optional[str]:
-        return self.headers.get("content-type")
 
 
 class AiohttpWebSocketAdapter(AsyncWebSocketAdapter):

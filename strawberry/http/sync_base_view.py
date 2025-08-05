@@ -1,8 +1,6 @@
 import abc
 import json
-from collections.abc import Mapping
 from typing import (
-    Any,
     Callable,
     Generic,
     Literal,
@@ -11,6 +9,7 @@ from typing import (
 )
 
 from graphql import GraphQLError
+from lia import HTTPException, SyncHTTPRequestAdapter
 
 from strawberry.exceptions import MissingQueryError
 from strawberry.file_uploads.utils import replace_placeholders_with_files
@@ -30,40 +29,8 @@ from strawberry.types.graphql import OperationType
 from strawberry.types.unset import UNSET
 
 from .base import BaseView
-from .exceptions import HTTPException
 from .parse_content_type import parse_content_type
-from .types import HTTPMethod, QueryParams
 from .typevars import Context, Request, Response, RootValue, SubResponse
-
-
-class SyncHTTPRequestAdapter(abc.ABC):
-    @property
-    @abc.abstractmethod
-    def query_params(self) -> QueryParams: ...
-
-    @property
-    @abc.abstractmethod
-    def body(self) -> Union[str, bytes]: ...
-
-    @property
-    @abc.abstractmethod
-    def method(self) -> HTTPMethod: ...
-
-    @property
-    @abc.abstractmethod
-    def headers(self) -> Mapping[str, str]: ...
-
-    @property
-    @abc.abstractmethod
-    def content_type(self) -> Optional[str]: ...
-
-    @property
-    @abc.abstractmethod
-    def post_data(self) -> Mapping[str, Union[str, bytes]]: ...
-
-    @property
-    @abc.abstractmethod
-    def files(self) -> Mapping[str, Any]: ...
 
 
 class SyncBaseHTTPView(
