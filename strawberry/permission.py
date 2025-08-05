@@ -338,8 +338,6 @@ class PermissionExtension(FieldExtension):
         if self.fail_silently:
             return [] if self.return_empty_list else None
 
-        if kwargs in (None, {}):
-            return permission.on_unauthorized()
         return permission.on_unauthorized(**kwargs)
 
     def resolve(
