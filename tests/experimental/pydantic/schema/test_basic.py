@@ -3,7 +3,6 @@ from enum import Enum
 from typing import Optional, Union
 
 import pydantic
-
 import strawberry
 from tests.experimental.pydantic.utils import needs_pydantic_v1
 

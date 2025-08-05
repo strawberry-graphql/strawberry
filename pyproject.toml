@@ -328,6 +328,7 @@ ignore = [
   "Q003",
   "W191",
   "PLR0915",
+  "PLC0414",
 ]
 exclude = ["tests/python_312/*"] # SyntaxError because we support Python 3.9+
 
