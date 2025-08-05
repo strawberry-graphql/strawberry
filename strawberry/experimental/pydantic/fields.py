@@ -2,6 +2,7 @@ import builtins
 from typing import Annotated, Any, Union
 
 from pydantic import BaseModel
+
 from strawberry.experimental.pydantic._compat import (
     PydanticCompat,
     get_args,
