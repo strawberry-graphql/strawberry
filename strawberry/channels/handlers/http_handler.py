@@ -12,13 +12,13 @@ from urllib.parse import parse_qs
 from django.conf import settings
 from django.core.files import uploadhandler
 from django.http.multipartparser import MultiPartParser
-from lia import FormData
+from lia import AsyncHTTPRequestAdapter, FormData, SyncHTTPRequestAdapter
 
 from channels.db import database_sync_to_async
 from channels.generic.http import AsyncHttpConsumer
-from strawberry.http.async_base_view import AsyncBaseHTTPView, AsyncHTTPRequestAdapter
+from strawberry.http.async_base_view import AsyncBaseHTTPView
 from strawberry.http.exceptions import HTTPException
-from strawberry.http.sync_base_view import SyncBaseHTTPView, SyncHTTPRequestAdapter
+from strawberry.http.sync_base_view import SyncBaseHTTPView
 from strawberry.http.temporal_response import TemporalResponse
 from strawberry.http.typevars import Context, RootValue
 from strawberry.types.unset import UNSET

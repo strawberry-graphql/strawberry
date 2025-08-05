@@ -52,7 +52,7 @@ class ASGIWebSocketAdapter(AsyncWebSocketAdapter):
 
     async def iter_json(
         self, *, ignore_parsing_errors: bool = False
-    ) -> AsyncIterator[object]:
+    ) -> AsyncGenerator[object, None]:
         from json import JSONDecodeError
 
         from starlette.websockets import WebSocketDisconnect, WebSocketState
@@ -70,7 +70,7 @@ class ASGIWebSocketAdapter(AsyncWebSocketAdapter):
         except WebSocketDisconnect:  # pragma: no cover
             pass
 
-    async def send_json(self, message: dict[str, object]) -> None:
+    async def send_json(self, message: Mapping[str, object]) -> None:
         from starlette.websockets import WebSocketDisconnect
 
         try:
@@ -83,7 +83,13 @@ class ASGIWebSocketAdapter(AsyncWebSocketAdapter):
 
 
 if TYPE_CHECKING:
-    from collections.abc import AsyncIterator, Awaitable, Sequence
+    from collections.abc import (
+        AsyncGenerator,
+        AsyncIterator,
+        Awaitable,
+        Mapping,
+        Sequence,
+    )
     from enum import Enum
 
     from starlette.routing import BaseRoute
