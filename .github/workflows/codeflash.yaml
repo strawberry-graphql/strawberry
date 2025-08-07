@@ -4,14 +4,13 @@ on:
   pull_request:
     paths:
       # So that this workflow only runs when code within the target module is modified
-      - 'strawberry/**'
+      - "strawberry/**"
   workflow_dispatch:
 
 concurrency:
   # Any new push to the PR will cancel the previous run, so that only the latest code is optimized
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
-
 
 jobs:
   optimize:
@@ -30,7 +29,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: "3.11"
       - name: Install Project Dependencies
         run: |
           python -m pip install --upgrade pip
@@ -39,4 +38,4 @@ jobs:
       - name: Run Codeflash to optimize code
         run: |
           poetry env use python
-          poetry run codeflash
+          poetry run codeflash --benchmark
