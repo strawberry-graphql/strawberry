@@ -118,7 +118,7 @@ def field(
     directives: Optional[Sequence[object]] = (),
     extensions: Optional[list[FieldExtension]] = None,
     graphql_type: Optional[Any] = None,
-) -> Any: ...
+) -> StrawberryField: ...
 
 
 @overload
