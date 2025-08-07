@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import contextlib
 import dataclasses
 import sys
 from functools import partial, reduce
@@ -731,14 +732,27 @@ class GraphQLCoreConverter:
             ) -> Any:
                 # parse field arguments into Strawberry input types and convert
                 # field names to Python equivalents
-                field_args, field_kwargs = get_arguments(
-                    field=field,
-                    source=_source,
-                    info=info,
-                    kwargs=kwargs,
-                    config=self.config,
-                    scalar_registry=self.scalar_registry,
-                )
+                try:
+                    field_args, field_kwargs = get_arguments(
+                        field=field,
+                        source=_source,
+                        info=info,
+                        kwargs=kwargs,
+                        config=self.config,
+                        scalar_registry=self.scalar_registry,
+                    )
+                except Exception as exc:
+                    # Try to import Pydantic ValidationError
+                    with contextlib.suppress(ImportError):
+                        from pydantic import ValidationError
+
+                        if isinstance(
+                            exc, ValidationError
+                        ) and self._should_convert_validation_error(field):
+                            from strawberry.pydantic import Error
+
+                            return Error.from_validation_error(exc)
+                    raise
 
                 resolver_requested_info = False
                 if "info" in field_kwargs:
@@ -798,6 +812,22 @@ class GraphQLCoreConverter:
             return _async_resolver
         _resolver._is_default = not field.base_resolver  # type: ignore
         return _resolver
+
+    def _should_convert_validation_error(self, field: StrawberryField) -> bool:
+        """Check if field return type is a Union containing strawberry.pydantic.Error."""
+        from strawberry.types.union import StrawberryUnion
+
+        field_type = field.type
+        if isinstance(field_type, StrawberryUnion):
+            # Import Error dynamically to avoid circular imports
+            try:
+                from strawberry.pydantic import Error
+
+                return any(union_type is Error for union_type in field_type.types)
+            except ImportError:
+                # If strawberry.pydantic doesn't exist or Error isn't available
+                return False
+        return False
 
     def from_scalar(self, scalar: type) -> GraphQLScalarType:
         from strawberry.relay.types import GlobalID
