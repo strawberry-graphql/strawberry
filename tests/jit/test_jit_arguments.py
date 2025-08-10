@@ -3,13 +3,16 @@ Test JIT compilation with field arguments support.
 """
 
 import time
+from pathlib import Path
 from typing import List, Optional
 
 from graphql import execute, parse
-from inline_snapshot import outsource, snapshot
+from pytest_snapshot.plugin import Snapshot
 
 import strawberry
-from strawberry.jit_compiler import compile_query
+from strawberry.jit_compiler import GraphQLJITCompiler, compile_query
+
+HERE = Path(__file__).parent
 
 
 @strawberry.type
@@ -127,7 +130,7 @@ class Query:
         ]
 
 
-def test_jit_with_simple_arguments():
+def test_jit_with_simple_arguments(snapshot: Snapshot):
     """Test JIT compilation with simple field arguments."""
     schema = strawberry.Schema(Query)
     
@@ -146,22 +149,33 @@ def test_jit_with_simple_arguments():
     }
     """
     
-    # Compile with JIT
-    compiled_fn = compile_query(schema._schema, query)
+    # Compile the query
+    compiler = GraphQLJITCompiler(schema._schema)
+    document = parse(query)
+    operation = compiler._get_operation(document)
+    root_type = schema._schema.type_map["Query"]
     
-    # Execute both ways
+    # Generate the function code
+    generated_code = compiler._generate_function(operation, root_type)
+    
+    # Check the generated code with snapshot
+    snapshot.snapshot_dir = HERE / "snapshots" / "jit_arguments"
+    snapshot.assert_match(generated_code, "simple_arguments.py")
+    
+    # Execute the compiled function
+    compiled_fn = compile_query(schema._schema, query)
     root = Query()
-    jit_result = compiled_fn(root)
-    standard_result = execute(schema._schema, parse(query), root_value=root)
+    result = compiled_fn(root)
     
     # Verify results match
-    assert jit_result == standard_result.data
-    assert jit_result["user"]["id"] == "123"
-    assert len(jit_result["user"]["posts"]) <= 5
-    assert all(p["published"] for p in jit_result["user"]["posts"])
+    standard_result = execute(schema._schema, parse(query), root_value=root)
+    assert result == standard_result.data
+    assert result["user"]["id"] == "123"
+    assert len(result["user"]["posts"]) <= 5
+    assert all(p["published"] for p in result["user"]["posts"])
 
 
-def test_jit_with_default_arguments():
+def test_jit_with_default_arguments(snapshot: Snapshot):
     """Test JIT compilation with default argument values."""
     schema = strawberry.Schema(Query)
     
@@ -183,10 +197,21 @@ def test_jit_with_default_arguments():
     }
     """
     
-    # Compile with JIT
-    compiled_fn = compile_query(schema._schema, query)
+    # Compile the query
+    compiler = GraphQLJITCompiler(schema._schema)
+    document = parse(query)
+    operation = compiler._get_operation(document)
+    root_type = schema._schema.type_map["Query"]
+    
+    # Generate the function code
+    generated_code = compiler._generate_function(operation, root_type)
+    
+    # Check the generated code with snapshot
+    snapshot.snapshot_dir = HERE / "snapshots" / "jit_arguments"
+    snapshot.assert_match(generated_code, "default_arguments.py")
     
     # Execute both ways
+    compiled_fn = compile_query(schema._schema, query)
     root = Query()
     jit_result = compiled_fn(root)
     standard_result = execute(schema._schema, parse(query), root_value=root)
@@ -203,7 +228,7 @@ def test_jit_with_default_arguments():
         assert post["views"] >= 500
 
 
-def test_jit_with_variables():
+def test_jit_with_variables(snapshot: Snapshot):
     """Test JIT compilation with query variables."""
     schema = strawberry.Schema(Query)
     
@@ -221,10 +246,21 @@ def test_jit_with_variables():
     }
     """
     
-    # Compile with JIT
-    compiled_fn = compile_query(schema._schema, query)
+    # Compile the query
+    compiler = GraphQLJITCompiler(schema._schema)
+    document = parse(query)
+    operation = compiler._get_operation(document)
+    root_type = schema._schema.type_map["Query"]
+    
+    # Generate the function code
+    generated_code = compiler._generate_function(operation, root_type)
+    
+    # Check the generated code with snapshot
+    snapshot.snapshot_dir = HERE / "snapshots" / "jit_arguments"
+    snapshot.assert_match(generated_code, "with_variables.py")
     
     # Execute with variables
+    compiled_fn = compile_query(schema._schema, query)
     root = Query()
     variables = {
         "userId": "789",
@@ -247,7 +283,7 @@ def test_jit_with_variables():
     assert all(p["published"] for p in jit_result["user"]["posts"])
 
 
-def test_jit_with_list_arguments():
+def test_jit_with_list_arguments(snapshot: Snapshot):
     """Test JIT compilation with list arguments."""
     schema = strawberry.Schema(Query)
     
@@ -260,10 +296,21 @@ def test_jit_with_list_arguments():
     }
     """
     
-    # Compile with JIT
-    compiled_fn = compile_query(schema._schema, query)
+    # Compile the query
+    compiler = GraphQLJITCompiler(schema._schema)
+    document = parse(query)
+    operation = compiler._get_operation(document)
+    root_type = schema._schema.type_map["Query"]
+    
+    # Generate the function code
+    generated_code = compiler._generate_function(operation, root_type)
+    
+    # Check the generated code with snapshot
+    snapshot.snapshot_dir = HERE / "snapshots" / "jit_arguments"
+    snapshot.assert_match(generated_code, "list_arguments.py")
     
     # Execute both ways
+    compiled_fn = compile_query(schema._schema, query)
     root = Query()
     jit_result = compiled_fn(root)
     standard_result = execute(schema._schema, parse(query), root_value=root)
@@ -276,7 +323,7 @@ def test_jit_with_list_arguments():
     assert jit_result["postsByIds"][2]["id"] == "3"
 
 
-def test_jit_with_complex_arguments():
+def test_jit_with_complex_arguments(snapshot: Snapshot):
     """Test JIT compilation with complex argument combinations."""
     schema = strawberry.Schema(Query)
     
@@ -294,10 +341,21 @@ def test_jit_with_complex_arguments():
     }
     """
     
-    # Compile with JIT
-    compiled_fn = compile_query(schema._schema, query)
+    # Compile the query
+    compiler = GraphQLJITCompiler(schema._schema)
+    document = parse(query)
+    operation = compiler._get_operation(document)
+    root_type = schema._schema.type_map["Query"]
+    
+    # Generate the function code
+    generated_code = compiler._generate_function(operation, root_type)
+    
+    # Check the generated code with snapshot
+    snapshot.snapshot_dir = HERE / "snapshots" / "jit_arguments"
+    snapshot.assert_match(generated_code, "complex_arguments.py")
     
     # Execute both ways
+    compiled_fn = compile_query(schema._schema, query)
     root = Query()
     jit_result = compiled_fn(root)
     standard_result = execute(schema._schema, parse(query), root_value=root)
@@ -310,7 +368,7 @@ def test_jit_with_complex_arguments():
         assert post["views"] >= 100
 
 
-def test_jit_with_null_arguments():
+def test_jit_with_null_arguments(snapshot: Snapshot):
     """Test JIT compilation with null/optional arguments."""
     schema = strawberry.Schema(Query)
     
@@ -325,10 +383,21 @@ def test_jit_with_null_arguments():
     }
     """
     
-    # Compile with JIT
-    compiled_fn = compile_query(schema._schema, query)
+    # Compile the query
+    compiler = GraphQLJITCompiler(schema._schema)
+    document = parse(query)
+    operation = compiler._get_operation(document)
+    root_type = schema._schema.type_map["Query"]
+    
+    # Generate the function code
+    generated_code = compiler._generate_function(operation, root_type)
+    
+    # Check the generated code with snapshot
+    snapshot.snapshot_dir = HERE / "snapshots" / "jit_arguments"
+    snapshot.assert_match(generated_code, "null_arguments.py")
     
     # Execute both ways
+    compiled_fn = compile_query(schema._schema, query)
     root = Query()
     jit_result = compiled_fn(root)
     standard_result = execute(schema._schema, parse(query), root_value=root)

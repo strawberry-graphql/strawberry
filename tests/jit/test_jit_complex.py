@@ -3,13 +3,18 @@ Test complex JIT compilation scenarios with custom resolvers.
 """
 
 import random
+import time
 from datetime import datetime, timedelta
+from pathlib import Path
 from typing import List, Optional
 
 from graphql import execute, parse
+from pytest_snapshot.plugin import Snapshot
 
 import strawberry
-from strawberry.jit_compiler import compile_query
+from strawberry.jit_compiler import GraphQLJITCompiler, compile_query
+
+HERE = Path(__file__).parent
 
 
 @strawberry.type
@@ -214,7 +219,7 @@ class Query:
         return Analytics(carts=carts)
 
 
-def test_complex_shopping_cart_jit():
+def test_complex_shopping_cart_jit(snapshot: Snapshot):
     """Test JIT compilation with complex shopping cart example."""
     schema = strawberry.Schema(Query)
 
@@ -249,6 +254,19 @@ def test_complex_shopping_cart_jit():
     }
     """
 
+    # Compile the query
+    compiler = GraphQLJITCompiler(schema._schema)
+    document = parse(query)
+    operation = compiler._get_operation(document)
+    root_type = schema._schema.type_map["Query"]
+
+    # Generate the function code
+    generated_code = compiler._generate_function(operation, root_type)
+
+    # Check the generated code with snapshot
+    snapshot.snapshot_dir = HERE / "snapshots" / "jit_complex"
+    snapshot.assert_match(generated_code, "shopping_cart.py")
+
     # Compile with JIT
     compiled_fn = compile_query(schema._schema, query)
     root = Query()
@@ -275,7 +293,7 @@ def test_complex_shopping_cart_jit():
     )
 
 
-def test_complex_analytics_jit():
+def test_complex_analytics_jit(snapshot: Snapshot):
     """Test JIT compilation with analytics aggregations."""
     schema = strawberry.Schema(Query)
 
@@ -303,6 +321,19 @@ def test_complex_analytics_jit():
     }
     """
 
+    # Compile the query
+    compiler = GraphQLJITCompiler(schema._schema)
+    document = parse(query)
+    operation = compiler._get_operation(document)
+    root_type = schema._schema.type_map["Query"]
+
+    # Generate the function code
+    generated_code = compiler._generate_function(operation, root_type)
+
+    # Check the generated code with snapshot
+    snapshot.snapshot_dir = HERE / "snapshots" / "jit_complex"
+    snapshot.assert_match(generated_code, "analytics.py")
+
     # Compile with JIT
     compiled_fn = compile_query(schema._schema, query)
     root = Query()
@@ -326,10 +357,8 @@ def test_complex_analytics_jit():
     assert jit_result == standard_result.data
 
 
-def test_performance_complex_query():
+def test_performance_complex_query(snapshot: Snapshot):
     """Test that JIT provides performance benefit for complex queries."""
-    import time
-
     schema = strawberry.Schema(Query)
 
     query = """
@@ -388,6 +417,19 @@ def test_performance_complex_query():
     }
     """
 
+    # Compile the query
+    compiler = GraphQLJITCompiler(schema._schema)
+    document = parse(query)
+    operation = compiler._get_operation(document)
+    root_type = schema._schema.type_map["Query"]
+
+    # Generate the function code
+    generated_code = compiler._generate_function(operation, root_type)
+
+    # Check the generated code with snapshot
+    snapshot.snapshot_dir = HERE / "snapshots" / "jit_complex"
+    snapshot.assert_match(generated_code, "full_cart_analysis.py")
+
     # Parse once
     parsed_query = parse(query)
 
@@ -426,7 +468,20 @@ def test_performance_complex_query():
 
 
 if __name__ == "__main__":
-    test_complex_shopping_cart_jit()
-    test_complex_analytics_jit()
-    test_performance_complex_query()
+    import pytest
+    from pytest_snapshot.plugin import Snapshot
+
+    # Create a mock snapshot for testing
+    class MockSnapshot:
+        def __init__(self):
+            self.snapshot_dir = None
+
+        def assert_match(self, content, filename):
+            print(f"Would save snapshot to: {self.snapshot_dir / filename if self.snapshot_dir else filename}")
+
+    snapshot = MockSnapshot()
+    
+    test_complex_shopping_cart_jit(snapshot)
+    test_complex_analytics_jit(snapshot)
+    test_performance_complex_query(snapshot)
     print("\n✅ All complex JIT tests passed!")

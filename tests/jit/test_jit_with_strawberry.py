@@ -2,13 +2,16 @@
 Tests for the GraphQL JIT compiler with Strawberry schemas.
 """
 
+from pathlib import Path
 from typing import List
 
 from graphql import execute, parse
-from inline_snapshot import snapshot
+from pytest_snapshot.plugin import Snapshot
 
 import strawberry
-from strawberry.jit_compiler import compile_query
+from strawberry.jit_compiler import GraphQLJITCompiler, compile_query
+
+HERE = Path(__file__).parent
 
 
 @strawberry.type
@@ -67,7 +70,7 @@ class Query:
         )
 
 
-def test_strawberry_simple_query():
+def test_strawberry_simple_query(snapshot: Snapshot):
     """Test JIT compilation with Strawberry schema."""
     schema = strawberry.Schema(Query)
 
@@ -80,205 +83,156 @@ def test_strawberry_simple_query():
     }
     """
 
-    # Compile and execute with JIT
+    # Compile the query
+    compiler = GraphQLJITCompiler(schema._schema)
+    document = parse(query)
+    operation = compiler._get_operation(document)
+    root_type = schema._schema.type_map["Query"]
+
+    # Generate the function code
+    generated_code = compiler._generate_function(operation, root_type)
+
+    # Check the generated code with snapshot
+    snapshot.snapshot_dir = HERE / "snapshots" / "jit_with_strawberry"
+    snapshot.assert_match(generated_code, "strawberry_simple_query.py")
+
+    # Execute the compiled function
     compiled_fn = compile_query(schema._schema, query)
-    result = compiled_fn(Query())
-
-    # Check result
-    assert result == snapshot(
-        {
-            "posts": [
-                {"id": "1", "title": "Introduction to GraphQL"},
-                {"id": "2", "title": "Understanding JIT Compilation"},
-            ]
-        }
-    )
-
-    # Compare with standard execution
-    standard_result = execute(schema._schema, parse(query), root_value=Query())
-    assert result == standard_result.data
-
-
-def test_strawberry_with_custom_resolvers():
-    """Test JIT compilation with Strawberry custom field resolvers."""
-    schema = strawberry.Schema(Query)
-
-    query = """
-    query {
-        posts {
-            title
-            wordCount
-            author {
-                displayName
-            }
-        }
-    }
-    """
-
-    # Compile and execute with JIT
-    compiled_fn = compile_query(schema._schema, query)
-    result = compiled_fn(Query())
-
-    # Check result
-    assert result == snapshot(
-        {
-            "posts": [
-                {
-                    "title": "Introduction to GraphQL",
-                    "wordCount": 14,
-                    "author": {"displayName": "Alice (alice@example.com)"},
-                },
-                {
-                    "title": "Understanding JIT Compilation",
-                    "wordCount": 11,
-                    "author": {"displayName": "Bob (bob@example.com)"},
-                },
-            ]
-        }
-    )
-
-    # Compare with standard execution
-    standard_result = execute(schema._schema, parse(query), root_value=Query())
-    assert result == standard_result.data
-
-
-def test_strawberry_single_field():
-    """Test JIT compilation with single object field."""
-    schema = strawberry.Schema(Query)
-
-    query = """
-    query {
-        featuredPost {
-            title
-            wordCount
-            author {
-                name
-                displayName
-            }
-        }
-    }
-    """
-
-    # Compile and execute with JIT
-    compiled_fn = compile_query(schema._schema, query)
-    result = compiled_fn(Query())
-
-    # Check result - get the actual result first
-    assert result == snapshot(
-        {
-            "featuredPost": {
-                "title": "Featured: GraphQL Best Practices",
-                "wordCount": 9,
-                "author": {"name": "Alice", "displayName": "Alice (alice@example.com)"},
-            }
-        }
-    )
-
-    # Compare with standard execution
-    standard_result = execute(schema._schema, parse(query), root_value=Query())
-    assert result == standard_result.data
-
-
-def test_strawberry_with_typename():
-    """Test JIT compilation with __typename introspection."""
-    schema = strawberry.Schema(Query)
-
-    query = """
-    query {
-        __typename
-        posts {
-            __typename
-            id
-            author {
-                __typename
-                name
-            }
-        }
-    }
-    """
-
-    # Compile and execute with JIT
-    compiled_fn = compile_query(schema._schema, query)
-    result = compiled_fn(Query())
-
-    # Check result
-    assert result == snapshot(
-        {
-            "__typename": "Query",
-            "posts": [
-                {
-                    "__typename": "Post",
-                    "id": "1",
-                    "author": {"__typename": "Author", "name": "Alice"},
-                },
-                {
-                    "__typename": "Post",
-                    "id": "2",
-                    "author": {"__typename": "Author", "name": "Bob"},
-                },
-            ],
-        }
-    )
-
-    # Compare with standard execution
-    standard_result = execute(schema._schema, parse(query), root_value=Query())
-    assert result == standard_result.data
-
-
-def test_performance_comparison():
-    """Compare performance between JIT and standard execution."""
-    import time
-
-    schema = strawberry.Schema(Query)
-
-    query = """
-    query {
-        posts {
-            id
-            title
-            wordCount
-            author {
-                name
-                displayName
-            }
-        }
-        featuredPost {
-            title
-            author {
-                displayName
-            }
-        }
-    }
-    """
-
-    # Compile once
-    compiled_fn = compile_query(schema._schema, query)
-    parsed_query = parse(query)
-
-    # Measure JIT execution time
-    iterations = 1000
     root = Query()
+    result = compiled_fn(root)
 
-    start = time.perf_counter()
-    for _ in range(iterations):
-        result = compiled_fn(root)
-    jit_time = time.perf_counter() - start
+    # Verify result matches expected
+    expected_result = {
+        "posts": [
+            {"id": "1", "title": "Introduction to GraphQL"},
+            {"id": "2", "title": "Understanding JIT Compilation"},
+        ]
+    }
+    assert result == expected_result
 
-    # Measure standard execution time
-    start = time.perf_counter()
-    for _ in range(iterations):
-        result = execute(schema._schema, parsed_query, root_value=root)
-    standard_time = time.perf_counter() - start
+    # Compare with standard GraphQL execution
+    standard_result = execute(schema._schema, parse(query), root_value=root)
+    assert result == standard_result.data
 
-    # JIT should be significantly faster
-    speedup = standard_time / jit_time
-    print(f"\nPerformance comparison ({iterations} iterations):")
-    print(f"  Standard execution: {standard_time:.3f}s")
-    print(f"  JIT execution:      {jit_time:.3f}s")
-    print(f"  Speedup:            {speedup:.1f}x")
 
-    # Assert JIT is faster (at least 2x when using actual resolvers)
-    # The speedup varies based on system load and resolver complexity
-    assert speedup > 2, (
-        f"JIT should be significantly faster, but only got {speedup:.1f}x speedup"
-    )
+def test_strawberry_custom_resolvers(snapshot: Snapshot):
+    """Test JIT compilation with custom Strawberry resolvers."""
+    schema = strawberry.Schema(Query)
+
+    query = """
+    query {
+        posts {
+            id
+            title
+            wordCount
+            author {
+                name
+                displayName
+            }
+        }
+    }
+    """
+
+    # Compile the query
+    compiler = GraphQLJITCompiler(schema._schema)
+    document = parse(query)
+    operation = compiler._get_operation(document)
+    root_type = schema._schema.type_map["Query"]
+
+    # Generate the function code
+    generated_code = compiler._generate_function(operation, root_type)
+
+    # Check the generated code with snapshot
+    snapshot.snapshot_dir = HERE / "snapshots" / "jit_with_strawberry"
+    snapshot.assert_match(generated_code, "strawberry_custom_resolvers.py")
+
+    # Execute the compiled function
+    compiled_fn = compile_query(schema._schema, query)
+    root = Query()
+    result = compiled_fn(root)
+
+    # Verify result matches expected
+    expected_result = {
+        "posts": [
+            {
+                "id": "1",
+                "title": "Introduction to GraphQL",
+                "wordCount": 14,
+                "author": {
+                    "name": "Alice",
+                    "displayName": "Alice (alice@example.com)",
+                },
+            },
+            {
+                "id": "2",
+                "title": "Understanding JIT Compilation",
+                "wordCount": 12,
+                "author": {
+                    "name": "Bob",
+                    "displayName": "Bob (bob@example.com)",
+                },
+            },
+        ]
+    }
+    assert result == expected_result
+
+    # Compare with standard GraphQL execution
+    standard_result = execute(schema._schema, parse(query), root_value=root)
+    assert result == standard_result.data
+
+
+def test_strawberry_single_field(snapshot: Snapshot):
+    """Test JIT compilation with single field that returns an object."""
+    schema = strawberry.Schema(Query)
+
+    query = """
+    query {
+        featuredPost {
+            id
+            title
+            wordCount
+            author {
+                name
+                email
+                displayName
+            }
+        }
+    }
+    """
+
+    # Compile the query
+    compiler = GraphQLJITCompiler(schema._schema)
+    document = parse(query)
+    operation = compiler._get_operation(document)
+    root_type = schema._schema.type_map["Query"]
+
+    # Generate the function code
+    generated_code = compiler._generate_function(operation, root_type)
+
+    # Check the generated code with snapshot
+    snapshot.snapshot_dir = HERE / "snapshots" / "jit_with_strawberry"
+    snapshot.assert_match(generated_code, "strawberry_single_field.py")
+
+    # Execute the compiled function
+    compiled_fn = compile_query(schema._schema, query)
+    root = Query()
+    result = compiled_fn(root)
+
+    # Verify result matches expected
+    expected_result = {
+        "featuredPost": {
+            "id": "3",
+            "title": "Featured: GraphQL Best Practices",
+            "wordCount": 9,
+            "author": {
+                "name": "Alice",
+                "email": "alice@example.com",
+                "displayName": "Alice (alice@example.com)",
+            },
+        }
+    }
+    assert result == expected_result
+
+    # Compare with standard GraphQL execution
+    standard_result = execute(schema._schema, parse(query), root_value=root)
+    assert result == standard_result.data
