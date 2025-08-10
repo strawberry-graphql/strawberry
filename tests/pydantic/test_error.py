@@ -144,7 +144,9 @@ def test_error_in_mutation_with_union_return():
         """
     )
 
-    assert not result.errors  # No GraphQL errors, validation errors are converted to Error type
+    assert (
+        not result.errors
+    )  # No GraphQL errors, validation errors are converted to Error type
     assert len(result.data["createUser"]["errors"]) == 2
 
     # Check first error

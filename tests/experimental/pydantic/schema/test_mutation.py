@@ -206,8 +206,11 @@ def test_mutation_with_validation_and_error_type():
     assert len(result.data["createUser"]["errors"]) == 1
     assert result.data["createUser"]["errors"][0]["type"] == "string_too_short"
     assert result.data["createUser"]["errors"][0]["loc"] == ["name"]
-    
+
     if IS_PYDANTIC_V2:
         assert "at least 2 characters" in result.data["createUser"]["errors"][0]["msg"]
     else:
-        assert "ensure this value has at least 2 characters" in result.data["createUser"]["errors"][0]["msg"]
+        assert (
+            "ensure this value has at least 2 characters"
+            in result.data["createUser"]["errors"][0]["msg"]
+        )
