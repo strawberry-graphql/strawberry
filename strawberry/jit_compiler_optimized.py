@@ -9,6 +9,7 @@ from graphql import (
     GraphQLObjectType,
     GraphQLSchema,
     SelectionSetNode,
+    Undefined,
     get_operation_root_type,
     parse,
     validate,
@@ -169,6 +170,32 @@ class OptimizedGraphQLJITCompiler:
         if not field_def:
             return
 
+        # Handle field arguments for simple fields (methods)
+        if field.arguments or (field_def.args and len(field_def.args) > 0):
+            # Build arguments dictionary inline for optimization
+            args_code = self._build_inline_arguments(field, field_def)
+            
+            # Check if attribute is callable and call with arguments
+            self._emit(f"_attr = getattr({parent_var}, '{field_name}', None)")
+            self._emit(f"if callable(_attr):")
+            self.indent_level += 1
+            if args_code:
+                self._emit(f"_temp_val = _attr({args_code})")
+            else:
+                self._emit(f"_temp_val = _attr()")
+            self.indent_level -= 1
+            self._emit(f"else:")
+            self.indent_level += 1
+            self._emit(f"_temp_val = _attr")
+            self.indent_level -= 1
+            
+            # Now handle the result
+            if field.selection_set:
+                self._process_nested_field(field, field_def, "_temp_val", result_var, alias)
+            else:
+                self._emit(f'{result_var}["{alias}"] = _temp_val')
+            return
+
         # Direct attribute access - much faster than resolver calls
         if field.selection_set:
             field_type = field_def.type
@@ -241,13 +268,15 @@ class OptimizedGraphQLJITCompiler:
 
         temp_var = f"_field_{field_name}"
 
-        # Try to inline simple resolvers
-        if self._can_inline_resolver(field_def.resolve):
-            # For very simple resolvers, we could inline them
-            # This is a future optimization
-            self._emit(f"{temp_var} = _resolvers['{resolver_id}']({parent_var}, None)")
+        # Handle arguments for complex fields with resolvers
+        if field.arguments or (field_def.args and len(field_def.args) > 0):
+            args_code = self._build_inline_arguments(field, field_def)
+            if args_code:
+                self._emit(f"{temp_var} = _resolvers['{resolver_id}']({parent_var}, None, {args_code})")
+            else:
+                self._emit(f"{temp_var} = _resolvers['{resolver_id}']({parent_var}, None)")
         else:
-            # Fall back to resolver call
+            # No arguments - simple resolver call
             self._emit(f"{temp_var} = _resolvers['{resolver_id}']({parent_var}, None)")
 
         if field.selection_set:
@@ -291,6 +320,133 @@ class OptimizedGraphQLJITCompiler:
                 self.indent_level -= 1
         else:
             self._emit(f'{result_var}["{alias}"] = {temp_var}')
+
+    def _process_nested_field(self, field, field_def, temp_var, result_var, alias):
+        """Process nested field selection."""
+        field_type = field_def.type
+        while hasattr(field_type, "of_type"):
+            field_type = field_type.of_type
+
+        if isinstance(field_type, GraphQLObjectType):
+            self._emit(f"if {temp_var} is not None:")
+            self.indent_level += 1
+
+            # Handle lists
+            if hasattr(field_def.type, "of_type") and str(field_def.type).startswith("["):
+                self._emit(f"if isinstance({temp_var}, list):")
+                self.indent_level += 1
+                self._emit(f'{result_var}["{alias}"] = []')
+                item_var = f"_item_{field.name.value}"
+                item_result_var = f"_{field.name.value}_item_result"
+                self._emit(f"for {item_var} in {temp_var}:")
+                self.indent_level += 1
+                self._emit(f"{item_result_var} = {{}}")
+                self._generate_optimized_selection_set(
+                    field.selection_set, field_type, item_var, item_result_var
+                )
+                self._emit(f'{result_var}["{alias}"].append({item_result_var})')
+                self.indent_level -= 1  # Exit for loop
+                self.indent_level -= 1  # Exit isinstance check
+            else:
+                nested_var = f"_nested_{field.name.value}"
+                self._emit(f"{nested_var} = {{}}")
+                self._generate_optimized_selection_set(
+                    field.selection_set, field_type, temp_var, nested_var
+                )
+                self._emit(f'{result_var}["{alias}"] = {nested_var}')
+
+            self.indent_level -= 1
+            self._emit("else:")
+            self.indent_level += 1
+            self._emit(f'{result_var}["{alias}"] = None')
+            self.indent_level -= 1
+
+    def _build_inline_arguments(self, field: FieldNode, field_def) -> str:
+        """Build inline arguments for optimized function calls."""
+        args = []
+        
+        # Collect default values
+        defaults = {}
+        if field_def.args:
+            for arg_name, arg_def in field_def.args.items():
+                if hasattr(arg_def, 'default_value') and arg_def.default_value is not Undefined:
+                    defaults[arg_name] = self._serialize_value(arg_def.default_value)
+        
+        # Override with provided arguments
+        provided = {}
+        if field.arguments:
+            for arg in field.arguments:
+                arg_name = arg.name.value
+                provided[arg_name] = self._generate_argument_value(arg.value)
+        
+        # Merge defaults and provided
+        all_args = {**defaults, **provided}
+        
+        # Format as keyword arguments
+        for key, value in all_args.items():
+            args.append(f"{key}={value}")
+        
+        return ", ".join(args) if args else ""
+    
+    def _generate_argument_value(self, value_node) -> str:
+        """Generate inline code for argument values."""
+        from graphql.language import (
+            VariableNode,
+            IntValueNode,
+            FloatValueNode,
+            StringValueNode,
+            BooleanValueNode,
+            NullValueNode,
+            ListValueNode,
+            ObjectValueNode,
+            EnumValueNode,
+        )
+        
+        if isinstance(value_node, VariableNode):
+            # For optimized version, we'll access variables directly
+            var_name = value_node.name.value
+            return f"variables.get('{var_name}')"
+        elif isinstance(value_node, (IntValueNode, FloatValueNode)):
+            return value_node.value
+        elif isinstance(value_node, StringValueNode):
+            return repr(value_node.value)
+        elif isinstance(value_node, BooleanValueNode):
+            return "True" if value_node.value else "False"
+        elif isinstance(value_node, NullValueNode):
+            return "None"
+        elif isinstance(value_node, EnumValueNode):
+            return repr(value_node.value)
+        elif isinstance(value_node, ListValueNode):
+            items = [self._generate_argument_value(item) for item in value_node.values]
+            return f"[{', '.join(items)}]"
+        elif isinstance(value_node, ObjectValueNode):
+            items = []
+            for field in value_node.fields:
+                key = repr(field.name.value)
+                val = self._generate_argument_value(field.value)
+                items.append(f"{key}: {val}")
+            return f"{{{', '.join(items)}}}"
+        else:
+            return "None"
+    
+    def _serialize_value(self, value) -> str:
+        """Serialize Python values for code generation."""
+        if value is None:
+            return "None"
+        elif isinstance(value, bool):
+            return "True" if value else "False"
+        elif isinstance(value, (int, float)):
+            return str(value)
+        elif isinstance(value, str):
+            return repr(value)
+        elif isinstance(value, list):
+            items = [self._serialize_value(item) for item in value]
+            return f"[{', '.join(items)}]"
+        elif isinstance(value, dict):
+            items = [f"{repr(k)}: {self._serialize_value(v)}" for k, v in value.items()]
+            return f"{{{', '.join(items)}}}"
+        else:
+            return repr(value)
 
     def _emit(self, line: str):
         indent = "    " * self.indent_level

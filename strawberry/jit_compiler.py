@@ -9,6 +9,7 @@ from graphql import (
     GraphQLObjectType,
     GraphQLSchema,
     SelectionSetNode,
+    Undefined,
     get_operation_root_type,
     parse,
     validate,
@@ -302,21 +303,50 @@ from typing import Any, Dict, List, Optional'''
         self._emit(f'{info_var}.field_name = "{field_name}"')
         self._emit(f'{info_var}.parent_type = "{parent_type.name}"')
 
+        # Handle field arguments if any
+        if field.arguments or (field_def.args and len(field_def.args) > 0):
+            # Build arguments dictionary including defaults
+            self._emit(f"kwargs = {{}}")
+            
+            # First, handle default values from schema
+            if field_def.args:
+                for arg_name, arg_def in field_def.args.items():
+                    if hasattr(arg_def, 'default_value'):
+                        # Skip Undefined sentinel values
+                        if arg_def.default_value is not Undefined:
+                            default_val = self._serialize_value(arg_def.default_value)
+                            self._emit(f"kwargs['{arg_name}'] = {default_val}")
+            
+            # Then override with provided arguments
+            if field.arguments:
+                for arg in field.arguments:
+                    arg_name = arg.name.value
+                    arg_code = self._generate_argument_value(arg.value, info_var)
+                    self._emit(f"kwargs['{arg_name}'] = {arg_code}")
+
         if self.resolver_map[resolver_id]:
             # Call the actual resolver
             self._emit(f"resolver = _resolvers['{resolver_id}']")
-            # Handle field arguments if any
-            if field.arguments:
-                args_dict = self._build_arguments_dict(field)
-                self._emit(f"kwargs = {args_dict}")
+            if field.arguments or (field_def.args and len(field_def.args) > 0):
                 self._emit(f"{temp_var} = resolver({parent_var}, {info_var}, **kwargs)")
             else:
                 self._emit(f"{temp_var} = resolver({parent_var}, {info_var})")
         else:
-            # Use default field resolution
-            self._emit(
-                f"{temp_var} = getattr({parent_var}, '{field_name}', None) if hasattr({parent_var}, '{field_name}') else ({parent_var}.get('{field_name}', None) if isinstance({parent_var}, dict) else None)"
-            )
+            # Use default field resolution - arguments are passed to the method/function if it exists
+            if field.arguments or (field_def.args and len(field_def.args) > 0):
+                self._emit(f"attr = getattr({parent_var}, '{field_name}', None)")
+                self._emit(f"if callable(attr):")
+                self.indent_level += 1
+                self._emit(f"{temp_var} = attr(**kwargs)")
+                self.indent_level -= 1
+                self._emit(f"else:")
+                self.indent_level += 1
+                self._emit(f"{temp_var} = attr")
+                self.indent_level -= 1
+            else:
+                self._emit(
+                    f"{temp_var} = getattr({parent_var}, '{field_name}', None) if hasattr({parent_var}, '{field_name}') else ({parent_var}.get('{field_name}', None) if isinstance({parent_var}, dict) else None)"
+                )
 
         if field.selection_set:
             field_type = field_def.type
@@ -377,15 +407,68 @@ from typing import Any, Dict, List, Optional'''
         else:
             self._emit(f'{result_var}["{alias}"] = {temp_var}')
 
-    def _build_arguments_dict(self, field: FieldNode) -> str:
-        """Build a dictionary of arguments from the field node"""
-        args = {}
-        for arg in field.arguments:
-            # For now, just handle simple literal values
-            arg_name = arg.name.value
-            if hasattr(arg.value, "value"):
-                args[arg_name] = arg.value.value
-        return str(args)
+    def _generate_argument_value(self, value_node, info_var: str) -> str:
+        """Generate code to extract argument value from AST node, supporting variables"""
+        from graphql.language import (
+            VariableNode,
+            IntValueNode,
+            FloatValueNode,
+            StringValueNode,
+            BooleanValueNode,
+            NullValueNode,
+            ListValueNode,
+            ObjectValueNode,
+            EnumValueNode,
+        )
+        
+        if isinstance(value_node, VariableNode):
+            # Reference to a variable
+            var_name = value_node.name.value
+            return f"{info_var}.variable_values.get('{var_name}')"
+        elif isinstance(value_node, (IntValueNode, FloatValueNode)):
+            return value_node.value
+        elif isinstance(value_node, StringValueNode):
+            return repr(value_node.value)
+        elif isinstance(value_node, BooleanValueNode):
+            return "True" if value_node.value else "False"
+        elif isinstance(value_node, NullValueNode):
+            return "None"
+        elif isinstance(value_node, EnumValueNode):
+            return repr(value_node.value)
+        elif isinstance(value_node, ListValueNode):
+            items = [self._generate_argument_value(item, info_var) for item in value_node.values]
+            return f"[{', '.join(items)}]"
+        elif isinstance(value_node, ObjectValueNode):
+            items = []
+            for field in value_node.fields:
+                key = repr(field.name.value)
+                val = self._generate_argument_value(field.value, info_var)
+                items.append(f"{key}: {val}")
+            return f"{{{', '.join(items)}}}"
+        else:
+            # Fallback for unknown types
+            if hasattr(value_node, "value"):
+                return repr(value_node.value)
+            return "None"
+    
+    def _serialize_value(self, value) -> str:
+        """Serialize a Python value to a string representation for code generation"""
+        if value is None:
+            return "None"
+        elif isinstance(value, bool):
+            return "True" if value else "False"
+        elif isinstance(value, (int, float)):
+            return str(value)
+        elif isinstance(value, str):
+            return repr(value)
+        elif isinstance(value, list):
+            items = [self._serialize_value(item) for item in value]
+            return f"[{', '.join(items)}]"
+        elif isinstance(value, dict):
+            items = [f"{repr(k)}: {self._serialize_value(v)}" for k, v in value.items()]
+            return f"{{{', '.join(items)}}}"
+        else:
+            return repr(value)
 
     def _emit(self, line: str):
         indent = "    " * self.indent_level
