@@ -70,14 +70,9 @@ def test_error_type_with_nested_fields():
 def test_error_in_mutation_with_union_return():
     """Test using Error in a mutation with union return type."""
 
-    # Use a regular strawberry input type to allow passing invalid data
-    @strawberry.input
-    class CreateUserInput:
-        name: str
-        age: int
-
-    # Define the Pydantic model for validation
-    class CreateUserModel(pydantic.BaseModel):
+    # Use @strawberry.pydantic.input for automatic validation
+    @strawberry.pydantic.input
+    class CreateUserInput(pydantic.BaseModel):
         name: pydantic.constr(min_length=2)
         age: pydantic.conint(ge=0, le=120)
 
@@ -92,15 +87,10 @@ def test_error_in_mutation_with_union_return():
         def create_user(
             self, input: CreateUserInput
         ) -> Union[CreateUserSuccess, Error]:
-            try:
-                # Validate the input using Pydantic
-                validated = CreateUserModel(name=input.name, age=input.age)
-                # Simulate successful creation
-                return CreateUserSuccess(
-                    user_id=1, message=f"User {validated.name} created successfully"
-                )
-            except pydantic.ValidationError as e:
-                return Error.from_validation_error(e)
+            # If we get here, validation passed
+            return CreateUserSuccess(
+                user_id=1, message=f"User {input.name} created successfully"
+            )
 
     @strawberry.type
     class Query:
@@ -154,7 +144,7 @@ def test_error_in_mutation_with_union_return():
         """
     )
 
-    assert not result.errors
+    assert not result.errors  # No GraphQL errors, validation errors are converted to Error type
     assert len(result.data["createUser"]["errors"]) == 2
 
     # Check first error
