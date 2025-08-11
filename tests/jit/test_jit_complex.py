@@ -12,7 +12,7 @@ from graphql import execute, parse
 from pytest_snapshot.plugin import Snapshot
 
 import strawberry
-from strawberry.jit_compiler import GraphQLJITCompiler, compile_query
+from strawberry.jit import JITCompiler, compile_query
 
 HERE = Path(__file__).parent
 
@@ -255,7 +255,7 @@ def test_complex_shopping_cart_jit(snapshot: Snapshot):
     """
 
     # Compile the query
-    compiler = GraphQLJITCompiler(schema._schema)
+    compiler = JITCompiler(schema._schema)
     document = parse(query)
     operation = compiler._get_operation(document)
     root_type = schema._schema.type_map["Query"]
@@ -322,7 +322,7 @@ def test_complex_analytics_jit(snapshot: Snapshot):
     """
 
     # Compile the query
-    compiler = GraphQLJITCompiler(schema._schema)
+    compiler = JITCompiler(schema._schema)
     document = parse(query)
     operation = compiler._get_operation(document)
     root_type = schema._schema.type_map["Query"]
@@ -418,7 +418,7 @@ def test_performance_complex_query(snapshot: Snapshot):
     """
 
     # Compile the query
-    compiler = GraphQLJITCompiler(schema._schema)
+    compiler = JITCompiler(schema._schema)
     document = parse(query)
     operation = compiler._get_operation(document)
     root_type = schema._schema.type_map["Query"]
@@ -468,7 +468,6 @@ def test_performance_complex_query(snapshot: Snapshot):
 
 
 if __name__ == "__main__":
-    import pytest
     from pytest_snapshot.plugin import Snapshot
 
     # Create a mock snapshot for testing
@@ -477,10 +476,12 @@ if __name__ == "__main__":
             self.snapshot_dir = None
 
         def assert_match(self, content, filename):
-            print(f"Would save snapshot to: {self.snapshot_dir / filename if self.snapshot_dir else filename}")
+            print(
+                f"Would save snapshot to: {self.snapshot_dir / filename if self.snapshot_dir else filename}"
+            )
 
     snapshot = MockSnapshot()
-    
+
     test_complex_shopping_cart_jit(snapshot)
     test_complex_analytics_jit(snapshot)
     test_performance_complex_query(snapshot)

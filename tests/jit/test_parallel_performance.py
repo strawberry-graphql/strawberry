@@ -9,8 +9,7 @@ from typing import List
 from graphql import execute, parse
 
 import strawberry
-from strawberry.jit_compiler import compile_query
-from strawberry.jit_compiler_parallel import compile_query_parallel
+from strawberry.jit import compile_query
 
 
 @strawberry.type
@@ -114,7 +113,7 @@ async def benchmark_parallel_fields():
     print(f"Sequential JIT:     {seq_time * 1000:.2f}ms ({std_time / seq_time:.2f}x)")
 
     # Parallel JIT
-    compiled_par = compile_query_parallel(schema._schema, query)
+    compiled_par = compile_query(schema._schema, query)
 
     async def run_parallel():
         return await compiled_par(root)
@@ -174,7 +173,7 @@ async def benchmark_list_fields():
     print(f"Sequential JIT:     {seq_time * 1000:.2f}ms ({std_time / seq_time:.2f}x)")
 
     # Parallel JIT
-    compiled_par = compile_query_parallel(schema._schema, query)
+    compiled_par = compile_query(schema._schema, query)
 
     async def run_parallel():
         return await compiled_par(root)
@@ -242,7 +241,7 @@ async def benchmark_complex_query():
     print(f"Sequential JIT:     {seq_time * 1000:.2f}ms ({std_time / seq_time:.2f}x)")
 
     # Parallel JIT
-    compiled_par = compile_query_parallel(schema._schema, query)
+    compiled_par = compile_query(schema._schema, query)
 
     async def run_parallel():
         return await compiled_par(root)

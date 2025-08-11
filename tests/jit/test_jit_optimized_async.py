@@ -12,11 +12,11 @@ from graphql import execute, parse
 from pytest_snapshot.plugin import Snapshot
 
 import strawberry
-from strawberry.jit_compiler import compile_query
+from strawberry.jit import compile_query
 from strawberry.jit_compiler_optimized_async import (
-    OptimizedAsyncJITCompiler,
+    JITCompiler,
     analyze_schema_async_fields,
-    compile_query_optimized,
+    compile_query,
 )
 
 HERE = Path(__file__).parent
@@ -113,7 +113,7 @@ async def test_optimized_async_compilation(snapshot: Snapshot):
     """
 
     # Use the optimized compiler
-    compiler = OptimizedAsyncJITCompiler(schema._schema)
+    compiler = JITCompiler(schema._schema)
     document = parse(query)
     operation = compiler._get_operation(document)
     root_type = schema._schema.type_map["Query"]
@@ -126,7 +126,7 @@ async def test_optimized_async_compilation(snapshot: Snapshot):
     snapshot.assert_match(generated_code, "optimized_async_posts.py")
 
     # Execute the compiled function
-    compiled_fn = compile_query_optimized(schema._schema, query)
+    compiled_fn = compile_query(schema._schema, query)
     root = Query()
 
     result = await compiled_fn(root)
@@ -174,7 +174,7 @@ async def test_performance_comparison():
         await compiled_std(root)
 
         # Optimized JIT
-        compiled_opt = compile_query_optimized(schema._schema, query)
+        compiled_opt = compile_query(schema._schema, query)
         await compiled_opt(root)
 
     # Benchmark standard JIT
@@ -185,7 +185,7 @@ async def test_performance_comparison():
     std_time = time.perf_counter() - start
 
     # Benchmark optimized JIT
-    compiled_opt = compile_query_optimized(schema._schema, query)
+    compiled_opt = compile_query(schema._schema, query)
     start = time.perf_counter()
     for _ in range(100):
         result_opt = await compiled_opt(root)
@@ -228,7 +228,7 @@ async def test_mixed_sync_async_optimized():
     """
 
     # Compile with optimization
-    compiled_fn = compile_query_optimized(schema._schema, query)
+    compiled_fn = compile_query(schema._schema, query)
     root = Query()
 
     result = await compiled_fn(root)
@@ -249,7 +249,7 @@ def test_compile_time_knowledge():
     """Test that the compiler correctly identifies async fields at compile time."""
     schema = strawberry.Schema(Query)
 
-    compiler = OptimizedAsyncJITCompiler(schema._schema)
+    compiler = JITCompiler(schema._schema)
 
     # Check compile-time knowledge
     assert compiler._is_field_async("Query", "posts") is True

@@ -9,8 +9,7 @@ from graphql import execute, parse
 from pytest_snapshot.plugin import Snapshot
 
 import strawberry
-from strawberry.jit_compiler import GraphQLJITCompiler, compile_query
-from strawberry.jit_compiler_optimized import compile_query_optimized
+from strawberry.jit import JITCompiler, compile_query
 
 HERE = Path(__file__).parent
 
@@ -79,7 +78,7 @@ def test_skip_directive(snapshot: Snapshot):
     """
 
     # Compile the query
-    compiler = GraphQLJITCompiler(schema._schema)
+    compiler = JITCompiler(schema._schema)
     document = parse(query)
     operation = compiler._get_operation(document)
     root_type = schema._schema.type_map["Query"]
@@ -136,7 +135,7 @@ def test_include_directive(snapshot: Snapshot):
     """
 
     # Compile the query
-    compiler = GraphQLJITCompiler(schema._schema)
+    compiler = JITCompiler(schema._schema)
     document = parse(query)
     operation = compiler._get_operation(document)
     root_type = schema._schema.type_map["Query"]
@@ -191,7 +190,7 @@ def test_combined_directives(snapshot: Snapshot):
     """
 
     # Compile the query
-    compiler = GraphQLJITCompiler(schema._schema)
+    compiler = JITCompiler(schema._schema)
     document = parse(query)
     operation = compiler._get_operation(document)
     root_type = schema._schema.type_map["Query"]
@@ -208,9 +207,7 @@ def test_combined_directives(snapshot: Snapshot):
     root = Query()
 
     # Test with showing details but hiding published
-    result = compiled_fn(
-        root, variables={"showDetails": True, "hidePublished": True}
-    )
+    result = compiled_fn(root, variables={"showDetails": True, "hidePublished": True})
     assert "content" in result["posts"][0]
     assert "views" in result["posts"][0]
     assert "published" not in result["posts"][0]
@@ -242,7 +239,7 @@ def test_directives_with_fragments(snapshot: Snapshot):
         content @include(if: $includeContent)
         published @skip(if: $skipPublished)
     }
-    
+
     query GetPosts($includeContent: Boolean!, $skipPublished: Boolean!) {
         posts {
             id
@@ -253,7 +250,7 @@ def test_directives_with_fragments(snapshot: Snapshot):
     """
 
     # Compile the query
-    compiler = GraphQLJITCompiler(schema._schema)
+    compiler = JITCompiler(schema._schema)
     document = parse(query)
     compiler._extract_fragments(document)
     operation = compiler._get_operation(document)
@@ -308,7 +305,7 @@ def test_optimized_skip_directive():
     """
 
     # Execute with optimized compiler
-    compiled_fn = compile_query_optimized(schema._schema, query)
+    compiled_fn = compile_query(schema._schema, query)
     root = Query()
 
     # Test skipping content
@@ -349,7 +346,7 @@ def test_optimized_include_directive():
     """
 
     # Execute with optimized compiler
-    compiled_fn = compile_query_optimized(schema._schema, query)
+    compiled_fn = compile_query(schema._schema, query)
     root = Query()
 
     # Test not including author
@@ -387,7 +384,7 @@ def test_optimized_combined_directives():
     """
 
     # Execute with optimized compiler
-    compiled_fn = compile_query_optimized(schema._schema, query)
+    compiled_fn = compile_query(schema._schema, query)
     root = Query()
 
     result = compiled_fn(root, variables={"showExtra": True, "hideTitle": False})
@@ -427,7 +424,7 @@ def test_literal_boolean_directives(snapshot: Snapshot):
     """
 
     # Compile the query
-    compiler = GraphQLJITCompiler(schema._schema)
+    compiler = JITCompiler(schema._schema)
     document = parse(query)
     operation = compiler._get_operation(document)
     root_type = schema._schema.type_map["Query"]
@@ -446,7 +443,9 @@ def test_literal_boolean_directives(snapshot: Snapshot):
 
     # Verify results
     assert "content" not in result["posts"][0]  # Skipped due to @skip(if: true)
-    assert "published" not in result["posts"][0]  # Not included due to @include(if: false)
+    assert (
+        "published" not in result["posts"][0]
+    )  # Not included due to @include(if: false)
     assert "views" in result["posts"][0]  # Included due to @include(if: true)
     assert result["posts"][0]["views"] == 100
 

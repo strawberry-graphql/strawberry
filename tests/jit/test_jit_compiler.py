@@ -9,7 +9,7 @@ from graphql import execute, parse
 from pytest_snapshot.plugin import Snapshot
 
 import strawberry
-from strawberry.jit_compiler import GraphQLJITCompiler, compile_query
+from strawberry.jit import JITCompiler, compile_query
 
 HERE = Path(__file__).parent
 
@@ -62,7 +62,7 @@ def test_simple_query(snapshot: Snapshot):
     """
 
     # Compile the query
-    compiler = GraphQLJITCompiler(schema._schema)
+    compiler = JITCompiler(schema._schema)
     document = parse(query)
     operation = compiler._get_operation(document)
     root_type = schema._schema.type_map["Query"]
@@ -109,7 +109,7 @@ def test_nested_query(snapshot: Snapshot):
     """
 
     # Compile the query
-    compiler = GraphQLJITCompiler(schema._schema)
+    compiler = JITCompiler(schema._schema)
     document = parse(query)
     operation = compiler._get_operation(document)
     root_type = schema._schema.type_map["Query"]
@@ -162,7 +162,7 @@ def test_query_with_aliases(snapshot: Snapshot):
     """
 
     # Compile the query
-    compiler = GraphQLJITCompiler(schema._schema)
+    compiler = JITCompiler(schema._schema)
     document = parse(query)
     operation = compiler._get_operation(document)
     root_type = schema._schema.type_map["Query"]
@@ -220,7 +220,7 @@ def test_query_with_typename(snapshot: Snapshot):
     """
 
     # Compile the query
-    compiler = GraphQLJITCompiler(schema._schema)
+    compiler = JITCompiler(schema._schema)
     document = parse(query)
     operation = compiler._get_operation(document)
     root_type = schema._schema.type_map["Query"]

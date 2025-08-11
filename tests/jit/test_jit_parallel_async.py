@@ -12,10 +12,10 @@ from graphql import execute, parse
 from pytest_snapshot.plugin import Snapshot
 
 import strawberry
-from strawberry.jit_compiler import compile_query
+from strawberry.jit import compile_query
 from strawberry.jit_compiler_parallel import (
-    ParallelAsyncJITCompiler,
-    compile_query_parallel,
+    JITCompiler,
+    compile_query,
 )
 
 HERE = Path(__file__).parent
@@ -148,7 +148,7 @@ async def test_parallel_execution_simple():
     sequential_time = time.perf_counter() - start
 
     # Parallel execution
-    compiled_parallel = compile_query_parallel(schema._schema, query)
+    compiled_parallel = compile_query(schema._schema, query)
 
     start = time.perf_counter()
     result_par = await compiled_parallel(root)
@@ -198,7 +198,7 @@ async def test_parallel_execution_nested():
     sequential_time = time.perf_counter() - start
 
     # Parallel execution
-    compiled_parallel = compile_query_parallel(schema._schema, query)
+    compiled_parallel = compile_query(schema._schema, query)
 
     start = time.perf_counter()
     result_par = await compiled_parallel(root)
@@ -250,7 +250,7 @@ async def test_parallel_execution_mixed():
     sequential_time = time.perf_counter() - start
 
     # Parallel execution
-    compiled_parallel = compile_query_parallel(schema._schema, query)
+    compiled_parallel = compile_query(schema._schema, query)
 
     start = time.perf_counter()
     result_par = await compiled_parallel(root)
@@ -285,7 +285,7 @@ async def test_parallel_execution_snapshot(snapshot: Snapshot):
     """
 
     # Generate code with parallel compiler
-    compiler = ParallelAsyncJITCompiler(schema._schema)
+    compiler = JITCompiler(schema._schema)
     document = parse(query)
     operation = compiler._get_operation(document)
     root_type = schema._schema.type_map["Query"]
@@ -297,7 +297,7 @@ async def test_parallel_execution_snapshot(snapshot: Snapshot):
     snapshot.assert_match(generated_code, "parallel_async_query.py")
 
     # Execute and verify
-    compiled_fn = compile_query_parallel(schema._schema, query)
+    compiled_fn = compile_query(schema._schema, query)
     root = Query()
 
     result = await compiled_fn(root)
@@ -365,7 +365,7 @@ async def benchmark_parallel_performance():
     sequential_time = time.perf_counter() - start
 
     # Parallel JIT
-    compiled_par = compile_query_parallel(schema._schema, query)
+    compiled_par = compile_query(schema._schema, query)
     start = time.perf_counter()
     for _ in range(5):
         result = await compiled_par(root)

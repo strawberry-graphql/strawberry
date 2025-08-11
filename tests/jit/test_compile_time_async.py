@@ -10,7 +10,7 @@ from typing import Dict, Set
 from graphql import GraphQLObjectType, GraphQLSchema, parse
 
 import strawberry
-from strawberry.jit_compiler import GraphQLJITCompiler
+from strawberry.jit import JITCompiler
 
 
 def analyze_schema_async_fields(schema: GraphQLSchema) -> Dict[str, Set[str]]:
@@ -39,7 +39,7 @@ def analyze_schema_async_fields(schema: GraphQLSchema) -> Dict[str, Set[str]]:
     return async_fields
 
 
-class OptimizedAsyncJITCompiler(GraphQLJITCompiler):
+class JITCompiler(JITCompiler):
     """
     JIT compiler with compile-time async detection.
     This avoids runtime inspect.iscoroutinefunction checks.
@@ -159,7 +159,7 @@ def demonstrate_compile_time_detection():
     """
 
     # Standard compiler (with runtime checks)
-    standard_compiler = GraphQLJITCompiler(schema._schema)
+    standard_compiler = JITCompiler(schema._schema)
     doc = parse(query)
     op = standard_compiler._get_operation(doc)
     root_type = schema._schema.type_map["Query"]

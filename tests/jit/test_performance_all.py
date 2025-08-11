@@ -9,7 +9,7 @@ from typing import List
 from graphql import execute, parse
 
 import strawberry
-from strawberry.jit_compiler import compile_query
+from strawberry.jit import compile_query
 
 try:
     from strawberry.jit_compiler_optimized import GraphQLJITCompilerOptimized
@@ -19,7 +19,7 @@ try:
         return compiler.compile_query(query)
 except ImportError:
     compile_query_optimized_sync = None
-from strawberry.jit_compiler_optimized_async import compile_query_optimized
+from strawberry.jit_compiler_optimized_async import compile_query
 
 
 @strawberry.type
@@ -233,7 +233,7 @@ async def benchmark_async_query():
     jit_time = time.perf_counter() - start
 
     # Optimized JIT with compile-time async detection
-    compiled_opt = compile_query_optimized(schema._schema, query)
+    compiled_opt = compile_query(schema._schema, query)
     start = time.perf_counter()
     for _ in range(100):
         result = await compiled_opt(root)
@@ -301,7 +301,7 @@ async def benchmark_mixed_query():
     jit_time = time.perf_counter() - start
 
     # Optimized JIT with compile-time async detection
-    compiled_opt = compile_query_optimized(schema._schema, query)
+    compiled_opt = compile_query(schema._schema, query)
     start = time.perf_counter()
     for _ in range(100):
         result = await compiled_opt(root)
@@ -354,7 +354,7 @@ async def benchmark_simple_query():
     jit_time = time.perf_counter() - start
 
     # Optimized JIT with compile-time async detection
-    compiled_opt = compile_query_optimized(schema._schema, query)
+    compiled_opt = compile_query(schema._schema, query)
     start = time.perf_counter()
     for _ in range(100):
         result = await compiled_opt(root)

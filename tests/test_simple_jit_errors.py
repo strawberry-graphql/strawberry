@@ -2,10 +2,12 @@
 Simple test to verify basic error handling in JIT.
 """
 
-import strawberry
 from typing import Optional
+
 from graphql import execute_sync, parse
-from strawberry.jit_compiler import compile_query
+
+import strawberry
+from strawberry.jit import compile_query
 
 
 @strawberry.type
@@ -13,7 +15,7 @@ class TestType:
     @strawberry.field
     def working_field(self) -> str:
         return "working"
-    
+
     @strawberry.field
     def error_field(self) -> Optional[str]:
         raise Exception("Test error")
@@ -28,7 +30,7 @@ class Query:
 
 def test_basic_error_handling():
     schema = strawberry.Schema(Query)
-    
+
     query = """
     query {
         test {
@@ -37,12 +39,12 @@ def test_basic_error_handling():
         }
     }
     """
-    
+
     # Standard execution handles errors
     result = execute_sync(schema._schema, parse(query), root_value=Query())
     print("Standard result:", result.data)
     print("Standard errors:", result.errors)
-    
+
     # JIT should handle errors too
     try:
         compiled_fn = compile_query(schema._schema, query)

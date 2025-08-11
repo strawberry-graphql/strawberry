@@ -9,7 +9,7 @@ from graphql import execute, parse
 from pytest_snapshot.plugin import Snapshot
 
 import strawberry
-from strawberry.jit_compiler import GraphQLJITCompiler, compile_query
+from strawberry.jit import JITCompiler, compile_query
 
 HERE = Path(__file__).parent
 
@@ -129,7 +129,7 @@ def test_simple_fragment(snapshot: Snapshot):
     """
 
     # Compile the query
-    compiler = GraphQLJITCompiler(schema._schema)
+    compiler = JITCompiler(schema._schema)
     document = parse(query)
     compiler._extract_fragments(document)
     operation = compiler._get_operation(document)
@@ -187,7 +187,7 @@ def test_nested_fragments(snapshot: Snapshot):
     """
 
     # Compile the query
-    compiler = GraphQLJITCompiler(schema._schema)
+    compiler = JITCompiler(schema._schema)
     document = parse(query)
     compiler._extract_fragments(document)
     operation = compiler._get_operation(document)
@@ -236,7 +236,7 @@ def test_inline_fragment(snapshot: Snapshot):
     """
 
     # Compile the query
-    compiler = GraphQLJITCompiler(schema._schema)
+    compiler = JITCompiler(schema._schema)
     document = parse(query)
     operation = compiler._get_operation(document)
     root_type = schema._schema.type_map["Query"]
@@ -299,7 +299,7 @@ def test_multiple_fragments(snapshot: Snapshot):
     """
 
     # Compile the query
-    compiler = GraphQLJITCompiler(schema._schema)
+    compiler = JITCompiler(schema._schema)
     document = parse(query)
     compiler._extract_fragments(document)
     operation = compiler._get_operation(document)
@@ -351,7 +351,7 @@ def test_fragment_with_variables(snapshot: Snapshot):
     """
 
     # Compile the query
-    compiler = GraphQLJITCompiler(schema._schema)
+    compiler = JITCompiler(schema._schema)
     document = parse(query)
     compiler._extract_fragments(document)
     operation = compiler._get_operation(document)
@@ -404,7 +404,7 @@ def test_fragment_on_list(snapshot: Snapshot):
     """
 
     # Compile the query
-    compiler = GraphQLJITCompiler(schema._schema)
+    compiler = JITCompiler(schema._schema)
     document = parse(query)
     compiler._extract_fragments(document)
     operation = compiler._get_operation(document)

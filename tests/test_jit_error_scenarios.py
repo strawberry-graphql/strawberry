@@ -2,23 +2,24 @@
 Test various error handling scenarios in JIT compiler.
 """
 
+from typing import List, Optional
+
 import strawberry
-from typing import Optional, List
-from strawberry.jit_compiler import compile_query
+from strawberry.jit import compile_query
 
 
 @strawberry.type
 class Item:
     id: int
-    
+
     @strawberry.field
     def name(self) -> str:
         return f"Item {self.id}"
-    
+
     @strawberry.field
     def error_field(self) -> str:
         raise Exception(f"Error in item {self.id}")
-    
+
     @strawberry.field
     def nullable_error(self) -> Optional[str]:
         raise Exception(f"Nullable error in item {self.id}")
@@ -29,7 +30,7 @@ class Container:
     @strawberry.field
     def items(self) -> List[Item]:
         return [Item(id=i) for i in range(3)]
-    
+
     @strawberry.field
     def single_item(self) -> Item:
         return Item(id=99)
@@ -45,7 +46,7 @@ class Query:
 def test_list_errors():
     """Test error handling in list fields."""
     schema = strawberry.Schema(Query)
-    
+
     query = """
     query {
         container {
@@ -57,14 +58,14 @@ def test_list_errors():
         }
     }
     """
-    
+
     compiled_fn = compile_query(schema._schema, query)
     result = compiled_fn(Query())
-    
+
     print("List field errors test:")
     print("Data:", result.get("data"))
     print("Errors count:", len(result.get("errors", [])))
-    
+
     # Check that we have data for non-erroring fields
     items = result["data"]["container"]["items"]
     assert len(items) == 3
@@ -72,7 +73,7 @@ def test_list_errors():
         assert item["id"] == i
         assert item["name"] == f"Item {i}"
         assert item["nullableError"] is None  # Errored field is None
-    
+
     # Check that we have 3 errors (one per item)
     assert len(result["errors"]) == 3
     print("✅ List errors handled correctly\n")
@@ -81,7 +82,7 @@ def test_list_errors():
 def test_nested_errors():
     """Test error handling in nested structures."""
     schema = strawberry.Schema(Query)
-    
+
     query = """
     query {
         container {
@@ -97,19 +98,19 @@ def test_nested_errors():
         }
     }
     """
-    
+
     compiled_fn = compile_query(schema._schema, query)
     result = compiled_fn(Query())
-    
+
     print("Nested errors test:")
     print("Data:", result.get("data"))
     print("Errors count:", len(result.get("errors", [])))
-    
+
     # Non-nullable error field should still allow other fields
     single_item = result["data"]["container"]["singleItem"]
     assert single_item["id"] == 99
     assert single_item["name"] == "Item 99"
-    
+
     # We should have errors for errorField and all nullableError fields
     assert len(result["errors"]) >= 4  # 1 for errorField + 3 for nullableError
     print("✅ Nested errors handled correctly\n")
@@ -118,7 +119,7 @@ def test_nested_errors():
 def test_error_paths():
     """Test that error paths are correct."""
     schema = strawberry.Schema(Query)
-    
+
     query = """
     query {
         container {
@@ -129,18 +130,20 @@ def test_error_paths():
         }
     }
     """
-    
+
     compiled_fn = compile_query(schema._schema, query)
     result = compiled_fn(Query())
-    
+
     print("Error paths test:")
     errors = result.get("errors", [])
-    
+
     # Check error paths
     for i, error in enumerate(errors):
         expected_path = ["container", "items", i, "nullableError"]
-        assert error["path"] == expected_path, f"Expected {expected_path}, got {error['path']}"
-    
+        assert error["path"] == expected_path, (
+            f"Expected {expected_path}, got {error['path']}"
+        )
+
     print("✅ Error paths are correct\n")
 
 

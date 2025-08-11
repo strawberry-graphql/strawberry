@@ -20,10 +20,9 @@ from graphql import execute_sync, parse
 # Import all demos
 import strawberry
 
-# Try importing JIT
+# Import unified JIT
 try:
-    from strawberry.jit_compiler import compile_query
-    from strawberry.jit_compiler_cached import CachedJITCompiler
+    from strawberry.jit import compile_query, create_cached_compiler
 
     JIT_AVAILABLE = True
 except ImportError:
@@ -100,7 +99,7 @@ def run_quickstart_benchmark() -> BenchmarkResult:
     jit_time = statistics.mean(times) * 1000
 
     # Cached
-    compiler = CachedJITCompiler(schema._schema, enable_parallel=False)
+    compiler = create_cached_compiler(schema._schema)
     times = []
     for _ in range(iterations):
         start = time.perf_counter()
@@ -284,7 +283,7 @@ def run_overhead_elimination_benchmark() -> BenchmarkResult:
     jit_time = statistics.mean(times) * 1000
 
     # Cached
-    compiler = CachedJITCompiler(schema._schema, enable_parallel=False)
+    compiler = create_cached_compiler(schema._schema)
     times = []
     for _ in range(20):
         start = time.perf_counter()

@@ -10,7 +10,7 @@ from typing import List
 from graphql import execute, execute_sync, parse
 
 import strawberry
-from strawberry.jit_compiler import compile_query
+from strawberry.jit import compile_query
 
 
 @strawberry.type

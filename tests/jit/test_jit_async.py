@@ -11,7 +11,7 @@ from graphql import execute, parse
 from pytest_snapshot.plugin import Snapshot
 
 import strawberry
-from strawberry.jit_compiler import GraphQLJITCompiler, compile_query
+from strawberry.jit import JITCompiler, compile_query
 
 HERE = Path(__file__).parent
 
@@ -137,7 +137,7 @@ async def test_async_simple_field(snapshot: Snapshot):
     """
 
     # Compile the query
-    compiler = GraphQLJITCompiler(schema._schema)
+    compiler = JITCompiler(schema._schema)
     document = parse(query)
     operation = compiler._get_operation(document)
     root_type = schema._schema.type_map["Query"]
@@ -184,7 +184,7 @@ async def test_async_nested_fields(snapshot: Snapshot):
     """
 
     # Compile the query
-    compiler = GraphQLJITCompiler(schema._schema)
+    compiler = JITCompiler(schema._schema)
     document = parse(query)
     operation = compiler._get_operation(document)
     root_type = schema._schema.type_map["Query"]
@@ -238,7 +238,7 @@ async def test_mixed_sync_async_fields(snapshot: Snapshot):
     """
 
     # Compile the query
-    compiler = GraphQLJITCompiler(schema._schema)
+    compiler = JITCompiler(schema._schema)
     document = parse(query)
     operation = compiler._get_operation(document)
     root_type = schema._schema.type_map["Query"]
@@ -289,7 +289,7 @@ async def test_async_with_list_fields(snapshot: Snapshot):
     """
 
     # Compile the query
-    compiler = GraphQLJITCompiler(schema._schema)
+    compiler = JITCompiler(schema._schema)
     document = parse(query)
     operation = compiler._get_operation(document)
     root_type = schema._schema.type_map["Query"]
@@ -369,7 +369,7 @@ async def test_async_with_variables(snapshot: Snapshot):
     """
 
     # Compile the query
-    compiler = GraphQLJITCompiler(schema._schema)
+    compiler = JITCompiler(schema._schema)
     document = parse(query)
     operation = compiler._get_operation(document)
     root_type = schema._schema.type_map["Query"]
@@ -440,7 +440,6 @@ async def test_async_with_fragments(snapshot: Snapshot):
 if __name__ == "__main__":
     # Run async tests
     async def run_tests():
-
         class MockSnapshot:
             def __init__(self):
                 self.snapshot_dir = None
