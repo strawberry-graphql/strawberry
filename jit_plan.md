@@ -30,7 +30,9 @@ We've successfully created a **Just-In-Time (JIT) compiler for GraphQL** that ta
 - ✅ `test_jit_with_strawberry.py` - Strawberry-specific integration
 - ✅ `test_jit_benchmark.py` - Performance benchmarks
 - ✅ `test_jit_complex.py` - Complex real-world scenarios
-- ✅ `test_jit_arguments.py` - Field arguments and variables tests (NEW)
+- ✅ `test_jit_arguments.py` - Field arguments and variables tests
+- ✅ `test_jit_fragments.py` - Fragment support tests (NEW)
+- ✅ `test_jit_fragments_optimized.py` - Optimized fragment tests (NEW)
 - ✅ External snapshots for generated code inspection
 
 #### 4. **Features Implemented**
@@ -42,9 +44,12 @@ We've successfully created a **Just-In-Time (JIT) compiler for GraphQL** that ta
 - ✅ `__typename` introspection
 - ✅ Standalone executable output
 - ✅ External snapshot testing
-- ✅ **Field arguments with default values** (NEW)
-- ✅ **Query variables support** (NEW)
-- ✅ **All argument types (scalars, lists, objects, enums, nulls)** (NEW)
+- ✅ **Field arguments with default values**
+- ✅ **Query variables support**
+- ✅ **All argument types (scalars, lists, objects, enums, nulls)**
+- ✅ **Fragment spreads** (NEW)
+- ✅ **Inline fragments** (NEW)
+- ✅ **Nested fragments** (NEW)
 
 ### Performance Achievements
 
@@ -73,18 +78,18 @@ query {
 
 **Implementation completed:**
 - ✅ Parse field arguments from AST
-- ✅ Generate argument extraction code  
+- ✅ Generate argument extraction code
 - ✅ Pass arguments to resolvers
 - ✅ Handle default values
 - ✅ Support for variables
 - ✅ Support for all argument types (scalars, lists, objects, enums, nulls)
 - ✅ Optimized inline argument generation in optimized compiler
 
-#### 2. **Fragments Support** 🟡 MEDIUM PRIORITY
-GraphQL fragments are not yet supported.
+#### 2. **Fragments Support** ✅ COMPLETED
+GraphQL fragments are now fully supported.
 
 ```graphql
-# Not supported yet:
+# Now supported:
 fragment PostFields on Post {
   id
   title
@@ -97,10 +102,13 @@ query {
 }
 ```
 
-**Implementation needed:**
-- Fragment definition parsing
-- Fragment spread resolution
-- Inline fragment support
+**Implementation completed:**
+- ✅ Fragment definition parsing
+- ✅ Fragment spread resolution
+- ✅ Inline fragment support
+- ✅ Nested fragments
+- ✅ Multiple fragments on same query
+- ✅ Support in both standard and optimized JIT compilers
 
 #### 3. **Variables Support** ✅ COMPLETED
 Query variables are now fully supported.
@@ -192,12 +200,12 @@ schema = strawberry.Schema(Query, jit_enabled=True, jit_cache_size=100)
 
 ### Sprint 1 (Essential Features) ✅ PARTIALLY COMPLETE
 1. ~~**Field Arguments**~~ ✅ COMPLETED - Critical for real-world usage
-2. **Error Handling** - Required for production  
+2. **Error Handling** - Required for production
 3. **Async Support** - Most GraphQL APIs are async
 
-### Sprint 2 (Common Patterns) ⚡ IN PROGRESS
+### Sprint 2 (Common Patterns) ✅ COMPLETED
 4. ~~**Variables Support**~~ ✅ COMPLETED - Common in client queries
-5. **Fragments** - Code reuse pattern
+5. ~~**Fragments**~~ ✅ COMPLETED - Code reuse pattern
 6. **Caching System** - Performance optimization
 
 ### Sprint 3 (Type System)
@@ -216,6 +224,7 @@ schema = strawberry.Schema(Query, jit_enabled=True, jit_cache_size=100)
 ## 🎯 Success Metrics
 
 - [x] Field arguments and variables supported ✅
+- [x] Fragment support (spreads, inline, nested) ✅
 - [ ] All standard GraphQL features supported
 - [x] Maintains 3x+ performance improvement ✅
 - [ ] Zero security vulnerabilities
@@ -250,9 +259,10 @@ The JIT compiler has shown tremendous promise with consistent 3-10x performance 
 
 **Recent Progress**:
 - Successfully implemented field arguments with default values
-- Added full query variables support 
-- Maintained 3-4x performance improvement even with argument handling
-- Both standard and optimized JIT compilers now support arguments
+- Added full query variables support
+- Implemented complete fragment support (spreads, inline, nested)
+- Maintained 3-4x performance improvement even with argument and fragment handling
+- Both standard and optimized JIT compilers now support arguments and fragments
 
 The modular design makes it easy to add new features incrementally. The test suite with external snapshots provides excellent visibility into the generated code, making debugging and optimization straightforward.
 
@@ -264,5 +274,5 @@ Based on real-world usage requirements, the next high-priority items are:
 
 1. **Error Handling** - Critical for production use
 2. **Async Support** - Most GraphQL APIs use async resolvers
-3. **Fragments** - Common pattern in client queries
-4. **Caching System** - To avoid recompilation of the same queries
+3. **Caching System** - To avoid recompilation of the same queries
+4. **Union/Interface Types** - Complete type system support

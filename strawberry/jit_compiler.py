@@ -6,8 +6,11 @@ from typing import Callable, Optional
 from graphql import (
     DocumentNode,
     FieldNode,
+    FragmentDefinitionNode,
+    FragmentSpreadNode,
     GraphQLObjectType,
     GraphQLSchema,
+    InlineFragmentNode,
     SelectionSetNode,
     Undefined,
     get_operation_root_type,
@@ -40,6 +43,7 @@ class GraphQLJITCompiler:
         self.indent_level = 0
         self.field_counter = 0
         self.resolver_map = {}  # Maps field IDs to their resolvers
+        self.fragments = {}  # Maps fragment names to their definitions
 
     def compile_query(self, query: str) -> Callable:
         document = parse(query)
@@ -47,6 +51,9 @@ class GraphQLJITCompiler:
         errors = validate(self.schema, document)
         if errors:
             raise ValueError(f"Query validation failed: {errors}")
+
+        # Extract fragments from document
+        self._extract_fragments(document)
 
         operation = self._get_operation(document)
         if not operation:
@@ -108,6 +115,13 @@ class GraphQLJITCompiler:
             if isinstance(definition, OperationDefinitionNode):
                 return definition
         return None
+
+    def _extract_fragments(self, document: DocumentNode):
+        """Extract fragment definitions from the document."""
+        self.fragments = {}
+        for definition in document.definitions:
+            if isinstance(definition, FragmentDefinitionNode):
+                self.fragments[definition.name.value] = definition
 
     def _generate_function(
         self, operation: OperationDefinitionNode, root_type: GraphQLObjectType
@@ -265,6 +279,14 @@ from typing import Any, Dict, List, Optional'''
                 self._generate_field(
                     selection, parent_type, parent_var, result_var, info_var
                 )
+            elif isinstance(selection, FragmentSpreadNode):
+                self._generate_fragment_spread(
+                    selection, parent_type, parent_var, result_var, info_var
+                )
+            elif isinstance(selection, InlineFragmentNode):
+                self._generate_inline_fragment(
+                    selection, parent_type, parent_var, result_var, info_var
+                )
 
     def _generate_field(
         self,
@@ -306,17 +328,17 @@ from typing import Any, Dict, List, Optional'''
         # Handle field arguments if any
         if field.arguments or (field_def.args and len(field_def.args) > 0):
             # Build arguments dictionary including defaults
-            self._emit(f"kwargs = {{}}")
-            
+            self._emit("kwargs = {}")
+
             # First, handle default values from schema
             if field_def.args:
                 for arg_name, arg_def in field_def.args.items():
-                    if hasattr(arg_def, 'default_value'):
+                    if hasattr(arg_def, "default_value"):
                         # Skip Undefined sentinel values
                         if arg_def.default_value is not Undefined:
                             default_val = self._serialize_value(arg_def.default_value)
                             self._emit(f"kwargs['{arg_name}'] = {default_val}")
-            
+
             # Then override with provided arguments
             if field.arguments:
                 for arg in field.arguments:
@@ -331,22 +353,21 @@ from typing import Any, Dict, List, Optional'''
                 self._emit(f"{temp_var} = resolver({parent_var}, {info_var}, **kwargs)")
             else:
                 self._emit(f"{temp_var} = resolver({parent_var}, {info_var})")
+        # Use default field resolution - arguments are passed to the method/function if it exists
+        elif field.arguments or (field_def.args and len(field_def.args) > 0):
+            self._emit(f"attr = getattr({parent_var}, '{field_name}', None)")
+            self._emit("if callable(attr):")
+            self.indent_level += 1
+            self._emit(f"{temp_var} = attr(**kwargs)")
+            self.indent_level -= 1
+            self._emit("else:")
+            self.indent_level += 1
+            self._emit(f"{temp_var} = attr")
+            self.indent_level -= 1
         else:
-            # Use default field resolution - arguments are passed to the method/function if it exists
-            if field.arguments or (field_def.args and len(field_def.args) > 0):
-                self._emit(f"attr = getattr({parent_var}, '{field_name}', None)")
-                self._emit(f"if callable(attr):")
-                self.indent_level += 1
-                self._emit(f"{temp_var} = attr(**kwargs)")
-                self.indent_level -= 1
-                self._emit(f"else:")
-                self.indent_level += 1
-                self._emit(f"{temp_var} = attr")
-                self.indent_level -= 1
-            else:
-                self._emit(
-                    f"{temp_var} = getattr({parent_var}, '{field_name}', None) if hasattr({parent_var}, '{field_name}') else ({parent_var}.get('{field_name}', None) if isinstance({parent_var}, dict) else None)"
-                )
+            self._emit(
+                f"{temp_var} = getattr({parent_var}, '{field_name}', None) if hasattr({parent_var}, '{field_name}') else ({parent_var}.get('{field_name}', None) if isinstance({parent_var}, dict) else None)"
+            )
 
         if field.selection_set:
             field_type = field_def.type
@@ -410,65 +431,171 @@ from typing import Any, Dict, List, Optional'''
     def _generate_argument_value(self, value_node, info_var: str) -> str:
         """Generate code to extract argument value from AST node, supporting variables"""
         from graphql.language import (
-            VariableNode,
-            IntValueNode,
-            FloatValueNode,
-            StringValueNode,
             BooleanValueNode,
-            NullValueNode,
-            ListValueNode,
-            ObjectValueNode,
             EnumValueNode,
+            FloatValueNode,
+            IntValueNode,
+            ListValueNode,
+            NullValueNode,
+            ObjectValueNode,
+            StringValueNode,
+            VariableNode,
         )
-        
+
         if isinstance(value_node, VariableNode):
             # Reference to a variable
             var_name = value_node.name.value
             return f"{info_var}.variable_values.get('{var_name}')"
-        elif isinstance(value_node, (IntValueNode, FloatValueNode)):
+        if isinstance(value_node, (IntValueNode, FloatValueNode)):
             return value_node.value
-        elif isinstance(value_node, StringValueNode):
+        if isinstance(value_node, StringValueNode):
             return repr(value_node.value)
-        elif isinstance(value_node, BooleanValueNode):
+        if isinstance(value_node, BooleanValueNode):
             return "True" if value_node.value else "False"
-        elif isinstance(value_node, NullValueNode):
+        if isinstance(value_node, NullValueNode):
             return "None"
-        elif isinstance(value_node, EnumValueNode):
+        if isinstance(value_node, EnumValueNode):
             return repr(value_node.value)
-        elif isinstance(value_node, ListValueNode):
-            items = [self._generate_argument_value(item, info_var) for item in value_node.values]
+        if isinstance(value_node, ListValueNode):
+            items = [
+                self._generate_argument_value(item, info_var)
+                for item in value_node.values
+            ]
             return f"[{', '.join(items)}]"
-        elif isinstance(value_node, ObjectValueNode):
+        if isinstance(value_node, ObjectValueNode):
             items = []
             for field in value_node.fields:
                 key = repr(field.name.value)
                 val = self._generate_argument_value(field.value, info_var)
                 items.append(f"{key}: {val}")
             return f"{{{', '.join(items)}}}"
-        else:
-            # Fallback for unknown types
-            if hasattr(value_node, "value"):
-                return repr(value_node.value)
-            return "None"
-    
+        # Fallback for unknown types
+        if hasattr(value_node, "value"):
+            return repr(value_node.value)
+        return "None"
+
     def _serialize_value(self, value) -> str:
         """Serialize a Python value to a string representation for code generation"""
         if value is None:
             return "None"
-        elif isinstance(value, bool):
+        if isinstance(value, bool):
             return "True" if value else "False"
-        elif isinstance(value, (int, float)):
+        if isinstance(value, (int, float)):
             return str(value)
-        elif isinstance(value, str):
+        if isinstance(value, str):
             return repr(value)
-        elif isinstance(value, list):
+        if isinstance(value, list):
             items = [self._serialize_value(item) for item in value]
             return f"[{', '.join(items)}]"
-        elif isinstance(value, dict):
-            items = [f"{repr(k)}: {self._serialize_value(v)}" for k, v in value.items()]
+        if isinstance(value, dict):
+            items = [f"{k!r}: {self._serialize_value(v)}" for k, v in value.items()]
             return f"{{{', '.join(items)}}}"
+        return repr(value)
+
+    def _generate_fragment_spread(
+        self,
+        fragment_spread: FragmentSpreadNode,
+        parent_type: GraphQLObjectType,
+        parent_var: str,
+        result_var: str,
+        info_var: str,
+    ):
+        """Generate code for a fragment spread."""
+        fragment_name = fragment_spread.name.value
+
+        if fragment_name not in self.fragments:
+            raise ValueError(f"Fragment '{fragment_name}' not found")
+
+        fragment_def = self.fragments[fragment_name]
+
+        # Get the type condition
+        type_condition = fragment_def.type_condition.name.value
+
+        # Check if the parent type matches or is compatible with the fragment's type condition
+        if parent_type.name == type_condition:
+            # The types match, we can directly apply the fragment
+            if fragment_def.selection_set:
+                self._generate_selection_set(
+                    fragment_def.selection_set,
+                    parent_type,
+                    parent_var,
+                    result_var,
+                    info_var,
+                )
         else:
-            return repr(value)
+            # Generate a type check for the fragment
+            self._emit(f"# Fragment spread: {fragment_name}")
+            self._emit(
+                f"if hasattr({parent_var}, '__typename') and {parent_var}.__typename == '{type_condition}':"
+            )
+            self.indent_level += 1
+            if fragment_def.selection_set:
+                self._generate_selection_set(
+                    fragment_def.selection_set,
+                    parent_type,
+                    parent_var,
+                    result_var,
+                    info_var,
+                )
+            self.indent_level -= 1
+
+    def _generate_inline_fragment(
+        self,
+        inline_fragment: InlineFragmentNode,
+        parent_type: GraphQLObjectType,
+        parent_var: str,
+        result_var: str,
+        info_var: str,
+    ):
+        """Generate code for an inline fragment."""
+        # Check if there's a type condition
+        if inline_fragment.type_condition:
+            type_name = inline_fragment.type_condition.name.value
+
+            # Get the actual type from schema
+            fragment_type = self.schema.type_map.get(type_name)
+            if not fragment_type or not isinstance(fragment_type, GraphQLObjectType):
+                return  # Skip if type not found
+
+            # If the type condition matches the parent type, apply directly
+            if type_name == parent_type.name:
+                # Same type, no need for runtime check
+                self._emit(f"# Inline fragment on {type_name}")
+                if inline_fragment.selection_set:
+                    self._generate_selection_set(
+                        inline_fragment.selection_set,
+                        fragment_type,
+                        parent_var,
+                        result_var,
+                        info_var,
+                    )
+            else:
+                # Different type, need runtime check
+                self._emit(f"# Inline fragment on {type_name}")
+                self._emit(
+                    f"if hasattr({parent_var}, '__typename') and {parent_var}.__typename == '{type_name}':"
+                )
+                self.indent_level += 1
+
+                if inline_fragment.selection_set:
+                    self._generate_selection_set(
+                        inline_fragment.selection_set,
+                        fragment_type,
+                        parent_var,
+                        result_var,
+                        info_var,
+                    )
+
+                self.indent_level -= 1
+        # No type condition, apply selections directly
+        elif inline_fragment.selection_set:
+            self._generate_selection_set(
+                inline_fragment.selection_set,
+                parent_type,
+                parent_var,
+                result_var,
+                info_var,
+            )
 
     def _emit(self, line: str):
         indent = "    " * self.indent_level

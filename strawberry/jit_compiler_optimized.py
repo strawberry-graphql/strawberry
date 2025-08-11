@@ -6,8 +6,11 @@ from typing import Callable, Optional
 from graphql import (
     DocumentNode,
     FieldNode,
+    FragmentDefinitionNode,
+    FragmentSpreadNode,
     GraphQLObjectType,
     GraphQLSchema,
+    InlineFragmentNode,
     SelectionSetNode,
     Undefined,
     get_operation_root_type,
@@ -32,6 +35,7 @@ class OptimizedGraphQLJITCompiler:
         self.field_counter = 0
         self.resolver_map = {}
         self.inline_resolvers = {}  # Store simple resolvers for inlining
+        self.fragments = {}  # Maps fragment names to their definitions
 
     def compile_query(self, query: str) -> Callable:
         document = parse(query)
@@ -39,6 +43,9 @@ class OptimizedGraphQLJITCompiler:
         errors = validate(self.schema, document)
         if errors:
             raise ValueError(f"Query validation failed: {errors}")
+
+        # Extract fragments from document
+        self._extract_fragments(document)
 
         operation = self._get_operation(document)
         if not operation:
@@ -129,6 +136,8 @@ class OptimizedGraphQLJITCompiler:
     ):
         # Group fields by type for potential batching
         fields_by_resolver_type = {}
+        fragment_spreads = []
+        inline_fragments = []
 
         for selection in selection_set.selections:
             if isinstance(selection, FieldNode):
@@ -140,6 +149,10 @@ class OptimizedGraphQLJITCompiler:
                     fields_by_resolver_type.setdefault("simple", []).append(selection)
                 else:
                     fields_by_resolver_type.setdefault("complex", []).append(selection)
+            elif isinstance(selection, FragmentSpreadNode):
+                fragment_spreads.append(selection)
+            elif isinstance(selection, InlineFragmentNode):
+                inline_fragments.append(selection)
 
         # Process simple fields first (batch them)
         if "simple" in fields_by_resolver_type:
@@ -150,6 +163,18 @@ class OptimizedGraphQLJITCompiler:
         if "complex" in fields_by_resolver_type:
             for field in fields_by_resolver_type["complex"]:
                 self._generate_complex_field(field, parent_type, parent_var, result_var)
+
+        # Process fragment spreads
+        for fragment_spread in fragment_spreads:
+            self._generate_fragment_spread(
+                fragment_spread, parent_type, parent_var, result_var
+            )
+
+        # Process inline fragments
+        for inline_fragment in inline_fragments:
+            self._generate_inline_fragment(
+                inline_fragment, parent_type, parent_var, result_var
+            )
 
     def _generate_simple_field(
         self,
@@ -174,24 +199,26 @@ class OptimizedGraphQLJITCompiler:
         if field.arguments or (field_def.args and len(field_def.args) > 0):
             # Build arguments dictionary inline for optimization
             args_code = self._build_inline_arguments(field, field_def)
-            
+
             # Check if attribute is callable and call with arguments
             self._emit(f"_attr = getattr({parent_var}, '{field_name}', None)")
-            self._emit(f"if callable(_attr):")
+            self._emit("if callable(_attr):")
             self.indent_level += 1
             if args_code:
                 self._emit(f"_temp_val = _attr({args_code})")
             else:
-                self._emit(f"_temp_val = _attr()")
+                self._emit("_temp_val = _attr()")
             self.indent_level -= 1
-            self._emit(f"else:")
+            self._emit("else:")
             self.indent_level += 1
-            self._emit(f"_temp_val = _attr")
+            self._emit("_temp_val = _attr")
             self.indent_level -= 1
-            
+
             # Now handle the result
             if field.selection_set:
-                self._process_nested_field(field, field_def, "_temp_val", result_var, alias)
+                self._process_nested_field(
+                    field, field_def, "_temp_val", result_var, alias
+                )
             else:
                 self._emit(f'{result_var}["{alias}"] = _temp_val')
             return
@@ -272,9 +299,13 @@ class OptimizedGraphQLJITCompiler:
         if field.arguments or (field_def.args and len(field_def.args) > 0):
             args_code = self._build_inline_arguments(field, field_def)
             if args_code:
-                self._emit(f"{temp_var} = _resolvers['{resolver_id}']({parent_var}, None, {args_code})")
+                self._emit(
+                    f"{temp_var} = _resolvers['{resolver_id}']({parent_var}, None, {args_code})"
+                )
             else:
-                self._emit(f"{temp_var} = _resolvers['{resolver_id}']({parent_var}, None)")
+                self._emit(
+                    f"{temp_var} = _resolvers['{resolver_id}']({parent_var}, None)"
+                )
         else:
             # No arguments - simple resolver call
             self._emit(f"{temp_var} = _resolvers['{resolver_id}']({parent_var}, None)")
@@ -332,7 +363,9 @@ class OptimizedGraphQLJITCompiler:
             self.indent_level += 1
 
             # Handle lists
-            if hasattr(field_def.type, "of_type") and str(field_def.type).startswith("["):
+            if hasattr(field_def.type, "of_type") and str(field_def.type).startswith(
+                "["
+            ):
                 self._emit(f"if isinstance({temp_var}, list):")
                 self.indent_level += 1
                 self._emit(f'{result_var}["{alias}"] = []')
@@ -364,93 +397,199 @@ class OptimizedGraphQLJITCompiler:
     def _build_inline_arguments(self, field: FieldNode, field_def) -> str:
         """Build inline arguments for optimized function calls."""
         args = []
-        
+
         # Collect default values
         defaults = {}
         if field_def.args:
             for arg_name, arg_def in field_def.args.items():
-                if hasattr(arg_def, 'default_value') and arg_def.default_value is not Undefined:
+                if (
+                    hasattr(arg_def, "default_value")
+                    and arg_def.default_value is not Undefined
+                ):
                     defaults[arg_name] = self._serialize_value(arg_def.default_value)
-        
+
         # Override with provided arguments
         provided = {}
         if field.arguments:
             for arg in field.arguments:
                 arg_name = arg.name.value
                 provided[arg_name] = self._generate_argument_value(arg.value)
-        
+
         # Merge defaults and provided
         all_args = {**defaults, **provided}
-        
+
         # Format as keyword arguments
         for key, value in all_args.items():
             args.append(f"{key}={value}")
-        
+
         return ", ".join(args) if args else ""
-    
+
     def _generate_argument_value(self, value_node) -> str:
         """Generate inline code for argument values."""
         from graphql.language import (
-            VariableNode,
-            IntValueNode,
-            FloatValueNode,
-            StringValueNode,
             BooleanValueNode,
-            NullValueNode,
-            ListValueNode,
-            ObjectValueNode,
             EnumValueNode,
+            FloatValueNode,
+            IntValueNode,
+            ListValueNode,
+            NullValueNode,
+            ObjectValueNode,
+            StringValueNode,
+            VariableNode,
         )
-        
+
         if isinstance(value_node, VariableNode):
             # For optimized version, we'll access variables directly
             var_name = value_node.name.value
             return f"variables.get('{var_name}')"
-        elif isinstance(value_node, (IntValueNode, FloatValueNode)):
+        if isinstance(value_node, (IntValueNode, FloatValueNode)):
             return value_node.value
-        elif isinstance(value_node, StringValueNode):
+        if isinstance(value_node, StringValueNode):
             return repr(value_node.value)
-        elif isinstance(value_node, BooleanValueNode):
+        if isinstance(value_node, BooleanValueNode):
             return "True" if value_node.value else "False"
-        elif isinstance(value_node, NullValueNode):
+        if isinstance(value_node, NullValueNode):
             return "None"
-        elif isinstance(value_node, EnumValueNode):
+        if isinstance(value_node, EnumValueNode):
             return repr(value_node.value)
-        elif isinstance(value_node, ListValueNode):
+        if isinstance(value_node, ListValueNode):
             items = [self._generate_argument_value(item) for item in value_node.values]
             return f"[{', '.join(items)}]"
-        elif isinstance(value_node, ObjectValueNode):
+        if isinstance(value_node, ObjectValueNode):
             items = []
             for field in value_node.fields:
                 key = repr(field.name.value)
                 val = self._generate_argument_value(field.value)
                 items.append(f"{key}: {val}")
             return f"{{{', '.join(items)}}}"
-        else:
-            return "None"
-    
+        return "None"
+
     def _serialize_value(self, value) -> str:
         """Serialize Python values for code generation."""
         if value is None:
             return "None"
-        elif isinstance(value, bool):
+        if isinstance(value, bool):
             return "True" if value else "False"
-        elif isinstance(value, (int, float)):
+        if isinstance(value, (int, float)):
             return str(value)
-        elif isinstance(value, str):
+        if isinstance(value, str):
             return repr(value)
-        elif isinstance(value, list):
+        if isinstance(value, list):
             items = [self._serialize_value(item) for item in value]
             return f"[{', '.join(items)}]"
-        elif isinstance(value, dict):
-            items = [f"{repr(k)}: {self._serialize_value(v)}" for k, v in value.items()]
+        if isinstance(value, dict):
+            items = [f"{k!r}: {self._serialize_value(v)}" for k, v in value.items()]
             return f"{{{', '.join(items)}}}"
-        else:
-            return repr(value)
+        return repr(value)
+
+    def _extract_fragments(self, document: DocumentNode):
+        """Extract fragment definitions from the document."""
+        self.fragments = {}
+        for definition in document.definitions:
+            if isinstance(definition, FragmentDefinitionNode):
+                self.fragments[definition.name.value] = definition
 
     def _emit(self, line: str):
         indent = "    " * self.indent_level
         self.generated_code.append(f"{indent}{line}")
+
+    def _generate_fragment_spread(
+        self,
+        fragment_spread: FragmentSpreadNode,
+        parent_type: GraphQLObjectType,
+        parent_var: str,
+        result_var: str,
+    ):
+        """Generate optimized code for a fragment spread."""
+        fragment_name = fragment_spread.name.value
+
+        if fragment_name not in self.fragments:
+            raise ValueError(f"Fragment '{fragment_name}' not found")
+
+        fragment_def = self.fragments[fragment_name]
+
+        # Get the type condition
+        type_condition = fragment_def.type_condition.name.value
+
+        # Check if the parent type matches or is compatible with the fragment's type condition
+        if parent_type.name == type_condition:
+            # The types match, we can directly apply the fragment
+            if fragment_def.selection_set:
+                self._generate_optimized_selection_set(
+                    fragment_def.selection_set,
+                    parent_type,
+                    parent_var,
+                    result_var,
+                )
+        else:
+            # Generate a type check for the fragment
+            self._emit(f"# Fragment spread: {fragment_name}")
+            self._emit(
+                f"if hasattr({parent_var}, '__typename') and {parent_var}.__typename == '{type_condition}':"
+            )
+            self.indent_level += 1
+            if fragment_def.selection_set:
+                self._generate_optimized_selection_set(
+                    fragment_def.selection_set,
+                    parent_type,
+                    parent_var,
+                    result_var,
+                )
+            self.indent_level -= 1
+
+    def _generate_inline_fragment(
+        self,
+        inline_fragment: InlineFragmentNode,
+        parent_type: GraphQLObjectType,
+        parent_var: str,
+        result_var: str,
+    ):
+        """Generate optimized code for an inline fragment."""
+        # Check if there's a type condition
+        if inline_fragment.type_condition:
+            type_name = inline_fragment.type_condition.name.value
+
+            # Get the actual type from schema
+            fragment_type = self.schema.type_map.get(type_name)
+            if not fragment_type or not isinstance(fragment_type, GraphQLObjectType):
+                return  # Skip if type not found
+
+            # If the type condition matches the parent type, apply directly
+            if type_name == parent_type.name:
+                # Same type, no need for runtime check - optimize by inlining
+                self._emit(f"# Inline fragment on {type_name} (optimized)")
+                if inline_fragment.selection_set:
+                    self._generate_optimized_selection_set(
+                        inline_fragment.selection_set,
+                        fragment_type,
+                        parent_var,
+                        result_var,
+                    )
+            else:
+                # Different type, need runtime check
+                self._emit(f"# Inline fragment on {type_name}")
+                self._emit(
+                    f"if hasattr({parent_var}, '__typename') and {parent_var}.__typename == '{type_name}':"
+                )
+                self.indent_level += 1
+
+                if inline_fragment.selection_set:
+                    self._generate_optimized_selection_set(
+                        inline_fragment.selection_set,
+                        fragment_type,
+                        parent_var,
+                        result_var,
+                    )
+
+                self.indent_level -= 1
+        # No type condition, apply selections directly
+        elif inline_fragment.selection_set:
+            self._generate_optimized_selection_set(
+                inline_fragment.selection_set,
+                parent_type,
+                parent_var,
+                result_var,
+            )
 
 
 def compile_query_optimized(schema: GraphQLSchema, query: str) -> Callable:
