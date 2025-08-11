@@ -146,7 +146,7 @@ from typing import Any, Dict, List, Optional'''
         if operation.selection_set:
             # Generate selection set with parallel execution
             self._generate_selection_set_parallel(
-                operation.selection_set, root_type, "root", "result", "info"
+                operation.selection_set, root_type, "root", "result", "info", path="[]"
             )
 
         self._emit("return result")
@@ -187,6 +187,7 @@ from typing import Any, Dict, List, Optional'''
         parent_var: str,
         result_var: str,
         info_var: str,
+        path: str = "[]",
     ):
         """Generate selection set with parallel execution for async fields.
 
@@ -269,18 +270,18 @@ from typing import Any, Dict, List, Optional'''
             # Process single async field or when not async
             for selection in async_selections:
                 self._generate_field(
-                    selection, parent_type, parent_var, result_var, info_var
+                    selection, parent_type, parent_var, result_var, info_var, path
                 )
 
         # Process fragments
         for selection in fragment_selections:
             if isinstance(selection, FragmentSpreadNode):
                 self._generate_fragment_spread(
-                    selection, parent_type, parent_var, result_var, info_var
+                    selection, parent_type, parent_var, result_var, info_var, path
                 )
             elif isinstance(selection, InlineFragmentNode):
                 self._generate_inline_fragment(
-                    selection, parent_type, parent_var, result_var, info_var
+                    selection, parent_type, parent_var, result_var, info_var, path
                 )
 
     def _generate_selection_set(
@@ -290,6 +291,7 @@ from typing import Any, Dict, List, Optional'''
         parent_var: str,
         result_var: str,
         info_var: str,
+        path: str = "[]",
     ):
         """Override to use parallel execution when beneficial.
 
@@ -299,12 +301,12 @@ from typing import Any, Dict, List, Optional'''
         if self.parallel_execution_enabled and self.has_async_resolvers:
             # Use parallel execution for async fields
             self._generate_selection_set_parallel(
-                selection_set, parent_type, parent_var, result_var, info_var
+                selection_set, parent_type, parent_var, result_var, info_var, path
             )
         else:
             # Fall back to sequential execution
             super()._generate_selection_set(
-                selection_set, parent_type, parent_var, result_var, info_var
+                selection_set, parent_type, parent_var, result_var, info_var, path
             )
 
 

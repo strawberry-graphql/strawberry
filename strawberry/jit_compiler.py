@@ -227,16 +227,42 @@ from typing import Any, Dict, List, Optional'''
         self.indent_level += 1
         self._emit('"""Execute the JIT-compiled GraphQL query."""')
         self._emit("result = {}")
+        self._emit("errors = []  # Collect field errors")
         self._emit("info = _MockInfo(None)  # Mock info object")
         self._emit("info.root_value = root")
         self._emit("info.context = context")
         self._emit("info.variable_values = variables or {}")
 
         if operation.selection_set:
+            # Generate try-except for root-level error handling
+            self._emit("")
+            self._emit("# Execute query with error handling")
+            self._emit("try:")
+            self.indent_level += 1
             self._generate_selection_set(
-                operation.selection_set, root_type, "root", "result", "info"
+                operation.selection_set, root_type, "root", "result", "info", path="[]"
             )
+            self.indent_level -= 1
+            self._emit("except Exception as root_error:")
+            self.indent_level += 1
+            self._emit("# Non-nullable error propagated to root")
+            self._emit("if not isinstance(root_error, Exception):")
+            self.indent_level += 1
+            self._emit("raise  # Re-raise non-Exception errors")
+            self.indent_level -= 1
+            self._emit("# Add to errors if it's a field error")
+            self._emit("if not any(e.get('message') == str(root_error) for e in errors):")
+            self.indent_level += 1
+            self._emit("errors.append({'message': str(root_error), 'path': []})")
+            self.indent_level -= 1
+            self._emit("result = None  # Null the entire result for root error")
+            self.indent_level -= 1
 
+        self._emit("# Return result with errors if any occurred")
+        self._emit("if errors:")
+        self.indent_level += 1
+        self._emit('return {"data": result, "errors": errors}')
+        self.indent_level -= 1
         self._emit("return result")
 
         # Generate resolver initialization
@@ -295,11 +321,12 @@ from typing import Any, Dict, List, Optional'''
         parent_var: str,
         result_var: str,
         info_var: str,
+        path: str = "[]",
     ):
         for selection in selection_set.selections:
             if isinstance(selection, FieldNode):
                 self._generate_field(
-                    selection, parent_type, parent_var, result_var, info_var
+                    selection, parent_type, parent_var, result_var, info_var, path
                 )
             elif isinstance(selection, FragmentSpreadNode):
                 self._generate_fragment_spread(
@@ -317,9 +344,13 @@ from typing import Any, Dict, List, Optional'''
         parent_var: str,
         result_var: str,
         info_var: str,
+        path: str = "[]",
     ):
         field_name = field.name.value
         alias = field.alias.value if field.alias else field_name
+        
+        # Build the path for this field
+        field_path = f"{path} + ['{alias}']"
 
         if field_name == "__typename":
             self._emit(f'{result_var}["{alias}"] = "{parent_type.name}"')
@@ -353,10 +384,17 @@ from typing import Any, Dict, List, Optional'''
 
         # Generate code to call the resolver
         temp_var = f"field_{field_name}_value"
+        
+        # Check if field is nullable for error handling
+        is_nullable = self._is_nullable_type(field_def.type)
 
         # Update info object for this field
         self._emit(f'{info_var}.field_name = "{field_name}"')
         self._emit(f'{info_var}.parent_type = "{parent_type.name}"')
+        
+        # Start try block for error handling
+        self._emit("try:")
+        self.indent_level += 1
 
         # Handle field arguments if any
         if field.arguments or (field_def.args and len(field_def.args) > 0):
@@ -458,40 +496,83 @@ from typing import Any, Dict, List, Optional'''
                     self._emit(f"if isinstance({temp_var}, list):")
                     self.indent_level += 1
                     self._emit(f'{result_var}["{alias}"] = []')
-                    self._emit(f"for item_{field_name} in {temp_var}:")
+                    self._emit(f"for idx_{field_name}, item_{field_name} in enumerate({temp_var}):")
                     self.indent_level += 1
                     self._emit(f"item_{field_name}_result = {{}}")
+                    item_path = f"{field_path} + [idx_{field_name}]"
+                    # Wrap nested selection in try-except for non-nullable propagation
+                    self._emit("try:")
+                    self.indent_level += 1
                     self._generate_selection_set(
                         field.selection_set,
                         field_type,
                         f"item_{field_name}",
                         f"item_{field_name}_result",
                         info_var,
+                        item_path,
                     )
                     self._emit(
                         f'{result_var}["{alias}"].append(item_{field_name}_result)'
                     )
                     self.indent_level -= 1
+                    self._emit("except Exception as nested_e:")
+                    self.indent_level += 1
+                    self._emit("# Error in list item - check if list is nullable")
+                    if is_nullable:
+                        self._emit("# List is nullable, null the item")
+                        self._emit(f'{result_var}["{alias}"].append(None)')
+                    else:
+                        self._emit("# List is non-nullable, propagate error")
+                        self._emit("raise")
+                    self.indent_level -= 1
+                    self.indent_level -= 1
                     self.indent_level -= 1
                     self._emit("else:")
                     self.indent_level += 1
                     self._emit("single_item_result = {}")
+                    # Wrap single item in try-except
+                    self._emit("try:")
+                    self.indent_level += 1
                     self._generate_selection_set(
                         field.selection_set,
                         field_type,
                         temp_var,
                         "single_item_result",
                         info_var,
+                        field_path,
                     )
                     self._emit(f'{result_var}["{alias}"] = single_item_result')
+                    self.indent_level -= 1
+                    self._emit("except Exception as nested_e:")
+                    self.indent_level += 1
+                    if is_nullable:
+                        self._emit("# Field is nullable, set to None")
+                        self._emit(f'{result_var}["{alias}"] = None')
+                    else:
+                        self._emit("# Field is non-nullable, propagate error")
+                        self._emit("raise")
+                    self.indent_level -= 1
                     self.indent_level -= 1
                 else:
                     nested_var = f"nested_{field_name}_result"
                     self._emit(f"{nested_var} = {{}}")
+                    # Wrap nested selection in try-except
+                    self._emit("try:")
+                    self.indent_level += 1
                     self._generate_selection_set(
-                        field.selection_set, field_type, temp_var, nested_var, info_var
+                        field.selection_set, field_type, temp_var, nested_var, info_var, field_path
                     )
                     self._emit(f'{result_var}["{alias}"] = {nested_var}')
+                    self.indent_level -= 1
+                    self._emit("except Exception as nested_e:")
+                    self.indent_level += 1
+                    if is_nullable:
+                        self._emit("# Field is nullable, set to None")
+                        self._emit(f'{result_var}["{alias}"] = None')
+                    else:
+                        self._emit("# Field is non-nullable, propagate error")
+                        self._emit("raise")
+                    self.indent_level -= 1
 
                 self.indent_level -= 1
                 self._emit("else:")
@@ -500,6 +581,25 @@ from typing import Any, Dict, List, Optional'''
                 self.indent_level -= 1
         else:
             self._emit(f'{result_var}["{alias}"] = {temp_var}')
+        
+        # End try block and add except for error handling
+        self.indent_level -= 1
+        self._emit("except Exception as e:")
+        self.indent_level += 1
+        self._emit(f"# Handle field error for '{field_name}'")
+        self._emit(f"error = {{}}")
+        self._emit(f"error['message'] = str(e)")
+        self._emit(f"error['path'] = {field_path}")
+        self._emit("errors.append(error)")
+        
+        if is_nullable:
+            self._emit(f"# Nullable field - set to None")
+            self._emit(f'{result_var}["{alias}"] = None')
+        else:
+            self._emit(f"# Non-nullable field error - must propagate")
+            self._emit("# Re-raise to propagate error up the tree")
+            self._emit("raise")
+        self.indent_level -= 1
 
         # Close directive conditional block if needed
         if field.directives and self._generate_skip_include_checks(
@@ -772,6 +872,11 @@ from typing import Any, Dict, List, Optional'''
     def _emit(self, line: str):
         indent = "    " * self.indent_level
         self.generated_code.append(f"{indent}{line}")
+    
+    def _is_nullable_type(self, graphql_type):
+        """Check if a GraphQL type is nullable."""
+        from graphql import GraphQLNonNull
+        return not isinstance(graphql_type, GraphQLNonNull)
 
 
 def compile_query(schema: GraphQLSchema, query: str) -> Callable:
