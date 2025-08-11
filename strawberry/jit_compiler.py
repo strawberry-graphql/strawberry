@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import inspect
 import textwrap
 from typing import Callable, Optional
 
@@ -45,6 +46,8 @@ class GraphQLJITCompiler:
         self.field_counter = 0
         self.resolver_map = {}  # Maps field IDs to their resolvers
         self.fragments = {}  # Maps fragment names to their definitions
+        self.has_async_resolvers = False  # Track if any resolver is async
+        self.async_resolver_ids = set()  # Track which resolvers are async
 
     def compile_query(self, query: str) -> Callable:
         document = parse(query)
@@ -69,6 +72,8 @@ class GraphQLJITCompiler:
         self.indent_level = 0
         self.field_counter = 0
         self.resolver_map = {}
+        self.has_async_resolvers = False
+        self.async_resolver_ids = set()
 
         function_code = self._generate_function(operation, root_type)
 
@@ -200,9 +205,25 @@ from typing import Any, Dict, List, Optional'''
         self.generated_code.append(header)
         self.generated_code.append(mock_info_code)
         self.generated_code.append("")
+
+        # Pre-scan to detect async resolvers
+        if operation.selection_set:
+            self._detect_async_resolvers(operation.selection_set, root_type)
+
+        # Add imports if needed
+        if self.has_async_resolvers:
+            self.generated_code.append("")
+            self.generated_code.append("import asyncio")
+            self.generated_code.append("import inspect")
+
         self.generated_code.append("")
 
-        self._emit("def execute_query(root, context=None, variables=None):")
+        # Generate async or sync function based on resolver types
+        if self.has_async_resolvers:
+            self._emit("async def execute_query(root, context=None, variables=None):")
+        else:
+            self._emit("def execute_query(root, context=None, variables=None):")
+
         self.indent_level += 1
         self._emit('"""Execute the JIT-compiled GraphQL query."""')
         self._emit("result = {}")
@@ -307,7 +328,7 @@ from typing import Any, Dict, List, Optional'''
         field_def = parent_type.fields.get(field_name)
         if not field_def:
             return
-        
+
         # Handle directives (@skip and @include)
         if field.directives:
             skip_code = self._generate_skip_include_checks(field.directives, info_var)
@@ -322,6 +343,10 @@ from typing import Any, Dict, List, Optional'''
         # Get the resolver function from the field definition
         if field_def.resolve:
             self.resolver_map[resolver_id] = field_def.resolve
+            # Check if resolver is async
+            if inspect.iscoroutinefunction(field_def.resolve):
+                self.has_async_resolvers = True
+                self.async_resolver_ids.add(resolver_id)
         else:
             # Use a default resolver that gets the attribute
             self.resolver_map[resolver_id] = None
@@ -357,8 +382,19 @@ from typing import Any, Dict, List, Optional'''
         if self.resolver_map[resolver_id]:
             # Call the actual resolver
             self._emit(f"resolver = _resolvers['{resolver_id}']")
-            if field.arguments or (field_def.args and len(field_def.args) > 0):
-                self._emit(f"{temp_var} = resolver({parent_var}, {info_var}, **kwargs)")
+            if resolver_id in self.async_resolver_ids:
+                # Async resolver - need to await
+                if field.arguments or (field_def.args and len(field_def.args) > 0):
+                    self._emit(
+                        f"{temp_var} = await resolver({parent_var}, {info_var}, **kwargs)"
+                    )
+                else:
+                    self._emit(f"{temp_var} = await resolver({parent_var}, {info_var})")
+            # Sync resolver
+            elif field.arguments or (field_def.args and len(field_def.args) > 0):
+                self._emit(
+                    f"{temp_var} = resolver({parent_var}, {info_var}, **kwargs)"
+                )
             else:
                 self._emit(f"{temp_var} = resolver({parent_var}, {info_var})")
         # Use default field resolution - arguments are passed to the method/function if it exists
@@ -366,7 +402,36 @@ from typing import Any, Dict, List, Optional'''
             self._emit(f"attr = getattr({parent_var}, '{field_name}', None)")
             self._emit("if callable(attr):")
             self.indent_level += 1
-            self._emit(f"{temp_var} = attr(**kwargs)")
+            if self.has_async_resolvers:
+                # In async context, check if the method is async
+                self._emit("if inspect.iscoroutinefunction(attr):")
+                self.indent_level += 1
+                self._emit(f"{temp_var} = await attr(**kwargs)")
+                self.indent_level -= 1
+                self._emit("else:")
+                self.indent_level += 1
+                self._emit(f"{temp_var} = attr(**kwargs)")
+                self.indent_level -= 1
+            else:
+                self._emit(f"{temp_var} = attr(**kwargs)")
+            self.indent_level -= 1
+            self._emit("else:")
+            self.indent_level += 1
+            self._emit(f"{temp_var} = attr")
+            self.indent_level -= 1
+        # For simple attribute access without args
+        elif self.has_async_resolvers:
+            # Check if attribute is an async method
+            self._emit(
+                f"attr = getattr({parent_var}, '{field_name}', None) if hasattr({parent_var}, '{field_name}') else ({parent_var}.get('{field_name}', None) if isinstance({parent_var}, dict) else None)"
+            )
+            self._emit("if callable(attr) and inspect.iscoroutinefunction(attr):")
+            self.indent_level += 1
+            self._emit(f"{temp_var} = await attr()")
+            self.indent_level -= 1
+            self._emit("elif callable(attr):")
+            self.indent_level += 1
+            self._emit(f"{temp_var} = attr()")
             self.indent_level -= 1
             self._emit("else:")
             self.indent_level += 1
@@ -435,9 +500,11 @@ from typing import Any, Dict, List, Optional'''
                 self.indent_level -= 1
         else:
             self._emit(f'{result_var}["{alias}"] = {temp_var}')
-        
+
         # Close directive conditional block if needed
-        if field.directives and self._generate_skip_include_checks(field.directives, info_var):
+        if field.directives and self._generate_skip_include_checks(
+            field.directives, info_var
+        ):
             self.indent_level -= 1
 
     def _generate_argument_value(self, value_node, info_var: str) -> str:
@@ -609,13 +676,15 @@ from typing import Any, Dict, List, Optional'''
                 info_var,
             )
 
-    def _generate_skip_include_checks(self, directives: list[DirectiveNode], info_var: str) -> str:
+    def _generate_skip_include_checks(
+        self, directives: list[DirectiveNode], info_var: str
+    ) -> str:
         """Generate conditional code for @skip and @include directives."""
         conditions = []
-        
+
         for directive in directives:
             directive_name = directive.name.value
-            
+
             if directive_name == "skip":
                 # @skip(if: condition) - skip field if condition is true
                 if_arg = self._get_directive_argument(directive, "if", info_var)
@@ -626,19 +695,80 @@ from typing import Any, Dict, List, Optional'''
                 if_arg = self._get_directive_argument(directive, "if", info_var)
                 if if_arg:
                     conditions.append(if_arg)
-        
+
         if conditions:
             # Combine all conditions with AND
             return f"if {' and '.join(conditions)}:"
         return ""
-    
-    def _get_directive_argument(self, directive: DirectiveNode, arg_name: str, info_var: str) -> str:
+
+    def _get_directive_argument(
+        self, directive: DirectiveNode, arg_name: str, info_var: str
+    ) -> str:
         """Extract argument value from a directive."""
         for arg in directive.arguments or []:
             if arg.name.value == arg_name:
                 return self._generate_argument_value(arg.value, info_var)
         return ""
-    
+
+    def _detect_async_resolvers(
+        self, selection_set: SelectionSetNode, parent_type: GraphQLObjectType
+    ):
+        """Pre-scan to detect any async resolvers in the query."""
+        for selection in selection_set.selections:
+            if isinstance(selection, FieldNode):
+                field_name = selection.name.value
+                if field_name == "__typename":
+                    continue
+
+                field_def = parent_type.fields.get(field_name)
+                if field_def:
+                    if field_def.resolve and inspect.iscoroutinefunction(
+                        field_def.resolve
+                    ):
+                        self.has_async_resolvers = True
+                    # Also check if the default field access might be async
+                    # This is a heuristic - in production we'd need schema introspection
+                    elif not field_def.resolve:
+                        # For fields without custom resolvers, we can't know at compile time
+                        # if the attribute/method is async, so we need to be conservative
+                        # For now, we'll assume fields ending with certain patterns might be async
+                        pass
+
+                # Recurse into nested selections
+                if field_def and selection.selection_set:
+                    field_type = field_def.type
+                    while hasattr(field_type, "of_type"):
+                        field_type = field_type.of_type
+                    if isinstance(field_type, GraphQLObjectType):
+                        self._detect_async_resolvers(
+                            selection.selection_set, field_type
+                        )
+            elif isinstance(selection, FragmentSpreadNode):
+                # Handle fragment spreads
+                fragment_name = selection.name.value
+                if fragment_name in self.fragments:
+                    fragment_def = self.fragments[fragment_name]
+                    if fragment_def.selection_set:
+                        self._detect_async_resolvers(
+                            fragment_def.selection_set, parent_type
+                        )
+            elif isinstance(selection, InlineFragmentNode):
+                # Handle inline fragments
+                if selection.selection_set:
+                    if selection.type_condition:
+                        type_name = selection.type_condition.name.value
+                        fragment_type = self.schema.type_map.get(type_name)
+                        if fragment_type and isinstance(
+                            fragment_type, GraphQLObjectType
+                        ):
+                            self._detect_async_resolvers(
+                                selection.selection_set, fragment_type
+                            )
+                    else:
+                        self._detect_async_resolvers(
+                            selection.selection_set, parent_type
+                        )
+
     def _emit(self, line: str):
         indent = "    " * self.indent_level
         self.generated_code.append(f"{indent}{line}")
