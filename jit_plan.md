@@ -31,8 +31,9 @@ We've successfully created a **Just-In-Time (JIT) compiler for GraphQL** that ta
 - ✅ `test_jit_benchmark.py` - Performance benchmarks
 - ✅ `test_jit_complex.py` - Complex real-world scenarios
 - ✅ `test_jit_arguments.py` - Field arguments and variables tests
-- ✅ `test_jit_fragments.py` - Fragment support tests (NEW)
-- ✅ `test_jit_fragments_optimized.py` - Optimized fragment tests (NEW)
+- ✅ `test_jit_fragments.py` - Fragment support tests
+- ✅ `test_jit_fragments_optimized.py` - Optimized fragment tests
+- ✅ `test_jit_directives.py` - Directive support tests (NEW)
 - ✅ External snapshots for generated code inspection
 
 #### 4. **Features Implemented**
@@ -47,9 +48,11 @@ We've successfully created a **Just-In-Time (JIT) compiler for GraphQL** that ta
 - ✅ **Field arguments with default values**
 - ✅ **Query variables support**
 - ✅ **All argument types (scalars, lists, objects, enums, nulls)**
-- ✅ **Fragment spreads** (NEW)
-- ✅ **Inline fragments** (NEW)
-- ✅ **Nested fragments** (NEW)
+- ✅ **Fragment spreads**
+- ✅ **Inline fragments**
+- ✅ **Nested fragments**
+- ✅ **@skip directive** (NEW)
+- ✅ **@include directive** (NEW)
 
 ### Performance Achievements
 
@@ -130,18 +133,27 @@ query GetPost($id: ID!) {
 
 ### Phase 2: Advanced Features
 
-#### 4. **Directives Support** 🟢 LOWER PRIORITY
-GraphQL directives like `@skip` and `@include`.
+#### 4. **Directives Support** ✅ COMPLETED
+Built-in GraphQL directives `@skip` and `@include` are now fully supported.
 
 ```graphql
-# Not supported yet:
-query {
+# Now supported:
+query GetPosts($showTitle: Boolean!, $skipContent: Boolean!) {
   posts {
     id
     title @include(if: $showTitle)
+    content @skip(if: $skipContent)
   }
 }
 ```
+
+**Implementation completed:**
+- ✅ @skip directive - conditionally skip fields
+- ✅ @include directive - conditionally include fields
+- ✅ Support for variable-based conditions
+- ✅ Support for literal boolean conditions
+- ✅ Directives work with fragments
+- ✅ Support in both standard and optimized JIT compilers
 
 #### 5. **Union and Interface Types** 🟡 MEDIUM PRIORITY
 Support for GraphQL unions and interfaces with type resolution.
@@ -208,9 +220,9 @@ schema = strawberry.Schema(Query, jit_enabled=True, jit_cache_size=100)
 5. ~~**Fragments**~~ ✅ COMPLETED - Code reuse pattern
 6. **Caching System** - Performance optimization
 
-### Sprint 3 (Type System)
+### Sprint 3 (Type System) ⚡ IN PROGRESS
 7. **Union/Interface Types** - Complete type support
-8. **Directives** - Conditional fields
+8. ~~**Directives**~~ ✅ COMPLETED - Conditional fields
 
 ### Sprint 4 (Production Ready)
 9. **Strawberry Integration** - Seamless usage
@@ -225,6 +237,7 @@ schema = strawberry.Schema(Query, jit_enabled=True, jit_cache_size=100)
 
 - [x] Field arguments and variables supported ✅
 - [x] Fragment support (spreads, inline, nested) ✅
+- [x] Built-in directives (@skip, @include) ✅
 - [ ] All standard GraphQL features supported
 - [x] Maintains 3x+ performance improvement ✅
 - [ ] Zero security vulnerabilities
@@ -261,8 +274,9 @@ The JIT compiler has shown tremendous promise with consistent 3-10x performance 
 - Successfully implemented field arguments with default values
 - Added full query variables support
 - Implemented complete fragment support (spreads, inline, nested)
-- Maintained 3-4x performance improvement even with argument and fragment handling
-- Both standard and optimized JIT compilers now support arguments and fragments
+- Added built-in directive support (@skip and @include)
+- Maintained 3-4x performance improvement even with all new features
+- Both standard and optimized JIT compilers now support arguments, fragments, and directives
 
 The modular design makes it easy to add new features incrementally. The test suite with external snapshots provides excellent visibility into the generated code, making debugging and optimization straightforward.
 

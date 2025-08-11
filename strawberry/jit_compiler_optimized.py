@@ -4,6 +4,7 @@ import inspect
 from typing import Callable, Optional
 
 from graphql import (
+    DirectiveNode,
     DocumentNode,
     FieldNode,
     FragmentDefinitionNode,
@@ -194,6 +195,14 @@ class OptimizedGraphQLJITCompiler:
         field_def = parent_type.fields.get(field_name)
         if not field_def:
             return
+        
+        # Handle directives (@skip and @include)
+        directive_check = None
+        if field.directives:
+            directive_check = self._generate_directive_check(field.directives)
+            if directive_check:
+                self._emit(f"if {directive_check}:")
+                self.indent_level += 1
 
         # Handle field arguments for simple fields (methods)
         if field.arguments or (field_def.args and len(field_def.args) > 0):
@@ -273,6 +282,10 @@ class OptimizedGraphQLJITCompiler:
             self._emit(
                 f'{result_var}["{alias}"] = getattr({parent_var}, "{field_name}", None)'
             )
+        
+        # Close directive conditional block if needed
+        if field.directives and directive_check:
+            self.indent_level -= 1
 
     def _generate_complex_field(
         self,
@@ -288,6 +301,14 @@ class OptimizedGraphQLJITCompiler:
         field_def = parent_type.fields.get(field_name)
         if not field_def:
             return
+        
+        # Handle directives (@skip and @include)
+        directive_check = None
+        if field.directives:
+            directive_check = self._generate_directive_check(field.directives)
+            if directive_check:
+                self._emit(f"if {directive_check}:")
+                self.indent_level += 1
 
         resolver_id = f"resolver_{self.field_counter}"
         self.field_counter += 1
@@ -351,6 +372,10 @@ class OptimizedGraphQLJITCompiler:
                 self.indent_level -= 1
         else:
             self._emit(f'{result_var}["{alias}"] = {temp_var}')
+        
+        # Close directive conditional block if needed
+        if field.directives and directive_check:
+            self.indent_level -= 1
 
     def _process_nested_field(self, field, field_def, temp_var, result_var, alias):
         """Process nested field selection."""
@@ -489,6 +514,36 @@ class OptimizedGraphQLJITCompiler:
             if isinstance(definition, FragmentDefinitionNode):
                 self.fragments[definition.name.value] = definition
 
+    def _generate_directive_check(self, directives: list[DirectiveNode]) -> str:
+        """Generate optimized conditional expression for @skip and @include directives."""
+        conditions = []
+        
+        for directive in directives:
+            directive_name = directive.name.value
+            
+            if directive_name == "skip":
+                # @skip(if: condition) - skip field if condition is true
+                if_arg = self._get_directive_if_argument(directive)
+                if if_arg:
+                    conditions.append(f"not ({if_arg})")
+            elif directive_name == "include":
+                # @include(if: condition) - include field if condition is true  
+                if_arg = self._get_directive_if_argument(directive)
+                if if_arg:
+                    conditions.append(if_arg)
+        
+        if conditions:
+            # Combine conditions with AND for optimal performance
+            return " and ".join(conditions)
+        return ""
+    
+    def _get_directive_if_argument(self, directive: DirectiveNode) -> str:
+        """Extract the 'if' argument value from a directive."""
+        for arg in directive.arguments or []:
+            if arg.name.value == "if":
+                return self._generate_argument_value(arg.value)
+        return ""
+    
     def _emit(self, line: str):
         indent = "    " * self.indent_level
         self.generated_code.append(f"{indent}{line}")

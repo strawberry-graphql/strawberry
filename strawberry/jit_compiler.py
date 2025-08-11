@@ -4,6 +4,7 @@ import textwrap
 from typing import Callable, Optional
 
 from graphql import (
+    DirectiveNode,
     DocumentNode,
     FieldNode,
     FragmentDefinitionNode,
@@ -306,6 +307,13 @@ from typing import Any, Dict, List, Optional'''
         field_def = parent_type.fields.get(field_name)
         if not field_def:
             return
+        
+        # Handle directives (@skip and @include)
+        if field.directives:
+            skip_code = self._generate_skip_include_checks(field.directives, info_var)
+            if skip_code:
+                self._emit(skip_code)
+                self.indent_level += 1
 
         # Store the resolver for this field
         resolver_id = f"resolver_{self.field_counter}"
@@ -427,6 +435,10 @@ from typing import Any, Dict, List, Optional'''
                 self.indent_level -= 1
         else:
             self._emit(f'{result_var}["{alias}"] = {temp_var}')
+        
+        # Close directive conditional block if needed
+        if field.directives and self._generate_skip_include_checks(field.directives, info_var):
+            self.indent_level -= 1
 
     def _generate_argument_value(self, value_node, info_var: str) -> str:
         """Generate code to extract argument value from AST node, supporting variables"""
@@ -597,6 +609,36 @@ from typing import Any, Dict, List, Optional'''
                 info_var,
             )
 
+    def _generate_skip_include_checks(self, directives: list[DirectiveNode], info_var: str) -> str:
+        """Generate conditional code for @skip and @include directives."""
+        conditions = []
+        
+        for directive in directives:
+            directive_name = directive.name.value
+            
+            if directive_name == "skip":
+                # @skip(if: condition) - skip field if condition is true
+                if_arg = self._get_directive_argument(directive, "if", info_var)
+                if if_arg:
+                    conditions.append(f"not ({if_arg})")
+            elif directive_name == "include":
+                # @include(if: condition) - include field if condition is true
+                if_arg = self._get_directive_argument(directive, "if", info_var)
+                if if_arg:
+                    conditions.append(if_arg)
+        
+        if conditions:
+            # Combine all conditions with AND
+            return f"if {' and '.join(conditions)}:"
+        return ""
+    
+    def _get_directive_argument(self, directive: DirectiveNode, arg_name: str, info_var: str) -> str:
+        """Extract argument value from a directive."""
+        for arg in directive.arguments or []:
+            if arg.name.value == arg_name:
+                return self._generate_argument_value(arg.value, info_var)
+        return ""
+    
     def _emit(self, line: str):
         indent = "    " * self.indent_level
         self.generated_code.append(f"{indent}{line}")
