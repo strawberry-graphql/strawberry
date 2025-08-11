@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import inspect
-from typing import Callable, Optional
+from typing import Callable, Optional, Set
 
 from graphql import (
     DirectiveNode,
@@ -37,6 +37,8 @@ class OptimizedGraphQLJITCompiler:
         self.resolver_map = {}
         self.inline_resolvers = {}  # Store simple resolvers for inlining
         self.fragments = {}  # Maps fragment names to their definitions
+        self.has_async_resolvers = False  # Track if we have any async resolvers
+        self.async_resolver_ids: Set[str] = set()  # Track which resolvers are async
 
     def compile_query(self, query: str) -> Callable:
         document = parse(query)
@@ -62,17 +64,25 @@ class OptimizedGraphQLJITCompiler:
         self.field_counter = 0
         self.resolver_map = {}
         self.inline_resolvers = {}
+        self.has_async_resolvers = False
+        self.async_resolver_ids = set()
 
         function_code = self._generate_optimized_function(operation, root_type)
 
         # Create minimal runtime environment
         local_vars = {
             "_resolvers": self.resolver_map,
+            "_async_resolver_ids": self.async_resolver_ids,
             "getattr": getattr,  # Direct access to builtins
             "hasattr": hasattr,
             "isinstance": isinstance,
             "len": len,
         }
+        
+        # Add asyncio if we have async resolvers
+        if self.has_async_resolvers:
+            import asyncio
+            local_vars["asyncio"] = asyncio
 
         compiled_code = compile(function_code, "<optimized>", "exec")
         exec(compiled_code, local_vars)
@@ -114,15 +124,30 @@ class OptimizedGraphQLJITCompiler:
     ) -> str:
         self.generated_code = []
         self.indent_level = 0
+        
+        # First pass: analyze for async resolvers
+        self._analyze_async_resolvers(operation.selection_set, root_type)
+        
+        # Reset for actual generation
+        self.generated_code = []
+        self.indent_level = 0
 
-        self._emit("def execute_query(root, context=None, variables=None):")
+        if self.has_async_resolvers:
+            self._emit("async def execute_query(root, context=None, variables=None):")
+        else:
+            self._emit("def execute_query(root, context=None, variables=None):")
         self.indent_level += 1
         self._emit("result = {}")
 
         if operation.selection_set:
-            self._generate_optimized_selection_set(
-                operation.selection_set, root_type, "root", "result"
-            )
+            if self.has_async_resolvers:
+                self._generate_optimized_selection_set_async(
+                    operation.selection_set, root_type, "root", "result"
+                )
+            else:
+                self._generate_optimized_selection_set(
+                    operation.selection_set, root_type, "root", "result"
+                )
 
         self._emit("return result")
 
@@ -313,6 +338,11 @@ class OptimizedGraphQLJITCompiler:
         resolver_id = f"resolver_{self.field_counter}"
         self.field_counter += 1
         self.resolver_map[resolver_id] = field_def.resolve
+        
+        # Check if resolver is async
+        if inspect.iscoroutinefunction(field_def.resolve):
+            self.has_async_resolvers = True
+            self.async_resolver_ids.add(resolver_id)
 
         temp_var = f"_field_{field_name}"
 
@@ -645,9 +675,410 @@ class OptimizedGraphQLJITCompiler:
                 parent_var,
                 result_var,
             )
+    
+    def _analyze_async_resolvers(self, selection_set: SelectionSetNode, parent_type: GraphQLObjectType):
+        """Analyze selection set for async resolvers."""
+        for selection in selection_set.selections:
+            if isinstance(selection, FieldNode):
+                field_name = selection.name.value
+                field_def = parent_type.fields.get(field_name)
+                
+                if field_def and field_def.resolve:
+                    # Check if resolver is async
+                    if inspect.iscoroutinefunction(field_def.resolve):
+                        self.has_async_resolvers = True
+                        
+                # Recurse into nested selections
+                if field_def and selection.selection_set:
+                    field_type = field_def.type
+                    while hasattr(field_type, "of_type"):
+                        field_type = field_type.of_type
+                    
+                    if isinstance(field_type, GraphQLObjectType):
+                        self._analyze_async_resolvers(selection.selection_set, field_type)
+            
+            elif isinstance(selection, FragmentSpreadNode):
+                fragment_name = selection.name.value
+                if fragment_name in self.fragments:
+                    fragment_def = self.fragments[fragment_name]
+                    if fragment_def.selection_set:
+                        # Get the fragment type
+                        type_name = fragment_def.type_condition.name.value
+                        fragment_type = self.schema.type_map.get(type_name)
+                        if fragment_type and isinstance(fragment_type, GraphQLObjectType):
+                            self._analyze_async_resolvers(fragment_def.selection_set, fragment_type)
+            
+            elif isinstance(selection, InlineFragmentNode):
+                if selection.type_condition:
+                    type_name = selection.type_condition.name.value
+                    fragment_type = self.schema.type_map.get(type_name)
+                    if fragment_type and isinstance(fragment_type, GraphQLObjectType) and selection.selection_set:
+                        self._analyze_async_resolvers(selection.selection_set, fragment_type)
+                elif selection.selection_set:
+                    self._analyze_async_resolvers(selection.selection_set, parent_type)
+    
+    def _generate_optimized_selection_set_async(
+        self,
+        selection_set: SelectionSetNode,
+        parent_type: GraphQLObjectType,
+        parent_var: str,
+        result_var: str,
+    ):
+        """Generate optimized async selection set code."""
+        # Group fields by type for potential batching
+        simple_fields = []
+        async_fields = []
+        sync_fields = []
+        fragment_spreads = []
+        inline_fragments = []
+        
+        for selection in selection_set.selections:
+            if isinstance(selection, FieldNode):
+                field_name = selection.name.value
+                field_def = parent_type.fields.get(field_name)
+                
+                if field_def and not field_def.resolve:
+                    # Simple field with no resolver
+                    simple_fields.append(selection)
+                elif field_def and field_def.resolve:
+                    # Check if resolver is async
+                    if inspect.iscoroutinefunction(field_def.resolve):
+                        async_fields.append(selection)
+                    else:
+                        sync_fields.append(selection)
+            elif isinstance(selection, FragmentSpreadNode):
+                fragment_spreads.append(selection)
+            elif isinstance(selection, InlineFragmentNode):
+                inline_fragments.append(selection)
+        
+        # Process simple fields first (batch them)
+        for field in simple_fields:
+            self._generate_simple_field_async(field, parent_type, parent_var, result_var)
+        
+        # Process sync fields
+        for field in sync_fields:
+            self._generate_complex_field_async(field, parent_type, parent_var, result_var, is_async=False)
+        
+        # Process async fields - can be parallelized
+        if async_fields:
+            # Generate parallel async execution
+            self._emit("# Execute async fields in parallel")
+            self._emit("_async_tasks = []")
+            
+            for field in async_fields:
+                self._generate_async_field_task(field, parent_type, parent_var)
+            
+            # Wait for all async tasks
+            self._emit("if _async_tasks:")
+            self.indent_level += 1
+            self._emit("_async_results = await asyncio.gather(*_async_tasks)")
+            self._emit("for field_alias, field_value in _async_results:")
+            self.indent_level += 1
+            self._emit(f"{result_var}[field_alias] = field_value")
+            self.indent_level -= 1
+            self.indent_level -= 1
+        
+        # Process fragments
+        for fragment_spread in fragment_spreads:
+            self._generate_fragment_spread_async(
+                fragment_spread, parent_type, parent_var, result_var
+            )
+        
+        for inline_fragment in inline_fragments:
+            self._generate_inline_fragment_async(
+                inline_fragment, parent_type, parent_var, result_var
+            )
+    
+    def _generate_simple_field_async(
+        self,
+        field: FieldNode,
+        parent_type: GraphQLObjectType,
+        parent_var: str,
+        result_var: str,
+    ):
+        """Generate optimized code for simple field access in async context."""
+        # For simple fields, just use the sync version - no await needed
+        self._generate_simple_field(field, parent_type, parent_var, result_var)
+    
+    def _generate_complex_field_async(
+        self,
+        field: FieldNode,
+        parent_type: GraphQLObjectType,
+        parent_var: str,
+        result_var: str,
+        is_async: bool = False,
+    ):
+        """Generate code for fields with custom resolvers in async context."""
+        field_name = field.name.value
+        alias = field.alias.value if field.alias else field_name
+        
+        field_def = parent_type.fields.get(field_name)
+        if not field_def:
+            return
+        
+        # Handle directives
+        directive_check = None
+        if field.directives:
+            directive_check = self._generate_directive_check(field.directives)
+            if directive_check:
+                self._emit(f"if {directive_check}:")
+                self.indent_level += 1
+        
+        resolver_id = f"resolver_{self.field_counter}"
+        self.field_counter += 1
+        self.resolver_map[resolver_id] = field_def.resolve
+        
+        # Check if resolver is async
+        if inspect.iscoroutinefunction(field_def.resolve):
+            self.async_resolver_ids.add(resolver_id)
+        
+        temp_var = f"_field_{field_name}"
+        
+        # Generate resolver call with await if needed
+        args_code = ""
+        if field.arguments or (field_def.args and len(field_def.args) > 0):
+            args_code = self._build_inline_arguments(field, field_def)
+        
+        if is_async or resolver_id in self.async_resolver_ids:
+            # Async resolver - use await
+            if args_code:
+                self._emit(
+                    f"{temp_var} = await _resolvers['{resolver_id}']({parent_var}, None, {args_code})"
+                )
+            else:
+                self._emit(
+                    f"{temp_var} = await _resolvers['{resolver_id}']({parent_var}, None)"
+                )
+        else:
+            # Sync resolver - no await
+            if args_code:
+                self._emit(
+                    f"{temp_var} = _resolvers['{resolver_id}']({parent_var}, None, {args_code})"
+                )
+            else:
+                self._emit(
+                    f"{temp_var} = _resolvers['{resolver_id}']({parent_var}, None)"
+                )
+        
+        # Process result
+        if field.selection_set:
+            field_type = field_def.type
+            while hasattr(field_type, "of_type"):
+                field_type = field_type.of_type
+            
+            if isinstance(field_type, GraphQLObjectType):
+                self._emit(f"if {temp_var} is not None:")
+                self.indent_level += 1
+                
+                if hasattr(field_def.type, "of_type") and str(field_def.type).startswith("["):
+                    # Handle list
+                    self._emit(f"if isinstance({temp_var}, list):")
+                    self.indent_level += 1
+                    self._emit(f'{result_var}["{alias}"] = []')
+                    item_var = f"_item_{field_name}"
+                    item_result_var = f"_{field_name}_item_result"
+                    self._emit(f"for {item_var} in {temp_var}:")
+                    self.indent_level += 1
+                    self._emit(f"{item_result_var} = {{}}")
+                    # Use async version for nested selections
+                    self._generate_optimized_selection_set_async(
+                        field.selection_set, field_type, item_var, item_result_var
+                    )
+                    self._emit(f'{result_var}["{alias}"].append({item_result_var})')
+                    self.indent_level -= 1
+                    self.indent_level -= 1
+                else:
+                    # Handle object
+                    nested_var = f"_nested_{field_name}"
+                    self._emit(f"{nested_var} = {{}}")
+                    self._generate_optimized_selection_set_async(
+                        field.selection_set, field_type, temp_var, nested_var
+                    )
+                    self._emit(f'{result_var}["{alias}"] = {nested_var}')
+                
+                self.indent_level -= 1
+                self._emit("else:")
+                self.indent_level += 1
+                self._emit(f'{result_var}["{alias}"] = None')
+                self.indent_level -= 1
+        else:
+            self._emit(f'{result_var}["{alias}"] = {temp_var}')
+        
+        # Close directive block
+        if field.directives and directive_check:
+            self.indent_level -= 1
+    
+    def _generate_async_field_task(
+        self,
+        field: FieldNode,
+        parent_type: GraphQLObjectType,
+        parent_var: str,
+    ):
+        """Generate an async task for parallel execution."""
+        field_name = field.name.value
+        alias = field.alias.value if field.alias else field_name
+        
+        field_def = parent_type.fields.get(field_name)
+        if not field_def:
+            return
+        
+        resolver_id = f"resolver_{self.field_counter}"
+        self.field_counter += 1
+        self.resolver_map[resolver_id] = field_def.resolve
+        self.async_resolver_ids.add(resolver_id)
+        
+        # Build arguments
+        args_code = ""
+        if field.arguments or (field_def.args and len(field_def.args) > 0):
+            args_code = self._build_inline_arguments(field, field_def)
+        
+        # Create async task
+        task_name = f"_task_{field_name}_{self.field_counter}"
+        self._emit(f"async def {task_name}():")
+        self.indent_level += 1
+        
+        if args_code:
+            self._emit(f"value = await _resolvers['{resolver_id}']({parent_var}, None, {args_code})")
+        else:
+            self._emit(f"value = await _resolvers['{resolver_id}']({parent_var}, None)")
+        
+        # Handle nested selections inline if needed
+        if field.selection_set:
+            field_type = field_def.type
+            while hasattr(field_type, "of_type"):
+                field_type = field_type.of_type
+            
+            if isinstance(field_type, GraphQLObjectType):
+                self._emit("if value is not None:")
+                self.indent_level += 1
+                
+                if hasattr(field_def.type, "of_type") and str(field_def.type).startswith("["):
+                    # Handle list
+                    self._emit("if isinstance(value, list):")
+                    self.indent_level += 1
+                    self._emit("result_list = []")
+                    self._emit("for item in value:")
+                    self.indent_level += 1
+                    self._emit("item_result = {}")
+                    # Generate selections for each item
+                    # Use a different variable name to avoid scoping issues
+                    temp_item_var = f"_temp_item_{field_name}"
+                    self._emit(f"{temp_item_var} = item")
+                    self._generate_optimized_selection_set_async(
+                        field.selection_set, field_type, temp_item_var, "item_result"
+                    )
+                    self._emit("result_list.append(item_result)")
+                    self.indent_level -= 1
+                    self._emit("processed_value = result_list")
+                    self.indent_level -= 1
+                else:
+                    # Handle object - use a temporary variable to avoid scoping issues
+                    self._emit("nested_result = {}")
+                    temp_obj_var = f"_temp_obj_{field_name}"
+                    self._emit(f"{temp_obj_var} = value")
+                    self._generate_optimized_selection_set_async(
+                        field.selection_set, field_type, temp_obj_var, "nested_result"
+                    )
+                    self._emit("processed_value = nested_result")
+                
+                self.indent_level -= 1
+        
+        # Return tuple with alias and processed value
+        if field.selection_set:
+            self._emit(f"return ('{alias}', processed_value if value is not None else value)")
+        else:
+            self._emit(f"return ('{alias}', value)")
+        
+        self.indent_level -= 1
+        self._emit(f"_async_tasks.append({task_name}())")
+    
+    def _generate_fragment_spread_async(
+        self,
+        fragment_spread: FragmentSpreadNode,
+        parent_type: GraphQLObjectType,
+        parent_var: str,
+        result_var: str,
+    ):
+        """Generate async code for fragment spread."""
+        fragment_name = fragment_spread.name.value
+        
+        if fragment_name not in self.fragments:
+            raise ValueError(f"Fragment '{fragment_name}' not found")
+        
+        fragment_def = self.fragments[fragment_name]
+        type_condition = fragment_def.type_condition.name.value
+        
+        if parent_type.name == type_condition:
+            if fragment_def.selection_set:
+                self._generate_optimized_selection_set_async(
+                    fragment_def.selection_set,
+                    parent_type,
+                    parent_var,
+                    result_var,
+                )
+        else:
+            self._emit(f"# Fragment spread: {fragment_name}")
+            self._emit(
+                f"if hasattr({parent_var}, '__typename') and {parent_var}.__typename == '{type_condition}':"
+            )
+            self.indent_level += 1
+            if fragment_def.selection_set:
+                self._generate_optimized_selection_set_async(
+                    fragment_def.selection_set,
+                    parent_type,
+                    parent_var,
+                    result_var,
+                )
+            self.indent_level -= 1
+    
+    def _generate_inline_fragment_async(
+        self,
+        inline_fragment: InlineFragmentNode,
+        parent_type: GraphQLObjectType,
+        parent_var: str,
+        result_var: str,
+    ):
+        """Generate async code for inline fragment."""
+        if inline_fragment.type_condition:
+            type_name = inline_fragment.type_condition.name.value
+            fragment_type = self.schema.type_map.get(type_name)
+            
+            if not fragment_type or not isinstance(fragment_type, GraphQLObjectType):
+                return
+            
+            if type_name == parent_type.name:
+                self._emit(f"# Inline fragment on {type_name} (optimized)")
+                if inline_fragment.selection_set:
+                    self._generate_optimized_selection_set_async(
+                        inline_fragment.selection_set,
+                        fragment_type,
+                        parent_var,
+                        result_var,
+                    )
+            else:
+                self._emit(f"# Inline fragment on {type_name}")
+                self._emit(
+                    f"if hasattr({parent_var}, '__typename') and {parent_var}.__typename == '{type_name}':"
+                )
+                self.indent_level += 1
+                if inline_fragment.selection_set:
+                    self._generate_optimized_selection_set_async(
+                        inline_fragment.selection_set,
+                        fragment_type,
+                        parent_var,
+                        result_var,
+                    )
+                self.indent_level -= 1
+        elif inline_fragment.selection_set:
+            self._generate_optimized_selection_set_async(
+                inline_fragment.selection_set,
+                parent_type,
+                parent_var,
+                result_var,
+            )
 
 
 def compile_query_optimized(schema: GraphQLSchema, query: str) -> Callable:
-    """Compile a GraphQL query with aggressive optimizations."""
+    """Compile a GraphQL query with aggressive optimizations and async support."""
     compiler = OptimizedGraphQLJITCompiler(schema)
     return compiler.compile_query(query)
