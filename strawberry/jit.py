@@ -265,6 +265,24 @@ class JITCompiler:
 
         return "\n".join(self.generated_code)
 
+    def _is_field_async(self, field_def) -> bool:
+        """Check if a field is async using StrawberryField metadata.
+
+        This uses compile-time information from Strawberry's field decoration
+        instead of runtime introspection, improving performance.
+        """
+        # First try to get the StrawberryField from extensions
+        if hasattr(field_def, "extensions") and field_def.extensions:
+            strawberry_field = field_def.extensions.get("strawberry-definition")
+            if strawberry_field and hasattr(strawberry_field, "is_async"):
+                return strawberry_field.is_async
+
+        # Fallback to runtime check if StrawberryField not available
+        # (e.g., for built-in GraphQL fields)
+        if field_def.resolve:
+            return inspect.iscoroutinefunction(field_def.resolve)
+        return False
+
     def _generate_parallel_selection_set(
         self,
         selection_set: SelectionSetNode,
@@ -292,11 +310,11 @@ class JITCompiler:
                     resolver_id = f"resolver_{self.field_counter}"
                     self.field_counter += 1
 
-                    if field_def.resolve and inspect.iscoroutinefunction(
-                        field_def.resolve
-                    ):
+                    # Use compile-time async detection from StrawberryField
+                    if self._is_field_async(field_def):
                         async_fields.append((selection, resolver_id))
-                        self.resolver_map[resolver_id] = field_def.resolve
+                        if field_def.resolve:
+                            self.resolver_map[resolver_id] = field_def.resolve
                         self.async_resolver_ids.add(resolver_id)
                     else:
                         sync_fields.append(selection)
@@ -496,7 +514,8 @@ class JITCompiler:
             self.field_counter += 1
             self.resolver_map[resolver_id] = field_def.resolve
 
-            if inspect.iscoroutinefunction(field_def.resolve):
+            # Use compile-time async detection from StrawberryField
+            if self._is_field_async(field_def):
                 self.async_resolver_ids.add(resolver_id)
                 if field.arguments:
                     self._generate_arguments(field, field_def, info_var)
@@ -1814,9 +1833,8 @@ class JITCompiler:
 
                 field_def = parent_type.fields.get(field_name)
                 if field_def:
-                    if field_def.resolve and inspect.iscoroutinefunction(
-                        field_def.resolve
-                    ):
+                    # Use compile-time async detection from StrawberryField
+                    if self._is_field_async(field_def):
                         self.has_async_resolvers = True
 
                     if selection.selection_set:
