@@ -108,7 +108,19 @@ class JITCompiler:
             "_resolvers": self.resolver_map,
             "_MockInfo": MockInfo,
             "_schema": self.schema,
+            "_scalar_serializers": {},  # Will be populated with scalar serializers
+            "_scalar_parsers": {},  # Will be populated with scalar parse_value functions
+            "_var_defs": operation.variable_definitions if operation.variable_definitions else [],
         }
+
+        # Extract scalar serializers and parsers from schema
+        for type_name, type_def in self.schema.type_map.items():
+            if hasattr(type_def, "serialize") and callable(type_def.serialize):
+                # This is a scalar type with custom serialization
+                local_vars["_scalar_serializers"][type_name] = type_def.serialize
+            if hasattr(type_def, "parse_value") and callable(type_def.parse_value):
+                # This is a scalar type with custom parsing
+                local_vars["_scalar_parsers"][type_name] = type_def.parse_value
 
         compiled_code = compile(function_code, "<jit_compiled>", "exec")
         exec(compiled_code, local_vars)
@@ -175,12 +187,30 @@ class JITCompiler:
         self._emit('"""Execute JIT-compiled GraphQL query with optimizations."""')
         self._emit("result = {}")
         self._emit("errors = []")
+        
+        # Coerce variables to handle enums and other input types properly
+        if operation.variable_definitions:
+            self._emit("# Coerce variables")
+            self._emit("from graphql.execution.values import get_variable_values")
+            self._emit("coerced = get_variable_values(_schema, _var_defs, variables or {})")
+            self._emit("if isinstance(coerced, list):")  # List means errors
+            self.indent_level += 1
+            self._emit("for error in coerced:")
+            self.indent_level += 1
+            self._emit("errors.append({'message': str(error), 'path': []})")
+            self.indent_level -= 1
+            self._emit('return {"data": None, "errors": errors}')
+            self.indent_level -= 1
+            self._emit("variables = coerced")  # Dict of coerced values
+        else:
+            self._emit("variables = variables or {}")
 
         # Create mock info object
+        self._emit("")
         self._emit("info = _MockInfo(_schema)")
         self._emit("info.root_value = root")
         self._emit("info.context = context")
-        self._emit("info.variable_values = variables or {}")
+        self._emit("info.variable_values = variables")
         self._emit("")
 
         # Generate selection set with error handling
@@ -568,7 +598,54 @@ class JITCompiler:
                 self._emit(f'{result_var}["{alias}"] = None')
                 self.indent_level -= 1
         else:
-            self._emit(f'{result_var}["{alias}"] = {temp_var}')
+            # Apply scalar serialization if needed
+            field_type = field_def.type
+            while hasattr(field_type, "of_type"):
+                field_type = field_type.of_type
+            
+            # Check if this is a custom scalar or enum that needs serialization
+            from graphql import GraphQLEnumType
+            
+            if hasattr(field_type, "name") and field_type.name in ["String", "Int", "Float", "Boolean", "ID"]:
+                # Built-in scalars don't need special handling
+                self._emit(f'{result_var}["{alias}"] = {temp_var}')
+            elif isinstance(field_type, GraphQLEnumType) or (hasattr(field_type, "serialize") and callable(field_type.serialize)):
+                # Custom scalar with serialization
+                self._emit(f"# Serialize custom scalar: {field_type.name}")
+                if str(field_def.type).startswith("["):
+                    # List of scalars
+                    self._emit(f"if {temp_var} is not None:")
+                    self.indent_level += 1
+                    self._emit(f'{result_var}["{alias}"] = []')
+                    self._emit(f"for scalar_item in {temp_var}:")
+                    self.indent_level += 1
+                    self._emit(f"if scalar_item is not None and '{field_type.name}' in _scalar_serializers:")
+                    self.indent_level += 1
+                    self._emit(f'{result_var}["{alias}"].append(_scalar_serializers["{field_type.name}"](scalar_item))')
+                    self.indent_level -= 1
+                    self._emit(f"else:")
+                    self.indent_level += 1
+                    self._emit(f'{result_var}["{alias}"].append(scalar_item)')
+                    self.indent_level -= 1
+                    self.indent_level -= 1
+                    self.indent_level -= 1
+                    self._emit(f"else:")
+                    self.indent_level += 1
+                    self._emit(f'{result_var}["{alias}"] = None')
+                    self.indent_level -= 1
+                else:
+                    # Single scalar
+                    self._emit(f"if {temp_var} is not None and '{field_type.name}' in _scalar_serializers:")
+                    self.indent_level += 1
+                    self._emit(f'{result_var}["{alias}"] = _scalar_serializers["{field_type.name}"]({temp_var})')
+                    self.indent_level -= 1
+                    self._emit(f"else:")
+                    self.indent_level += 1
+                    self._emit(f'{result_var}["{alias}"] = {temp_var}')
+                    self.indent_level -= 1
+            else:
+                # Default - no serialization needed
+                self._emit(f'{result_var}["{alias}"] = {temp_var}')
 
         # Error handling
         self.indent_level -= 1
@@ -603,11 +680,13 @@ class JITCompiler:
         if field.arguments:
             for arg in field.arguments:
                 arg_name = arg.name.value
-                arg_code = self._generate_argument_value(arg.value, info_var)
+                # Get the argument type for custom scalar handling
+                arg_type = field_def.args.get(arg_name).type if field_def.args and arg_name in field_def.args else None
+                arg_code = self._generate_argument_value(arg.value, info_var, arg_type)
                 self._emit(f"kwargs['{arg_name}'] = {arg_code}")
 
-    def _generate_argument_value(self, value_node, info_var: str) -> str:
-        """Generate code for argument value."""
+    def _generate_argument_value(self, value_node, info_var: str, arg_type=None) -> str:
+        """Generate code for argument value with custom scalar support."""
         from graphql.language import (
             BooleanValueNode,
             EnumValueNode,
@@ -621,28 +700,117 @@ class JITCompiler:
         )
 
         if isinstance(value_node, VariableNode):
-            return f"{info_var}.variable_values.get('{value_node.name.value}')"
+            var_name = value_node.name.value
+            var_code = f"{info_var}.variable_values.get('{var_name}')"
+            
+            # Check if the argument type is a custom scalar that needs parsing
+            if arg_type:
+                from graphql import is_list_type, is_non_null_type
+                
+                # Check if it's a list type
+                if is_list_type(arg_type) or (is_non_null_type(arg_type) and is_list_type(arg_type.of_type)):
+                    # Get the item type
+                    list_type = arg_type
+                    if is_non_null_type(list_type):
+                        list_type = list_type.of_type
+                    item_type = list_type.of_type
+                    if is_non_null_type(item_type):
+                        item_type = item_type.of_type
+                    
+                    # Check if item type is a custom scalar
+                    if hasattr(item_type, "name") and hasattr(item_type, "parse_value"):
+                        # Apply parse_value to each element in the list
+                        parser_func = f"_scalar_parsers.get('{item_type.name}', lambda x: x)"
+                        return f"([{parser_func}(item) for item in {var_code}] if {var_code} is not None else None)"
+                else:
+                    # Single value - check if it's a custom scalar
+                    scalar_type = arg_type
+                    while hasattr(scalar_type, "of_type"):
+                        scalar_type = scalar_type.of_type
+                        
+                    if hasattr(scalar_type, "name") and hasattr(scalar_type, "parse_value"):
+                        # This is a custom scalar - wrap with parse_value
+                        return f"(_scalar_parsers.get('{scalar_type.name}', lambda x: x)({var_code}) if {var_code} is not None else None)"
+            
+            return var_code
         if isinstance(value_node, (IntValueNode, FloatValueNode)):
             return value_node.value
         if isinstance(value_node, StringValueNode):
+            # For literal strings in custom scalars, we need to apply parse_literal
+            if arg_type:
+                scalar_type = arg_type
+                while hasattr(scalar_type, "of_type"):
+                    scalar_type = scalar_type.of_type
+                    
+                if hasattr(scalar_type, "name") and hasattr(scalar_type, "parse_literal"):
+                    # Custom scalar with parse_literal
+                    return f"_scalar_parsers.get('{scalar_type.name}', lambda x: x)({repr(value_node.value)})"
+            
             return repr(value_node.value)
         if isinstance(value_node, BooleanValueNode):
             return "True" if value_node.value else "False"
         if isinstance(value_node, NullValueNode):
             return "None"
         if isinstance(value_node, EnumValueNode):
+            # For enum values, we need to get the actual enum instance
+            # The enum value in the query (e.g., "HIGH") needs to be mapped to the Python enum
+            if arg_type:
+                from graphql import GraphQLEnumType, is_non_null_type
+                
+                enum_type = arg_type
+                if is_non_null_type(enum_type):
+                    enum_type = enum_type.of_type
+                    
+                if isinstance(enum_type, GraphQLEnumType):
+                    # Get the enum value configuration
+                    enum_value_name = value_node.value
+                    if enum_value_name in enum_type.values:
+                        # The enum_type.values[name].value contains the actual Python enum instance
+                        # We need to generate code that accesses this at runtime
+                        return f"_schema.type_map['{enum_type.name}'].values['{enum_value_name}'].value"
+            
+            # Fallback to string representation
             return repr(value_node.value)
         if isinstance(value_node, ListValueNode):
+            # For list values, pass the item type to recursive calls
+            item_type = None
+            if arg_type:
+                from graphql import is_list_type, is_non_null_type
+                
+                list_type = arg_type
+                if is_non_null_type(list_type):
+                    list_type = list_type.of_type
+                if is_list_type(list_type):
+                    item_type = list_type.of_type
+            
             items = [
-                self._generate_argument_value(item, info_var)
+                self._generate_argument_value(item, info_var, item_type)
                 for item in value_node.values
             ]
             return f"[{', '.join(items)}]"
         if isinstance(value_node, ObjectValueNode):
+            # For object values, we need to pass field types to handle enums properly
             items = []
+            
+            # Try to get the input object type to get field types
+            field_types = {}
+            if arg_type:
+                from graphql import GraphQLInputObjectType, is_non_null_type
+                
+                input_type = arg_type
+                if is_non_null_type(input_type):
+                    input_type = input_type.of_type
+                    
+                if isinstance(input_type, GraphQLInputObjectType):
+                    # Get field types from the input object
+                    for field_name, field_def in input_type.fields.items():
+                        field_types[field_name] = field_def.type
+            
             for field in value_node.fields:
                 key = repr(field.name.value)
-                val = self._generate_argument_value(field.value, info_var)
+                field_name = field.name.value
+                field_type = field_types.get(field_name)
+                val = self._generate_argument_value(field.value, info_var, field_type)
                 items.append(f"{key}: {val}")
             return f"{{{', '.join(items)}}}"
         return "None"
