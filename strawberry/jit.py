@@ -150,6 +150,11 @@ class JITCompiler:
         self._emit("from typing import Any, Dict, List, Optional")
         self._emit("")
 
+        # Check if this is a mutation (mutations must execute serially)
+        from graphql.language import OperationType
+
+        is_mutation = operation.operation == OperationType.MUTATION
+
         # Pre-scan for async resolvers
         if operation.selection_set:
             self._detect_async_resolvers(operation.selection_set, root_type)
@@ -183,11 +188,18 @@ class JITCompiler:
             self._emit("try:")
             self.indent_level += 1
 
-            if self.enable_parallel and self.has_async_resolvers:
+            # Mutations MUST execute serially per GraphQL spec
+            # Queries can use parallel execution for performance
+            if self.enable_parallel and self.has_async_resolvers and not is_mutation:
+                self._emit("# Parallel execution for query fields")
                 self._generate_parallel_selection_set(
                     operation.selection_set, root_type, "root", "result", "info", "[]"
                 )
             else:
+                if is_mutation:
+                    self._emit(
+                        "# Serial execution for mutations (GraphQL spec requirement)"
+                    )
                 self._generate_selection_set(
                     operation.selection_set, root_type, "root", "result", "info", "[]"
                 )
