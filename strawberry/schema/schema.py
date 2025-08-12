@@ -79,6 +79,7 @@ from ._graphql_core import (
 from .base import BaseSchema
 from .config import StrawberryConfig
 from .exceptions import CannotGetOperationTypeError, InvalidOperationTypeError
+from .type_map import StrawberryTypeMap
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Mapping
@@ -367,6 +368,10 @@ class Schema(BaseSchema):
             formatted_errors = "\n\n".join(f"❌ {error.message}" for error in errors)
             raise ValueError(f"Invalid Schema. Errors:\n\n{formatted_errors}")
 
+        # Build the native Strawberry type map for fast lookups
+        self._type_map = StrawberryTypeMap(self.config)
+        self._type_map.build_from_schema(self._schema)
+
     def get_extensions(self, sync: bool = False) -> list[SchemaExtension]:
         extensions: list[type[SchemaExtension] | SchemaExtension] = []
         extensions.extend(self.extensions)
@@ -386,6 +391,11 @@ class Schema(BaseSchema):
     @cached_property
     def _async_extensions(self) -> list[SchemaExtension]:
         return self.get_extensions(sync=False)
+
+    @property
+    def type_map(self) -> StrawberryTypeMap:
+        """Access the native Strawberry type map for fast type and field lookups."""
+        return self._type_map
 
     def create_extensions_runner(
         self, execution_context: ExecutionContext, extensions: list[SchemaExtension]

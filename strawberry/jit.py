@@ -13,7 +13,7 @@ from __future__ import annotations
 import hashlib
 import inspect
 import time
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple, Union
 
 from graphql import (
     DirectiveNode,
@@ -34,6 +34,9 @@ from graphql import (
     validate,
 )
 from graphql.language import OperationDefinitionNode
+
+if TYPE_CHECKING:
+    import strawberry
 
 
 class MockInfo:
@@ -62,8 +65,18 @@ class JITCompiler:
     - Built-in caching with configurable TTL and size limits
     """
 
-    def __init__(self, schema: GraphQLSchema):
-        self.schema = schema
+    def __init__(self, schema: Union[GraphQLSchema, strawberry.Schema]):
+        # Support both GraphQL Core schema and Strawberry schema
+        if hasattr(schema, "_schema"):
+            # It's a Strawberry schema
+            self.strawberry_schema = schema
+            self.schema = schema._schema
+            self.type_map = schema.type_map
+        else:
+            # It's a GraphQL Core schema
+            self.strawberry_schema = None
+            self.schema = schema
+            self.type_map = None
         self.generated_code = []
         self.indent_level = 0
         self.field_counter = 0
@@ -1949,13 +1962,15 @@ class CachedJITCompiler:
 
 
 # Public API
-def compile_query(schema: GraphQLSchema, query: str) -> Callable:
+def compile_query(
+    schema: Union[GraphQLSchema, strawberry.Schema], query: str
+) -> Callable:
     """Compile a GraphQL query into optimized Python code.
 
     This is the main entry point for JIT compilation.
 
     Args:
-        schema: The GraphQL schema
+        schema: The GraphQL schema or Strawberry schema
         query: The GraphQL query string
 
     Returns:
