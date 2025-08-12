@@ -436,9 +436,15 @@ class JITCompiler:
                 # Check for list type
                 if str(field_def.type).startswith("["):
                     self._emit(f'{result_var}["{alias}"] = []')
-                    self._emit(f"for idx, item in enumerate({temp_var}):")
+                    # Use unique variable names for nested lists
+                    list_counter = self.nested_counter
+                    self.nested_counter += 1
+                    item_var = f"item_{list_counter}"
+                    item_result_var = f"item_result_{list_counter}"
+
+                    self._emit(f"for idx, {item_var} in enumerate({temp_var}):")
                     self.indent_level += 1
-                    self._emit("item_result = {}")
+                    self._emit(f"{item_result_var} = {{}}")
                     item_path = f"{field_path} + [idx]"
 
                     # For unions/interfaces, we need runtime type resolution
@@ -446,8 +452,8 @@ class JITCompiler:
                         self._generate_abstract_type_selection(
                             field.selection_set,
                             field_type,
-                            "item",
-                            "item_result",
+                            item_var,
+                            item_result_var,
                             info_var,
                             item_path,
                         )
@@ -455,12 +461,12 @@ class JITCompiler:
                         self._generate_selection_set(
                             field.selection_set,
                             field_type,
-                            "item",
-                            "item_result",
+                            item_var,
+                            item_result_var,
                             info_var,
                             item_path,
                         )
-                    self._emit(f'{result_var}["{alias}"].append(item_result)')
+                    self._emit(f'{result_var}["{alias}"].append({item_result_var})')
                     self.indent_level -= 1
                 else:
                     # Use a unique variable name for nested results
