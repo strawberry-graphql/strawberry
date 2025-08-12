@@ -76,7 +76,7 @@
 ### Other
 - ⬜ Field middleware/extensions
 - ⬜ DataLoader integration
-- ⬜ Schema introspection queries (__schema, __type)
+- ✅ Schema introspection queries (__schema, __type)
 - ⬜ Federation support
 
 ## Test Coverage
@@ -90,6 +90,7 @@
 - ✅ Union type tests (test_union_types.py)
 - ✅ Input type tests (test_input_types.py, test_input_edge_cases.py)
 - ✅ Mutation tests (test_mutations.py, test_mutation_serial_execution.py)
+- ✅ Introspection tests (test_introspection.py)
 
 ## Performance Benchmarks
 
