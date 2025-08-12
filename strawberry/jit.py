@@ -13,7 +13,7 @@ from __future__ import annotations
 import hashlib
 import inspect
 import time
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 from graphql import (
     DirectiveNode,
@@ -21,9 +21,11 @@ from graphql import (
     FieldNode,
     FragmentDefinitionNode,
     FragmentSpreadNode,
+    GraphQLInterfaceType,
     GraphQLNonNull,
     GraphQLObjectType,
     GraphQLSchema,
+    GraphQLUnionType,
     InlineFragmentNode,
     SelectionSetNode,
     Undefined,
@@ -69,6 +71,7 @@ class JITCompiler:
         self.fragments = {}
         self.has_async_resolvers = False
         self.async_resolver_ids = set()
+        self.nested_counter = 0  # Counter for unique nested result variables
 
         # Optimization flags
         self.enable_parallel = True
@@ -119,6 +122,7 @@ class JITCompiler:
         self.resolver_map = {}
         self.has_async_resolvers = False
         self.async_resolver_ids = set()
+        self.nested_counter = 0
 
     def _get_operation(
         self, document: DocumentNode
@@ -412,9 +416,7 @@ class JITCompiler:
             self._emit(f"attr = getattr({parent_var}, '{field_name}', None)")
             if field.arguments:
                 self._generate_arguments(field, field_def, info_var)
-                self._emit(
-                    f"{temp_var} = attr(**kwargs) if callable(attr) else attr"
-                )
+                self._emit(f"{temp_var} = attr(**kwargs) if callable(attr) else attr")
             else:
                 self._emit(f"{temp_var} = attr() if callable(attr) else attr")
 
@@ -424,7 +426,10 @@ class JITCompiler:
             while hasattr(field_type, "of_type"):
                 field_type = field_type.of_type
 
-            if isinstance(field_type, GraphQLObjectType):
+            # Handle Object, Union, and Interface types
+            if isinstance(
+                field_type, (GraphQLObjectType, GraphQLUnionType, GraphQLInterfaceType)
+            ):
                 self._emit(f"if {temp_var} is not None:")
                 self.indent_level += 1
 
@@ -435,27 +440,54 @@ class JITCompiler:
                     self.indent_level += 1
                     self._emit("item_result = {}")
                     item_path = f"{field_path} + [idx]"
-                    self._generate_selection_set(
-                        field.selection_set,
-                        field_type,
-                        "item",
-                        "item_result",
-                        info_var,
-                        item_path,
-                    )
+
+                    # For unions/interfaces, we need runtime type resolution
+                    if isinstance(field_type, (GraphQLUnionType, GraphQLInterfaceType)):
+                        self._generate_abstract_type_selection(
+                            field.selection_set,
+                            field_type,
+                            "item",
+                            "item_result",
+                            info_var,
+                            item_path,
+                        )
+                    else:
+                        self._generate_selection_set(
+                            field.selection_set,
+                            field_type,
+                            "item",
+                            "item_result",
+                            info_var,
+                            item_path,
+                        )
                     self._emit(f'{result_var}["{alias}"].append(item_result)')
                     self.indent_level -= 1
                 else:
-                    self._emit("nested_result = {}")
-                    self._generate_selection_set(
-                        field.selection_set,
-                        field_type,
-                        temp_var,
-                        "nested_result",
-                        info_var,
-                        field_path,
-                    )
-                    self._emit(f'{result_var}["{alias}"] = nested_result')
+                    # Use a unique variable name for nested results
+                    nested_var = f"nested_result_{self.nested_counter}"
+                    self.nested_counter += 1
+                    self._emit(f"{nested_var} = {{}}")
+
+                    # For unions/interfaces, we need runtime type resolution
+                    if isinstance(field_type, (GraphQLUnionType, GraphQLInterfaceType)):
+                        self._generate_abstract_type_selection(
+                            field.selection_set,
+                            field_type,
+                            temp_var,
+                            nested_var,
+                            info_var,
+                            field_path,
+                        )
+                    else:
+                        self._generate_selection_set(
+                            field.selection_set,
+                            field_type,
+                            temp_var,
+                            nested_var,
+                            info_var,
+                            field_path,
+                        )
+                    self._emit(f'{result_var}["{alias}"] = {nested_var}')
 
                 self.indent_level -= 1
                 self._emit("else:")
@@ -656,6 +688,135 @@ class JITCompiler:
                 info_var,
                 path,
             )
+
+    def _generate_abstract_type_selection(
+        self,
+        selection_set: SelectionSetNode,
+        abstract_type: Union[GraphQLUnionType, GraphQLInterfaceType],
+        parent_var: str,
+        result_var: str,
+        info_var: str,
+        path: str,
+    ):
+        """Generate selection for union or interface types with runtime type resolution."""
+        # First, always add __typename for proper type discrimination
+        self._emit(f"# Resolve abstract type: {abstract_type.name}")
+
+        # Get the actual typename from the object
+        self._emit("# Get runtime type")
+        self._emit("actual_typename = None")
+        self._emit(f'if hasattr({parent_var}, "__typename"):')
+        self.indent_level += 1
+        self._emit(f"actual_typename = {parent_var}.__typename")
+        self.indent_level -= 1
+        self._emit(f'elif hasattr({parent_var}.__class__, "__name__"):')
+        self.indent_level += 1
+        self._emit(f"actual_typename = {parent_var}.__class__.__name__")
+        self.indent_level -= 1
+
+        # Add __typename to result if requested
+        for selection in selection_set.selections:
+            if (
+                isinstance(selection, FieldNode)
+                and selection.name.value == "__typename"
+            ):
+                alias = selection.alias.value if selection.alias else "__typename"
+                self._emit(f'{result_var}["{alias}"] = actual_typename')
+                break
+
+        # Collect fragments and inline fragments by type
+        type_selections = {}  # type_name -> selections
+        common_selections = []  # Selections without type condition
+
+        for selection in selection_set.selections:
+            if isinstance(selection, FieldNode):
+                if selection.name.value != "__typename":
+                    common_selections.append(selection)
+            elif isinstance(selection, InlineFragmentNode):
+                if selection.type_condition:
+                    type_name = selection.type_condition.name.value
+                    if type_name not in type_selections:
+                        type_selections[type_name] = []
+                    type_selections[type_name].extend(
+                        selection.selection_set.selections
+                    )
+                else:
+                    # No type condition means it applies to all types
+                    common_selections.extend(selection.selection_set.selections)
+            elif isinstance(selection, FragmentSpreadNode):
+                # Handle fragment spreads
+                fragment_name = selection.name.value
+                if fragment_name in self.fragments:
+                    fragment_def = self.fragments[fragment_name]
+                    if fragment_def.type_condition:
+                        type_name = fragment_def.type_condition.name.value
+                        if type_name not in type_selections:
+                            type_selections[type_name] = []
+                        type_selections[type_name].extend(
+                            fragment_def.selection_set.selections
+                        )
+
+        # Get possible types for the union/interface
+        possible_types = []
+        if isinstance(abstract_type, GraphQLUnionType):
+            possible_types = list(abstract_type.types)
+        elif isinstance(abstract_type, GraphQLInterfaceType):
+            # For interfaces, we need to get implementing types from schema
+            for type_name, gql_type in self.schema.type_map.items():
+                if isinstance(gql_type, GraphQLObjectType):
+                    if abstract_type in gql_type.interfaces:
+                        possible_types.append(gql_type)
+
+        # Generate type-specific selections
+        if type_selections or common_selections:
+            first_type = True
+            for possible_type in possible_types:
+                type_name = possible_type.name
+
+                # Check if we have selections for this type
+                selections_for_type = common_selections.copy()
+                if type_name in type_selections:
+                    selections_for_type.extend(type_selections[type_name])
+
+                if selections_for_type:
+                    if first_type:
+                        self._emit(f'if actual_typename == "{type_name}":')
+                        first_type = False
+                    else:
+                        self._emit(f'elif actual_typename == "{type_name}":')
+
+                    self.indent_level += 1
+
+                    # Generate selections for this concrete type
+                    for selection in selections_for_type:
+                        if isinstance(selection, FieldNode):
+                            self._generate_field(
+                                selection,
+                                possible_type,
+                                parent_var,
+                                result_var,
+                                info_var,
+                                path,
+                            )
+
+                    self.indent_level -= 1
+
+            # Add else clause for unknown types (just process common selections)
+            if not first_type and common_selections:
+                self._emit("else:")
+                self.indent_level += 1
+                self._emit("# Unknown type, process common fields only")
+
+                # Try to resolve common fields
+                for selection in common_selections:
+                    if isinstance(selection, FieldNode):
+                        field_name = selection.name.value
+                        alias = selection.alias.value if selection.alias else field_name
+                        self._emit(
+                            f'{result_var}["{alias}"] = getattr({parent_var}, "{field_name}", None)'
+                        )
+
+                self.indent_level -= 1
 
     def _generate_skip_include_checks(
         self, directives: List[DirectiveNode], info_var: str
