@@ -208,7 +208,8 @@ exclude = [
   "dist",
   "node_modules",
   "venv",
-  "tests/*/snapshots",
+  "tests/**/snapshots/**",
+  "tests/jit/snapshots/**",
 ]
 src = ["strawberry", "tests"]
 

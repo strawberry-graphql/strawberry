@@ -1,5 +1,4 @@
-"""
-Example GraphQL queries to test with the JIT compiler.
+"""Example GraphQL queries to test with the JIT compiler.
 Copy and paste these into GraphQL Playground at http://localhost:8000/graphql
 """
 
@@ -61,7 +60,7 @@ query BlogDashboard {
       }
     }
   }
-  
+
   featuredPost {
     id
     title
@@ -76,7 +75,7 @@ query BlogDashboard {
       likes
     }
   }
-  
+
   topAuthors(limit: 5) {
     id
     name
@@ -142,10 +141,7 @@ query SearchPosts($searchTerm: String!, $limit: Int!) {
 """
 
 # Variables for search query
-SEARCH_VARIABLES = {
-    "searchTerm": "GraphQL",
-    "limit": 10
-}
+SEARCH_VARIABLES = {"searchTerm": "GraphQL", "limit": 10}
 
 # Fragment example
 FRAGMENT_QUERY = """
@@ -171,7 +167,7 @@ query PostsWithFragments {
       ...AuthorInfo
     }
   }
-  
+
   featuredPost {
     ...PostDetails
     author {
@@ -187,12 +183,12 @@ query ConditionalFields($includeComments: Boolean!, $skipAuthor: Boolean!) {
   posts(limit: 5) {
     id
     title
-    
+
     comments @include(if: $includeComments) {
       text
       likes
     }
-    
+
     author @skip(if: $skipAuthor) {
       name
       email
@@ -202,10 +198,7 @@ query ConditionalFields($includeComments: Boolean!, $skipAuthor: Boolean!) {
 """
 
 # Variables for directive query
-DIRECTIVE_VARIABLES = {
-    "includeComments": True,
-    "skipAuthor": False
-}
+DIRECTIVE_VARIABLES = {"includeComments": True, "skipAuthor": False}
 
 
 def print_example_queries():
@@ -219,13 +212,13 @@ def print_example_queries():
         ("Fragment Query", FRAGMENT_QUERY, None),
         ("Directive Query", DIRECTIVE_QUERY, DIRECTIVE_VARIABLES),
     ]
-    
-    print("\n" + "="*60)
+
+    print("\n" + "=" * 60)
     print("📝 EXAMPLE GRAPHQL QUERIES")
-    print("="*60)
+    print("=" * 60)
     print("\nCopy these queries to test in GraphQL Playground:")
     print("http://localhost:8000/graphql\n")
-    
+
     for i, (name, query, variables) in enumerate(examples, 1):
         print(f"\n{i}. {name}")
         print("-" * 40)
@@ -233,10 +226,10 @@ def print_example_queries():
         if variables:
             print("\nVariables:")
             print(variables)
-    
-    print("\n" + "="*60)
+
+    print("\n" + "=" * 60)
     print("💡 PERFORMANCE TIPS")
-    print("="*60)
+    print("=" * 60)
     print("""
 1. The first execution of each unique query will be slower (compilation)
 2. Subsequent executions use the cached compiled version (10x faster)

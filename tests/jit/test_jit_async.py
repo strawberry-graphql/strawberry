@@ -279,7 +279,7 @@ def test_sync_only_query():
     # Execute the compiled function
     compiled_fn = compile_query(schema._schema, query)
     root = Query()
-    
+
     # This should work synchronously
     jit_result = compiled_fn(root)
 

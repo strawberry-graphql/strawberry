@@ -5,7 +5,7 @@ This example demonstrates the powerful JIT (Just-In-Time) compiler for Strawberr
 ## Features Demonstrated
 
 - ⚡ **JIT Compilation** - 3-6x faster query execution
-- 🔄 **Parallel Async Execution** - 3.7x faster for async fields  
+- 🔄 **Parallel Async Execution** - 3.7x faster for async fields
 - 💾 **Query Caching** - 10x faster for repeated queries
 - 🎯 **Real-world Example** - Blog API with posts, authors, and comments
 

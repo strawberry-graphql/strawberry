@@ -23,9 +23,10 @@ repos:
     rev: v5.0.0
     hooks:
       - id: trailing-whitespace
+        exclude: ^tests/.*/snapshots/
       - id: check-merge-conflict
       - id: end-of-file-fixer
-        exclude: ^tests/relay/snapshots
+        exclude: ^tests/.*/snapshots/
       - id: check-toml
       - id: no-commit-to-branch
         args: ["--branch", "main"]
