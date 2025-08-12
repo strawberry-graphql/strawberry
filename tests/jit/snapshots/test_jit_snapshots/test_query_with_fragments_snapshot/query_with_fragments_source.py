@@ -17,6 +17,8 @@ def execute_query(root, context=None, variables=None):
             info.field_name = "posts"
             kwargs = {}
             kwargs['limit'] = 10
+            kwargs['published'] = None
+            kwargs['priority'] = None
             kwargs['limit'] = 2
             field_posts_value = _resolvers['resolver_0'](root, info, **kwargs)
             if field_posts_value is not None:

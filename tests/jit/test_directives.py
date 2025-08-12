@@ -2,69 +2,14 @@
 Test JIT compilation with GraphQL directives (@skip and @include).
 """
 
-from typing import List
-
 from graphql import execute, parse
 
-import strawberry
 from strawberry.jit import compile_query
 
 
-@strawberry.type
-class Author:
-    id: str
-    name: str
-    verified: bool
-
-
-@strawberry.type
-class Post:
-    id: str
-    title: str
-    content: str
-    author: Author
-    published: bool
-    views: int
-
-
-@strawberry.type
-class Query:
-    @strawberry.field
-    def posts(self, limit: int = 10) -> List[Post]:
-        """Get posts."""
-        authors = [
-            Author(id="a1", name="Alice", verified=True),
-            Author(id="a2", name="Bob", verified=False),
-        ]
-
-        return [
-            Post(
-                id=f"p{i}",
-                title=f"Post {i}",
-                content=f"Content for post {i}",
-                author=authors[i % 2],
-                published=i % 2 == 0,
-                views=i * 100,
-            )
-            for i in range(limit)
-        ]
-
-    @strawberry.field
-    def featured_post(self) -> Post:
-        """Get featured post."""
-        return Post(
-            id="featured",
-            title="Featured Post",
-            content="This is the featured post",
-            author=Author(id="a1", name="Alice", verified=True),
-            published=True,
-            views=1000,
-        )
-
-
-def test_skip_directive_with_literal():
+def test_skip_directive_with_literal(jit_schema, query_type):
     """Test @skip directive with literal boolean."""
-    schema = strawberry.Schema(Query)
+    schema = jit_schema
 
     # Skip should exclude the field
     query = """
@@ -78,18 +23,18 @@ def test_skip_directive_with_literal():
     """
 
     compiled_fn = compile_query(schema._schema, query)
-    jit_result = compiled_fn(Query())
+    jit_result = compiled_fn(query_type)
 
-    standard_result = execute(schema._schema, parse(query), root_value=Query())
+    standard_result = execute(schema._schema, parse(query), root_value=query_type)
 
     assert jit_result == standard_result.data
     assert "title" not in jit_result["posts"][0]  # Skipped
     assert "content" in jit_result["posts"][0]  # Not skipped
 
 
-def test_skip_directive_with_variable():
+def test_skip_directive_with_variable(jit_schema, query_type):
     """Test @skip directive with variable."""
-    schema = strawberry.Schema(Query)
+    schema = jit_schema
 
     query = """
     query GetPosts($skipTitle: Boolean!, $skipContent: Boolean!) {
@@ -105,10 +50,10 @@ def test_skip_directive_with_variable():
     variables = {"skipTitle": True, "skipContent": False}
 
     compiled_fn = compile_query(schema._schema, query)
-    jit_result = compiled_fn(Query(), variables=variables)
+    jit_result = compiled_fn(query_type, variables=variables)
 
     standard_result = execute(
-        schema._schema, parse(query), root_value=Query(), variable_values=variables
+        schema._schema, parse(query), root_value=query_type, variable_values=variables
     )
 
     assert jit_result == standard_result.data
@@ -117,15 +62,15 @@ def test_skip_directive_with_variable():
 
     # Test not skipping either
     variables = {"skipTitle": False, "skipContent": False}
-    jit_result = compiled_fn(Query(), variables=variables)
+    jit_result = compiled_fn(query_type, variables=variables)
 
     assert "title" in jit_result["posts"][0]
     assert "content" in jit_result["posts"][0]
 
 
-def test_include_directive_with_literal():
+def test_include_directive_with_literal(jit_schema, query_type):
     """Test @include directive with literal boolean."""
-    schema = strawberry.Schema(Query)
+    schema = jit_schema
 
     query = """
     query {
@@ -139,18 +84,18 @@ def test_include_directive_with_literal():
     """
 
     compiled_fn = compile_query(schema._schema, query)
-    jit_result = compiled_fn(Query())
+    jit_result = compiled_fn(query_type)
 
-    standard_result = execute(schema._schema, parse(query), root_value=Query())
+    standard_result = execute(schema._schema, parse(query), root_value=query_type)
 
     assert jit_result == standard_result.data
     assert "title" not in jit_result["posts"][0]  # Not included
     assert "content" in jit_result["posts"][0]  # Included
 
 
-def test_include_directive_with_variable():
+def test_include_directive_with_variable(jit_schema, query_type):
     """Test @include directive with variable."""
-    schema = strawberry.Schema(Query)
+    schema = jit_schema
 
     query = """
     query GetPosts($includeAuthor: Boolean!, $includeViews: Boolean!) {
@@ -170,10 +115,10 @@ def test_include_directive_with_variable():
     variables = {"includeAuthor": True, "includeViews": False}
 
     compiled_fn = compile_query(schema._schema, query)
-    jit_result = compiled_fn(Query(), variables=variables)
+    jit_result = compiled_fn(query_type, variables=variables)
 
     standard_result = execute(
-        schema._schema, parse(query), root_value=Query(), variable_values=variables
+        schema._schema, parse(query), root_value=query_type, variable_values=variables
     )
 
     assert jit_result == standard_result.data
@@ -181,9 +126,9 @@ def test_include_directive_with_variable():
     assert "views" not in jit_result["posts"][0]
 
 
-def test_combined_skip_and_include():
+def test_combined_skip_and_include(jit_schema, query_type):
     """Test combining @skip and @include directives."""
-    schema = strawberry.Schema(Query)
+    schema = jit_schema
 
     # Note: When both are present, field is included only if
     # @include is true AND @skip is false
@@ -207,9 +152,12 @@ def test_combined_skip_and_include():
     ]
 
     for variables, should_have_title in test_cases:
-        jit_result = compiled_fn(Query(), variables=variables)
+        jit_result = compiled_fn(query_type, variables=variables)
         standard_result = execute(
-            schema._schema, parse(query), root_value=Query(), variable_values=variables
+            schema._schema,
+            parse(query),
+            root_value=query_type,
+            variable_values=variables,
         )
 
         assert jit_result == standard_result.data
@@ -219,9 +167,9 @@ def test_combined_skip_and_include():
             assert "title" not in jit_result["posts"][0]
 
 
-def test_directives_on_nested_fields():
+def test_directives_on_nested_fields(jit_schema, query_type):
     """Test directives on nested fields."""
-    schema = strawberry.Schema(Query)
+    schema = jit_schema
 
     query = """
     query GetPosts($skipAuthorName: Boolean!) {
@@ -240,10 +188,10 @@ def test_directives_on_nested_fields():
     variables = {"skipAuthorName": True}
 
     compiled_fn = compile_query(schema._schema, query)
-    jit_result = compiled_fn(Query(), variables=variables)
+    jit_result = compiled_fn(query_type, variables=variables)
 
     standard_result = execute(
-        schema._schema, parse(query), root_value=Query(), variable_values=variables
+        schema._schema, parse(query), root_value=query_type, variable_values=variables
     )
 
     assert jit_result == standard_result.data
@@ -251,9 +199,9 @@ def test_directives_on_nested_fields():
     assert "verified" in jit_result["posts"][0]["author"]
 
 
-def test_directives_with_fragments():
+def test_directives_with_fragments(jit_schema, query_type):
     """Test directives with fragments."""
-    schema = strawberry.Schema(Query)
+    schema = jit_schema
 
     query = """
     fragment PostFields on Post {
@@ -273,10 +221,10 @@ def test_directives_with_fragments():
     variables = {"includeTitle": False}
 
     compiled_fn = compile_query(schema._schema, query)
-    jit_result = compiled_fn(Query(), variables=variables)
+    jit_result = compiled_fn(query_type, variables=variables)
 
     standard_result = execute(
-        schema._schema, parse(query), root_value=Query(), variable_values=variables
+        schema._schema, parse(query), root_value=query_type, variable_values=variables
     )
 
     assert jit_result == standard_result.data
@@ -298,9 +246,9 @@ def test_directives_on_inline_fragments():
     pytest.skip("Directives on inline fragments not yet supported in JIT")
 
 
-def test_directive_on_root_field():
+def test_directive_on_root_field(jit_schema, query_type):
     """Test directives on root query fields."""
-    schema = strawberry.Schema(Query)
+    schema = jit_schema
 
     query = """
     query GetData($includePosts: Boolean!, $includeFeatured: Boolean!) {
@@ -318,10 +266,10 @@ def test_directive_on_root_field():
     variables = {"includePosts": True, "includeFeatured": False}
 
     compiled_fn = compile_query(schema._schema, query)
-    jit_result = compiled_fn(Query(), variables=variables)
+    jit_result = compiled_fn(query_type, variables=variables)
 
     standard_result = execute(
-        schema._schema, parse(query), root_value=Query(), variable_values=variables
+        schema._schema, parse(query), root_value=query_type, variable_values=variables
     )
 
     assert jit_result == standard_result.data
@@ -329,11 +277,11 @@ def test_directive_on_root_field():
     assert "featuredPost" not in jit_result
 
 
-def test_directives_performance():
+def test_directives_performance(jit_schema, query_type):
     """Test performance with directives."""
     import time
 
-    schema = strawberry.Schema(Query)
+    schema = jit_schema
 
     query = """
     query GetPosts($skipContent: Boolean!, $includeAuthor: Boolean!) {
@@ -359,14 +307,14 @@ def test_directives_performance():
     # Benchmark JIT
     start = time.time()
     for _ in range(100):
-        jit_result = compiled_fn(Query(), variables=variables)
+        jit_result = compiled_fn(query_type, variables=variables)
     jit_time = time.time() - start
 
     # Benchmark standard
     start = time.time()
     for _ in range(100):
         standard_result = execute(
-            schema._schema, parsed, root_value=Query(), variable_values=variables
+            schema._schema, parsed, root_value=query_type, variable_values=variables
         )
     standard_time = time.time() - start
 
@@ -374,17 +322,3 @@ def test_directives_performance():
 
     # JIT should still be faster even with directive conditions
     assert jit_time < standard_time
-
-
-if __name__ == "__main__":
-    test_skip_directive_with_literal()
-    test_skip_directive_with_variable()
-    test_include_directive_with_literal()
-    test_include_directive_with_variable()
-    test_combined_skip_and_include()
-    test_directives_on_nested_fields()
-    test_directives_with_fragments()
-    test_directives_on_inline_fragments()
-    test_directive_on_root_field()
-    test_directives_performance()
-    print("✅ All directive tests passed!")

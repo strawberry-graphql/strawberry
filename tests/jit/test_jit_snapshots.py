@@ -3,59 +3,8 @@ Test JIT compilation snapshots to inspect generated functions.
 """
 
 import inspect
-from typing import List
 
-import strawberry
 from strawberry.jit import compile_query
-
-
-@strawberry.type
-class Author:
-    id: str
-    name: str
-    email: str
-
-
-@strawberry.type
-class Post:
-    id: str
-    title: str
-    content: str
-    author: Author
-    published: bool
-
-
-@strawberry.type
-class Query:
-    @strawberry.field
-    def posts(self, limit: int = 10) -> List[Post]:
-        """Get posts."""
-        author = Author(id="a1", name="Alice", email="alice@example.com")
-        return [
-            Post(
-                id=f"p{i}",
-                title=f"Post {i}",
-                content=f"Content {i}",
-                author=author,
-                published=i % 2 == 0,
-            )
-            for i in range(limit)
-        ]
-
-    @strawberry.field
-    async def async_posts(self, limit: int = 10) -> List[Post]:
-        """Get posts asynchronously."""
-        author = Author(id="a1", name="Alice", email="alice@example.com")
-        return [
-            Post(
-                id=f"p{i}",
-                title=f"Post {i}",
-                content=f"Content {i}",
-                author=author,
-                published=i % 2 == 0,
-            )
-            for i in range(limit)
-        ]
 
 
 def get_jit_source(compiled_fn):
@@ -66,9 +15,9 @@ def get_jit_source(compiled_fn):
     return "Source code not available (compile with debug=True)"
 
 
-def test_simple_query_snapshot(snapshot):
+def test_simple_query_snapshot(snapshot, jit_schema, query_type):
     """Test snapshot of a simple query."""
-    schema = strawberry.Schema(Query)
+    schema = jit_schema
 
     query = """
     query GetPosts {
@@ -85,7 +34,7 @@ def test_simple_query_snapshot(snapshot):
     generated_code = get_jit_source(compiled_fn)
 
     # Verify the function works
-    result = compiled_fn(Query())
+    result = compiled_fn(query_type)
     assert len(result["posts"]) == 2
     assert result["posts"][0]["id"] == "p0"
     assert result["posts"][0]["title"] == "Post 0"
@@ -94,9 +43,9 @@ def test_simple_query_snapshot(snapshot):
     snapshot.assert_match(generated_code, "simple_query_source.py")
 
 
-def test_nested_query_snapshot(snapshot):
+def test_nested_query_snapshot(snapshot, jit_schema, query_type):
     """Test snapshot of a nested query."""
-    schema = strawberry.Schema(Query)
+    schema = jit_schema
 
     query = """
     query GetPostsWithAuthor {
@@ -115,7 +64,7 @@ def test_nested_query_snapshot(snapshot):
     compiled_fn = compile_query(schema._schema, query)
 
     # Execute and verify
-    result = compiled_fn(Query())
+    result = compiled_fn(query_type)
     assert len(result["posts"]) == 2
     assert result["posts"][0]["author"]["name"] == "Alice"
 
@@ -124,9 +73,9 @@ def test_nested_query_snapshot(snapshot):
     snapshot.assert_match(generated_code, "nested_query_source.py")
 
 
-def test_query_with_variables_snapshot(snapshot):
+def test_query_with_variables_snapshot(snapshot, jit_schema, query_type):
     """Test snapshot of a query with variables."""
-    schema = strawberry.Schema(Query)
+    schema = jit_schema
 
     query = """
     query GetPosts($limit: Int!) {
@@ -142,7 +91,7 @@ def test_query_with_variables_snapshot(snapshot):
 
     # Execute with variables
     variables = {"limit": 3}
-    result = compiled_fn(Query(), variables=variables)
+    result = compiled_fn(query_type, variables=variables)
     assert len(result["posts"]) == 3
 
     # Snapshot the generated source code
@@ -150,9 +99,9 @@ def test_query_with_variables_snapshot(snapshot):
     snapshot.assert_match(generated_code, "query_with_variables_source.py")
 
 
-def test_query_with_directives_snapshot(snapshot):
+def test_query_with_directives_snapshot(snapshot, jit_schema, query_type):
     """Test snapshot of a query with directives."""
-    schema = strawberry.Schema(Query)
+    schema = jit_schema
 
     query = """
     query GetPosts($includeContent: Boolean!) {
@@ -169,7 +118,7 @@ def test_query_with_directives_snapshot(snapshot):
 
     # Execute with variables
     variables = {"includeContent": True}
-    result = compiled_fn(Query(), variables=variables)
+    result = compiled_fn(query_type, variables=variables)
     assert "content" in result["posts"][0]
     assert "published" in result["posts"][0]
 
@@ -178,9 +127,9 @@ def test_query_with_directives_snapshot(snapshot):
     snapshot.assert_match(generated_code, "query_with_directives_source.py")
 
 
-def test_query_with_fragments_snapshot(snapshot):
+def test_query_with_fragments_snapshot(snapshot, jit_schema, query_type):
     """Test snapshot of a query with fragments."""
-    schema = strawberry.Schema(Query)
+    schema = jit_schema
 
     query = """
     fragment PostFields on Post {
@@ -202,7 +151,7 @@ def test_query_with_fragments_snapshot(snapshot):
     compiled_fn = compile_query(schema._schema, query)
 
     # Execute
-    result = compiled_fn(Query())
+    result = compiled_fn(query_type)
     assert "content" in result["posts"][0]
     assert result["posts"][0]["author"]["name"] == "Alice"
 
@@ -211,9 +160,9 @@ def test_query_with_fragments_snapshot(snapshot):
     snapshot.assert_match(generated_code, "query_with_fragments_source.py")
 
 
-async def test_async_query_snapshot(snapshot):
+async def test_async_query_snapshot(snapshot, jit_schema, query_type):
     """Test snapshot of an async query."""
-    schema = strawberry.Schema(Query)
+    schema = jit_schema
 
     query = """
     query GetAsyncPosts {
@@ -233,7 +182,7 @@ async def test_async_query_snapshot(snapshot):
     assert inspect.iscoroutinefunction(compiled_fn)
 
     # Execute
-    result = await compiled_fn(Query())
+    result = await compiled_fn(query_type)
     assert len(result["asyncPosts"]) == 2
 
     # Snapshot the generated source code

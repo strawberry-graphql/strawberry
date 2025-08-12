@@ -24,6 +24,8 @@ def execute_query(root, context=None, variables=None):
             info.field_name = "posts"
             kwargs = {}
             kwargs['limit'] = 10
+            kwargs['published'] = None
+            kwargs['priority'] = None
             kwargs['limit'] = (_scalar_parsers.get('Int', lambda x: x)(info.variable_values.get('limit')) if info.variable_values.get('limit') is not None else None)
             field_posts_value = _resolvers['resolver_0'](root, info, **kwargs)
             if field_posts_value is not None:
