@@ -577,3 +577,72 @@ def test_generic_interface_multiple_type_vars():
     assert result.data is not None
     assert result.data["pair"]["getFirst"] == 42
     assert result.data["pair"]["getSecond"] == "world"
+
+
+
+def test_generic_nested_interface() -> None:
+    @strawberry.interface
+    class Node:
+        id_p: strawberry.Private[int]
+        
+        @strawberry.field
+        def id(self) -> strawberry.ID:
+            return strawberry.ID(f"{self.__class__.__name__}:{self.id_p}")
+            
+    @strawberry.interface
+    class Record[T]:
+        data: T
+        date_insert: str
+        
+        
+        
+    @dataclass
+    class AnimalDTO:
+        gender: bool
+
+    @dataclass
+    class CatDTO(AnimalDTO):
+        fur_color: str    
+        
+    
+    @strawberry.interface
+    class AnimalGQL[T: AnimalDTO](Node):
+        dto: strawberry.Private[T]
+    
+    @strawberry.type
+    class CatGQL(AnimalGQL[CatDTO], HasColor):
+        @strawberry.field
+        def fur_color(self) -> str:
+            return self.dto.fur_color
+            
+    
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def animal(self) -> AnimalGQL[AnimalDTO]:
+            return CatGQL(
+                id_p=1,
+                color="orange",
+                dto=CatDTO(gender=True, fur_color="orange")
+            )
+
+    schema = strawberry.Schema(query=Query, types=[CatGQL])
+
+    query = """
+        query {
+            animal {
+                id
+                ... on CatGQL {
+                    furColor
+                }
+            }
+        }
+    """
+
+    result = schema.execute_sync(query)
+
+    assert not result.errors
+    assert result.data is not None
+    assert result.data["animal"]["id"] == "CatGQL:1"
+    assert result.data["animal"]["furColor"] == "orange"
+    
