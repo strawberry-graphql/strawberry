@@ -329,15 +329,15 @@ class JITCompiler:
             self._emit(
                 "async_results = await asyncio.gather(*async_tasks, return_exceptions=True)"
             )
-            self._emit("for result in async_results:")
+            self._emit("for async_result in async_results:")
             self.indent_level += 1
-            self._emit("if isinstance(result, Exception):")
+            self._emit("if isinstance(async_result, Exception):")
             self.indent_level += 1
-            self._emit("errors.append({'message': str(result), 'path': " + path + "})")
+            self._emit("errors.append({'message': str(async_result), 'path': " + path + "})")
             self.indent_level -= 1
-            self._emit("elif isinstance(result, tuple):")
+            self._emit("elif isinstance(async_result, tuple):")
             self.indent_level += 1
-            self._emit("field_alias, field_value = result")
+            self._emit("field_alias, field_value = async_result")
             self._emit(f"{result_var}[field_alias] = field_value")
             self.indent_level -= 1
             self.indent_level -= 1

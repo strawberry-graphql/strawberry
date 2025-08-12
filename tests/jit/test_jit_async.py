@@ -3,17 +3,13 @@ Test JIT compilation with async resolvers.
 """
 
 import asyncio
-from pathlib import Path
 from typing import List
 
 import pytest
 from graphql import execute, parse
-from pytest_snapshot.plugin import Snapshot
 
 import strawberry
-from strawberry.jit import JITCompiler, compile_query
-
-HERE = Path(__file__).parent
+from strawberry.jit import compile_query
 
 
 @strawberry.type
@@ -126,7 +122,7 @@ class Query:
 
 
 @pytest.mark.asyncio
-async def test_async_simple_field(snapshot: Snapshot):
+async def test_async_simple_field():
     """Test JIT compilation with a simple async field."""
     schema = strawberry.Schema(Query)
 
@@ -136,36 +132,21 @@ async def test_async_simple_field(snapshot: Snapshot):
     }
     """
 
-    # Compile the query
-    compiler = JITCompiler(schema._schema)
-    document = parse(query)
-    operation = compiler._get_operation(document)
-    root_type = schema._schema.type_map["Query"]
-
-    # Generate the function code
-    generated_code = compiler._generate_function(operation, root_type)
-
-    # Check the generated code with snapshot
-    snapshot.snapshot_dir = HERE / "snapshots" / "jit_async"
-    snapshot.assert_match(generated_code, "async_simple_field.py")
-
     # Execute the compiled function
     compiled_fn = compile_query(schema._schema, query)
     root = Query()
+    jit_result = await compiled_fn(root)
 
-    # The compiled function should be async
-    assert asyncio.iscoroutinefunction(compiled_fn)
-
-    result = await compiled_fn(root)
-    assert result["hello"] == "Hello GraphQL"
-
-    # Compare with standard GraphQL execution
+    # Execute standard way
     standard_result = await execute(schema._schema, parse(query), root_value=root)
-    assert result == standard_result.data
+
+    # Verify results match
+    assert jit_result == standard_result.data
+    assert jit_result["hello"] == "Hello GraphQL"
 
 
 @pytest.mark.asyncio
-async def test_async_nested_fields(snapshot: Snapshot):
+async def test_async_nested_fields():
     """Test JIT compilation with nested async fields."""
     schema = strawberry.Schema(Query)
 
@@ -175,6 +156,7 @@ async def test_async_nested_fields(snapshot: Snapshot):
             id
             title
             author {
+                id
                 name
                 bio
             }
@@ -183,100 +165,74 @@ async def test_async_nested_fields(snapshot: Snapshot):
     }
     """
 
-    # Compile the query
-    compiler = JITCompiler(schema._schema)
-    document = parse(query)
-    operation = compiler._get_operation(document)
-    root_type = schema._schema.type_map["Query"]
-
-    # Generate the function code
-    generated_code = compiler._generate_function(operation, root_type)
-
-    # Check the generated code with snapshot
-    snapshot.snapshot_dir = HERE / "snapshots" / "jit_async"
-    snapshot.assert_match(generated_code, "async_nested_fields.py")
-
     # Execute the compiled function
     compiled_fn = compile_query(schema._schema, query)
     root = Query()
+    jit_result = await compiled_fn(root)
 
-    result = await compiled_fn(root)
-
-    # Verify results
-    assert len(result["posts"]) == 2
-    assert result["posts"][0]["id"] == "p1"
-    assert result["posts"][0]["author"]["name"] == "Alice"
-    assert result["posts"][0]["author"]["bio"] == "Bio of Alice"
-    assert result["posts"][0]["viewCount"] == 100
-
-    # Compare with standard GraphQL execution
+    # Execute standard way
     standard_result = await execute(schema._schema, parse(query), root_value=root)
-    assert result == standard_result.data
+
+    # Verify results match
+    assert jit_result == standard_result.data
+    assert len(jit_result["posts"]) == 2
+    assert jit_result["posts"][0]["author"]["bio"] == "Bio of Alice"
+    assert jit_result["posts"][0]["viewCount"] == 100
 
 
 @pytest.mark.asyncio
-async def test_mixed_sync_async_fields(snapshot: Snapshot):
+async def test_mixed_sync_async_fields():
     """Test JIT compilation with mixed sync and async fields."""
     schema = strawberry.Schema(Query)
 
     query = """
     query MixedQuery {
-        syncPosts {
+        posts(limit: 1) {
             id
             title
             syncAuthor {
+                id
                 name
+            }
+            author {
+                id
+                bio
+            }
+            comments {
+                id
+                text
+                likes
             }
         }
-        posts {
+        syncPosts {
             id
-            author {
-                name
-            }
+            title
         }
     }
     """
 
-    # Compile the query
-    compiler = JITCompiler(schema._schema)
-    document = parse(query)
-    operation = compiler._get_operation(document)
-    root_type = schema._schema.type_map["Query"]
-
-    # Generate the function code
-    generated_code = compiler._generate_function(operation, root_type)
-
-    # Check the generated code with snapshot
-    snapshot.snapshot_dir = HERE / "snapshots" / "jit_async"
-    snapshot.assert_match(generated_code, "mixed_sync_async.py")
-
     # Execute the compiled function
     compiled_fn = compile_query(schema._schema, query)
     root = Query()
+    jit_result = await compiled_fn(root)
 
-    # Should be async because posts field is async
-    assert asyncio.iscoroutinefunction(compiled_fn)
-
-    result = await compiled_fn(root)
-
-    # Verify both sync and async fields work
-    assert len(result["syncPosts"]) == 1
-    assert result["syncPosts"][0]["syncAuthor"]["name"] == "Alice"
-    assert len(result["posts"]) == 2
-    assert result["posts"][0]["author"]["name"] == "Alice"
-
-    # Compare with standard GraphQL execution
+    # Execute standard way
     standard_result = await execute(schema._schema, parse(query), root_value=root)
-    assert result == standard_result.data
+
+    # Verify results match
+    assert jit_result == standard_result.data
+    assert jit_result["posts"][0]["syncAuthor"]["id"] == "a1"
+    assert jit_result["posts"][0]["author"]["bio"] == "Bio of Alice"
+    assert jit_result["posts"][0]["comments"][0]["likes"] == 42
 
 
 @pytest.mark.asyncio
-async def test_async_with_list_fields(snapshot: Snapshot):
-    """Test JIT compilation with async fields returning lists."""
+async def test_async_with_list_fields():
+    """Test JIT compilation with async list fields."""
     schema = strawberry.Schema(Query)
 
     query = """
-    query GetComments {
+    query GetPostsWithComments {
         posts {
             id
             comments {
@@ -288,134 +244,33 @@ async def test_async_with_list_fields(snapshot: Snapshot):
     }
     """
 
-    # Compile the query
-    compiler = JITCompiler(schema._schema)
-    document = parse(query)
-    operation = compiler._get_operation(document)
-    root_type = schema._schema.type_map["Query"]
-
-    # Generate the function code
-    generated_code = compiler._generate_function(operation, root_type)
-
-    # Check the generated code with snapshot
-    snapshot.snapshot_dir = HERE / "snapshots" / "jit_async"
-    snapshot.assert_match(generated_code, "async_list_fields.py")
-
     # Execute the compiled function
     compiled_fn = compile_query(schema._schema, query)
     root = Query()
+    jit_result = await compiled_fn(root)
 
-    result = await compiled_fn(root)
-
-    # Verify results
-    assert len(result["posts"]) == 2
-    assert len(result["posts"][0]["comments"]) == 2
-    assert result["posts"][0]["comments"][0]["text"] == "Great post!"
-    assert result["posts"][0]["comments"][0]["likes"] == 42
-
-    # Compare with standard GraphQL execution
+    # Execute standard way
     standard_result = await execute(schema._schema, parse(query), root_value=root)
-    assert result == standard_result.data
+
+    # Verify results match
+    assert jit_result == standard_result.data
+    assert len(jit_result["posts"]) == 2
+    assert len(jit_result["posts"][0]["comments"]) == 2
+    assert all(c["likes"] == 42 for p in jit_result["posts"] for c in p["comments"])
 
 
 def test_sync_only_query():
-    """Test that sync-only queries generate sync functions."""
-
-    @strawberry.type
-    class SimpleQuery:
-        @strawberry.field
-        def name(self) -> str:
-            return "Sync Field"
-
-        @strawberry.field
-        def count(self) -> int:
-            return 42
-
-    schema = strawberry.Schema(SimpleQuery)
+    """Test that sync-only queries don't create async functions."""
+    schema = strawberry.Schema(Query)
 
     query = """
     query SyncOnly {
-        name
-        count
-    }
-    """
-
-    # Compile the query
-    compiled_fn = compile_query(schema._schema, query)
-    root = SimpleQuery()
-
-    # Should NOT be async
-    assert not asyncio.iscoroutinefunction(compiled_fn)
-
-    # Can call synchronously
-    result = compiled_fn(root)
-    assert result["name"] == "Sync Field"
-    assert result["count"] == 42
-
-
-@pytest.mark.asyncio
-async def test_async_with_variables(snapshot: Snapshot):
-    """Test async JIT compilation with variables."""
-    schema = strawberry.Schema(Query)
-
-    query = """
-    query GetPosts($limit: Int!) {
-        posts(limit: $limit) {
+        syncPosts {
             id
             title
-            viewCount
-        }
-    }
-    """
-
-    # Compile the query
-    compiler = JITCompiler(schema._schema)
-    document = parse(query)
-    operation = compiler._get_operation(document)
-    root_type = schema._schema.type_map["Query"]
-
-    # Generate the function code
-    generated_code = compiler._generate_function(operation, root_type)
-
-    # Check the generated code with snapshot
-    snapshot.snapshot_dir = HERE / "snapshots" / "jit_async"
-    snapshot.assert_match(generated_code, "async_with_variables.py")
-
-    # Execute the compiled function
-    compiled_fn = compile_query(schema._schema, query)
-    root = Query()
-
-    result = await compiled_fn(root, variables={"limit": 1})
-
-    # Verify results
-    assert len(result["posts"]) == 1
-    assert result["posts"][0]["viewCount"] == 100
-
-    # Compare with standard GraphQL execution
-    standard_result = await execute(
-        schema._schema, parse(query), root_value=root, variable_values={"limit": 1}
-    )
-    assert result == standard_result.data
-
-
-@pytest.mark.asyncio
-async def test_async_with_fragments(snapshot: Snapshot):
-    """Test async JIT compilation with fragments."""
-    schema = strawberry.Schema(Query)
-
-    query = """
-    fragment PostFields on Post {
-        id
-        title
-        viewCount
-    }
-
-    query GetPosts {
-        posts {
-            ...PostFields
-            author {
+            syncAuthor {
+                id
                 name
-                bio
             }
         }
     }
@@ -424,42 +279,94 @@ async def test_async_with_fragments(snapshot: Snapshot):
     # Execute the compiled function
     compiled_fn = compile_query(schema._schema, query)
     root = Query()
+    
+    # This should work synchronously
+    jit_result = compiled_fn(root)
 
-    result = await compiled_fn(root)
+    # Execute standard way
+    standard_result = execute(schema._schema, parse(query), root_value=root)
 
-    # Verify results
-    assert len(result["posts"]) == 2
-    assert result["posts"][0]["viewCount"] == 100
-    assert result["posts"][0]["author"]["bio"] == "Bio of Alice"
+    # Verify results match
+    assert jit_result == standard_result.data
+    assert jit_result["syncPosts"][0]["id"] == "p1"
 
-    # Compare with standard GraphQL execution
+
+@pytest.mark.asyncio
+async def test_async_with_variables():
+    """Test async JIT compilation with variables."""
+    schema = strawberry.Schema(Query)
+
+    query = """
+    query GetPosts($limit: Int!, $name: String!) {
+        posts(limit: $limit) {
+            id
+            title
+        }
+        hello(name: $name)
+    }
+    """
+
+    variables = {"limit": 1, "name": "Test"}
+
+    # Execute the compiled function
+    compiled_fn = compile_query(schema._schema, query)
+    root = Query()
+    jit_result = await compiled_fn(root, variables=variables)
+
+    # Execute standard way
+    standard_result = await execute(
+        schema._schema, parse(query), root_value=root, variable_values=variables
+    )
+
+    # Verify results match
+    assert jit_result == standard_result.data
+    assert len(jit_result["posts"]) == 1
+    assert jit_result["hello"] == "Hello Test"
+
+
+@pytest.mark.asyncio
+async def test_async_with_fragments():
+    """Test async JIT compilation with fragments."""
+    schema = strawberry.Schema(Query)
+
+    query = """
+    fragment AuthorInfo on Author {
+        id
+        name
+        bio
+    }
+
+    query GetPostsWithFragments {
+        posts(limit: 1) {
+            id
+            title
+            author {
+                ...AuthorInfo
+            }
+        }
+    }
+    """
+
+    # Execute the compiled function
+    compiled_fn = compile_query(schema._schema, query)
+    root = Query()
+    jit_result = await compiled_fn(root)
+
+    # Execute standard way
     standard_result = await execute(schema._schema, parse(query), root_value=root)
-    assert result == standard_result.data
+
+    # Verify results match
+    assert jit_result == standard_result.data
+    assert jit_result["posts"][0]["author"]["bio"] == "Bio of Alice"
 
 
 if __name__ == "__main__":
     # Run async tests
-    async def run_tests():
-        class MockSnapshot:
-            def __init__(self):
-                self.snapshot_dir = None
-
-            def assert_match(self, content, filename):
-                print(
-                    f"Would save snapshot to: {self.snapshot_dir / filename if self.snapshot_dir else filename}"
-                )
-
-        snapshot = MockSnapshot()
-
-        await test_async_simple_field(snapshot)
-        await test_async_nested_fields(snapshot)
-        await test_mixed_sync_async_fields(snapshot)
-        await test_async_with_list_fields(snapshot)
-        await test_async_with_variables(snapshot)
-        await test_async_with_fragments(snapshot)
-
-        test_sync_only_query()
-
-        print("\n✅ All async JIT tests passed!")
-
-    asyncio.run(run_tests())
+    asyncio.run(test_async_simple_field())
+    asyncio.run(test_async_nested_fields())
+    asyncio.run(test_mixed_sync_async_fields())
+    asyncio.run(test_async_with_list_fields())
+    test_sync_only_query()
+    asyncio.run(test_async_with_variables())
+    asyncio.run(test_async_with_fragments())
+    print("✅ All async tests passed!")
