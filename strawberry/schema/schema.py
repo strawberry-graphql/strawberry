@@ -50,6 +50,7 @@ from strawberry.extensions.directives import (
 from strawberry.extensions.runner import SchemaExtensionsRunner
 from strawberry.printer import print_schema
 from strawberry.schema.schema_converter import GraphQLCoreConverter
+from strawberry.schema.validation_rules.maybe_null import MaybeNullValidationRule
 from strawberry.schema.validation_rules.one_of import OneOfInputValidationRule
 from strawberry.types.base import (
     StrawberryObjectDefinition,
@@ -124,6 +125,7 @@ def validate_document(
 ) -> list[GraphQLError]:
     validation_rules = (
         *validation_rules,
+        MaybeNullValidationRule,
         OneOfInputValidationRule,
     )
     return validate(
