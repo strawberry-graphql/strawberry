@@ -94,8 +94,7 @@ def should_resolve_list_connection_edges(info: Info) -> bool:
             and selection.name in resolve_for_field_names
         ):
             return True
-        nested_selections = getattr(selection, "selections", None)
-        if nested_selections:
+        if nested_selections := getattr(selection, "selections", None):
             stack.extend(nested_selections)
     return False
 
