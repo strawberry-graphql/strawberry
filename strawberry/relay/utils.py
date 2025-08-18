@@ -7,7 +7,6 @@ from typing import TYPE_CHECKING, Any, Union
 from typing_extensions import Self, assert_never
 
 from strawberry.types.base import StrawberryObjectDefinition
-from strawberry.types.info import Info
 from strawberry.types.nodes import InlineFragment
 
 if TYPE_CHECKING:
@@ -84,10 +83,9 @@ def should_resolve_list_connection_edges(info: Info) -> bool:
 
     """
     resolve_for_field_names = {"edges", "pageInfo"}
-    # Use a stack for iterative DFS, much faster than recursion
+    # Recursively inspect the selection to check if the user requested to resolve the `edges` field.
     stack = []
     for selection_field in info.selected_fields:
-        # Push all top-level selections onto the stack
         stack.extend(selection_field.selections)
     while stack:
         selection = stack.pop()
@@ -96,8 +94,6 @@ def should_resolve_list_connection_edges(info: Info) -> bool:
             and selection.name in resolve_for_field_names
         ):
             return True
-        # InlineFragment or any other Selection: examine nested selections (if any)
-        # Use getattr to avoid attribute error if selections doesn't exist
         nested_selections = getattr(selection, "selections", None)
         if nested_selections:
             stack.extend(nested_selections)
