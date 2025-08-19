@@ -142,11 +142,7 @@ type Query {
 
 ### Optional arguments
 
-Optional or nullable arguments can be expressed using `Optional`. If you need to
-differentiate between `null` (maps to `None` in Python) and no arguments being
-passed, you can use `strawberry.Maybe`:
-
-<CodeGrid>
+Optional or nullable arguments can be expressed using `Optional`:
 
 ```python
 from typing import Optional
@@ -160,50 +156,12 @@ class Query:
         if name is None:
             return "Hello world!"
         return f"Hello {name}!"
-
-    @strawberry.field
-    def greet(self, name: strawberry.Maybe[str] = None) -> str:
-        if name:
-            if name.value:
-                return f"Hello {name.value}!"
-            else:
-                return "Name was null!"
-        else:
-            return "Name was not set!"
 ```
 
-```graphql
-type Query {
-  hello(name: String = null): String!
-  greet(name: String): String!
-}
-```
-
-</CodeGrid>
-
-Like this you will get the following responses:
-
-<CodeGrid>
-
-```graphql
-{
-  unset: greet
-  null: greet(name: null)
-  name: greet(name: "Dominique")
-}
-```
-
-```json
-{
-  "data": {
-    "unset": "Name was not set!",
-    "null": "Name was null!",
-    "name": "Hello Dominique!"
-  }
-}
-```
-
-</CodeGrid>
+If you need to differentiate between `null` and no arguments being passed (for
+example, distinguishing between "set to null" vs "don't change"), you can use
+`strawberry.Maybe`. See the [Maybe documentation](./maybe.md) for comprehensive
+usage examples and patterns.
 
 ### Annotated Arguments
 
@@ -221,7 +179,7 @@ class Query:
     @strawberry.field
     def greet(
         self,
-        name: strawberry.Maybe[str] = None,
+        name: Optional[str] = None,
         is_morning: Annotated[
             Optional[bool],
             strawberry.argument(

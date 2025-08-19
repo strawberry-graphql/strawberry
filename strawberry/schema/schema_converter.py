@@ -854,6 +854,13 @@ class GraphQLCoreConverter:
         NoneType = type(None)
         if type_ is None or type_ is NoneType:
             return self.from_type(type_)
+        if isinstance(type_, StrawberryMaybe):
+            # StrawberryMaybe should always generate optional types
+            # because Maybe[T] = Union[Some[T], None] (field can be absent)
+            # But we need to handle the case where of_type is itself optional
+            if isinstance(type_.of_type, StrawberryOptional):
+                return self.from_type(type_.of_type.of_type)
+            return self.from_type(type_.of_type)
         if isinstance(type_, StrawberryOptional):
             return self.from_type(type_.of_type)
         return GraphQLNonNull(self.from_type(type_))
