@@ -60,7 +60,7 @@ def test_custom_scalar_serialization():
     standard_data = result.data
 
     # JIT execution
-    compiled_fn = compile_query(schema._schema, query)
+    compiled_fn = compile_query(schema, query)
     jit_result = compiled_fn(None)
 
     assert jit_result["encodedData"] == standard_data["encodedData"]
@@ -74,7 +74,7 @@ def test_custom_scalar_serialization():
     standard_data = result.data
 
     # JIT execution
-    compiled_fn = compile_query(schema._schema, query)
+    compiled_fn = compile_query(schema, query)
     jit_result = compiled_fn(None)
 
     assert jit_result["currentTime"] == standard_data["currentTime"]
@@ -88,7 +88,7 @@ def test_custom_scalar_serialization():
     standard_data = result.data
 
     # JIT execution
-    compiled_fn = compile_query(schema._schema, query)
+    compiled_fn = compile_query(schema, query)
     jit_result = compiled_fn(None)
 
     assert jit_result["caseTest"] == standard_data["caseTest"]
@@ -129,7 +129,7 @@ def test_custom_scalar_deserialization():
     standard_data = result.data
 
     # JIT execution
-    compiled_fn = compile_query(schema._schema, query)
+    compiled_fn = compile_query(schema, query)
     jit_result = compiled_fn(None, variables=variables)
 
     assert jit_result["decodeBase64"] == standard_data["decodeBase64"]
@@ -147,7 +147,7 @@ def test_custom_scalar_deserialization():
     standard_data = result.data
 
     # JIT execution
-    compiled_fn = compile_query(schema._schema, query)
+    compiled_fn = compile_query(schema, query)
     jit_result = compiled_fn(None, variables=variables)
 
     assert jit_result["formatDate"] == standard_data["formatDate"]
@@ -163,7 +163,7 @@ def test_custom_scalar_deserialization():
     standard_data = result.data
 
     # JIT execution
-    compiled_fn = compile_query(schema._schema, query)
+    compiled_fn = compile_query(schema, query)
     jit_result = compiled_fn(None)
 
     assert jit_result["echoCase"] == standard_data["echoCase"]
@@ -199,7 +199,7 @@ def test_list_of_custom_scalars():
     standard_data = result.data
 
     # JIT execution
-    compiled_fn = compile_query(schema._schema, query)
+    compiled_fn = compile_query(schema, query)
     jit_result = compiled_fn(None)
 
     assert jit_result["encodeMultiple"] == standard_data["encodeMultiple"]
@@ -224,7 +224,7 @@ def test_list_of_custom_scalars():
     standard_data = result.data
 
     # JIT execution
-    compiled_fn = compile_query(schema._schema, query)
+    compiled_fn = compile_query(schema, query)
     jit_result = compiled_fn(None, variables=variables)
 
     assert jit_result["decodeMultiple"] == standard_data["decodeMultiple"]
@@ -259,7 +259,7 @@ def test_nested_custom_scalars():
     standard_data = result.data
 
     # JIT execution
-    compiled_fn = compile_query(schema._schema, query)
+    compiled_fn = compile_query(schema, query)
     jit_result = compiled_fn(None)
 
     assert jit_result == standard_data
@@ -298,7 +298,7 @@ def test_nullable_custom_scalars():
     standard_data = result.data
 
     # JIT execution
-    compiled_fn = compile_query(schema._schema, query)
+    compiled_fn = compile_query(schema, query)
     jit_result = compiled_fn(None)
 
     assert jit_result == standard_data
@@ -312,7 +312,7 @@ def test_nullable_custom_scalars():
     standard_data = result.data
 
     # JIT execution
-    compiled_fn = compile_query(schema._schema, query)
+    compiled_fn = compile_query(schema, query)
     jit_result = compiled_fn(None)
 
     assert jit_result == standard_data
@@ -326,7 +326,7 @@ def test_nullable_custom_scalars():
     standard_data = result.data
 
     # JIT execution
-    compiled_fn = compile_query(schema._schema, query)
+    compiled_fn = compile_query(schema, query)
     jit_result = compiled_fn(None)
 
     assert jit_result == standard_data
@@ -359,7 +359,7 @@ def test_custom_scalar_errors():
     assert result.errors
 
     # JIT execution
-    compiled_fn = compile_query(schema._schema, query)
+    compiled_fn = compile_query(schema, query)
     jit_result = compiled_fn(None)
 
     assert "errors" in jit_result

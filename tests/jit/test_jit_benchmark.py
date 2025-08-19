@@ -140,7 +140,7 @@ def test_jit_with_small_dataset():
     """
 
     # Compile and execute
-    compiled_fn = compile_query(schema._schema, query)
+    compiled_fn = compile_query(schema, query)
     root = Query(posts_data)
     result = compiled_fn(root)
 
@@ -184,7 +184,7 @@ def test_jit_with_large_dataset():
     root = Query(posts_data)
 
     # Compile the query
-    compiled_fn = compile_query(schema._schema, query)
+    compiled_fn = compile_query(schema, query)
 
     # Warm up
     compiled_fn(root)
@@ -250,7 +250,7 @@ def test_jit_benchmark_comparison():
     """
 
     parsed_query = parse(query)
-    compiled_fn = compile_query(schema._schema, query)
+    compiled_fn = compile_query(schema, query)
 
     dataset_configs = [
         (10, 5, 100),  # 10 posts, 5 comments each, 100 iterations
@@ -320,7 +320,7 @@ def test_jit_with_minimal_fields():
     """
 
     parsed_query = parse(query)
-    compiled_fn = compile_query(schema._schema, query)
+    compiled_fn = compile_query(schema, query)
     root = Query(posts_data)
 
     iterations = 100

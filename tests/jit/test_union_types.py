@@ -131,7 +131,7 @@ def test_union_type_resolution():
     assert result.data["library"]["featuredItem"]["director"] == "Wachowski Sisters"
 
     # JIT execution
-    compiled_fn = compile_query(schema._schema, query)
+    compiled_fn = compile_query(schema, query)
     jit_result = compiled_fn(Query())
 
     assert jit_result["library"]["featuredItem"]["__typename"] == "Movie"
@@ -171,7 +171,7 @@ def test_union_list_field():
     """
 
     # JIT execution
-    compiled_fn = compile_query(schema._schema, query)
+    compiled_fn = compile_query(schema, query)
     result = compiled_fn(Query())
 
     items = result["library"]["items"]
@@ -229,7 +229,7 @@ def test_union_with_fragments():
     """
 
     # JIT execution
-    compiled_fn = compile_query(schema._schema, query)
+    compiled_fn = compile_query(schema, query)
     result = compiled_fn(Query())
 
     item = result["library"]["featuredItem"]
@@ -274,7 +274,7 @@ def test_union_with_arguments():
     """
 
     # JIT execution
-    compiled_fn = compile_query(schema._schema, query)
+    compiled_fn = compile_query(schema, query)
     result = compiled_fn(Query())
 
     # Check book
@@ -317,7 +317,7 @@ def test_union_without_typename():
     """
 
     # JIT execution
-    compiled_fn = compile_query(schema._schema, query)
+    compiled_fn = compile_query(schema, query)
     result = compiled_fn(Query())
 
     item = result["library"]["featuredItem"]
@@ -350,7 +350,7 @@ def test_union_search_query():
     """
 
     # JIT execution with variables
-    compiled_fn = compile_query(schema._schema, query)
+    compiled_fn = compile_query(schema, query)
 
     # Search for both book and movie
     result = compiled_fn(Query(), variables={"q": "book movie"})
@@ -406,7 +406,7 @@ def test_union_performance():
     standard_time = time.perf_counter() - start
 
     # JIT execution
-    compiled_fn = compile_query(schema._schema, query)
+    compiled_fn = compile_query(schema, query)
     start = time.perf_counter()
     for _ in range(iterations):
         result = compiled_fn(root)
@@ -452,7 +452,7 @@ def test_union_error_handling():
     """
 
     # JIT execution
-    compiled_fn = compile_query(schema._schema, query)
+    compiled_fn = compile_query(schema, query)
     result = compiled_fn(ErrorQuery())
 
     # Should handle errors properly - when a non-nullable field errors,

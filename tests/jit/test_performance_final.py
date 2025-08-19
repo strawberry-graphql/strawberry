@@ -164,7 +164,7 @@ def benchmark_sync_queries():
         standard_time = time.perf_counter() - start
 
         # JIT Compiled
-        compiled_fn = compile_query(schema._schema, query)
+        compiled_fn = compile_query(schema, query)
         start = time.perf_counter()
         for _ in range(100):
             result = compiled_fn(root)
@@ -233,7 +233,7 @@ async def benchmark_async_queries():
         standard_time = time.perf_counter() - start
 
         # JIT Compiled
-        compiled_fn = compile_query(schema._schema, query)
+        compiled_fn = compile_query(schema, query)
         start = time.perf_counter()
         for _ in range(100):
             result = await compiled_fn(root)

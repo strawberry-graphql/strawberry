@@ -28,7 +28,7 @@ def test_simple_query_snapshot(snapshot, jit_schema, query_type):
     }
     """
 
-    compiled_fn = compile_query(schema._schema, query)
+    compiled_fn = compile_query(schema, query)
 
     # Get the generated code
     generated_code = get_jit_source(compiled_fn)
@@ -61,7 +61,7 @@ def test_nested_query_snapshot(snapshot, jit_schema, query_type):
     }
     """
 
-    compiled_fn = compile_query(schema._schema, query)
+    compiled_fn = compile_query(schema, query)
 
     # Execute and verify
     result = compiled_fn(query_type)
@@ -87,7 +87,7 @@ def test_query_with_variables_snapshot(snapshot, jit_schema, query_type):
     }
     """
 
-    compiled_fn = compile_query(schema._schema, query)
+    compiled_fn = compile_query(schema, query)
 
     # Execute with variables
     variables = {"limit": 3}
@@ -114,7 +114,7 @@ def test_query_with_directives_snapshot(snapshot, jit_schema, query_type):
     }
     """
 
-    compiled_fn = compile_query(schema._schema, query)
+    compiled_fn = compile_query(schema, query)
 
     # Execute with variables
     variables = {"includeContent": True}
@@ -148,7 +148,7 @@ def test_query_with_fragments_snapshot(snapshot, jit_schema, query_type):
     }
     """
 
-    compiled_fn = compile_query(schema._schema, query)
+    compiled_fn = compile_query(schema, query)
 
     # Execute
     result = compiled_fn(query_type)
@@ -176,7 +176,7 @@ async def test_async_query_snapshot(snapshot, jit_schema, query_type):
     }
     """
 
-    compiled_fn = compile_query(schema._schema, query)
+    compiled_fn = compile_query(schema, query)
 
     # The function should be async
     assert inspect.iscoroutinefunction(compiled_fn)
@@ -199,7 +199,7 @@ def inspect_jit_function(query_string: str, schema=None):
     if schema is None:
         schema = strawberry.Schema(Query)
 
-    compiled_fn = compile_query(schema._schema, query_string)
+    compiled_fn = compile_query(schema, query_string)
 
     print(f"Function name: {compiled_fn.__name__}")
     print(f"Is async: {inspect.iscoroutinefunction(compiled_fn)}")

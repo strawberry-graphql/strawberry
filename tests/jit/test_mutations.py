@@ -342,7 +342,7 @@ def test_single_mutation():
     reset_database()
 
     # JIT execution
-    compiled_fn = compile_query(schema._schema, query)
+    compiled_fn = compile_query(schema, query)
     jit_result = compiled_fn(Mutation(), variables=variables)
 
     assert jit_result["createUser"]["success"] is True
@@ -374,7 +374,7 @@ def test_multiple_mutations_serial_execution():
     """
 
     # JIT execution
-    compiled_fn = compile_query(schema._schema, query)
+    compiled_fn = compile_query(schema, query)
     result = compiled_fn(Mutation())
 
     # Check all mutations succeeded
@@ -424,7 +424,7 @@ def test_mutation_with_dependency():
     """
 
     # JIT execution
-    compiled_fn = compile_query(schema._schema, query)
+    compiled_fn = compile_query(schema, query)
     result = compiled_fn(Mutation())
 
     # Both should succeed because user_0 is created first
@@ -459,7 +459,7 @@ def test_mutation_error_handling():
     """
 
     # JIT execution
-    compiled_fn = compile_query(schema._schema, query)
+    compiled_fn = compile_query(schema, query)
     result = compiled_fn(Mutation())
 
     # First should succeed
@@ -491,7 +491,7 @@ def test_mutation_with_exception():
     """
 
     # JIT execution
-    compiled_fn = compile_query(schema._schema, query)
+    compiled_fn = compile_query(schema, query)
     result = compiled_fn(Mutation())
 
     # Should return error
@@ -515,7 +515,7 @@ def test_mutation_side_effects():
         }
     }
     """
-    compiled_fn = compile_query(schema._schema, setup_query)
+    compiled_fn = compile_query(schema, setup_query)
     compiled_fn(Mutation())
 
     # Create a post
@@ -527,7 +527,7 @@ def test_mutation_side_effects():
     }
     """
 
-    compiled_fn = compile_query(schema._schema, create_query)
+    compiled_fn = compile_query(schema, create_query)
     result = compiled_fn(Mutation())
 
     # Now increment view count multiple times
@@ -545,7 +545,7 @@ def test_mutation_side_effects():
     }
     """
 
-    compiled_fn = compile_query(schema._schema, increment_query)
+    compiled_fn = compile_query(schema, increment_query)
     result = compiled_fn(Mutation())
 
     # Each mutation should see the effect of the previous one
@@ -582,7 +582,7 @@ def test_async_mutations_serial_execution():
     """
 
     # JIT execution (will be async)
-    compiled_fn = compile_query(schema._schema, query)
+    compiled_fn = compile_query(schema, query)
 
     # Run in asyncio event loop
     async def run_test():
@@ -634,7 +634,7 @@ def test_mutation_with_nested_fields():
     }
     """
 
-    compiled_fn = compile_query(schema._schema, setup_query)
+    compiled_fn = compile_query(schema, setup_query)
     compiled_fn(Mutation())
 
     # Now create a post with nested author lookup
@@ -661,7 +661,7 @@ def test_mutation_with_nested_fields():
     }
     """
 
-    compiled_fn = compile_query(schema._schema, query)
+    compiled_fn = compile_query(schema, query)
     result = compiled_fn(Mutation())
 
     assert result["createPost"]["success"] is True
@@ -711,7 +711,7 @@ def test_mutation_performance():
     standard_time = time.perf_counter() - start
 
     # JIT execution
-    compiled_fn = compile_query(schema._schema, query)
+    compiled_fn = compile_query(schema, query)
     start = time.perf_counter()
     for i in range(iterations):
         reset_database()

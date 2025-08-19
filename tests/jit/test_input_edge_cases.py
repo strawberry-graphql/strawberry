@@ -174,7 +174,7 @@ def test_enum_input():
     variables = {"input": {"title": "Urgent Task", "priority": "URGENT"}}
 
     # JIT execution
-    compiled_fn = compile_query(schema._schema, query)
+    compiled_fn = compile_query(schema, query)
     result = compiled_fn(Mutation(), variables=variables)
 
     assert result["createTask"]["title"] == "Urgent Task"
@@ -234,7 +234,7 @@ def test_deeply_nested_input():
     }
 
     # JIT execution
-    compiled_fn = compile_query(schema._schema, query)
+    compiled_fn = compile_query(schema, query)
     result = compiled_fn(Mutation(), variables=variables)
 
     assert result["createTask"]["title"] == "Complex Task"
@@ -279,7 +279,7 @@ def test_list_of_input_objects():
     }
 
     # JIT execution
-    compiled_fn = compile_query(schema._schema, query)
+    compiled_fn = compile_query(schema, query)
     result = compiled_fn(Mutation(), variables=variables)
 
     assert result["createBulkTasks"]["totalCount"] == 3
@@ -311,7 +311,7 @@ def test_boolean_and_float_inputs():
     }
 
     # JIT execution
-    compiled_fn = compile_query(schema._schema, query)
+    compiled_fn = compile_query(schema, query)
     result = compiled_fn(Mutation(), variables=variables)
 
     assert result["createTask"]["isActive"] is False
@@ -336,7 +336,7 @@ def test_null_vs_undefined_inputs():
     # Test with null description
     variables = {"title": "Task with null description", "description": None}
 
-    compiled_fn = compile_query(schema._schema, query)
+    compiled_fn = compile_query(schema, query)
     result = compiled_fn(Mutation(), variables=variables)
 
     assert result["createTask"]["title"] == "Task with null description"
@@ -381,7 +381,7 @@ def test_mixed_inline_and_variable_inputs():
         "tags": [{"name": "important"}, {"name": "review"}],
     }
 
-    compiled_fn = compile_query(schema._schema, query)
+    compiled_fn = compile_query(schema, query)
     result = compiled_fn(Mutation(), variables=variables)
 
     assert result["createTask"]["title"] == "Mixed Input Task"
@@ -413,7 +413,7 @@ def test_empty_list_inputs():
         "input": {"title": "Task with empty lists", "tags": [], "assigneeIds": []}
     }
 
-    compiled_fn = compile_query(schema._schema, query)
+    compiled_fn = compile_query(schema, query)
     result = compiled_fn(Mutation(), variables=variables)
 
     assert result["createTask"]["title"] == "Task with empty lists"
@@ -476,7 +476,7 @@ def test_input_validation_performance():
     standard_time = time.perf_counter() - start
 
     # JIT execution
-    compiled_fn = compile_query(schema._schema, query)
+    compiled_fn = compile_query(schema, query)
     start = time.perf_counter()
     for _ in range(iterations):
         result = compiled_fn(root, variables=variables)

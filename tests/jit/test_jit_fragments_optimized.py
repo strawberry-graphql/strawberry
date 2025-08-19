@@ -89,7 +89,7 @@ def test_optimized_simple_fragment():
     """
 
     # Execute with optimized compiler
-    compiled_fn = compile_query(schema._schema, query)
+    compiled_fn = compile_query(schema, query)
     root = Query()
     result = compiled_fn(root)
 
@@ -133,7 +133,7 @@ def test_optimized_nested_fragments():
     """
 
     # Execute with optimized compiler
-    compiled_fn = compile_query(schema._schema, query)
+    compiled_fn = compile_query(schema, query)
     root = Query()
     result = compiled_fn(root)
 
@@ -168,7 +168,7 @@ def test_optimized_inline_fragment():
     """
 
     # Execute with optimized compiler
-    compiled_fn = compile_query(schema._schema, query)
+    compiled_fn = compile_query(schema, query)
     root = Query()
     result = compiled_fn(root)
 
@@ -217,7 +217,7 @@ def test_optimized_multiple_fragments():
     """
 
     # Execute with optimized compiler
-    compiled_fn = compile_query(schema._schema, query)
+    compiled_fn = compile_query(schema, query)
     root = Query()
     result = compiled_fn(root)
 

@@ -13,7 +13,7 @@ from __future__ import annotations
 import hashlib
 import inspect
 import time
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from graphql import (
     DirectiveNode,
@@ -35,8 +35,7 @@ from graphql import (
 )
 from graphql.language import OperationDefinitionNode
 
-if TYPE_CHECKING:
-    import strawberry
+import strawberry
 
 
 class MockInfo:
@@ -65,18 +64,21 @@ class JITCompiler:
     - Built-in caching with configurable TTL and size limits
     """
 
-    def __init__(self, schema: Union[GraphQLSchema, strawberry.Schema]):
-        # Support both GraphQL Core schema and Strawberry schema
-        if hasattr(schema, "_schema"):
-            # It's a Strawberry schema
-            self.strawberry_schema = schema
-            self.schema = schema._schema
-            self.type_map = schema.type_map
-        else:
-            # It's a GraphQL Core schema
-            self.strawberry_schema = None
-            self.schema = schema
-            self.type_map = None
+    def __init__(self, schema: strawberry.Schema):
+        """Initialize JIT compiler with a Strawberry schema.
+
+        Args:
+            schema: A Strawberry schema instance
+        """
+        if not hasattr(schema, "_schema"):
+            raise TypeError(
+                "JIT compiler requires a Strawberry schema. "
+                "Create one with strawberry.Schema(Query)"
+            )
+
+        self.strawberry_schema = schema
+        self.schema = schema._schema  # GraphQL Core schema for AST operations
+        self.type_map = schema.type_map  # Native Strawberry type map
         self.generated_code = []
         self.indent_level = 0
         self.field_counter = 0
@@ -1900,10 +1902,17 @@ class CachedJITCompiler:
 
     def __init__(
         self,
-        schema: GraphQLSchema,
+        schema: strawberry.Schema,
         cache_size: int = 1000,
         ttl_seconds: Optional[float] = None,
     ):
+        """Initialize cached JIT compiler.
+
+        Args:
+            schema: A Strawberry schema instance
+            cache_size: Maximum number of cached queries
+            ttl_seconds: TTL for cache entries in seconds
+        """
         self.schema = schema
         self.compiler = JITCompiler(schema)
         self.cache: Dict[str, Tuple[Callable, float]] = {}
@@ -1962,15 +1971,13 @@ class CachedJITCompiler:
 
 
 # Public API
-def compile_query(
-    schema: Union[GraphQLSchema, strawberry.Schema], query: str
-) -> Callable:
+def compile_query(schema: strawberry.Schema, query: str) -> Callable:
     """Compile a GraphQL query into optimized Python code.
 
     This is the main entry point for JIT compilation.
 
     Args:
-        schema: The GraphQL schema or Strawberry schema
+        schema: A Strawberry schema instance
         query: The GraphQL query string
 
     Returns:
@@ -1981,14 +1988,14 @@ def compile_query(
 
 
 def create_cached_compiler(
-    schema: GraphQLSchema,
+    schema: strawberry.Schema,
     cache_size: int = 1000,
     ttl_seconds: Optional[float] = None,
 ) -> CachedJITCompiler:
     """Create a cached JIT compiler for production use.
 
     Args:
-        schema: The GraphQL schema
+        schema: A Strawberry schema instance
         cache_size: Maximum number of cached queries (default: 1000)
         ttl_seconds: TTL for cache entries in seconds (default: None = no expiry)
 

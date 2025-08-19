@@ -165,7 +165,7 @@ async def benchmark_sync_query():
     standard_time = time.perf_counter() - start
 
     # JIT compiled execution
-    compiled_fn = compile_query(schema._schema, query)
+    compiled_fn = compile_query(schema, query)
     start = time.perf_counter()
     for _ in range(10):
         result = compiled_fn(root)
@@ -210,7 +210,7 @@ async def benchmark_async_query():
     standard_time = time.perf_counter() - start
 
     # JIT compiled execution
-    compiled_fn = compile_query(schema._schema, query)
+    compiled_fn = compile_query(schema, query)
     start = time.perf_counter()
     for _ in range(10):
         result = await compiled_fn(root)
@@ -262,7 +262,7 @@ async def benchmark_mixed_query():
     standard_time = time.perf_counter() - start
 
     # JIT compiled execution
-    compiled_fn = compile_query(schema._schema, query)
+    compiled_fn = compile_query(schema, query)
     start = time.perf_counter()
     for _ in range(10):
         result = await compiled_fn(root)
@@ -314,7 +314,7 @@ async def benchmark_complex_async_query():
     standard_time = time.perf_counter() - start
 
     # JIT compiled execution
-    compiled_fn = compile_query(schema._schema, query)
+    compiled_fn = compile_query(schema, query)
     start = time.perf_counter()
     for _ in range(5):
         result = await compiled_fn(root)
@@ -353,7 +353,7 @@ async def benchmark_simple_query():
     standard_time = time.perf_counter() - start
 
     # JIT compiled execution
-    compiled_fn = compile_query(schema._schema, query)
+    compiled_fn = compile_query(schema, query)
     start = time.perf_counter()
     for _ in range(10):
         result = await compiled_fn(root)

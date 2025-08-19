@@ -107,7 +107,7 @@ def benchmark_sync_simple():
     standard_time = time.perf_counter() - start
 
     # JIT compiled execution
-    compiled_fn = compile_query(schema._schema, query)
+    compiled_fn = compile_query(schema, query)
 
     # Warmup
     for _ in range(5):
@@ -157,7 +157,7 @@ def benchmark_sync_nested():
     standard_time = time.perf_counter() - start
 
     # JIT compiled execution
-    compiled_fn = compile_query(schema._schema, query)
+    compiled_fn = compile_query(schema, query)
 
     # Warmup
     for _ in range(5):
@@ -217,7 +217,7 @@ def benchmark_sync_complex():
     standard_time = time.perf_counter() - start
 
     # JIT compiled execution
-    compiled_fn = compile_query(schema._schema, query)
+    compiled_fn = compile_query(schema, query)
 
     # Warmup
     for _ in range(5):
@@ -260,7 +260,7 @@ async def benchmark_async_simple():
     standard_time = time.perf_counter() - start
 
     # JIT compiled execution
-    compiled_fn = compile_query(schema._schema, query)
+    compiled_fn = compile_query(schema, query)
 
     # Warmup
     for _ in range(5):

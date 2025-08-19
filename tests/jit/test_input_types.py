@@ -190,7 +190,7 @@ def test_simple_input():
     assert result.data["person"]["age"] == 30
 
     # JIT execution
-    compiled_fn = compile_query(schema._schema, query)
+    compiled_fn = compile_query(schema, query)
     jit_result = compiled_fn(Query(), variables={"id": "1"})
 
     assert jit_result["person"]["id"] == "1"
@@ -220,7 +220,7 @@ def test_input_object():
     variables = {"input": {"query": "John", "limit": 5, "offset": 0}}
 
     # JIT execution
-    compiled_fn = compile_query(schema._schema, query)
+    compiled_fn = compile_query(schema, query)
     result = compiled_fn(Query(), variables=variables)
 
     assert len(result["search"]["items"]) == 1
@@ -269,7 +269,7 @@ def test_nested_input():
     }
 
     # JIT execution
-    compiled_fn = compile_query(schema._schema, query)
+    compiled_fn = compile_query(schema, query)
     result = compiled_fn(Mutation(), variables=variables)
 
     assert result["createPerson"]["name"] == "Jane Smith"
@@ -298,7 +298,7 @@ def test_input_with_defaults():
     """
 
     # JIT execution - should use default limit and offset
-    compiled_fn = compile_query(schema._schema, query)
+    compiled_fn = compile_query(schema, query)
     result = compiled_fn(Query(), variables={"query": "John"})
 
     assert len(result["search"]["items"]) == 1
@@ -326,7 +326,7 @@ def test_optional_input_fields():
     variables = {"input": {"id": "1", "name": "John Updated"}}
 
     # JIT execution
-    compiled_fn = compile_query(schema._schema, query)
+    compiled_fn = compile_query(schema, query)
     result = compiled_fn(Mutation(), variables=variables)
 
     assert result["updatePerson"]["id"] == "1"
@@ -353,7 +353,7 @@ def test_list_input():
     variables = {"name": "Bob", "age": 35, "tags": ["manager", "agile", "scrum"]}
 
     # JIT execution
-    compiled_fn = compile_query(schema._schema, query)
+    compiled_fn = compile_query(schema, query)
     result = compiled_fn(Mutation(), variables=variables)
 
     assert result["createPerson"]["name"] == "Bob"
@@ -378,7 +378,7 @@ def test_inline_input_object():
     """
 
     # JIT execution
-    compiled_fn = compile_query(schema._schema, query)
+    compiled_fn = compile_query(schema, query)
     result = compiled_fn(Query())
 
     assert len(result["search"]["items"]) == 1
@@ -433,7 +433,7 @@ def test_input_performance():
     standard_time = time.perf_counter() - start
 
     # JIT execution
-    compiled_fn = compile_query(schema._schema, query)
+    compiled_fn = compile_query(schema, query)
     start = time.perf_counter()
     for _ in range(iterations):
         result = compiled_fn(root, variables=variables)

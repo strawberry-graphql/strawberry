@@ -88,7 +88,7 @@ def benchmark_compilation_overhead():
     compilation_times = []
     for _ in range(10):
         start = time.perf_counter()
-        compiled_fn = compile_query(schema._schema, query)
+        compiled_fn = compile_query(schema, query)
         compilation_times.append(time.perf_counter() - start)
 
     avg_compilation = sum(compilation_times) / len(compilation_times)
@@ -153,7 +153,7 @@ def benchmark_cache_effectiveness():
     # Without cache
     start = time.perf_counter()
     for query in query_stream:
-        compiled_fn = compile_query(schema._schema, query)
+        compiled_fn = compile_query(schema, query)
         result = compiled_fn(root)
     no_cache_time = time.perf_counter() - start
 
@@ -206,7 +206,7 @@ async def benchmark_cached_async_queries():
     times = []
     for _ in range(iterations):
         start = time.perf_counter()
-        compiled_fn = compile_query(schema._schema, query)
+        compiled_fn = compile_query(schema, query)
         result = await compiled_fn(root)
         times.append(time.perf_counter() - start)
     no_cache_time = sum(times)

@@ -97,7 +97,7 @@ def test_async_mutations_execute_serially():
     }
     """
 
-    compiled_fn = compile_query(schema._schema, query)
+    compiled_fn = compile_query(schema, query)
 
     # Run the mutations
     start_time = time.time()
@@ -157,7 +157,7 @@ def test_mixed_sync_async_mutations_serial():
     }
     """
 
-    compiled_fn = compile_query(schema._schema, query)
+    compiled_fn = compile_query(schema, query)
 
     # Run the mutations
     result = asyncio.run(compiled_fn(Mutation()))
@@ -221,7 +221,7 @@ def test_query_fields_can_be_parallel():
     }
     """
 
-    compiled_fn = compile_query(schema._schema, query)
+    compiled_fn = compile_query(schema, query)
 
     # Run the query
     start_time = time.time()

@@ -22,7 +22,7 @@ def test_skip_directive_with_literal(jit_schema, query_type):
     }
     """
 
-    compiled_fn = compile_query(schema._schema, query)
+    compiled_fn = compile_query(schema, query)
     jit_result = compiled_fn(query_type)
 
     standard_result = execute(schema._schema, parse(query), root_value=query_type)
@@ -49,7 +49,7 @@ def test_skip_directive_with_variable(jit_schema, query_type):
     # Test skipping title but not content
     variables = {"skipTitle": True, "skipContent": False}
 
-    compiled_fn = compile_query(schema._schema, query)
+    compiled_fn = compile_query(schema, query)
     jit_result = compiled_fn(query_type, variables=variables)
 
     standard_result = execute(
@@ -83,7 +83,7 @@ def test_include_directive_with_literal(jit_schema, query_type):
     }
     """
 
-    compiled_fn = compile_query(schema._schema, query)
+    compiled_fn = compile_query(schema, query)
     jit_result = compiled_fn(query_type)
 
     standard_result = execute(schema._schema, parse(query), root_value=query_type)
@@ -114,7 +114,7 @@ def test_include_directive_with_variable(jit_schema, query_type):
     # Include author but not views
     variables = {"includeAuthor": True, "includeViews": False}
 
-    compiled_fn = compile_query(schema._schema, query)
+    compiled_fn = compile_query(schema, query)
     jit_result = compiled_fn(query_type, variables=variables)
 
     standard_result = execute(
@@ -141,7 +141,7 @@ def test_combined_skip_and_include(jit_schema, query_type):
     }
     """
 
-    compiled_fn = compile_query(schema._schema, query)
+    compiled_fn = compile_query(schema, query)
 
     # Test all combinations
     test_cases = [
@@ -187,7 +187,7 @@ def test_directives_on_nested_fields(jit_schema, query_type):
 
     variables = {"skipAuthorName": True}
 
-    compiled_fn = compile_query(schema._schema, query)
+    compiled_fn = compile_query(schema, query)
     jit_result = compiled_fn(query_type, variables=variables)
 
     standard_result = execute(
@@ -220,7 +220,7 @@ def test_directives_with_fragments(jit_schema, query_type):
 
     variables = {"includeTitle": False}
 
-    compiled_fn = compile_query(schema._schema, query)
+    compiled_fn = compile_query(schema, query)
     jit_result = compiled_fn(query_type, variables=variables)
 
     standard_result = execute(
@@ -265,7 +265,7 @@ def test_directive_on_root_field(jit_schema, query_type):
 
     variables = {"includePosts": True, "includeFeatured": False}
 
-    compiled_fn = compile_query(schema._schema, query)
+    compiled_fn = compile_query(schema, query)
     jit_result = compiled_fn(query_type, variables=variables)
 
     standard_result = execute(
@@ -301,7 +301,7 @@ def test_directives_performance(jit_schema, query_type):
     variables = {"skipContent": True, "includeAuthor": False}
 
     # Compile once
-    compiled_fn = compile_query(schema._schema, query)
+    compiled_fn = compile_query(schema, query)
     parsed = parse(query)
 
     # Benchmark JIT

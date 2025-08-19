@@ -257,35 +257,19 @@ def benchmark_jit_compilation_with_type_map():
 
     iterations = 100
 
-    # Benchmark with GraphQL Core schema (old way)
-    compiler_old = JITCompiler(schema._schema)
+    # Since we only support Strawberry schemas now, we'll just benchmark
+    # the compilation performance
+    compiler = JITCompiler(schema)
     start = time.perf_counter()
     for _ in range(iterations):
-        compiler_old.compile_query(query)
-    old_time = time.perf_counter() - start
+        compiler.compile_query(query)
+    compilation_time = time.perf_counter() - start
 
-    # Benchmark with Strawberry schema and type map (new way)
-    compiler_new = JITCompiler(schema)
-    start = time.perf_counter()
-    for _ in range(iterations):
-        compiler_new.compile_query(query)
-    new_time = time.perf_counter() - start
-
-    # The new way should be at least as fast, potentially faster
-    # due to pre-computed names and direct field access
     print("\\n📊 JIT Compilation Performance:")
     print(
-        f"   With GraphQL Core schema: {old_time * 1000:.2f}ms for {iterations} compilations"
+        f"   With Strawberry type map: {compilation_time * 1000:.2f}ms for {iterations} compilations"
     )
-    print(
-        f"   With Strawberry type map: {new_time * 1000:.2f}ms for {iterations} compilations"
-    )
-
-    if new_time < old_time:
-        speedup = old_time / new_time
-        print(f"   Speedup: {speedup:.2f}x faster")
-    else:
-        print("   Performance similar (within margin of error)")
+    print(f"   Average per compilation: {compilation_time * 1000 / iterations:.2f}ms")
 
 
 if __name__ == "__main__":

@@ -79,7 +79,7 @@ def test_schema_introspection():
     }
 
     # JIT execution
-    compiled_fn = compile_query(schema._schema, query)
+    compiled_fn = compile_query(schema, query)
     jit_result = compiled_fn(None)
 
     assert jit_result == {
@@ -117,7 +117,7 @@ def test_type_introspection():
     standard_data = result.data
 
     # JIT execution
-    compiled_fn = compile_query(schema._schema, query)
+    compiled_fn = compile_query(schema, query)
     jit_result = compiled_fn(None)
 
     # Compare results
@@ -159,7 +159,7 @@ def test_type_kind_introspection():
     standard_data = result.data
 
     # JIT execution
-    compiled_fn = compile_query(schema._schema, query)
+    compiled_fn = compile_query(schema, query)
     jit_result = compiled_fn(None)
 
     # Compare results
@@ -198,7 +198,7 @@ def test_field_introspection():
     standard_data = result.data
 
     # JIT execution
-    compiled_fn = compile_query(schema._schema, query)
+    compiled_fn = compile_query(schema, query)
     jit_result = compiled_fn(None)
 
     # Find author field in both results
@@ -233,7 +233,7 @@ def test_all_types_introspection():
     standard_data = result.data
 
     # JIT execution
-    compiled_fn = compile_query(schema._schema, query)
+    compiled_fn = compile_query(schema, query)
     jit_result = compiled_fn(None)
 
     # Compare number of types
@@ -285,7 +285,7 @@ def test_nested_type_introspection():
     standard_data = result.data
 
     # JIT execution
-    compiled_fn = compile_query(schema._schema, query)
+    compiled_fn = compile_query(schema, query)
     jit_result = compiled_fn(None)
 
     # Find author field
@@ -333,7 +333,7 @@ def test_directives_introspection():
     standard_data = result.data
 
     # JIT execution
-    compiled_fn = compile_query(schema._schema, query)
+    compiled_fn = compile_query(schema, query)
     jit_result = compiled_fn(None)
 
     # Check directives
@@ -388,7 +388,7 @@ def test_list_type_introspection():
     standard_data = result.data
 
     # JIT execution
-    compiled_fn = compile_query(schema._schema, query)
+    compiled_fn = compile_query(schema, query)
     jit_result = compiled_fn(None)
 
     # Find books field (which returns [Book!]!)
@@ -440,7 +440,7 @@ def test_introspection_with_variables():
     standard_data = result.data
 
     # JIT execution
-    compiled_fn = compile_query(schema._schema, query)
+    compiled_fn = compile_query(schema, query)
     jit_result = compiled_fn(None, variables=variables)
 
     # Compare results
@@ -549,7 +549,7 @@ def test_graphiql_introspection_query():
     standard_data = result.data
 
     # JIT execution
-    compiled_fn = compile_query(schema._schema, query)
+    compiled_fn = compile_query(schema, query)
     jit_result = compiled_fn(None)
 
     # Basic checks

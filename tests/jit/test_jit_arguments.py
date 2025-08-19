@@ -150,7 +150,7 @@ def test_jit_with_simple_arguments():
     """
 
     # Execute the compiled function
-    compiled_fn = compile_query(schema._schema, query)
+    compiled_fn = compile_query(schema, query)
     root = Query()
     result = compiled_fn(root)
 
@@ -185,7 +185,7 @@ def test_jit_with_default_arguments():
     """
 
     # Execute both ways
-    compiled_fn = compile_query(schema._schema, query)
+    compiled_fn = compile_query(schema, query)
     root = Query()
     jit_result = compiled_fn(root)
     standard_result = execute(schema._schema, parse(query), root_value=root)
@@ -223,7 +223,7 @@ def test_jit_with_variables():
     variables = {"userId": "789", "postLimit": 3, "onlyPublished": False}
 
     # Execute both ways
-    compiled_fn = compile_query(schema._schema, query)
+    compiled_fn = compile_query(schema, query)
     root = Query()
     jit_result = compiled_fn(root, variables=variables)
     standard_result = execute(
@@ -252,7 +252,7 @@ def test_jit_with_list_arguments():
     variables = {"ids": ["post1", "post2", "post3"]}
 
     # Execute both ways
-    compiled_fn = compile_query(schema._schema, query)
+    compiled_fn = compile_query(schema, query)
     root = Query()
     jit_result = compiled_fn(root, variables=variables)
     standard_result = execute(
@@ -285,7 +285,7 @@ def test_jit_with_complex_arguments():
     variables = {"query": "Post", "limit": 10, "minViews": 200}
 
     # Execute both ways
-    compiled_fn = compile_query(schema._schema, query)
+    compiled_fn = compile_query(schema, query)
     root = Query()
     jit_result = compiled_fn(root, variables=variables)
     standard_result = execute(
@@ -318,7 +318,7 @@ def test_jit_with_null_arguments():
     # Test with null (should return all posts)
     variables = {"published": None}
 
-    compiled_fn = compile_query(schema._schema, query)
+    compiled_fn = compile_query(schema, query)
     root = Query()
     jit_result = compiled_fn(root, variables=variables)
     standard_result = execute(
@@ -353,7 +353,7 @@ def test_jit_arguments_performance():
     variables = {"userId": "perf_test", "limit": 5}
 
     # Compile once
-    compiled_fn = compile_query(schema._schema, query)
+    compiled_fn = compile_query(schema, query)
     root = Query()
 
     # Measure JIT performance

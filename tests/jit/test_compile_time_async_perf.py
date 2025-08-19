@@ -42,7 +42,7 @@ class Query:
 def test_compile_time_async_detection_overhead():
     """Test that we're using compile-time async detection, not runtime checks."""
     schema = strawberry.Schema(Query)
-    compiler = JITCompiler(schema._schema)
+    compiler = JITCompiler(schema)
 
     query = """
     query {
@@ -136,7 +136,7 @@ def benchmark_async_detection():
 async def test_async_execution_still_works():
     """Ensure async execution still works correctly with our optimization."""
     schema = strawberry.Schema(Query)
-    compiler = JITCompiler(schema._schema)
+    compiler = JITCompiler(schema)
 
     query = """
     query {

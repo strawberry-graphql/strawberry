@@ -20,7 +20,7 @@ async def test_async_simple_field(jit_schema, query_type):
     """
 
     # Execute the compiled function
-    compiled_fn = compile_query(schema._schema, query)
+    compiled_fn = compile_query(schema, query)
     jit_result = await compiled_fn(query_type)
 
     # Execute standard way
@@ -52,7 +52,7 @@ async def test_async_nested_fields(jit_schema, query_type):
     """
 
     # Execute the compiled function
-    compiled_fn = compile_query(schema._schema, query)
+    compiled_fn = compile_query(schema, query)
     jit_result = await compiled_fn(query_type)
 
     # Execute standard way
@@ -97,7 +97,7 @@ async def test_mixed_sync_async_fields(jit_schema, query_type):
     """
 
     # Execute the compiled function
-    compiled_fn = compile_query(schema._schema, query)
+    compiled_fn = compile_query(schema, query)
     root = query_type
     jit_result = await compiled_fn(query_type)
 
@@ -132,7 +132,7 @@ async def test_async_with_list_fields(jit_schema, query_type):
     """
 
     # Execute the compiled function
-    compiled_fn = compile_query(schema._schema, query)
+    compiled_fn = compile_query(schema, query)
     root = query_type
     jit_result = await compiled_fn(query_type)
 
@@ -166,7 +166,7 @@ def test_sync_only_query(jit_schema, query_type):
     """
 
     # Execute the compiled function
-    compiled_fn = compile_query(schema._schema, query)
+    compiled_fn = compile_query(schema, query)
     root = query_type
 
     # This should work synchronously
@@ -198,7 +198,7 @@ async def test_async_with_variables(jit_schema, query_type):
     variables = {"limit": 1, "name": "Test"}
 
     # Execute the compiled function
-    compiled_fn = compile_query(schema._schema, query)
+    compiled_fn = compile_query(schema, query)
     root = query_type
     jit_result = await compiled_fn(root, variables=variables)
 
@@ -237,7 +237,7 @@ async def test_async_with_fragments(jit_schema, query_type):
     """
 
     # Execute the compiled function
-    compiled_fn = compile_query(schema._schema, query)
+    compiled_fn = compile_query(schema, query)
     root = query_type
     jit_result = await compiled_fn(query_type)
 

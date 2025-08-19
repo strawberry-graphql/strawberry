@@ -104,7 +104,7 @@ async def benchmark_parallel_fields():
     print(f"Standard GraphQL:   {std_time * 1000:.2f}ms")
 
     # Sequential JIT
-    compiled_seq = compile_query(schema._schema, query)
+    compiled_seq = compile_query(schema, query)
 
     async def run_sequential():
         return await compiled_seq(root)
@@ -113,7 +113,7 @@ async def benchmark_parallel_fields():
     print(f"Sequential JIT:     {seq_time * 1000:.2f}ms ({std_time / seq_time:.2f}x)")
 
     # Parallel JIT
-    compiled_par = compile_query(schema._schema, query)
+    compiled_par = compile_query(schema, query)
 
     async def run_parallel():
         return await compiled_par(root)
@@ -164,7 +164,7 @@ async def benchmark_list_fields():
     print(f"Standard GraphQL:   {std_time * 1000:.2f}ms")
 
     # Sequential JIT
-    compiled_seq = compile_query(schema._schema, query)
+    compiled_seq = compile_query(schema, query)
 
     async def run_sequential():
         return await compiled_seq(root)
@@ -173,7 +173,7 @@ async def benchmark_list_fields():
     print(f"Sequential JIT:     {seq_time * 1000:.2f}ms ({std_time / seq_time:.2f}x)")
 
     # Parallel JIT
-    compiled_par = compile_query(schema._schema, query)
+    compiled_par = compile_query(schema, query)
 
     async def run_parallel():
         return await compiled_par(root)
@@ -232,7 +232,7 @@ async def benchmark_complex_query():
     print(f"Standard GraphQL:   {std_time * 1000:.2f}ms")
 
     # Sequential JIT
-    compiled_seq = compile_query(schema._schema, query)
+    compiled_seq = compile_query(schema, query)
 
     async def run_sequential():
         return await compiled_seq(root)
@@ -241,7 +241,7 @@ async def benchmark_complex_query():
     print(f"Sequential JIT:     {seq_time * 1000:.2f}ms ({std_time / seq_time:.2f}x)")
 
     # Parallel JIT
-    compiled_par = compile_query(schema._schema, query)
+    compiled_par = compile_query(schema, query)
 
     async def run_parallel():
         return await compiled_par(root)
