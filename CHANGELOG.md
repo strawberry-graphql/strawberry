@@ -1,6 +1,17 @@
 CHANGELOG
 =========
 
+0.280.0 - 2025-08-19
+--------------------
+
+This release unifies the format of HTTP error response bodies across all HTTP
+view integrations. Previously, the Chalice integration used a custom JSON body
+response different from the plain string used by other integrations. Now, all
+integrations will return a plain string for HTTP error responses.
+
+Contributed by [Jonathan Ehwald](https://github.com/DoctorJohn) via [PR #3978](https://github.com/strawberry-graphql/strawberry/pull/3978/)
+
+
 0.279.0 - 2025-08-19
 --------------------
 
