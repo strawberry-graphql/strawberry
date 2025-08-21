@@ -34,7 +34,6 @@ from strawberry.types import ExecutionResult
 from strawberry.types.execution import PreExecutionError
 from strawberry.types.graphql import OperationType
 from strawberry.types.unset import UnsetType
-from strawberry.utils.debug import pretty_print_graphql_operation
 from strawberry.utils.operation import get_operation_type
 
 if TYPE_CHECKING:
@@ -55,7 +54,6 @@ class BaseGraphQLTransportWSHandler(Generic[Context, RootValue]):
         context: Context,
         root_value: Optional[RootValue],
         schema: BaseSchema,
-        debug: bool,
         connection_init_wait_timeout: timedelta,
     ) -> None:
         self.view = view
@@ -63,7 +61,6 @@ class BaseGraphQLTransportWSHandler(Generic[Context, RootValue]):
         self.context = context
         self.root_value = root_value
         self.schema = schema
-        self.debug = debug
         self.connection_init_wait_timeout = connection_init_wait_timeout
         self.connection_init_timeout_task: Optional[asyncio.Task] = None
         self.connection_init_received = False
@@ -236,13 +233,6 @@ class BaseGraphQLTransportWSHandler(Generic[Context, RootValue]):
             reason = f"Subscriber for {message['id']} already exists"
             await self.websocket.close(code=4409, reason=reason)
             return
-
-        if self.debug:  # pragma: no cover
-            pretty_print_graphql_operation(
-                message["payload"].get("operationName"),
-                message["payload"]["query"],
-                message["payload"].get("variables"),
-            )
 
         operation = Operation(
             self,

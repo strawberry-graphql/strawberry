@@ -6,10 +6,7 @@ import rich
 import typer
 
 from strawberry.cli.app import app
-from strawberry.cli.constants import (
-    DEBUG_SERVER_LOG_OPERATIONS,
-    DEBUG_SERVER_SCHEMA_ENV_VAR_KEY,
-)
+from strawberry.cli.constants import DEBUG_SERVER_SCHEMA_ENV_VAR_KEY
 from strawberry.cli.utils import load_schema
 
 
@@ -42,12 +39,6 @@ def server(
             "Works the same as `--app-dir` in uvicorn."
         ),
     ),
-    log_operations: bool = typer.Option(
-        True,
-        "--log-operations",
-        show_default=True,
-        help="Log GraphQL operations",
-    ),
 ) -> None:
     sys.path.insert(0, app_dir)
 
@@ -65,7 +56,6 @@ def server(
     load_schema(schema, app_dir=app_dir)
 
     os.environ[DEBUG_SERVER_SCHEMA_ENV_VAR_KEY] = schema
-    os.environ[DEBUG_SERVER_LOG_OPERATIONS] = str(log_operations)
     app = "strawberry.cli.debug_server:app"
 
     # Windows doesn't support UTF-8 by default

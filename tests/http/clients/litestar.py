@@ -74,7 +74,6 @@ class LitestarHttpClient(HttpClient):
             allow_queries_via_get=allow_queries_via_get,
             keep_alive=keep_alive,
             keep_alive_interval=keep_alive_interval,
-            debug=debug,
             subscription_protocols=subscription_protocols,
             connection_init_wait_timeout=connection_init_wait_timeout,
             multipart_uploads_enabled=multipart_uploads_enabled,
