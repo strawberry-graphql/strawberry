@@ -23,6 +23,7 @@ from strawberry.exceptions import (
 from strawberry.types.base import get_object_definition
 from strawberry.types.maybe import _annotation_is_maybe
 from strawberry.utils.deprecations import DEPRECATION_MESSAGES, DeprecatedDescriptor
+from strawberry.utils.inspect import get_specialized_type_var_map
 from strawberry.utils.str_converters import to_camel_case
 
 from .base import StrawberryObjectDefinition
@@ -34,10 +35,36 @@ T = TypeVar("T", bound=builtins.type)
 
 def _get_interfaces(cls: builtins.type[Any]) -> list[StrawberryObjectDefinition]:
     interfaces: list[StrawberryObjectDefinition] = []
+
+    # Check __orig_bases__ for generic specializations first
+    orig_bases = getattr(cls, "__orig_bases__", ())
+    for orig_base in orig_bases:
+        # Check if this is a generic specialization (e.g., GenericInterface[int])
+        if hasattr(orig_base, "__origin__"):
+            base_origin = orig_base.__origin__
+            type_definition = get_object_definition(base_origin)
+            if (
+                type_definition
+                and type_definition.is_interface
+                and type_definition.is_graphql_generic
+            ):
+                # This is a specialized generic interface
+                type_var_map = get_specialized_type_var_map(orig_base)
+                if type_var_map:
+                    specialized_interface = type_definition.copy_with(type_var_map)
+                    specialized_definition = (
+                        specialized_interface.__strawberry_definition__
+                    )
+                    interfaces.append(specialized_definition)
+                    continue
+
+    # Fall back to MRO for non-generic interfaces
     for base in cls.__mro__[1:]:  # Exclude current class
         type_definition = get_object_definition(base)
         if type_definition and type_definition.is_interface:
-            interfaces.append(type_definition)
+            # Only add non-generic interfaces or ones not already handled above
+            if not type_definition.is_graphql_generic:
+                interfaces.append(type_definition)
 
     return interfaces
 

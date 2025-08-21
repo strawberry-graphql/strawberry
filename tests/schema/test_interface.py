@@ -1,5 +1,7 @@
+import abc
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Generic, TypeVar
+from typing_extensions import Self
 
 import pytest
 from pytest_mock import MockerFixture
@@ -423,3 +425,216 @@ def test_resolve_type_on_interface_returning_interface():
     assert result.data
     assert result.data["one"] == {"id": "1", "__typename": "Video"}
     assert result.data["two"] == {"id": "2", "__typename": "Image"}
+
+
+def test_generic_interface():
+    T = TypeVar("T")
+
+    class IDTO(abc.ABC, Generic[T]):
+        @classmethod
+        @abc.abstractmethod
+        def from_dto(cls, dto: T) -> Self: ...
+
+        @classmethod
+        def from_dto_list(cls, dtos: list[T]) -> list[Self]:
+            return [cls.from_dto(dto) for dto in dtos]
+
+    @dataclass
+    class OwnerDTO:
+        name: str
+
+    @dataclass
+    class AnimalDTO:
+        owner: OwnerDTO
+
+    @dataclass
+    class CatDTO(AnimalDTO):
+        fur_color: str
+
+    @strawberry.type
+    class OwnerGQL:
+        name: str
+
+        @classmethod
+        def from_dto(cls, dto: OwnerDTO) -> "OwnerGQL":
+            return OwnerGQL(name=dto.name)
+
+    K = TypeVar("K", bound=AnimalDTO)
+
+    @strawberry.interface
+    class AnimalGQL(Generic[K], IDTO[K]):
+        dto: strawberry.Private[K]
+
+        @strawberry.field
+        def owner(self) -> OwnerGQL:
+            return OwnerGQL.from_dto(self.dto.owner)
+
+    @strawberry.type
+    class CatGQL(AnimalGQL[CatDTO]):
+        fur_color: str
+
+        @classmethod
+        def from_dto(cls, dto: CatDTO) -> Self:
+            return cls(dto=dto, fur_color=dto.fur_color)
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def animal(self) -> AnimalGQL[AnimalDTO]:
+            return CatGQL.from_dto(
+                CatDTO(fur_color="orange", owner=OwnerDTO(name="garfield"))
+            )
+
+        @strawberry.field
+        def animals(self) -> list[AnimalGQL[AnimalDTO]]:
+            return CatGQL.from_dto_list(
+                [CatDTO(fur_color="orange", owner=OwnerDTO(name="garfield"))]
+            )
+
+    schema = strawberry.Schema(query=Query, types=[AnimalGQL, CatGQL, OwnerGQL])
+
+    query = """
+        query {
+            animal {
+                ... on CatGQL {
+                    furColor
+                }
+                owner {
+                    name
+                }
+            }
+        }
+    """
+
+    result = schema.execute_sync(query)
+
+    assert not result.errors
+    assert result.data
+    assert result.data["animal"]["furColor"] == "orange"
+
+    query_list = """
+        query {
+            animals {
+                ... on CatGQL {
+                    furColor
+                }
+                owner {
+                    name
+                }
+            }
+        }
+    """
+
+    result = schema.execute_sync(query_list)
+
+    assert not result.errors
+    assert result.data
+    assert result.data["animals"][0]["furColor"] == "orange"
+    assert result.data["animals"][0]["owner"]["name"] == "garfield"
+
+
+def test_generic_interface_multiple_type_vars():
+    T = TypeVar("T")
+    U = TypeVar("U")
+
+    @strawberry.interface
+    class PairInterface(Generic[T, U]):
+        first: strawberry.Private[T]
+        second: strawberry.Private[U]
+
+        @strawberry.field
+        def get_first(self) -> T:
+            return self.first
+
+        @strawberry.field
+        def get_second(self) -> U:
+            return self.second
+
+    @strawberry.type
+    class IntStrPair(PairInterface[int, str]):
+        pass
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def pair(self) -> IntStrPair:
+            return IntStrPair(first=42, second="world")
+
+    schema = strawberry.Schema(query=Query)
+
+    query = """
+        query {
+            pair {
+                getFirst
+                getSecond
+            }
+        }
+    """
+
+    result = schema.execute_sync(query)
+
+    assert not result.errors
+    assert result.data is not None
+    assert result.data["pair"]["getFirst"] == 42
+    assert result.data["pair"]["getSecond"] == "world"
+
+
+def test_generic_nested_interface() -> None:
+    @strawberry.interface
+    class Node:
+        id_p: strawberry.Private[int]
+
+        @strawberry.field
+        def id(self) -> strawberry.ID:
+            return strawberry.ID(f"{self.__class__.__name__}:{self.id_p}")
+
+    @strawberry.interface
+    class Record[T]:
+        data: T
+        date_insert: str
+
+    @dataclass
+    class AnimalDTO:
+        gender: bool
+
+    @dataclass
+    class CatDTO(AnimalDTO):
+        fur_color: str
+
+    @strawberry.interface
+    class AnimalGQL[T: AnimalDTO](Node):
+        dto: strawberry.Private[T]
+
+    @strawberry.type
+    class CatGQL(AnimalGQL[CatDTO], HasColor):
+        @strawberry.field
+        def fur_color(self) -> str:
+            return self.dto.fur_color
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def animal(self) -> AnimalGQL[AnimalDTO]:
+            return CatGQL(
+                id_p=1, color="orange", dto=CatDTO(gender=True, fur_color="orange")
+            )
+
+    schema = strawberry.Schema(query=Query, types=[CatGQL])
+
+    query = """
+        query {
+            animal {
+                id
+                ... on CatGQL {
+                    furColor
+                }
+            }
+        }
+    """
+
+    result = schema.execute_sync(query)
+
+    assert not result.errors
+    assert result.data is not None
+    assert result.data["animal"]["id"] == "CatGQL:1"
+    assert result.data["animal"]["furColor"] == "orange"
