@@ -127,7 +127,6 @@ class GraphQLRouter(
         allow_queries_via_get: bool = True,
         keep_alive: bool = False,
         keep_alive_interval: float = 1,
-        debug: bool = False,
         root_value_getter: Optional[Callable[[], RootValue]] = None,
         context_getter: Optional[
             Callable[..., Union[Optional[Context], Awaitable[Optional[Context]]]]
@@ -183,7 +182,6 @@ class GraphQLRouter(
         self.allow_queries_via_get = allow_queries_via_get
         self.keep_alive = keep_alive
         self.keep_alive_interval = keep_alive_interval
-        self.debug = debug
         self.root_value_getter = root_value_getter or self.__get_root_value
         # TODO: clean this type up
         self.context_getter = self.__get_context_getter(

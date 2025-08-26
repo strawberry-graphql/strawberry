@@ -27,7 +27,6 @@ from strawberry.subscriptions.protocols.graphql_ws.types import (
 )
 from strawberry.types.execution import ExecutionResult, PreExecutionError
 from strawberry.types.unset import UnsetType
-from strawberry.utils.debug import pretty_print_graphql_operation
 
 if TYPE_CHECKING:
     from collections.abc import AsyncGenerator
@@ -44,7 +43,6 @@ class BaseGraphQLWSHandler(Generic[Context, RootValue]):
         context: Context,
         root_value: Optional[RootValue],
         schema: BaseSchema,
-        debug: bool,
         keep_alive: bool,
         keep_alive_interval: Optional[float],
     ) -> None:
@@ -53,7 +51,6 @@ class BaseGraphQLWSHandler(Generic[Context, RootValue]):
         self.context = context
         self.root_value = root_value
         self.schema = schema
-        self.debug = debug
         self.keep_alive = keep_alive
         self.keep_alive_interval = keep_alive_interval
         self.keep_alive_task: Optional[asyncio.Task] = None
@@ -138,9 +135,6 @@ class BaseGraphQLWSHandler(Generic[Context, RootValue]):
         query = payload["query"]
         operation_name = payload.get("operationName")
         variables = payload.get("variables")
-
-        if self.debug:
-            pretty_print_graphql_operation(operation_name, query, variables)
 
         result_handler = self.handle_async_results(
             operation_id, query, operation_name, variables
