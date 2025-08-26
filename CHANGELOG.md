@@ -1,6 +1,20 @@
 CHANGELOG
 =========
 
+0.281.0 - 2025-08-26
+--------------------
+
+In this release we removed the `--log-operations` option from the
+`strawberry server` command. The option only worked for WebSocket connections to
+the debug server, and had limited utility.
+
+Removing this option allowed us to remove the undocumented `debug` option from
+all HTTP view integrations and WebSocket protocol implementation, simplifying
+the codebase.
+
+Contributed by [Jonathan Ehwald](https://github.com/DoctorJohn) via [PR #3979](https://github.com/strawberry-graphql/strawberry/pull/3979/)
+
+
 0.280.0 - 2025-08-19
 --------------------
 
