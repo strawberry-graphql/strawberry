@@ -1,6 +1,6 @@
 import re
 import typing
-from typing import TYPE_CHECKING, Any, Generic, TypeAlias, TypeVar
+from typing import TYPE_CHECKING, Annotated, Any, Generic, TypeAlias, TypeVar
 
 T = TypeVar("T")
 
@@ -47,7 +47,10 @@ def _annotation_is_maybe(annotation: Any) -> bool:
         # Checking for the pattern should be good enough for now.
         return _maybe_re.match(annotation) is not None
 
-    return (orig := typing.get_origin(annotation)) and orig is Maybe
+    orig = typing.get_origin(annotation)
+    if orig is Annotated:
+        return _annotation_is_maybe(typing.get_args(annotation)[0])
+    return orig is Maybe
 
 
 __all__ = [
