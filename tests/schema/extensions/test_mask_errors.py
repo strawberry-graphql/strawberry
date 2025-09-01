@@ -1,5 +1,6 @@
 from unittest.mock import Mock
 
+import pytest
 from graphql.error import GraphQLError
 
 import strawberry
@@ -29,6 +30,7 @@ def test_mask_all_errors():
     ]
 
 
+@pytest.mark.asyncio
 async def test_mask_all_errors_async():
     @strawberry.type
     class Query:
@@ -159,7 +161,8 @@ def test_graphql_error_masking():
     ]
 
 
-def test_mask_errors_with_strawberry_execution_result_async():
+@pytest.mark.asyncio
+async def test_mask_errors_with_strawberry_execution_result_async():
     """Test that MaskErrors works correctly with async execution (which returns StrawberryExecutionResult)."""
 
     @strawberry.type
@@ -173,26 +176,20 @@ def test_mask_errors_with_strawberry_execution_result_async():
     query = "query { testField }"
 
     # Use async execution to ensure we get StrawberryExecutionResult path
-    import asyncio
-
-    async def run_async_test():
-        result = await schema.execute(query)
-        assert result.errors is not None
-        formatted_errors = [err.formatted for err in result.errors]
-        assert formatted_errors == [
-            {
-                "locations": [{"column": 9, "line": 1}],
-                "message": "Unexpected error.",
-                "path": ["testField"],
-            }
-        ]
-        return result
-
-    # Run the async test
-    asyncio.run(run_async_test())
+    result = await schema.execute(query)
+    assert result.errors is not None
+    formatted_errors = [err.formatted for err in result.errors]
+    assert formatted_errors == [
+        {
+            "locations": [{"column": 9, "line": 1}],
+            "message": "Unexpected error.",
+            "path": ["testField"],
+        }
+    ]
 
 
-def test_mask_errors_selective_async():
+@pytest.mark.asyncio
+async def test_mask_errors_selective_async():
     """Test selective error masking with async execution."""
 
     class VisibleError(Exception):
@@ -216,34 +213,28 @@ def test_mask_errors_selective_async():
         query=Query, extensions=[MaskErrors(should_mask_error=should_mask_error)]
     )
 
-    import asyncio
+    # Test hidden error
+    query = "query { hiddenError }"
+    result = await schema.execute(query)
+    assert result.errors is not None
+    formatted_errors = [err.formatted for err in result.errors]
+    assert formatted_errors == [
+        {
+            "locations": [{"column": 9, "line": 1}],
+            "message": "Unexpected error.",
+            "path": ["hiddenError"],
+        }
+    ]
 
-    async def run_async_test():
-        # Test hidden error
-        query = "query { hiddenError }"
-        result = await schema.execute(query)
-        assert result.errors is not None
-        formatted_errors = [err.formatted for err in result.errors]
-        assert formatted_errors == [
-            {
-                "locations": [{"column": 9, "line": 1}],
-                "message": "Unexpected error.",
-                "path": ["hiddenError"],
-            }
-        ]
-
-        # Test visible error
-        query = "query { visibleError }"
-        result = await schema.execute(query)
-        assert result.errors is not None
-        formatted_errors = [err.formatted for err in result.errors]
-        assert formatted_errors == [
-            {
-                "locations": [{"column": 9, "line": 1}],
-                "message": "This error is visible",
-                "path": ["visibleError"],
-            }
-        ]
-
-    # Run the async test
-    asyncio.run(run_async_test())
+    # Test visible error
+    query = "query { visibleError }"
+    result = await schema.execute(query)
+    assert result.errors is not None
+    formatted_errors = [err.formatted for err in result.errors]
+    assert formatted_errors == [
+        {
+            "locations": [{"column": 9, "line": 1}],
+            "message": "This error is visible",
+            "path": ["visibleError"],
+        }
+    ]
