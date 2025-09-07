@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.282.0 - 2025-09-07
+--------------------
+
+This release fixes mask errors to support strawberry execution results.
+
+Contributed by [Aryan Iyappan](https://github.com/aryaniyaps) via [PR #3987](https://github.com/strawberry-graphql/strawberry/pull/3987/)
+
+
 0.281.0 - 2025-08-26
 --------------------
 
