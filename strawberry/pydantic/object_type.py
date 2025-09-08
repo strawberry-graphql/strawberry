@@ -12,10 +12,6 @@ if TYPE_CHECKING:
     import builtins
     from collections.abc import Sequence
 
-from strawberry.experimental.pydantic._compat import PydanticCompat
-from strawberry.experimental.pydantic.conversion import (
-    convert_strawberry_class_to_pydantic_model,
-)
 from strawberry.types.base import StrawberryObjectDefinition
 from strawberry.types.cast import get_strawberry_type_cast
 from strawberry.utils.str_converters import to_camel_case
@@ -68,9 +64,6 @@ def _process_pydantic_type(
     # Get the GraphQL type name
     name = name or to_camel_case(cls.__name__)
 
-    # Get compatibility layer for this model
-    compat = PydanticCompat.from_model(cls)
-
     # Extract fields using our custom function
     # All fields from the Pydantic model are included by default, except strawberry.Private fields
     fields = _get_pydantic_fields(
@@ -106,38 +99,6 @@ def _process_pydantic_type(
 
     # Add the is_type_of method to the class for testing purposes
     cls.is_type_of = is_type_of  # type: ignore
-
-    # Add conversion methods
-    def from_pydantic(
-        instance: BaseModel, extra: Optional[dict[str, Any]] = None
-    ) -> BaseModel:
-        """Convert a Pydantic model instance to a GraphQL-compatible instance."""
-        if extra:
-            # If there are extra fields, create a new instance with them
-            instance_dict = compat.model_dump(instance)
-            instance_dict.update(extra)
-            return cls(**instance_dict)
-        return instance
-
-    def to_pydantic(self: Any, **kwargs: Any) -> BaseModel:
-        """Convert a GraphQL instance back to a Pydantic model."""
-        if isinstance(self, cls):
-            # If it's already the right type, return it
-            if not kwargs:
-                return self
-            # Create a new instance with the updated kwargs
-            instance_dict = compat.model_dump(self)
-            instance_dict.update(kwargs)
-            return cls(**instance_dict)
-
-        # If it's a different type, convert it
-        return convert_strawberry_class_to_pydantic_model(self, **kwargs)
-
-    # Add conversion methods if they don't exist
-    if not hasattr(cls, "from_pydantic"):
-        cls.from_pydantic = staticmethod(from_pydantic)  # type: ignore
-    if not hasattr(cls, "to_pydantic"):
-        cls.to_pydantic = to_pydantic  # type: ignore
 
     return cls
 

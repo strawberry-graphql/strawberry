@@ -176,32 +176,6 @@ def test_basic_type_includes_all_pydantic_fields():
     assert len(field_names) == 2
 
 
-def test_conversion_methods_exist():
-    """Test that from_pydantic and to_pydantic methods are added to the class."""
-
-    @strawberry.pydantic.type
-    class User(pydantic.BaseModel):
-        age: int
-        name: str
-
-    # Check that conversion methods exist
-    assert hasattr(User, "from_pydantic")
-    assert hasattr(User, "to_pydantic")
-    assert callable(User.from_pydantic)
-    assert callable(User.to_pydantic)
-
-    # Test basic conversion
-    original = User(age=25, name="John")
-    converted = User.from_pydantic(original)
-    assert converted.age == 25
-    assert converted.name == "John"
-
-    # Test back conversion
-    back_converted = converted.to_pydantic()
-    assert back_converted.age == 25
-    assert back_converted.name == "John"
-
-
 def test_is_type_of_method():
     """Test that is_type_of method is added for proper type resolution."""
 
