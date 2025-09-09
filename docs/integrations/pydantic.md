@@ -253,6 +253,93 @@ class CreateUserInput(BaseModel):
         return v
 ```
 
+### Field Directives and Customization
+
+You can use `strawberry.field()` with `Annotated` types to add GraphQL-specific
+features like directives, permissions, and deprecation to individual Pydantic
+model fields:
+
+```python
+from typing import Annotated
+from pydantic import BaseModel, Field
+import strawberry
+
+
+@strawberry.schema_directive(
+    locations=[strawberry.schema_directive.Location.FIELD_DEFINITION]
+)
+class Sensitive:
+    reason: str
+
+
+@strawberry.schema_directive(
+    locations=[strawberry.schema_directive.Location.FIELD_DEFINITION]
+)
+class Range:
+    min: int
+    max: int
+
+
+@strawberry.pydantic.type
+class User(BaseModel):
+    # Regular field - uses Pydantic description
+    name: Annotated[str, Field(description="The user's full name")]
+
+    # Field with directive
+    email: Annotated[str, strawberry.field(directives=[Sensitive(reason="PII")])]
+
+    # Field with multiple directives and Pydantic features
+    age: Annotated[
+        int,
+        Field(alias="userAge", description="User's age"),
+        strawberry.field(directives=[Range(min=0, max=150)]),
+    ]
+
+    # Field with permissions
+    phone: Annotated[
+        str,
+        strawberry.field(
+            permission_classes=[IsAuthenticated],
+            directives=[Sensitive(reason="Contact Info")],
+        ),
+    ]
+
+    # Deprecated field
+    old_id: Annotated[int, strawberry.field(deprecation_reason="Use 'id' instead")]
+```
+
+#### Field Customization Options
+
+When using `strawberry.field()` with Pydantic models, you can specify:
+
+- **`directives`**: List of GraphQL directives to apply to the field
+- **`permission_classes`**: List of permission classes for field-level
+  authorization
+- **`deprecation_reason`**: Mark a field as deprecated with a reason
+- **`description`**: Override the Pydantic field description for GraphQL
+- **`name`**: Override the GraphQL field name (takes precedence over Pydantic
+  aliases)
+
+#### Input Types with Directives
+
+Field directives work with input types too:
+
+```python
+@strawberry.schema_directive(
+    locations=[strawberry.schema_directive.Location.INPUT_FIELD_DEFINITION]
+)
+class Validate:
+    pattern: str
+
+
+@strawberry.pydantic.input
+class CreateUserInput(BaseModel):
+    name: str
+    email: Annotated[
+        str, strawberry.field(directives=[Validate(pattern=r"^[^@]+@[^@]+\.[^@]+")])
+    ]
+```
+
 ## Conversion Methods
 
 Decorated models automatically get conversion methods:

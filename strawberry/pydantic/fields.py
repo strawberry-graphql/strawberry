@@ -7,7 +7,7 @@ classes, converting them to StrawberryField instances that can be used in GraphQ
 from __future__ import annotations
 
 import sys
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, get_args, get_origin
 from typing import Union as TypingUnion
 from typing import _GenericAlias as TypingGenericAlias
 
@@ -16,7 +16,7 @@ from strawberry.experimental.pydantic._compat import PydanticCompat
 from strawberry.experimental.pydantic.utils import get_default_factory_for_field
 from strawberry.types.field import StrawberryField
 from strawberry.types.private import is_private
-from strawberry.utils.typing import get_args, get_origin, is_union
+from strawberry.utils.typing import is_union
 
 from .exceptions import UnregisteredTypeException
 
@@ -25,6 +25,27 @@ if TYPE_CHECKING:
     from pydantic.fields import FieldInfo
 
 from strawberry.experimental.pydantic._compat import lenient_issubclass
+
+
+def _extract_strawberry_field_from_annotation(
+    annotation: Any,
+) -> StrawberryField | None:
+    """Extract StrawberryField from an Annotated type annotation.
+
+    Args:
+        annotation: The type annotation, possibly Annotated[Type, strawberry.field(...)]
+
+    Returns:
+        StrawberryField instance if found in annotation metadata, None otherwise
+    """
+    # Check if this is an Annotated type
+    if hasattr(annotation, "__metadata__"):
+        # Look for StrawberryField in the metadata
+        for metadata_item in annotation.__metadata__:
+            if isinstance(metadata_item, StrawberryField):
+                return metadata_item
+
+    return None
 
 
 def replace_pydantic_types(type_: Any, is_input: bool) -> Any:
@@ -88,6 +109,13 @@ def _get_pydantic_fields(
     All fields from the Pydantic model are included by default, except those marked
     with strawberry.Private.
 
+    Fields can be customized using strawberry.field() overrides:
+
+    @strawberry.pydantic.type
+    class User(BaseModel):
+        name: str
+        age: int = strawberry.field(directives=[SomeDirective()])
+
     Args:
         cls: The Pydantic BaseModel class to extract fields from
         original_type_annotations: Type annotations that may override field types
@@ -105,34 +133,64 @@ def _get_pydantic_fields(
     # Extract Pydantic model fields
     model_fields = compat.get_model_fields(cls, include_computed=include_computed)
 
-    # Get annotations from the class to check for strawberry.Private and other custom fields
+    # Get annotations from the class to check for strawberry.Private and strawberry.field() overrides
     existing_annotations = getattr(cls, "__annotations__", {})
 
     # Process each field from the Pydantic model
     for field_name, pydantic_field in model_fields.items():
-        # Check if this field is marked as private
+        # Check if this field is marked as private or has strawberry.field() metadata
+        strawberry_override = None
         if field_name in existing_annotations:
-            field_type = existing_annotations[field_name]
+            field_annotation = existing_annotations[field_name]
+
             # Skip private fields - they shouldn't be included in GraphQL schema
-            if is_private(field_type):
+            if is_private(field_annotation):
                 continue
+
+            # Check for strawberry.field() in Annotated metadata
+            strawberry_override = _extract_strawberry_field_from_annotation(
+                field_annotation
+            )
 
         # Get the field type from the Pydantic model
         field_type = get_type_for_field(pydantic_field, is_input, compat=compat)
 
-        graphql_name = None
+        # Start with values from Pydantic field
+        graphql_name = pydantic_field.alias if pydantic_field.has_alias else None
+        description = pydantic_field.description
+        directives = []
+        permission_classes = []
+        extensions = []
+        deprecation_reason = None
 
-        if pydantic_field.has_alias:
-            graphql_name = pydantic_field.alias
+        # If there's a strawberry.field() override, merge its values
+        if strawberry_override:
+            # strawberry.field() overrides take precedence for GraphQL-specific settings
+            if strawberry_override.graphql_name is not None:
+                graphql_name = strawberry_override.graphql_name
+            if strawberry_override.description is not None:
+                description = strawberry_override.description
+            if strawberry_override.directives:
+                directives = list(strawberry_override.directives)
+            if strawberry_override.permission_classes:
+                permission_classes = list(strawberry_override.permission_classes)
+            if strawberry_override.extensions:
+                extensions = list(strawberry_override.extensions)
+            if strawberry_override.deprecation_reason is not None:
+                deprecation_reason = strawberry_override.deprecation_reason
 
         strawberry_field = StrawberryField(
             python_name=field_name,
             graphql_name=graphql_name,
             type_annotation=StrawberryAnnotation.from_annotation(field_type),
-            description=pydantic_field.description,
+            description=description,
             default_factory=get_default_factory_for_field(
                 pydantic_field, compat=compat
             ),
+            directives=directives,
+            permission_classes=permission_classes,
+            extensions=extensions,
+            deprecation_reason=deprecation_reason,
         )
 
         # Set the origin module for proper type resolution

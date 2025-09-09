@@ -154,6 +154,12 @@ def type(
             age: int
 
         # All fields from the Pydantic model will be included in the GraphQL type
+
+        # You can also use strawberry.field() for field-level customization:
+        @strawberry.pydantic.type
+        class User(BaseModel):
+            name: str
+            age: int = strawberry.field(directives=[SomeDirective()])
     """
 
     def wrap(cls: type[BaseModel]) -> type[BaseModel]:
