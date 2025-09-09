@@ -16,6 +16,8 @@ from strawberry.types.field import StrawberryField
 from strawberry.types.private import is_private
 from strawberry.utils.typing import get_args, get_origin, is_union
 
+from .exceptions import UnregisteredTypeException
+
 if TYPE_CHECKING:
     from pydantic import BaseModel
     from pydantic.fields import FieldInfo
@@ -28,14 +30,8 @@ def replace_pydantic_types(type_: Any, is_input: bool) -> Any:
     from pydantic import BaseModel
 
     if lenient_issubclass(type_, BaseModel):
-        # For first-class integration, check if the type has been decorated
         if hasattr(type_, "__strawberry_definition__"):
-            # Return the type itself as it's already a Strawberry type
             return type_
-        # If not decorated, raise an error
-        from strawberry.experimental.pydantic.exceptions import (
-            UnregisteredTypeException,
-        )
 
         raise UnregisteredTypeException(type_)
 

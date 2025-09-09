@@ -1,10 +1,3 @@
-"""
-Tests for basic Pydantic integration functionality.
-
-These tests verify that Pydantic models can be directly decorated with
-@strawberry.pydantic.type decorators and work correctly as GraphQL types.
-"""
-
 from typing import Optional
 
 from inline_snapshot import snapshot

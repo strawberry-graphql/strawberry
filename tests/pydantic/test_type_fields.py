@@ -1,9 +1,11 @@
 from typing import Annotated
 
+import pytest
 from inline_snapshot import snapshot
 
 import pydantic
 import strawberry
+from strawberry.pydantic.exceptions import UnregisteredTypeException
 from strawberry.types.base import get_object_definition
 
 
@@ -92,3 +94,21 @@ def test_can_use_strawberry_types():
             }
         }
     )
+
+
+def test_all_models_need_to_marked_as_strawberry_types():
+    class Address(pydantic.BaseModel):
+        street: str
+        city: str
+
+    with pytest.raises(
+        UnregisteredTypeException,
+        match=(
+            r"Cannot find a Strawberry Type for <class '([^']+)\.([^']+)'> did you forget to register it\?"
+        ),
+    ):
+
+        @strawberry.pydantic.type
+        class User(pydantic.BaseModel):
+            name: str
+            address: Address
