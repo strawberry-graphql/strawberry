@@ -1,3 +1,5 @@
+from typing import Annotated
+
 from inline_snapshot import snapshot
 
 import pydantic
@@ -9,8 +11,8 @@ def test_pydantic_field_aliases_in_execution():
 
     @strawberry.pydantic.type
     class User(pydantic.BaseModel):
-        name: str = pydantic.Field(alias="fullName")
-        age: int = pydantic.Field(alias="yearsOld")
+        name: Annotated[str, pydantic.Field(alias="fullName")]
+        age: Annotated[int, pydantic.Field(alias="yearsOld")]
 
     @strawberry.type
     class Query:

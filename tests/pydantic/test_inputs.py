@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Annotated, Optional
 
 from inline_snapshot import snapshot
 
@@ -139,9 +139,9 @@ def test_input_type_with_invalid_email():
 
     @strawberry.pydantic.input
     class UserInput(pydantic.BaseModel):
-        name: str = pydantic.Field(min_length=2, max_length=50)
-        age: int = pydantic.Field(ge=0, le=150)
-        email: str = pydantic.Field(pattern=r"^[^@]+@[^@]+\.[^@]+$")
+        name: Annotated[str, pydantic.Field(min_length=2, max_length=50)]
+        age: Annotated[int, pydantic.Field(ge=0, le=150)]
+        email: Annotated[str, pydantic.Field(pattern=r"^[^@]+@[^@]+\.[^@]+$")]
 
     @strawberry.pydantic.type
     class User(pydantic.BaseModel):
@@ -194,9 +194,9 @@ def test_input_type_with_invalid_name_length():
 
     @strawberry.pydantic.input
     class UserInput(pydantic.BaseModel):
-        name: str = pydantic.Field(min_length=2, max_length=50)
-        age: int = pydantic.Field(ge=0, le=150)
-        email: str = pydantic.Field(pattern=r"^[^@]+@[^@]+\.[^@]+$")
+        name: Annotated[str, pydantic.Field(min_length=2, max_length=50)]
+        age: Annotated[int, pydantic.Field(ge=0, le=150)]
+        email: Annotated[str, pydantic.Field(pattern=r"^[^@]+@[^@]+\.[^@]+$")]
 
     @strawberry.pydantic.type
     class User(pydantic.BaseModel):
@@ -249,9 +249,9 @@ def test_input_type_with_invalid_age_range():
 
     @strawberry.pydantic.input
     class UserInput(pydantic.BaseModel):
-        name: str = pydantic.Field(min_length=2, max_length=50)
-        age: int = pydantic.Field(ge=0, le=150)
-        email: str = pydantic.Field(pattern=r"^[^@]+@[^@]+\.[^@]+$")
+        name: Annotated[str, pydantic.Field(min_length=2, max_length=50)]
+        age: Annotated[int, pydantic.Field(ge=0, le=150)]
+        email: Annotated[str, pydantic.Field(pattern=r"^[^@]+@[^@]+\.[^@]+$")]
 
     @strawberry.pydantic.type
     class User(pydantic.BaseModel):
@@ -329,14 +329,14 @@ def test_nested_input_types_with_validation():
 
     @strawberry.pydantic.input
     class AddressInput(pydantic.BaseModel):
-        street: str = pydantic.Field(min_length=5)
-        city: str = pydantic.Field(min_length=2)
-        zipcode: str = pydantic.Field(pattern=r"^\d{5}$")
+        street: Annotated[str, pydantic.Field(min_length=5)]
+        city: Annotated[str, pydantic.Field(min_length=2)]
+        zipcode: Annotated[str, pydantic.Field(pattern=r"^\d{5}$")]
 
     @strawberry.pydantic.input
     class UserInput(pydantic.BaseModel):
         name: str
-        age: int = pydantic.Field(ge=18)  # Must be 18 or older
+        age: Annotated[int, pydantic.Field(ge=18)]  # Must be 18 or older
         address: AddressInput
 
     @strawberry.pydantic.type
@@ -669,9 +669,9 @@ def test_input_type_with_optional_fields_and_validation():
 
     @strawberry.pydantic.input
     class UpdateProfileInput(pydantic.BaseModel):
-        bio: Optional[str] = pydantic.Field(None, max_length=200)
-        website: Optional[str] = pydantic.Field(None, pattern=r"^https?://.*")
-        age: Optional[int] = pydantic.Field(None, ge=0, le=150)
+        bio: Annotated[Optional[str], pydantic.Field(None, max_length=200)]
+        website: Annotated[Optional[str], pydantic.Field(None, pattern=r"^https?://.*")]
+        age: Annotated[Optional[int], pydantic.Field(None, ge=0, le=150)]
 
     @strawberry.pydantic.type
     class Profile(pydantic.BaseModel):

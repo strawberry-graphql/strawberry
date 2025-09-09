@@ -1,11 +1,4 @@
-"""
-Execution tests for Pydantic integration.
-
-These tests verify that Pydantic models work correctly in GraphQL execution,
-including queries, mutations, and various field types.
-"""
-
-from typing import Optional
+from typing import Annotated, Optional
 
 import pytest
 
@@ -283,8 +276,8 @@ def test_pydantic_field_descriptions_in_schema():
 
     @strawberry.pydantic.type
     class User(pydantic.BaseModel):
-        name: str = pydantic.Field(description="The user's full name")
-        age: int = pydantic.Field(description="The user's age in years")
+        name: Annotated[str, pydantic.Field(description="The user's full name")]
+        age: Annotated[int, pydantic.Field(description="The user's age in years")]
 
     @strawberry.type
     class Query:
@@ -305,8 +298,8 @@ def test_pydantic_field_aliases_in_execution():
 
     @strawberry.pydantic.type
     class User(pydantic.BaseModel):
-        name: str = pydantic.Field(alias="fullName")
-        age: int = pydantic.Field(alias="yearsOld")
+        name: Annotated[str, pydantic.Field(alias="fullName")]
+        age: Annotated[int, pydantic.Field(alias="yearsOld")]
 
     @strawberry.type
     class Query:
@@ -340,7 +333,7 @@ def test_pydantic_validation_integration():
     class CreateUserInput(pydantic.BaseModel):
         name: str
         age: int
-        email: str = pydantic.Field(pattern=r"^[^@]+@[^@]+\.[^@]+$")
+        email: Annotated[str, pydantic.Field(pattern=r"^[^@]+@[^@]+\.[^@]+$")]
 
     @strawberry.pydantic.type
     class User(pydantic.BaseModel):

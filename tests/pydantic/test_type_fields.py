@@ -1,8 +1,10 @@
+from typing import Annotated
+
+from inline_snapshot import snapshot
+
 import pydantic
 import strawberry
-from strawberry.types.base import (
-    get_object_definition,
-)
+from strawberry.types.base import get_object_definition
 
 
 def test_pydantic_field_descriptions():
@@ -10,8 +12,8 @@ def test_pydantic_field_descriptions():
 
     @strawberry.pydantic.type
     class User(pydantic.BaseModel):
-        age: int = pydantic.Field(description="The user's age")
-        name: str = pydantic.Field(description="The user's name")
+        age: Annotated[int, pydantic.Field(description="The user's age")]
+        name: Annotated[str, pydantic.Field(description="The user's name")]
 
     definition = get_object_definition(User, strict=True)
 
@@ -27,8 +29,8 @@ def test_pydantic_field_aliases():
 
     @strawberry.pydantic.type
     class User(pydantic.BaseModel):
-        age: int = pydantic.Field(alias="userAge")
-        name: str = pydantic.Field(alias="userName")
+        age: Annotated[int, pydantic.Field(alias="userAge")]
+        name: Annotated[str, pydantic.Field(alias="userName")]
 
     definition = get_object_definition(User, strict=True)
 
@@ -37,3 +39,56 @@ def test_pydantic_field_aliases():
 
     assert age_field.graphql_name == "userAge"
     assert name_field.graphql_name == "userName"
+
+
+def test_can_use_strawberry_types():
+    """Test that Pydantic models can use Strawberry types."""
+
+    @strawberry.type
+    class Address:
+        street: str
+        city: str
+
+    @strawberry.pydantic.type
+    class User(pydantic.BaseModel):
+        name: str
+        address: Address
+
+    definition = get_object_definition(User, strict=True)
+
+    address_field = next(f for f in definition.fields if f.python_name == "address")
+
+    assert address_field.type is Address
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        @staticmethod
+        def user() -> User:
+            return User(
+                name="Rabbit", address=Address(street="123 Main St", city="Wonderland")
+            )
+
+    schema = strawberry.Schema(query=Query)
+
+    query = """query {
+        user {
+            name
+            address {
+                street
+                city
+            }
+        }
+    }"""
+
+    result = schema.execute_sync(query)
+
+    assert not result.errors
+    assert result.data == snapshot(
+        {
+            "user": {
+                "name": "Rabbit",
+                "address": {"street": "123 Main St", "city": "Wonderland"},
+            }
+        }
+    )

@@ -1,3 +1,5 @@
+from typing import Annotated
+
 import pydantic
 import strawberry
 
@@ -7,8 +9,8 @@ def test_pydantic_field_descriptions_in_schema():
 
     @strawberry.pydantic.type
     class User(pydantic.BaseModel):
-        name: str = pydantic.Field(description="The user's full name")
-        age: int = pydantic.Field(description="The user's age in years")
+        name: Annotated[str, pydantic.Field(description="The user's full name")]
+        age: Annotated[int, pydantic.Field(description="The user's age in years")]
 
     @strawberry.type
     class Query:
