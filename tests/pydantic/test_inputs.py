@@ -1,16 +1,25 @@
-"""
-Input type tests for Pydantic integration.
-
-These tests verify that Pydantic input types work correctly with validation,
-including both valid and invalid data scenarios.
-"""
-
 from typing import Optional
 
 from inline_snapshot import snapshot
 
 import pydantic
 import strawberry
+from strawberry.types.base import get_object_definition
+
+
+def test_basic_input_type():
+    """Test that @strawberry.pydantic.input works."""
+
+    @strawberry.pydantic.input
+    class CreateUserInput(pydantic.BaseModel):
+        age: int
+        name: str
+
+    definition = get_object_definition(CreateUserInput, strict=True)
+
+    assert definition.name == "CreateUserInput"
+    assert definition.is_input is True
+    assert len(definition.fields) == 2
 
 
 def test_input_type_with_valid_data():

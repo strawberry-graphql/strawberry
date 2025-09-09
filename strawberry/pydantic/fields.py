@@ -87,19 +87,7 @@ def replace_types_recursively(
 
 def get_type_for_field(field: FieldInfo, is_input: bool, compat: PydanticCompat) -> Any:
     """Get the GraphQL type for a Pydantic field."""
-    outer_type = field.outer_type_
-
-    replaced_type = replace_types_recursively(outer_type, is_input, compat=compat)
-
-    if field.is_v1:
-        # only pydantic v1 has this Optional logic
-        should_add_optional: bool = field.allow_none
-        if should_add_optional:
-            from typing import Optional
-
-            return Optional[replaced_type]
-
-    return replaced_type
+    return replace_types_recursively(field.outer_type_, is_input, compat=compat)
 
 
 def _get_pydantic_fields(

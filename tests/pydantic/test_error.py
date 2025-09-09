@@ -185,7 +185,8 @@ type ErrorDetail {
 
 type Query {
   testError: Error!
-}"""
+}\
+"""
     )
 
 
