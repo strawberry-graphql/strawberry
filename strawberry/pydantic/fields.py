@@ -8,6 +8,8 @@ from __future__ import annotations
 
 import sys
 from typing import TYPE_CHECKING, Any
+from typing import Union as TypingUnion
+from typing import _GenericAlias as TypingGenericAlias
 
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.experimental.pydantic._compat import PydanticCompat
@@ -59,23 +61,10 @@ def replace_types_recursively(
     )
 
     # Handle special cases for typing generics
-    from typing import Union as TypingUnion
-    from typing import _GenericAlias as TypingGenericAlias
-
     if isinstance(replaced_type, TypingGenericAlias):
         return TypingGenericAlias(origin, converted)
     if is_union(replaced_type):
         return TypingUnion[converted]
-
-    # Handle Annotated types
-    from typing import Annotated
-
-    if origin is Annotated and converted:
-        converted = (converted[0],)
-
-    # For other types, try to use copy_with if available
-    if hasattr(replaced_type, "copy_with"):
-        return replaced_type.copy_with(converted)
 
     # Fallback to origin[converted] for standard generic types
     return origin[converted]
@@ -131,29 +120,20 @@ def _get_pydantic_fields(
         # Get the field type from the Pydantic model
         field_type = get_type_for_field(pydantic_field, is_input, compat=compat)
 
-        # Check if there's a custom field definition on the class
-        custom_field = getattr(cls, field_name, None)
-        if isinstance(custom_field, StrawberryField):
-            # Use the custom field but update its type if needed
-            strawberry_field = custom_field
-            strawberry_field.type_annotation = StrawberryAnnotation.from_annotation(
-                field_type
-            )
-        else:
-            # Create a new StrawberryField
-            graphql_name = None
-            if pydantic_field.has_alias:
-                graphql_name = pydantic_field.alias
+        graphql_name = None
 
-            strawberry_field = StrawberryField(
-                python_name=field_name,
-                graphql_name=graphql_name,
-                type_annotation=StrawberryAnnotation.from_annotation(field_type),
-                description=pydantic_field.description,
-                default_factory=get_default_factory_for_field(
-                    pydantic_field, compat=compat
-                ),
-            )
+        if pydantic_field.has_alias:
+            graphql_name = pydantic_field.alias
+
+        strawberry_field = StrawberryField(
+            python_name=field_name,
+            graphql_name=graphql_name,
+            type_annotation=StrawberryAnnotation.from_annotation(field_type),
+            description=pydantic_field.description,
+            default_factory=get_default_factory_for_field(
+                pydantic_field, compat=compat
+            ),
+        )
 
         # Set the origin module for proper type resolution
         origin = cls
@@ -166,13 +146,6 @@ def _get_pydantic_fields(
             strawberry_field.type_annotation.namespace = module.__dict__
 
         strawberry_field.origin = origin
-
-        # Apply any type overrides from original_type_annotations
-        if field_name in original_type_annotations:
-            strawberry_field.type = original_type_annotations[field_name]
-            strawberry_field.type_annotation = StrawberryAnnotation(
-                annotation=strawberry_field.type
-            )
 
         fields.append(strawberry_field)
 

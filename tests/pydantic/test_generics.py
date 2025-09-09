@@ -1,10 +1,14 @@
+import sys
 from typing import Generic, TypeVar
 
+import pytest
 from inline_snapshot import snapshot
 
 import pydantic
 import strawberry
 from strawberry.types.base import (
+    StrawberryList,
+    StrawberryOptional,
     StrawberryTypeVar,
     get_object_definition,
 )
@@ -104,3 +108,29 @@ type UserString {
   name: String!
 }\
 """)
+
+
+def test_can_convert_generic_alias_fields_to_strawberry():
+    @strawberry.pydantic.type
+    class Test(pydantic.BaseModel):
+        list_1d: list[int]
+        list_2d: list[list[int]]
+
+    fields = get_object_definition(Test, strict=True).fields
+    assert isinstance(fields[0].type, StrawberryList)
+    assert isinstance(fields[1].type, StrawberryList)
+
+
+@pytest.mark.skipif(
+    sys.version_info < (3, 10),
+    reason="union type expressions were added in python 3.10",
+)
+def test_can_convert_optional_union_type_expression_fields_to_strawberry():
+    @strawberry.pydantic.type
+    class Test(pydantic.BaseModel):
+        optional_list: list[int] | None
+        optional_str: str | None
+
+    fields = get_object_definition(Test, strict=True).fields
+    assert isinstance(fields[0].type, StrawberryOptional)
+    assert isinstance(fields[1].type, StrawberryOptional)
