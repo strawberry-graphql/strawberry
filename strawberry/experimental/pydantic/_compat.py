@@ -178,6 +178,9 @@ class PydanticV2Compat:
             new_fields |= self.get_model_computed_fields(model)
         return new_fields
 
+    def get_model_json_schema(self, model: type[BaseModel]) -> dict[str, Any]:
+        return model.model_json_schema()
+
     @cached_property
     def fields_map(self) -> dict[Any, Any]:
         return get_fields_map_for_v2()
@@ -272,6 +275,9 @@ class PydanticV1Compat:
             return new_type_supertype(type_)
 
         return type_
+
+    def get_model_json_schema(self, model: type[BaseModel]) -> dict[str, Any]:
+        return model.schema()
 
     def model_dump(self, model_instance: BaseModel) -> dict[Any, Any]:
         return model_instance.dict()
