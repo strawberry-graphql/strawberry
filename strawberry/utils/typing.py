@@ -129,10 +129,7 @@ def is_concrete_generic(annotation: type) -> bool:
 
 
 def is_generic_subclass(annotation: type) -> bool:
-    return isinstance(annotation, type) and issubclass(
-        annotation,
-        Generic,  # type:ignore
-    )
+    return isinstance(annotation, type) and issubclass(annotation, Generic)
 
 
 def is_generic(annotation: type) -> bool:
@@ -184,7 +181,7 @@ def get_parameters(annotation: type) -> Union[tuple[object], tuple[()]]:
         and issubclass(annotation, Generic)  # type:ignore
         and annotation is not Generic
     ):
-        return annotation.__parameters__  # type: ignore[union-attr]
+        return annotation.__parameters__
     return ()  # pragma: no cover
 
 

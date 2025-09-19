@@ -296,7 +296,7 @@ class StrawberryField(dataclasses.Field):
         #       removed.
         _ = resolver.arguments
 
-    @property  # type: ignore
+    @property
     def type(
         self,
     ) -> Union[  # type: ignore [valid-type]
