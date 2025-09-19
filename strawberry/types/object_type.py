@@ -25,6 +25,7 @@ from strawberry.types.maybe import _annotation_is_maybe
 from strawberry.utils.deprecations import DEPRECATION_MESSAGES, DeprecatedDescriptor
 from strawberry.utils.str_converters import to_camel_case
 
+from ._dataclasses_field import StrawberryDataclassField
 from .base import StrawberryObjectDefinition
 from .field import StrawberryField, field
 from .type_resolver import _get_fields
@@ -131,6 +132,19 @@ def _inject_default_for_maybe_annotations(
     for name, annotation in annotations.copy().items():
         if _annotation_is_maybe(annotation) and not hasattr(cls, name):
             setattr(cls, name, None)
+
+
+def _convert_field_annotations_to_dataclass_fields(
+    cls: builtins.type[T], annotations: dict[str, Any]
+) -> None:
+    for field_name in annotations:
+        field = getattr(cls, field_name, None)
+
+        if field and isinstance(field, StrawberryField):
+            dataclass_field = StrawberryDataclassField.from_strawberry_field(field)
+            annotations[field_name] = dataclass_field.type
+
+            setattr(cls, field_name, dataclass_field)
 
 
 def _process_type(
@@ -297,13 +311,11 @@ def type(
 
         annotations = getattr(cls, "__annotations__", {})
 
-        for field_name in annotations:
-            field = getattr(cls, field_name, None)
+        _convert_field_annotations_to_dataclass_fields(cls, annotations)
 
-            if field and isinstance(field, StrawberryField) and field.type_annotation:
-                original_type_annotations[field_name] = field.type_annotation.annotation
         if is_input:
             _inject_default_for_maybe_annotations(cls, annotations)
+
         wrapped = _wrap_dataclass(cls)
 
         return _process_type(  # type: ignore
