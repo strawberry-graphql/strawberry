@@ -1194,3 +1194,60 @@ def test_union_merging_with_annotated_annotated_merge():
     """
         ).strip()
     )
+
+
+def test_union_used_inside_generic():
+    T = TypeVar("T")
+
+    @strawberry.type
+    class User:
+        name: str
+        age: int
+
+    @strawberry.type
+    class ProUser:
+        name: str
+        age: float
+
+    @strawberry.type
+    class GenType(Generic[T]):
+        data: T
+
+    GeneralUser = Annotated[Union[User, ProUser], strawberry.union("GeneralUser")]
+
+    @strawberry.type
+    class Response(GenType[GeneralUser]): ...
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def user(self) -> Response: ...
+
+    schema = strawberry.Schema(query=Query)
+
+    assert (
+        str(schema)
+        == textwrap.dedent(
+            """
+        union GeneralUser = User | ProUser
+
+        type ProUser {
+          name: String!
+          age: Float!
+        }
+
+        type Query {
+          user: Response!
+        }
+
+        type Response {
+          data: GeneralUser!
+        }
+
+        type User {
+          name: String!
+          age: Int!
+        }
+    """
+        ).strip()
+    )

@@ -31,7 +31,7 @@ class Some(Generic[T]):
 
 
 if TYPE_CHECKING:
-    Maybe: TypeAlias = Union[Some[Union[T, None]], None]
+    Maybe: TypeAlias = Union[Some[T], None]
 else:
     # we do this trick so we can inspect that at runtime
     class Maybe(Generic[T]): ...

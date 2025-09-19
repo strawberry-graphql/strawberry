@@ -29,7 +29,9 @@ class DirectivesExtension(SchemaExtension):
     ) -> AwaitableOrValue[Any]:
         value = await await_maybe(_next(root, info, *args, **kwargs))
 
-        for directive in info.field_nodes[0].directives:
+        nodes = list(info.field_nodes)
+
+        for directive in nodes[0].directives:
             if directive.name.value in SPECIFIED_DIRECTIVES:
                 continue
             strawberry_directive, arguments = process_directive(directive, value, info)
@@ -49,7 +51,9 @@ class DirectivesExtensionSync(SchemaExtension):
     ) -> AwaitableOrValue[Any]:
         value = _next(root, info, *args, **kwargs)
 
-        for directive in info.field_nodes[0].directives:
+        nodes = list(info.field_nodes)
+
+        for directive in nodes[0].directives:
             if directive.name.value in SPECIFIED_DIRECTIVES:
                 continue
             strawberry_directive, arguments = process_directive(directive, value, info)

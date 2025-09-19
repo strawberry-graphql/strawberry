@@ -16,13 +16,14 @@ from starlette.websockets import WebSocket
 from strawberry.asgi import GraphQL as BaseGraphQLView
 from strawberry.http import GraphQLHTTPResponse
 from strawberry.http.ides import GraphQL_IDE
+from strawberry.schema import Schema
 from strawberry.subscriptions import (
     GRAPHQL_TRANSPORT_WS_PROTOCOL,
     GRAPHQL_WS_PROTOCOL,
 )
 from strawberry.types import ExecutionResult
 from tests.http.context import get_context
-from tests.views.schema import Query, schema
+from tests.views.schema import Query
 from tests.websockets.views import OnWSConnectMixin
 
 from .base import (
@@ -66,12 +67,12 @@ class GraphQLView(OnWSConnectMixin, BaseGraphQLView[dict[str, object], object]):
 class AsgiHttpClient(HttpClient):
     def __init__(
         self,
+        schema: Schema,
         graphiql: Optional[bool] = None,
         graphql_ide: Optional[GraphQL_IDE] = "graphiql",
         allow_queries_via_get: bool = True,
         keep_alive: bool = False,
         keep_alive_interval: float = 1,
-        debug: bool = False,
         subscription_protocols: Sequence[str] = (
             GRAPHQL_TRANSPORT_WS_PROTOCOL,
             GRAPHQL_WS_PROTOCOL,
@@ -87,7 +88,6 @@ class AsgiHttpClient(HttpClient):
             allow_queries_via_get=allow_queries_via_get,
             keep_alive=keep_alive,
             keep_alive_interval=keep_alive_interval,
-            debug=debug,
             subscription_protocols=subscription_protocols,
             connection_init_wait_timeout=connection_init_wait_timeout,
             multipart_uploads_enabled=multipart_uploads_enabled,

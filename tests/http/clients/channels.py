@@ -20,13 +20,14 @@ from strawberry.channels.handlers.http_handler import ChannelsRequest
 from strawberry.http import GraphQLHTTPResponse
 from strawberry.http.ides import GraphQL_IDE
 from strawberry.http.temporal_response import TemporalResponse
+from strawberry.schema import Schema
 from strawberry.subscriptions import (
     GRAPHQL_TRANSPORT_WS_PROTOCOL,
     GRAPHQL_WS_PROTOCOL,
 )
 from strawberry.types import ExecutionResult
 from tests.http.context import get_context
-from tests.views.schema import Query, schema
+from tests.views.schema import Query
 from tests.websockets.views import OnWSConnectMixin
 
 from .base import (
@@ -147,12 +148,12 @@ class ChannelsHttpClient(HttpClient):
 
     def __init__(
         self,
+        schema: Schema,
         graphiql: Optional[bool] = None,
         graphql_ide: Optional[GraphQL_IDE] = "graphiql",
         allow_queries_via_get: bool = True,
         keep_alive: bool = False,
         keep_alive_interval: float = 1,
-        debug: bool = False,
         subscription_protocols: Sequence[str] = (
             GRAPHQL_TRANSPORT_WS_PROTOCOL,
             GRAPHQL_WS_PROTOCOL,
@@ -165,7 +166,6 @@ class ChannelsHttpClient(HttpClient):
             schema=schema,
             keep_alive=keep_alive,
             keep_alive_interval=keep_alive_interval,
-            debug=debug,
             subscription_protocols=subscription_protocols,
             connection_init_wait_timeout=connection_init_wait_timeout,
         )
@@ -287,6 +287,7 @@ class ChannelsHttpClient(HttpClient):
 class SyncChannelsHttpClient(ChannelsHttpClient):
     def __init__(
         self,
+        schema: Schema,
         graphiql: Optional[bool] = None,
         graphql_ide: Optional[GraphQL_IDE] = "graphiql",
         allow_queries_via_get: bool = True,

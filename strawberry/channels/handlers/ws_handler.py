@@ -109,7 +109,6 @@ class GraphQLWSConsumer(
         schema: BaseSchema,
         keep_alive: bool = False,
         keep_alive_interval: float = 1,
-        debug: bool = False,
         subscription_protocols: Sequence[str] = (
             GRAPHQL_TRANSPORT_WS_PROTOCOL,
             GRAPHQL_WS_PROTOCOL,
@@ -122,7 +121,6 @@ class GraphQLWSConsumer(
         self.schema = schema
         self.keep_alive = keep_alive
         self.keep_alive_interval = keep_alive_interval
-        self.debug = debug
         self.protocols = subscription_protocols
         self.message_queue: asyncio.Queue[MessageQueueData] = asyncio.Queue()
         self.run_task: Optional[asyncio.Task] = None
@@ -164,7 +162,9 @@ class GraphQLWSConsumer(
         raise NotImplementedError
 
     def create_response(
-        self, response_data: GraphQLHTTPResponse, sub_response: GraphQLWSConsumer
+        self,
+        response_data: Union[GraphQLHTTPResponse, list[GraphQLHTTPResponse]],
+        sub_response: GraphQLWSConsumer,
     ) -> GraphQLWSConsumer:
         raise NotImplementedError
 

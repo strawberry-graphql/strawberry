@@ -8,14 +8,16 @@ from typing import (
     Any,
     Callable,
     Generic,
+    Literal,
     Optional,
     Union,
     cast,
     overload,
 )
-from typing_extensions import Literal, TypeGuard
+from typing_extensions import TypeGuard
 
 from graphql import GraphQLError
+from lia import AsyncHTTPRequestAdapter, HTTPException
 
 from strawberry.exceptions import MissingQueryError
 from strawberry.file_uploads.utils import replace_placeholders_with_files
@@ -25,6 +27,9 @@ from strawberry.http import (
     process_result,
 )
 from strawberry.http.ides import GraphQL_IDE
+from strawberry.schema._graphql_core import (
+    GraphQLIncrementalExecutionResults,
+)
 from strawberry.schema.base import BaseSchema
 from strawberry.schema.exceptions import (
     CannotGetOperationTypeError,
@@ -40,9 +45,7 @@ from strawberry.types.graphql import OperationType
 from strawberry.types.unset import UNSET, UnsetType
 
 from .base import BaseView
-from .exceptions import HTTPException
 from .parse_content_type import parse_content_type
-from .types import FormData, HTTPMethod, QueryParams
 from .typevars import (
     Context,
     Request,
@@ -52,30 +55,6 @@ from .typevars import (
     WebSocketRequest,
     WebSocketResponse,
 )
-
-
-class AsyncHTTPRequestAdapter(abc.ABC):
-    @property
-    @abc.abstractmethod
-    def query_params(self) -> QueryParams: ...
-
-    @property
-    @abc.abstractmethod
-    def method(self) -> HTTPMethod: ...
-
-    @property
-    @abc.abstractmethod
-    def headers(self) -> Mapping[str, str]: ...
-
-    @property
-    @abc.abstractmethod
-    def content_type(self) -> Optional[str]: ...
-
-    @abc.abstractmethod
-    async def get_body(self) -> Union[str, bytes]: ...
-
-    @abc.abstractmethod
-    async def get_form_data(self) -> FormData: ...
 
 
 class AsyncWebSocketAdapter(abc.ABC):
@@ -109,7 +88,6 @@ class AsyncBaseHTTPView(
 ):
     schema: BaseSchema
     graphql_ide: Optional[GraphQL_IDE]
-    debug: bool
     keep_alive = False
     keep_alive_interval: Optional[float] = None
     connection_init_wait_timeout: timedelta = timedelta(minutes=1)
@@ -150,7 +128,9 @@ class AsyncBaseHTTPView(
 
     @abc.abstractmethod
     def create_response(
-        self, response_data: GraphQLHTTPResponse, sub_response: SubResponse
+        self,
+        response_data: Union[GraphQLHTTPResponse, list[GraphQLHTTPResponse]],
+        sub_response: SubResponse,
     ) -> Response: ...
 
     @abc.abstractmethod
@@ -181,8 +161,12 @@ class AsyncBaseHTTPView(
     ) -> WebSocketResponse: ...
 
     async def execute_operation(
-        self, request: Request, context: Context, root_value: Optional[RootValue]
-    ) -> Union[ExecutionResult, SubscriptionExecutionResult]:
+        self,
+        request: Request,
+        context: Context,
+        root_value: Optional[RootValue],
+        sub_response: SubResponse,
+    ) -> Union[ExecutionResult, list[ExecutionResult], SubscriptionExecutionResult]:
         request_adapter = self.request_adapter_class(request)
 
         try:
@@ -198,6 +182,22 @@ class AsyncBaseHTTPView(
         if not self.allow_queries_via_get and request_adapter.method == "GET":
             allowed_operation_types = allowed_operation_types - {OperationType.QUERY}
 
+        if isinstance(request_data, list):
+            # batch GraphQL requests
+            return await asyncio.gather(
+                *[
+                    self.execute_single(
+                        request=request,
+                        request_adapter=request_adapter,
+                        sub_response=sub_response,
+                        context=context,
+                        root_value=root_value,
+                        request_data=data,
+                    )
+                    for data in request_data
+                ]
+            )
+
         if request_data.protocol == "multipart-subscription":
             return await self.schema.subscribe(
                 request_data.query,  # type: ignore
@@ -208,15 +208,49 @@ class AsyncBaseHTTPView(
                 operation_extensions=request_data.extensions,
             )
 
-        return await self.schema.execute(
-            request_data.query,
+        return await self.execute_single(
+            request=request,
+            request_adapter=request_adapter,
+            sub_response=sub_response,
+            context=context,
             root_value=root_value,
-            variable_values=request_data.variables,
-            context_value=context,
-            operation_name=request_data.operation_name,
-            allowed_operation_types=allowed_operation_types,
-            operation_extensions=request_data.extensions,
+            request_data=request_data,
         )
+
+    async def execute_single(
+        self,
+        request: Request,
+        request_adapter: AsyncHTTPRequestAdapter,
+        sub_response: SubResponse,
+        context: Context,
+        root_value: Optional[RootValue],
+        request_data: GraphQLRequestData,
+    ) -> ExecutionResult:
+        allowed_operation_types = OperationType.from_http(request_adapter.method)
+
+        if not self.allow_queries_via_get and request_adapter.method == "GET":
+            allowed_operation_types = allowed_operation_types - {OperationType.QUERY}
+
+        try:
+            result = await self.schema.execute(
+                request_data.query,
+                root_value=root_value,
+                variable_values=request_data.variables,
+                context_value=context,
+                operation_name=request_data.operation_name,
+                allowed_operation_types=allowed_operation_types,
+                operation_extensions=request_data.extensions,
+            )
+        except CannotGetOperationTypeError as e:
+            raise HTTPException(400, e.as_http_error_reason()) from e
+        except InvalidOperationTypeError as e:
+            raise HTTPException(
+                400, e.as_http_error_reason(request_adapter.method)
+            ) from e
+        except MissingQueryError as e:
+            raise HTTPException(400, "No GraphQL query found in the request") from e
+
+        return result
 
     async def parse_multipart(self, request: AsyncHTTPRequestAdapter) -> dict[str, str]:
         try:
@@ -224,8 +258,9 @@ class AsyncBaseHTTPView(
         except ValueError as e:
             raise HTTPException(400, "Unable to parse the multipart body") from e
 
-        operations = form_data["form"].get("operations", "{}")
-        files_map = form_data["form"].get("map", "{}")
+        operations = form_data.form.get("operations", "{}")
+        files_map = form_data.form.get("map", "{}")
+        files = form_data.files
 
         if isinstance(operations, (bytes, str)):
             operations = self.parse_json(operations)
@@ -234,9 +269,7 @@ class AsyncBaseHTTPView(
             files_map = self.parse_json(files_map)
 
         try:
-            return replace_placeholders_with_files(
-                operations, files_map, form_data["files"]
-            )
+            return replace_placeholders_with_files(operations, files_map, files)
         except KeyError as e:
             raise HTTPException(400, "File(s) missing in form data") from e
 
@@ -291,7 +324,6 @@ class AsyncBaseHTTPView(
                     context=context,
                     root_value=root_value,
                     schema=self.schema,
-                    debug=self.debug,
                     connection_init_wait_timeout=self.connection_init_wait_timeout,
                 ).handle()
             elif websocket_subprotocol == GRAPHQL_WS_PROTOCOL:
@@ -301,7 +333,6 @@ class AsyncBaseHTTPView(
                     context=context,
                     root_value=root_value,
                     schema=self.schema,
-                    debug=self.debug,
                     keep_alive=self.keep_alive,
                     keep_alive_interval=self.keep_alive_interval,
                 ).handle()
@@ -327,18 +358,12 @@ class AsyncBaseHTTPView(
                 return await self.render_graphql_ide(request)
             raise HTTPException(404, "Not Found")
 
-        try:
-            result = await self.execute_operation(
-                request=request, context=context, root_value=root_value
-            )
-        except CannotGetOperationTypeError as e:
-            raise HTTPException(400, e.as_http_error_reason()) from e
-        except InvalidOperationTypeError as e:
-            raise HTTPException(
-                400, e.as_http_error_reason(request_adapter.method)
-            ) from e
-        except MissingQueryError as e:
-            raise HTTPException(400, "No GraphQL query found in the request") from e
+        result = await self.execute_operation(
+            request=request,
+            context=context,
+            root_value=root_value,
+            sub_response=sub_response,
+        )
 
         if isinstance(result, SubscriptionExecutionResult):
             stream = self._get_stream(request, result)
@@ -352,23 +377,108 @@ class AsyncBaseHTTPView(
                     "Content-Type": "multipart/mixed;boundary=graphql;subscriptionSpec=1.0,application/json",
                 },
             )
+        if isinstance(result, GraphQLIncrementalExecutionResults):
 
-        response_data = await self.process_result(request=request, result=result)
+            async def stream() -> AsyncGenerator[str, None]:
+                yield "---"
 
-        if result.errors:
-            self._handle_errors(result.errors, response_data)
+                response = await self.process_result(request, result.initial_result)
+
+                response["hasNext"] = result.initial_result.has_next
+                response["pending"] = [
+                    p.formatted for p in result.initial_result.pending
+                ]
+                response["extensions"] = result.initial_result.extensions
+
+                yield self.encode_multipart_data(response, "-")
+
+                all_pending = result.initial_result.pending
+
+                async for value in result.subsequent_results:
+                    response = {
+                        "hasNext": value.has_next,
+                        "extensions": value.extensions,
+                    }
+
+                    if value.pending:
+                        response["pending"] = [p.formatted for p in value.pending]
+
+                    if value.completed:
+                        response["completed"] = [p.formatted for p in value.completed]
+
+                    if value.incremental:
+                        incremental = []
+
+                        all_pending.extend(value.pending)
+
+                        for incremental_value in value.incremental:
+                            pending_value = next(
+                                (
+                                    v
+                                    for v in all_pending
+                                    if v.id == incremental_value.id
+                                ),
+                                None,
+                            )
+
+                            assert pending_value
+
+                            incremental.append(
+                                {
+                                    **incremental_value.formatted,
+                                    "path": pending_value.path,
+                                    "label": pending_value.label,
+                                }
+                            )
+
+                        response["incremental"] = incremental
+
+                    yield self.encode_multipart_data(response, "-")
+
+                yield "--\r\n"
+
+            return await self.create_streaming_response(
+                request,
+                stream,
+                sub_response,
+                headers={
+                    "Transfer-Encoding": "chunked",
+                    "Content-Type": 'multipart/mixed; boundary="-"',
+                },
+            )
+
+        response_data: Union[GraphQLHTTPResponse, list[GraphQLHTTPResponse]]
+
+        if isinstance(result, list):
+            response_data = []
+            for execution_result in result:
+                processed_result = await self.process_result(
+                    request=request, result=execution_result
+                )
+                if execution_result.errors:
+                    self._handle_errors(execution_result.errors, processed_result)
+                response_data.append(processed_result)
+        else:
+            response_data = await self.process_result(request=request, result=result)
+
+            if result.errors:
+                self._handle_errors(result.errors, response_data)
 
         return self.create_response(
             response_data=response_data, sub_response=sub_response
         )
 
     def encode_multipart_data(self, data: Any, separator: str) -> str:
+        encoded_data = self.encode_json(data)
+
         return "".join(
             [
-                f"\r\n--{separator}\r\n",
-                "Content-Type: application/json\r\n\r\n",
-                self.encode_json(data),
-                "\n",
+                "\r\n",
+                "Content-Type: application/json; charset=utf-8\r\n",
+                "Content-Length: " + str(len(encoded_data)) + "\r\n",
+                "\r\n",
+                encoded_data,
+                f"\r\n--{separator}",
             ]
         )
 
@@ -508,15 +618,16 @@ class AsyncBaseHTTPView(
 
     async def parse_http_body(
         self, request: AsyncHTTPRequestAdapter
-    ) -> GraphQLRequestData:
+    ) -> Union[GraphQLRequestData, list[GraphQLRequestData]]:
         headers = {key.lower(): value for key, value in request.headers.items()}
         content_type, _ = parse_content_type(request.content_type or "")
         accept = headers.get("accept", "")
 
-        protocol: Literal["http", "multipart-subscription"] = "http"
-
-        if self._is_multipart_subscriptions(*parse_content_type(accept)):
-            protocol = "multipart-subscription"
+        protocol: Literal["http", "multipart-subscription"] = (
+            "multipart-subscription"
+            if self._is_multipart_subscriptions(*parse_content_type(accept))
+            else "http"
+        )
 
         if request.method == "GET":
             data = self.parse_query_params(request.query_params)
@@ -526,6 +637,19 @@ class AsyncBaseHTTPView(
             data = await self.parse_multipart(request)
         else:
             raise HTTPException(400, "Unsupported content type")
+
+        if isinstance(data, list):
+            self._validate_batch_request(data, protocol=protocol)
+            return [
+                GraphQLRequestData(
+                    query=item.get("query"),
+                    variables=item.get("variables"),
+                    operation_name=item.get("operationName"),
+                    extensions=item.get("extensions"),
+                    protocol=protocol,
+                )
+                for item in data
+            ]
 
         query = data.get("query")
         if not isinstance(query, (str, type(None))):

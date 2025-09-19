@@ -3,32 +3,27 @@ from __future__ import annotations
 import asyncio
 import warnings
 from datetime import timedelta
-from io import BytesIO
 from json.decoder import JSONDecodeError
 from typing import (
     TYPE_CHECKING,
-    Any,
     Callable,
     Optional,
     Union,
-    cast,
 )
 from typing_extensions import TypeGuard
 
+from lia import AiohttpHTTPRequestAdapter, HTTPException
+
 from aiohttp import ClientConnectionResetError, http, web
-from aiohttp.multipart import BodyPartReader
 from strawberry.http.async_base_view import (
     AsyncBaseHTTPView,
-    AsyncHTTPRequestAdapter,
     AsyncWebSocketAdapter,
 )
 from strawberry.http.exceptions import (
-    HTTPException,
     NonJsonMessageReceived,
     NonTextMessageReceived,
     WebSocketDisconnected,
 )
-from strawberry.http.types import FormData, HTTPMethod, QueryParams
 from strawberry.http.typevars import (
     Context,
     RootValue,
@@ -41,47 +36,6 @@ if TYPE_CHECKING:
     from strawberry.http import GraphQLHTTPResponse
     from strawberry.http.ides import GraphQL_IDE
     from strawberry.schema import BaseSchema
-
-
-class AiohttpHTTPRequestAdapter(AsyncHTTPRequestAdapter):
-    def __init__(self, request: web.Request) -> None:
-        self.request = request
-
-    @property
-    def query_params(self) -> QueryParams:
-        return self.request.query.copy()  # type: ignore[attr-defined]
-
-    async def get_body(self) -> str:
-        return (await self.request.content.read()).decode()
-
-    @property
-    def method(self) -> HTTPMethod:
-        return cast("HTTPMethod", self.request.method.upper())
-
-    @property
-    def headers(self) -> Mapping[str, str]:
-        return self.request.headers
-
-    async def get_form_data(self) -> FormData:
-        reader = await self.request.multipart()
-
-        data: dict[str, Any] = {}
-        files: dict[str, Any] = {}
-
-        while field := await reader.next():
-            assert isinstance(field, BodyPartReader)
-            assert field.name
-
-            if field.filename:
-                files[field.name] = BytesIO(await field.read(decode=False))
-            else:
-                data[field.name] = await field.text()
-
-        return FormData(files=files, form=data)
-
-    @property
-    def content_type(self) -> Optional[str]:
-        return self.headers.get("content-type")
 
 
 class AiohttpWebSocketAdapter(AsyncWebSocketAdapter):
@@ -143,7 +97,6 @@ class GraphQLView(
         allow_queries_via_get: bool = True,
         keep_alive: bool = True,
         keep_alive_interval: float = 1,
-        debug: bool = False,
         subscription_protocols: Sequence[str] = (
             GRAPHQL_TRANSPORT_WS_PROTOCOL,
             GRAPHQL_WS_PROTOCOL,
@@ -155,7 +108,6 @@ class GraphQLView(
         self.allow_queries_via_get = allow_queries_via_get
         self.keep_alive = keep_alive
         self.keep_alive_interval = keep_alive_interval
-        self.debug = debug
         self.subscription_protocols = subscription_protocols
         self.connection_init_wait_timeout = connection_init_wait_timeout
         self.multipart_uploads_enabled = multipart_uploads_enabled
@@ -210,7 +162,9 @@ class GraphQLView(
         return {"request": request, "response": response}  # type: ignore
 
     def create_response(
-        self, response_data: GraphQLHTTPResponse, sub_response: web.Response
+        self,
+        response_data: Union[GraphQLHTTPResponse, list[GraphQLHTTPResponse]],
+        sub_response: web.Response,
     ) -> web.Response:
         sub_response.text = self.encode_json(response_data)
         sub_response.content_type = "application/json"

@@ -5,11 +5,13 @@ from enum import Enum
 from typing import Any, Optional, Union
 
 from graphql import GraphQLError
+from graphql.version import VersionInfo, version_info
 
 import strawberry
 from strawberry.extensions import SchemaExtension
 from strawberry.file_uploads import Upload
 from strawberry.permission import BasePermission
+from strawberry.schema.config import StrawberryConfig
 from strawberry.subscriptions.protocols.graphql_transport_ws.types import PingMessage
 from strawberry.types import ExecutionContext
 
@@ -69,6 +71,19 @@ class DebugInfo:
 
 
 @strawberry.type
+class Hero:
+    id: strawberry.ID
+
+    @strawberry.field
+    @staticmethod
+    def name(fail: bool = False) -> str:
+        if fail:
+            raise ValueError("Failed to get name")
+
+        return "Thiago Bellini"
+
+
+@strawberry.type
 class Query:
     @strawberry.field
     def greetings(self) -> str:
@@ -96,6 +111,10 @@ class Query:
         raise ValueError(message)
 
     @strawberry.field
+    async def some_error(self) -> Optional[str]:
+        raise ValueError("Some error")
+
+    @strawberry.field
     def teapot(self, info: strawberry.Info[Any, None]) -> str:
         info.context["response"].status_code = 418
 
@@ -106,8 +125,10 @@ class Query:
         return type(self).__name__
 
     @strawberry.field
-    def value_from_context(self, info: strawberry.Info) -> str:
-        return info.context["custom_value"]
+    def value_from_context(
+        self, info: strawberry.Info, key: str = "custom_value"
+    ) -> str:
+        return info.context[key]
 
     @strawberry.field
     def value_from_extensions(self, info: strawberry.Info, key: str) -> str:
@@ -129,6 +150,16 @@ class Query:
         response.headers["X-Name"] = name
 
         return name
+
+    @strawberry.field
+    def character(self) -> Hero:
+        return Hero(id=strawberry.ID("1"))
+
+    @strawberry.field
+    async def streamable_field(self) -> strawberry.Streamable[str]:
+        for i in range(2):
+            yield f"Hello {i}"
+            await asyncio.sleep(0.1)
 
 
 @strawberry.type
@@ -157,6 +188,11 @@ class Mutation:
     def match_text(self, text_file: Upload, pattern: str) -> str:
         text = text_file.read().decode()
         return pattern if pattern in text else ""
+
+    @strawberry.mutation
+    def update_context(self, info: strawberry.Info, key: str, value: str) -> bool:
+        info.context[key] = value
+        return True
 
 
 @strawberry.type
@@ -297,4 +333,9 @@ schema = Schema(
     mutation=Mutation,
     subscription=Subscription,
     extensions=[MyExtension],
+    config=StrawberryConfig(
+        enable_experimental_incremental_execution=(
+            version_info >= VersionInfo.from_str("3.3.0a0")
+        )
+    ),
 )

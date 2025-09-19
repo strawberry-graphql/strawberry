@@ -5,6 +5,8 @@ from io import BytesIO
 import pytest
 from urllib3 import encode_multipart_formdata
 
+from tests.views.schema import schema
+
 from .clients.base import HttpClient
 
 
@@ -16,7 +18,7 @@ def http_client(http_client_class: type[HttpClient]) -> HttpClient:
         if http_client_class is ChaliceHttpClient:
             pytest.xfail(reason="Chalice does not support uploads")
 
-    return http_client_class()
+    return http_client_class(schema)
 
 
 @pytest.fixture
@@ -27,7 +29,7 @@ def enabled_http_client(http_client_class: type[HttpClient]) -> HttpClient:
         if http_client_class is ChaliceHttpClient:
             pytest.xfail(reason="Chalice does not support uploads")
 
-    return http_client_class(multipart_uploads_enabled=True)
+    return http_client_class(schema, multipart_uploads_enabled=True)
 
 
 async def test_multipart_uploads_are_disabled_by_default(http_client: HttpClient):

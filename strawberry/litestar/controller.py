@@ -13,10 +13,10 @@ from typing import (
     Optional,
     TypedDict,
     Union,
-    cast,
 )
 from typing_extensions import TypeGuard
 
+from lia import HTTPException, LitestarRequestAdapter
 from msgspec import Struct
 
 from litestar import (
@@ -41,16 +41,13 @@ from litestar.status_codes import HTTP_200_OK
 from strawberry.exceptions import InvalidCustomContext
 from strawberry.http.async_base_view import (
     AsyncBaseHTTPView,
-    AsyncHTTPRequestAdapter,
     AsyncWebSocketAdapter,
 )
 from strawberry.http.exceptions import (
-    HTTPException,
     NonJsonMessageReceived,
     NonTextMessageReceived,
     WebSocketDisconnected,
 )
-from strawberry.http.types import FormData, HTTPMethod, QueryParams
 from strawberry.http.typevars import Context, RootValue
 from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
 
@@ -153,41 +150,6 @@ class GraphQLResource(Struct):
     extensions: Optional[dict[str, object]]
 
 
-class LitestarRequestAdapter(AsyncHTTPRequestAdapter):
-    def __init__(self, request: Request[Any, Any, Any]) -> None:
-        self.request = request
-
-    @property
-    def query_params(self) -> QueryParams:
-        return self.request.query_params
-
-    @property
-    def method(self) -> HTTPMethod:
-        return cast("HTTPMethod", self.request.method.upper())
-
-    @property
-    def headers(self) -> Mapping[str, str]:
-        return self.request.headers
-
-    @property
-    def content_type(self) -> Optional[str]:
-        content_type, params = self.request.content_type
-
-        # combine content type and params
-        if params:
-            content_type += "; " + "; ".join(f"{k}={v}" for k, v in params.items())
-
-        return content_type
-
-    async def get_body(self) -> bytes:
-        return await self.request.body()
-
-    async def get_form_data(self) -> FormData:
-        multipart_data = await self.request.form()
-
-        return FormData(form=multipart_data, files=multipart_data)
-
-
 class LitestarWebSocketAdapter(AsyncWebSocketAdapter):
     def __init__(
         self, view: AsyncBaseHTTPView, request: WebSocket, response: WebSocket
@@ -251,7 +213,6 @@ class GraphQLController(
     allow_queries_via_get: bool = True
     graphiql_allowed_accept: frozenset[str] = frozenset({"text/html", "*/*"})
     graphql_ide: Optional[GraphQL_IDE] = "graphiql"
-    debug: bool = False
     connection_init_wait_timeout: timedelta = timedelta(minutes=1)
     protocols: Sequence[str] = (
         GRAPHQL_TRANSPORT_WS_PROTOCOL,
@@ -302,7 +263,9 @@ class GraphQLController(
         return Response(self.graphql_ide_html, media_type=MediaType.HTML)
 
     def create_response(
-        self, response_data: GraphQLHTTPResponse, sub_response: Response[bytes]
+        self,
+        response_data: Union[GraphQLHTTPResponse, list[GraphQLHTTPResponse]],
+        sub_response: Response[bytes],
     ) -> Response[bytes]:
         response = Response(
             self.encode_json(response_data).encode(),
@@ -406,7 +369,6 @@ def make_graphql_controller(
     allow_queries_via_get: bool = True,
     keep_alive: bool = False,
     keep_alive_interval: float = 1,
-    debug: bool = False,
     # TODO: root typevar
     root_value_getter: Optional[AnyCallable] = None,
     # TODO: context typevar
@@ -456,7 +418,6 @@ def make_graphql_controller(
 
     _GraphQLController.keep_alive = keep_alive
     _GraphQLController.keep_alive_interval = keep_alive_interval
-    _GraphQLController.debug = debug
     _GraphQLController.protocols = subscription_protocols
     _GraphQLController.connection_init_wait_timeout = connection_init_wait_timeout
     _GraphQLController.graphiql_allowed_accept = frozenset({"text/html", "*/*"})

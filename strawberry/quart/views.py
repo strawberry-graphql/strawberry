@@ -3,25 +3,24 @@ import warnings
 from collections.abc import AsyncGenerator, Mapping, Sequence
 from datetime import timedelta
 from json.decoder import JSONDecodeError
-from typing import TYPE_CHECKING, Callable, ClassVar, Optional, Union, cast
+from typing import TYPE_CHECKING, Callable, ClassVar, Optional, Union
 from typing_extensions import TypeGuard
+
+from lia import HTTPException, QuartHTTPRequestAdapter
 
 from quart import Request, Response, Websocket, request, websocket
 from quart.ctx import has_websocket_context
 from quart.views import View
 from strawberry.http.async_base_view import (
     AsyncBaseHTTPView,
-    AsyncHTTPRequestAdapter,
     AsyncWebSocketAdapter,
 )
 from strawberry.http.exceptions import (
-    HTTPException,
     NonJsonMessageReceived,
     NonTextMessageReceived,
     WebSocketDisconnected,
 )
 from strawberry.http.ides import GraphQL_IDE
-from strawberry.http.types import FormData, HTTPMethod, QueryParams
 from strawberry.http.typevars import Context, RootValue
 from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
 
@@ -29,35 +28,6 @@ if TYPE_CHECKING:
     from quart.typing import ResponseReturnValue
     from strawberry.http import GraphQLHTTPResponse
     from strawberry.schema.base import BaseSchema
-
-
-class QuartHTTPRequestAdapter(AsyncHTTPRequestAdapter):
-    def __init__(self, request: Request) -> None:
-        self.request = request
-
-    @property
-    def query_params(self) -> QueryParams:
-        return self.request.args.to_dict()
-
-    @property
-    def method(self) -> HTTPMethod:
-        return cast("HTTPMethod", self.request.method.upper())
-
-    @property
-    def content_type(self) -> Optional[str]:
-        return self.request.content_type
-
-    @property
-    def headers(self) -> Mapping[str, str]:
-        return self.request.headers  # type: ignore
-
-    async def get_body(self) -> str:
-        return (await self.request.data).decode()
-
-    async def get_form_data(self) -> FormData:
-        files = await self.request.files
-        form = await self.request.form
-        return FormData(files=files, form=form)
 
 
 class QuartWebSocketAdapter(AsyncWebSocketAdapter):
@@ -118,7 +88,6 @@ class GraphQLView(
         allow_queries_via_get: bool = True,
         keep_alive: bool = True,
         keep_alive_interval: float = 1,
-        debug: bool = False,
         subscription_protocols: Sequence[str] = (
             GRAPHQL_TRANSPORT_WS_PROTOCOL,
             GRAPHQL_WS_PROTOCOL,
@@ -130,7 +99,6 @@ class GraphQLView(
         self.allow_queries_via_get = allow_queries_via_get
         self.keep_alive = keep_alive
         self.keep_alive_interval = keep_alive_interval
-        self.debug = debug
         self.subscription_protocols = subscription_protocols
         self.connection_init_wait_timeout = connection_init_wait_timeout
         self.multipart_uploads_enabled = multipart_uploads_enabled
@@ -149,7 +117,9 @@ class GraphQLView(
         return Response(self.graphql_ide_html)
 
     def create_response(
-        self, response_data: "GraphQLHTTPResponse", sub_response: Response
+        self,
+        response_data: Union["GraphQLHTTPResponse", list["GraphQLHTTPResponse"]],
+        sub_response: Response,
     ) -> Response:
         sub_response.set_data(self.encode_json(response_data))
 

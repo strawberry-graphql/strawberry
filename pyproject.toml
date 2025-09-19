@@ -1,6 +1,6 @@
 [project]
 name = "strawberry-graphql"
-version = "0.276.0"
+version = "0.282.0"
 description = "A library for creating GraphQL APIs"
 authors = [{ name = "Patrick Arminio", email = "patrick.arminio@gmail.com" }]
 license = { text = "MIT" }
@@ -19,6 +19,7 @@ dependencies = [
   "typing-extensions>=4.13.0",
   "python-dateutil~=2.7",
   "packaging>=23",
+  "lia-web (>=0.2.1)",
 ]
 
 [project.urls]
@@ -332,6 +333,7 @@ ignore = [
   "Q002",
   "Q003",
   "W191",
+  "PLR0915",
 ]
 exclude = ["tests/python_312/*"] # SyntaxError because we support Python 3.9+
 

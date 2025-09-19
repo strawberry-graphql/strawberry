@@ -9,13 +9,15 @@ from typing_extensions import Literal
 from chalice.app import Chalice
 from chalice.app import Request as ChaliceRequest
 from chalice.test import Client
+from strawberry import Schema
 from strawberry.chalice.views import GraphQLView as BaseGraphQLView
 from strawberry.http import GraphQLHTTPResponse
 from strawberry.http.ides import GraphQL_IDE
 from strawberry.http.temporal_response import TemporalResponse
+from strawberry.schema.config import StrawberryConfig
 from strawberry.types import ExecutionResult
 from tests.http.context import get_context
-from tests.views.schema import Query, schema
+from tests.views.schema import Query
 
 from .base import JSON, HttpClient, Response, ResultOverrideFunction
 
@@ -46,11 +48,13 @@ class GraphQLView(BaseGraphQLView[dict[str, object], object]):
 class ChaliceHttpClient(HttpClient):
     def __init__(
         self,
+        schema: Schema,
         graphiql: Optional[bool] = None,
         graphql_ide: Optional[GraphQL_IDE] = "graphiql",
         allow_queries_via_get: bool = True,
         result_override: ResultOverrideFunction = None,
         multipart_uploads_enabled: bool = False,
+        schema_config: Optional[StrawberryConfig] = None,
     ):
         self.app = Chalice(app_name="TheStackBadger")
 
