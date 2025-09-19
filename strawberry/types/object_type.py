@@ -25,7 +25,6 @@ from strawberry.types.maybe import _annotation_is_maybe
 from strawberry.utils.deprecations import DEPRECATION_MESSAGES, DeprecatedDescriptor
 from strawberry.utils.str_converters import to_camel_case
 
-from ._dataclasses_field import StrawberryDataclassField
 from .base import StrawberryObjectDefinition
 from .field import StrawberryField, field
 from .type_resolver import _get_fields
@@ -134,17 +133,22 @@ def _inject_default_for_maybe_annotations(
             setattr(cls, name, None)
 
 
-def _convert_field_annotations_to_dataclass_fields(
-    cls: builtins.type[T], annotations: dict[str, Any]
+def _preprocess_type(
+    cls: T, original_type_annotations: dict[str, Any], is_input: bool
 ) -> None:
+    annotations = getattr(cls, "__annotations__", {})
+
     for field_name in annotations:
         field = getattr(cls, field_name, None)
 
         if field and isinstance(field, StrawberryField):
-            dataclass_field = StrawberryDataclassField.from_strawberry_field(field)
-            annotations[field_name] = dataclass_field.type
+            if field.type_annotation:
+                original_type_annotations[field_name] = field.type_annotation.annotation
 
-            setattr(cls, field_name, dataclass_field)
+            field = field.as_dataclass_field()
+
+    if is_input:
+        _inject_default_for_maybe_annotations(cls, annotations)
 
 
 def _process_type(
@@ -156,8 +160,20 @@ def _process_type(
     description: Optional[str] = None,
     directives: Optional[Sequence[object]] = (),
     extend: bool = False,
-    original_type_annotations: Optional[dict[str, Any]] = None,
 ) -> T:
+    # when running `_wrap_dataclass` we lose some of the information about the
+    # the passed types, especially the type_annotation inside the StrawberryField
+    # this makes it impossible to customise the field type, like this:
+    # >>> @strawberry.type
+    # >>> class Query:
+    # >>>     a: int = strawberry.field(graphql_type=str)
+    # so we need to extract the information before running `_wrap_dataclass`
+    original_type_annotations: dict[str, Any] = {}
+
+    _preprocess_type(cls, original_type_annotations, is_input)
+
+    cls = _wrap_dataclass(cls)
+
     name = name or to_camel_case(cls.__name__)
     original_type_annotations = original_type_annotations or {}
 
@@ -300,33 +316,14 @@ def type(
                 exc = ObjectIsNotClassError.type
             raise exc(cls)
 
-        # when running `_wrap_dataclass` we lose some of the information about the
-        # the passed types, especially the type_annotation inside the StrawberryField
-        # this makes it impossible to customise the field type, like this:
-        # >>> @strawberry.type
-        # >>> class Query:
-        # >>>     a: int = strawberry.field(graphql_type=str)
-        # so we need to extract the information before running `_wrap_dataclass`
-        original_type_annotations: dict[str, Any] = {}
-
-        annotations = getattr(cls, "__annotations__", {})
-
-        _convert_field_annotations_to_dataclass_fields(cls, annotations)
-
-        if is_input:
-            _inject_default_for_maybe_annotations(cls, annotations)
-
-        wrapped = _wrap_dataclass(cls)
-
         return _process_type(  # type: ignore
-            wrapped,
+            cls,
             name=name,
             is_input=is_input,
             is_interface=is_interface,
             description=description,
             directives=directives,
             extend=extend,
-            original_type_annotations=original_type_annotations,
         )
 
     if cls is None:
