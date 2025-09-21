@@ -96,29 +96,31 @@ type ComboQuery {
 
 ### `PartialType`
 
-`PartialType` metaclass is used to extend your type but makes its all field optional. Consider
-you have different types for each operation on the same model such as `UserCreate`, `UserUpdate`
-and `UserQuery`. `UserQuery` should have id field but the other does not. All fields of
-`UserQuery` and `UserUpdate` might be optional. In this case instead of defining the same field for
-each type one can define in a single type and extend it.
+`PartialType` metaclass is used to extend your type but makes its all field
+optional. Consider you have different types for each operation on the same model
+such as `UserCreate`, `UserUpdate` and `UserQuery`. `UserQuery` should have id
+field but the other does not. All fields of `UserQuery` and `UserUpdate` might
+be optional. In this case instead of defining the same field for each type one
+can define in a single type and extend it.
 
 ```py
 from strawberry.tools import PartialType
+
 
 @strawberry.type
 class UserCreate:
     firstname: str
     lastname: str
 
+
 @strawberry.type
 class UserUpdate(UserCreate, metaclass=PartialType):
     pass
 
+
 @strawberry.type
 class UserQuery(UserCreate, metaclass=PartialType):
     id: Optional[strawberry.ID]
-
 ```
-
 
 </CodeGrid>
