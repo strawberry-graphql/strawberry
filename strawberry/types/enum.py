@@ -151,7 +151,7 @@ def _process_enum(
         )
         values.append(value)
 
-    cls._enum_definition = StrawberryEnum(  # type: ignore
+    cls.__strawberry_definition__ = StrawberryEnum(  # type: ignore
         wrapped_cls=cls,
         name=name,
         values=values,

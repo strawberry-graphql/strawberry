@@ -215,9 +215,9 @@ class StrawberryAnnotation:
 
     def create_enum(self, evaled_type: Any) -> StrawberryEnum:
         try:
-            return evaled_type._enum_definition
+            return evaled_type.__strawberry_definition__
         except AttributeError:
-            return strawberry_enum(evaled_type)._enum_definition
+            return strawberry_enum(evaled_type).__strawberry_definition__
 
     def create_list(self, evaled_type: Any) -> StrawberryList:
         item_type, *_ = get_args(evaled_type)

@@ -162,7 +162,7 @@ def _is_leaf_type(
         return _is_leaf_type(type_.resolve_type(), scalar_registry)
 
     if hasattr(type_, "_enum_definition"):
-        enum_definition: StrawberryEnum = type_._enum_definition
+        enum_definition: StrawberryEnum = type_.__strawberry_definition__
         return _is_leaf_type(enum_definition, scalar_registry)
 
     return False
@@ -243,7 +243,7 @@ def convert_argument(
         return convert_argument(value, type_.resolve_type(), scalar_registry, config)
 
     if hasattr(type_, "_enum_definition"):
-        enum_definition: StrawberryEnum = type_._enum_definition
+        enum_definition: StrawberryEnum = type_.__strawberry_definition__
         return convert_argument(value, enum_definition, scalar_registry, config)
 
     if has_object_definition(type_):

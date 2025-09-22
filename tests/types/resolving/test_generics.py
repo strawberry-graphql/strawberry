@@ -115,7 +115,7 @@ def test_generic_with_enums():
 
     generic_slot_field: StrawberryField = resolved.__strawberry_definition__.fields[0]
     assert isinstance(generic_slot_field.type, StrawberryEnum)
-    assert generic_slot_field.type is VehicleMake._enum_definition
+    assert generic_slot_field.type is VehicleMake.__strawberry_definition__
 
 
 def test_cant_create_concrete_of_non_strawberry_object():

@@ -18,8 +18,8 @@ def test_enum():
         return Language.ENGLISH
 
     resolver = StrawberryResolver(get_spoken_language)
-    # TODO: Remove reference to ._enum_definition with StrawberryEnum
-    assert resolver.type is Language._enum_definition
+    # TODO: Remove reference to .__strawberry_definition__ with StrawberryEnum
+    assert resolver.type is Language.__strawberry_definition__
 
 
 def test_forward_references():

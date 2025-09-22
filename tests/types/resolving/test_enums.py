@@ -16,4 +16,4 @@ def test_basic():
     resolved = annotation.resolve()
 
     # TODO: Remove reference to .enum_definition with StrawberryEnum
-    assert resolved is NumaNuma._enum_definition
+    assert resolved is NumaNuma.__strawberry_definition__
