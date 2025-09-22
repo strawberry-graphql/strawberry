@@ -24,7 +24,7 @@ class EnumValue:
 
 
 @dataclasses.dataclass
-class EnumDefinition(StrawberryType):
+class StrawberryEnum(StrawberryType):
     wrapped_cls: EnumMeta
     name: str
     values: list[EnumValue]
@@ -151,7 +151,7 @@ def _process_enum(
         )
         values.append(value)
 
-    cls._enum_definition = EnumDefinition(  # type: ignore
+    cls._enum_definition = StrawberryEnum(  # type: ignore
         wrapped_cls=cls,
         name=name,
         values=values,
@@ -238,4 +238,4 @@ def enum(
     return wrap(cls)
 
 
-__all__ = ["EnumDefinition", "EnumValue", "EnumValueDefinition", "enum", "enum_value"]
+__all__ = ["StrawberryEnum", "EnumValue", "EnumValueDefinition", "enum", "enum_value"]

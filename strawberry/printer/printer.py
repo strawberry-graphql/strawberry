@@ -39,7 +39,7 @@ from strawberry.types.base import (
     StrawberryObjectDefinition,
     has_object_definition,
 )
-from strawberry.types.enum import EnumDefinition
+from strawberry.types.enum import StrawberryEnum
 from strawberry.types.scalar import ScalarWrapper
 from strawberry.types.unset import UNSET
 
@@ -183,7 +183,7 @@ def print_schema_directive(
             if hasattr(f_type, "_scalar_definition"):
                 extras.types.add(cast("type", f_type))
 
-            if isinstance(f_type, EnumDefinition):
+            if isinstance(f_type, StrawberryEnum):
                 extras.types.add(cast("type", f_type))
 
     return f" @{gql_directive.name}{params}"

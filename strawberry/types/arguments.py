@@ -21,7 +21,7 @@ from strawberry.types.base import (
     StrawberryOptional,
     has_object_definition,
 )
-from strawberry.types.enum import EnumDefinition
+from strawberry.types.enum import StrawberryEnum
 from strawberry.types.lazy_type import LazyType, StrawberryLazyReference
 from strawberry.types.maybe import Some
 from strawberry.types.unset import UNSET as _deprecated_UNSET  # noqa: N811
@@ -155,14 +155,14 @@ def _is_leaf_type(
     if is_scalar(type_, scalar_registry):
         return True
 
-    if isinstance(type_, EnumDefinition):
+    if isinstance(type_, StrawberryEnum):
         return True
 
     if isinstance(type_, LazyType):
         return _is_leaf_type(type_.resolve_type(), scalar_registry)
 
     if hasattr(type_, "_enum_definition"):
-        enum_definition: EnumDefinition = type_._enum_definition
+        enum_definition: StrawberryEnum = type_._enum_definition
         return _is_leaf_type(enum_definition, scalar_registry)
 
     return False
@@ -243,7 +243,7 @@ def convert_argument(
         return convert_argument(value, type_.resolve_type(), scalar_registry, config)
 
     if hasattr(type_, "_enum_definition"):
-        enum_definition: EnumDefinition = type_._enum_definition
+        enum_definition: StrawberryEnum = type_._enum_definition
         return convert_argument(value, enum_definition, scalar_registry, config)
 
     if has_object_definition(type_):

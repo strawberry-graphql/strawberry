@@ -11,7 +11,7 @@ from strawberry.types.base import (
     StrawberryOptional,
     has_object_definition,
 )
-from strawberry.types.enum import EnumDefinition, EnumValue
+from strawberry.types.enum import StrawberryEnum, EnumValue
 from strawberry.types.lazy_type import LazyType
 from strawberry.types.scalar import ScalarDefinition
 from strawberry.types.union import StrawberryUnion
@@ -45,7 +45,7 @@ class NameConverter:
     ) -> str:
         if isinstance(type_, (StrawberryDirective, StrawberrySchemaDirective)):
             return self.from_directive(type_)
-        if isinstance(type_, EnumDefinition):  # TODO: Replace with StrawberryEnum
+        if isinstance(type_, StrawberryEnum):  # TODO: Replace with StrawberryEnum
             return self.from_enum(type_)
         if isinstance(type_, StrawberryObjectDefinition):
             if type_.is_input:
@@ -78,10 +78,10 @@ class NameConverter:
     def from_interface(self, interface: StrawberryObjectDefinition) -> str:
         return self.from_object(interface)
 
-    def from_enum(self, enum: EnumDefinition) -> str:
+    def from_enum(self, enum: StrawberryEnum) -> str:
         return enum.name
 
-    def from_enum_value(self, enum: EnumDefinition, enum_value: EnumValue) -> str:
+    def from_enum_value(self, enum: StrawberryEnum, enum_value: EnumValue) -> str:
         return enum_value.name
 
     def from_directive(
@@ -152,7 +152,7 @@ class NameConverter:
         if isinstance(type_, LazyType):
             type_ = type_.resolve_type()
 
-        if isinstance(type_, EnumDefinition):
+        if isinstance(type_, StrawberryEnum):
             name = type_.name
         elif isinstance(type_, StrawberryUnion):
             name = type_.graphql_name if type_.graphql_name else self.from_union(type_)
