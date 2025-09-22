@@ -918,7 +918,7 @@ class Schema(BaseSchema):
         for concrete_type in self.schema_converter.type_map.values():
             type_def = concrete_type.definition
 
-            # This can be a TypeDefinition, EnumDefinition, ScalarDefinition
+            # This can be a TypeDefinition, StrawberryEnum, ScalarDefinition
             # or UnionDefinition
             if not isinstance(type_def, StrawberryObjectDefinition):
                 continue

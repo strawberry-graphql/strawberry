@@ -425,7 +425,7 @@ class StrawberryObjectDefinition(StrawberryType):
 
             # TODO: uniform type var map, at the moment we map object types
             # to their class (not to TypeDefinition) while we map enum to
-            # the EnumDefinition class. This is why we do this check here:
+            # the StrawberryEnum class. This is why we do this check here:
             if hasattr(real_concrete_type, "_enum_definition"):
                 real_concrete_type = real_concrete_type._enum_definition
 
