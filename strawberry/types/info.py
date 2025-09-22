@@ -77,10 +77,13 @@ class Info(Generic[ContextType, RootValueType]):
         See:
         https://discuss.python.org/t/passing-only-one-typevar-of-two-when-using-defaults/49134
         """
-        if not isinstance(types, tuple):
-            types = (types, Any)
-
-        return super().__class_getitem__(types)  # type: ignore
+        # Fast path: if types is already a tuple of length 2, avoid allocation/modification
+        if isinstance(types, tuple):
+            # Only coerce if it's a tuple of length 1 (for legacy compatibility); else, pass as-is
+            if len(types) == 1:
+                types = (types[0], Any)
+            return super().__class_getitem__(types)  # type: ignore
+        return super().__class_getitem__((types, Any))  # type: ignore
 
     @property
     def field_name(self) -> str:
