@@ -22,8 +22,9 @@ def test_base_context():
 
 
 def test_with_explicit_class_context_getter():
-    from fastapi import Depends, FastAPI
     from fastapi.testclient import TestClient
+
+    from fastapi import Depends, FastAPI
     from strawberry.fastapi import BaseContext, GraphQLRouter
 
     @strawberry.type
@@ -58,8 +59,9 @@ def test_with_explicit_class_context_getter():
 
 
 def test_with_implicit_class_context_getter():
-    from fastapi import Depends, FastAPI
     from fastapi.testclient import TestClient
+
+    from fastapi import Depends, FastAPI
     from strawberry.fastapi import BaseContext, GraphQLRouter
 
     @strawberry.type
@@ -92,8 +94,9 @@ def test_with_implicit_class_context_getter():
 
 
 def test_with_dict_context_getter():
-    from fastapi import Depends, FastAPI
     from fastapi.testclient import TestClient
+
+    from fastapi import Depends, FastAPI
     from strawberry.fastapi import GraphQLRouter
 
     @strawberry.type
@@ -124,8 +127,9 @@ def test_with_dict_context_getter():
 
 
 def test_without_context_getter():
-    from fastapi import FastAPI
     from fastapi.testclient import TestClient
+
+    from fastapi import FastAPI
     from strawberry.fastapi import GraphQLRouter
 
     @strawberry.type
@@ -149,8 +153,9 @@ def test_without_context_getter():
 
 
 def test_with_invalid_context_getter():
-    from fastapi import Depends, FastAPI
     from fastapi.testclient import TestClient
+
+    from fastapi import Depends, FastAPI
     from strawberry.fastapi import GraphQLRouter
 
     @strawberry.type
@@ -184,8 +189,9 @@ def test_with_invalid_context_getter():
 
 
 def test_class_context_injects_connection_params_over_transport_ws():
-    from fastapi import Depends, FastAPI
     from fastapi.testclient import TestClient
+
+    from fastapi import Depends, FastAPI
     from strawberry.fastapi import BaseContext, GraphQLRouter
 
     @strawberry.type
@@ -256,10 +262,10 @@ def test_class_context_injects_connection_params_over_transport_ws():
 
 
 def test_class_context_injects_connection_params_over_ws():
+    from fastapi.testclient import TestClient
     from starlette.websockets import WebSocketDisconnect
 
     from fastapi import Depends, FastAPI
-    from fastapi.testclient import TestClient
     from strawberry.fastapi import BaseContext, GraphQLRouter
 
     @strawberry.type
