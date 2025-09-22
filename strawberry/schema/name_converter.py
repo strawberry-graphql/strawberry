@@ -45,7 +45,7 @@ class NameConverter:
     ) -> str:
         if isinstance(type_, (StrawberryDirective, StrawberrySchemaDirective)):
             return self.from_directive(type_)
-        if isinstance(type_, StrawberryEnum):  # TODO: Replace with StrawberryEnum
+        if isinstance(type_, StrawberryEnum):
             return self.from_enum(type_)
         if isinstance(type_, StrawberryObjectDefinition):
             if type_.is_input:
