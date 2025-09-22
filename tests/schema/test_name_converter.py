@@ -9,7 +9,7 @@ from strawberry.schema.name_converter import NameConverter
 from strawberry.schema_directive import Location, StrawberrySchemaDirective
 from strawberry.types.arguments import StrawberryArgument
 from strawberry.types.base import StrawberryObjectDefinition, StrawberryType
-from strawberry.types.enum import StrawberryEnum, EnumValue
+from strawberry.types.enum import EnumValue, StrawberryEnum
 from strawberry.types.field import StrawberryField
 from strawberry.types.scalar import ScalarDefinition
 from strawberry.types.union import StrawberryUnion

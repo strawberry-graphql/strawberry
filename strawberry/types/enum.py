@@ -238,4 +238,4 @@ def enum(
     return wrap(cls)
 
 
-__all__ = ["StrawberryEnum", "EnumValue", "EnumValueDefinition", "enum", "enum_value"]
+__all__ = ["EnumValue", "EnumValueDefinition", "StrawberryEnum", "enum", "enum_value"]

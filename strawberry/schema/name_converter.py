@@ -11,7 +11,7 @@ from strawberry.types.base import (
     StrawberryOptional,
     has_object_definition,
 )
-from strawberry.types.enum import StrawberryEnum, EnumValue
+from strawberry.types.enum import EnumValue, StrawberryEnum
 from strawberry.types.lazy_type import LazyType
 from strawberry.types.scalar import ScalarDefinition
 from strawberry.types.union import StrawberryUnion
