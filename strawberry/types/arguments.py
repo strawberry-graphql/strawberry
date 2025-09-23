@@ -161,10 +161,6 @@ def _is_leaf_type(
     if isinstance(type_, LazyType):
         return _is_leaf_type(type_.resolve_type(), scalar_registry)
 
-    if hasattr(type_, "_enum_definition"):
-        enum_definition: StrawberryEnum = type_.__strawberry_definition__
-        return _is_leaf_type(enum_definition, scalar_registry)
-
     return False
 
 
@@ -242,7 +238,9 @@ def convert_argument(
     if isinstance(type_, LazyType):
         return convert_argument(value, type_.resolve_type(), scalar_registry, config)
 
-    if hasattr(type_, "_enum_definition"):
+    if hasattr(type_, "__strawberry_definition__") and isinstance(
+        type_.__strawberry_definition__, StrawberryEnum
+    ):
         enum_definition: StrawberryEnum = type_.__strawberry_definition__
         return convert_argument(value, enum_definition, scalar_registry, config)
 

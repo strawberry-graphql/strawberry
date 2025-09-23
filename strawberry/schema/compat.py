@@ -5,6 +5,8 @@ from typing import TYPE_CHECKING, Union
 from strawberry.scalars import is_scalar as is_strawberry_scalar
 from strawberry.types.base import StrawberryType, has_object_definition
 
+from strawberry.types.enum import StrawberryEnum
+
 # TypeGuard is only available in typing_extensions => 3.10, we don't want
 # to force updates to the typing_extensions package so we only use it when
 # TYPE_CHECKING is enabled.
@@ -36,7 +38,10 @@ def is_scalar(
 
 
 def is_enum(type_: Union[StrawberryType, type]) -> TypeGuard[type]:
-    return hasattr(type_, "_enum_definition")
+    if hasattr(type_, "__strawberry_definition__"):
+        return isinstance(type_.__strawberry_definition__, StrawberryEnum)
+
+    return False
 
 
 def is_schema_directive(type_: Union[StrawberryType, type]) -> TypeGuard[type]:
