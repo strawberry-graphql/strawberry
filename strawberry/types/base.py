@@ -427,6 +427,15 @@ class StrawberryObjectDefinition(StrawberryType):
             # to their class (not to TypeDefinition) while we map enum to
             # the StrawberryEnum class. This is why we do this check here:
 
+            if hasattr(real_concrete_type, "__strawberry_definition__"):
+                from strawberry.types.enum import StrawberryEnum
+
+                if isinstance(
+                    real_concrete_type.__strawberry_definition__, StrawberryEnum
+                ):
+
+                    real_concrete_type = real_concrete_type.__strawberry_definition__
+
             if (
                 isinstance(expected_concrete_type, type)
                 and isinstance(real_concrete_type, type)
