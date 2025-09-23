@@ -4,7 +4,6 @@ from typing import TYPE_CHECKING, Union
 
 from strawberry.scalars import is_scalar as is_strawberry_scalar
 from strawberry.types.base import StrawberryType, has_object_definition
-
 from strawberry.types.enum import StrawberryEnum
 
 # TypeGuard is only available in typing_extensions => 3.10, we don't want
