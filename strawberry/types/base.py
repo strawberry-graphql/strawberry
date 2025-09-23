@@ -433,7 +433,6 @@ class StrawberryObjectDefinition(StrawberryType):
                 if isinstance(
                     real_concrete_type.__strawberry_definition__, StrawberryEnum
                 ):
-
                     real_concrete_type = real_concrete_type.__strawberry_definition__
 
             if (
