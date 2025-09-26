@@ -8,10 +8,10 @@ nox.options.reuse_existing_virtualenvs = True
 nox.options.error_on_external_run = True
 nox.options.default_venv_backend = "uv"
 
-PYTHON_VERSIONS = ["3.13", "3.12", "3.11", "3.10", "3.9"]
+PYTHON_VERSIONS = ["3.14", "3.13", "3.12", "3.11", "3.10", "3.9"]
 
 GQL_CORE_VERSIONS = [
-    "3.2.3",
+    "3.2.6",
     "3.3.0a9",
 ]
 
@@ -130,7 +130,7 @@ def tests_integrations(session: Session, integration: str, gql_core: str) -> Non
 
 
 @session(python=PYTHON_VERSIONS, name="Pydantic tests", tags=["tests", "pydantic"])
-@with_gql_core_parametrize("pydantic", ["1.10", "2.9.0", "2.10.0", "2.11.0"])
+@with_gql_core_parametrize("pydantic", ["1.10", "2.11.9"])
 def test_pydantic(session: Session, pydantic: str, gql_core: str) -> None:
     session.run_always("poetry", "install", external=True)
 

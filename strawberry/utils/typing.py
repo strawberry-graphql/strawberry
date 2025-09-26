@@ -110,9 +110,8 @@ def get_optional_annotation(annotation: type) -> type:
 
     # if we have multiple non none types we want to return a copy of this
     # type (normally a Union type).
-
     if len(non_none_types) > 1:
-        return annotation.copy_with(non_none_types)  # type: ignore[attr-defined]
+        return Union[non_none_types]  # type: ignore
 
     return non_none_types[0]
 
@@ -130,10 +129,7 @@ def is_concrete_generic(annotation: type) -> bool:
 
 
 def is_generic_subclass(annotation: type) -> bool:
-    return isinstance(annotation, type) and issubclass(
-        annotation,
-        Generic,  # type:ignore
-    )
+    return isinstance(annotation, type) and issubclass(annotation, Generic)
 
 
 def is_generic(annotation: type) -> bool:
@@ -182,7 +178,7 @@ def type_has_annotation(type_: object, annotation: type) -> bool:
 def get_parameters(annotation: type) -> Union[tuple[object], tuple[()]]:
     if isinstance(annotation, _GenericAlias) or (
         isinstance(annotation, type)
-        and issubclass(annotation, Generic)  # type:ignore
+        and issubclass(annotation, Generic)
         and annotation is not Generic
     ):
         return annotation.__parameters__  # type: ignore[union-attr]

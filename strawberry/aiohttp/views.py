@@ -87,7 +87,7 @@ class GraphQLView(
 
     allow_queries_via_get = True
     request_adapter_class = AiohttpHTTPRequestAdapter
-    websocket_adapter_class = AiohttpWebSocketAdapter
+    websocket_adapter_class = AiohttpWebSocketAdapter  # type: ignore
 
     def __init__(
         self,

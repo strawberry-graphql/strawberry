@@ -102,7 +102,7 @@ class GraphQLWSConsumer(
     ```
     """
 
-    websocket_adapter_class = ChannelsWebSocketAdapter
+    websocket_adapter_class = ChannelsWebSocketAdapter  # type: ignore
 
     def __init__(
         self,

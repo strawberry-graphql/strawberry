@@ -62,7 +62,7 @@ class GraphQLRouter(
 ):
     allow_queries_via_get = True
     request_adapter_class = StarletteRequestAdapter
-    websocket_adapter_class = ASGIWebSocketAdapter
+    websocket_adapter_class = ASGIWebSocketAdapter  # type: ignore
 
     @staticmethod
     async def __get_root_value() -> None:

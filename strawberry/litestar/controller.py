@@ -208,7 +208,7 @@ class GraphQLController(
     }
 
     request_adapter_class = LitestarRequestAdapter
-    websocket_adapter_class = LitestarWebSocketAdapter
+    websocket_adapter_class = LitestarWebSocketAdapter  # type: ignore
 
     allow_queries_via_get: bool = True
     graphiql_allowed_accept: frozenset[str] = frozenset({"text/html", "*/*"})

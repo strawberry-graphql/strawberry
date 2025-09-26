@@ -98,6 +98,10 @@ class StrawberryField(dataclasses.Field):
         if sys.version_info >= (3, 10):
             kwargs["kw_only"] = dataclasses.MISSING
 
+        # doc was added to python 3.14 and it is required
+        if sys.version_info >= (3, 14):
+            kwargs["doc"] = None
+
         super().__init__(
             default=default,
             default_factory=default_factory,  # type: ignore
@@ -292,7 +296,7 @@ class StrawberryField(dataclasses.Field):
         #       removed.
         _ = resolver.arguments
 
-    @property  # type: ignore
+    @property
     def type(
         self,
     ) -> Union[  # type: ignore [valid-type]
