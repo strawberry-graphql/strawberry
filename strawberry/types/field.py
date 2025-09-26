@@ -68,7 +68,7 @@ def _is_generic(resolver_type: Union[StrawberryType, type]) -> bool:
     return False
 
 
-class StrawberryField(dataclasses.Field):
+class StrawberryField:
     type_annotation: Optional[StrawberryAnnotation]
     default_resolver: Callable[[Any, str], object] = getattr
 
@@ -89,27 +89,11 @@ class StrawberryField(dataclasses.Field):
         directives: Sequence[object] = (),
         extensions: list[FieldExtension] = (),  # type: ignore
     ) -> None:
-        # basic fields are fields with no provided resolver
-        is_basic_field = not base_resolver
-
-        kwargs: Any = {}
-
-        # kw_only was added to python 3.10 and it is required
-        if sys.version_info >= (3, 10):
-            kwargs["kw_only"] = dataclasses.MISSING
-
-        super().__init__(
-            default=default,
-            default_factory=default_factory,  # type: ignore
-            init=is_basic_field,
-            repr=is_basic_field,
-            compare=is_basic_field,
-            hash=None,
-            metadata=metadata or {},
-            **kwargs,
-        )
-
+        self.default = default
+        self.default_factory = default_factory
         self.graphql_name = graphql_name
+        self.metadata = metadata
+
         if python_name is not None:
             self.python_name = python_name
 
@@ -154,6 +138,27 @@ class StrawberryField(dataclasses.Field):
                 PermissionExtension(permission_instances, use_directives=False)
             )
         self.deprecation_reason = deprecation_reason
+
+    def as_dataclass_field(self) -> dataclasses.Field:
+        # basic fields are fields with no provided resolver
+        is_basic_field = not self.base_resolver
+
+        kwargs: Any = {}
+
+        # kw_only was added to python 3.10 and it is required
+        if sys.version_info >= (3, 10):
+            kwargs["kw_only"] = dataclasses.MISSING
+
+        return dataclasses.field(
+            default=self.default,
+            default_factory=self.default_factory,  # type: ignore
+            init=is_basic_field,
+            repr=is_basic_field,
+            compare=is_basic_field,
+            hash=None,
+            metadata=self.metadata or {},
+            **kwargs,
+        )
 
     def __copy__(self) -> Self:
         new_field = type(self)(
