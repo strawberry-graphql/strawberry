@@ -129,8 +129,15 @@ def _inject_default_for_maybe_annotations(
 ) -> None:
     """Inject `= None` for fields with `Maybe` annotations and no default value."""
     for name, annotation in annotations.copy().items():
-        if _annotation_is_maybe(annotation) and not hasattr(cls, name):
-            setattr(cls, name, None)
+        if _annotation_is_maybe(annotation):
+            if not hasattr(cls, name):
+                setattr(cls, name, None)
+            elif (
+                isinstance(attr := getattr(cls, name), StrawberryField)
+                and isinstance(attr.default, dataclasses._MISSING_TYPE)
+                and isinstance(attr.default_factory, dataclasses._MISSING_TYPE)
+            ):
+                attr.default = None
 
 
 def _process_type(
