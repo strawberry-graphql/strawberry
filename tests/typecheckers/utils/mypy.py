@@ -62,6 +62,10 @@ def run_mypy(code: str, strict: bool = True) -> list[Result]:
         )
         full_output = full_output.strip()
 
+        if not full_output:
+            assert process_result.returncode == 0
+            return []
+
         results: list[Result] = []
 
         try:
