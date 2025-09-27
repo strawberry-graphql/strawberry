@@ -204,7 +204,7 @@ def field(
     # This init parameter is used by PyRight to determine whether this field
     # is added in the constructor or not. It is not used to change
     # any behavior at the moment.
-    init: Literal[True, False, None] = None,
+    init: Optional[Literal[True, False]] = None,
 ) -> Any:
     from .schema_directives import (
         Authenticated,
