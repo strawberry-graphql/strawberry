@@ -78,13 +78,12 @@ class BaseView(Generic[Request]):
     def _is_multipart_subscriptions(
         self, content_type: str, params: dict[str, str]
     ) -> bool:
-        if content_type != "multipart/mixed":
-            return False
-
-        if params.get("boundary") != "graphql":
-            return False
-
-        return params.get("subscriptionspec", "").startswith("1.0")
+        subscription_spec = params.get("subscriptionspec", "").strip("'\"")
+        return (
+            content_type == "multipart/mixed"
+            and ("boundary" not in params or params["boundary"] == "graphql")
+            and subscription_spec.startswith("1.0")
+        )
 
     def _validate_batch_request(
         self, request_data: list[GraphQLRequestData], protocol: str
