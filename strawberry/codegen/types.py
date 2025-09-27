@@ -45,6 +45,7 @@ class GraphQLObjectType:
     name: str
     fields: list[GraphQLField] = field(default_factory=list)
     graphql_typename: Optional[str] = None
+    is_one_of: bool = False
 
 
 # Subtype of GraphQLObjectType.

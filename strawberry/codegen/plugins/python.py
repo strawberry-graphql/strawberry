@@ -109,16 +109,25 @@ class PythonPlugin(QueryCodegenPlugin):
 
         return type_.name
 
-    def _print_field(self, field: GraphQLField) -> str:
+    def _print_field(self, field: GraphQLField, as_oneof_member: bool = False) -> str:
+        # `as_oneof_member` makes the field non optional
+        # We're doing this because we're expressing oneOf via union instead
+
         name = field.name
 
         if field.alias:
             name = f"# alias for {field.name}\n{field.alias}"
 
         default_value = ""
-        if field.default_value is not None:
+        if field.default_value is not None and not as_oneof_member:
             default_value = f" = {self._print_argument_value(field.default_value)}"
-        return f"{name}: {self._get_type_name(field.type)}{default_value}"
+
+        if as_oneof_member and isinstance(field.type, GraphQLOptional):
+            type_ = field.type.of_type
+        else:
+            type_ = field.type
+
+        return f"{name}: {self._get_type_name(type_)}{default_value}"
 
     def _print_argument_value(self, argval: GraphQLArgumentValue) -> str:
         if hasattr(argval, "values"):
@@ -173,6 +182,37 @@ class PythonPlugin(QueryCodegenPlugin):
 
         return "\n".join(lines)
 
+    def _get_oneof_class_name(
+        self, parent_type: GraphQLObjectType, member_field: GraphQLField
+    ) -> str:
+        # Name the classes using the parent name and field name
+        # Example.option => ExampleOption
+        return f"{parent_type.name}{member_field.name.title()}"
+
+    def _print_oneof_object_type(self, type_: GraphQLObjectType) -> str:
+        self.imports["typing"].add("Union")
+
+        fields = [field for field in type_.fields if field.name != "__typename"]
+
+        indent = 4 * " "
+
+        lines = []
+        for field in fields:
+            # Add a one-field class for each oneOf member
+            lines.append(f"class {self._get_oneof_class_name(type_, field)}:")
+            lines.append(
+                textwrap.indent(self._print_field(field, as_oneof_member=True), indent)
+            )
+            lines.append("")
+
+        # Create a union of the classes we just created
+        type_list = ", ".join(
+            [self._get_oneof_class_name(type_, field) for field in fields]
+        )
+        lines.append(f"{type_.name} = Union[{type_list}]")
+
+        return "\n".join(lines)
+
     def _print_enum_type(self, type_: GraphQLEnum) -> str:
         values = "\n".join(self._print_enum_value(value) for value in type_.values)
 
@@ -201,7 +241,10 @@ class PythonPlugin(QueryCodegenPlugin):
             return self._print_union_type(type_)
 
         if isinstance(type_, GraphQLObjectType):
-            return self._print_object_type(type_)
+            if type_.is_one_of:
+                return self._print_oneof_object_type(type_)
+            else:
+                return self._print_object_type(type_)
 
         if isinstance(type_, GraphQLEnum):
             return self._print_enum_type(type_)
