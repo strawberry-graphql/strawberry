@@ -8,6 +8,7 @@ from typing import (
     Any,
     Callable,
     Optional,
+    TypeVar,
     cast,
 )
 
@@ -20,7 +21,10 @@ from strawberry.experimental.pydantic.conversion import (
     convert_pydantic_model_to_strawberry_class,
     convert_strawberry_class_to_pydantic_model,
 )
-from strawberry.experimental.pydantic.exceptions import MissingFieldsListError
+from strawberry.experimental.pydantic.exceptions import (
+    JsonSchemaDirectiveNotRegistered,
+    MissingFieldsListError,
+)
 from strawberry.experimental.pydantic.fields import replace_types_recursively
 from strawberry.experimental.pydantic.utils import (
     DataclassCreationFields,
@@ -33,6 +37,7 @@ from strawberry.types.cast import get_strawberry_type_cast
 from strawberry.types.field import StrawberryField
 from strawberry.types.object_type import _process_type, _wrap_dataclass
 from strawberry.types.type_resolver import _get_fields
+from strawberry.utils.str_converters import to_snake_case
 
 if TYPE_CHECKING:
     import builtins
@@ -62,6 +67,8 @@ def _build_dataclass_creation_fields(
     auto_fields_set: set[str],
     use_pydantic_alias: bool,
     compat: PydanticCompat,
+    json_schema: dict[str, Any],
+    json_schema_directive: Optional[builtins.type] = None,
 ) -> DataclassCreationFields:
     field_type = (
         get_type_for_field(field, is_input, compat=compat)
@@ -84,6 +91,21 @@ def _build_dataclass_creation_fields(
         elif field.has_alias and use_pydantic_alias:
             graphql_name = field.alias
 
+        directives = existing_field.directives if existing_field else ()
+        if (
+            json_schema_directive
+            and json_schema
+            and (
+                json_directive := _generate_json_directive(
+                    json_schema, json_schema_directive
+                )
+            )
+        ):
+            directives = (
+                *directives,
+                json_directive,
+            )
+
         strawberry_field = StrawberryField(
             python_name=field.name,
             graphql_name=graphql_name,
@@ -98,7 +120,7 @@ def _build_dataclass_creation_fields(
             permission_classes=(
                 existing_field.permission_classes if existing_field else []
             ),
-            directives=existing_field.directives if existing_field else (),
+            directives=directives,
             metadata=existing_field.metadata if existing_field else {},
         )
 
@@ -107,6 +129,26 @@ def _build_dataclass_creation_fields(
         field_type=field_type,  # type: ignore
         field=strawberry_field,
     )
+
+
+T = TypeVar("T")
+
+
+def _generate_json_directive(
+    json_schema: dict[str, Any], json_schema_directive: builtins.type[T]
+) -> Optional[T]:
+    if not dataclasses.is_dataclass(json_schema_directive):
+        raise JsonSchemaDirectiveNotRegistered(json_schema_directive)
+
+    field_names = {field.name for field in dataclasses.fields(json_schema_directive)}
+
+    if applicable_values := {
+        to_snake_case(key): value
+        for key, value in json_schema.items()
+        if to_snake_case(key) in field_names
+    }:
+        return json_schema_directive(**applicable_values)
+    return None
 
 
 if TYPE_CHECKING:
@@ -128,6 +170,7 @@ def type(
     all_fields: bool = False,
     include_computed: bool = False,
     use_pydantic_alias: bool = True,
+    json_schema_directive: Optional[Any] = None,
 ) -> Callable[..., builtins.type[StrawberryTypeFromPydantic[PydanticModel]]]:
     def wrap(cls: Any) -> builtins.type[StrawberryTypeFromPydantic[PydanticModel]]:
         compat = PydanticCompat.from_model(model)
@@ -184,6 +227,11 @@ def type(
         private_fields = get_private_fields(wrapped)
 
         extra_fields_dict = {field.name: field for field in extra_strawberry_fields}
+        fields_json_schema = (
+            compat.get_model_json_schema(model).get("properties", {})
+            if json_schema_directive
+            else {}
+        )
 
         all_model_fields: list[DataclassCreationFields] = [
             _build_dataclass_creation_fields(
@@ -193,6 +241,8 @@ def type(
                 auto_fields_set,
                 use_pydantic_alias,
                 compat=compat,
+                json_schema_directive=json_schema_directive,
+                json_schema=fields_json_schema.get(field.name, {}),
             )
             for field_name, field in model_fields.items()
             if field_name in fields_set
@@ -250,10 +300,12 @@ def type(
         else:
             kwargs["init"] = False
 
+        bases = cls.__orig_bases__ if hasattr(cls, "__orig_bases__") else cls.__bases__
+
         cls = dataclasses.make_dataclass(
             cls.__name__,
             [field.to_tuple() for field in all_model_fields],
-            bases=cls.__bases__,
+            bases=bases,
             namespace=namespace,
             **kwargs,  # type: ignore
         )
@@ -317,6 +369,7 @@ def input(
     directives: Optional[Sequence[object]] = (),
     all_fields: bool = False,
     use_pydantic_alias: bool = True,
+    json_schema_directive: Optional[builtins.type] = None,
 ) -> Callable[..., builtins.type[StrawberryTypeFromPydantic[PydanticModel]]]:
     """Convenience decorator for creating an input type from a Pydantic model.
 
@@ -334,6 +387,7 @@ def input(
         directives=directives,
         all_fields=all_fields,
         use_pydantic_alias=use_pydantic_alias,
+        json_schema_directive=json_schema_directive,
     )
 
 
