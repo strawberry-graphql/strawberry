@@ -6,6 +6,7 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
+    cast,
     ClassVar,
     Optional,
     TypeVar,
@@ -433,8 +434,7 @@ class StrawberryObjectDefinition(StrawberryType):
                 if isinstance(
                     real_concrete_type.__strawberry_definition__, StrawberryEnum
                 ):
-
-                    real_concrete_type = real_concrete_type.__strawberry_definition__
+                    real_concrete_type = cast("Any", real_concrete_type.__strawberry_definition__)
 
             if (
                 isinstance(expected_concrete_type, type)
