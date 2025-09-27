@@ -143,6 +143,30 @@ def test_auto_fields_other_sentinel():
     assert field3.type is OtherSentinel
 
 
+def test_basic_type_with_internal_method():
+    class User(pydantic.BaseModel):
+        age: int
+        password: Optional[str]
+
+    @strawberry.experimental.pydantic.type(User)
+    class UserType:
+        age: strawberry.auto
+        password: strawberry.auto
+
+        @strawberry.field
+        def password_hash(self) -> int:
+            return self.perform_hash(self.password)
+
+        def perform_hash(self, data: str) -> int:
+            return hash(data)
+
+    definition: StrawberryObjectDefinition = UserType.__strawberry_definition__
+    assert definition.name == "UserType"
+
+    assert len(definition.fields) == 3
+    assert hasattr(UserType, "perform_hash")
+
+
 def test_referencing_other_models_fails_when_not_registered():
     class Group(pydantic.BaseModel):
         name: str
