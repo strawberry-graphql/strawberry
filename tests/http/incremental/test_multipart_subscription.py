@@ -15,7 +15,7 @@ def http_client(http_client_class: type[HttpClient]) -> HttpClient:
     with contextlib.suppress(ImportError):
         import django
 
-        if django.VERSION < (4, 2):
+        if django.get_version() < "4.2":
             pytest.skip(reason="Django < 4.2 doesn't async streaming responses")
 
         from tests.http.clients.django import DjangoHttpClient
