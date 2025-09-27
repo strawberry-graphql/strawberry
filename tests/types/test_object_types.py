@@ -23,8 +23,8 @@ def test_enum():
 
     field: StrawberryField = get_object_definition(Animal).fields[0]
 
-    # TODO: Remove reference to ._enum_definition with StrawberryEnum
-    assert field.type is Count._enum_definition
+    # TODO: Remove reference to .__strawberry_definition__ with StrawberryEnum
+    assert field.type is Count.__strawberry_definition__
 
 
 def test_forward_reference():
