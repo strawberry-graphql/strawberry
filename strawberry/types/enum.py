@@ -8,6 +8,7 @@ from typing import (
     TypeVar,
     Union,
     overload,
+    TYPE_CHECKING
 )
 
 from strawberry.exceptions import ObjectIsNotAnEnumError
@@ -246,9 +247,8 @@ def enum(
     return wrap(cls)
 
 
-# TODO: remove when deprecating _enum_definition
-from typing import TYPE_CHECKING
 
+# TODO: remove when deprecating _enum_definition
 if TYPE_CHECKING:
     from typing_extensions import deprecated
 
