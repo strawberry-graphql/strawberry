@@ -10,15 +10,15 @@ from strawberry.dataloader import DataLoader
 try:
     import django
 
-    DJANGO_VERSION: str = django.get_version()
+    DJANGO_VERSION: tuple[int, int, int] = django.VERSION
 except ImportError:
-    DJANGO_VERSION = "0.0.0"
+    DJANGO_VERSION = (0, 0, 0)
 
 
 pytestmark = [
     pytest.mark.asyncio,
     pytest.mark.skipif(
-        DJANGO_VERSION < "3.1",
+        DJANGO_VERSION < (3, 1),
         reason="Async views are only supported in Django >= 3.1",
     ),
 ]

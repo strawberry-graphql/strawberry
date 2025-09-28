@@ -13,7 +13,7 @@ def incremental_http_client_class(
     with contextlib.suppress(ImportError):
         import django
 
-        if tuple(map(int, django.get_version().split(".")[:2])) < (4, 2):
+        if django.VERSION < (4, 2):
             pytest.skip(reason="Django < 4.2 doesn't async streaming responses")
 
         from tests.http.clients.django import DjangoHttpClient
