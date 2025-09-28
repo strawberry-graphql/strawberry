@@ -249,7 +249,6 @@ def enum(
 # TODO: remove when deprecating _enum_definition
 from typing import TYPE_CHECKING
 
-
 if TYPE_CHECKING:
 
     @deprecated("Use StrawberryEnum instead")
@@ -260,10 +259,10 @@ else:
 
 
 __all__ = [
+    "EnumDefinition",
     "EnumValue",
     "EnumValueDefinition",
     "StrawberryEnum",
-    "EnumDefinition",
     "enum",
     "enum_value",
 ]
