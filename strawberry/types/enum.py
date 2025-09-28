@@ -1,15 +1,7 @@
 import dataclasses
 from collections.abc import Iterable, Mapping
 from enum import EnumMeta
-from typing import (
-    Any,
-    Callable,
-    Optional,
-    TypeVar,
-    Union,
-    overload,
-    TYPE_CHECKING
-)
+from typing import TYPE_CHECKING, Any, Callable, Optional, TypeVar, Union, overload
 
 from strawberry.exceptions import ObjectIsNotAnEnumError
 from strawberry.types.base import StrawberryType
@@ -245,7 +237,6 @@ def enum(
         return wrap
 
     return wrap(cls)
-
 
 
 # TODO: remove when deprecating _enum_definition
