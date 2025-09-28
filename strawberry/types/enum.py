@@ -250,6 +250,7 @@ def enum(
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
+    from typing_extensions import deprecated
 
     @deprecated("Use StrawberryEnum instead")
     class EnumDefinition(StrawberryEnum): ...
