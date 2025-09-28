@@ -4,14 +4,23 @@ import strawberry
 from strawberry.utils.deprecations import DEPRECATION_MESSAGES
 
 
+from enum import Enum
+
 @strawberry.type
 class A:
     a: int
 
 
+@strawberry.enum
+class Color(Enum):
+    RED = "red"
+    GREEN = "green"
+    BLUE = "blue"
+
+
 def test_type_definition_is_aliased():
     with pytest.warns(
-        match="_type_definition is deprecated, use __strawberry_definition__ instead"
+        match=DEPRECATION_MESSAGES._TYPE_DEFINITION
     ):
         assert A.__strawberry_definition__ is A._type_definition
 
@@ -22,6 +31,26 @@ def test_get_warns():
 
 
 def test_can_import_type_definition():
-    from strawberry.types.base import TypeDefinition
+    from strawberry.types.base import TypeDefinition, StrawberryObjectDefinition
 
     assert TypeDefinition
+    assert TypeDefinition is StrawberryObjectDefinition
+
+
+def test_enum_definition_is_aliased():
+    with pytest.warns(
+        match=DEPRECATION_MESSAGES._ENUM_DEFINITION
+    ):
+        assert Color.__strawberry_definition__ is Color._enum_definition
+
+
+def test_enum_get_warns():
+    with pytest.warns(match=DEPRECATION_MESSAGES._ENUM_DEFINITION):
+        assert Color._enum_definition.name == "Color"
+
+
+def test_can_import_enum_definition():
+    from strawberry.types.enum import EnumDefinition, StrawberryEnum
+
+    assert EnumDefinition
+    assert EnumDefinition is StrawberryEnum

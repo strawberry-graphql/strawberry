@@ -8,6 +8,9 @@ class DEPRECATION_MESSAGES:  # noqa: N801
     _TYPE_DEFINITION = (
         "_type_definition is deprecated, use __strawberry_definition__ instead"
     )
+    _ENUM_DEFINITION = (
+        "_enum_definition is deprecated, use __strawberry_definition__ instead"
+    )
 
 
 class DeprecatedDescriptor:

@@ -12,6 +12,7 @@ from typing import (
 
 from strawberry.exceptions import ObjectIsNotAnEnumError
 from strawberry.types.base import StrawberryType
+from strawberry.utils.deprecations import DEPRECATION_MESSAGES, DeprecatedDescriptor
 
 
 @dataclasses.dataclass
@@ -159,6 +160,13 @@ def _process_enum(
         directives=directives,
     )
 
+    # TODO: remove when deprecating _enum_definition
+    DeprecatedDescriptor(
+        DEPRECATION_MESSAGES._ENUM_DEFINITION,
+        cls.__strawberry_definition__,  # type: ignore[attr-defined]
+        "_enum_definition",
+    ).inject(cls)
+
     return cls
 
 
@@ -238,4 +246,24 @@ def enum(
     return wrap(cls)
 
 
-__all__ = ["EnumValue", "EnumValueDefinition", "StrawberryEnum", "enum", "enum_value"]
+# TODO: remove when deprecating _enum_definition
+from typing import TYPE_CHECKING
+
+
+if TYPE_CHECKING:
+
+    @deprecated("Use StrawberryEnum instead")
+    class EnumDefinition(StrawberryEnum): ...
+
+else:
+    EnumDefinition = StrawberryEnum
+
+
+__all__ = [
+    "EnumValue",
+    "EnumValueDefinition",
+    "StrawberryEnum",
+    "EnumDefinition",
+    "enum",
+    "enum_value",
+]
