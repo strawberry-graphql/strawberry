@@ -3,8 +3,9 @@ import strawberry
 
 # TODO: move this to common tests
 def test_set_custom_http_response_status():
-    from litestar import Litestar
     from litestar.testing import TestClient
+
+    from litestar import Litestar
     from strawberry.litestar import make_graphql_controller
 
     @strawberry.type
@@ -26,8 +27,9 @@ def test_set_custom_http_response_status():
 
 
 def test_set_without_setting_http_response_status():
-    from litestar import Litestar
     from litestar.testing import TestClient
+
+    from litestar import Litestar
     from strawberry.litestar import make_graphql_controller
 
     @strawberry.type

@@ -9,9 +9,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Optional
 
-from django.urls import re_path
-
 from channels.routing import ProtocolTypeRouter, URLRouter
+from django.urls import re_path
 
 from .handlers.http_handler import GraphQLHTTPConsumer
 from .handlers.ws_handler import GraphQLWSConsumer
