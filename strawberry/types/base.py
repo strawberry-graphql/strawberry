@@ -422,21 +422,19 @@ class StrawberryObjectDefinition(StrawberryType):
                 continue
 
             # Check if the expected type matches the type found on the type_map
-            real_concrete_type = type(value)
+            from strawberry.types.enum import StrawberryEnum
+            real_concrete_type: type | StrawberryEnum = type(value)
 
             # TODO: uniform type var map, at the moment we map object types
             # to their class (not to TypeDefinition) while we map enum to
             # the StrawberryEnum class. This is why we do this check here:
 
             if hasattr(real_concrete_type, "__strawberry_definition__"):
-                from strawberry.types.enum import StrawberryEnum
 
                 if isinstance(
                     real_concrete_type.__strawberry_definition__, StrawberryEnum
                 ):
-                    real_concrete_type = cast(
-                        "Any", real_concrete_type.__strawberry_definition__
-                    )
+                    real_concrete_type = real_concrete_type.__strawberry_definition__
 
             if (
                 isinstance(expected_concrete_type, type)
