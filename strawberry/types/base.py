@@ -430,9 +430,9 @@ class StrawberryObjectDefinition(StrawberryType):
             # the StrawberryEnum class. This is why we do this check here:
 
             if hasattr(real_concrete_type, "__strawberry_definition__") and isinstance(
-                    real_concrete_type.__strawberry_definition__, StrawberryEnum
-                ):
-                    real_concrete_type = real_concrete_type.__strawberry_definition__
+                real_concrete_type.__strawberry_definition__, StrawberryEnum
+            ):
+                real_concrete_type = real_concrete_type.__strawberry_definition__
 
             if (
                 isinstance(expected_concrete_type, type)
