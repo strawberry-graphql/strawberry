@@ -10,7 +10,6 @@ from typing import (
     Optional,
     TypeVar,
     Union,
-    cast,
     overload,
 )
 from typing_extensions import Literal, Protocol, Self, deprecated
@@ -423,6 +422,7 @@ class StrawberryObjectDefinition(StrawberryType):
 
             # Check if the expected type matches the type found on the type_map
             from strawberry.types.enum import StrawberryEnum
+
             real_concrete_type: type | StrawberryEnum = type(value)
 
             # TODO: uniform type var map, at the moment we map object types
@@ -430,7 +430,6 @@ class StrawberryObjectDefinition(StrawberryType):
             # the StrawberryEnum class. This is why we do this check here:
 
             if hasattr(real_concrete_type, "__strawberry_definition__"):
-
                 if isinstance(
                     real_concrete_type.__strawberry_definition__, StrawberryEnum
                 ):
