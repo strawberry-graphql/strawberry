@@ -5,7 +5,7 @@ schema fields through a new configuration option.
 
 Added a `sort_schema` configuration option to `StrawberryConfig` that allows
 users to enable alphabetical sorting of schema types and fields. When enabled,
-the schema uses GraphQL's built-in `lexicographicSortSchema` function to sort
+the schema uses GraphQL's built-in `lexicographic_sort_schema` function to sort
 all types, fields, and other schema elements alphabetically, making the
 introspection UI easier to navigate.
 
