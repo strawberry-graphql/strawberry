@@ -126,6 +126,58 @@ class CustomInfo(Info):
 schema = strawberry.Schema(query=Query, config=StrawberryConfig(info_class=CustomInfo))
 ```
 
+### sort_schema
+
+By default, Strawberry will preserve the order in which fields are defined in
+your code. When you enable schema sorting, all types, fields, and other schema
+elements will be sorted alphabetically using GraphQL's `lexicographicSortSchema`
+function. This can make GraphQL introspection UIs (like GraphiQL) easier to
+navigate by grouping related fields together alphabetically.
+
+```python
+schema = strawberry.Schema(query=Query, config=StrawberryConfig(sort_schema=True))
+```
+
+**Example:**
+
+```python
+import strawberry
+from strawberry.schema.config import StrawberryConfig
+
+
+@strawberry.type
+class Query:
+    user_by_name: str
+    user_by_id: str
+    user_by_email: str
+
+
+schema = strawberry.Schema(query=Query, config=StrawberryConfig(sort_schema=True))
+```
+
+With `sort_schema=True`, the schema will be printed as:
+
+```graphql
+type Query {
+  userByEmail: String!
+  userById: String!
+  userByName: String!
+}
+```
+
+Instead of preserving the original definition order:
+
+```graphql
+type Query {
+  userByName: String!
+  userById: String!
+  userByEmail: String!
+}
+```
+
+This option affects all schema elements including types, fields, enums, input
+types, interfaces, and unions.
+
 ### enable_experimental_incremental_execution
 
 <Note>
