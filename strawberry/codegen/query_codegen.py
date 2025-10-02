@@ -45,7 +45,7 @@ from strawberry.types.base import (
     get_object_definition,
     has_object_definition,
 )
-from strawberry.types.enum import EnumDefinition
+from strawberry.types.enum import StrawberryEnum
 from strawberry.types.lazy_type import LazyType
 from strawberry.types.scalar import ScalarDefinition, ScalarWrapper
 from strawberry.types.union import StrawberryUnion
@@ -551,7 +551,7 @@ class QueryCodegen:
         if isinstance(field_type, ScalarDefinition):
             return self._collect_scalar(field_type, None)
 
-        if isinstance(field_type, EnumDefinition):
+        if isinstance(field_type, StrawberryEnum):
             return self._collect_enum(field_type)
 
         raise ValueError(f"Unsupported type: {field_type}")  # pragma: no cover
@@ -907,7 +907,7 @@ class QueryCodegen:
 
         return graphql_scalar
 
-    def _collect_enum(self, enum: EnumDefinition) -> GraphQLEnum:
+    def _collect_enum(self, enum: StrawberryEnum) -> GraphQLEnum:
         graphql_enum = GraphQLEnum(
             enum.name,
             [value.name for value in enum.values],

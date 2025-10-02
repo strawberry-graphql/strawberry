@@ -6,7 +6,7 @@ import pytest
 import strawberry
 from strawberry.schema.config import StrawberryConfig
 from strawberry.types.base import StrawberryList, StrawberryOptional
-from strawberry.types.enum import EnumDefinition
+from strawberry.types.enum import StrawberryEnum
 from strawberry.types.lazy_type import LazyType
 from strawberry.types.union import StrawberryUnion
 
@@ -15,7 +15,7 @@ K = TypeVar("K")
 V = TypeVar("V")
 
 
-Enum = EnumDefinition(None, name="Enum", values=[], description=None)  # type: ignore
+Enum = StrawberryEnum(None, name="Enum", values=[], description=None)  # type: ignore
 CustomInt = strawberry.scalar(NewType("CustomInt", int))
 
 
