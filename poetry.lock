@@ -805,17 +805,19 @@ colorama = {version = "*", markers = "platform_system == \"Windows\""}
 
 [[package]]
 name = "codeflash"
-version = "0.15.4"
+version = "0.16.0"
 description = "Client for codeflash.ai - automatic code performance optimization, powered by AI"
 optional = false
 python-versions = ">=3.9"
 groups = ["dev"]
 files = [
-    {file = "codeflash-0.15.4.tar.gz", hash = "sha256:a3b9c19dafc0c1822ec5c9a13a88386e663d56e8432223749907f488fa57ae27"},
+    {file = "codeflash-0.16.0-py3-none-any.whl", hash = "sha256:b9935a5c161edb4ee839602f6af8a1aaf43edf70046576fcc80eb0b71faaa4fd"},
+    {file = "codeflash-0.16.0.tar.gz", hash = "sha256:6882af301e038eea57976c9af902c13141c47093b1ce572a882e25f51ba02b1f"},
 ]
 
 [package.dependencies]
 click = ">=8.1.0"
+codeflash-benchmark = "*"
 coverage = ">=7.6.4"
 crosshair-tool = ">=0.0.78"
 dill = ">=0.3.8"
@@ -841,6 +843,21 @@ timeout-decorator = ">=0.5.0"
 tomlkit = ">=0.11.7"
 unidiff = ">=0.7.4"
 unittest-xml-reporting = ">=3.2.0"
+
+[[package]]
+name = "codeflash-benchmark"
+version = "0.1.0"
+description = "Pytest benchmarking plugin for codeflash.ai - automatic code performance optimization"
+optional = false
+python-versions = ">=3.9"
+groups = ["dev"]
+files = [
+    {file = "codeflash_benchmark-0.1.0-py3-none-any.whl", hash = "sha256:5e981f05dc8edaf77ae6e369aa61844eefe6fd2d2973fb5333b4dab8a4a89fdd"},
+    {file = "codeflash_benchmark-0.1.0.tar.gz", hash = "sha256:f54e42731971872553a2c4bf2e7fead113a00a4e88a19adcf57390ec260c0828"},
+]
+
+[package.dependencies]
+pytest = ">=7.0.0,<8.3.4 || >8.3.4"
 
 [[package]]
 name = "colorama"
