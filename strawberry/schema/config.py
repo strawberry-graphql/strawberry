@@ -24,6 +24,7 @@ class StrawberryConfig:
     enable_experimental_incremental_execution: bool = False
     _unsafe_disable_same_type_validation: bool = False
     batching_config: Optional[BatchingConfig] = None
+    sort_schema: bool = False
 
     def __post_init__(
         self,
