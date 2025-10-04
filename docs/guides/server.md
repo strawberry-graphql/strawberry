@@ -11,7 +11,7 @@ Strawberry’s built in server helps with this use case. It allows to quickly ha
 a development server by running the following command:
 
 ```shell
-strawberry server package.module:schema
+strawberry dev package.module:schema
 ```
 
 where `schema` is the name of a Strawberry schema symbol and `package.module` is

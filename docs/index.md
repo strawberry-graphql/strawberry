@@ -8,7 +8,8 @@ This tutorial will help you:
 
 - Obtain a basic understanding of GraphQL principles
 - Define a GraphQL schema using Strawberry
-- Run the Strawberry server that lets you execute queries against your schema
+- Run the Strawberry dev server that lets you execute queries against your
+  schema
 
 This tutorial assumes that you are familiar with the command line and Python,
 and that you have a recent version of Python (3.9+) installed.
@@ -32,7 +33,7 @@ After that we need a new virtualenv:
 python -m venv virtualenv
 ```
 
-Activate the virtualenv and then install strawberry plus the debug server.
+Activate the virtualenv and then install strawberry plus the dev server.
 
 ```shell
 source virtualenv/bin/activate
@@ -126,10 +127,10 @@ schema = strawberry.Schema(query=Query)
 Then run the following command
 
 ```shell
-strawberry server schema
+strawberry dev schema
 ```
 
-This will start a debug server, you should see the following output:
+This will start a dev server, you should see the following output:
 
 ```text
 Running strawberry on http://0.0.0.0:8000/graphql 🍓
