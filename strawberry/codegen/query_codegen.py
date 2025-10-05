@@ -13,7 +13,7 @@ from typing import (
     Union,
     cast,
 )
-from typing_extensions import Literal, Protocol
+from typing_extensions import Protocol
 
 import rich
 from graphql import (
@@ -479,7 +479,7 @@ class QueryCodegen:
 
         return GraphQLOperation(
             operation_definition.name.value,
-            kind= operation_definition.operation.value,
+            kind=operation_definition.operation.value,
             selections=self._convert_selection_set(operation_definition.selection_set),
             directives=self._convert_directives(operation_definition.directives),
             variables=variables,

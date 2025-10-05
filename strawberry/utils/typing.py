@@ -130,10 +130,7 @@ def is_concrete_generic(annotation: type) -> bool:
 
 
 def is_generic_subclass(annotation: type) -> bool:
-    return isinstance(annotation, type) and issubclass(
-        annotation,
-        Generic
-    )
+    return isinstance(annotation, type) and issubclass(annotation, Generic)
 
 
 def is_generic(annotation: type) -> bool:
