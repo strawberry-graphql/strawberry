@@ -13,7 +13,12 @@ from typing import (
     overload,
 )
 
-from graphql import GraphQLObjectType, GraphQLSchema, is_union_type
+from graphql import (
+    GraphQLObjectType,
+    GraphQLSchema,
+    is_union_type,
+    lexicographic_sort_schema,
+)
 from graphql.language.printer import print_ast
 from graphql.type import (
     is_enum_type,
@@ -597,6 +602,9 @@ def print_schema(schema: BaseSchema) -> str:
         "GraphQLSchema",
         schema._schema,  # type: ignore
     )
+
+    if schema.config.sort_schema:
+        graphql_core_schema = lexicographic_sort_schema(graphql_core_schema)
     extras = PrintExtras()
 
     filtered_directives = [
