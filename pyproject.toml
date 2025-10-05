@@ -63,74 +63,73 @@ cli = ["typer>=0.7.0", "pygments~=2.3", "rich>=12.0.0", "libcst"]
 litestar = ["litestar>=2; python_version~='3.10'"]
 pyinstrument = ["pyinstrument>=4.0.0"]
 
+[dependency-groups]
+dev = [
+  "ruff (>=0.12.3,<0.13.0)",
+  "asgiref (>=3.2,<4.0)",
+  "email-validator (>=1.1.3,<3.0.0)",
+  "freezegun (>=1.2.1,<2.0.0)",
+  "libcst (>=1.8.2,<2.0.0)",
+  "markupsafe (==2.1.3)",
+  "nox (>=2024.4.15,<2025.0.0)",
+  "nox-poetry (>=1.0.3,<2.0.0)",
+  "opentelemetry-api (<2)",
+  "opentelemetry-sdk (<2)",
+  "pygments (>=2.3,<3.0)",
+  "pyinstrument (>=4.0.0)",
+  "pytest (>=7.2,<8.0)",
+  "pytest-asyncio (>=0.20.3)",
+  "pytest-codspeed (>=3.0.0) ; python_version >= \"3.9\"",
+  "pytest-cov (>=4.0.0,<5.0.0)",
+  "pytest-emoji (>=0.2.0,<0.3.0)",
+  "pytest-mock (>=3.10,<4.0)",
+  "pytest-snapshot (>=0.9.0,<0.10.0)",
+  "pytest-xdist[psutil] (>=3.1.0,<4.0.0)",
+  "python-multipart (>=0.0.7)",
+  "rich (>=12.5.1)",
+  "sanic-testing (>=22.9,<24.0)",
+  "typer (>=0.7.0)",
+  "types-aiofiles (>=24.1.0.20250326,<25.0.0.0)",
+  "types-certifi (>=2021.10.8,<2022.0.0)",
+  "types-chardet (>=5.0.4,<6.0.0)",
+  "types-freezegun (>=1.1.9,<2.0.0)",
+  "types-python-dateutil (>=2.8.19,<3.0.0)",
+  "types-toml (>=0.10.8,<0.11.0)",
+  "types-typed-ast (>=1.5.8,<2.0.0)",
+  "types-ujson (>=5.10.0.20250326,<6.0.0.0)",
+  "types-protobuf (>=5.29.1.20250403,<6.0.0.0)",
+  "poetry-plugin-export (>=1.6.0,<2.0.0)",
+  # another bug in poetry
+  "urllib3 (<2)",
+  "inline-snapshot (>=0.10.1,<0.11.0)",
+  "types-deprecated (>=1.2.15.20241117,<2.0.0.0)",
+  "types-six (>=1.17.0.20250403,<2.0.0.0)",
+  "types-pyyaml (>=6.0.12.20240917,<7.0.0.0)",
+  "mypy (>=1.15.0,<2.0.0)",
+  "pyright (==1.1.401)",
+  "codeflash (>=0.9.2)",
+]
+integrations = [
+  "aiohttp (>=3.7.4.post0,<4.0.0)",
+  "chalice (>=1.22,<2.0)",
+  "channels (>=3.0.5,<5.0.0)",
+  "django (>=3.2)",
+  "fastapi (>=0.65.0)",
+  "flask (>=1.1)",
+  "quart (>=0.19.3)",
+  "pydantic (>=2.0)",
+  "pytest-aiohttp (>=1.0.3,<2.0.0)",
+  "pytest-django (>=4.5,<5.0)",
+  "sanic (>=20.12.2)",
+  "starlette (>=0.13.6)",
+  "litestar (>=2) ; python_version >= \"3.10\"",
+  "uvicorn (>=0.11.6)",
+  "daphne (>=4.0.0,<5.0.0)",
+]
+
 [tool.poetry]
 packages = [{ include = "strawberry" }]
 include = ["strawberry/py.typed"]
-
-[tool.poetry.group.dev.dependencies]
-ruff = "^0.12.3"
-asgiref = "^3.2"
-email-validator = { version = ">=1.1.3,<3.0.0", optional = false }
-freezegun = "^1.2.1"
-libcst = { version = "^1.8.2", optional = false }
-MarkupSafe = "2.1.3"
-nox = "^2024.4.15"
-nox-poetry = "^1.0.3"
-opentelemetry-api = "<2"
-opentelemetry-sdk = "<2"
-pygments = "^2.3"
-pyinstrument = { version = ">=4.0.0", optional = false }
-pytest = "^7.2"
-pytest-asyncio = ">=0.20.3"
-pytest-codspeed = { version = ">=3.0.0", python = ">=3.9" }
-pytest-cov = "^4.0.0"
-pytest-emoji = "^0.2.0"
-pytest-mock = "^3.10"
-pytest-snapshot = "^0.9.0"
-pytest-xdist = { extras = ["psutil"], version = "^3.1.0" }
-python-multipart = ">=0.0.7"
-rich = { version = ">=12.5.1", optional = false }
-sanic-testing = ">=22.9,<24.0"
-typer = { version = ">=0.7.0", optional = false }
-types-aiofiles = "^24.1.0.20250326"
-types-certifi = "^2021.10.8"
-types-chardet = "^5.0.4"
-types-freezegun = "^1.1.9"
-types-python-dateutil = "^2.8.19"
-types-toml = "^0.10.8"
-types-typed-ast = "^1.5.8"
-types-ujson = "^5.10.0.20250326"
-types-protobuf = "^5.29.1.20250403"
-poetry-plugin-export = { version = "^1.6.0", python = "<4.0", optional = false }
-# another bug in poetry
-urllib3 = "<2"
-inline-snapshot = "^0.10.1"
-types-deprecated = "^1.2.15.20241117"
-types-six = "^1.17.0.20250403"
-types-pyyaml = "^6.0.12.20240917"
-mypy = "^1.15.0"
-pyright = "1.1.401"
-codeflash = ">=0.9.2"
-
-[tool.poetry.group.integrations]
-optional = true
-
-[tool.poetry.group.integrations.dependencies]
-aiohttp = "^3.7.4.post0"
-chalice = { version = "^1.22" }
-channels = ">=3.0.5,<5.0.0"
-Django = ">=3.2"
-fastapi = { version = ">=0.65.0", optional = false }
-flask = ">=1.1"
-quart = ">=0.19.3"
-pydantic = { version = ">=2.0", optional = false }
-pytest-aiohttp = "^1.0.3"
-pytest-django = { version = "^4.5" }
-sanic = ">=20.12.2"
-starlette = ">=0.13.6"
-litestar = { version = ">=2", python = ">=3.10,<4.0", optional = false }
-uvicorn = ">=0.11.6"
-daphne = "^4.0.0"
 
 [tool.pytest.ini_options]
 addopts = "--emoji"
