@@ -98,7 +98,7 @@ def test_missing_dev_server_dependencies(
     assert result.stdout == (
         "Error: "
         "The dev server requires additional packages, install them by running:\n"
-        "pip install 'strawberry-graphql[debug-server]'\n"
+        "pip install 'strawberry-graphql[dev-server]'\n"
     )
 
 

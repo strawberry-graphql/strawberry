@@ -50,6 +50,16 @@ debug-server = [
   "rich>=12.0.0",
   "libcst",
 ]
+dev-server = [
+  "starlette>=0.18.0",
+  "uvicorn>=0.11.6",
+  "websockets>=15.0.1,<16",
+  "python-multipart>=0.0.7",
+  "typer>=0.7.0",
+  "pygments~=2.3",
+  "rich>=12.0.0",
+  "libcst",
+]
 django = ["Django>=3.2", "asgiref~=3.2"]
 channels = ["channels>=3.0.5", "asgiref~=3.2"]
 flask = ["flask>=1.1"]

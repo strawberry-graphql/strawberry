@@ -49,7 +49,7 @@ def dev(
     except ImportError:
         rich.print(
             "[red]Error: The dev server requires additional packages, install them by running:\n"
-            r"pip install 'strawberry-graphql\[debug-server]'"
+            r"pip install 'strawberry-graphql\[dev-server]'"
         )
         raise typer.Exit(1) from None
 
