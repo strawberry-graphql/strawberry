@@ -52,6 +52,15 @@ def test_default_schema_symbol_name(cli_app: Typer, uvicorn_run_mock: MagicMock)
     assert uvicorn_run_mock.call_count == 1
 
 
+def test_invalid_app_dir(cli_app: Typer):
+    result = cli_runner.invoke(cli_app, ["dev", "--app-dir=./non/existing/path", "app"])
+
+    expected_error = "Error: No module named 'app'"
+
+    assert result.exit_code == 2
+    assert expected_error in result.stdout
+
+
 def test_invalid_module(cli_app: Typer):
     schema = "not.existing.module"
     result = cli_runner.invoke(cli_app, ["dev", schema])
