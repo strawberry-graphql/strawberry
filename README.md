@@ -14,7 +14,7 @@ The quick start method provides a server and CLI to get going quickly. Install
 with:
 
 ```shell
-pip install "strawberry-graphql[dev-server]"
+pip install "strawberry-graphql[cli]"
 ```
 
 ## Getting Started

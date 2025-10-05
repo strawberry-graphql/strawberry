@@ -37,7 +37,7 @@ Activate the virtualenv and then install strawberry plus the dev server.
 
 ```shell
 source virtualenv/bin/activate
-pip install 'strawberry-graphql[dev-server]'
+pip install 'strawberry-graphql[cli]'
 ```
 
 ## Step 2: Define the schema
