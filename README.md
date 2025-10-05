@@ -107,7 +107,7 @@ get started follow these steps:
 ```shell
 git clone https://github.com/strawberry-graphql/strawberry
 cd strawberry
-poetry install --with integrations
+poetry install
 poetry run pytest
 ```
 
