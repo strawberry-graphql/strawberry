@@ -102,7 +102,7 @@ def test_missing_dev_server_dependencies(
     )
 
 
-def test_dev_server_routes(dev_server_client: TestClient):
-    for path in ["/", "/graphql"]:
-        response = dev_server_client.get(path)
-        assert response.status_code == 200
+@pytest.mark.parametrize("path", ["/", "/graphql"])
+def test_dev_server_routes(dev_server_client: TestClient, path: str):
+    response = dev_server_client.get(path)
+    assert response.status_code == 200
