@@ -26,16 +26,3 @@ this url [http://localhost:8000/graphql](http://localhost:8000/graphql).
 Strawberry's built in server automatically reloads when changes to the module
 containing the `schema` are detected. This way you can spend more time
 prototyping your API rather than restarting development servers.
-
-## Disabling operation logging
-
-By default Strawberry's built in server logs all operations that are executed.
-This can be useful for debugging but can also be annoying if you are
-prototyping.
-
-To disable operation logging you can use the `--log-operations` configuration
-flag:
-
-```shell
-strawberry server package.module:schema --log-operations False
-```
