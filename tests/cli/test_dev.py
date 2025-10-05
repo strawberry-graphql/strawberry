@@ -10,7 +10,7 @@ from typer.testing import CliRunner
 
 # UTF-8 chars are not supported by default console on Windows
 BOOT_MSG_END = " 🍓\n" if sys.platform != "win32" else "\n"
-BOOT_MSG = "Running strawberry on http://0.0.0.0:8000/graphql" + BOOT_MSG_END
+BOOT_MSG = f"Running strawberry on http://0.0.0.0:8000/graphql{BOOT_MSG_END}"
 
 cli_runner = CliRunner()
 
