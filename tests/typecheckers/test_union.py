@@ -1,3 +1,6 @@
+import sys
+
+import pytest
 from inline_snapshot import snapshot
 
 from .utils.marks import requires_mypy, requires_pyright, skip_on_windows
@@ -32,6 +35,10 @@ reveal_type(x)
 """
 
 
+@pytest.mark.skipif(
+    sys.version_info < (3, 10),
+    reason="Union type representation differs in Python 3.9",
+)
 def test():
     results = typecheck(CODE)
 
