@@ -1,6 +1,18 @@
 CHANGELOG
 =========
 
+0.283.0 - 2025-10-06
+--------------------
+
+In this release, we renamed the `strawberry server` command to `strawberry dev`
+to better reflect its purpose as a development server.
+
+We also deprecated the `strawberry-graphql[debug-server]` extra in favor of
+`strawberry-graphql[cli]`. Please update your dependencies accordingly.
+
+Contributed by [Jonathan Ehwald](https://github.com/DoctorJohn) via [PR #4011](https://github.com/strawberry-graphql/strawberry/pull/4011/)
+
+
 0.282.0 - 2025-09-07
 --------------------
 

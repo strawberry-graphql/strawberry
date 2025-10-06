@@ -78,7 +78,7 @@ class GraphQLView(
     methods: ClassVar[list[str]] = ["GET", "POST"]
     allow_queries_via_get: bool = True
     request_adapter_class = QuartHTTPRequestAdapter
-    websocket_adapter_class = QuartWebSocketAdapter
+    websocket_adapter_class = QuartWebSocketAdapter  # type: ignore
 
     def __init__(
         self,
