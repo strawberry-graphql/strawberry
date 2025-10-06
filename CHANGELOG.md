@@ -1,6 +1,27 @@
 CHANGELOG
 =========
 
+0.283.1 - 2025-10-06
+--------------------
+
+Fixed multipart subscription header parsing to properly handle optional boundary parameters and quoted subscription spec values. This improves compatibility with different GraphQL clients that may send headers in various formats.
+
+**Key improvements:**
+
+- Made the `boundary=graphql` parameter optional in multipart subscription detection
+- Added proper quote stripping for `subscriptionSpec` values (e.g., `subscriptionSpec="1.0"`)
+- Enhanced test coverage for different header format scenarios
+
+**Example of supported headers:**
+
+```raw
+Accept: multipart/mixed;boundary=graphql;subscriptionSpec=1.0,application/json
+Accept: multipart/mixed;subscriptionSpec="1.0",application/json
+```
+
+Contributed by [Louis Amon](https://github.com/LouisAmon) via [PR #4002](https://github.com/strawberry-graphql/strawberry/pull/4002/)
+
+
 0.283.0 - 2025-10-06
 --------------------
 
