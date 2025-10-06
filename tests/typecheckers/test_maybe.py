@@ -1,3 +1,6 @@
+import sys
+
+import pytest
 from inline_snapshot import snapshot
 
 from .utils.marks import requires_mypy, requires_pyright, skip_on_windows
@@ -24,6 +27,10 @@ if obj.foobar:
 """
 
 
+@pytest.mark.skipif(
+    sys.version_info < (3, 10),
+    reason="Union type representation differs in Python 3.9",
+)
 def test_maybe() -> None:
     result = typecheck(CODE)
 
@@ -48,7 +55,7 @@ def test_maybe() -> None:
         [
             Result(
                 type="note",
-                message='Revealed type is "Union[strawberry.types.maybe.Some[builtins.str], None]"',
+                message='Revealed type is "strawberry.types.maybe.Some[builtins.str] | None"',
                 line=12,
                 column=13,
             ),

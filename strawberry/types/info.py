@@ -78,7 +78,7 @@ class Info(Generic[ContextType, RootValueType]):
         https://discuss.python.org/t/passing-only-one-typevar-of-two-when-using-defaults/49134
         """
         if not isinstance(types, tuple):
-            types = (types, Any)  # type: ignore
+            types = (types, Any)
 
         return super().__class_getitem__(types)  # type: ignore
 
