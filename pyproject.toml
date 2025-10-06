@@ -59,7 +59,16 @@ pydantic = ["pydantic>1.6.1"]
 sanic = ["sanic>=20.12.2"]
 fastapi = ["fastapi>=0.65.2", "python-multipart>=0.0.7"]
 chalice = ["chalice~=1.22"]
-cli = ["typer>=0.7.0", "pygments~=2.3", "rich>=12.0.0", "libcst"]
+cli = [
+  "typer>=0.7.0",
+  "pygments~=2.3",
+  "rich>=12.0.0",
+  "libcst",
+  "starlette>=0.18.0",
+  "uvicorn>=0.11.6",
+  "websockets>=15.0.1,<16",
+  "python-multipart>=0.0.7",
+]
 litestar = ["litestar>=2; python_version~='3.10'"]
 pyinstrument = ["pyinstrument>=4.0.0"]
 

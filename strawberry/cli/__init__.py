@@ -1,6 +1,7 @@
 try:
     from .app import app
     from .commands.codegen import codegen as codegen
+    from .commands.dev import dev as dev
     from .commands.export_schema import export_schema as export_schema
     from .commands.locate_definition import (
         locate_definition as locate_definition,

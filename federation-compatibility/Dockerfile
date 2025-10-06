@@ -15,4 +15,4 @@ COPY federation-compatibility/schema.py ./
 
 EXPOSE 4001
 
-CMD poetry run strawberry server -p 4001 -h 0.0.0.0 schema:schema
+CMD ["poetry", "run", "strawberry", "dev", "-p", "4001", "-h", "0.0.0.0", "schema:schema"]

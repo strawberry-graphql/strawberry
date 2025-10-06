@@ -427,10 +427,10 @@ client doesn't know the cursor initially, when it makes the first request.
 
 </Note>
 
-Now, let us start a debug server with our schema!
+Now, let us start a dev server with our schema!
 
 ```shell
-strawberry server example:schema
+strawberry dev example:schema
 ```
 
 We should be able to query for users on the GraphiQL explorer. Here's a sample

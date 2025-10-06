@@ -595,10 +595,10 @@ class Query:
 schema = strawberry.Schema(query=Query)
 ```
 
-you can start the debug server with the following command:
+you can start the dev server with the following command:
 
 ```shell
-strawberry server example:schema
+strawberry dev example:schema
 ```
 
 Here's an example query to try out:
