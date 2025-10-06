@@ -129,7 +129,7 @@ def test_schema_overrides():
         [
             Result(
                 type="note",
-                message='Revealed type is "def (year: typing.SupportsIndex, month: typing.SupportsIndex, day: typing.SupportsIndex, hour: typing.SupportsIndex =, minute: typing.SupportsIndex =, second: typing.SupportsIndex =, microsecond: typing.SupportsIndex =, tzinfo: Union[datetime.tzinfo, None] =, *, fold: builtins.int =) -> datetime.datetime"',
+                message='Revealed type is "def (year: typing.SupportsIndex, month: typing.SupportsIndex, day: typing.SupportsIndex, hour: typing.SupportsIndex =, minute: typing.SupportsIndex =, second: typing.SupportsIndex =, microsecond: typing.SupportsIndex =, tzinfo: datetime.tzinfo | None =, *, fold: builtins.int =) -> datetime.datetime"',
                 line=17,
                 column=13,
             )

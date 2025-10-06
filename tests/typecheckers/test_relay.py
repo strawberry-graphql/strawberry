@@ -316,13 +316,13 @@ def test():
             ),
             Result(
                 type="note",
-                message='Revealed type is "Union[strawberry.relay.types.Node, None]"',
+                message='Revealed type is "strawberry.relay.types.Node | None"',
                 line=132,
                 column=13,
             ),
             Result(
                 type="note",
-                message='Revealed type is "builtins.list[Union[strawberry.relay.types.Node, None]]"',
+                message='Revealed type is "builtins.list[strawberry.relay.types.Node | None]"',
                 line=133,
                 column=13,
             ),

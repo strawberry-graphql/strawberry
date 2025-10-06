@@ -48,7 +48,7 @@ def test_maybe() -> None:
         [
             Result(
                 type="note",
-                message='Revealed type is "Union[strawberry.types.maybe.Some[builtins.str], None]"',
+                message='Revealed type is "strawberry.types.maybe.Some[builtins.str] | None"',
                 line=12,
                 column=13,
             ),
