@@ -38,4 +38,4 @@ jobs:
       - name: Run Codeflash to optimize code
         run: |
           poetry env use python
-          poetry run codeflash --benchmark
+          poetry run codeflash --benchmark --benchmarks-root tests/benchmarks
