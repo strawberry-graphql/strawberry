@@ -166,7 +166,8 @@ def tests_typecheckers(session: Session) -> None:
     )
 
 
-@session(python=PYTHON_VERSIONS, name="CLI tests", tags=["tests"])
+# skipping python 3.9 because of some changes in click 8.2.0
+@session(python=PYTHON_VERSIONS[:-1], name="CLI tests", tags=["tests"])
 def tests_cli(session: Session) -> None:
     session.run_always("poetry", "install", "--without=integrations", external=True)
 
