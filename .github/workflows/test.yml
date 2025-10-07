@@ -110,7 +110,7 @@ jobs:
         with:
           token: ${{ secrets.CODSPEED_TOKEN }}
           mode: instrumentation
-          run: poetry run pytest tests/benchmarks --codspeed
+          run: poetry run pytest tests/benchmarks --codspeed -p no:codeflash-benchmark
 
   lint:
     name: ✨ Lint
