@@ -182,7 +182,7 @@ def get_parameters(annotation: type) -> Union[tuple[object], tuple[()]]:
         and issubclass(annotation, Generic)
         and annotation is not Generic
     ):
-        return annotation.__parameters__  # type: ignore[union-attr]
+        return annotation.__parameters__
     return ()  # pragma: no cover
 
 
