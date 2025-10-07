@@ -1,17 +1,11 @@
 import dataclasses
 from collections.abc import Iterable, Mapping
 from enum import EnumMeta
-from typing import (
-    Any,
-    Callable,
-    Optional,
-    TypeVar,
-    Union,
-    overload,
-)
+from typing import TYPE_CHECKING, Any, Callable, Optional, TypeVar, Union, overload
 
 from strawberry.exceptions import ObjectIsNotAnEnumError
 from strawberry.types.base import StrawberryType
+from strawberry.utils.deprecations import DEPRECATION_MESSAGES, DeprecatedDescriptor
 
 
 @dataclasses.dataclass
@@ -24,7 +18,7 @@ class EnumValue:
 
 
 @dataclasses.dataclass
-class EnumDefinition(StrawberryType):
+class StrawberryEnum(StrawberryType):
     wrapped_cls: EnumMeta
     name: str
     values: list[EnumValue]
@@ -151,13 +145,20 @@ def _process_enum(
         )
         values.append(value)
 
-    cls._enum_definition = EnumDefinition(  # type: ignore
+    cls.__strawberry_definition__ = StrawberryEnum(  # type: ignore
         wrapped_cls=cls,
         name=name,
         values=values,
         description=description,
         directives=directives,
     )
+
+    # TODO: remove when deprecating _enum_definition
+    DeprecatedDescriptor(
+        DEPRECATION_MESSAGES._ENUM_DEFINITION,
+        cls.__strawberry_definition__,  # type: ignore[attr-defined]
+        "_enum_definition",
+    ).inject(cls)
 
     return cls
 
@@ -238,4 +239,22 @@ def enum(
     return wrap(cls)
 
 
-__all__ = ["EnumDefinition", "EnumValue", "EnumValueDefinition", "enum", "enum_value"]
+# TODO: remove when deprecating _enum_definition
+if TYPE_CHECKING:
+    from typing_extensions import deprecated
+
+    @deprecated("Use StrawberryEnum instead")
+    class EnumDefinition(StrawberryEnum): ...
+
+else:
+    EnumDefinition = StrawberryEnum
+
+
+__all__ = [
+    "EnumDefinition",
+    "EnumValue",
+    "EnumValueDefinition",
+    "StrawberryEnum",
+    "enum",
+    "enum_value",
+]

@@ -92,7 +92,7 @@ if TYPE_CHECKING:
 
     from strawberry.directive import StrawberryDirective
     from strawberry.types.base import StrawberryType
-    from strawberry.types.enum import EnumDefinition
+    from strawberry.types.enum import StrawberryEnum
     from strawberry.types.field import StrawberryField
     from strawberry.types.scalar import ScalarDefinition, ScalarWrapper
     from strawberry.types.union import StrawberryUnion
@@ -443,7 +443,7 @@ class Schema(BaseSchema):
         Union[
             StrawberryObjectDefinition,
             ScalarDefinition,
-            EnumDefinition,
+            StrawberryEnum,
             StrawberryUnion,
         ]
     ]:
@@ -918,7 +918,7 @@ class Schema(BaseSchema):
         for concrete_type in self.schema_converter.type_map.values():
             type_def = concrete_type.definition
 
-            # This can be a TypeDefinition, EnumDefinition, ScalarDefinition
+            # This can be a TypeDefinition, StrawberryEnum, ScalarDefinition
             # or UnionDefinition
             if not isinstance(type_def, StrawberryObjectDefinition):
                 continue
