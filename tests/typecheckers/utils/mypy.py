@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import pathlib
 import subprocess
 import tempfile
@@ -52,7 +53,13 @@ def run_mypy(code: str, strict: bool = True) -> list[Result]:
         module_path.write_text(code)
 
         process_result = subprocess.run(
-            [*args, str(module_path)], check=False, capture_output=True
+            [*args, str(module_path)],
+            check=False,
+            capture_output=True,
+            env={
+                "PYTHONWARNINGS": "error,ignore::SyntaxWarning",
+                "PATH": os.environ["PATH"],
+            },
         )
 
         full_output = (
