@@ -6,10 +6,10 @@ title: Testing
 
 The GraphiQL playground integrated with Strawberry available at
 [http://localhost:8000/graphql](http://localhost:8000/graphql) (if you run the
-schema with `strawberry server`) can be a good place to start testing your
-queries and mutations. However, at some point, while you are developing your
-application (or even before if you are practising TDD), you may want to create
-some automated tests.
+schema with `strawberry dev`) can be a good place to start testing your queries
+and mutations. However, at some point, while you are developing your application
+(or even before if you are practising TDD), you may want to create some
+automated tests.
 
 We can use the Strawberry `schema` object we defined in the
 [Getting Started tutorial](../index.md#step-5-create-our-schema-and-run-it) to

@@ -14,7 +14,7 @@ The quick start method provides a server and CLI to get going quickly. Install
 with:
 
 ```shell
-pip install "strawberry-graphql[debug-server]"
+pip install "strawberry-graphql[cli]"
 ```
 
 ## Getting Started
@@ -44,13 +44,13 @@ schema = strawberry.Schema(query=Query)
 This will create a GraphQL schema defining a `User` type and a single query
 field `user` that will return a hardcoded user.
 
-To run the debug server run the following command:
+To serve the schema using the dev server run the following command:
 
 ```shell
-strawberry server app
+strawberry dev app
 ```
 
-Open the debug server by clicking on the following link:
+Open the dev server by clicking on the following link:
 [http://0.0.0.0:8000/graphql](http://0.0.0.0:8000/graphql)
 
 This will open GraphiQL where you can test the API.
@@ -107,7 +107,7 @@ get started follow these steps:
 ```shell
 git clone https://github.com/strawberry-graphql/strawberry
 cd strawberry
-poetry install --with integrations
+poetry install
 poetry run pytest
 ```
 

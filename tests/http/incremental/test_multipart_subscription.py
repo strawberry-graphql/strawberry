@@ -60,14 +60,27 @@ def http_client(http_client_class: type[HttpClient]) -> HttpClient:
 
 
 @pytest.mark.parametrize("method", ["get", "post"])
+@pytest.mark.parametrize(
+    "accept_header",
+    [
+        pytest.param(
+            "multipart/mixed;boundary=graphql;subscriptionSpec=1.0,application/json",
+            id="with-boundary",
+        ),
+        pytest.param(
+            'multipart/mixed;subscriptionSpec="1.0",application/json',
+            id="no-boundary-with-quotes",
+        ),
+    ],
+)
 async def test_multipart_subscription(
-    http_client: HttpClient, method: Literal["get", "post"]
+    http_client: HttpClient, method: Literal["get", "post"], accept_header: str
 ):
     response = await http_client.query(
         method=method,
         query='subscription { echo(message: "Hello world", delay: 0.2) }',
         headers={
-            "accept": "multipart/mixed;boundary=graphql;subscriptionSpec=1.0,application/json",
+            "accept": accept_header,
             "content-type": "application/json",
         },
     )

@@ -1,13 +1,8 @@
-import os
-import sys
 from enum import Enum
 
-import rich
 import typer
 
 from strawberry.cli.app import app
-from strawberry.cli.constants import DEBUG_SERVER_SCHEMA_ENV_VAR_KEY
-from strawberry.cli.utils import load_schema
 
 
 class LogLevel(str, Enum):
@@ -40,33 +35,7 @@ def server(
         ),
     ),
 ) -> None:
-    sys.path.insert(0, app_dir)
-
-    try:
-        import starlette  # noqa: F401
-        import uvicorn
-    except ImportError:
-        rich.print(
-            "[red]Error: The debug server requires additional packages, "
-            "install them by running:\n"
-            r"pip install 'strawberry-graphql\[debug-server]'"
-        )
-        raise typer.Exit(1)  # noqa: B904
-
-    load_schema(schema, app_dir=app_dir)
-
-    os.environ[DEBUG_SERVER_SCHEMA_ENV_VAR_KEY] = schema
-    app = "strawberry.cli.debug_server:app"
-
-    # Windows doesn't support UTF-8 by default
-    endl = " 🍓\n" if sys.platform != "win32" else "\n"
-    print(f"Running strawberry on http://{host}:{port}/graphql", end=endl)  # noqa: T201
-
-    uvicorn.run(
-        app,
-        host=host,
-        port=port,
-        log_level=log_level,
-        reload=True,
-        reload_dirs=[app_dir],
+    typer.echo(
+        "The `strawberry server` command is deprecated, use `strawberry dev` instead."
     )
+    raise typer.Exit(1)

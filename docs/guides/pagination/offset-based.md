@@ -200,7 +200,7 @@ use of the Django pagination API. You can check it out
 Now, let us start the server and see offset-based pagination in action!
 
 ```shell
-strawberry server example:schema
+strawberry dev example:schema
 ```
 
 You will get the following message:

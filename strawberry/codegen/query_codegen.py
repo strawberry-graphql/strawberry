@@ -473,15 +473,13 @@ class QueryCodegen:
             class_name=result_class_name,
         )
 
-        operation_kind = operation_definition.operation.value
-
         variables, variables_type = self._convert_variable_definitions(
             operation_definition.variable_definitions, operation_name=operation_name
         )
 
         return GraphQLOperation(
             operation_definition.name.value,
-            kind=operation_kind,  # type: ignore[arg-type]
+            kind=operation_definition.operation.value,
             selections=self._convert_selection_set(operation_definition.selection_set),
             directives=self._convert_directives(operation_definition.directives),
             variables=variables,
