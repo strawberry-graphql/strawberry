@@ -519,3 +519,61 @@ user_type = UserType(id="abc", content_name="Bob", content_description=None)
 print(user_type.to_pydantic())
 # id='abc' content={<ContentType.NAME: 'name'>: 'Bob'}
 ```
+
+## Schema directives to capture JSON schema data
+
+The pydantic conversion also supports capturing the JSON schema metadata from
+Pydantic. Note the fields in the directive must match the json schema names.
+
+```python
+from pydantic import BaseModel, Field
+from typing import Annotated, Optional
+from strawberry.schema_directive import Location
+import strawberry
+
+
+class User(BaseModel):
+    id: Annotated[int, Field(gt=0)]
+    name: Annotated[str, Field(json_schema_extra={"name_type": "full"})]
+
+
+@strawberry.schema_directive(locations=[Location.FIELD_DEFINITION])
+class MyJsonSchema:
+    exclusive_minimum: Optional[int] = None
+    name_type: Optional[str] = None
+
+
+@strawberry.experimental.pydantic.type(model=User, json_schema_directive=MyJsonSchema)
+class UserType:
+    id: strawberry.auto
+    name: strawberry.auto
+
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def test() -> UserType:
+        return UserType.from_pydantic(User(id=123, name="John Doe"))
+
+
+schema = strawberry.Schema(query=Query)
+```
+
+Now if [the schema is exported](../guides/schema-export), the result will
+contain:
+
+```graphql
+directive @myJsonSchema(
+  exclusiveMinimum: Int = null
+  nameType: String = null
+) on FIELD_DEFINITION
+
+type Query {
+  test: UserType!
+}
+
+type UserType {
+  id: Int!
+  name: String! @myJsonSchema(exclusiveMinimum: null, nameType: "full")
+}
+```

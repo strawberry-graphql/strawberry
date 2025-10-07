@@ -1,6 +1,6 @@
 import textwrap
 from enum import Enum
-from typing import Optional, Union
+from typing import Annotated, Generic, Optional, TypeAlias, TypeVar, Union
 
 import pydantic
 
@@ -527,6 +527,74 @@ def test_basic_type_with_optional_and_default():
     assert not result.errors
     assert result.data["user"]["age"] == 1
     assert result.data["user"]["password"] is None
+
+
+def test_nested_type_with_resolved_generic():
+    A = TypeVar("A")
+
+    class Hobby(pydantic.BaseModel, Generic[A]):
+        name: A
+
+    @strawberry.experimental.pydantic.type(Hobby)
+    class HobbyType(Generic[A]):
+        name: strawberry.auto
+
+    class User(pydantic.BaseModel):
+        hobby: Hobby[str]
+
+    @strawberry.experimental.pydantic.type(User)
+    class UserType:
+        hobby: strawberry.auto
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def user(self) -> UserType:
+            return UserType(hobby=HobbyType(name="Skii"))
+
+    schema = strawberry.Schema(query=Query)
+
+    query = "{ user { hobby { name } } }"
+
+    result = schema.execute_sync(query)
+
+    assert not result.errors
+    assert result.data["user"]["hobby"]["name"] == "Skii"
+
+
+def test_nested_type_with_resolved_field_generic():
+    Count: TypeAlias = Annotated[float, pydantic.Field(ge=0)]
+
+    A = TypeVar("A")
+
+    class Hobby(pydantic.BaseModel, Generic[A]):
+        count: A
+
+    @strawberry.experimental.pydantic.type(Hobby)
+    class HobbyType(Generic[A]):
+        count: strawberry.auto
+
+    class User(pydantic.BaseModel):
+        hobby: Hobby[Count]
+
+    @strawberry.experimental.pydantic.type(User)
+    class UserType:
+        hobby: strawberry.auto
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def user(self) -> UserType:
+            return UserType(hobby=HobbyType(count=2))
+
+    schema = strawberry.Schema(query=Query)
+
+    query = "{ user { hobby { count } } }"
+
+    result = schema.execute_sync(query)
+
+    assert not result.errors
+    assert result.data["user"]["hobby"]["count"] == 2
 
 
 @needs_pydantic_v1

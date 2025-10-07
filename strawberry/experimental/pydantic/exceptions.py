@@ -53,3 +53,12 @@ class AutoFieldsNotInBaseModelError(Exception):
         )
 
         super().__init__(message)
+
+
+class JsonSchemaDirectiveNotRegistered(Exception):
+    def __init__(self, json_schema_directive: type) -> None:
+        message = (
+            f"{json_schema_directive} not registered as a strawberry schema directive"
+        )
+
+        super().__init__(message)
