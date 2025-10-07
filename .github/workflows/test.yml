@@ -106,9 +106,10 @@ jobs:
         if: steps.setup-python.outputs.cache-hit != 'true'
 
       - name: Run benchmarks
-        uses: CodSpeedHQ/action@v3.2.0
+        uses: CodSpeedHQ/action@v4.1.1
         with:
           token: ${{ secrets.CODSPEED_TOKEN }}
+          mode: instrumentation
           run: poetry run pytest tests/benchmarks --codspeed
 
   lint:
