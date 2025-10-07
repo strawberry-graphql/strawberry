@@ -129,12 +129,35 @@ def tests_integrations(session: Session, integration: str, gql_core: str) -> Non
     session.run("pytest", *COMMON_PYTEST_OPTIONS, "-m", integration)
 
 
-@session(python=PYTHON_VERSIONS, name="Pydantic tests", tags=["tests", "pydantic"])
-@with_gql_core_parametrize("pydantic", ["1.10", "2.12.0"])
-def test_pydantic(session: Session, pydantic: str, gql_core: str) -> None:
+@session(
+    python=["3.9", "3.10", "3.11", "3.12", "3.13"],
+    name="Pydantic V1 tests",
+    tags=["tests", "pydantic"],
+)
+@gql_core_parametrize
+def test_pydantic(session: Session, gql_core: str) -> None:
     session.run_always("poetry", "install", "--without=integrations", external=True)
 
-    session._session.install(f"pydantic~={pydantic}")  # type: ignore
+    session._session.install("pydantic~=1.10")  # type: ignore
+    _install_gql_core(session, gql_core)
+    session.run(
+        "pytest",
+        "--cov=.",
+        "--cov-append",
+        "--cov-report=xml",
+        "-m",
+        "pydantic",
+        "--ignore=tests/cli",
+        "--ignore=tests/benchmarks",
+    )
+
+
+@session(python=PYTHON_VERSIONS, name="Pydantic tests", tags=["tests", "pydantic"])
+@gql_core_parametrize
+def test_pydantic_v2(session: Session, gql_core: str) -> None:
+    session.run_always("poetry", "install", "--without=integrations", external=True)
+
+    session._session.install("pydantic~=2.12")  # type: ignore
     _install_gql_core(session, gql_core)
     session.run(
         "pytest",

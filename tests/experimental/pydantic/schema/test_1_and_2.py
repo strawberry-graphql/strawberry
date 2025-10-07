@@ -1,10 +1,17 @@
+import sys
 import textwrap
 from typing import Optional, Union
+
+import pytest
 
 import strawberry
 from tests.experimental.pydantic.utils import needs_pydantic_v2
 
 
+@pytest.mark.skipif(
+    sys.version_info >= (3, 14),
+    reason="Pydantic v1 is not compatible with Python 3.14+",
+)
 @needs_pydantic_v2
 def test_can_use_both_pydantic_1_and_2():
     import pydantic
