@@ -117,7 +117,7 @@ dev = [
   "mypy (>=1.15.0,<2.0.0)",
   "pyright (==1.1.401)",
   "codeflash (>=0.9.2)",
-  "pre-commit (>=4.3.0,<5.0.0)",
+  "pre-commit",
 ]
 integrations = [
   "aiohttp (>=3.7.4.post0,<4.0.0)",

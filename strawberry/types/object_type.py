@@ -12,7 +12,7 @@ from typing import (
     Union,
     overload,
 )
-from typing_extensions import dataclass_transform
+from typing_extensions import dataclass_transform, get_annotations
 
 from strawberry.exceptions import (
     InvalidSuperclassInterfaceError,
@@ -51,7 +51,8 @@ def _check_field_annotations(cls: builtins.type[Any]) -> None:
 
     https://github.com/python/cpython/blob/6fed3c85402c5ca704eb3f3189ca3f5c67a08d19/Lib/dataclasses.py#L881-L884
     """
-    cls_annotations = cls.__dict__.get("__annotations__", {})
+    cls_annotations = get_annotations(cls)
+    # TODO: do we need this?
     cls.__annotations__ = cls_annotations
 
     for field_name, field_ in cls.__dict__.items():

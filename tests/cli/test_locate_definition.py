@@ -42,7 +42,7 @@ def test_find_missing_model(cli_app: Typer, cli_runner: CliRunner):
     result = cli_runner.invoke(cli_app, ["locate-definition", selector, "Missing"])
 
     assert result.exit_code == 1
-    assert result.stdout.strip() == snapshot("Definition not found: Missing")
+    assert result.stderr.strip() == snapshot("Definition not found: Missing")
 
 
 def test_find_missing_model_field(cli_app: Typer, cli_runner: CliRunner):
@@ -52,7 +52,7 @@ def test_find_missing_model_field(cli_app: Typer, cli_runner: CliRunner):
     )
 
     assert result.exit_code == 1
-    assert result.stdout.strip() == snapshot("Definition not found: Missing.field")
+    assert result.stderr.strip() == snapshot("Definition not found: Missing.field")
 
 
 def test_find_missing_schema(cli_app: Typer, cli_runner: CliRunner):
