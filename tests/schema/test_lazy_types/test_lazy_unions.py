@@ -9,26 +9,38 @@ from strawberry.printer import print_schema
 class TypeA:
     a: int
 
+
 @strawberry.type
 class TypeB:
     b: int
 
 
-ABUnion = Annotated[Union[TypeA, TypeB], strawberry.union("ABUnion", types=[TypeA, TypeB])]
+ABUnion = Annotated[
+    Union[TypeA, TypeB], strawberry.union("ABUnion", types=[TypeA, TypeB])
+]
 
 
-TypeALazy = Annotated["TypeA", strawberry.lazy("tests.schema.test_lazy_types.test_lazy_unions")]
-TypeBLazy = Annotated["TypeB", strawberry.lazy("tests.schema.test_lazy_types.test_lazy_unions")]
-LazyABUnion = Annotated[Union[
-    TypeALazy,
-    TypeBLazy,
-], strawberry.union("LazyABUnion", types=[TypeALazy, TypeBLazy])]
+TypeALazy = Annotated[
+    "TypeA", strawberry.lazy("tests.schema.test_lazy_types.test_lazy_unions")
+]
+TypeBLazy = Annotated[
+    "TypeB", strawberry.lazy("tests.schema.test_lazy_types.test_lazy_unions")
+]
+LazyABUnion = Annotated[
+    Union[
+        TypeALazy,
+        TypeBLazy,
+    ],
+    strawberry.union("LazyABUnion", types=[TypeALazy, TypeBLazy]),
+]
 
 
 def test_lazy_union_with_non_lazy_members():
     @strawberry.type
     class Query:
-        ab: Annotated["ABUnion", strawberry.lazy("tests.schema.test_lazy_types.test_lazy_unions")]
+        ab: Annotated[
+            "ABUnion", strawberry.lazy("tests.schema.test_lazy_types.test_lazy_unions")
+        ]
 
     expected = """
         union ABUnion = TypeA | TypeB
@@ -53,7 +65,10 @@ def test_lazy_union_with_non_lazy_members():
 def test_lazy_union_with_lazy_members():
     @strawberry.type
     class Query:
-        ab: Annotated["LazyABUnion", strawberry.lazy("tests.schema.test_lazy_types.test_lazy_unions")]
+        ab: Annotated[
+            "LazyABUnion",
+            strawberry.lazy("tests.schema.test_lazy_types.test_lazy_unions"),
+        ]
 
     expected = """
            union LazyABUnion = TypeA | TypeB

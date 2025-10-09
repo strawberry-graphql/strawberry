@@ -6,13 +6,14 @@ import typing
 from functools import partial, reduce
 from typing import (
     TYPE_CHECKING,
+    Annotated,
     Any,
     Callable,
     Generic,
     Optional,
     TypeVar,
     Union,
-    cast, Annotated,
+    cast,
 )
 from typing_extensions import Protocol
 
