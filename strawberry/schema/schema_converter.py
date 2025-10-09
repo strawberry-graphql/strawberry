@@ -11,7 +11,7 @@ from typing import (
     Optional,
     TypeVar,
     Union,
-    cast,
+    cast, Annotated,
 )
 from typing_extensions import Protocol
 
@@ -78,6 +78,7 @@ from strawberry.utils.await_maybe import await_maybe
 
 from . import compat
 from .types.concrete_type import ConcreteType
+from ..utils import typing
 
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Mapping
@@ -861,6 +862,10 @@ class GraphQLCoreConverter:
     def from_type(self, type_: Union[StrawberryType, type]) -> GraphQLNullableType:
         if compat.is_graphql_generic(type_):
             raise MissingTypesForGenericError(type_)
+
+        # to handle lazy unions
+        if typing.get_origin(type_) is Annotated and len(typing.get_args(type_)) == 2:
+            type_ = typing.get_args(type_)[1]
 
         if isinstance(type_, EnumDefinition):  # TODO: Replace with StrawberryEnum
             return self.from_enum(type_)
