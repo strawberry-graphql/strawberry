@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import dataclasses
 import sys
+import typing
 from functools import partial, reduce
 from typing import (
     TYPE_CHECKING,
@@ -78,7 +79,6 @@ from strawberry.utils.await_maybe import await_maybe
 
 from . import compat
 from .types.concrete_type import ConcreteType
-from ..utils import typing
 
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Mapping
