@@ -865,8 +865,10 @@ class GraphQLCoreConverter:
             raise MissingTypesForGenericError(type_)
 
         # to handle lazy unions
-        if typing.get_origin(type_) is Annotated and len(typing.get_args(type_)) == 2:
-            type_ = typing.get_args(type_)[1]
+        if typing.get_origin(type_) is Annotated:
+            args = typing.get_args(type_)
+            if len(args) >= 2 and isinstance(args[1], StrawberryUnion):
+                type_ = args[1]
 
         if isinstance(type_, EnumDefinition):  # TODO: Replace with StrawberryEnum
             return self.from_enum(type_)
