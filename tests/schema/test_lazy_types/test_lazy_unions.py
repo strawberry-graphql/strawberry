@@ -71,20 +71,20 @@ def test_lazy_union_with_lazy_members():
         ]
 
     expected = """
-           union LazyABUnion = TypeA | TypeB
+        union LazyABUnion = TypeA | TypeB
 
-           type Query {
-             ab: LazyABUnion!
-           }
+        type Query {
+          ab: LazyABUnion!
+        }
 
-           type TypeA {
-             a: Int!
-           }
+        type TypeA {
+          a: Int!
+        }
 
-           type TypeB {
-             b: Int!
-           }
-       """
+        type TypeB {
+          b: Int!
+        }
+    """
 
     schema = strawberry.Schema(query=Query)
     assert print_schema(schema) == textwrap.dedent(expected).strip()
