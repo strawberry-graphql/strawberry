@@ -56,20 +56,21 @@ def test_lazy_union_with_non_lazy_members():
         type TypeB {
           b: Int!
         }
+           expected = """
+        union LazyABUnion = TypeA | TypeB
+
+        type Query {
+          ab: LazyABUnion!
+        }
+
+        type TypeA {
+          a: Int!
+        }
+
+        type TypeB {
+          b: Int!
+        }
     """
-
-    schema = strawberry.Schema(query=Query)
-    assert print_schema(schema) == textwrap.dedent(expected).strip()
-
-
-def test_lazy_union_with_lazy_members():
-    @strawberry.type
-    class Query:
-        ab: Annotated[
-            "LazyABUnion",
-            strawberry.lazy("tests.schema.test_lazy_types.test_lazy_unions"),
-        ]
-
     expected = """
            union LazyABUnion = TypeA | TypeB
 
