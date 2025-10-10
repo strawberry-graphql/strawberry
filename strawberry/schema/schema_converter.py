@@ -2,9 +2,11 @@ from __future__ import annotations
 
 import dataclasses
 import sys
+import typing
 from functools import partial, reduce
 from typing import (
     TYPE_CHECKING,
+    Annotated,
     Any,
     Callable,
     Generic,
@@ -868,6 +870,12 @@ class GraphQLCoreConverter:
     def from_type(self, type_: Union[StrawberryType, type]) -> GraphQLNullableType:
         if compat.is_graphql_generic(type_):
             raise MissingTypesForGenericError(type_)
+
+        # to handle lazy unions
+        if typing.get_origin(type_) is Annotated:
+            args = typing.get_args(type_)
+            if len(args) >= 2 and isinstance(args[1], StrawberryUnion):
+                type_ = args[1]
 
         if isinstance(type_, EnumDefinition):  # TODO: Replace with StrawberryEnum
             return self.from_enum(type_)
