@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.283.3 - 2025-10-10
+--------------------
+
+Adds support for lazy unions.
+
+Contributed by [Radosław Cybulski](https://github.com/rcybulski1122012) via [PR #4017](https://github.com/strawberry-graphql/strawberry/pull/4017/)
+
+
 0.283.2 - 2025-10-07
 --------------------
 
