@@ -154,13 +154,20 @@ def print_schema_directive(
     )
     schema_converter = schema.schema_converter
     gql_directive = schema_converter.from_schema_directive(directive.__class__)
+
+    # Reuse schema.config.name_converter for fast attribute lookup, localize builtins
+    name_converter = schema.config.name_converter.get_graphql_name
+    directive_getattr = getattr
+    UNSET_LOCAL = UNSET
+    fields = strawberry_directive.fields
+
     params = print_schema_directive_params(
         gql_directive,
         {
-            schema.config.name_converter.get_graphql_name(f): getattr(
-                directive, f.python_name or f.name, UNSET
+            name_converter(f): directive_getattr(
+                directive, f.python_name or f.name, UNSET_LOCAL
             )
-            for f in strawberry_directive.fields
+            for f in fields
         },
         schema=schema,
     )
@@ -170,19 +177,20 @@ def print_schema_directive(
     if printed_directive is not None:
         extras.directives.add(printed_directive)
 
-        for field in strawberry_directive.fields:
+        # minimize repeated lookups/attribute access in field iteration
+        for field in fields:
             f_type = field.type
 
+            # Inline the StrawberryContainer unrolling for performance (avoiding function call)
             while isinstance(f_type, StrawberryContainer):
                 f_type = f_type.of_type
 
+            # Inlined checks for common GraphQL types
             if has_object_definition(f_type):
                 extras.types.add(cast("type", f_type))
-
-            if hasattr(f_type, "_scalar_definition"):
+            elif hasattr(f_type, "_scalar_definition"):
                 extras.types.add(cast("type", f_type))
-
-            if isinstance(f_type, EnumDefinition):
+            elif isinstance(f_type, EnumDefinition):
                 extras.types.add(cast("type", f_type))
 
     return f" @{gql_directive.name}{params}"
@@ -194,18 +202,25 @@ def print_field_directives(
     if not field:
         return ""
 
-    directives = (
-        directive
-        for directive in field.directives
-        if any(
-            location in [Location.FIELD_DEFINITION, Location.INPUT_FIELD_DEFINITION]
-            for location in directive.__strawberry_directive__.locations  # type: ignore
-        )
-    )
+    # Pre-build set for quick location comparisons
+    FIELD_DEF = Location.FIELD_DEFINITION
+    INPUT_FIELD_DEF = Location.INPUT_FIELD_DEFINITION
 
+    # Avoid generator overhead: collect matching directives in a list directly.
+    field_directives = field.directives
+    matching_directives = []
+    append = matching_directives.append
+    for directive in field_directives:
+        locations = directive.__strawberry_directive__.locations  # type: ignore
+        for location in locations:
+            if location is FIELD_DEF or location is INPUT_FIELD_DEF:
+                append(directive)
+                break
+
+    # Small optimization: list comprehension, faster than generators for short lists
     return "".join(
         print_schema_directive(directive, schema=schema, extras=extras)
-        for directive in directives
+        for directive in matching_directives
     )
 
 
