@@ -1,20 +1,20 @@
 import pathlib
 from typing import Literal
 
+_BASE_DIR = pathlib.Path(__file__).parents[1]
+
 GraphQL_IDE = Literal["graphiql", "apollo-sandbox", "pathfinder"]
 
 
 def get_graphql_ide_html(
     graphql_ide: GraphQL_IDE | None = "graphiql",
 ) -> str:
-    here = pathlib.Path(__file__).parents[1]
-
     if graphql_ide == "apollo-sandbox":
-        path = here / "static/apollo-sandbox.html"
+        path = _BASE_DIR / "static/apollo-sandbox.html"
     elif graphql_ide == "pathfinder":
-        path = here / "static/pathfinder.html"
+        path = _BASE_DIR / "static/pathfinder.html"
     else:
-        path = here / "static/graphiql.html"
+        path = _BASE_DIR / "static/graphiql.html"
 
     return path.read_text(encoding="utf-8")
 
