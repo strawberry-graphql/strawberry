@@ -162,8 +162,10 @@ class BaseGraphQLTestClient(ABC):
         """
         map: dict[str, list[str]] = {}
 
-        # Pre-create an iterator of file keys to use for lists
-        files_iter = iter(files.keys())
+        # Pre-create a list of file keys for O(1) access instead of iterator
+        file_keys = list(files.keys())
+        file_key_idx = 0
+
         for key, values in variables.items():
             reference = key
             variable_values = values
@@ -178,13 +180,12 @@ class BaseGraphQLTestClient(ABC):
 
             # If the variable is an array of files we must number the keys
             if isinstance(variable_values, list):
-                for index, _ in enumerate(variable_values):
-                    try:
-                        k = next(files_iter)
-                    except StopIteration:
-                        raise KeyError(
-                            "Not enough file keys to match list in variables"
-                        )
+                n = len(variable_values)
+                if file_key_idx + n > len(file_keys):
+                    raise KeyError("Not enough file keys to match list in variables")
+                for index in range(n):
+                    k = file_keys[file_key_idx]
+                    file_key_idx += 1
                     map.setdefault(k, [])
                     map[k].append(f"variables.{reference}.{index}")
             # Only map if this is actually a file (i.e., appears in files dict)
