@@ -5,6 +5,7 @@ import warnings
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Literal
+
 from typing_extensions import TypedDict
 
 if TYPE_CHECKING:
@@ -161,6 +162,9 @@ class BaseGraphQLTestClient(ABC):
         ```
         """
         map: dict[str, list[str]] = {}
+
+        # Pre-create an iterator of file keys to use for lists
+        files_iter = iter(files.keys())
         for key, values in variables.items():
             reference = key
             variable_values = values
@@ -175,20 +179,20 @@ class BaseGraphQLTestClient(ABC):
 
             # If the variable is an array of files we must number the keys
             if isinstance(variable_values, list):
-                # copying `files` as when we map a file we must discard from the dict
-                _kwargs = files.copy()
                 for index, _ in enumerate(variable_values):
-                    k = next(iter(_kwargs.keys()))
-                    _kwargs.pop(k)
+                    try:
+                        k = next(files_iter)
+                    except StopIteration:
+                        raise KeyError(
+                            "Not enough file keys to match list in variables"
+                        )
                     map.setdefault(k, [])
                     map[k].append(f"variables.{reference}.{index}")
-            else:
+            # Only map if this is actually a file (i.e., appears in files dict)
+            elif key in files:
                 map[key] = [f"variables.{reference}"]
 
-        # Variables can be mixed files and other data, we don't want to map non-files
-        # vars so we need to remove them, we can't remove them before
-        # because they can be part of a list of files or folder
-        return {k: v for k, v in map.items() if k in files}
+        return map
 
     def _decode(self, response: Any, type: Literal["multipart", "json"]) -> Any:
         if type == "multipart":
