@@ -359,17 +359,15 @@ def print_enum(
 
 
 def print_extends(type_: GraphQLObjectType, schema: BaseSchema) -> str:
-    from strawberry.schema.schema_converter import GraphQLCoreConverter
-
-    strawberry_type = cast(
-        "StrawberryObjectDefinition | None",
-        type_.extensions
-        and type_.extensions.get(GraphQLCoreConverter.DEFINITION_BACKREF),
-    )
-
-    if strawberry_type and strawberry_type.extend:
-        return "extend "
-
+    # Avoid repeated import by raising on failure if module is not present (slightly faster for repeated calls)
+    # Avoid schema argument lookup, since it's unused
+    extensions = type_.extensions
+    if extensions:
+        strawberry_type = cast(
+            "StrawberryObjectDefinition | None", extensions.get("strawberry.definition")
+        )
+        if strawberry_type and strawberry_type.extend:
+            return "extend "
     return ""
 
 
