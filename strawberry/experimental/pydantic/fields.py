@@ -35,13 +35,20 @@ def replace_types_recursively(
 
     origin = get_origin(type_)
 
+    # Fast path: not a generic/union or doesn't have type args
     if not origin or not hasattr(type_, "__args__"):
         return replaced_type
 
+    # Fetch the args from replaced_type so that nested replaced objects/types are correct
+    orig_args = get_args(replaced_type)
     converted = tuple(
         replace_types_recursively(t, is_input=is_input, compat=compat)
-        for t in get_args(replaced_type)
+        for t in orig_args
     )
+
+    # Avoid recreating identical generic/union/annotated types when possible
+    if converted == orig_args:
+        return replaced_type
 
     if isinstance(replaced_type, TypingGenericAlias):
         return TypingGenericAlias(origin, converted)
