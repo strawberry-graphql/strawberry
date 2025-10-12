@@ -5,7 +5,6 @@ import warnings
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Literal
-
 from typing_extensions import TypedDict
 
 if TYPE_CHECKING:
