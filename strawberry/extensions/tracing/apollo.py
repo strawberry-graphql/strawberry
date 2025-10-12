@@ -4,7 +4,7 @@ import dataclasses
 import time
 from datetime import datetime, timezone
 from inspect import isawaitable
-from typing import TYPE_CHECKING, Any, Callable, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 from strawberry.extensions import SchemaExtension
 from strawberry.extensions.utils import get_path_from_info
@@ -12,7 +12,7 @@ from strawberry.extensions.utils import get_path_from_info
 from .utils import should_skip_tracing
 
 if TYPE_CHECKING:
-    from collections.abc import Generator
+    from collections.abc import Callable, Generator
 
     from graphql import GraphQLResolveInfo
 

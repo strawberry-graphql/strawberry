@@ -1,5 +1,6 @@
 import re
-from typing import Annotated, Any, Callable, Optional
+from collections.abc import Callable
+from typing import Annotated, Any, Optional
 
 import pytest
 

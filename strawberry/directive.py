@@ -6,7 +6,6 @@ from typing import (
     TYPE_CHECKING,
     Annotated,
     Any,
-    Callable,
     Generic,
     Optional,
     TypeVar,
@@ -24,6 +23,7 @@ from strawberry.types.unset import UNSET
 
 if TYPE_CHECKING:
     import inspect
+    from collections.abc import Callable
 
     from strawberry.types.arguments import StrawberryArgument
 

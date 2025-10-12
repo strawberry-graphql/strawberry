@@ -1,5 +1,6 @@
 import itertools
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 import nox
 from nox_poetry import Session, session
@@ -8,7 +9,7 @@ nox.options.reuse_existing_virtualenvs = True
 nox.options.error_on_external_run = True
 nox.options.default_venv_backend = "uv"
 
-PYTHON_VERSIONS = ["3.14", "3.13", "3.12", "3.11", "3.10", "3.9"]
+PYTHON_VERSIONS = ["3.14", "3.13", "3.12", "3.11", "3.10"]
 
 GQL_CORE_VERSIONS = [
     "3.2.6",
@@ -130,7 +131,7 @@ def tests_integrations(session: Session, integration: str, gql_core: str) -> Non
 
 
 @session(
-    python=["3.9", "3.10", "3.11", "3.12", "3.13"],
+    python=["3.10", "3.11", "3.12", "3.13"],
     name="Pydantic V1 tests",
     tags=["tests", "pydantic"],
 )
@@ -189,8 +190,7 @@ def tests_typecheckers(session: Session) -> None:
     )
 
 
-# skipping python 3.9 because of some changes in click 8.2.0
-@session(python=PYTHON_VERSIONS[:-1], name="CLI tests", tags=["tests"])
+@session(python=PYTHON_VERSIONS, name="CLI tests", tags=["tests"])
 def tests_cli(session: Session) -> None:
     session.run_always("poetry", "install", "--without=integrations", external=True)
 

@@ -1,11 +1,14 @@
 from __future__ import annotations
 
 from dataclasses import InitVar, dataclass, field
-from typing import Any, Callable, Optional, TypedDict
+from typing import TYPE_CHECKING, Any, Optional, TypedDict
 
 from strawberry.types.info import Info
 
 from .name_converter import NameConverter
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 
 class BatchingConfig(TypedDict):

@@ -99,7 +99,7 @@ jobs:
     steps:
       - uses: actions/setup-python@v4
         with:
-          python-version: "3.9"
+          python-version: "3.10"
       - name: Install dependencies
         run: pip install httpx
       - name: Update release on GitHub
@@ -178,7 +178,7 @@ jobs:
     steps:
       - uses: actions/setup-python@v4
         with:
-          python-version: "3.9"
+          python-version: "3.10"
       - name: Install dependencies
         run: pip install tweepy==4.14.0
       - name: Send tweet

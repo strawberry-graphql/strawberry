@@ -5,14 +5,14 @@ from abc import ABC, abstractmethod
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
     ClassVar,
+    Literal,
     Optional,
     TypeVar,
     Union,
     overload,
 )
-from typing_extensions import Literal, Protocol, Self, deprecated
+from typing_extensions import Protocol, Self, deprecated
 
 from strawberry.utils.deprecations import DEPRECATION_MESSAGES, DeprecatedDescriptor
 from strawberry.utils.inspect import get_specialized_type_var_map
@@ -20,8 +20,8 @@ from strawberry.utils.typing import is_concrete_generic
 from strawberry.utils.typing import is_generic as is_type_generic
 
 if TYPE_CHECKING:
-    from collections.abc import Mapping, Sequence
-    from typing_extensions import TypeGuard
+    from collections.abc import Callable, Mapping, Sequence
+    from typing import TypeGuard
 
     from graphql import GraphQLAbstractType, GraphQLResolveInfo
 
@@ -291,7 +291,9 @@ class StrawberryObjectDefinition(StrawberryType):
             resolved_type = StrawberryAnnotation(passed_type).resolve()
             resolved_types.append(resolved_type)
 
-        type_var_map = dict(zip((param.__name__ for param in params), resolved_types))
+        type_var_map = dict(
+            zip((param.__name__ for param in params), resolved_types, strict=False)
+        )
 
         return self.copy_with(type_var_map)
 

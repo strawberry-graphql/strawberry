@@ -3,7 +3,6 @@ from __future__ import annotations
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
     Optional,
     Union,
     overload,
@@ -13,7 +12,7 @@ from strawberry.types.enum import _process_enum
 from strawberry.types.enum import enum_value as base_enum_value
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable
+    from collections.abc import Callable, Iterable
 
     from strawberry.enum import EnumType, EnumValueDefinition
 

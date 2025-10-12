@@ -5,7 +5,6 @@ import warnings
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
     Optional,
     Union,
     cast,
@@ -31,7 +30,7 @@ from strawberry.utils.typing import get_list_annotation, is_list
 from .exceptions import MissingFieldsListError
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
+    from collections.abc import Callable, Sequence
 
     from strawberry.types.base import WithStrawberryObjectDefinition
 

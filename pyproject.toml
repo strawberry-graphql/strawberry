@@ -13,7 +13,7 @@ classifiers = [
   "Topic :: Software Development :: Libraries :: Python Modules",
   "License :: OSI Approved :: MIT License",
 ]
-requires-python = ">=3.9,<4.0"
+requires-python = ">=3.10,<4.0"
 dependencies = [
   "graphql-core>=3.2.0,<3.4.0",
   "typing-extensions>=4.5.0",
@@ -88,7 +88,7 @@ dev = [
   "pyinstrument (>=4.0.0)",
   "pytest (>=7.2,<8.0)",
   "pytest-asyncio (>=0.20.3)",
-  "pytest-codspeed (>=3.0.0) ; python_version >= \"3.9\"",
+  "pytest-codspeed (>=3.0.0)",
   "pytest-cov (>=4.0.0,<5.0.0)",
   "pytest-emoji (>=0.2.0,<0.3.0)",
   "pytest-mock (>=3.10,<4.0)",
@@ -191,12 +191,12 @@ append-github-contributor = true
 exclude = ["**/__pycache__", "**/.venv", "**/.pytest_cache", "**/.nox"]
 reportMissingImports = true
 reportMissingTypeStubs = false
-pythonVersion = "3.9"
+pythonVersion = "3.10"
 stubPath = ""
 
 [tool.ruff]
 line-length = 88
-target-version = "py39"
+target-version = "py310"
 fix = true
 exclude = [
   ".bzr",
@@ -339,7 +339,6 @@ ignore = [
   "W191",
   "PLR0915",
 ]
-exclude = ["tests/python_312/*"] # SyntaxError because we support Python 3.9+
 
 [tool.ruff.lint.per-file-ignores]
 ".github/*" = ["INP001"]

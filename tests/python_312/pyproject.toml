@@ -1,0 +1,2 @@
+[tool.ruff]
+target-version = "py312"

@@ -5,11 +5,10 @@ from datetime import timedelta
 from json import JSONDecodeError
 from typing import (
     TYPE_CHECKING,
-    Callable,
     Optional,
+    TypeGuard,
     Union,
 )
-from typing_extensions import TypeGuard
 
 from lia import HTTPException, StarletteRequestAdapter
 from starlette import status
@@ -38,7 +37,13 @@ from strawberry.http.typevars import (
 from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
 
 if TYPE_CHECKING:
-    from collections.abc import AsyncGenerator, AsyncIterator, Mapping, Sequence
+    from collections.abc import (
+        AsyncGenerator,
+        AsyncIterator,
+        Callable,
+        Mapping,
+        Sequence,
+    )
 
     from starlette.types import Receive, Scope, Send
 

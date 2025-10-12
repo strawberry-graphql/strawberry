@@ -1,8 +1,9 @@
 import dataclasses
+from collections.abc import Callable
 from dataclasses import dataclass
 from decimal import Decimal
 from functools import cached_property
-from typing import TYPE_CHECKING, Any, Callable, Optional
+from typing import TYPE_CHECKING, Any, Optional
 from uuid import UUID
 
 import pydantic
@@ -296,7 +297,7 @@ class PydanticCompat:
 
 
 if IS_PYDANTIC_V2:
-    from typing_extensions import get_args, get_origin
+    from typing import get_args, get_origin
 
     from pydantic.v1.typing import is_new_type
     from pydantic.v1.utils import lenient_issubclass, smart_deepcopy

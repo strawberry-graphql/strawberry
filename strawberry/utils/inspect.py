@@ -1,9 +1,9 @@
 import asyncio
 import inspect
+from collections.abc import Callable
 from functools import lru_cache
 from typing import (
     Any,
-    Callable,
     Generic,
     Optional,
     Protocol,
@@ -99,7 +99,7 @@ def get_specialized_type_var_map(cls: type) -> Optional[dict[str, type]]:
         if (type_params := getattr(origin, "__parameters__", None)) is not None:
             args = get_args(tp)
             if args:
-                for type_param, arg in zip(type_params, args):
+                for type_param, arg in zip(type_params, args, strict=False):
                     if type_param not in param_args:
                         param_args[type_param] = arg
             else:

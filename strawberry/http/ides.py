@@ -1,6 +1,5 @@
 import pathlib
-from typing import Optional
-from typing_extensions import Literal
+from typing import Literal, Optional
 
 GraphQL_IDE = Literal["graphiql", "apollo-sandbox", "pathfinder"]
 

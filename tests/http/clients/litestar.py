@@ -5,8 +5,7 @@ import json
 from collections.abc import AsyncGenerator, Mapping, Sequence
 from datetime import timedelta
 from io import BytesIO
-from typing import Any, Optional
-from typing_extensions import Literal
+from typing import Any, Literal, Optional
 
 from litestar import Litestar, Request
 from litestar.exceptions import WebSocketDisconnect

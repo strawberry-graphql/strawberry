@@ -5,6 +5,7 @@ import typing
 import warnings
 from collections import abc
 from enum import Enum
+from types import UnionType
 from typing import (
     TYPE_CHECKING,
     Annotated,
@@ -14,8 +15,10 @@ from typing import (
     TypeVar,
     Union,
     cast,
+    get_args,
+    get_origin,
 )
-from typing_extensions import Self, get_args, get_origin
+from typing_extensions import Self
 
 from strawberry.streamable import StrawberryStreamable
 from strawberry.types.base import (
@@ -413,12 +416,8 @@ class StrawberryAnnotation:
         """Returns True if annotation is a Union."""
         # this check is needed because unions declared with the new syntax `A | B`
         # don't have a `__origin__` property on them, but they are instances of
-        # `UnionType`, which is only available in Python 3.10+
-        if sys.version_info >= (3, 10):
-            from types import UnionType
-
-            if isinstance(annotation, UnionType):
-                return True
+        if isinstance(annotation, UnionType):
+            return True
 
         # unions declared as Union[A, B] fall through to this check
         # even on python 3.10+

@@ -10,15 +10,15 @@ from typing import (
     TYPE_CHECKING,
     Annotated,
     Any,
-    Callable,
     Generic,
     NamedTuple,
     Optional,
     TypeVar,
     Union,
     cast,
+    get_origin,
 )
-from typing_extensions import Protocol, get_origin
+from typing_extensions import Protocol
 
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.exceptions import (
@@ -33,7 +33,7 @@ from strawberry.utils.typing import type_has_annotation
 
 if TYPE_CHECKING:
     import builtins
-    from collections.abc import Mapping
+    from collections.abc import Callable, Mapping
 
 
 class Parameter(inspect.Parameter):

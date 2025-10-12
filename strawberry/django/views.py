@@ -5,11 +5,10 @@ import warnings
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
     Optional,
+    TypeGuard,
     Union,
 )
-from typing_extensions import TypeGuard
 
 from asgiref.sync import markcoroutinefunction
 from django.core.serializers.json import DjangoJSONEncoder
@@ -37,7 +36,7 @@ from strawberry.http.typevars import (
 from .context import StrawberryDjangoContext
 
 if TYPE_CHECKING:
-    from collections.abc import AsyncIterator
+    from collections.abc import AsyncIterator, Callable
 
     from django.template.response import TemplateResponse
 

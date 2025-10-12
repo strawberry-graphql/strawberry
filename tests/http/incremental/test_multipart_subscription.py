@@ -1,5 +1,5 @@
 import contextlib
-from typing_extensions import Literal
+from typing import Literal
 
 import pytest
 

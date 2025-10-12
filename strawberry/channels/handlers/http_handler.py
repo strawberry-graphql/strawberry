@@ -5,8 +5,8 @@ import json
 import warnings
 from functools import cached_property
 from io import BytesIO
-from typing import TYPE_CHECKING, Any, Callable, Optional, Union
-from typing_extensions import TypeGuard, assert_never
+from typing import TYPE_CHECKING, Any, Optional, TypeGuard, Union
+from typing_extensions import assert_never
 from urllib.parse import parse_qs
 
 from django.conf import settings
@@ -25,7 +25,7 @@ from strawberry.types.unset import UNSET
 from .base import ChannelsConsumer
 
 if TYPE_CHECKING:
-    from collections.abc import AsyncGenerator, Mapping
+    from collections.abc import AsyncGenerator, Callable, Mapping
 
     from strawberry.http import GraphQLHTTPResponse
     from strawberry.http.ides import GraphQL_IDE

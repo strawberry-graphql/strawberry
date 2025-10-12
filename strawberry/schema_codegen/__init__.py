@@ -4,8 +4,8 @@ import dataclasses
 import keyword
 from collections import defaultdict
 from graphlib import TopologicalSorter
-from typing import TYPE_CHECKING, Union
-from typing_extensions import Protocol, TypeAlias
+from typing import TYPE_CHECKING, TypeAlias, Union
+from typing_extensions import Protocol
 
 import libcst as cst
 from graphql import (

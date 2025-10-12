@@ -13,8 +13,8 @@ from typing import (
     TypeVar,
     Union,
     cast,
+    get_origin,
 )
-from typing_extensions import get_origin
 
 from graphql import GraphQLNamedType, GraphQLUnionType
 
