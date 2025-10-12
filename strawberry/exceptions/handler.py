@@ -1,8 +1,9 @@
 import os
 import sys
 import threading
+from collections.abc import Callable
 from types import TracebackType
-from typing import Any, Callable, Optional, cast
+from typing import Any, Optional, cast
 
 from .exception import StrawberryException, UnableToFindExceptionSource
 

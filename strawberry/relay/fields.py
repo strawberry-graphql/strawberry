@@ -8,6 +8,7 @@ from collections.abc import (
     AsyncIterable,
     AsyncIterator,
     Awaitable,
+    Callable,
     Iterable,
     Iterator,
     Mapping,
@@ -17,13 +18,13 @@ from typing import (
     TYPE_CHECKING,
     Annotated,
     Any,
-    Callable,
     ForwardRef,
     Optional,
     Union,
     cast,
+    get_args,
+    get_origin,
 )
-from typing_extensions import get_args, get_origin
 
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.extensions.field_extension import (
@@ -47,7 +48,7 @@ from strawberry.utils.typing import eval_type, is_generic_alias, is_optional, is
 from .types import Connection, GlobalID, Node
 
 if TYPE_CHECKING:
-    from typing_extensions import Literal
+    from typing import Literal
 
     from strawberry.permission import BasePermission
     from strawberry.types.info import Info
@@ -180,6 +181,7 @@ class NodeExtension(FieldExtension):
                                     for nodes in asyncgen_nodes.values()
                                 ),
                             ),
+                            strict=True,
                         )
                     )
 

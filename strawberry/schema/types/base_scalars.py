@@ -1,8 +1,8 @@
 import datetime
 import decimal
 import uuid
+from collections.abc import Callable
 from operator import methodcaller
-from typing import Callable
 
 import dateutil.parser
 from graphql import GraphQLError

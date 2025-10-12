@@ -11,7 +11,7 @@ from strawberry.types.base import StrawberryType, has_object_definition
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
-    from typing_extensions import TypeGuard
+    from typing import TypeGuard
 
     from strawberry.types.scalar import ScalarDefinition, ScalarWrapper
 

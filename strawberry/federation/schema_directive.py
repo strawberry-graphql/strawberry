@@ -1,5 +1,6 @@
 import dataclasses
-from typing import Callable, Optional, TypeVar
+from collections.abc import Callable
+from typing import Optional, TypeVar
 from typing_extensions import dataclass_transform
 
 from strawberry.directive import directive_field

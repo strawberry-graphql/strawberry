@@ -2,13 +2,13 @@ import asyncio
 import contextlib
 import warnings
 from collections import defaultdict
-from collections.abc import AsyncGenerator, Awaitable, Sequence
+from collections.abc import AsyncGenerator, Awaitable, Callable, Sequence
 from typing import (
     Any,
-    Callable,
+    Literal,
     Optional,
 )
-from typing_extensions import Literal, Protocol, TypedDict
+from typing_extensions import Protocol, TypedDict
 from weakref import WeakSet
 
 from channels.consumer import AsyncConsumer

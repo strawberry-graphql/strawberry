@@ -1,8 +1,6 @@
-import sys
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 from typing import (
     Any,
-    Callable,
     NewType,
     Optional,
     TypeVar,
@@ -12,11 +10,7 @@ from typing import (
 
 from strawberry.types.scalar import ScalarWrapper, _process_scalar
 
-# in python 3.10+ NewType is a class
-if sys.version_info >= (3, 10):
-    _T = TypeVar("_T", bound=Union[type, NewType])
-else:
-    _T = TypeVar("_T", bound=type)
+_T = TypeVar("_T", bound=Union[type, NewType])
 
 
 def identity(x: _T) -> _T:  # pragma: no cover

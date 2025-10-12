@@ -47,8 +47,6 @@ def upgrade(
 
         raise typer.Exit(2)
 
-    python_target_version = tuple(int(x) for x in python_target.split("."))
-
     transformer: ConvertUnionToAnnotatedUnion | UpdateImportsCodemod
 
     if codemod == "update-imports":
@@ -57,7 +55,7 @@ def upgrade(
     else:
         transformer = ConvertUnionToAnnotatedUnion(
             CodemodContext(),
-            use_pipe_syntax=python_target_version >= (3, 10),
+            use_pipe_syntax=True,
             use_typing_extensions=use_typing_extensions,
         )
 

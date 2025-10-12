@@ -1,8 +1,7 @@
 import builtins
-from collections.abc import Iterable, Sequence
+from collections.abc import Callable, Iterable, Sequence
 from typing import (
     TYPE_CHECKING,
-    Callable,
     Optional,
     TypeVar,
     Union,

@@ -2,13 +2,12 @@ from __future__ import annotations
 
 import warnings
 from asyncio import ensure_future
-from collections.abc import AsyncGenerator, AsyncIterator, Awaitable, Iterable
+from collections.abc import AsyncGenerator, AsyncIterator, Awaitable, Callable, Iterable
 from functools import cached_property, lru_cache
 from inspect import isawaitable
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
     NamedTuple,
     Optional,
     Union,
@@ -83,7 +82,7 @@ from .exceptions import CannotGetOperationTypeError, InvalidOperationTypeError
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Mapping
-    from typing_extensions import TypeAlias
+    from typing import TypeAlias
 
     from graphql.language import DocumentNode
     from graphql.pyutils import Path

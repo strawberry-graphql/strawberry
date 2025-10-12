@@ -6,12 +6,11 @@ from inspect import signature
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
     Optional,
+    TypeGuard,
     Union,
     cast,
 )
-from typing_extensions import TypeGuard
 
 from lia import HTTPException, StarletteRequestAdapter
 from starlette import status
@@ -41,6 +40,7 @@ if TYPE_CHECKING:
     from collections.abc import (
         AsyncIterator,
         Awaitable,
+        Callable,
         Sequence,
     )
     from enum import Enum

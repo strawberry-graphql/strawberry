@@ -2,13 +2,12 @@ import abc
 import contextlib
 import json
 import logging
-from collections.abc import AsyncGenerator, AsyncIterable, Mapping, Sequence
+from collections.abc import AsyncGenerator, AsyncIterable, Callable, Mapping, Sequence
 from dataclasses import dataclass
 from datetime import timedelta
 from functools import cached_property
 from io import BytesIO
-from typing import Any, Callable, Optional, Union
-from typing_extensions import Literal
+from typing import Any, Literal, Optional, Union
 
 from strawberry.http import GraphQLHTTPResponse
 from strawberry.http.ides import GraphQL_IDE

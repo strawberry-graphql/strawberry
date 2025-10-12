@@ -6,7 +6,6 @@ import warnings
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
     Optional,
     cast,
 )
@@ -36,7 +35,7 @@ from strawberry.types.type_resolver import _get_fields
 
 if TYPE_CHECKING:
     import builtins
-    from collections.abc import Sequence
+    from collections.abc import Callable, Sequence
 
     from graphql import GraphQLResolveInfo
 
@@ -247,8 +246,6 @@ def type(
         # https://github.com/python/cpython/issues/89961
         if sys.version_info >= (3, 10, 1):
             kwargs["kw_only"] = dataclasses.MISSING
-        else:
-            kwargs["init"] = False
 
         cls = dataclasses.make_dataclass(
             cls.__name__,
@@ -257,11 +254,6 @@ def type(
             namespace=namespace,
             **kwargs,  # type: ignore
         )
-
-        if sys.version_info < (3, 10, 1):
-            from strawberry.utils.dataclasses import add_custom_init_fn
-
-            add_custom_init_fn(cls)
 
         _process_type(
             cls,

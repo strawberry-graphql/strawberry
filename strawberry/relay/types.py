@@ -19,13 +19,17 @@ from typing import (
     ClassVar,
     ForwardRef,
     Generic,
+    Literal,
     Optional,
+    TypeAlias,
     TypeVar,
     Union,
     cast,
+    get_args,
+    get_origin,
     overload,
 )
-from typing_extensions import Literal, Self, TypeAlias, get_args, get_origin
+from typing_extensions import Self
 
 from strawberry.relay.exceptions import NodeIDAnnotationError
 from strawberry.types.base import (

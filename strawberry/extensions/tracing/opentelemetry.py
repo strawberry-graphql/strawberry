@@ -1,11 +1,11 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from copy import deepcopy
 from inspect import isawaitable
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
     Optional,
     Union,
 )
