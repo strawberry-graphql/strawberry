@@ -19,6 +19,12 @@ class Response:
     data: dict[str, object] | None
     extensions: dict[str, object] | None
 
+    # Placeholder for Response class; required for function signatures.
+    def __init__(self, errors=None, data=None, extensions=None) -> None:
+        self.errors = errors
+        self.data = data
+        self.extensions = extensions
+
 
 class Body(TypedDict, total=False):
     query: str
@@ -93,7 +99,27 @@ class BaseGraphQLTestClient(ABC):
         if files:
             assert variables is not None
             assert files is not None
-            file_map = BaseGraphQLTestClient._build_multipart_file_map(variables, files)
+
+            # Unroll loop to avoid extra method call and dict copies in files loop
+            map: dict[str, list[str]] = {}
+            for key, values in variables.items():
+                reference = key
+                variable_values = values
+
+                if isinstance(values, dict):
+                    folder_key = next(iter(values))
+                    reference += f".{folder_key}"
+                    variable_values = variable_values[folder_key]
+
+                if isinstance(variable_values, list):
+                    # Use keys iterator and pop directly to avoid copying files
+                    _kwargs_keys = iter(files)
+                    for index in range(len(variable_values)):
+                        k = next(_kwargs_keys)
+                        map.setdefault(k, []).append(f"variables.{reference}.{index}")
+                else:
+                    map[key] = [f"variables.{reference}"]
+            file_map = {k: v for k, v in map.items() if k in files}
 
             body = {
                 "operations": json.dumps(body),
