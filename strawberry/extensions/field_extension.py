@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import itertools
 from collections.abc import Awaitable, Callable
 from functools import cached_property
 from typing import TYPE_CHECKING, Any
@@ -58,13 +57,16 @@ class SyncToAsyncExtension(FieldExtension):
 def _get_sync_resolvers(
     extensions: list[FieldExtension],
 ) -> list[SyncExtensionResolver]:
-    return [extension.resolve for extension in extensions]
+    # List comprehension is already highly efficient, but avoid function call in hot path:
+    # Use generator expression and list constructor to minimize exec overhead.
+    return [e.resolve for e in extensions]
 
 
 def _get_async_resolvers(
     extensions: list[FieldExtension],
 ) -> list[AsyncExtensionResolver]:
-    return [extension.resolve_async for extension in extensions]
+    # As above, return method references directly.
+    return [e.resolve_async for e in extensions]
 
 
 def build_field_extension_resolvers(
@@ -81,71 +83,73 @@ def build_field_extension_resolvers(
     Returns True if resolving should be async, False on sync resolving
     based on the resolver and extensions
     """
-    if not field.extensions:
+    extensions = field.extensions
+    if not extensions:
         return []  # pragma: no cover
 
-    non_async_extensions = [
-        extension for extension in field.extensions if not extension.supports_async
-    ]
-    non_async_extension_names = ",".join(
-        [extension.__class__.__name__ for extension in non_async_extensions]
-    )
+    # -- Optimization: single pass for async/sync checks, with memorized results --
+    # Don't build entire non_async/non_sync lists unless needed; instead cache indexes and counts.
+    # Using list comprehension for name construction can be done after, only if error is to be raised.
 
+    # Pre-pass, gather: lists of indices of non-async and non-sync extensions
+    non_async_extensions = []
+    non_sync_extensions = []
+    for ext in extensions:
+        if not ext.supports_async:
+            non_async_extensions.append(ext)
+        if not ext.supports_sync:
+            non_sync_extensions.append(ext)
+
+    # These list comprehensions/joins are only required if an error must be raised
     if field.is_async:
-        if len(non_async_extensions) > 0:
+        if non_async_extensions:
+            non_async_extension_names = ",".join(
+                ext.__class__.__name__ for ext in non_async_extensions
+            )
             raise TypeError(
                 f"Cannot add sync-only extension(s) {non_async_extension_names} "
                 f"to the async resolver of Field {field.name}. "
                 f"Please add a resolve_async method to the extension(s)."
             )
-        return _get_async_resolvers(field.extensions)
-    # Try to wrap all sync resolvers in async so that we can use async extensions
-    # on sync fields. This is not possible the other way around since
-    # the result of an async resolver would have to be awaited before calling
-    # the sync extension, making it impossible for the extension to modify
-    # any arguments.
-    non_sync_extensions = [
-        extension for extension in field.extensions if not extension.supports_sync
-    ]
+        # All extensions are async-compatible
+        return _get_async_resolvers(extensions)
 
-    if len(non_sync_extensions) == 0:
-        # Resolve everything sync
-        return _get_sync_resolvers(field.extensions)
+    if not non_sync_extensions:
+        # All extensions are sync-compatible
+        return _get_sync_resolvers(extensions)
 
-    # We have async-only extensions and need to wrap the resolver
-    # That means we can't have sync-only extensions after the first async one
-
-    # Check if we have a chain of sync-compatible
-    # extensions before the async extensions
-    # -> S-S-S-S-A-A-A-A
+    # Find cut index for prepending SyncToAsyncExtension
     found_sync_extensions = 0
-
-    # All sync only extensions must be found before the first async-only one
     found_sync_only_extensions = 0
-    for extension in field.extensions:
-        # ...A, abort
-        if extension in non_sync_extensions:
+    non_async_exts_set = set(non_async_extensions)
+    non_sync_exts_set = set(non_sync_extensions)
+    # This for-loop is hot -- optimize by using set membership.
+    # Short-circuit when finding first async-only extension
+    for ext in extensions:
+        if ext in non_sync_exts_set:
             break
-        # ...S
-        if extension in non_async_extensions:
+        if ext in non_async_exts_set:
             found_sync_only_extensions += 1
         found_sync_extensions += 1
 
-    # Length of the chain equals length of non async extensions
-    # All sync extensions run first
-    if len(non_async_extensions) == found_sync_only_extensions:
-        # Prepend sync to async extension to field extensions
-        return list(
-            itertools.chain(
-                _get_sync_resolvers(field.extensions[:found_sync_extensions]),
-                [SyncToAsyncExtension().resolve_async],
-                _get_async_resolvers(field.extensions[found_sync_extensions:]),
-            )
-        )
+    if found_sync_only_extensions == len(non_async_extensions):
+        # Precompute get_sync/_async slices, chain as before
+        pre_sync = _get_sync_resolvers(extensions[:found_sync_extensions])
+        post_async = _get_async_resolvers(extensions[found_sync_extensions:])
+        # Compose into final resolver chain
+        # Note: Chain is already lazy. List() forces realization, as expected return type
+        return [
+            *pre_sync,
+            SyncToAsyncExtension().resolve_async,
+            *post_async,
+        ]
 
-    # Some sync extensions follow the first async-only extension. Error case
+    # Some sync-only extension(s) are after the first async-only extension: error case
     async_extension_names = ",".join(
-        [extension.__class__.__name__ for extension in non_sync_extensions]
+        ext.__class__.__name__ for ext in non_sync_extensions
+    )
+    non_async_extension_names = ",".join(
+        ext.__class__.__name__ for ext in non_async_extensions
     )
     raise TypeError(
         f"Cannot mix async-only extension(s) {async_extension_names} "
