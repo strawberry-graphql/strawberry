@@ -4,7 +4,7 @@ import dataclasses
 import time
 from datetime import datetime, timezone
 from inspect import isawaitable
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 from strawberry.extensions import SchemaExtension
 from strawberry.extensions.utils import get_path_from_info
@@ -38,7 +38,7 @@ class ApolloResolverStats:
     field_name: str
     return_type: Any
     start_offset: int
-    duration: Optional[int] = None
+    duration: int | None = None
 
     def to_json(self) -> dict[str, Any]:
         return {

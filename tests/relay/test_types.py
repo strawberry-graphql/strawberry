@@ -1,5 +1,5 @@
 from collections.abc import AsyncGenerator, AsyncIterable
-from typing import Any, Optional, Union, cast
+from typing import Any, cast
 from typing_extensions import assert_type
 from unittest.mock import MagicMock
 
@@ -62,7 +62,7 @@ def test_global_id_resolve_node_sync():
 def test_global_id_resolve_node_sync_non_existing():
     gid = relay.GlobalID(type_name="Fruit", node_id="999")
     fruit = gid.resolve_node_sync(fake_info)
-    assert_type(fruit, Optional[relay.Node])
+    assert_type(fruit, relay.Node | None)
     assert fruit is None
 
 
@@ -85,8 +85,8 @@ def test_global_id_resolve_node_sync_ensure_type_with_union():
     class Foo: ...
 
     gid = relay.GlobalID(type_name="Fruit", node_id="1")
-    fruit = gid.resolve_node_sync(fake_info, ensure_type=Union[Fruit, Foo])
-    assert_type(fruit, Union[Fruit, Foo])
+    fruit = gid.resolve_node_sync(fake_info, ensure_type=Fruit | Foo)
+    assert_type(fruit, Fruit | Foo)
     assert isinstance(fruit, Fruit)
     assert fruit.id == 1
     assert fruit.name == "Banana"
@@ -103,7 +103,7 @@ def test_global_id_resolve_node_sync_ensure_type_wrong_type():
 async def test_global_id_resolve_node():
     gid = relay.GlobalID(type_name="FruitAsync", node_id="1")
     fruit = await gid.resolve_node(fake_info)
-    assert_type(fruit, Optional[relay.Node])
+    assert_type(fruit, relay.Node | None)
     assert isinstance(fruit, FruitAsync)
     assert fruit.id == 1
     assert fruit.name == "Banana"
@@ -112,7 +112,7 @@ async def test_global_id_resolve_node():
 async def test_global_id_resolve_node_non_existing():
     gid = relay.GlobalID(type_name="FruitAsync", node_id="999")
     fruit = await gid.resolve_node(fake_info)
-    assert_type(fruit, Optional[relay.Node])
+    assert_type(fruit, relay.Node | None)
     assert fruit is None
 
 
@@ -135,8 +135,8 @@ async def test_global_id_resolve_node_ensure_type_with_union():
     class Foo: ...
 
     gid = relay.GlobalID(type_name="FruitAsync", node_id="1")
-    fruit = await gid.resolve_node(fake_info, ensure_type=Union[FruitAsync, Foo])
-    assert_type(fruit, Union[FruitAsync, Foo])
+    fruit = await gid.resolve_node(fake_info, ensure_type=FruitAsync | Foo)
+    assert_type(fruit, FruitAsync | Foo)
     assert isinstance(fruit, FruitAsync)
     assert fruit.id == 1
     assert fruit.name == "Banana"

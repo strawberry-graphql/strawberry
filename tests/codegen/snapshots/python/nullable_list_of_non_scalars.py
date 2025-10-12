@@ -1,8 +1,8 @@
-from typing import List, Optional
+from typing import List
 
 class OperationNameResultOptionalListOfPeople:
     name: str
     age: int
 
 class OperationNameResult:
-    optional_list_of_people: Optional[list[OperationNameResultOptionalListOfPeople]]
+    optional_list_of_people: list[OperationNameResultOptionalListOfPeople] | None

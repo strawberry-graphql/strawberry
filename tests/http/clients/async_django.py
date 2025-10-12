@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from collections.abc import AsyncIterable
-from typing import Optional
 
 from django.core.exceptions import BadRequest, SuspiciousOperation
 from django.http import Http404, HttpRequest, HttpResponse, StreamingHttpResponse
@@ -45,8 +44,8 @@ class AsyncDjangoHttpClient(DjangoHttpClient):
     def __init__(
         self,
         schema: Schema,
-        graphiql: Optional[bool] = None,
-        graphql_ide: Optional[GraphQL_IDE] = "graphiql",
+        graphiql: bool | None = None,
+        graphql_ide: GraphQL_IDE | None = "graphiql",
         allow_queries_via_get: bool = True,
         result_override: ResultOverrideFunction = None,
         multipart_uploads_enabled: bool = False,

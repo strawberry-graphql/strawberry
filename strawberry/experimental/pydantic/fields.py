@@ -1,6 +1,6 @@
 import builtins
 from types import UnionType as TypingUnionType
-from typing import Annotated, Any, Union
+from typing import Annotated, Any
 from typing import GenericAlias as TypingGenericAlias  # type: ignore
 
 from pydantic import BaseModel
@@ -46,7 +46,7 @@ def replace_types_recursively(
     if isinstance(replaced_type, TypingGenericAlias):
         return TypingGenericAlias(origin, converted)
     if isinstance(replaced_type, TypingUnionType):
-        return Union[converted]
+        return converted
 
     # TODO: investigate if we could move the check for annotated to the top
     if origin is Annotated and converted:

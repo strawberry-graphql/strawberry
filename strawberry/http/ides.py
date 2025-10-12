@@ -1,11 +1,11 @@
 import pathlib
-from typing import Literal, Optional
+from typing import Literal
 
 GraphQL_IDE = Literal["graphiql", "apollo-sandbox", "pathfinder"]
 
 
 def get_graphql_ide_html(
-    graphql_ide: Optional[GraphQL_IDE] = "graphiql",
+    graphql_ide: GraphQL_IDE | None = "graphiql",
 ) -> str:
     here = pathlib.Path(__file__).parents[1]
 

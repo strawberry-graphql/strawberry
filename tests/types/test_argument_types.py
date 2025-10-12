@@ -1,6 +1,6 @@
 import warnings
 from enum import Enum
-from typing import Optional, TypeVar
+from typing import TypeVar
 
 import pytest
 
@@ -79,12 +79,12 @@ def test_object():
 
 def test_optional():
     @strawberry.field
-    def set_age(age: Optional[int]) -> bool:
+    def set_age(age: int | None) -> bool:
         _ = age
         return True
 
     argument = set_age.arguments[0]
-    assert argument.type == Optional[int]
+    assert argument.type == int | None
 
 
 def test_type_var():

@@ -1,6 +1,6 @@
 import textwrap
 from enum import Enum
-from typing import Annotated, Any, Optional, Union
+from typing import Annotated, Any
 
 import strawberry
 from strawberry import BasePermission, Info
@@ -70,12 +70,12 @@ def test_directive_on_types():
     @strawberry.schema_directive(locations=[Location.OBJECT, Location.FIELD_DEFINITION])
     class SensitiveData:
         reason: str
-        meta: Optional[list[SensitiveValue]] = UNSET
+        meta: list[SensitiveValue] | None = UNSET
 
     @strawberry.schema_directive(locations=[Location.INPUT_OBJECT])
     class SensitiveInput:
         reason: str
-        meta: Optional[list[SensitiveValue]] = UNSET
+        meta: list[SensitiveValue] | None = UNSET
 
     @strawberry.schema_directive(locations=[Location.INPUT_FIELD_DEFINITION])
     class RangeInput:
@@ -612,7 +612,7 @@ def test_print_directive_on_union():
         reason: str
 
     MyUnion = Annotated[
-        Union[A, B],
+        A | B,
         strawberry.union(name="MyUnion", directives=[Sensitive(reason="example")]),
     ]
 
@@ -718,13 +718,13 @@ def test_print_directive_on_argument_with_description():
 def test_print_directive_with_unset_value():
     @strawberry.input
     class FooInput:
-        a: Optional[str] = strawberry.UNSET
-        b: Optional[str] = strawberry.UNSET
+        a: str | None = strawberry.UNSET
+        b: str | None = strawberry.UNSET
 
     @strawberry.schema_directive(locations=[Location.FIELD_DEFINITION])
     class FooDirective:
         input: FooInput
-        optional_input: Optional[FooInput] = strawberry.UNSET
+        optional_input: FooInput | None = strawberry.UNSET
 
     @strawberry.type
     class Query:
@@ -761,7 +761,7 @@ def test_print_directive_with_snake_case_arguments():
     @strawberry.schema_directive(locations=[Location.FIELD_DEFINITION])
     class FooDirective:
         input: FooInput
-        optional_input: Optional[FooInput] = strawberry.UNSET
+        optional_input: FooInput | None = strawberry.UNSET
 
     @strawberry.type
     class Query:

@@ -1,5 +1,4 @@
 import dataclasses
-from typing import Optional
 from typing_extensions import assert_type
 
 import pytest
@@ -14,7 +13,7 @@ def test_get_object_definition():
         name: str
 
     obj_definition = get_object_definition(Fruit)
-    assert_type(obj_definition, Optional[StrawberryObjectDefinition])
+    assert_type(obj_definition, StrawberryObjectDefinition | None)
     assert obj_definition is not None
     assert isinstance(obj_definition, StrawberryObjectDefinition)
 

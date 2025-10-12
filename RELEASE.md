@@ -1,7 +1,7 @@
 Release type: minor
 
-This release drops support for Python 3.9, which reached its end-of-life (EOL)
-in October 2025. The minimum supported Python version is now 3.10.
+This release drops updates our strawberry's codebase to use the "|" syntax for
+Optional and Union types, which was introduced in Python 3.10.
 
-We strongly recommend upgrading to Python 3.10 or a newer version, as older
-versions are no longer maintained and may contain security vulnerabilities.
+This change improves code readability and aligns with modern Python practices,
+and should not affect existing functionality.

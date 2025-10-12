@@ -3,7 +3,7 @@ from __future__ import annotations
 from functools import cached_property
 from inspect import getframeinfo, stack
 from pathlib import Path
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from strawberry.exceptions.utils.source_finder import SourceFinder
 
@@ -24,7 +24,7 @@ class InvalidUnionTypeError(StrawberryException):
         self,
         union_name: str,
         invalid_type: object,
-        union_definition: Optional[StrawberryUnion] = None,
+        union_definition: StrawberryUnion | None = None,
     ) -> None:
         from strawberry.types.base import StrawberryList
         from strawberry.types.scalar import ScalarWrapper
@@ -58,7 +58,7 @@ class InvalidUnionTypeError(StrawberryException):
         self.annotation_message = "invalid type here"
 
     @cached_property
-    def exception_source(self) -> Optional[ExceptionSource]:
+    def exception_source(self) -> ExceptionSource | None:
         source_finder = SourceFinder()
 
         if self.union_definition:
@@ -100,7 +100,7 @@ class InvalidTypeForUnionMergeError(StrawberryException):
         self.annotation_message = "invalid type here"
 
     @cached_property
-    def exception_source(self) -> Optional[ExceptionSource]:
+    def exception_source(self) -> ExceptionSource | None:
         source_finder = SourceFinder()
 
         return source_finder.find_union_merge(self.union, self.other, frame=self.frame)

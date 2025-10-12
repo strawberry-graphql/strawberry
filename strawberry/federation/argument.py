@@ -1,16 +1,15 @@
 from collections.abc import Iterable
-from typing import Optional
 
 from strawberry.types.arguments import StrawberryArgumentAnnotation
 
 
 def argument(
-    description: Optional[str] = None,
-    name: Optional[str] = None,
-    deprecation_reason: Optional[str] = None,
+    description: str | None = None,
+    name: str | None = None,
+    deprecation_reason: str | None = None,
     directives: Iterable[object] = (),
     inaccessible: bool = False,
-    tags: Optional[Iterable[str]] = (),
+    tags: Iterable[str] | None = (),
 ) -> StrawberryArgumentAnnotation:
     from strawberry.federation.schema_directives import Inaccessible, Tag
 

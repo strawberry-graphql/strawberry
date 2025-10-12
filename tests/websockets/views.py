@@ -1,5 +1,3 @@
-from typing import Union
-
 from strawberry import UNSET
 from strawberry.exceptions import ConnectionRejectionError
 from strawberry.http.async_base_view import AsyncBaseHTTPView
@@ -26,7 +24,7 @@ class OnWSConnectMixin(
 ):
     async def on_ws_connect(
         self, context: dict[str, object]
-    ) -> Union[UnsetType, None, dict[str, object]]:
+    ) -> UnsetType | None | dict[str, object]:
         connection_params = context["connection_params"]
 
         if isinstance(connection_params, dict):

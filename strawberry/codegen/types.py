@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
@@ -30,9 +30,9 @@ class GraphQLUnion:
 @dataclass
 class GraphQLField:
     name: str
-    alias: Optional[str]
+    alias: str | None
     type: GraphQLType
-    default_value: Optional[GraphQLArgumentValue] = None
+    default_value: GraphQLArgumentValue | None = None
 
 
 @dataclass
@@ -44,7 +44,7 @@ class GraphQLFragmentSpread:
 class GraphQLObjectType:
     name: str
     fields: list[GraphQLField] = field(default_factory=list)
-    graphql_typename: Optional[str] = None
+    graphql_typename: str | None = None
 
 
 # Subtype of GraphQLObjectType.
@@ -54,7 +54,7 @@ class GraphQLObjectType:
 class GraphQLFragmentType(GraphQLObjectType):
     name: str
     fields: list[GraphQLField] = field(default_factory=list)
-    graphql_typename: Optional[str] = None
+    graphql_typename: str | None = None
     on: str = ""
 
     def __post_init__(self) -> None:
@@ -74,23 +74,23 @@ class GraphQLEnum:
 @dataclass
 class GraphQLScalar:
     name: str
-    python_type: Optional[type]
+    python_type: type | None
 
 
-GraphQLType = Union[
-    GraphQLObjectType,
-    GraphQLEnum,
-    GraphQLScalar,
-    GraphQLOptional,
-    GraphQLList,
-    GraphQLUnion,
-]
+GraphQLType = (
+    GraphQLObjectType
+    | GraphQLEnum
+    | GraphQLScalar
+    | GraphQLOptional
+    | GraphQLList
+    | GraphQLUnion
+)
 
 
 @dataclass
 class GraphQLFieldSelection:
     field: str
-    alias: Optional[str]
+    alias: str | None
     selections: list[GraphQLSelection]
     directives: list[GraphQLDirective]
     arguments: list[GraphQLArgument]
@@ -102,9 +102,7 @@ class GraphQLInlineFragment:
     selections: list[GraphQLSelection]
 
 
-GraphQLSelection = Union[
-    GraphQLFieldSelection, GraphQLInlineFragment, GraphQLFragmentSpread
-]
+GraphQLSelection = GraphQLFieldSelection | GraphQLInlineFragment | GraphQLFragmentSpread
 
 
 @dataclass
@@ -125,7 +123,7 @@ class GraphQLFloatValue:
 @dataclass
 class GraphQLEnumValue:
     name: str
-    enum_type: Optional[str] = None
+    enum_type: str | None = None
 
 
 @dataclass
@@ -155,17 +153,17 @@ class GraphQLVariableReference:
     value: str
 
 
-GraphQLArgumentValue = Union[
-    GraphQLStringValue,
-    GraphQLNullValue,
-    GraphQLIntValue,
-    GraphQLVariableReference,
-    GraphQLFloatValue,
-    GraphQLListValue,
-    GraphQLEnumValue,
-    GraphQLBoolValue,
-    GraphQLObjectValue,
-]
+GraphQLArgumentValue = (
+    GraphQLStringValue
+    | GraphQLNullValue
+    | GraphQLIntValue
+    | GraphQLVariableReference
+    | GraphQLFloatValue
+    | GraphQLListValue
+    | GraphQLEnumValue
+    | GraphQLBoolValue
+    | GraphQLObjectValue
+)
 
 
 @dataclass
@@ -194,7 +192,7 @@ class GraphQLOperation:
     directives: list[GraphQLDirective]
     variables: list[GraphQLVariable]
     type: GraphQLObjectType
-    variables_type: Optional[GraphQLObjectType]
+    variables_type: GraphQLObjectType | None
 
 
 __all__ = [

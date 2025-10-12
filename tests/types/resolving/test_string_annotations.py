@@ -1,4 +1,4 @@
-from typing import Optional, TypeVar
+from typing import TypeVar
 
 import strawberry
 from strawberry.annotation import StrawberryAnnotation
@@ -43,14 +43,14 @@ def test_list_of_string_of_type():
 
 
 def test_optional_of_string():
-    annotation = StrawberryAnnotation(Optional["bool"])
+    annotation = StrawberryAnnotation("bool | None")
     resolved = annotation.resolve()
 
     assert isinstance(resolved, StrawberryOptional)
     assert resolved.of_type is bool
 
     assert resolved == StrawberryOptional(of_type=bool)
-    assert resolved == Optional[bool]
+    assert resolved == bool | None
 
 
 def test_string_of_object():
@@ -116,7 +116,7 @@ def test_string_of_optional():
     assert resolved.of_type is int
 
     assert resolved == StrawberryOptional(of_type=int)
-    assert resolved == Optional[int]
+    assert resolved == int | None
 
 
 # TODO: Move to object tests to test namespace logic
@@ -142,8 +142,8 @@ def test_basic_types():
 def test_optional():
     @strawberry.type
     class Query:
-        name: "Optional[str]"
-        age: "Optional[int]"
+        name: "str | None"
+        age: "int | None"
 
     definition = Query.__strawberry_definition__
     assert definition.name == "Query"

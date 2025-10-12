@@ -1,4 +1,3 @@
-from typing import Union
 
 class OperationNameResultInterfaceBlogPost:
     # typename: BlogPost
@@ -10,7 +9,7 @@ class OperationNameResultInterfaceImage:
     id: str
     url: str
 
-OperationNameResultInterface = Union[OperationNameResultInterfaceBlogPost, OperationNameResultInterfaceImage]
+OperationNameResultInterface = OperationNameResultInterfaceBlogPost | OperationNameResultInterfaceImage
 
 class OperationNameResult:
     interface: OperationNameResultInterface

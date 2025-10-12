@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Annotated, Optional
+from typing import Annotated
 
 import pytest
 
@@ -74,12 +74,12 @@ def test_list():
         StrawberryArgument(
             graphql_name="optionalIntegerList",
             python_name="optional_integer_list",
-            type_annotation=StrawberryAnnotation(list[Optional[int]]),
+            type_annotation=StrawberryAnnotation(list[int | None]),
         ),
         StrawberryArgument(
             graphql_name="optionalStringList",
             python_name="optional_string_list",
-            type_annotation=StrawberryAnnotation(list[Optional[str]]),
+            type_annotation=StrawberryAnnotation(list[str | None]),
         ),
     ]
 
@@ -186,7 +186,7 @@ def test_optional_input_types():
         StrawberryArgument(
             graphql_name=None,
             python_name="input",
-            type_annotation=StrawberryAnnotation(Optional[MyInput]),
+            type_annotation=StrawberryAnnotation(MyInput | None),
         ),
     ]
 
@@ -232,7 +232,7 @@ def test_optional_list_of_input_types():
         StrawberryArgument(
             graphql_name="inputList",
             python_name="input_list",
-            type_annotation=StrawberryAnnotation(Optional[list[MyInput]]),
+            type_annotation=StrawberryAnnotation(list[MyInput] | None),
         ),
     ]
     assert convert_arguments(
@@ -265,7 +265,7 @@ def test_nested_input_types():
     class AddReleaseFileCommentInput:
         pr_number: int
         status: ReleaseFileStatus
-        release_info: Optional[ReleaseInfo]
+        release_info: ReleaseInfo | None
 
     args = {
         "input": {
@@ -361,8 +361,8 @@ def test_uses_default_for_optional_types_when_nothing_is_passed():
 
     @strawberry.input
     class Input:
-        numbers: Optional[Number] = UNSET
-        numbers_second: Optional[Number] = UNSET
+        numbers: Number | None = UNSET
+        numbers_second: Number | None = UNSET
 
     # case 1
     args = {"input": {}}
@@ -408,8 +408,8 @@ def test_when_optional():
 
     @strawberry.input
     class Input:
-        numbers: Optional[Number] = UNSET
-        numbers_second: Optional[Number] = UNSET
+        numbers: Number | None = UNSET
+        numbers_second: Number | None = UNSET
 
     args = {}
 
@@ -417,7 +417,7 @@ def test_when_optional():
         StrawberryArgument(
             graphql_name=None,
             python_name="input",
-            type_annotation=StrawberryAnnotation(Optional[Input]),
+            type_annotation=StrawberryAnnotation(Input | None),
         )
     ]
 
@@ -450,7 +450,7 @@ def test_fails_when_passing_non_strawberry_classes():
         StrawberryArgument(
             graphql_name=None,
             python_name="input",
-            type_annotation=StrawberryAnnotation(Optional[Input]),
+            type_annotation=StrawberryAnnotation(Input | None),
         )
     ]
 

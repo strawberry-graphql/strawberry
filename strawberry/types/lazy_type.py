@@ -8,9 +8,7 @@ from typing import (
     Any,
     ForwardRef,
     Generic,
-    Optional,
     TypeVar,
-    Union,
     cast,
 )
 from typing_extensions import Self
@@ -32,7 +30,7 @@ class LazyType(Generic[TypeName, Module]):
 
     type_name: str
     module: str
-    package: Optional[str] = None
+    package: str | None = None
 
     def __class_getitem__(cls, params: tuple[str, str]) -> "Self":
         warnings.warn(
@@ -57,7 +55,7 @@ class LazyType(Generic[TypeName, Module]):
         return cls(type_name, module, package)
 
     def __or__(self, other: Other) -> object:
-        return Union[self, other]
+        return self | other
 
     def resolve_type(self) -> type[Any]:
         module = importlib.import_module(self.module, self.package)

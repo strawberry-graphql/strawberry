@@ -32,8 +32,6 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from typing import (
     TYPE_CHECKING,
-    Optional,
-    Union,
 )
 
 from graphql import GraphQLError
@@ -61,11 +59,16 @@ from strawberry.extensions.utils import is_introspection_key
 if TYPE_CHECKING:
     from collections.abc import Iterable
 
-IgnoreType = Union[Callable[[str], bool], re.Pattern, str]
+IgnoreType = Callable[[str], bool] | re.Pattern | str
 
-FieldArgumentType = Union[
-    bool, int, float, str, list["FieldArgumentType"], dict[str, "FieldArgumentType"]
-]
+FieldArgumentType = (
+    bool
+    | int
+    | float
+    | str
+    | list["FieldArgumentType"]
+    | dict[str, "FieldArgumentType"]
+)
 FieldArgumentsType = dict[str, FieldArgumentType]
 
 
@@ -99,8 +102,8 @@ class QueryDepthLimiter(AddValidationRules):
     def __init__(
         self,
         max_depth: int,
-        callback: Optional[Callable[[dict[str, int]], None]] = None,
-        should_ignore: Optional[ShouldIgnoreType] = None,
+        callback: Callable[[dict[str, int]], None] | None = None,
+        should_ignore: ShouldIgnoreType | None = None,
     ) -> None:
         """Initialize the QueryDepthLimiter.
 
@@ -122,8 +125,8 @@ class QueryDepthLimiter(AddValidationRules):
 
 def create_validator(
     max_depth: int,
-    should_ignore: Optional[ShouldIgnoreType],
-    callback: Optional[Callable[[dict[str, int]], None]] = None,
+    should_ignore: ShouldIgnoreType | None,
+    callback: Callable[[dict[str, int]], None] | None = None,
 ) -> type[ValidationRule]:
     class DepthLimitValidator(ValidationRule):
         def __init__(self, validation_context: ValidationContext) -> None:
@@ -218,7 +221,7 @@ def determine_depth(
     max_depth: int,
     context: ValidationContext,
     operation_name: str,
-    should_ignore: Optional[ShouldIgnoreType],
+    should_ignore: ShouldIgnoreType | None,
 ) -> int:
     if depth_so_far > max_depth:
         context.report_error(
@@ -288,7 +291,7 @@ def determine_depth(
     raise TypeError(f"Depth crawler cannot handle: {node.kind}")  # pragma: no cover
 
 
-def is_ignored(node: FieldNode, ignore: Optional[list[IgnoreType]] = None) -> bool:
+def is_ignored(node: FieldNode, ignore: list[IgnoreType] | None = None) -> bool:
     if ignore is None:
         return False
 

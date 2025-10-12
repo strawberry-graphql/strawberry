@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import ClassVar, Optional
+from typing import ClassVar
 
 from strawberry import directive_field
 from strawberry.schema_directive import Location, schema_directive
@@ -59,7 +59,7 @@ class Provides(FederationDirective):
 )
 class Key(FederationDirective):
     fields: FieldSet
-    resolvable: Optional[bool] = True
+    resolvable: bool | None = True
     imported_from: ClassVar[ImportedFrom] = ImportedFrom(
         name="key", url="https://specs.apollo.dev/federation/v2.7"
     )
@@ -81,17 +81,17 @@ class Shareable(FederationDirective):
     locations=[Location.SCHEMA], name="link", repeatable=True, print_definition=False
 )
 class Link:
-    url: Optional[str]
-    as_: Optional[str] = directive_field(name="as")
-    for_: Optional[LinkPurpose] = directive_field(name="for")
-    import_: Optional[list[Optional[LinkImport]]] = directive_field(name="import")
+    url: str | None
+    as_: str | None = directive_field(name="as")
+    for_: LinkPurpose | None = directive_field(name="for")
+    import_: list[LinkImport | None] | None = directive_field(name="import")
 
     def __init__(
         self,
-        url: Optional[str] = UNSET,
-        as_: Optional[str] = UNSET,
-        for_: Optional[LinkPurpose] = UNSET,
-        import_: Optional[list[Optional[LinkImport]]] = UNSET,
+        url: str | None = UNSET,
+        as_: str | None = UNSET,
+        for_: LinkPurpose | None = UNSET,
+        import_: list[LinkImport | None] | None = UNSET,
     ) -> None:
         self.url = url
         self.as_ = as_
@@ -128,7 +128,7 @@ class Tag(FederationDirective):
 )
 class Override(FederationDirective):
     override_from: str = directive_field(name="from")
-    label: Optional[str] = UNSET
+    label: str | None = UNSET
     imported_from: ClassVar[ImportedFrom] = ImportedFrom(
         name="override", url="https://specs.apollo.dev/federation/v2.7"
     )

@@ -1,7 +1,6 @@
 import dataclasses
 import textwrap
 from collections.abc import Iterable
-from typing import Optional, Union
 from typing_extensions import Self
 
 import pytest
@@ -1637,10 +1636,10 @@ def test_correct_model_returned(type_name: str, should_have_name: bool):
         def resolve_nodes(
             cls,
             *,
-            info: Optional[strawberry.Info] = None,
+            info: strawberry.Info | None = None,
             node_ids: Iterable[str],
             required: bool = False,
-        ) -> Iterable[Optional[Union[Self, FruitModel]]]:
+        ) -> Iterable[Self | FruitModel | None]:
             return [fruits[nid] if required else fruits.get(nid) for nid in node_ids]
 
     @strawberry.type
@@ -1652,10 +1651,10 @@ def test_correct_model_returned(type_name: str, should_have_name: bool):
         def resolve_nodes(
             cls,
             *,
-            info: Optional[strawberry.Info] = None,
+            info: strawberry.Info | None = None,
             node_ids: Iterable[str],
             required: bool = False,
-        ) -> Iterable[Optional[Union[Self, FruitModel]]]:
+        ) -> Iterable[Self | FruitModel | None]:
             return [fruits[nid] if required else fruits.get(nid) for nid in node_ids]
 
     @strawberry.type

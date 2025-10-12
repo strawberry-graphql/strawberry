@@ -1,8 +1,6 @@
-# ruff: noqa: F821
-
 import datetime
 import sys
-from typing import Annotated, Optional, Union
+from typing import Annotated
 
 import pytest
 
@@ -146,8 +144,8 @@ def test_list_inside_generic():
     class Foo:
         string: Value[str]
         strings: Value[list[str]]
-        optional_string: Value[Optional[str]]
-        optional_strings: Value[Optional[list[str]]]
+        optional_string: Value[str | None]
+        optional_strings: Value[list[str] | None]
 
     definition = get_object_definition(Foo, strict=True)
     assert not definition.is_graphql_generic
@@ -166,7 +164,7 @@ def test_list_inside_generic():
 def test_generic_with_optional():
     @strawberry.type
     class Edge[T]:
-        node: Optional[T]
+        node: T | None
 
     definition = get_object_definition(Edge, strict=True)
     assert definition.is_graphql_generic
@@ -224,7 +222,7 @@ def test_generic_with_list():
 def test_generic_with_list_of_optionals():
     @strawberry.type
     class Connection[T]:
-        edges: list[Optional[T]]
+        edges: list[T | None]
 
     definition = get_object_definition(Connection, strict=True)
     assert definition.is_graphql_generic
@@ -259,7 +257,7 @@ def test_generics_with_unions():
 
     @strawberry.type
     class Edge[T]:
-        node: Union[Error, T]
+        node: Error | T
 
     definition = get_object_definition(Edge, strict=True)
     assert definition.type_params[0].__name__ == "T"
@@ -403,7 +401,7 @@ def test_generics_inside_optional():
 
     @strawberry.type
     class Query:
-        user: Optional[Edge[str]]
+        user: Edge[str] | None
 
     query_definition = get_object_definition(Query, strict=True)
     assert query_definition.type_params == []
@@ -447,7 +445,7 @@ def test_generics_inside_unions():
 
     @strawberry.type
     class Query:
-        user: Union[Edge[str], Error]
+        user: Edge[str] | Error
 
     query_definition = get_object_definition(Query, strict=True)
     assert query_definition.type_params == []
@@ -468,7 +466,7 @@ def test_multiple_generics_inside_unions():
 
     @strawberry.type
     class Query:
-        user: Union[Edge[int], Edge[str]]
+        user: Edge[int] | Edge[str]
 
     query_definition = get_object_definition(Query, strict=True)
     assert query_definition.type_params == []
@@ -502,7 +500,7 @@ def test_union_inside_generics():
     class Connection[T]:
         nodes: list[T]
 
-    DogCat = Annotated[Union[Dog, Cat], strawberry.union("DogCat")]
+    DogCat = Annotated[Dog | Cat, strawberry.union("DogCat")]
 
     @strawberry.type
     class Query:
@@ -541,7 +539,7 @@ def test_anonymous_union_inside_generics():
 
     @strawberry.type
     class Query:
-        connection: Connection[Union[Dog, Cat]]
+        connection: Connection[Dog | Cat]
 
     definition = get_object_definition(Query, strict=True)
     assert definition.type_params == []

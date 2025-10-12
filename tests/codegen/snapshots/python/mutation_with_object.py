@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List
 from enum import Enum
 
 class AddBlogPostsResultAddBlogPostsPosts:
@@ -21,7 +21,7 @@ class BlogPostInput:
     pi: float = 3.14159
     a_bool: bool = True
     an_int: int = 42
-    an_optional_int: Optional[int] = None
+    an_optional_int: int | None = None
 
 class AddBlogPostsVariables:
     input: list[BlogPostInput]

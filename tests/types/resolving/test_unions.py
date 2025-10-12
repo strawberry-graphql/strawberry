@@ -1,4 +1,4 @@
-from typing import Annotated, Generic, TypeVar, Union
+from typing import Annotated, Generic, TypeVar
 
 import pytest
 
@@ -18,7 +18,7 @@ def test_python_union():
     class Error:
         name: str
 
-    annotation = StrawberryAnnotation(Union[User, Error])
+    annotation = StrawberryAnnotation(User | Error)
     resolved = annotation.resolve()
 
     assert isinstance(resolved, StrawberryUnion)
@@ -28,7 +28,7 @@ def test_python_union():
         name=None,
         type_annotations=(StrawberryAnnotation(User), StrawberryAnnotation(Error)),
     )
-    assert resolved == Union[User, Error]
+    assert resolved == User | Error
 
 
 def test_python_union_short_syntax():
@@ -50,7 +50,7 @@ def test_python_union_short_syntax():
         name=None,
         type_annotations=(StrawberryAnnotation(User), StrawberryAnnotation(Error)),
     )
-    assert resolved == Union[User, Error]
+    assert resolved == User | Error
 
 
 def test_strawberry_union():
@@ -62,7 +62,7 @@ def test_strawberry_union():
     class Error:
         name: str
 
-    cool_union = Annotated[Union[User, Error], union(name="CoolUnion")]
+    cool_union = Annotated[User | Error, union(name="CoolUnion")]
     annotation = StrawberryAnnotation(cool_union)
     resolved = annotation.resolve()
 
@@ -86,7 +86,7 @@ def test_union_with_generic():
     class Edge(Generic[T]):
         node: T
 
-    Result = Annotated[Union[Error, Edge[str]], strawberry.union("Result")]
+    Result = Annotated[Error | Edge[str], strawberry.union("Result")]
 
     strawberry_union = StrawberryAnnotation(Result).resolve()
 
@@ -105,12 +105,7 @@ def test_union_with_generic():
 )
 def test_error_with_scalar_types():
     Something = Annotated[
-        Union[
-            int,
-            str,
-            float,
-            bool,
-        ],
+        int | str | float | bool,
         strawberry.union("Something"),
     ]
 

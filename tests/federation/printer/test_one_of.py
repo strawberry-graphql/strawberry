@@ -1,5 +1,4 @@
 import textwrap
-from typing import Optional
 
 import strawberry
 
@@ -7,8 +6,8 @@ import strawberry
 def test_prints_one_of_directive():
     @strawberry.federation.input(one_of=True, tags=["myTag", "anotherTag"])
     class Input:
-        a: Optional[str] = strawberry.UNSET
-        b: Optional[int] = strawberry.UNSET
+        a: str | None = strawberry.UNSET
+        b: int | None = strawberry.UNSET
 
     @strawberry.federation.type
     class Query:

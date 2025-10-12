@@ -1,5 +1,4 @@
 import typing
-from typing import Union
 
 import pytest
 
@@ -30,7 +29,7 @@ def test_union_short_syntax():
         name=None,
         type_annotations=(StrawberryAnnotation(User), StrawberryAnnotation(Error)),
     )
-    assert resolved == Union[User, Error]
+    assert resolved == User | Error
 
 
 def test_union_none():
@@ -47,7 +46,7 @@ def test_union_none():
     assert resolved == StrawberryOptional(
         of_type=User,
     )
-    assert resolved == Union[User, None]
+    assert resolved == User | None
 
 
 def test_strawberry_union_and_none():

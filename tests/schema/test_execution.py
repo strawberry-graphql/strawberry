@@ -1,6 +1,5 @@
 import textwrap
 from textwrap import dedent
-from typing import Optional
 from unittest.mock import patch
 
 import pytest
@@ -15,7 +14,7 @@ from strawberry.extensions import AddValidationRules, DisableValidation
 def test_enabling_query_validation_sync(mock_validate, validate_queries):
     @strawberry.type
     class Query:
-        example: Optional[str] = None
+        example: str | None = None
 
     extensions = []
     if validate_queries is False:
@@ -47,7 +46,7 @@ def test_enabling_query_validation_sync(mock_validate, validate_queries):
 async def test_enabling_query_validation(validate_queries):
     @strawberry.type
     class Query:
-        example: Optional[str] = None
+        example: str | None = None
 
     extensions = []
     if validate_queries is False:
@@ -79,7 +78,7 @@ async def test_enabling_query_validation(validate_queries):
 async def test_invalid_query_with_validation_enabled():
     @strawberry.type
     class Query:
-        example: Optional[str] = None
+        example: str | None = None
 
     schema = strawberry.Schema(query=Query)
 
@@ -103,7 +102,7 @@ async def test_invalid_query_with_validation_enabled():
 async def test_asking_for_wrong_field():
     @strawberry.type
     class Query:
-        example: Optional[str] = None
+        example: str | None = None
 
     schema = strawberry.Schema(query=Query, extensions=[DisableValidation()])
 
@@ -420,8 +419,8 @@ def test_overriding_process_errors(caplog: pytest.LogCaptureFixture):
 def test_adding_custom_validation_rules():
     @strawberry.type
     class Query:
-        example: Optional[str] = None
-        another_example: Optional[str] = None
+        example: str | None = None
+        another_example: str | None = None
 
     class CustomRule(ValidationRule):
         def enter_field(self, node, *args: str) -> None:
@@ -457,7 +456,7 @@ def test_partial_responses():
             return "hi"
 
         @strawberry.field
-        def this_fails(self) -> Optional[str]:
+        def this_fails(self) -> str | None:
             raise ValueError("this field fails")
 
     schema = strawberry.Schema(query=Query)

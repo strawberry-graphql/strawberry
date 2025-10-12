@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Generic, NewType, TypeVar, Union
+from typing import Generic, NewType, TypeVar
 
 import pytest
 
@@ -33,7 +33,7 @@ def test_strawberry_union():
         name="CoolUnion",
         type_annotations=(StrawberryAnnotation(User), StrawberryAnnotation(Error)),
     )
-    assert resolved != Union[User, Error]  # Name will be different
+    assert resolved != User | Error  # Name will be different
 
 
 def test_named_union_with_deprecated_api_using_types_parameter():

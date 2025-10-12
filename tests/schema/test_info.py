@@ -1,6 +1,6 @@
 import dataclasses
 import json
-from typing import Annotated, Optional
+from typing import Annotated
 
 import pytest
 
@@ -177,7 +177,7 @@ def test_info_arguments():
     @strawberry.input
     class TestInput:
         name: str
-        age: Optional[int] = UNSET
+        age: int | None = UNSET
 
     selected_fields = None
 
@@ -256,7 +256,7 @@ def test_info_selected_fields_undefined_variable():
     class Query:
         @strawberry.field
         def hello(
-            self, info: strawberry.Info[str, str], optional_input: Optional[str] = "hi"
+            self, info: strawberry.Info[str, str], optional_input: str | None = "hi"
         ) -> Result:
             nonlocal selected_fields
             selected_fields = info.selected_fields
@@ -299,7 +299,7 @@ def test_info_selected_fields_undefined_variable():
     [
         (str, "text"),
         (list[str], ["text"]),
-        (Optional[list[int]], None),
+        (list[int] | None, None),
     ],
 )
 def test_return_type_from_resolver(return_type, return_value):
@@ -372,7 +372,7 @@ def test_get_argument_defintion_helper():
             self,
             info: strawberry.Info,
             arg_1: Annotated[str, strawberry.argument(description="Some description")],
-            arg_2: Optional[TestInput] = None,
+            arg_2: TestInput | None = None,
         ) -> str:
             nonlocal arg_1_def, arg_2_def, missing_arg_def
             arg_1_def = info.get_argument_definition("arg_1")

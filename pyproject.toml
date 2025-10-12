@@ -225,13 +225,6 @@ src = ["strawberry", "tests"]
 [tool.ruff.lint]
 select = ["ALL"]
 ignore = [
-  # https://github.com/astral-sh/ruff/pull/4427
-  # equivalent to keep-runtime-typing. We might want to enable those
-  # after we drop support for Python 3.9
-  "UP006",
-  "UP007",
-  "UP045",
-
   # we use asserts in tests and to hint mypy
   "S101",
 
@@ -339,6 +332,9 @@ ignore = [
   "W191",
   "PLR0915",
 ]
+exclude = [
+  "tests/python_312/*",
+] # SyntaxError because of syntax only added at 3.12
 
 [tool.ruff.lint.per-file-ignores]
 ".github/*" = ["INP001"]

@@ -12,7 +12,7 @@ Note Python dicts maintain ordering (for all supported versions).
 from __future__ import annotations
 
 import dataclasses
-from typing import TYPE_CHECKING, Any, Optional, Union
+from typing import TYPE_CHECKING, Any
 
 from graphql.language import FieldNode as GQLFieldNode
 from graphql.language import FragmentSpreadNode as GQLFragmentSpreadNode
@@ -28,9 +28,10 @@ if TYPE_CHECKING:
     from graphql.language import ArgumentNode as GQLArgumentNode
     from graphql.language import DirectiveNode as GQLDirectiveNode
     from graphql.language import ValueNode as GQLValueNode
+
 Arguments = dict[str, Any]
 Directives = dict[str, Arguments]
-Selection = Union["SelectedField", "FragmentSpread", "InlineFragment"]
+Selection = "SelectedField | FragmentSpread | InlineFragment"
 
 
 def convert_value(info: GraphQLResolveInfo, node: GQLValueNode) -> Any:
@@ -139,7 +140,7 @@ class SelectedField:
     directives: Directives
     arguments: Arguments
     selections: list[Selection]
-    alias: Optional[str] = None
+    alias: str | None = None
 
     @classmethod
     def from_node(cls, info: GraphQLResolveInfo, node: GQLFieldNode) -> SelectedField:

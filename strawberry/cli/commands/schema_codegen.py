@@ -1,5 +1,4 @@
 from pathlib import Path
-from typing import Optional
 
 import typer
 
@@ -10,7 +9,7 @@ from strawberry.schema_codegen import codegen
 @app.command(help="Generate code from a query")
 def schema_codegen(
     schema: Path = typer.Argument(exists=True),
-    output: Optional[Path] = typer.Option(
+    output: Path | None = typer.Option(
         None,
         "-o",
         "--output",

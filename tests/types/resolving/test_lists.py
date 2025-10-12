@@ -1,5 +1,4 @@
 from collections.abc import Sequence
-from typing import Optional, Union
 
 import strawberry
 from strawberry.annotation import StrawberryAnnotation
@@ -40,36 +39,36 @@ def test_basic_sequence():
 
 
 def test_list_of_optional():
-    annotation = StrawberryAnnotation(list[Optional[int]])
+    annotation = StrawberryAnnotation(list[int | None])
     resolved = annotation.resolve()
 
     assert isinstance(resolved, StrawberryList)
-    assert resolved.of_type == Optional[int]
+    assert resolved.of_type == int | None
 
-    assert resolved == StrawberryList(of_type=Optional[int])
-    assert resolved == list[Optional[int]]
+    assert resolved == StrawberryList(of_type=int | None)
+    assert resolved == list[int | None]
 
 
 def test_sequence_of_optional():
-    annotation = StrawberryAnnotation(Sequence[Optional[int]])
+    annotation = StrawberryAnnotation(Sequence[int | None])
     resolved = annotation.resolve()
 
     assert isinstance(resolved, StrawberryList)
-    assert resolved.of_type == Optional[int]
+    assert resolved.of_type == int | None
 
-    assert resolved == StrawberryList(of_type=Optional[int])
-    assert resolved == Sequence[Optional[int]]
+    assert resolved == StrawberryList(of_type=int | None)
+    assert resolved == Sequence[int | None]
 
 
 def test_tuple_of_optional():
-    annotation = StrawberryAnnotation(tuple[Optional[int]])
+    annotation = StrawberryAnnotation(tuple[int | None])
     resolved = annotation.resolve()
 
     assert isinstance(resolved, StrawberryList)
-    assert resolved.of_type == Optional[int]
+    assert resolved.of_type == int | None
 
-    assert resolved == StrawberryList(of_type=Optional[int])
-    assert resolved == tuple[Optional[int]]
+    assert resolved == StrawberryList(of_type=int | None)
+    assert resolved == tuple[int | None]
 
 
 def test_list_of_lists():
@@ -114,14 +113,14 @@ def test_list_of_union():
     class Fungus:
         spore: bool
 
-    annotation = StrawberryAnnotation(list[Union[Animal, Fungus]])
+    annotation = StrawberryAnnotation(list[Animal | Fungus])
     resolved = annotation.resolve()
 
     assert isinstance(resolved, StrawberryList)
-    assert resolved.of_type == Union[Animal, Fungus]
+    assert resolved.of_type == Animal | Fungus
 
-    assert resolved == StrawberryList(of_type=Union[Animal, Fungus])
-    assert resolved == list[Union[Animal, Fungus]]
+    assert resolved == StrawberryList(of_type=Animal | Fungus)
+    assert resolved == list[Animal | Fungus]
 
 
 def test_sequence_of_union():
@@ -133,14 +132,14 @@ def test_sequence_of_union():
     class Fungus:
         spore: bool
 
-    annotation = StrawberryAnnotation(Sequence[Union[Animal, Fungus]])
+    annotation = StrawberryAnnotation(Sequence[Animal | Fungus])
     resolved = annotation.resolve()
 
     assert isinstance(resolved, StrawberryList)
-    assert resolved.of_type == Union[Animal, Fungus]
+    assert resolved.of_type == Animal | Fungus
 
-    assert resolved == StrawberryList(of_type=Union[Animal, Fungus])
-    assert resolved == Sequence[Union[Animal, Fungus]]
+    assert resolved == StrawberryList(of_type=Animal | Fungus)
+    assert resolved == Sequence[Animal | Fungus]
 
 
 def test_list_builtin():

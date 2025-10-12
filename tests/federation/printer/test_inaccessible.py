@@ -1,6 +1,6 @@
 import textwrap
 from enum import Enum
-from typing import Annotated, Union
+from typing import Annotated
 
 import strawberry
 
@@ -249,9 +249,7 @@ def test_field_tag_printed_correctly_on_union():
     class B:
         b: str
 
-    MyUnion = Annotated[
-        Union[A, B], strawberry.federation.union("Union", inaccessible=True)
-    ]
+    MyUnion = Annotated[A | B, strawberry.federation.union("Union", inaccessible=True)]
 
     @strawberry.federation.type
     class Query:

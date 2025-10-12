@@ -1,23 +1,23 @@
-from typing import List, Optional
+from typing import List
 
 class OperationNameResult:
     with_inputs: bool
 
 class PersonInput:
     name: str
-    age: Optional[int] = None
+    age: int | None = None
 
 class ExampleInput:
     id: str
     name: str
     age: int
-    person: Optional[PersonInput]
+    person: PersonInput | None
     people: list[PersonInput]
-    optional_people: Optional[list[PersonInput]]
+    optional_people: list[PersonInput] | None
 
 class OperationNameVariables:
-    id: Optional[str]
+    id: str | None
     input: ExampleInput
     ids: list[str]
-    ids2: Optional[list[Optional[str]]]
-    ids3: Optional[list[Optional[list[Optional[str]]]]]
+    ids2: list[str | None] | None
+    ids3: list[list[str | None] | None] | None

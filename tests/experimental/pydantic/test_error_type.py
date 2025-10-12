@@ -1,5 +1,3 @@
-from typing import Optional
-
 import pydantic
 import pytest
 
@@ -93,7 +91,7 @@ def test_basic_error_type_all_fields():
 def test_basic_type_all_fields_warn():
     class User(pydantic.BaseModel):
         age: int
-        password: Optional[str]
+        password: str | None
 
     with pytest.raises(
         UserWarning,
@@ -108,7 +106,7 @@ def test_basic_type_all_fields_warn():
 def test_basic_error_type_without_fields_throws_an_error():
     class User(pydantic.BaseModel):
         age: int
-        password: Optional[str]
+        password: str | None
 
     with pytest.raises(MissingFieldsListError):
 
@@ -220,7 +218,7 @@ def test_error_type_with_list_of_scalar():
 
 def test_error_type_with_optional_field():
     class UserModel(pydantic.BaseModel):
-        age: Optional[int]
+        age: int | None
 
     @strawberry.experimental.pydantic.error_type(UserModel)
     class UserError:
@@ -239,7 +237,7 @@ def test_error_type_with_optional_field():
 
 def test_error_type_with_list_of_optional_scalar():
     class UserModel(pydantic.BaseModel):
-        age: list[Optional[int]]
+        age: list[int | None]
 
     @strawberry.experimental.pydantic.error_type(UserModel)
     class UserError:
@@ -260,7 +258,7 @@ def test_error_type_with_list_of_optional_scalar():
 
 def test_error_type_with_optional_list_scalar():
     class UserModel(pydantic.BaseModel):
-        age: Optional[list[int]]
+        age: list[int] | None
 
     @strawberry.experimental.pydantic.error_type(UserModel)
     class UserError:
@@ -281,7 +279,7 @@ def test_error_type_with_optional_list_scalar():
 
 def test_error_type_with_optional_list_of_optional_scalar():
     class UserModel(pydantic.BaseModel):
-        age: Optional[list[Optional[int]]]
+        age: list[int | None] | None
 
     @strawberry.experimental.pydantic.error_type(UserModel)
     class UserError:
@@ -309,7 +307,7 @@ def test_error_type_with_optional_list_of_nested_model():
         name: strawberry.auto
 
     class UserModel(pydantic.BaseModel):
-        friends: Optional[list[FriendModel]]
+        friends: list[FriendModel] | None
 
     @strawberry.experimental.pydantic.error_type(UserModel)
     class UserError:

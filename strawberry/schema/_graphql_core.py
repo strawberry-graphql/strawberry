@@ -1,5 +1,3 @@
-from typing import Union
-
 from graphql.execution import ExecutionContext as GraphQLExecutionContext
 from graphql.execution import ExecutionResult as OriginalGraphQLExecutionResult
 from graphql.execution import execute, subscribe
@@ -24,9 +22,9 @@ try:
         GraphQLStreamDirective,
     )
 
-    GraphQLExecutionResult = Union[
-        OriginalGraphQLExecutionResult, InitialIncrementalExecutionResult
-    ]
+    GraphQLExecutionResult = (
+        OriginalGraphQLExecutionResult | InitialIncrementalExecutionResult
+    )
 
 except ImportError:
     GraphQLIncrementalExecutionResults = type(None)
@@ -37,11 +35,11 @@ except ImportError:
 
 
 # TODO: give this a better name, maybe also a better place
-ResultType = Union[
-    OriginalGraphQLExecutionResult,
-    GraphQLIncrementalExecutionResults,
-    ExecutionResult,
-]
+ResultType = (
+    OriginalGraphQLExecutionResult
+    | GraphQLIncrementalExecutionResults
+    | ExecutionResult
+)
 
 __all__ = [
     "GraphQLExecutionContext",

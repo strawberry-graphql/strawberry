@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import typing
-from typing import ClassVar, ForwardRef, Optional, Union
+from typing import ClassVar, ForwardRef
 
 from strawberry.scalars import JSON
 from strawberry.utils.typing import eval_type, is_classvar
@@ -10,39 +10,39 @@ from strawberry.utils.typing import eval_type, is_classvar
 def test_eval_type():
     class Foo: ...
 
-    assert eval_type(ForwardRef("Foo | None"), globals(), locals()) == Optional[Foo]
-    assert eval_type(ForwardRef("Foo | str"), globals(), locals()) == Union[Foo, str]
+    assert eval_type(ForwardRef("Foo | None"), globals(), locals()) == Foo | None
+    assert eval_type(ForwardRef("Foo | str"), globals(), locals()) == Foo | str
     assert (
         eval_type(ForwardRef("Foo | str | None"), globals(), locals())
-        == Union[Foo, str, None]
+        == Foo | str | None
     )
     assert (
         eval_type(ForwardRef("list[Foo | str] | None"), globals(), locals())
-        == Union[list[Union[Foo, str]], None]
+        == list[Foo | str] | None
     )
     assert (
         eval_type(ForwardRef("list[Foo | str] | None | int"), globals(), locals())
-        == Union[list[Union[Foo, str]], int, None]
+        == list[Foo | str] | int | None
     )
-    assert eval_type(ForwardRef("JSON | None"), globals(), locals()) == Optional[JSON]
+    assert eval_type(ForwardRef("JSON | None"), globals(), locals()) == JSON | None
 
 
 def test_eval_type_generic_type_alias():
     class Foo: ...
 
-    assert eval_type(ForwardRef("Foo | None"), globals(), locals()) == Optional[Foo]
-    assert eval_type(ForwardRef("Foo | str"), globals(), locals()) == Union[Foo, str]
+    assert eval_type(ForwardRef("Foo | None"), globals(), locals()) == Foo | None
+    assert eval_type(ForwardRef("Foo | str"), globals(), locals()) == Foo | str
     assert (
         eval_type(ForwardRef("Foo | str | None"), globals(), locals())
-        == Union[Foo, str, None]
+        == Foo | str | None
     )
     assert (
         eval_type(ForwardRef("list[Foo | str] | None"), globals(), locals())
-        == Union[list[Union[Foo, str]], None]  # type: ignore
+        == list[Foo | str] | None  # type: ignore
     )
     assert (
         eval_type(ForwardRef("list[Foo | str] | None | int"), globals(), locals())
-        == Union[list[Union[Foo, str]], int, None]  # type: ignore
+        == list[Foo | str] | int | None  # type: ignore
     )
 
 

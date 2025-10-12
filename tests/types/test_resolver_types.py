@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Optional, TypeVar, Union
+from typing import TypeVar
 
 from asgiref.sync import sync_to_async
 
@@ -68,10 +68,10 @@ def test_object():
 
 
 def test_optional():
-    def stock_market_tool() -> Optional[str]: ...
+    def stock_market_tool() -> str | None: ...
 
     resolver = StrawberryResolver(stock_market_tool)
-    assert resolver.type == Optional[str]
+    assert resolver.type == str | None
 
 
 def test_type_var():
@@ -92,10 +92,10 @@ def test_union():
     class Diagram:
         bar: float
 
-    def get_overlap() -> Union[Venn, Diagram]: ...
+    def get_overlap() -> Venn | Diagram: ...
 
     resolver = StrawberryResolver(get_overlap)
-    assert resolver.type == Union[Venn, Diagram]
+    assert resolver.type == Venn | Diagram
 
 
 def test_sync_to_async_resolver():

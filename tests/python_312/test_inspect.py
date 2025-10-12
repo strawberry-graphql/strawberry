@@ -1,5 +1,3 @@
-# ruff: noqa: F821
-
 import pytest
 
 import strawberry

@@ -3,7 +3,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from decimal import Decimal
 from functools import cached_property
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 from uuid import UUID
 
 import pydantic
@@ -25,12 +25,12 @@ class CompatModelField:
     type_: Any
     outer_type_: Any
     default: Any
-    default_factory: Optional[Callable[[], Any]]
+    default_factory: Callable[[], Any] | None
     required: bool
-    alias: Optional[str]
+    alias: str | None
     allow_none: bool
     has_alias: bool
-    description: Optional[str]
+    description: str | None
     _missing_type: Any
     is_v1: bool
 
@@ -44,8 +44,8 @@ class CompatModelField:
 
 
 ATTR_TO_TYPE_MAP = {
-    "NoneStr": Optional[str],
-    "NoneBytes": Optional[bytes],
+    "NoneStr": str | None,
+    "NoneBytes": bytes | None,
     "StrBytes": None,
     "NoneStrBytes": None,
     "StrictStr": str,

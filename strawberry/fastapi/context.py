@@ -1,23 +1,24 @@
-from typing import Any, Optional, Union
+from typing import TYPE_CHECKING, Any
 
-from starlette.background import BackgroundTasks
-from starlette.requests import Request
-from starlette.responses import Response
-from starlette.websockets import WebSocket
+if TYPE_CHECKING:
+    from starlette.background import BackgroundTasks
+    from starlette.requests import Request
+    from starlette.responses import Response
+    from starlette.websockets import WebSocket
 
-CustomContext = Union["BaseContext", dict[str, Any]]
-MergedContext = Union[
-    "BaseContext", dict[str, Union[Any, BackgroundTasks, Request, Response, WebSocket]]
-]
+CustomContext = "BaseContext | dict[str, Any]"
+MergedContext = (
+    "BaseContext | dict[str, Any | BackgroundTasks | Request | Response | WebSocket]"
+)
 
 
 class BaseContext:
-    connection_params: Optional[Any] = None
+    connection_params: Any | None = None
 
     def __init__(self) -> None:
-        self.request: Optional[Union[Request, WebSocket]] = None
-        self.background_tasks: Optional[BackgroundTasks] = None
-        self.response: Optional[Response] = None
+        self.request: Request | WebSocket | None = None
+        self.background_tasks: BackgroundTasks | None = None
+        self.response: Response | None = None
 
 
 __all__ = ["BaseContext"]

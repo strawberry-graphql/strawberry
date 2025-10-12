@@ -11,7 +11,6 @@ from typing import (  # type: ignore
     ClassVar,
     ForwardRef,
     Generic,
-    Optional,
     TypeGuard,
     TypeVar,
     Union,
@@ -109,7 +108,7 @@ def get_optional_annotation(annotation: type) -> type:
     # if we have multiple non none types we want to return a copy of this
     # type (normally a Union type).
     if len(non_none_types) > 1:
-        return Union[non_none_types]  # type: ignore
+        return non_none_types  # type: ignore
 
     return non_none_types[0]
 
@@ -145,7 +144,7 @@ def is_type_var(annotation: type) -> bool:
     return isinstance(annotation, TypeVar)
 
 
-def is_classvar(cls: type, annotation: Union[ForwardRef, str]) -> bool:
+def is_classvar(cls: type, annotation: ForwardRef | str) -> bool:
     """Returns True if the annotation is a ClassVar."""
     # This code was copied from the dataclassses cpython implementation to check
     # if a field is annotated with ClassVar or not, taking future annotations
@@ -173,7 +172,7 @@ def type_has_annotation(type_: object, annotation: type) -> bool:
     return False
 
 
-def get_parameters(annotation: type) -> Union[tuple[object], tuple[()]]:
+def get_parameters(annotation: type) -> tuple[object] | tuple[()]:
     if isinstance(annotation, _GenericAlias) or (
         isinstance(annotation, type)
         and issubclass(annotation, Generic)
@@ -184,9 +183,9 @@ def get_parameters(annotation: type) -> Union[tuple[object], tuple[()]]:
 
 
 def _get_namespace_from_ast(
-    expr: Union[ast.Expr, ast.expr],
-    globalns: Optional[dict] = None,
-    localns: Optional[dict] = None,
+    expr: ast.Expr | ast.expr,
+    globalns: dict | None = None,
+    localns: dict | None = None,
 ) -> dict[str, type]:
     from strawberry.types.lazy_type import StrawberryLazyReference
 
@@ -249,8 +248,8 @@ def _get_namespace_from_ast(
 
 def eval_type(
     type_: Any,
-    globalns: Optional[dict] = None,
-    localns: Optional[dict] = None,
+    globalns: dict | None = None,
+    localns: dict | None = None,
 ) -> type:
     """Evaluates a type, resolving forward references."""
     from strawberry.parent import StrawberryParent

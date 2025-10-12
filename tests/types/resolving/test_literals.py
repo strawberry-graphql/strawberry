@@ -1,5 +1,3 @@
-from typing import Optional, Union
-
 from strawberry.annotation import StrawberryAnnotation
 
 
@@ -38,8 +36,8 @@ def test_none():
     annotation = StrawberryAnnotation(type(None))
     annotation.resolve()
 
-    annotation = StrawberryAnnotation(Optional[int])
+    annotation = StrawberryAnnotation(int | None)
     annotation.resolve()
 
-    annotation = StrawberryAnnotation(Union[None, int])
+    annotation = StrawberryAnnotation(None | int)
     annotation.resolve()

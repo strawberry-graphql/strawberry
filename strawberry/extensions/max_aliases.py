@@ -1,5 +1,3 @@
-from typing import Union
-
 from graphql import (
     ExecutableDefinitionNode,
     FieldNode,
@@ -64,7 +62,7 @@ def create_validator(max_alias_count: int) -> type[ValidationRule]:
 
 
 def count_fields_with_alias(
-    selection_set_owner: Union[ExecutableDefinitionNode, FieldNode, InlineFragmentNode],
+    selection_set_owner: ExecutableDefinitionNode | FieldNode | InlineFragmentNode,
 ) -> int:
     if selection_set_owner.selection_set is None:
         return 0

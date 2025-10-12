@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Optional, TypeVar
+from typing import TypeVar
 
 import strawberry
 from strawberry.annotation import StrawberryAnnotation
@@ -61,10 +61,10 @@ def test_object():
 
 
 def test_optional():
-    annotation = StrawberryAnnotation(Optional[float])
+    annotation = StrawberryAnnotation(float | None)
     field = StrawberryField(type_annotation=annotation)
 
-    assert field.type == Optional[float]
+    assert field.type == float | None
 
 
 def test_type_var():
