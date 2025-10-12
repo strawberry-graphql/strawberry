@@ -48,7 +48,7 @@ def is_graphql_generic(type_: StrawberryType | type) -> bool:
     if has_object_definition(type_):
         return type_.__strawberry_definition__.is_graphql_generic
 
-    if isinstance(type_, StrawberryType):
+    if type(type_) is StrawberryType:
         return type_.is_graphql_generic
 
     return False
