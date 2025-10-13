@@ -9,9 +9,10 @@ def test_base_context():
 
 
 def test_with_class_context_getter():
-    from litestar import Litestar
     from litestar.di import Provide
     from litestar.testing import TestClient
+
+    from litestar import Litestar
     from strawberry.litestar import BaseContext, make_graphql_controller
 
     @strawberry.type
@@ -53,9 +54,10 @@ def test_with_class_context_getter():
 
 
 def test_with_dict_context_getter():
-    from litestar import Litestar
     from litestar.di import Provide
     from litestar.testing import TestClient
+
+    from litestar import Litestar
     from strawberry.litestar import make_graphql_controller
 
     @strawberry.type
@@ -93,8 +95,9 @@ def test_with_dict_context_getter():
 
 
 def test_without_context_getter():
-    from litestar import Litestar
     from litestar.testing import TestClient
+
+    from litestar import Litestar
     from strawberry.litestar import make_graphql_controller
 
     @strawberry.type
@@ -119,9 +122,10 @@ def test_without_context_getter():
 
 
 def test_with_invalid_context_getter():
-    from litestar import Litestar
     from litestar.di import Provide
     from litestar.testing import TestClient
+
+    from litestar import Litestar
     from strawberry.litestar import make_graphql_controller
 
     @strawberry.type
@@ -165,6 +169,7 @@ def test_with_invalid_context_getter():
 
 def test_custom_context():
     from litestar.testing import TestClient
+
     from tests.litestar.app import create_app
 
     @strawberry.type
@@ -185,6 +190,7 @@ def test_custom_context():
 
 def test_can_set_background_task():
     from litestar.testing import TestClient
+
     from tests.litestar.app import create_app
 
     task_complete = False

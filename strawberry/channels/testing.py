@@ -8,9 +8,9 @@ from typing import (
     Union,
 )
 
+from channels.testing.websocket import WebsocketCommunicator
 from graphql import GraphQLError, GraphQLFormattedError
 
-from channels.testing.websocket import WebsocketCommunicator
 from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
 from strawberry.subscriptions.protocols.graphql_transport_ws import (
     types as transport_ws_types,

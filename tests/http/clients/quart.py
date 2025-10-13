@@ -7,6 +7,7 @@ from io import BytesIO
 from typing import Any, Optional, Union
 from typing_extensions import Literal
 
+from quart.datastructures import FileStorage
 from starlette.testclient import TestClient
 from starlette.types import Receive, Scope, Send
 
@@ -14,7 +15,6 @@ from quart import Quart
 from quart import Request as QuartRequest
 from quart import Response as QuartResponse
 from quart import Websocket as QuartWebsocket
-from quart.datastructures import FileStorage
 from strawberry.http import GraphQLHTTPResponse
 from strawberry.http.ides import GraphQL_IDE
 from strawberry.quart.views import GraphQLView as BaseGraphQLView

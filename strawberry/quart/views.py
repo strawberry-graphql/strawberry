@@ -7,9 +7,9 @@ from typing import TYPE_CHECKING, Callable, ClassVar, Optional, Union
 from typing_extensions import TypeGuard
 
 from lia import HTTPException, QuartHTTPRequestAdapter
+from quart.ctx import has_websocket_context
 
 from quart import Request, Response, Websocket, request, websocket
-from quart.ctx import has_websocket_context
 from quart.views import View
 from strawberry.http.async_base_view import (
     AsyncBaseHTTPView,
@@ -26,6 +26,7 @@ from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_P
 
 if TYPE_CHECKING:
     from quart.typing import ResponseReturnValue
+
     from strawberry.http import GraphQLHTTPResponse
     from strawberry.schema.base import BaseSchema
 
