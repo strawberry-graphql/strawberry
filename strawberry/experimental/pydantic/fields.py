@@ -8,7 +8,6 @@ from typing import (
 from typing import GenericAlias as TypingGenericAlias  # type: ignore
 
 from pydantic import BaseModel
-
 from strawberry.experimental.pydantic._compat import (
     PydanticCompat,
     get_args,
