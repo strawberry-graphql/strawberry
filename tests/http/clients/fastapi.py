@@ -5,8 +5,7 @@ import json
 from collections.abc import AsyncGenerator, Sequence
 from datetime import timedelta
 from io import BytesIO
-from typing import Any, Optional
-from typing_extensions import Literal
+from typing import Any, Literal, Optional
 
 from fastapi import BackgroundTasks, Depends, FastAPI, Request, WebSocket
 from fastapi.testclient import TestClient

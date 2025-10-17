@@ -7,7 +7,6 @@ from decimal import Decimal
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
     Optional,
     Union,
     cast,
@@ -74,6 +73,8 @@ except ImportError:
 
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from mypy.nodes import ClassDef, Expression
     from mypy.plugins import (  # type: ignore
         AnalyzeTypeContext,

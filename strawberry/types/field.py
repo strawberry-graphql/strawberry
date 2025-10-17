@@ -4,12 +4,11 @@ import contextlib
 import copy
 import dataclasses
 import sys
-from collections.abc import Awaitable, Coroutine, Mapping, Sequence
+from collections.abc import Awaitable, Callable, Coroutine, Mapping, Sequence
 from functools import cached_property
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
     Optional,
     TypeVar,
     Union,
@@ -29,7 +28,8 @@ from .fields.resolver import StrawberryResolver
 
 if TYPE_CHECKING:
     import builtins
-    from typing_extensions import Literal, Self
+    from typing import Literal
+    from typing_extensions import Self
 
     from strawberry.extensions.field_extension import FieldExtension
     from strawberry.permission import BasePermission
@@ -92,11 +92,9 @@ class StrawberryField(dataclasses.Field):
         # basic fields are fields with no provided resolver
         is_basic_field = not base_resolver
 
-        kwargs: Any = {}
-
-        # kw_only was added to python 3.10 and it is required
-        if sys.version_info >= (3, 10):
-            kwargs["kw_only"] = dataclasses.MISSING
+        kwargs: Any = {
+            "kw_only": True,
+        }
 
         # doc was added to python 3.14 and it is required
         if sys.version_info >= (3, 14):

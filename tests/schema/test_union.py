@@ -1,4 +1,3 @@
-import sys
 import textwrap
 from dataclasses import dataclass
 from textwrap import dedent
@@ -461,10 +460,6 @@ def test_union_explicit_type_resolution():
     assert result.data == {"myField": {"__typename": "A", "a": 1}}
 
 
-@pytest.mark.skipif(
-    sys.version_info < (3, 10),
-    reason="pipe syntax for union is only available on python 3.10+",
-)
 def test_union_optional_with_or_operator():
     """Verify that the `|` operator is supported when annotating unions as
     optional in schemas.

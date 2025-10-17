@@ -9,8 +9,9 @@ from typing import (
     Optional,
     Union,
     cast,
+    get_args,
+    get_origin,
 )
-from typing_extensions import get_args, get_origin
 
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.exceptions import MultipleStrawberryArgumentsError, UnsupportedTypeError

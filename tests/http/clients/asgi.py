@@ -5,8 +5,7 @@ import json
 from collections.abc import AsyncGenerator, Mapping, Sequence
 from datetime import timedelta
 from io import BytesIO
-from typing import Any, Optional, Union
-from typing_extensions import Literal
+from typing import Any, Literal, Optional, Union
 
 from starlette.requests import Request
 from starlette.responses import Response as StarletteResponse

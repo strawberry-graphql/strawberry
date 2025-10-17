@@ -4,8 +4,7 @@ import urllib.parse
 from collections.abc import AsyncGenerator, Sequence
 from datetime import timedelta
 from io import BytesIO
-from typing import Any, Optional, Union
-from typing_extensions import Literal
+from typing import Any, Literal, Optional, Union
 
 from starlette.testclient import TestClient
 from starlette.types import Receive, Scope, Send

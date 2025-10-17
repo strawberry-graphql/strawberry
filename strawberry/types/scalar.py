@@ -5,7 +5,6 @@ from dataclasses import dataclass
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
     NewType,
     Optional,
     TypeVar,
@@ -18,16 +17,12 @@ from strawberry.types.base import StrawberryType
 from strawberry.utils.str_converters import to_camel_case
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable, Mapping
+    from collections.abc import Callable, Iterable, Mapping
 
     from graphql import GraphQLScalarType
 
 
-# in python 3.10+ NewType is a class
-if sys.version_info >= (3, 10):
-    _T = TypeVar("_T", bound=Union[type, NewType])
-else:
-    _T = TypeVar("_T", bound=type)
+_T = TypeVar("_T", bound=Union[type, NewType])
 
 
 def identity(x: _T) -> _T:

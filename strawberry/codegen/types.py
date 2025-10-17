@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Optional, Union
 if TYPE_CHECKING:
     from collections.abc import Mapping
     from enum import EnumMeta
-    from typing_extensions import Literal
+    from typing import Literal
 
     from strawberry.types.unset import UnsetType
 

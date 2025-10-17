@@ -4,12 +4,11 @@ import dataclasses
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
+    Literal,
     Optional,
     Union,
     overload,
 )
-from typing_extensions import Literal
 
 from strawberry.types.field import (
     _RESOLVER_TYPE,
@@ -21,8 +20,8 @@ from strawberry.types.field import (
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Mapping, Sequence
-    from typing_extensions import Literal
+    from collections.abc import Callable, Mapping, Sequence
+    from typing import Literal
 
     from strawberry.extensions.field_extension import FieldExtension
     from strawberry.permission import BasePermission

@@ -1,4 +1,5 @@
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 
 def is_default_resolver(func: Callable[..., Any]) -> bool:

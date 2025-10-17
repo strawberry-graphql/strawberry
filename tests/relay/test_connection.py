@@ -1,4 +1,3 @@
-import sys
 from collections.abc import Iterable
 from typing import Annotated, Any, Optional
 from typing_extensions import Self
@@ -164,10 +163,6 @@ def test_lazy_optional_connection():
     assert not result.errors
 
 
-@pytest.mark.skipif(
-    sys.version_info < (3, 10),
-    reason="pipe syntax for union is only available on python 3.10+",
-)
 def test_nullable_connection_with_pipe():
     @strawberry.type
     class Query:

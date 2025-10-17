@@ -1,7 +1,7 @@
 import abc
 import json
+from collections.abc import Callable
 from typing import (
-    Callable,
     Generic,
     Literal,
     Optional,

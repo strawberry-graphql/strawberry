@@ -8,7 +8,6 @@ from dataclasses import dataclass
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
     Generic,
     Optional,
     TypeVar,
@@ -20,7 +19,14 @@ from .exceptions import WrongNumberOfResultsReturned
 
 if TYPE_CHECKING:
     from asyncio.events import AbstractEventLoop
-    from collections.abc import Awaitable, Hashable, Iterable, Mapping, Sequence
+    from collections.abc import (
+        Awaitable,
+        Callable,
+        Hashable,
+        Iterable,
+        Mapping,
+        Sequence,
+    )
 
 
 T = TypeVar("T")
@@ -244,7 +250,7 @@ async def dispatch_batch(loader: DataLoader, batch: Batch) -> None:
                 expected=len(batch), received=len(values)
             )
 
-        for task, value in zip(batch.tasks, values):
+        for task, value in zip(batch.tasks, values, strict=True):
             # Trying to set_result in a cancelled future would raise
             # asyncio.exceptions.InvalidStateError
             if task.future.cancelled():

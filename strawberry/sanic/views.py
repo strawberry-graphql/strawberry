@@ -5,11 +5,10 @@ import warnings
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
     Optional,
+    TypeGuard,
     Union,
 )
-from typing_extensions import TypeGuard
 
 from lia import HTTPException, SanicHTTPRequestAdapter
 
@@ -24,7 +23,7 @@ from strawberry.http.typevars import (
 )
 
 if TYPE_CHECKING:
-    from collections.abc import AsyncGenerator
+    from collections.abc import AsyncGenerator, Callable
 
     from strawberry.http import GraphQLHTTPResponse
     from strawberry.http.ides import GraphQL_IDE

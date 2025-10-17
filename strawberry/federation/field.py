@@ -4,7 +4,6 @@ import dataclasses
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
     Optional,
     TypeVar,
     Union,
@@ -15,8 +14,8 @@ from strawberry.types.field import field as base_field
 from strawberry.types.unset import UNSET
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable, Mapping, Sequence
-    from typing_extensions import Literal
+    from collections.abc import Callable, Iterable, Mapping, Sequence
+    from typing import Literal
 
     from strawberry.extensions.field_extension import FieldExtension
     from strawberry.permission import BasePermission

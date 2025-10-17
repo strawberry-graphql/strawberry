@@ -4,6 +4,7 @@ import sys
 import typing
 from collections.abc import AsyncGenerator
 from functools import lru_cache
+from types import UnionType
 from typing import (  # type: ignore
     Annotated,
     Any,
@@ -11,15 +12,16 @@ from typing import (  # type: ignore
     ForwardRef,
     Generic,
     Optional,
+    TypeGuard,
     TypeVar,
     Union,
     _eval_type,
     _GenericAlias,
     _SpecialForm,
     cast,
-    overload,
+    get_args,
+    get_origin,
 )
-from typing_extensions import TypeGuard, get_args, get_origin
 
 
 @lru_cache
@@ -76,12 +78,8 @@ def is_union(annotation: object) -> bool:
     """Returns True if annotation is a Union."""
     # this check is needed because unions declared with the new syntax `A | B`
     # don't have a `__origin__` property on them, but they are instances of
-    # `UnionType`, which is only available in Python 3.10+
-    if sys.version_info >= (3, 10):
-        from types import UnionType
-
-        if isinstance(annotation, UnionType):
-            return True
+    if isinstance(annotation, UnionType):
+        return True
 
     # unions declared as Union[A, B] fall through to this check, even on python 3.10+
 
@@ -185,51 +183,6 @@ def get_parameters(annotation: type) -> Union[tuple[object], tuple[()]]:
     return ()  # pragma: no cover
 
 
-@overload
-def _ast_replace_union_operation(expr: ast.expr) -> ast.expr: ...
-
-
-@overload
-def _ast_replace_union_operation(expr: ast.Expr) -> ast.Expr: ...
-
-
-def _ast_replace_union_operation(
-    expr: Union[ast.Expr, ast.expr],
-) -> Union[ast.Expr, ast.expr]:
-    if isinstance(expr, ast.Expr) and isinstance(
-        expr.value, (ast.BinOp, ast.Subscript)
-    ):
-        expr = ast.Expr(_ast_replace_union_operation(expr.value))
-    elif isinstance(expr, ast.BinOp):
-        left = _ast_replace_union_operation(expr.left)
-        right = _ast_replace_union_operation(expr.right)
-        expr = ast.Subscript(
-            ast.Name(id="Union"),
-            ast.Tuple([left, right], ast.Load()),
-            ast.Load(),
-        )
-    elif isinstance(expr, ast.Tuple):
-        expr = ast.Tuple(
-            [_ast_replace_union_operation(elt) for elt in expr.elts],
-            ast.Load(),
-        )
-    elif isinstance(expr, ast.Subscript):
-        if hasattr(ast, "Index") and isinstance(expr.slice, ast.Index):
-            expr = ast.Subscript(
-                expr.value,
-                ast.Index(_ast_replace_union_operation(expr.slice.value)),  # type: ignore
-                ast.Load(),
-            )
-        elif isinstance(expr.slice, (ast.BinOp, ast.Tuple)):
-            expr = ast.Subscript(
-                expr.value,
-                _ast_replace_union_operation(expr.slice),
-                ast.Load(),
-            )
-
-    return expr
-
-
 def _get_namespace_from_ast(
     expr: Union[ast.Expr, ast.expr],
     globalns: Optional[dict] = None,
@@ -311,16 +264,6 @@ def eval_type(
     if isinstance(type_, ForwardRef):
         ast_obj = cast("ast.Expr", ast.parse(type_.__forward_arg__).body[0])
 
-        # For Python 3.10+, we can use the built-in _eval_type function directly.
-        # It will handle "|" notations properly
-        if sys.version_info < (3, 10):
-            ast_obj = _ast_replace_union_operation(ast_obj)
-
-            # We replaced "a | b" with "Union[a, b], so make sure Union can be resolved
-            # at globalns because it may not be there
-            if "Union" not in globalns:
-                globalns["Union"] = Union
-
         globalns.update(_get_namespace_from_ast(ast_obj, globalns, localns))
 
         type_ = ForwardRef(ast.unparse(ast_obj))
@@ -385,11 +328,8 @@ def eval_type(
 
         # python 3.10 will return UnionType for origin, and it cannot be
         # subscripted like Union[Foo, Bar]
-        if sys.version_info >= (3, 10):
-            from types import UnionType
-
-            if origin is UnionType:
-                origin = Union
+        if origin is UnionType:
+            origin = Union
 
         type_ = (
             origin[tuple(eval_type(a, globalns, localns) for a in args)]

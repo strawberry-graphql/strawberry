@@ -12,9 +12,10 @@ from typing import (
     Any,
     NamedTuple,
     Optional,
+    TypeAlias,
     cast,
 )
-from typing_extensions import Self, TypeAlias
+from typing_extensions import Self
 
 import strawberry
 from strawberry import relay

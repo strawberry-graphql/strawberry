@@ -1,12 +1,10 @@
 import builtins
 import dataclasses
 import inspect
-import sys
 import types
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from typing import (
     Any,
-    Callable,
     Optional,
     TypeVar,
     Union,
@@ -105,24 +103,7 @@ def _wrap_dataclass(cls: builtins.type[T]) -> builtins.type[T]:
     """Wrap a strawberry.type class with a dataclass and check for any issues before doing so."""
     # Ensure all Fields have been properly type-annotated
     _check_field_annotations(cls)
-
-    dclass_kwargs: dict[str, bool] = {}
-
-    # Python 3.10 introduces the kw_only param. If we're on an older version
-    # then generate our own custom init function
-    if sys.version_info >= (3, 10):
-        dclass_kwargs["kw_only"] = True
-    else:
-        dclass_kwargs["init"] = False
-
-    dclass = dataclasses.dataclass(cls, **dclass_kwargs)
-
-    if sys.version_info < (3, 10):
-        from strawberry.utils.dataclasses import add_custom_init_fn
-
-        add_custom_init_fn(dclass)
-
-    return dclass
+    return dataclasses.dataclass(kw_only=True)(cls)
 
 
 def _inject_default_for_maybe_annotations(

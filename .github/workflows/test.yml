@@ -57,12 +57,11 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: |
-            3.9
             3.10
             3.11
             3.12
             3.13
-            3.14-dev
+            3.14
 
       - run: pip install poetry nox nox-poetry uv
       - run: nox -r -t tests -s "${{ matrix.session.session }}"

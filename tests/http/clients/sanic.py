@@ -3,8 +3,7 @@ from __future__ import annotations
 from io import BytesIO
 from json import dumps
 from random import randint
-from typing import Any, Optional
-from typing_extensions import Literal
+from typing import Any, Literal, Optional
 
 from sanic import Sanic
 from sanic.request import Request as SanicRequest

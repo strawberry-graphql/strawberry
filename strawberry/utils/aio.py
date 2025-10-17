@@ -1,9 +1,14 @@
 import sys
-from collections.abc import AsyncGenerator, AsyncIterable, AsyncIterator, Awaitable
+from collections.abc import (
+    AsyncGenerator,
+    AsyncIterable,
+    AsyncIterator,
+    Awaitable,
+    Callable,
+)
 from contextlib import asynccontextmanager, suppress
 from typing import (
     Any,
-    Callable,
     Optional,
     TypeVar,
     Union,

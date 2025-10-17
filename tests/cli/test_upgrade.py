@@ -39,26 +39,6 @@ def test_upgrade_works_annotated_unions(
     snapshot.assert_match(target.read_text(), "unions.py")
 
 
-def test_upgrade_works_annotated_unions_target_python(
-    cli_app: Typer, cli_runner: CliRunner, tmp_path: Path, snapshot: Snapshot
-):
-    source = HERE / "fixtures/unions.py"
-
-    target = tmp_path / "unions.py"
-    target.write_text(source.read_text())
-
-    result = cli_runner.invoke(
-        cli_app,
-        ["upgrade", "--python-target", "3.8", "annotated-union", str(target)],
-    )
-
-    assert result.exit_code == 1
-    assert "1 files changed\n  - 0 files skipped" in result.stdout
-
-    snapshot.snapshot_dir = HERE / "snapshots"
-    snapshot.assert_match(target.read_text(), "unions_py38.py")
-
-
 def test_upgrade_works_annotated_unions_typing_extensions(
     cli_app: Typer, cli_runner: CliRunner, tmp_path: Path, snapshot: Snapshot
 ):
