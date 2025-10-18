@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.284.1 - 2025-10-18
+--------------------
+
+This release fixes the usage of `strawberry.Maybe` inside modules using `from __future__ import annotations`
+
+Contributed by [Thiago Bellini Ribeiro](https://github.com/bellini666) via [PR #4031](https://github.com/strawberry-graphql/strawberry/pull/4031/)
+
+
 0.284.0 - 2025-10-17
 --------------------
 
