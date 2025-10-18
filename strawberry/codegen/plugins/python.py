@@ -3,7 +3,7 @@ from __future__ import annotations
 import textwrap
 from collections import defaultdict
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, ClassVar, Optional
+from typing import TYPE_CHECKING, ClassVar
 
 from strawberry.codegen import CodegenFile, QueryCodegenPlugin
 from strawberry.codegen.types import (
@@ -31,7 +31,7 @@ if TYPE_CHECKING:
 @dataclass
 class PythonType:
     type: str
-    module: Optional[str] = None
+    module: str | None = None
 
 
 class PythonPlugin(QueryCodegenPlugin):

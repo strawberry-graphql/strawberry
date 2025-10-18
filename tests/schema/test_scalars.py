@@ -1,7 +1,6 @@
 from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal
 from textwrap import dedent
-from typing import Optional
 from uuid import UUID
 
 import pytest
@@ -167,7 +166,7 @@ def test_json():
             return data
 
         @strawberry.field
-        def echo_json_nullable(data: Optional[JSON]) -> Optional[JSON]:
+        def echo_json_nullable(data: JSON | None) -> JSON | None:
             return data
 
     schema = strawberry.Schema(query=Query)

@@ -1,5 +1,5 @@
 import textwrap
-from typing import Annotated, Union
+from typing import Annotated
 
 import strawberry
 from strawberry.printer import print_schema
@@ -15,9 +15,7 @@ class TypeB:
     b: int
 
 
-ABUnion = Annotated[
-    Union[TypeA, TypeB], strawberry.union("ABUnion", types=[TypeA, TypeB])
-]
+ABUnion = Annotated[TypeA | TypeB, strawberry.union("ABUnion", types=[TypeA, TypeB])]
 
 
 TypeALazy = Annotated[
@@ -27,10 +25,7 @@ TypeBLazy = Annotated[
     "TypeB", strawberry.lazy("tests.schema.test_lazy_types.test_lazy_unions")
 ]
 LazyABUnion = Annotated[
-    Union[
-        TypeALazy,
-        TypeBLazy,
-    ],
+    TypeALazy | TypeBLazy,
     strawberry.union("LazyABUnion", types=[TypeALazy, TypeBLazy]),
 ]
 

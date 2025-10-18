@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Optional
-
 
 class MissingOptionalDependenciesError(Exception):
     """Some optional dependencies that are required for a particular task are missing."""
@@ -9,8 +7,8 @@ class MissingOptionalDependenciesError(Exception):
     def __init__(
         self,
         *,
-        packages: Optional[list[str]] = None,
-        extras: Optional[list[str]] = None,
+        packages: list[str] | None = None,
+        extras: list[str] | None = None,
     ) -> None:
         """Initialize the error.
 

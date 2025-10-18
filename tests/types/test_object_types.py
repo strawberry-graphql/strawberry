@@ -2,7 +2,7 @@
 import dataclasses
 import re
 from enum import Enum
-from typing import Annotated, Optional, TypeVar, Union
+from typing import Annotated, Optional, TypeVar
 
 import pytest
 
@@ -82,7 +82,7 @@ def test_object():
 def test_optional():
     @strawberry.type
     class HasChoices:
-        decision: Optional[bool]
+        decision: bool | None
 
     field: StrawberryField = get_object_definition(HasChoices).fields[0]
 
@@ -110,7 +110,7 @@ def test_union():
     class UK:
         name: str
 
-    EU = Annotated[Union[Europe, UK], strawberry.union("EU")]
+    EU = Annotated[Europe | UK, strawberry.union("EU")]
 
     @strawberry.type
     class WishfulThinking:
@@ -140,11 +140,11 @@ def test_fields_with_defaults_inheritance():
     @strawberry.interface
     class A:
         text: str
-        delay: Optional[int] = None
+        delay: int | None = None
 
     @strawberry.type
     class B(A):
-        attachments: Optional[list[A]] = None
+        attachments: list[A] | None = None
 
     @strawberry.type
     class C(A):

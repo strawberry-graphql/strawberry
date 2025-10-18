@@ -121,13 +121,13 @@ class Custom: ...
 @strawberry.federation.type(extend=True, keys=["email"])
 class User:
     email: strawberry.ID = strawberry.federation.field(external=True)
-    name: Optional[str] = strawberry.federation.field(override="users")
-    total_products_created: Optional[int] = strawberry.federation.field(external=True)
+    name: str | None = strawberry.federation.field(override="users")
+    total_products_created: int | None = strawberry.federation.field(external=True)
     years_of_employment: int = strawberry.federation.field(external=True)
 
     # TODO: the camel casing will be fixed in a future release of Strawberry
     @strawberry.federation.field(requires=["totalProductsCreated", "yearsOfEmployment"])
-    def average_products_created_per_year(self) -> Optional[int]:
+    def average_products_created_per_year(self) -> int | None:
         if self.total_products_created is not None:
             return round(self.total_products_created / self.years_of_employment)
 
@@ -150,9 +150,9 @@ class User:
 
 @strawberry.federation.type(shareable=True)
 class ProductDimension:
-    size: Optional[str]
-    weight: Optional[float]
-    unit: Optional[str] = strawberry.federation.field(inaccessible=True)
+    size: str | None
+    weight: float | None
+    unit: str | None = strawberry.federation.field(inaccessible=True)
 
 
 @strawberry.type
@@ -163,13 +163,13 @@ class ProductVariation:
 @strawberry.type
 class CaseStudy:
     case_number: strawberry.ID
-    description: Optional[str]
+    description: str | None
 
 
 @strawberry.federation.type(keys=["study { caseNumber }"])
 class ProductResearch:
     study: CaseStudy
-    outcome: Optional[str]
+    outcome: str | None
 
     @classmethod
     def from_data(cls, data: dict) -> "ProductResearch":
@@ -206,8 +206,8 @@ class ProductResearch:
 class DeprecatedProduct:
     sku: str
     package: str
-    reason: Optional[str]
-    created_by: Optional[User]
+    reason: str | None
+    created_by: User | None
 
     @classmethod
     def resolve_reference(cls, **data: Any) -> Optional["DeprecatedProduct"]:
@@ -231,12 +231,12 @@ class DeprecatedProduct:
 )
 class Product:
     id: strawberry.ID
-    sku: Optional[str]
-    package: Optional[str]
+    sku: str | None
+    package: str | None
     variation_id: strawberry.Private[str]
 
     @strawberry.field
-    def variation(self) -> Optional[ProductVariation]:
+    def variation(self) -> ProductVariation | None:
         return (
             ProductVariation(strawberry.ID(self.variation_id))
             if self.variation_id
@@ -244,14 +244,14 @@ class Product:
         )
 
     @strawberry.field
-    def dimensions(self) -> Optional[ProductDimension]:
+    def dimensions(self) -> ProductDimension | None:
         return ProductDimension(**dimension)
 
     @strawberry.federation.field(provides=["totalProductsCreated"])
-    def created_by(self) -> Optional[User]:
+    def created_by(self) -> User | None:
         return User(**user)
 
-    notes: Optional[str] = strawberry.federation.field(tags=["internal"])
+    notes: str | None = strawberry.federation.field(tags=["internal"])
     research: list[ProductResearch]
 
     @classmethod
@@ -301,10 +301,10 @@ class Inventory:
 
 @strawberry.federation.type(extend=True)
 class Query:
-    product: Optional[Product] = strawberry.field(resolver=get_product_by_id)
+    product: Product | None = strawberry.field(resolver=get_product_by_id)
 
     @strawberry.field(deprecation_reason="Use product query instead")
-    def deprecated_product(self, sku: str, package: str) -> Optional[DeprecatedProduct]:
+    def deprecated_product(self, sku: str, package: str) -> DeprecatedProduct | None:
         return None
 
 

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import textwrap
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from strawberry.codegen import CodegenFile, QueryCodegenPlugin
 from strawberry.codegen.types import (
@@ -93,7 +93,7 @@ class PrintOperationPlugin(QueryCodegenPlugin):
         return f"({variables})"
 
     def _print_graphql_type(
-        self, type: GraphQLType, parent_type: Optional[GraphQLType] = None
+        self, type: GraphQLType, parent_type: GraphQLType | None = None
     ) -> str:
         if isinstance(type, GraphQLOptional):
             return self._print_graphql_type(type.of_type, type)

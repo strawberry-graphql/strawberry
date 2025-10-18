@@ -5,9 +5,7 @@ import types
 from collections.abc import Callable, Sequence
 from typing import (
     Any,
-    Optional,
     TypeVar,
-    Union,
     overload,
 )
 from typing_extensions import dataclass_transform, get_annotations
@@ -118,13 +116,13 @@ def _inject_default_for_maybe_annotations(
 def _process_type(
     cls: T,
     *,
-    name: Optional[str] = None,
+    name: str | None = None,
     is_input: bool = False,
     is_interface: bool = False,
-    description: Optional[str] = None,
-    directives: Optional[Sequence[object]] = (),
+    description: str | None = None,
+    directives: Sequence[object] | None = (),
     extend: bool = False,
-    original_type_annotations: Optional[dict[str, Any]] = None,
+    original_type_annotations: dict[str, Any] | None = None,
 ) -> T:
     name = name or to_camel_case(cls.__name__)
     original_type_annotations = original_type_annotations or {}
@@ -190,11 +188,11 @@ def _process_type(
 def type(
     cls: T,
     *,
-    name: Optional[str] = None,
+    name: str | None = None,
     is_input: bool = False,
     is_interface: bool = False,
-    description: Optional[str] = None,
-    directives: Optional[Sequence[object]] = (),
+    description: str | None = None,
+    directives: Sequence[object] | None = (),
     extend: bool = False,
 ) -> T: ...
 
@@ -205,25 +203,25 @@ def type(
 )
 def type(
     *,
-    name: Optional[str] = None,
+    name: str | None = None,
     is_input: bool = False,
     is_interface: bool = False,
-    description: Optional[str] = None,
-    directives: Optional[Sequence[object]] = (),
+    description: str | None = None,
+    directives: Sequence[object] | None = (),
     extend: bool = False,
 ) -> Callable[[T], T]: ...
 
 
 def type(
-    cls: Optional[T] = None,
+    cls: T | None = None,
     *,
-    name: Optional[str] = None,
+    name: str | None = None,
     is_input: bool = False,
     is_interface: bool = False,
-    description: Optional[str] = None,
-    directives: Optional[Sequence[object]] = (),
+    description: str | None = None,
+    directives: Sequence[object] | None = (),
     extend: bool = False,
-) -> Union[T, Callable[[T], T]]:
+) -> T | Callable[[T], T]:
     """Annotates a class as a GraphQL type.
 
     Similar to `dataclasses.dataclass`, but with additional functionality for
@@ -312,10 +310,10 @@ def type(
 def input(
     cls: T,
     *,
-    name: Optional[str] = None,
-    one_of: Optional[bool] = None,
-    description: Optional[str] = None,
-    directives: Optional[Sequence[object]] = (),
+    name: str | None = None,
+    one_of: bool | None = None,
+    description: str | None = None,
+    directives: Sequence[object] | None = (),
 ) -> T: ...
 
 
@@ -325,20 +323,20 @@ def input(
 )
 def input(
     *,
-    name: Optional[str] = None,
-    one_of: Optional[bool] = None,
-    description: Optional[str] = None,
-    directives: Optional[Sequence[object]] = (),
+    name: str | None = None,
+    one_of: bool | None = None,
+    description: str | None = None,
+    directives: Sequence[object] | None = (),
 ) -> Callable[[T], T]: ...
 
 
 def input(
-    cls: Optional[T] = None,
+    cls: T | None = None,
     *,
-    name: Optional[str] = None,
-    one_of: Optional[bool] = None,
-    description: Optional[str] = None,
-    directives: Optional[Sequence[object]] = (),
+    name: str | None = None,
+    one_of: bool | None = None,
+    description: str | None = None,
+    directives: Sequence[object] | None = (),
 ):
     """Annotates a class as a GraphQL Input type.
 
@@ -391,9 +389,9 @@ def input(
 def interface(
     cls: T,
     *,
-    name: Optional[str] = None,
-    description: Optional[str] = None,
-    directives: Optional[Sequence[object]] = (),
+    name: str | None = None,
+    description: str | None = None,
+    directives: Sequence[object] | None = (),
 ) -> T: ...
 
 
@@ -403,9 +401,9 @@ def interface(
 )
 def interface(
     *,
-    name: Optional[str] = None,
-    description: Optional[str] = None,
-    directives: Optional[Sequence[object]] = (),
+    name: str | None = None,
+    description: str | None = None,
+    directives: Sequence[object] | None = (),
 ) -> Callable[[T], T]: ...
 
 
@@ -413,11 +411,11 @@ def interface(
     order_default=True, kw_only_default=True, field_specifiers=(field, StrawberryField)
 )
 def interface(
-    cls: Optional[T] = None,
+    cls: T | None = None,
     *,
-    name: Optional[str] = None,
-    description: Optional[str] = None,
-    directives: Optional[Sequence[object]] = (),
+    name: str | None = None,
+    description: str | None = None,
+    directives: Sequence[object] | None = (),
 ):
     """Annotates a class as a GraphQL Interface.
 

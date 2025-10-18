@@ -1,5 +1,3 @@
-from typing import Union
-
 import strawberry
 
 
@@ -9,7 +7,7 @@ def test_maybe_null_validation_rule_input_fields():
     @strawberry.input
     class TestInput:
         strict_field: strawberry.Maybe[str]  # Should reject null
-        flexible_field: strawberry.Maybe[Union[str, None]]  # Should allow null
+        flexible_field: strawberry.Maybe[str | None]  # Should allow null
 
     @strawberry.type
     class Query:
@@ -67,7 +65,7 @@ def test_maybe_null_validation_rule_resolver_arguments():
         def search(
             self,
             query: strawberry.Maybe[str] = None,  # Should reject null
-            filter_by: strawberry.Maybe[Union[str, None]] = None,  # Should allow null
+            filter_by: strawberry.Maybe[str | None] = None,  # Should allow null
         ) -> str:
             return "success"
 
@@ -113,7 +111,7 @@ def test_maybe_null_validation_rule_multiple_errors():
     class TestInput:
         field1: strawberry.Maybe[str]
         field2: strawberry.Maybe[int]
-        field3: strawberry.Maybe[Union[str, None]]  # This one allows null
+        field3: strawberry.Maybe[str | None]  # This one allows null
 
     @strawberry.type
     class Query:

@@ -44,18 +44,17 @@ FederationAny = scalar(NewType("_Any", object), name="_Any")  # type: ignore
 class Schema(BaseSchema):
     def __init__(
         self,
-        query: Optional[type] = None,
-        mutation: Optional[type] = None,
-        subscription: Optional[type] = None,
+        query: type | None = None,
+        mutation: type | None = None,
+        subscription: type | None = None,
         # TODO: we should update directives' type in the main schema
         directives: Iterable[type] = (),
         types: Iterable[type] = (),
         extensions: Iterable[Union[type["SchemaExtension"], "SchemaExtension"]] = (),
-        execution_context_class: Optional[type["GraphQLExecutionContext"]] = None,
+        execution_context_class: type["GraphQLExecutionContext"] | None = None,
         config: Optional["StrawberryConfig"] = None,
-        scalar_overrides: Optional[
-            dict[object, Union[type, "ScalarWrapper", "ScalarDefinition"]]
-        ] = None,
+        scalar_overrides: dict[object, Union[type, "ScalarWrapper", "ScalarDefinition"]]
+        | None = None,
         schema_directives: Iterable[object] = (),
         enable_federation_2: bool = False,
     ) -> None:
@@ -85,9 +84,9 @@ class Schema(BaseSchema):
 
     def _get_federation_query_type(
         self,
-        query: Optional[type[WithStrawberryObjectDefinition]],
-        mutation: Optional[type[WithStrawberryObjectDefinition]],
-        subscription: Optional[type[WithStrawberryObjectDefinition]],
+        query: type[WithStrawberryObjectDefinition] | None,
+        mutation: type[WithStrawberryObjectDefinition] | None,
+        subscription: type[WithStrawberryObjectDefinition] | None,
         additional_types: Iterable[type[WithStrawberryObjectDefinition]],
     ) -> type:
         """Returns a new query type that includes the _service field.
@@ -124,7 +123,7 @@ class Schema(BaseSchema):
 
         if entity_type:
             self.entities_resolver.__annotations__["return"] = list[
-                Optional[entity_type]  # type: ignore
+                entity_type | None  # type: ignore
             ]
 
             entities_field = strawberry.field(
@@ -250,7 +249,7 @@ class Schema(BaseSchema):
         directive_by_url[import_url].add(f"@{name}")
 
     def _add_link_directives(
-        self, additional_directives: Optional[list[object]] = None
+        self, additional_directives: list[object] | None = None
     ) -> None:
         from .schema_directives import FederationDirective, Link
 
@@ -312,11 +311,11 @@ class Schema(BaseSchema):
 
 
 def _get_entity_type(
-    query: Optional[type[WithStrawberryObjectDefinition]],
-    mutation: Optional[type[WithStrawberryObjectDefinition]],
-    subscription: Optional[type[WithStrawberryObjectDefinition]],
+    query: type[WithStrawberryObjectDefinition] | None,
+    mutation: type[WithStrawberryObjectDefinition] | None,
+    subscription: type[WithStrawberryObjectDefinition] | None,
     additional_types: Iterable[type[WithStrawberryObjectDefinition]],
-) -> Optional[StrawberryUnion]:
+) -> StrawberryUnion | None:
     # recursively iterate over the schema to find all types annotated with @key
     # if no types are annotated with @key, then the _Entity union and Query._entities
     # field should not be added to the schema

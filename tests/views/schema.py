@@ -2,7 +2,7 @@ import asyncio
 import contextlib
 from collections.abc import AsyncGenerator
 from enum import Enum
-from typing import Any, Optional, Union
+from typing import Any
 
 from graphql import GraphQLError
 from graphql.version import VersionInfo, version_info
@@ -67,7 +67,7 @@ class FolderInput:
 @strawberry.type
 class DebugInfo:
     num_active_result_handlers: int
-    is_connection_init_timeout_task_done: Optional[bool]
+    is_connection_init_timeout_task_done: bool | None
 
 
 @strawberry.type
@@ -90,16 +90,16 @@ class Query:
         return "hello"
 
     @strawberry.field
-    def hello(self, name: Optional[str] = None) -> str:
+    def hello(self, name: str | None = None) -> str:
         return f"Hello {name or 'world'}"
 
     @strawberry.field
-    async def async_hello(self, name: Optional[str] = None, delay: float = 0) -> str:
+    async def async_hello(self, name: str | None = None, delay: float = 0) -> str:
         await asyncio.sleep(delay)
         return f"Hello {name or 'world'}"
 
     @strawberry.field(permission_classes=[AlwaysFailPermission])
-    def always_fail(self) -> Optional[str]:
+    def always_fail(self) -> str | None:
         return "Hey"
 
     @strawberry.field
@@ -111,7 +111,7 @@ class Query:
         raise ValueError(message)
 
     @strawberry.field
-    async def some_error(self) -> Optional[str]:
+    async def some_error(self) -> str | None:
         raise ValueError("Some error")
 
     @strawberry.field
@@ -270,8 +270,8 @@ class Subscription:
     async def listener(
         self,
         info: strawberry.Info,
-        timeout: Optional[float] = None,
-        group: Optional[str] = None,
+        timeout: float | None = None,
+        group: str | None = None,
     ) -> AsyncGenerator[str, None]:
         yield info.context["request"].channel_name
 
@@ -287,9 +287,9 @@ class Subscription:
     async def listener_with_confirmation(
         self,
         info: strawberry.Info,
-        timeout: Optional[float] = None,
-        group: Optional[str] = None,
-    ) -> AsyncGenerator[Union[str, None], None]:
+        timeout: float | None = None,
+        group: str | None = None,
+    ) -> AsyncGenerator[str | None, None]:
         async with info.context["request"].listen_to_channel(
             type="test.message",
             timeout=timeout,
@@ -320,7 +320,7 @@ class Subscription:
 
 class Schema(strawberry.Schema):
     def process_errors(
-        self, errors: list, execution_context: Optional[ExecutionContext] = None
+        self, errors: list, execution_context: ExecutionContext | None = None
     ) -> None:
         import traceback
 

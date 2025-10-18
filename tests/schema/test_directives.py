@@ -1,6 +1,6 @@
 import textwrap
 from enum import Enum
-from typing import Any, NoReturn, Optional
+from typing import Any, NoReturn
 
 import pytest
 
@@ -480,7 +480,7 @@ def test_directive_value():
 
     @strawberry.type
     class Cake:
-        frosting: Optional[str] = None
+        frosting: str | None = None
         flavor: str = "Chocolate"
 
     @strawberry.type
@@ -533,7 +533,7 @@ class Query:
 
 @strawberry.type
 class Cake:
-    frosting: Optional[str] = None
+    frosting: str | None = None
     flavor: str = "Chocolate"
 
 

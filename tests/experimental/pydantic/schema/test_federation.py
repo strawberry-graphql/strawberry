@@ -1,5 +1,3 @@
-import typing
-
 from pydantic import BaseModel
 
 import strawberry
@@ -26,7 +24,7 @@ def test_fetch_entities_pydantic():
     @strawberry.federation.type(extend=True)
     class Query:
         @strawberry.field
-        def top_products(self, first: int) -> typing.List[Product]:  # pragma: no cover
+        def top_products(self, first: int) -> list[Product]:  # pragma: no cover
             return []
 
     schema = strawberry.federation.Schema(query=Query, enable_federation_2=True)

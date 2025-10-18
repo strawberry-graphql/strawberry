@@ -1,6 +1,5 @@
 from collections.abc import Iterator
 from functools import lru_cache
-from typing import Optional
 
 from graphql.language.parser import parse
 
@@ -25,7 +24,7 @@ class ParserCache(SchemaExtension):
     ```
     """
 
-    def __init__(self, maxsize: Optional[int] = None) -> None:
+    def __init__(self, maxsize: int | None = None) -> None:
         """Initialize the ParserCache.
 
         Args:

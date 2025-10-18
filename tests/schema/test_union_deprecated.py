@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 from textwrap import dedent
-from typing import Optional
 
 import pytest
 
@@ -107,7 +106,7 @@ def test_can_use_union_in_optional():
 
     @strawberry.type
     class Query:
-        ab: Optional[Result] = None
+        ab: Result | None = None
 
     schema = strawberry.Schema(query=Query)
 

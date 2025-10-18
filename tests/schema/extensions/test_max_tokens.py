@@ -1,5 +1,3 @@
-from typing import Optional
-
 import strawberry
 from strawberry.extensions.max_tokens import MaxTokensLimiter
 
@@ -13,7 +11,7 @@ class Human:
 @strawberry.type
 class Query:
     @strawberry.field
-    def user(self, name: Optional[str] = None, email: Optional[str] = None) -> Human:
+    def user(self, name: str | None = None, email: str | None = None) -> Human:
         return Human(name="Jane Doe", email="jane@example.com")
 
     version: str

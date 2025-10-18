@@ -1,7 +1,6 @@
 # type: ignore
-import typing
 from contextlib import nullcontext
-from typing import Any, Generic, NamedTuple, Optional, TypeVar, Union
+from typing import Any, Generic, NamedTuple, TypeVar
 
 import pytest
 
@@ -220,7 +219,7 @@ def test_classmethod_resolvers():
 
     @strawberry.type
     class Query:
-        users: typing.List[User] = strawberry.field(resolver=User.get_users)
+        users: list[User] = strawberry.field(resolver=User.get_users)
 
     schema = strawberry.Schema(query=Query)
 
@@ -391,12 +390,12 @@ def test_generic_resolver_optional():
 
     T = TypeVar("T")
 
-    def resolver() -> Optional[T]:
+    def resolver() -> T | None:
         return AType(some=1)
 
     @strawberry.type
     class Query:
-        a_type: Optional[AType] = strawberry.field(resolver)
+        a_type: AType | None = strawberry.field(resolver)
 
     strawberry.Schema(query=Query)
 
@@ -451,12 +450,12 @@ def test_generic_resolver_union():
     class OtherType:
         other: int
 
-    def resolver() -> Union[T, OtherType]:
+    def resolver() -> T | OtherType:
         return AType(some=1)
 
     @strawberry.type
     class Query:
-        union_type: Union[AType, OtherType] = strawberry.field(resolver)
+        union_type: AType | OtherType = strawberry.field(resolver)
 
     strawberry.Schema(query=Query)
 

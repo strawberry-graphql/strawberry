@@ -1,6 +1,6 @@
 import re
 import typing
-from typing import TYPE_CHECKING, Any, Generic, TypeAlias, TypeVar, Union
+from typing import TYPE_CHECKING, Any, Generic, TypeAlias, TypeVar
 
 T = TypeVar("T")
 
@@ -31,7 +31,7 @@ class Some(Generic[T]):
 
 
 if TYPE_CHECKING:
-    Maybe: TypeAlias = Union[Some[T], None]
+    Maybe: TypeAlias = Some[T] | None
 else:
     # we do this trick so we can inspect that at runtime
     class Maybe(Generic[T]): ...

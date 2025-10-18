@@ -1,4 +1,4 @@
-from typing import Literal, TypedDict, Union
+from typing import Literal, TypeAlias, TypedDict
 from typing_extensions import NotRequired
 
 from graphql import GraphQLFormattedError
@@ -8,35 +8,35 @@ class ConnectionInitMessage(TypedDict):
     """Direction: Client -> Server."""
 
     type: Literal["connection_init"]
-    payload: NotRequired[Union[dict[str, object], None]]
+    payload: NotRequired[dict[str, object] | None]
 
 
 class ConnectionAckMessage(TypedDict):
     """Direction: Server -> Client."""
 
     type: Literal["connection_ack"]
-    payload: NotRequired[Union[dict[str, object], None]]
+    payload: NotRequired[dict[str, object] | None]
 
 
 class PingMessage(TypedDict):
     """Direction: bidirectional."""
 
     type: Literal["ping"]
-    payload: NotRequired[Union[dict[str, object], None]]
+    payload: NotRequired[dict[str, object] | None]
 
 
 class PongMessage(TypedDict):
     """Direction: bidirectional."""
 
     type: Literal["pong"]
-    payload: NotRequired[Union[dict[str, object], None]]
+    payload: NotRequired[dict[str, object] | None]
 
 
 class SubscribeMessagePayload(TypedDict):
-    operationName: NotRequired[Union[str, None]]
+    operationName: NotRequired[str | None]
     query: str
-    variables: NotRequired[Union[dict[str, object], None]]
-    extensions: NotRequired[Union[dict[str, object], None]]
+    variables: NotRequired[dict[str, object] | None]
+    extensions: NotRequired[dict[str, object] | None]
 
 
 class SubscribeMessage(TypedDict):
@@ -49,7 +49,7 @@ class SubscribeMessage(TypedDict):
 
 class NextMessagePayload(TypedDict):
     errors: NotRequired[list[GraphQLFormattedError]]
-    data: NotRequired[Union[dict[str, object], None]]
+    data: NotRequired[dict[str, object] | None]
     extensions: NotRequired[dict[str, object]]
 
 
@@ -76,16 +76,16 @@ class CompleteMessage(TypedDict):
     type: Literal["complete"]
 
 
-Message = Union[
-    ConnectionInitMessage,
-    ConnectionAckMessage,
-    PingMessage,
-    PongMessage,
-    SubscribeMessage,
-    NextMessage,
-    ErrorMessage,
-    CompleteMessage,
-]
+Message: TypeAlias = (
+    ConnectionInitMessage
+    | ConnectionAckMessage
+    | PingMessage
+    | PongMessage
+    | SubscribeMessage
+    | NextMessage
+    | ErrorMessage
+    | CompleteMessage
+)
 
 
 __all__ = [

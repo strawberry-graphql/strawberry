@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Union
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from graphql import GraphQLResolveInfo
 
 
-def is_introspection_key(key: Union[str, int]) -> bool:
+def is_introspection_key(key: str | int) -> bool:
     # from: https://spec.graphql.org/June2018/#sec-Schema
     # > All types and directives defined within a schema must not have a name which
     # > begins with "__" (two underscores), as this is used exclusively

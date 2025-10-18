@@ -1,5 +1,4 @@
 from textwrap import dedent
-from typing import Optional, Union
 
 import pytest
 
@@ -11,7 +10,7 @@ def maybe_schema() -> strawberry.Schema:
     @strawberry.type
     class User:
         name: str
-        phone: Optional[str]
+        phone: str | None
 
     user = User(name="Patrick", phone=None)
 
@@ -23,7 +22,7 @@ def maybe_schema() -> strawberry.Schema:
 
     @strawberry.input
     class UpdateUserInput:
-        phone: strawberry.Maybe[Union[str, None]]
+        phone: strawberry.Maybe[str | None]
 
     @strawberry.type
     class Mutation:
@@ -45,7 +44,7 @@ user_query = """
 """
 
 
-def set_phone(schema: strawberry.Schema, phone: Optional[str]) -> dict:
+def set_phone(schema: strawberry.Schema, phone: str | None) -> dict:
     query = """
     mutation ($phone: String) {
         updateUser(input: { phone: $phone }) {
@@ -107,7 +106,7 @@ def test_optional_argument_maybe() -> None:
     @strawberry.type
     class Query:
         @strawberry.field
-        def hello(self, name: strawberry.Maybe[Union[str, None]] = None) -> str:
+        def hello(self, name: strawberry.Maybe[str | None] = None) -> str:
             if name:
                 return "None" if name.value is None else name.value
 
@@ -154,7 +153,7 @@ def test_optional_argument_maybe() -> None:
 def test_maybe_list():
     @strawberry.input
     class InputData:
-        items: strawberry.Maybe[Union[list[str], None]]
+        items: strawberry.Maybe[list[str] | None]
 
     @strawberry.type
     class Query:
@@ -306,7 +305,7 @@ def test_maybe_str_error_messages():
     @strawberry.input
     class UpdateInput:
         name: strawberry.Maybe[str]  # Rejects null at Python validation level
-        phone: strawberry.Maybe[Union[str, None]]  # Can accept null
+        phone: strawberry.Maybe[str | None]  # Can accept null
 
     @strawberry.type
     class Query:
@@ -348,9 +347,9 @@ def test_mixed_maybe_field_behavior():
         # Should accept value or absent, reject null
         username: strawberry.Maybe[str]
         # Can accept null, value, or absent
-        bio: strawberry.Maybe[Union[str, None]]
+        bio: strawberry.Maybe[str | None]
         # Can accept null, value, or absent
-        website: strawberry.Maybe[Union[str, None]]
+        website: strawberry.Maybe[str | None]
 
     @strawberry.type
     class Query:
@@ -456,7 +455,7 @@ def test_maybe_nested_types():
         # Cannot accept null list - only valid list or absent
         tags: strawberry.Maybe[list[str]]
         # Can accept null, valid list, or absent
-        categories: strawberry.Maybe[Union[list[str], None]]
+        categories: strawberry.Maybe[list[str] | None]
 
     @strawberry.type
     class Query:
@@ -553,7 +552,7 @@ def test_maybe_resolver_arguments():
             # Cannot accept null - only value or absent
             query: strawberry.Maybe[str] = None,
             # Can accept null, value, or absent
-            filter_by: strawberry.Maybe[Union[str, None]] = None,
+            filter_by: strawberry.Maybe[str | None] = None,
         ) -> str:
             result = []
 
@@ -639,7 +638,7 @@ def test_maybe_graphql_schema_consistency():
     # Schema with Maybe[str | None]
     @strawberry.input
     class Input2:
-        field: strawberry.Maybe[Union[str, None]]
+        field: strawberry.Maybe[str | None]
 
     @strawberry.type
     class Query2:
@@ -667,14 +666,14 @@ def test_maybe_complex_types():
     class AddressInput:
         street: str
         city: str
-        zip_code: Optional[str] = None
+        zip_code: str | None = None
 
     @strawberry.input
     class UpdateProfileInput:
         # Cannot accept null address - only valid address or absent
         address: strawberry.Maybe[AddressInput]
         # Can accept null, valid address, or absent
-        billing_address: strawberry.Maybe[Union[AddressInput, None]]
+        billing_address: strawberry.Maybe[AddressInput | None]
 
     @strawberry.type
     class Query:
@@ -763,7 +762,7 @@ def test_maybe_union_with_none_works():
     @strawberry.input
     class TestInput:
         # This should work correctly - can accept value, null, or absent
-        field: strawberry.Maybe[Union[str, None]]
+        field: strawberry.Maybe[str | None]
 
     @strawberry.type
     class Query:
@@ -812,7 +811,7 @@ def test_maybe_behavior_documented():
         # Generates String (optional) but rejects null at Python level
         required_field: strawberry.Maybe[str]
         # Generates String (optional) and accepts null
-        optional_field: strawberry.Maybe[Union[str, None]]
+        optional_field: strawberry.Maybe[str | None]
 
     @strawberry.type
     class Query:
@@ -839,7 +838,7 @@ def test_maybe_schema_generation():
 
     @strawberry.input
     class Input2:
-        field: strawberry.Maybe[Union[str, None]]
+        field: strawberry.Maybe[str | None]
 
     @strawberry.type
     class Query:
@@ -904,7 +903,7 @@ def test_maybe_comprehensive_behavior_comparison():
         # String (optional) - can be value or absent, but rejects null at Python level
         strict_field: strawberry.Maybe[str]
         # String (optional) - can be null, value, or absent
-        flexible_field: strawberry.Maybe[Union[str, None]]
+        flexible_field: strawberry.Maybe[str | None]
 
     @strawberry.type
     class Query:

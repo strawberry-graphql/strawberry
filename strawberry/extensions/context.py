@@ -9,8 +9,6 @@ from typing import (
     TYPE_CHECKING,
     Any,
     NamedTuple,
-    Optional,
-    Union,
 )
 
 from strawberry.extensions import SchemaExtension
@@ -27,10 +25,8 @@ class WrappedHook(NamedTuple):
     extension: SchemaExtension
     hook: Callable[
         ...,
-        Union[
-            contextlib.AbstractAsyncContextManager[None],
-            contextlib.AbstractContextManager[None],
-        ],
+        contextlib.AbstractAsyncContextManager[None]
+        | contextlib.AbstractContextManager[None],
     ]
     is_async: bool
 
@@ -64,12 +60,12 @@ class ExtensionContextManagerBase:
             if hook:
                 self.hooks.append(hook)
 
-    def get_hook(self, extension: SchemaExtension) -> Optional[WrappedHook]:
+    def get_hook(self, extension: SchemaExtension) -> WrappedHook | None:
         on_start = getattr(extension, self.LEGACY_ENTER, None)
         on_end = getattr(extension, self.LEGACY_EXIT, None)
 
         is_legacy = on_start is not None or on_end is not None
-        hook_fn: Optional[Hook] = getattr(type(extension), self.HOOK_NAME)
+        hook_fn: Hook | None = getattr(type(extension), self.HOOK_NAME)
         hook_fn = hook_fn if hook_fn is not self.default_hook else None
         if is_legacy and hook_fn is not None:
             raise ValueError(
@@ -110,8 +106,8 @@ class ExtensionContextManagerBase:
     @staticmethod
     def from_legacy(
         extension: SchemaExtension,
-        on_start: Optional[Callable[[], None]] = None,
-        on_end: Optional[Callable[[], None]] = None,
+        on_start: Callable[[], None] | None = None,
+        on_end: Callable[[], None] | None = None,
     ) -> WrappedHook:
         if iscoroutinefunction(on_start) or iscoroutinefunction(on_end):
 
@@ -175,9 +171,9 @@ class ExtensionContextManagerBase:
 
     def __exit__(
         self,
-        exc_type: Optional[type[BaseException]],
-        exc_val: Optional[BaseException],
-        exc_tb: Optional[TracebackType],
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
     ) -> None:
         self.exit_stack.__exit__(exc_type, exc_val, exc_tb)
 
@@ -194,9 +190,9 @@ class ExtensionContextManagerBase:
 
     async def __aexit__(
         self,
-        exc_type: Optional[type[BaseException]],
-        exc_val: Optional[BaseException],
-        exc_tb: Optional[TracebackType],
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
     ) -> None:
         await self.async_exit_stack.__aexit__(exc_type, exc_val, exc_tb)
 

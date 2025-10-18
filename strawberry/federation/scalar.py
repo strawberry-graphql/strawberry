@@ -2,15 +2,13 @@ from collections.abc import Callable, Iterable
 from typing import (
     Any,
     NewType,
-    Optional,
     TypeVar,
-    Union,
     overload,
 )
 
 from strawberry.types.scalar import ScalarWrapper, _process_scalar
 
-_T = TypeVar("_T", bound=Union[type, NewType])
+_T = TypeVar("_T", bound=type | NewType)
 
 
 def identity(x: _T) -> _T:  # pragma: no cover
@@ -20,18 +18,18 @@ def identity(x: _T) -> _T:  # pragma: no cover
 @overload
 def scalar(
     *,
-    name: Optional[str] = None,
-    description: Optional[str] = None,
-    specified_by_url: Optional[str] = None,
+    name: str | None = None,
+    description: str | None = None,
+    specified_by_url: str | None = None,
     serialize: Callable = identity,
-    parse_value: Optional[Callable] = None,
-    parse_literal: Optional[Callable] = None,
+    parse_value: Callable | None = None,
+    parse_literal: Callable | None = None,
     directives: Iterable[object] = (),
     authenticated: bool = False,
     inaccessible: bool = False,
-    policy: Optional[list[list[str]]] = None,
-    requires_scopes: Optional[list[list[str]]] = None,
-    tags: Optional[Iterable[str]] = (),
+    policy: list[list[str]] | None = None,
+    requires_scopes: list[list[str]] | None = None,
+    tags: Iterable[str] | None = (),
 ) -> Callable[[_T], _T]: ...
 
 
@@ -39,36 +37,36 @@ def scalar(
 def scalar(
     cls: _T,
     *,
-    name: Optional[str] = None,
-    description: Optional[str] = None,
-    specified_by_url: Optional[str] = None,
+    name: str | None = None,
+    description: str | None = None,
+    specified_by_url: str | None = None,
     serialize: Callable = identity,
-    parse_value: Optional[Callable] = None,
-    parse_literal: Optional[Callable] = None,
+    parse_value: Callable | None = None,
+    parse_literal: Callable | None = None,
     directives: Iterable[object] = (),
     authenticated: bool = False,
     inaccessible: bool = False,
-    policy: Optional[list[list[str]]] = None,
-    requires_scopes: Optional[list[list[str]]] = None,
-    tags: Optional[Iterable[str]] = (),
+    policy: list[list[str]] | None = None,
+    requires_scopes: list[list[str]] | None = None,
+    tags: Iterable[str] | None = (),
 ) -> _T: ...
 
 
 def scalar(
-    cls: Optional[_T] = None,
+    cls: _T | None = None,
     *,
-    name: Optional[str] = None,
-    description: Optional[str] = None,
-    specified_by_url: Optional[str] = None,
+    name: str | None = None,
+    description: str | None = None,
+    specified_by_url: str | None = None,
     serialize: Callable = identity,
-    parse_value: Optional[Callable] = None,
-    parse_literal: Optional[Callable] = None,
+    parse_value: Callable | None = None,
+    parse_literal: Callable | None = None,
     directives: Iterable[object] = (),
     authenticated: bool = False,
     inaccessible: bool = False,
-    policy: Optional[list[list[str]]] = None,
-    requires_scopes: Optional[list[list[str]]] = None,
-    tags: Optional[Iterable[str]] = (),
+    policy: list[list[str]] | None = None,
+    requires_scopes: list[list[str]] | None = None,
+    tags: Iterable[str] | None = (),
 ) -> Any:
     """Annotates a class or type as a GraphQL custom scalar.
 

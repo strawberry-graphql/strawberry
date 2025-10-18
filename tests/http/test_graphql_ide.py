@@ -1,4 +1,4 @@
-from typing import Literal, Union
+from typing import Literal
 
 import pytest
 
@@ -71,7 +71,7 @@ async def test_does_not_render_graphiql_if_wrong_accept(
 @pytest.mark.parametrize("graphql_ide", [False, None])
 async def test_renders_graphiql_disabled(
     http_client_class: type[HttpClient],
-    graphql_ide: Union[bool, None],
+    graphql_ide: bool | None,
 ):
     http_client = http_client_class(schema, graphql_ide=graphql_ide)
     response = await http_client.get("/graphql", headers={"Accept": "text/html"})
