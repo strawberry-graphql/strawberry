@@ -40,6 +40,11 @@ def replace_types_recursively(
     origin = get_origin(type_)
 
     if not origin or not hasattr(type_, "__args__"):
+        if (
+            hasattr(basic_type, "__pydantic_generic_metadata__")
+            and basic_type.__pydantic_generic_metadata__["args"]
+        ):
+            return replaced_type[basic_type.__pydantic_generic_metadata__["args"]]
         return replaced_type
 
     converted = tuple(
