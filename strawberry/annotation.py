@@ -30,7 +30,7 @@ from strawberry.types.base import (
     get_object_definition,
     has_object_definition,
 )
-from strawberry.types.enum import EnumDefinition
+from strawberry.types.enum import StrawberryEnum
 from strawberry.types.enum import enum as strawberry_enum
 from strawberry.types.lazy_type import LazyType
 from strawberry.types.maybe import _annotation_is_maybe
@@ -216,11 +216,11 @@ class StrawberryAnnotation:
             return evaled_type.__strawberry_definition__.resolve_generic(evaled_type)
         raise ValueError(f"Not supported {evaled_type}")
 
-    def create_enum(self, evaled_type: Any) -> EnumDefinition:
+    def create_enum(self, evaled_type: Any) -> StrawberryEnum:
         try:
-            return evaled_type._enum_definition
+            return evaled_type.__strawberry_definition__
         except AttributeError:
-            return strawberry_enum(evaled_type)._enum_definition
+            return strawberry_enum(evaled_type).__strawberry_definition__
 
     def create_list(self, evaled_type: Any) -> StrawberryList:
         item_type, *_ = get_args(evaled_type)
@@ -389,7 +389,7 @@ class StrawberryAnnotation:
         # Prevent import cycles
         from strawberry.types.union import StrawberryUnion
 
-        if isinstance(evaled_type, EnumDefinition):
+        if isinstance(evaled_type, StrawberryEnum):
             return True
         elif _is_input_type(evaled_type):  # TODO: Replace with StrawberryInputObject
             return True
