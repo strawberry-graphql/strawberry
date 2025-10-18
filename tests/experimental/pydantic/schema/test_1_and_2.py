@@ -1,6 +1,5 @@
 import sys
 import textwrap
-from typing import Optional, Union
 
 import pytest
 
@@ -19,7 +18,7 @@ def test_can_use_both_pydantic_1_and_2():
 
     class UserModel(pydantic.BaseModel):
         age: int
-        name: Optional[str]
+        name: str | None
 
     @strawberry.experimental.pydantic.type(UserModel)
     class User:
@@ -28,7 +27,7 @@ def test_can_use_both_pydantic_1_and_2():
 
     class LegacyUserModel(pydantic_v1.BaseModel):
         age: int
-        name: Optional[str]
+        name: str | None
         int_field: pydantic.v1.NonNegativeInt = 1
 
     @strawberry.experimental.pydantic.type(LegacyUserModel)
@@ -40,7 +39,7 @@ def test_can_use_both_pydantic_1_and_2():
     @strawberry.type
     class Query:
         @strawberry.field
-        def user(self, id: strawberry.ID) -> Union[User, LegacyUser]:
+        def user(self, id: strawberry.ID) -> User | LegacyUser:
             if id == "legacy":
                 return LegacyUser(age=1, name="legacy")
 

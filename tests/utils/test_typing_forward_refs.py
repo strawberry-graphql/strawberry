@@ -18,11 +18,11 @@ def test_eval_type():
     )
     assert (
         eval_type(ForwardRef("list[Foo | str] | None"), globals(), locals())
-        == Union[list[Union[Foo, str]], None]
+        == Union[list[Foo | str], None]
     )
     assert (
         eval_type(ForwardRef("list[Foo | str] | None | int"), globals(), locals())
-        == Union[list[Union[Foo, str]], int, None]
+        == Union[list[Foo | str], int, None]
     )
     assert eval_type(ForwardRef("JSON | None"), globals(), locals()) == Optional[JSON]
 
@@ -38,11 +38,11 @@ def test_eval_type_generic_type_alias():
     )
     assert (
         eval_type(ForwardRef("list[Foo | str] | None"), globals(), locals())
-        == Union[list[Union[Foo, str]], None]  # type: ignore
+        == Union[list[Foo | str], None]  # type: ignore
     )
     assert (
         eval_type(ForwardRef("list[Foo | str] | None | int"), globals(), locals())
-        == Union[list[Union[Foo, str]], int, None]  # type: ignore
+        == Union[list[Foo | str], int, None]  # type: ignore
     )
 
 

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import Annotated, Union
+from typing import Annotated
 
 import strawberry
 
@@ -151,9 +151,7 @@ class CommentEdge:
     cursor: str
 
 
-SearchResult = Annotated[
-    Union[User, Post, Comment], strawberry.union(name="SearchResult")
-]
+SearchResult = Annotated[User | Post | Comment, strawberry.union(name="SearchResult")]
 
 
 @strawberry.type

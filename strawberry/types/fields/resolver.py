@@ -12,9 +12,7 @@ from typing import (
     Any,
     Generic,
     NamedTuple,
-    Optional,
     TypeVar,
-    Union,
     cast,
     get_origin,
 )
@@ -63,7 +61,7 @@ class ReservedParameterSpecification(Protocol):
         self,
         parameters: tuple[inspect.Parameter, ...],
         resolver: StrawberryResolver[Any],
-    ) -> Optional[inspect.Parameter]:
+    ) -> inspect.Parameter | None:
         """Finds the reserved parameter from ``parameters``."""
 
 
@@ -74,7 +72,7 @@ class ReservedName(NamedTuple):
         self,
         parameters: tuple[inspect.Parameter, ...],
         resolver: StrawberryResolver[Any],
-    ) -> Optional[inspect.Parameter]:
+    ) -> inspect.Parameter | None:
         del resolver
         return next((p for p in parameters if p.name == self.name), None)
 
@@ -86,7 +84,7 @@ class ReservedNameBoundParameter(NamedTuple):
         self,
         parameters: tuple[inspect.Parameter, ...],
         resolver: StrawberryResolver[Any],
-    ) -> Optional[inspect.Parameter]:
+    ) -> inspect.Parameter | None:
         del resolver
         if parameters:  # Add compatibility for resolvers with no arguments
             first_parameter = parameters[0]
@@ -108,7 +106,7 @@ class ReservedType(NamedTuple):
         self,
         parameters: tuple[inspect.Parameter, ...],
         resolver: StrawberryResolver[Any],
-    ) -> Optional[inspect.Parameter]:
+    ) -> inspect.Parameter | None:
         # Go through all the types even after we've found one so we can
         # give a helpful error message if someone uses the type more than once.
         type_parameters = []
@@ -193,10 +191,10 @@ class StrawberryResolver(Generic[T]):
 
     def __init__(
         self,
-        func: Union[Callable[..., T], staticmethod, classmethod],
+        func: Callable[..., T] | staticmethod | classmethod,
         *,
-        description: Optional[str] = None,
-        type_override: Optional[Union[StrawberryType, type]] = None,
+        description: str | None = None,
+        type_override: StrawberryType | type | None = None,
     ) -> None:
         self.wrapped_func = func
         self._description = description
@@ -220,7 +218,7 @@ class StrawberryResolver(Generic[T]):
     @cached_property
     def strawberry_annotations(
         self,
-    ) -> dict[inspect.Parameter, Union[StrawberryAnnotation, None]]:
+    ) -> dict[inspect.Parameter, StrawberryAnnotation | None]:
         return {
             p: (
                 StrawberryAnnotation(p.annotation, namespace=self._namespace)
@@ -233,7 +231,7 @@ class StrawberryResolver(Generic[T]):
     @cached_property
     def reserved_parameters(
         self,
-    ) -> dict[ReservedParameterSpecification, Optional[inspect.Parameter]]:
+    ) -> dict[ReservedParameterSpecification, inspect.Parameter | None]:
         """Mapping of reserved parameter specification to parameter."""
         parameters = tuple(self.signature.parameters.values())
         return {spec: spec.find(parameters, self) for spec in self.RESERVED_PARAMSPEC}
@@ -281,19 +279,19 @@ class StrawberryResolver(Generic[T]):
         return arguments
 
     @cached_property
-    def info_parameter(self) -> Optional[inspect.Parameter]:
+    def info_parameter(self) -> inspect.Parameter | None:
         return self.reserved_parameters.get(INFO_PARAMSPEC)
 
     @cached_property
-    def root_parameter(self) -> Optional[inspect.Parameter]:
+    def root_parameter(self) -> inspect.Parameter | None:
         return self.reserved_parameters.get(ROOT_PARAMSPEC)
 
     @cached_property
-    def self_parameter(self) -> Optional[inspect.Parameter]:
+    def self_parameter(self) -> inspect.Parameter | None:
         return self.reserved_parameters.get(SELF_PARAMSPEC)
 
     @cached_property
-    def parent_parameter(self) -> Optional[inspect.Parameter]:
+    def parent_parameter(self) -> inspect.Parameter | None:
         return self.reserved_parameters.get(PARENT_PARAMSPEC)
 
     @cached_property
@@ -320,7 +318,7 @@ class StrawberryResolver(Generic[T]):
         }
 
     @cached_property
-    def type_annotation(self) -> Optional[StrawberryAnnotation]:
+    def type_annotation(self) -> StrawberryAnnotation | None:
         return_annotation = self.signature.return_annotation
         if return_annotation is inspect.Signature.empty:
             return None
@@ -329,7 +327,7 @@ class StrawberryResolver(Generic[T]):
         )
 
     @property
-    def type(self) -> Optional[Union[StrawberryType, type]]:
+    def type(self) -> StrawberryType | type | None:
         if self._type_override:
             return self._type_override
         if self.type_annotation is None:
@@ -355,7 +353,7 @@ class StrawberryResolver(Generic[T]):
         )
 
     def copy_with(
-        self, type_var_map: Mapping[str, Union[StrawberryType, builtins.type]]
+        self, type_var_map: Mapping[str, StrawberryType | builtins.type]
     ) -> StrawberryResolver:
         type_override = None
 

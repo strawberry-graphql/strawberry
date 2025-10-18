@@ -1,8 +1,6 @@
 import textwrap
-import typing
 from dataclasses import InitVar, dataclass
 from enum import Enum
-from typing import Optional
 
 import pytest
 
@@ -44,7 +42,7 @@ def test_basic_schema():
 def test_basic_schema_optional():
     @strawberry.type
     class Query:
-        example: typing.Optional[str] = None
+        example: str | None = None
 
     schema = strawberry.Schema(query=Query)
 
@@ -63,7 +61,7 @@ def test_basic_schema_types():
 
     @strawberry.type
     class Query:
-        user: typing.Optional[User] = None
+        user: User | None = None
 
     schema = strawberry.Schema(query=Query)
 
@@ -97,7 +95,7 @@ def test_does_camel_case_conversion():
 def test_can_rename_fields():
     @strawberry.type
     class Hello:
-        value: typing.Optional[str] = strawberry.field(name="name")
+        value: str | None = strawberry.field(name="name")
 
     @strawberry.type
     class Query:
@@ -446,8 +444,8 @@ def test_multiple_fields_with_same_type():
 
     @strawberry.type
     class Query:
-        me: Optional[User] = None
-        you: Optional[User] = None
+        me: User | None = None
+        you: User | None = None
 
     schema = strawberry.Schema(query=Query)
 

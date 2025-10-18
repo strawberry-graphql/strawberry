@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import InitVar, dataclass, field
-from typing import TYPE_CHECKING, Any, Optional, TypedDict
+from typing import TYPE_CHECKING, Any, TypedDict
 
 from strawberry.types.info import Info
 
@@ -26,7 +26,7 @@ class StrawberryConfig:
     info_class: type[Info] = Info
     enable_experimental_incremental_execution: bool = False
     _unsafe_disable_same_type_validation: bool = False
-    batching_config: Optional[BatchingConfig] = None
+    batching_config: BatchingConfig | None = None
 
     def __post_init__(
         self,

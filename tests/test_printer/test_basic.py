@@ -1,5 +1,4 @@
 import textwrap
-from typing import Optional
 from uuid import UUID
 
 import strawberry
@@ -77,7 +76,7 @@ def test_printer_with_camel_case_off():
 def test_optional():
     @strawberry.type
     class Query:
-        s: Optional[str]
+        s: str | None
 
     expected_type = """
     type Query {
@@ -133,7 +132,7 @@ def test_input_simple_required_types():
 def test_input_defaults():
     @strawberry.input
     class MyInput:
-        s: Optional[str] = None
+        s: str | None = None
         i: int = 0
         b: bool = False
         f: float = 0.0
@@ -141,7 +140,7 @@ def test_input_defaults():
         id: strawberry.ID = strawberry.ID("some_id")
         id_number: strawberry.ID = strawberry.ID(123)  # type: ignore
         id_number_string: strawberry.ID = strawberry.ID("123")
-        x: Optional[int] = UNSET
+        x: int | None = UNSET
         l: list[str] = strawberry.field(default_factory=list)  # noqa: E741
         list_with_values: list[str] = strawberry.field(
             default_factory=lambda: ["a", "b"]

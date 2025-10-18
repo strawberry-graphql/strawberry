@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import warnings
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING
 
 from lia import ChaliceHTTPRequestAdapter, HTTPException
 
@@ -25,8 +25,8 @@ class GraphQLView(
     def __init__(
         self,
         schema: BaseSchema,
-        graphiql: Optional[bool] = None,
-        graphql_ide: Optional[GraphQL_IDE] = "graphiql",
+        graphiql: bool | None = None,
+        graphql_ide: GraphQL_IDE | None = "graphiql",
         allow_queries_via_get: bool = True,
     ) -> None:
         self.allow_queries_via_get = allow_queries_via_get
@@ -41,7 +41,7 @@ class GraphQLView(
         else:
             self.graphql_ide = graphql_ide
 
-    def get_root_value(self, request: Request) -> Optional[RootValue]:
+    def get_root_value(self, request: Request) -> RootValue | None:
         return None
 
     def render_graphql_ide(self, request: Request) -> Response:
@@ -58,7 +58,7 @@ class GraphQLView(
 
     def create_response(
         self,
-        response_data: Union[GraphQLHTTPResponse, list[GraphQLHTTPResponse]],
+        response_data: GraphQLHTTPResponse | list[GraphQLHTTPResponse],
         sub_response: TemporalResponse,
     ) -> Response:
         status_code = 200

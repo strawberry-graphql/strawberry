@@ -1,5 +1,3 @@
-from typing import Optional, Union
-
 import pytest
 from graphql import (
     GraphQLError,
@@ -61,15 +59,15 @@ class Query:
     @strawberry.field
     def user(
         self,
-        name: Optional[str],
-        id: Optional[int],
-        age: Optional[float],
-        is_cool: Optional[bool],
+        name: str | None,
+        id: int | None,
+        age: float | None,
+        is_cool: bool | None,
     ) -> Human:
         pass
 
     @strawberry.field
-    def users(self, names: Optional[list[str]]) -> list[Human]:
+    def users(self, names: list[str] | None) -> list[Human]:
         pass
 
     @strawberry.field
@@ -87,7 +85,7 @@ schema = strawberry.Schema(Query)
 
 def run_query(
     query: str, max_depth: int, should_ignore: ShouldIgnoreType = None
-) -> tuple[list[GraphQLError], Union[dict[str, int], None]]:
+) -> tuple[list[GraphQLError], dict[str, int] | None]:
     document = parse(query)
 
     result = None

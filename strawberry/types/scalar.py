@@ -8,7 +8,6 @@ from typing import (
     NewType,
     Optional,
     TypeVar,
-    Union,
     overload,
 )
 
@@ -22,7 +21,7 @@ if TYPE_CHECKING:
     from graphql import GraphQLScalarType
 
 
-_T = TypeVar("_T", bound=Union[type, NewType])
+_T = TypeVar("_T", bound=type | NewType)
 
 
 def identity(x: _T) -> _T:
@@ -32,25 +31,25 @@ def identity(x: _T) -> _T:
 @dataclass
 class ScalarDefinition(StrawberryType):
     name: str
-    description: Optional[str]
-    specified_by_url: Optional[str]
-    serialize: Optional[Callable]
-    parse_value: Optional[Callable]
-    parse_literal: Optional[Callable]
+    description: str | None
+    specified_by_url: str | None
+    serialize: Callable | None
+    parse_value: Callable | None
+    parse_literal: Callable | None
     directives: Iterable[object] = ()
-    origin: Optional[GraphQLScalarType | type] = None
+    origin: GraphQLScalarType | type | None = None
 
     # Optionally store the GraphQLScalarType instance so that we don't get
     # duplicates
-    implementation: Optional[GraphQLScalarType] = None
+    implementation: GraphQLScalarType | None = None
 
     # used for better error messages
-    _source_file: Optional[str] = None
-    _source_line: Optional[int] = None
+    _source_file: str | None = None
+    _source_line: int | None = None
 
     def copy_with(
-        self, type_var_map: Mapping[str, Union[StrawberryType, type]]
-    ) -> Union[StrawberryType, type]:
+        self, type_var_map: Mapping[str, StrawberryType | type]
+    ) -> StrawberryType | type:
         return super().copy_with(type_var_map)  # type: ignore[safe-super]
 
     @property
@@ -67,10 +66,10 @@ class ScalarWrapper:
     def __call__(self, *args: str, **kwargs: Any) -> Any:
         return self.wrap(*args, **kwargs)
 
-    def __or__(self, other: Union[StrawberryType, type]) -> StrawberryType:
+    def __or__(self, other: StrawberryType | type) -> StrawberryType:
         if other is None:
             # Return the correct notation when using `StrawberryUnion | None`.
-            return Optional[self]
+            return Optional[self]  # noqa: UP045
 
         # Raise an error in any other case.
         # There is Work in progress to deal with more merging cases, see:
@@ -81,12 +80,12 @@ class ScalarWrapper:
 def _process_scalar(
     cls: _T,
     *,
-    name: Optional[str] = None,
-    description: Optional[str] = None,
-    specified_by_url: Optional[str] = None,
-    serialize: Optional[Callable] = None,
-    parse_value: Optional[Callable] = None,
-    parse_literal: Optional[Callable] = None,
+    name: str | None = None,
+    description: str | None = None,
+    specified_by_url: str | None = None,
+    serialize: Callable | None = None,
+    parse_value: Callable | None = None,
+    parse_literal: Callable | None = None,
     directives: Iterable[object] = (),
 ) -> ScalarWrapper:
     from strawberry.exceptions.handler import should_use_rich_exceptions
@@ -122,12 +121,12 @@ def _process_scalar(
 @overload
 def scalar(
     *,
-    name: Optional[str] = None,
-    description: Optional[str] = None,
-    specified_by_url: Optional[str] = None,
+    name: str | None = None,
+    description: str | None = None,
+    specified_by_url: str | None = None,
     serialize: Callable = identity,
-    parse_value: Optional[Callable] = None,
-    parse_literal: Optional[Callable] = None,
+    parse_value: Callable | None = None,
+    parse_literal: Callable | None = None,
     directives: Iterable[object] = (),
 ) -> Callable[[_T], _T]: ...
 
@@ -136,12 +135,12 @@ def scalar(
 def scalar(
     cls: _T,
     *,
-    name: Optional[str] = None,
-    description: Optional[str] = None,
-    specified_by_url: Optional[str] = None,
+    name: str | None = None,
+    description: str | None = None,
+    specified_by_url: str | None = None,
     serialize: Callable = identity,
-    parse_value: Optional[Callable] = None,
-    parse_literal: Optional[Callable] = None,
+    parse_value: Callable | None = None,
+    parse_literal: Callable | None = None,
     directives: Iterable[object] = (),
 ) -> _T: ...
 
@@ -150,14 +149,14 @@ def scalar(
 # here or else it won't let us use any custom scalar to annotate attributes in
 # dataclasses/types. This should be properly solved when implementing StrawberryScalar
 def scalar(
-    cls: Optional[_T] = None,
+    cls: _T | None = None,
     *,
-    name: Optional[str] = None,
-    description: Optional[str] = None,
-    specified_by_url: Optional[str] = None,
+    name: str | None = None,
+    description: str | None = None,
+    specified_by_url: str | None = None,
     serialize: Callable = identity,
-    parse_value: Optional[Callable] = None,
-    parse_literal: Optional[Callable] = None,
+    parse_value: Callable | None = None,
+    parse_literal: Callable | None = None,
     directives: Iterable[object] = (),
 ) -> Any:
     """Annotates a class or type as a GraphQL custom scalar.

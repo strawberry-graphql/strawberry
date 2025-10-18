@@ -5,9 +5,7 @@ import warnings
 from typing import (
     TYPE_CHECKING,
     Any,
-    Optional,
     TypeGuard,
-    Union,
 )
 
 from asgiref.sync import markcoroutinefunction
@@ -47,7 +45,7 @@ if TYPE_CHECKING:
 
 # TODO: remove this and unify temporal responses
 class TemporalHttpResponse(JsonResponse):
-    status_code: Optional[int] = None  # pyright: ignore
+    status_code: int | None = None  # pyright: ignore
 
     def __init__(self) -> None:
         super().__init__({})
@@ -70,8 +68,8 @@ class BaseView:
     def __init__(
         self,
         schema: BaseSchema,
-        graphiql: Optional[str] = None,
-        graphql_ide: Optional[GraphQL_IDE] = "graphiql",
+        graphiql: str | None = None,
+        graphql_ide: GraphQL_IDE | None = "graphiql",
         allow_queries_via_get: bool = True,
         multipart_uploads_enabled: bool = False,
         **kwargs: Any,
@@ -94,7 +92,7 @@ class BaseView:
 
     def create_response(
         self,
-        response_data: Union[GraphQLHTTPResponse, list[GraphQLHTTPResponse]],
+        response_data: GraphQLHTTPResponse | list[GraphQLHTTPResponse],
         sub_response: HttpResponse,
     ) -> HttpResponseBase:
         data = self.encode_json(response_data)
@@ -142,13 +140,13 @@ class GraphQLView(
     ],
     View,
 ):
-    graphiql: Optional[bool] = None
-    graphql_ide: Optional[GraphQL_IDE] = "graphiql"
+    graphiql: bool | None = None
+    graphql_ide: GraphQL_IDE | None = "graphiql"
     allow_queries_via_get = True
     schema: BaseSchema = None  # type: ignore
     request_adapter_class = DjangoHTTPRequestAdapter
 
-    def get_root_value(self, request: HttpRequest) -> Optional[RootValue]:
+    def get_root_value(self, request: HttpRequest) -> RootValue | None:
         return None
 
     def get_context(self, request: HttpRequest, response: HttpResponse) -> Context:
@@ -159,7 +157,7 @@ class GraphQLView(
 
     def dispatch(
         self, request: HttpRequest, *args: Any, **kwargs: Any
-    ) -> Union[HttpResponseNotAllowed, TemplateResponse, HttpResponseBase]:
+    ) -> HttpResponseNotAllowed | TemplateResponse | HttpResponseBase:
         try:
             return self.run(request=request)
         except HTTPException as e:
@@ -190,8 +188,8 @@ class AsyncGraphQLView(
     ],
     View,
 ):
-    graphiql: Optional[bool] = None
-    graphql_ide: Optional[GraphQL_IDE] = "graphiql"
+    graphiql: bool | None = None
+    graphql_ide: GraphQL_IDE | None = "graphiql"
     allow_queries_via_get = True
     schema: BaseSchema = None  # type: ignore
     request_adapter_class = AsyncDjangoHTTPRequestAdapter
@@ -206,7 +204,7 @@ class AsyncGraphQLView(
 
         return view
 
-    async def get_root_value(self, request: HttpRequest) -> Optional[RootValue]:
+    async def get_root_value(self, request: HttpRequest) -> RootValue | None:
         return None
 
     async def get_context(
@@ -219,7 +217,7 @@ class AsyncGraphQLView(
 
     async def dispatch(  # pyright: ignore
         self, request: HttpRequest, *args: Any, **kwargs: Any
-    ) -> Union[HttpResponseNotAllowed, TemplateResponse, HttpResponseBase]:
+    ) -> HttpResponseNotAllowed | TemplateResponse | HttpResponseBase:
         try:
             return await self.run(request=request)
         except HTTPException as e:
@@ -239,11 +237,11 @@ class AsyncGraphQLView(
     def is_websocket_request(self, request: HttpRequest) -> TypeGuard[HttpRequest]:
         return False
 
-    async def pick_websocket_subprotocol(self, request: HttpRequest) -> Optional[str]:
+    async def pick_websocket_subprotocol(self, request: HttpRequest) -> str | None:
         raise NotImplementedError
 
     async def create_websocket_response(
-        self, request: HttpRequest, subprotocol: Optional[str]
+        self, request: HttpRequest, subprotocol: str | None
     ) -> TemporalHttpResponse:
         raise NotImplementedError
 

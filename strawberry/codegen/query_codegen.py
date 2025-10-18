@@ -8,8 +8,6 @@ from pathlib import Path
 from typing import (
     TYPE_CHECKING,
     Any,
-    Optional,
-    Union,
     cast,
 )
 from typing_extensions import Protocol
@@ -121,7 +119,7 @@ class CodegenResult:
 
 
 class HasSelectionSet(Protocol):
-    selection_set: Optional[SelectionSetNode]
+    selection_set: SelectionSetNode | None
 
 
 class QueryCodegenPlugin:
@@ -233,7 +231,7 @@ class QueryCodegenPluginManager:
     def __init__(
         self,
         plugins: list[QueryCodegenPlugin],
-        console_plugin: Optional[ConsolePlugin] = None,
+        console_plugin: ConsolePlugin | None = None,
     ) -> None:
         self.plugins = plugins
         self.console_plugin = console_plugin
@@ -297,7 +295,7 @@ class QueryCodegen:
         self,
         schema: Schema,
         plugins: list[QueryCodegenPlugin],
-        console_plugin: Optional[ConsolePlugin] = None,
+        console_plugin: ConsolePlugin | None = None,
     ) -> None:
         self.schema = schema
         self.plugin_manager = QueryCodegenPluginManager(plugins, console_plugin)
@@ -389,7 +387,7 @@ class QueryCodegen:
         raise ValueError(f"Unsupported type: {type(selection)}")  # pragma: no cover
 
     def _convert_selection_set(
-        self, selection_set: Optional[SelectionSetNode]
+        self, selection_set: SelectionSetNode | None
     ) -> list[GraphQLSelection]:
         if selection_set is None:
             return []
@@ -488,9 +486,9 @@ class QueryCodegen:
 
     def _convert_variable_definitions(
         self,
-        variable_definitions: Optional[Iterable[VariableDefinitionNode]],
+        variable_definitions: Iterable[VariableDefinitionNode] | None,
         operation_name: str,
-    ) -> tuple[list[GraphQLVariable], Optional[GraphQLObjectType]]:
+    ) -> tuple[list[GraphQLVariable], GraphQLObjectType | None]:
         if not variable_definitions:
             return [], None
 
@@ -521,7 +519,7 @@ class QueryCodegen:
 
     def _get_field_type(
         self,
-        field_type: Union[StrawberryType, type],
+        field_type: StrawberryType | type,
     ) -> GraphQLType:
         if isinstance(field_type, StrawberryOptional):
             return GraphQLOptional(self._get_field_type(field_type.of_type))
@@ -551,7 +549,7 @@ class QueryCodegen:
         raise ValueError(f"Unsupported type: {field_type}")  # pragma: no cover
 
     def _collect_type_from_strawberry_type(
-        self, strawberry_type: Union[type, StrawberryType]
+        self, strawberry_type: type | StrawberryType
     ) -> GraphQLType:
         type_: GraphQLType
 
@@ -590,9 +588,9 @@ class QueryCodegen:
         return type_
 
     def _collect_type_from_variable(
-        self, variable_type: TypeNode, parent_type: Optional[TypeNode] = None
+        self, variable_type: TypeNode, parent_type: TypeNode | None = None
     ) -> GraphQLType:
-        type_: Optional[GraphQLType] = None
+        type_: GraphQLType | None = None
 
         if isinstance(variable_type, ListTypeNode):
             type_ = GraphQLList(
@@ -631,11 +629,9 @@ class QueryCodegen:
         )
 
     def _unwrap_type(
-        self, type_: Union[type, StrawberryType]
-    ) -> tuple[
-        Union[type, StrawberryType], Optional[Callable[[GraphQLType], GraphQLType]]
-    ]:
-        wrapper: Optional[Callable[[GraphQLType], GraphQLType]] = None
+        self, type_: type | StrawberryType
+    ) -> tuple[type | StrawberryType, Callable[[GraphQLType], GraphQLType] | None]:
+        wrapper: Callable[[GraphQLType], GraphQLType] | None = None
 
         if isinstance(type_, StrawberryOptional):
             type_, previous_wrapper = self._unwrap_type(type_.of_type)
@@ -732,7 +728,7 @@ class QueryCodegen:
         selection: HasSelectionSet,
         parent_type: StrawberryObjectDefinition,
         class_name: str,
-    ) -> Union[GraphQLObjectType, GraphQLUnion]:
+    ) -> GraphQLObjectType | GraphQLUnion:
         sub_types = self._collect_types_using_fragments(
             selection, parent_type, class_name
         )
@@ -767,7 +763,7 @@ class QueryCodegen:
             )
 
         current_type = graph_ql_object_type_factory(class_name)
-        fields: list[Union[GraphQLFragmentSpread, GraphQLField]] = []
+        fields: list[GraphQLFragmentSpread | GraphQLField] = []
 
         for sub_selection in selection_set.selections:
             if isinstance(sub_selection, FragmentSpreadNode):
@@ -838,7 +834,7 @@ class QueryCodegen:
                 list(common_fields),
                 graphql_typename=type_condition_name,
             )
-            fields: list[Union[GraphQLFragmentSpread, GraphQLField]] = []
+            fields: list[GraphQLFragmentSpread | GraphQLField] = []
 
             for sub_selection in fragment.selection_set.selections:
                 if isinstance(sub_selection, FragmentSpreadNode):
@@ -893,7 +889,7 @@ class QueryCodegen:
         return sub_types
 
     def _collect_scalar(
-        self, scalar_definition: ScalarDefinition, python_type: Optional[type]
+        self, scalar_definition: ScalarDefinition, python_type: type | None
     ) -> GraphQLScalar:
         graphql_scalar = GraphQLScalar(scalar_definition.name, python_type=python_type)
 

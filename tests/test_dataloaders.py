@@ -1,7 +1,7 @@
 import asyncio
 from asyncio.futures import Future
 from collections.abc import Awaitable, Callable
-from typing import Any, Optional, Union, cast
+from typing import Any, Optional, cast
 
 import pytest
 from pytest_mock import MockerFixture
@@ -73,7 +73,7 @@ async def test_max_batch_size(mocker: MockerFixture):
 
 @pytest.mark.asyncio
 async def test_error():
-    async def idx(keys: list[int]) -> list[Union[int, ValueError]]:
+    async def idx(keys: list[int]) -> list[int | ValueError]:
         return [ValueError()]
 
     loader = DataLoader(load_fn=idx)
@@ -84,7 +84,7 @@ async def test_error():
 
 @pytest.mark.asyncio
 async def test_error_and_values():
-    async def idx(keys: list[int]) -> list[Union[int, ValueError]]:
+    async def idx(keys: list[int]) -> list[int | ValueError]:
         return [2] if keys == [2] else [ValueError()]
 
     loader = DataLoader(load_fn=idx)
@@ -97,7 +97,7 @@ async def test_error_and_values():
 
 @pytest.mark.asyncio
 async def test_when_raising_error_in_loader():
-    async def idx(keys: list[int]) -> list[Union[int, ValueError]]:
+    async def idx(keys: list[int]) -> list[int | ValueError]:
         raise ValueError
 
     loader = DataLoader(load_fn=idx)
@@ -195,7 +195,7 @@ async def test_cache_disabled_immediate_await(mocker: MockerFixture):
 
 @pytest.mark.asyncio
 async def test_prime():
-    async def idx(keys: list[Union[int, float]]) -> list[Union[int, float]]:
+    async def idx(keys: list[int | float]) -> list[int | float]:
         assert keys, "At least one key must be specified"
         return keys
 
@@ -241,7 +241,7 @@ async def test_prime():
 
 @pytest.mark.asyncio
 async def test_prime_nocache():
-    async def idx(keys: list[Union[int, float]]) -> list[Union[int, float]]:
+    async def idx(keys: list[int | float]) -> list[int | float]:
         assert keys, "At least one key must be specified"
         return keys
 

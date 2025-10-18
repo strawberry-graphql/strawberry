@@ -12,7 +12,7 @@ Note Python dicts maintain ordering (for all supported versions).
 from __future__ import annotations
 
 import dataclasses
-from typing import TYPE_CHECKING, Any, Optional, Union
+from typing import TYPE_CHECKING, Any, Union
 
 from graphql.language import FieldNode as GQLFieldNode
 from graphql.language import FragmentSpreadNode as GQLFragmentSpreadNode
@@ -139,7 +139,7 @@ class SelectedField:
     directives: Directives
     arguments: Arguments
     selections: list[Selection]
-    alias: Optional[str] = None
+    alias: str | None = None
 
     @classmethod
     def from_node(cls, info: GraphQLResolveInfo, node: GQLFieldNode) -> SelectedField:

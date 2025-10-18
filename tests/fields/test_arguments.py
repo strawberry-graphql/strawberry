@@ -1,4 +1,4 @@
-from typing import Annotated, Optional, Union
+from typing import Annotated
 
 import pytest
 
@@ -16,7 +16,7 @@ def test_basic_arguments():
     class Query:
         @strawberry.field
         def name(
-            self, argument: str, optional_argument: Optional[str]
+            self, argument: str, optional_argument: str | None
         ) -> str:  # pragma: no cover
             return "Name"
 
@@ -45,7 +45,7 @@ def test_input_type_as_argument():
     class Query:
         @strawberry.field
         def name(
-            self, input: Input, optional_input: Optional[Input]
+            self, input: Input, optional_input: Input | None
         ) -> str:  # pragma: no cover
             return input.name
 
@@ -96,7 +96,7 @@ def test_arguments_lists_of_optionals():
     @strawberry.type
     class Query:
         @strawberry.field
-        def names(self, inputs: list[Optional[Input]]) -> list[str]:  # pragma: no cover
+        def names(self, inputs: list[Input | None]) -> list[str]:  # pragma: no cover
             return [input_.name for input_ in inputs if input_ is not None]
 
     definition = Query.__strawberry_definition__
@@ -114,7 +114,7 @@ def test_arguments_lists_of_optionals():
 
 def test_basic_arguments_on_resolver():
     def name_resolver(  # pragma: no cover
-        id: strawberry.ID, argument: str, optional_argument: Optional[str]
+        id: strawberry.ID, argument: str, optional_argument: str | None
     ) -> str:
         return "Name"
 
@@ -141,7 +141,7 @@ def test_basic_arguments_on_resolver():
 
 def test_arguments_when_extending_a_type():
     def name_resolver(
-        id: strawberry.ID, argument: str, optional_argument: Optional[str]
+        id: strawberry.ID, argument: str, optional_argument: str | None
     ) -> str:  # pragma: no cover
         return "Name"
 
@@ -214,7 +214,7 @@ def test_argument_with_default_value_none():
     @strawberry.type
     class Query:
         @strawberry.field
-        def name(self, argument: Optional[str] = None) -> str:  # pragma: no cover
+        def name(self, argument: str | None = None) -> str:  # pragma: no cover
             return "Name"
 
     definition = Query.__strawberry_definition__
@@ -235,7 +235,7 @@ def test_argument_with_default_value_undefined():
     @strawberry.type
     class Query:
         @strawberry.field
-        def name(self, argument: Optional[str]) -> str:  # pragma: no cover
+        def name(self, argument: str | None) -> str:  # pragma: no cover
             return "Name"
 
     definition = Query.__strawberry_definition__
@@ -282,7 +282,7 @@ def test_annotated_optional_arguments_on_resolver():
         @strawberry.field
         def name(  # type: ignore
             argument: Annotated[
-                Optional[str],
+                str | None,
                 strawberry.argument(description="This is a description"),
             ],
         ) -> str:  # pragma: no cover
@@ -438,7 +438,7 @@ def test_union_as_an_argument_type():
     class Verb:
         text: str
 
-    Word = Annotated[Union[Noun, Verb], strawberry.argument("Word")]
+    Word = Annotated[Noun | Verb, strawberry.argument("Word")]
 
     @strawberry.field
     def add_word(word: Word) -> bool:

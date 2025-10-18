@@ -225,13 +225,6 @@ src = ["strawberry", "tests"]
 [tool.ruff.lint]
 select = ["ALL"]
 ignore = [
-  # https://github.com/astral-sh/ruff/pull/4427
-  # equivalent to keep-runtime-typing. We might want to enable those
-  # after we drop support for Python 3.9
-  "UP006",
-  "UP007",
-  "UP045",
-
   # we use asserts in tests and to hint mypy
   "S101",
 
@@ -372,6 +365,8 @@ ignore = [
   "TCH002",
   "TCH003",
   "TRY002",
+  "UP007",
+  "UP045",
 ]
 
 [tool.ruff.lint.isort]

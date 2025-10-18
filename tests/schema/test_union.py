@@ -1,7 +1,7 @@
 import textwrap
 from dataclasses import dataclass
 from textwrap import dedent
-from typing import Annotated, Generic, Optional, TypeVar, Union
+from typing import Annotated, Generic, TypeVar, Union
 
 import pytest
 
@@ -21,7 +21,7 @@ def test_union_as_field():
 
     @strawberry.type
     class Query:
-        ab: Union[A, B] = strawberry.field(default_factory=lambda: A(a=5))
+        ab: A | B = strawberry.field(default_factory=lambda: A(a=5))
 
     schema = strawberry.Schema(query=Query)
     query = """{
@@ -51,7 +51,7 @@ def test_union_as_field_inverse():
 
     @strawberry.type
     class Query:
-        ab: Union[A, B] = strawberry.field(default_factory=lambda: B(b=5))
+        ab: A | B = strawberry.field(default_factory=lambda: B(b=5))
 
     schema = strawberry.Schema(query=Query)
     query = """{
@@ -81,7 +81,7 @@ def test_cannot_use_non_strawberry_fields_for_the_union():
 
     @strawberry.type
     class Query:
-        ab: Union[A, B] = "ciao"
+        ab: A | B = "ciao"
 
     schema = strawberry.Schema(query=Query)
     query = """{
@@ -115,7 +115,7 @@ def test_union_as_mutation_return():
     @strawberry.type
     class Mutation:
         @strawberry.mutation
-        def hello(self) -> Union[A, B]:
+        def hello(self) -> A | B:
             return B(y=5)
 
     schema = strawberry.Schema(query=A, mutation=Mutation)
@@ -158,7 +158,7 @@ def test_types_not_included_in_the_union_are_rejected():
     @strawberry.type
     class Mutation:
         @strawberry.mutation
-        def hello(self) -> Union[A, B]:
+        def hello(self) -> A | B:
             return Outside(c=5)  # type:ignore
 
     schema = strawberry.Schema(query=A, mutation=Mutation, types=[Outside])
@@ -205,7 +205,7 @@ def test_unknown_types_are_rejected():
     @strawberry.type
     class Query:
         @strawberry.field
-        def hello(self) -> Union[A, B]:
+        def hello(self) -> A | B:
             return Outside(c=5)  # type:ignore
 
     schema = strawberry.Schema(query=Query)
@@ -234,7 +234,7 @@ def test_named_union():
     class B:
         b: int
 
-    Result = Annotated[Union[A, B], strawberry.union(name="Result")]
+    Result = Annotated[A | B, strawberry.union(name="Result")]
 
     @strawberry.type
     class Query:
@@ -274,7 +274,7 @@ def test_named_union_description():
         b: int
 
     Result = Annotated[
-        Union[A, B], strawberry.union(name="Result", description="Example Result")
+        A | B, strawberry.union(name="Result", description="Example Result")
     ]
 
     @strawberry.type
@@ -314,11 +314,11 @@ def test_can_use_union_in_optional():
     class B:
         b: int
 
-    Result = Annotated[Union[A, B], strawberry.union(name="Result")]
+    Result = Annotated[A | B, strawberry.union(name="Result")]
 
     @strawberry.type
     class Query:
-        ab: Optional[Result] = None
+        ab: Result | None = None
 
     schema = strawberry.Schema(query=Query)
 
@@ -362,8 +362,8 @@ def test_multiple_unions():
         class UnionB2:
             value: int
 
-        field1: Union[UnionA1, UnionA2]
-        field2: Union[UnionB1, UnionB2]
+        field1: UnionA1 | UnionA2
+        field2: UnionB1 | UnionB2
 
     schema = strawberry.Schema(query=CoolType)
 
@@ -398,7 +398,7 @@ def test_union_used_multiple_times():
     class B:
         b: int
 
-    MyUnion = Annotated[Union[A, B], strawberry.union("MyUnion")]
+    MyUnion = Annotated[A | B, strawberry.union("MyUnion")]
 
     @strawberry.type
     class Query:
@@ -443,7 +443,7 @@ def test_union_explicit_type_resolution():
     class B:
         b: int
 
-    MyUnion = Annotated[Union[A, B], strawberry.union("MyUnion")]
+    MyUnion = Annotated[A | B, strawberry.union("MyUnion")]
 
     @strawberry.type
     class Query:
@@ -513,7 +513,7 @@ def test_union_with_input_types():
     @strawberry.input
     class Input:
         name: str
-        something: Union[A, B]
+        something: A | B
 
     @strawberry.type
     class Query:
@@ -549,11 +549,11 @@ def test_union_with_similar_nested_generic_types():
     @strawberry.type
     class Query:
         @strawberry.field
-        def container_a(self) -> Union[Container[A], A]:
+        def container_a(self) -> Container[A] | A:
             return Container(items=[A(a="hello")])
 
         @strawberry.field
-        def container_b(self) -> Union[Container[B], B]:
+        def container_b(self) -> Container[B] | B:
             return Container(items=[B(b=3)])
 
     schema = strawberry.Schema(query=Query)
@@ -607,13 +607,13 @@ def test_lazy_union():
     @strawberry.type
     class Query:
         @strawberry.field
-        def a(self) -> Union[TypeA, TypeB]:
+        def a(self) -> TypeA | TypeB:
             from tests.schema.test_lazy_types.type_a import TypeA
 
             return TypeA(list_of_b=[])
 
         @strawberry.field
-        def b(self) -> Union[TypeA, TypeB]:
+        def b(self) -> TypeA | TypeB:
             from tests.schema.test_lazy_types.type_b import TypeB
 
             return TypeB()
@@ -675,7 +675,7 @@ def test_error_with_invalid_annotated_type():
 
     @strawberry.type
     class Query:
-        union: Union[Something, AnnotatedInt]
+        union: Something | AnnotatedInt
 
     strawberry.Schema(query=Query)
 
@@ -692,7 +692,7 @@ def test_raises_on_union_with_int():
 
     @strawberry.type
     class Query:
-        union: Union[ICanBeInUnion, int]
+        union: ICanBeInUnion | int
 
     strawberry.Schema(query=Query)
 
@@ -712,7 +712,7 @@ def test_raises_on_union_with_list_str():
 
     @strawberry.type
     class Query:
-        union: Union[ICanBeInUnion, list[str]]
+        union: ICanBeInUnion | list[str]
 
     strawberry.Schema(query=Query)
 
@@ -732,7 +732,7 @@ def test_raises_on_union_with_list_str_38():
 
     @strawberry.type
     class Query:
-        union: Union[ICanBeInUnion, list[str]]
+        union: ICanBeInUnion | list[str]
 
     strawberry.Schema(query=Query)
 
@@ -754,7 +754,7 @@ def test_raises_on_union_of_custom_scalar():
     @strawberry.type
     class Query:
         union: Annotated[
-            Union[Always42, ICanBeInUnion], strawberry.union(name="ExampleUnion")
+            Always42 | ICanBeInUnion, strawberry.union(name="ExampleUnion")
         ]
 
     strawberry.Schema(query=Query)
@@ -781,8 +781,8 @@ def test_union_of_unions():
 
     @strawberry.type
     class Query:
-        user: Union[User, Error]
-        error: Union[User, ErrorUnion]
+        user: User | Error
+        error: User | ErrorUnion
 
     schema = strawberry.Schema(query=Query)
 
@@ -881,7 +881,7 @@ def test_generic_union_with_annotated():
         @strawberry.field
         def by_id(
             self, id: strawberry.ID
-        ) -> Annotated[Union[T, NotFoundError], strawberry.union("ByIdResult")]: ...
+        ) -> Annotated[T | NotFoundError, strawberry.union("ByIdResult")]: ...
 
     @strawberry.type
     class Query:
@@ -937,7 +937,7 @@ def test_generic_union_with_annotated_inside():
         @strawberry.field
         def by_id(
             self, id: strawberry.ID
-        ) -> Union[T, Annotated[NotFoundError, strawberry.union("ByIdResult")]]: ...
+        ) -> T | Annotated[NotFoundError, strawberry.union("ByIdResult")]: ...
 
     @strawberry.type
     class Query:
@@ -995,9 +995,7 @@ def test_annoted_union_with_two_generics():
         @strawberry.field
         def by_id(
             self, id: strawberry.ID
-        ) -> Union[
-            T, Annotated[Union[U, NotFoundError], strawberry.union("ByIdResult")]
-        ]: ...
+        ) -> T | Annotated[U | NotFoundError, strawberry.union("ByIdResult")]: ...
 
     @strawberry.type
     class Query:
@@ -1102,9 +1100,9 @@ def test_union_merging_with_annotated():
     class C:
         c: int
 
-    a = Annotated[Union[A, B], strawberry.union("AorB")]
+    a = Annotated[A | B, strawberry.union("AorB")]
 
-    b = Annotated[Union[B, C], strawberry.union("BorC")]
+    b = Annotated[B | C, strawberry.union("BorC")]
 
     c = Union[a, b]
 
@@ -1153,11 +1151,11 @@ def test_union_merging_with_annotated_annotated_merge():
     class C:
         c: int
 
-    a = Annotated[Union[A, B], strawberry.union("AorB")]
+    a = Annotated[A | B, strawberry.union("AorB")]
 
-    b = Annotated[Union[B, C], strawberry.union("BorC")]
+    b = Annotated[B | C, strawberry.union("BorC")]
 
-    c = Annotated[Union[a, b], strawberry.union("ABC")]
+    c = Annotated[a | b, strawberry.union("ABC")]
 
     @strawberry.type
     class Query:
@@ -1208,7 +1206,7 @@ def test_union_used_inside_generic():
     class GenType(Generic[T]):
         data: T
 
-    GeneralUser = Annotated[Union[User, ProUser], strawberry.union("GeneralUser")]
+    GeneralUser = Annotated[User | ProUser, strawberry.union("GeneralUser")]
 
     @strawberry.type
     class Response(GenType[GeneralUser]): ...

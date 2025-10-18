@@ -1,6 +1,6 @@
 import json
 from collections.abc import Mapping
-from typing import Any, Generic, Optional, Union
+from typing import Any, Generic
 from typing_extensions import Protocol
 
 from lia import HTTPException
@@ -15,7 +15,7 @@ from .typevars import Request
 
 class BaseRequestProtocol(Protocol):
     @property
-    def query_params(self) -> Mapping[str, Optional[Union[str, list[str]]]]: ...
+    def query_params(self) -> Mapping[str, str | list[str] | None]: ...
 
     @property
     def method(self) -> HTTPMethod: ...
@@ -25,7 +25,7 @@ class BaseRequestProtocol(Protocol):
 
 
 class BaseView(Generic[Request]):
-    graphql_ide: Optional[GraphQL_IDE]
+    graphql_ide: GraphQL_IDE | None
     multipart_uploads_enabled: bool = False
     schema: BaseSchema
 
@@ -42,13 +42,13 @@ class BaseView(Generic[Request]):
     def is_request_allowed(self, request: BaseRequestProtocol) -> bool:
         return request.method in ("GET", "POST")
 
-    def parse_json(self, data: Union[str, bytes]) -> Any:
+    def parse_json(self, data: str | bytes) -> Any:
         try:
             return self.decode_json(data)
         except json.JSONDecodeError as e:
             raise HTTPException(400, "Unable to parse request body as JSON") from e
 
-    def decode_json(self, data: Union[str, bytes]) -> object:
+    def decode_json(self, data: str | bytes) -> object:
         return json.loads(data)
 
     def encode_json(self, data: object) -> str:

@@ -1,6 +1,6 @@
 import textwrap
 import warnings
-from typing import Generic, Optional, TypeVar
+from typing import Generic, TypeVar
 
 import pytest
 
@@ -11,9 +11,9 @@ def test_entities_type_when_no_type_has_keys():
     @strawberry.federation.type()
     class Product:
         upc: str
-        name: Optional[str]
-        price: Optional[int]
-        weight: Optional[int]
+        name: str | None
+        price: int | None
+        weight: int | None
 
     @strawberry.federation.type(extend=True)
     class Query:
@@ -67,9 +67,9 @@ def test_entities_type():
     @strawberry.federation.type(keys=["upc"])
     class Product:
         upc: str
-        name: Optional[str]
-        price: Optional[int]
-        weight: Optional[int]
+        name: str | None
+        price: int | None
+        weight: int | None
 
     @strawberry.federation.type(extend=True)
     class Query:
@@ -290,9 +290,9 @@ def test_can_create_schema_without_query():
     @strawberry.federation.type()
     class Product:
         upc: str
-        name: Optional[str]
-        price: Optional[int]
-        weight: Optional[int]
+        name: str | None
+        price: int | None
+        weight: int | None
 
     schema = strawberry.federation.Schema(types=[Product], enable_federation_2=True)
 
@@ -325,9 +325,9 @@ def test_federation_schema_warning():
     @strawberry.federation.type(keys=["upc"])
     class ProductFed:
         upc: str
-        name: Optional[str]
-        price: Optional[int]
-        weight: Optional[int]
+        name: str | None
+        price: int | None
+        weight: int | None
 
     with pytest.warns(UserWarning) as record:  # noqa: PT030
         strawberry.Schema(
@@ -345,9 +345,9 @@ def test_does_not_warn_when_using_federation_schema():
     @strawberry.federation.type(keys=["upc"])
     class ProductFed:
         upc: str
-        name: Optional[str]
-        price: Optional[int]
-        weight: Optional[int]
+        name: str | None
+        price: int | None
+        weight: int | None
 
     @strawberry.type
     class Query:

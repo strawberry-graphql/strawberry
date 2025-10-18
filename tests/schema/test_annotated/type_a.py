@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Annotated, Optional
+from typing import Annotated
 from uuid import UUID
 
 import strawberry
@@ -13,4 +13,4 @@ class Query:
         self,
         info: strawberry.Info,
         id_: Annotated[UUID, strawberry.argument(name="id")],
-    ) -> Optional[str]: ...
+    ) -> str | None: ...

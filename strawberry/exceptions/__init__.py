@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from functools import cached_property
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING
 
 from graphql import GraphQLError
 
@@ -72,20 +72,20 @@ class InvalidTypeInputForUnion(Exception):
 class MissingTypesForGenericError(Exception):
     """Raised when a generic types was used without passing any type."""
 
-    def __init__(self, annotation: Union[StrawberryType, type]) -> None:
+    def __init__(self, annotation: StrawberryType | type) -> None:
         message = f'The type "{annotation!r}" is generic, but no type has been passed'
 
         super().__init__(message)
 
 
 class UnsupportedTypeError(StrawberryException):
-    def __init__(self, annotation: Union[StrawberryType, type]) -> None:
+    def __init__(self, annotation: StrawberryType | type) -> None:
         message = f"{annotation} conversion is not supported"
 
         super().__init__(message)
 
     @cached_property
-    def exception_source(self) -> Optional[ExceptionSource]:
+    def exception_source(self) -> ExceptionSource | None:
         return None
 
 

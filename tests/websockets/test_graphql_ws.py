@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 import json
 from collections.abc import AsyncGenerator
-from typing import TYPE_CHECKING, Union
+from typing import TYPE_CHECKING
 from unittest import mock
 
 import pytest
@@ -313,9 +313,9 @@ async def test_sends_keep_alive(http_client_class: type[HttpClient]):
         # get but they should be more than one.
         keepalive_count = 0
         while True:
-            ka_or_data_message: Union[
-                ConnectionKeepAliveMessage, DataMessage
-            ] = await ws.receive_json()
+            ka_or_data_message: (
+                ConnectionKeepAliveMessage | DataMessage
+            ) = await ws.receive_json()
             if ka_or_data_message["type"] == "ka":
                 keepalive_count += 1
             else:

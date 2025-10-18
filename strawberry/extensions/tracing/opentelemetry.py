@@ -6,8 +6,6 @@ from inspect import isawaitable
 from typing import (
     TYPE_CHECKING,
     Any,
-    Optional,
-    Union,
 )
 
 from opentelemetry import trace
@@ -33,16 +31,16 @@ ArgFilter = Callable[[dict[str, Any], "GraphQLResolveInfo"], dict[str, Any]]
 
 
 class OpenTelemetryExtension(SchemaExtension):
-    _arg_filter: Optional[ArgFilter]
+    _arg_filter: ArgFilter | None
     _span_holder: dict[LifecycleStep, Span]
     _tracer: Tracer
 
     def __init__(
         self,
         *,
-        execution_context: Optional[ExecutionContext] = None,
-        arg_filter: Optional[ArgFilter] = None,
-        tracer_provider: Optional[trace.TracerProvider] = None,
+        execution_context: ExecutionContext | None = None,
+        arg_filter: ArgFilter | None = None,
+        tracer_provider: trace.TracerProvider | None = None,
     ) -> None:
         self._arg_filter = arg_filter
         self._tracer = trace.get_tracer("strawberry", tracer_provider=tracer_provider)
@@ -129,7 +127,7 @@ class OpenTelemetryExtension(SchemaExtension):
             return bytes(value)  # Convert bytearray and memoryview to bytes
         return str(value)
 
-    def convert_set_to_allowed_types(self, value: Union[set, frozenset]) -> str:
+    def convert_set_to_allowed_types(self, value: set | frozenset) -> str:
         return (
             "{" + ", ".join(str(self.convert_to_allowed_types(x)) for x in value) + "}"
         )

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import dataclasses
-from typing import TYPE_CHECKING, Union
+from typing import TYPE_CHECKING, TypeAlias
 
 from graphql import GraphQLField, GraphQLInputField, GraphQLType
 
@@ -11,14 +11,14 @@ if TYPE_CHECKING:
     from strawberry.types.scalar import ScalarDefinition
     from strawberry.types.union import StrawberryUnion
 
-Field = Union[GraphQLInputField, GraphQLField]
+Field: TypeAlias = GraphQLInputField | GraphQLField
 
 
 @dataclasses.dataclass
 class ConcreteType:
-    definition: Union[
-        StrawberryObjectDefinition, EnumDefinition, ScalarDefinition, StrawberryUnion
-    ]
+    definition: (
+        StrawberryObjectDefinition | EnumDefinition | ScalarDefinition | StrawberryUnion
+    )
     implementation: GraphQLType
 
 

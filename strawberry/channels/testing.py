@@ -4,8 +4,6 @@ import uuid
 from typing import (
     TYPE_CHECKING,
     Any,
-    Optional,
-    Union,
 )
 
 from graphql import GraphQLError, GraphQLFormattedError
@@ -53,7 +51,7 @@ class GraphQLWebsocketCommunicator(WebsocketCommunicator):
         self,
         application: ASGIApplication,
         path: str,
-        headers: Optional[list[tuple[bytes, bytes]]] = None,
+        headers: list[tuple[bytes, bytes]] | None = None,
         protocol: str = GRAPHQL_TRANSPORT_WS_PROTOCOL,
         connection_params: dict | None = None,
         **kwargs: Any,
@@ -83,9 +81,9 @@ class GraphQLWebsocketCommunicator(WebsocketCommunicator):
 
     async def __aexit__(
         self,
-        exc_type: Optional[type[BaseException]],
-        exc_val: Optional[BaseException],
-        exc_tb: Optional[TracebackType],
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
     ) -> None:
         await self.disconnect()
 
@@ -114,8 +112,8 @@ class GraphQLWebsocketCommunicator(WebsocketCommunicator):
     # get transformed into `FormattedExecutionResult` on the wire, but we attempt
     # to do a limited representation of them here, to make testing simpler.
     async def subscribe(
-        self, query: str, variables: Optional[dict] = None
-    ) -> Union[ExecutionResult, AsyncIterator[ExecutionResult]]:
+        self, query: str, variables: dict | None = None
+    ) -> ExecutionResult | AsyncIterator[ExecutionResult]:
         id_ = uuid.uuid4().hex
 
         if self.protocol == GRAPHQL_TRANSPORT_WS_PROTOCOL:
