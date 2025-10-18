@@ -13,45 +13,45 @@ def test_get_specialized_type_var_map_non_generic(value: type):
 
 def test_get_specialized_type_var_map_generic_not_specialized():
     @strawberry.type
-    class Foo[_T]: ...
+    class Foo[T]: ...
 
     assert get_specialized_type_var_map(Foo) == {}
 
 
 def test_get_specialized_type_var_map_generic():
     @strawberry.type
-    class Foo[_T]: ...
+    class Foo[T]: ...
 
     @strawberry.type
     class Bar(Foo[int]): ...
 
-    assert get_specialized_type_var_map(Bar) == {"_T": int}
+    assert get_specialized_type_var_map(Bar) == {"T": int}
 
 
 def test_get_specialized_type_var_map_from_alias():
     @strawberry.type
-    class Foo[_T]: ...
+    class Foo[T]: ...
 
     SpecializedFoo = Foo[int]
 
-    assert get_specialized_type_var_map(SpecializedFoo) == {"_T": int}
+    assert get_specialized_type_var_map(SpecializedFoo) == {"T": int}
 
 
 def test_get_specialized_type_var_map_from_alias_with_inheritance():
     @strawberry.type
-    class Foo[_T]: ...
+    class Foo[T]: ...
 
     SpecializedFoo = Foo[int]
 
     @strawberry.type
     class Bar(SpecializedFoo): ...
 
-    assert get_specialized_type_var_map(Bar) == {"_T": int}
+    assert get_specialized_type_var_map(Bar) == {"T": int}
 
 
 def test_get_specialized_type_var_map_generic_subclass():
     @strawberry.type
-    class Foo[_T]: ...
+    class Foo[T]: ...
 
     @strawberry.type
     class Bar(Foo[int]): ...
@@ -59,28 +59,28 @@ def test_get_specialized_type_var_map_generic_subclass():
     @strawberry.type
     class BarSubclass(Bar): ...
 
-    assert get_specialized_type_var_map(BarSubclass) == {"_T": int}
+    assert get_specialized_type_var_map(BarSubclass) == {"T": int}
 
 
 def test_get_specialized_type_var_map_double_generic():
     @strawberry.type
-    class Foo[_T]: ...
+    class Foo[T]: ...
 
     @strawberry.type
-    class Bar[_T](Foo[_T]): ...
+    class Bar[T](Foo[T]): ...
 
     @strawberry.type
     class Bin(Bar[int]): ...
 
-    assert get_specialized_type_var_map(Bin) == {"_T": int}
+    assert get_specialized_type_var_map(Bin) == {"T": int}
 
 
 def test_get_specialized_type_var_map_double_generic_subclass():
     @strawberry.type
-    class Foo[_T]: ...
+    class Foo[T]: ...
 
     @strawberry.type
-    class Bar[_T](Foo[_T]): ...
+    class Bar[T](Foo[T]): ...
 
     @strawberry.type
     class Bin(Bar[int]): ...
@@ -88,31 +88,31 @@ def test_get_specialized_type_var_map_double_generic_subclass():
     @strawberry.type
     class BinSubclass(Bin): ...
 
-    assert get_specialized_type_var_map(Bin) == {"_T": int}
+    assert get_specialized_type_var_map(Bin) == {"T": int}
 
 
 def test_get_specialized_type_var_map_double_generic_passthrough():
     @strawberry.type
-    class Foo[_T]: ...
+    class Foo[T]: ...
 
     @strawberry.type
-    class Bar[_K](Foo[_K]): ...
+    class Bar[K](Foo[K]): ...
 
     @strawberry.type
     class Bin(Bar[int]): ...
 
     assert get_specialized_type_var_map(Bin) == {
-        "_T": int,
-        "_K": int,
+        "T": int,
+        "K": int,
     }
 
 
 def test_get_specialized_type_var_map_multiple_inheritance():
     @strawberry.type
-    class Foo[_T]: ...
+    class Foo[T]: ...
 
     @strawberry.type
-    class Bar[_K]: ...
+    class Bar[K]: ...
 
     @strawberry.type
     class Bin(Foo[int]): ...
@@ -121,17 +121,17 @@ def test_get_specialized_type_var_map_multiple_inheritance():
     class Baz(Bin, Bar[str]): ...
 
     assert get_specialized_type_var_map(Baz) == {
-        "_T": int,
-        "_K": str,
+        "T": int,
+        "K": str,
     }
 
 
 def test_get_specialized_type_var_map_multiple_inheritance_subclass():
     @strawberry.type
-    class Foo[_T]: ...
+    class Foo[T]: ...
 
     @strawberry.type
-    class Bar[_K]: ...
+    class Bar[K]: ...
 
     @strawberry.type
     class Bin(Foo[int]): ...
@@ -143,6 +143,6 @@ def test_get_specialized_type_var_map_multiple_inheritance_subclass():
     class BazSubclass(Baz): ...
 
     assert get_specialized_type_var_map(BazSubclass) == {
-        "_T": int,
-        "_K": str,
+        "T": int,
+        "K": str,
     }

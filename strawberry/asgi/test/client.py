@@ -7,7 +7,7 @@ from strawberry.test import BaseGraphQLTestClient
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
-    from typing_extensions import Literal
+    from typing import Literal
 
 
 class GraphQLTestClient(BaseGraphQLTestClient):

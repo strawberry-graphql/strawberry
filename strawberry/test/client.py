@@ -4,8 +4,8 @@ import json
 import warnings
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Optional, Union
-from typing_extensions import Literal, TypedDict
+from typing import TYPE_CHECKING, Any, Literal, Optional, Union
+from typing_extensions import TypedDict
 
 if TYPE_CHECKING:
     from collections.abc import Coroutine, Mapping

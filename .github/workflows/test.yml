@@ -57,11 +57,11 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: |
-            3.9
             3.10
             3.11
             3.12
             3.13
+            3.14
 
       - run: pip install poetry nox nox-poetry uv
       - run: nox -r -t tests -s "${{ matrix.session.session }}"
@@ -105,10 +105,11 @@ jobs:
         if: steps.setup-python.outputs.cache-hit != 'true'
 
       - name: Run benchmarks
-        uses: CodSpeedHQ/action@v3.2.0
+        uses: CodSpeedHQ/action@v4.1.1
         with:
           token: ${{ secrets.CODSPEED_TOKEN }}
-          run: poetry run pytest tests/benchmarks --codspeed
+          mode: instrumentation
+          run: poetry run pytest tests/benchmarks --codspeed -p no:codeflash-benchmark
 
   lint:
     name: ✨ Lint

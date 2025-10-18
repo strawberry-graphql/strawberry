@@ -12,7 +12,7 @@ from strawberry.types.enum import StrawberryEnum
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
-    from typing_extensions import TypeGuard
+    from typing import TypeGuard
 
     from strawberry.types.scalar import ScalarDefinition, ScalarWrapper
 

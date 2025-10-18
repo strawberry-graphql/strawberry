@@ -1,5 +1,11 @@
 import builtins
-from typing import Annotated, Any, Union
+from types import UnionType
+from typing import (
+    Annotated,
+    Any,
+    Union,
+)
+from typing import GenericAlias as TypingGenericAlias  # type: ignore
 
 from pydantic import BaseModel
 
@@ -13,18 +19,6 @@ from strawberry.experimental.pydantic.exceptions import (
     UnregisteredTypeException,
 )
 from strawberry.types.base import StrawberryObjectDefinition
-
-try:
-    from types import UnionType as TypingUnionType
-except ImportError:
-    import sys
-
-    if sys.version_info < (3, 10):
-        TypingUnionType = ()
-    else:
-        raise
-
-from typing import GenericAlias as TypingGenericAlias  # type: ignore
 
 
 def replace_pydantic_types(type_: Any, is_input: bool) -> Any:
@@ -55,7 +49,7 @@ def replace_types_recursively(
 
     if isinstance(replaced_type, TypingGenericAlias):
         return TypingGenericAlias(origin, converted)
-    if isinstance(replaced_type, TypingUnionType):
+    if isinstance(replaced_type, UnionType):
         return Union[converted]
 
     # TODO: investigate if we could move the check for annotated to the top

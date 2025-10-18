@@ -45,7 +45,9 @@ def test_returns_extension_passed_by_user_and_directives_extension():
         query=Query, extensions=[MyExtension], directives=[uppercase]
     )
     for ext, ext_cls in zip(
-        schema.get_extensions(), [MyExtension, DirectivesExtension]
+        schema.get_extensions(),
+        [MyExtension, DirectivesExtension],
+        strict=True,
     ):
         assert isinstance(ext, ext_cls)
 
@@ -62,7 +64,9 @@ def test_returns_extension_passed_by_user_and_directives_extension_sync():
         query=Query, extensions=[MyExtension], directives=[uppercase]
     )
     for ext, ext_cls in zip(
-        schema.get_extensions(sync=True), [MyExtension, DirectivesExtensionSync]
+        schema.get_extensions(sync=True),
+        [MyExtension, DirectivesExtensionSync],
+        strict=True,
     ):
         assert isinstance(ext, ext_cls)
 

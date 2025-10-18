@@ -7,7 +7,6 @@ from decimal import Decimal
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
     Optional,
     Union,
     cast,
@@ -74,6 +73,8 @@ except ImportError:
 
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from mypy.nodes import ClassDef, Expression
     from mypy.plugins import (  # type: ignore
         AnalyzeTypeContext,
@@ -355,7 +356,7 @@ def add_static_method_to_class(
         arg_types, arg_kinds, arg_names, return_type, function_type
     )
     if tvar_def:
-        signature.variables = [tvar_def]
+        signature.variables = [tvar_def]  # type: ignore[assignment]
 
     func = FuncDef(name, args, Block([PassStmt()]))
 

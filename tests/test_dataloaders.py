@@ -1,7 +1,7 @@
 import asyncio
 from asyncio.futures import Future
-from collections.abc import Awaitable
-from typing import Any, Callable, Optional, Union, cast
+from collections.abc import Awaitable, Callable
+from typing import Any, Optional, Union, cast
 
 import pytest
 from pytest_mock import MockerFixture

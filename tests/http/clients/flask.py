@@ -6,8 +6,7 @@ import functools
 import json
 import urllib.parse
 from io import BytesIO
-from typing import Any, Optional, Union
-from typing_extensions import Literal
+from typing import Any, Literal, Optional, Union
 
 from flask import Flask
 from flask import Request as FlaskRequest

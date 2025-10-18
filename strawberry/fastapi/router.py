@@ -6,12 +6,11 @@ from inspect import signature
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
     Optional,
+    TypeGuard,
     Union,
     cast,
 )
-from typing_extensions import TypeGuard
 
 from lia import HTTPException, StarletteRequestAdapter
 from starlette import status
@@ -41,6 +40,7 @@ if TYPE_CHECKING:
     from collections.abc import (
         AsyncIterator,
         Awaitable,
+        Callable,
         Sequence,
     )
     from enum import Enum
@@ -62,7 +62,7 @@ class GraphQLRouter(
 ):
     allow_queries_via_get = True
     request_adapter_class = StarletteRequestAdapter
-    websocket_adapter_class = ASGIWebSocketAdapter
+    websocket_adapter_class = ASGIWebSocketAdapter  # type: ignore
 
     @staticmethod
     async def __get_root_value() -> None:

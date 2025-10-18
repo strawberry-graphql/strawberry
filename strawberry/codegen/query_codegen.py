@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Iterable, Mapping, Sequence
+from collections.abc import Callable, Iterable, Mapping, Sequence
 from dataclasses import MISSING, dataclass
 from enum import Enum
 from functools import cmp_to_key, partial
@@ -8,12 +8,11 @@ from pathlib import Path
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
     Optional,
     Union,
     cast,
 )
-from typing_extensions import Literal, Protocol
+from typing_extensions import Protocol
 
 import rich
 from graphql import (
@@ -473,18 +472,13 @@ class QueryCodegen:
             class_name=result_class_name,
         )
 
-        operation_kind = cast(
-            "Literal['query', 'mutation', 'subscription']",
-            operation_definition.operation.value,
-        )
-
         variables, variables_type = self._convert_variable_definitions(
             operation_definition.variable_definitions, operation_name=operation_name
         )
 
         return GraphQLOperation(
             operation_definition.name.value,
-            kind=operation_kind,
+            kind=operation_definition.operation.value,
             selections=self._convert_selection_set(operation_definition.selection_set),
             directives=self._convert_directives(operation_definition.directives),
             variables=variables,

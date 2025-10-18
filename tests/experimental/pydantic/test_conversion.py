@@ -1,7 +1,6 @@
 import base64
 import dataclasses
 import re
-import sys
 from enum import Enum
 from typing import Any, NewType, Optional, TypeVar, Union
 
@@ -1202,10 +1201,6 @@ def test_can_convert_generic_alias_fields_to_strawberry():
     assert test.list_2d == [[1, 2], [3]]
 
 
-@pytest.mark.skipif(
-    sys.version_info < (3, 10),
-    reason="union type expressions were added in python 3.10",
-)
 def test_can_convert_optional_union_type_expression_fields_to_strawberry():
     class TestModel(BaseModel):
         optional_list: list[int] | None

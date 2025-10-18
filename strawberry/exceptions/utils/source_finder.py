@@ -6,12 +6,12 @@ import sys
 from dataclasses import dataclass
 from functools import cached_property
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Callable, Optional, cast
+from typing import TYPE_CHECKING, Any, Optional, cast
 
 from strawberry.exceptions.exception_source import ExceptionSource
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
+    from collections.abc import Callable, Sequence
     from inspect import Traceback
 
     from libcst import BinaryOperation, Call, CSTNode, FunctionDef

@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Optional
-from typing_extensions import Literal, TypedDict
+from typing import Any, Literal, Optional
+from typing_extensions import TypedDict
 
 from strawberry.schema._graphql_core import (
     GraphQLIncrementalExecutionResults,

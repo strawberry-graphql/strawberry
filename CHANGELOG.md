@@ -1,6 +1,67 @@
 CHANGELOG
 =========
 
+0.284.0 - 2025-10-17
+--------------------
+
+This release drops support for Python 3.9, which reached its end-of-life (EOL)
+in October 2025. The minimum supported Python version is now 3.10.
+
+We strongly recommend upgrading to Python 3.10 or a newer version, as older
+versions are no longer maintained and may contain security vulnerabilities.
+
+Contributed by [Thiago Bellini Ribeiro](https://github.com/bellini666) via [PR #4018](https://github.com/strawberry-graphql/strawberry/pull/4018/)
+
+
+0.283.3 - 2025-10-10
+--------------------
+
+Adds support for lazy unions.
+
+Contributed by [Radosław Cybulski](https://github.com/rcybulski1122012) via [PR #4017](https://github.com/strawberry-graphql/strawberry/pull/4017/)
+
+
+0.283.2 - 2025-10-07
+--------------------
+
+This release adds support for the upcoming Python 3.14
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #3828](https://github.com/strawberry-graphql/strawberry/pull/3828/)
+
+
+0.283.1 - 2025-10-06
+--------------------
+
+Fixed multipart subscription header parsing to properly handle optional boundary parameters and quoted subscription spec values. This improves compatibility with different GraphQL clients that may send headers in various formats.
+
+**Key improvements:**
+
+- Made the `boundary=graphql` parameter optional in multipart subscription detection
+- Added proper quote stripping for `subscriptionSpec` values (e.g., `subscriptionSpec="1.0"`)
+- Enhanced test coverage for different header format scenarios
+
+**Example of supported headers:**
+
+```raw
+Accept: multipart/mixed;boundary=graphql;subscriptionSpec=1.0,application/json
+Accept: multipart/mixed;subscriptionSpec="1.0",application/json
+```
+
+Contributed by [Louis Amon](https://github.com/LouisAmon) via [PR #4002](https://github.com/strawberry-graphql/strawberry/pull/4002/)
+
+
+0.283.0 - 2025-10-06
+--------------------
+
+In this release, we renamed the `strawberry server` command to `strawberry dev`
+to better reflect its purpose as a development server.
+
+We also deprecated the `strawberry-graphql[debug-server]` extra in favor of
+`strawberry-graphql[cli]`. Please update your dependencies accordingly.
+
+Contributed by [Jonathan Ehwald](https://github.com/DoctorJohn) via [PR #4011](https://github.com/strawberry-graphql/strawberry/pull/4011/)
+
+
 0.282.0 - 2025-09-07
 --------------------
 

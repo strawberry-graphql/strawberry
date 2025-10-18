@@ -3,8 +3,7 @@ from __future__ import annotations
 import urllib.parse
 from io import BytesIO
 from json import dumps
-from typing import Any, Optional, Union
-from typing_extensions import Literal
+from typing import Any, Literal, Optional, Union
 
 from chalice.app import Chalice
 from chalice.app import Request as ChaliceRequest

@@ -2,19 +2,18 @@ import abc
 import asyncio
 import contextlib
 import json
-from collections.abc import AsyncGenerator, Mapping
+from collections.abc import AsyncGenerator, Callable, Mapping
 from datetime import timedelta
 from typing import (
     Any,
-    Callable,
     Generic,
     Literal,
     Optional,
+    TypeGuard,
     Union,
     cast,
     overload,
 )
-from typing_extensions import TypeGuard
 
 from graphql import GraphQLError
 from lia import AsyncHTTPRequestAdapter, HTTPException

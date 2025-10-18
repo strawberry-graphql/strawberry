@@ -1,4 +1,3 @@
-import sys
 from typing import Annotated, Generic, TypeVar, Union
 
 import pytest
@@ -32,10 +31,6 @@ def test_python_union():
     assert resolved == Union[User, Error]
 
 
-@pytest.mark.skipif(
-    sys.version_info < (3, 10),
-    reason="short syntax for union is only available on python 3.10+",
-)
 def test_python_union_short_syntax():
     @strawberry.type
     class User:
@@ -128,10 +123,6 @@ def test_error_with_scalar_types():
 
 @pytest.mark.raises_strawberry_exception(
     InvalidUnionTypeError, match="Type `int` cannot be used in a GraphQL Union"
-)
-@pytest.mark.skipif(
-    sys.version_info < (3, 10),
-    reason="short syntax for union is only available on python 3.10+",
 )
 def test_error_with_scalar_types_pipe():
     # TODO: using Something as the name of the union makes the source finder

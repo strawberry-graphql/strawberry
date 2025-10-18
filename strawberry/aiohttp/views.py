@@ -6,11 +6,10 @@ from datetime import timedelta
 from json.decoder import JSONDecodeError
 from typing import (
     TYPE_CHECKING,
-    Callable,
     Optional,
+    TypeGuard,
     Union,
 )
-from typing_extensions import TypeGuard
 
 from lia import AiohttpHTTPRequestAdapter, HTTPException
 
@@ -31,7 +30,7 @@ from strawberry.http.typevars import (
 from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
 
 if TYPE_CHECKING:
-    from collections.abc import AsyncGenerator, Mapping, Sequence
+    from collections.abc import AsyncGenerator, Callable, Mapping, Sequence
 
     from strawberry.http import GraphQLHTTPResponse
     from strawberry.http.ides import GraphQL_IDE
@@ -87,7 +86,7 @@ class GraphQLView(
 
     allow_queries_via_get = True
     request_adapter_class = AiohttpHTTPRequestAdapter
-    websocket_adapter_class = AiohttpWebSocketAdapter
+    websocket_adapter_class = AiohttpWebSocketAdapter  # type: ignore
 
     def __init__(
         self,

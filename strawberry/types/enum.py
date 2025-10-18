@@ -1,5 +1,5 @@
 import dataclasses
-from collections.abc import Iterable, Mapping
+from collections.abc import Callable, Iterable, Mapping
 from enum import EnumMeta
 from typing import TYPE_CHECKING, Any, Callable, Optional, TypeVar, Union, overload
 

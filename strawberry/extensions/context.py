@@ -8,7 +8,6 @@ from asyncio import iscoroutinefunction
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
     NamedTuple,
     Optional,
     Union,
@@ -18,7 +17,7 @@ from strawberry.extensions import SchemaExtension
 from strawberry.utils.await_maybe import AwaitableOrValue, await_maybe
 
 if TYPE_CHECKING:
-    from collections.abc import AsyncIterator, Iterator
+    from collections.abc import AsyncIterator, Callable, Iterator
     from types import TracebackType
 
     from strawberry.extensions.base_extension import Hook

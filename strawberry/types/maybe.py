@@ -1,6 +1,5 @@
 import typing
-from typing import TYPE_CHECKING, Any, Generic, TypeVar, Union
-from typing_extensions import TypeAlias
+from typing import TYPE_CHECKING, Any, Generic, TypeAlias, TypeVar, Union
 
 T = TypeVar("T")
 

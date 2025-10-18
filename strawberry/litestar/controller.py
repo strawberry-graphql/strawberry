@@ -8,13 +8,12 @@ from datetime import timedelta
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
     ClassVar,
     Optional,
     TypedDict,
+    TypeGuard,
     Union,
 )
-from typing_extensions import TypeGuard
 
 from lia import HTTPException, LitestarRequestAdapter
 from msgspec import Struct
@@ -52,7 +51,13 @@ from strawberry.http.typevars import Context, RootValue
 from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
 
 if TYPE_CHECKING:
-    from collections.abc import AsyncGenerator, AsyncIterator, Mapping, Sequence
+    from collections.abc import (
+        AsyncGenerator,
+        AsyncIterator,
+        Callable,
+        Mapping,
+        Sequence,
+    )
 
     from litestar.types import AnyCallable, Dependencies
     from strawberry.http import GraphQLHTTPResponse
@@ -208,7 +213,7 @@ class GraphQLController(
     }
 
     request_adapter_class = LitestarRequestAdapter
-    websocket_adapter_class = LitestarWebSocketAdapter
+    websocket_adapter_class = LitestarWebSocketAdapter  # type: ignore
 
     allow_queries_via_get: bool = True
     graphiql_allowed_accept: frozenset[str] = frozenset({"text/html", "*/*"})

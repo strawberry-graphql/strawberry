@@ -5,8 +5,7 @@ import json as json_module
 from collections.abc import AsyncGenerator, Mapping, Sequence
 from datetime import timedelta
 from io import BytesIO
-from typing import Any, Optional
-from typing_extensions import Literal
+from typing import Any, Literal, Optional
 
 from urllib3 import encode_multipart_formdata
 

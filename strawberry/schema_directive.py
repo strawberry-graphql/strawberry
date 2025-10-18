@@ -1,6 +1,7 @@
 import dataclasses
+from collections.abc import Callable
 from enum import Enum
-from typing import Callable, Optional, TypeVar
+from typing import Optional, TypeVar
 from typing_extensions import dataclass_transform
 
 from strawberry.types.field import StrawberryField, field

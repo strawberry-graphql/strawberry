@@ -5,9 +5,9 @@ from typing import (
     TYPE_CHECKING,
     ClassVar,
     Optional,
+    TypeGuard,
     Union,
 )
-from typing_extensions import TypeGuard
 
 from lia import AsyncFlaskHTTPRequestAdapter, FlaskHTTPRequestAdapter, HTTPException
 

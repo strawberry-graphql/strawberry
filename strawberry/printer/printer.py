@@ -5,7 +5,6 @@ from itertools import chain
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
     Optional,
     TypeVar,
     Union,
@@ -46,6 +45,8 @@ from strawberry.types.unset import UNSET
 from .ast_from_value import ast_from_value
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from graphql import (
         GraphQLArgument,
         GraphQLEnumType,

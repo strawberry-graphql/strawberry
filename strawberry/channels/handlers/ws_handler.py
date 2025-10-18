@@ -7,9 +7,9 @@ from typing import (
     TYPE_CHECKING,
     Optional,
     TypedDict,
+    TypeGuard,
     Union,
 )
-from typing_extensions import TypeGuard
 
 from strawberry.http.async_base_view import AsyncBaseHTTPView, AsyncWebSocketAdapter
 from strawberry.http.exceptions import NonJsonMessageReceived, NonTextMessageReceived
@@ -102,7 +102,7 @@ class GraphQLWSConsumer(
     ```
     """
 
-    websocket_adapter_class = ChannelsWebSocketAdapter
+    websocket_adapter_class = ChannelsWebSocketAdapter  # type: ignore
 
     def __init__(
         self,

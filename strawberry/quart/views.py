@@ -1,10 +1,9 @@
 import asyncio
 import warnings
-from collections.abc import AsyncGenerator, Mapping, Sequence
+from collections.abc import AsyncGenerator, Callable, Mapping, Sequence
 from datetime import timedelta
 from json.decoder import JSONDecodeError
-from typing import TYPE_CHECKING, Callable, ClassVar, Optional, Union
-from typing_extensions import TypeGuard
+from typing import TYPE_CHECKING, ClassVar, Optional, TypeGuard, Union
 
 from lia import HTTPException, QuartHTTPRequestAdapter
 
@@ -78,7 +77,7 @@ class GraphQLView(
     methods: ClassVar[list[str]] = ["GET", "POST"]
     allow_queries_via_get: bool = True
     request_adapter_class = QuartHTTPRequestAdapter
-    websocket_adapter_class = QuartWebSocketAdapter
+    websocket_adapter_class = QuartWebSocketAdapter  # type: ignore
 
     def __init__(
         self,
