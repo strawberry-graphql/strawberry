@@ -5,8 +5,9 @@ from json import dumps
 from random import randint
 from typing import Any, Literal
 
-from sanic import Sanic
 from sanic.request import Request as SanicRequest
+
+from sanic import Sanic
 from strawberry.http import GraphQLHTTPResponse
 from strawberry.http.ides import GraphQL_IDE
 from strawberry.http.temporal_response import TemporalResponse

@@ -3,8 +3,9 @@ import strawberry
 
 # TODO: move this to common tests
 def test_set_response_headers():
-    from litestar import Litestar
     from litestar.testing import TestClient
+
+    from litestar import Litestar
     from strawberry.litestar import make_graphql_controller
 
     @strawberry.type
@@ -29,8 +30,9 @@ def test_set_response_headers():
 
 
 def test_set_cookie_headers():
-    from litestar import Litestar
     from litestar.testing import TestClient
+
+    from litestar import Litestar
     from strawberry.litestar import make_graphql_controller
 
     @strawberry.type

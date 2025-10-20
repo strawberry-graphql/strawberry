@@ -10,6 +10,9 @@ from typing import (
     cast,
 )
 
+from fastapi.datastructures import Default
+from fastapi.routing import APIRoute
+from fastapi.utils import generate_unique_id
 from lia import HTTPException, StarletteRequestAdapter
 from starlette import status
 from starlette.background import BackgroundTasks  # noqa: TC002
@@ -24,9 +27,6 @@ from starlette.responses import (
 from starlette.websockets import WebSocket
 
 from fastapi import APIRouter, Depends, params
-from fastapi.datastructures import Default
-from fastapi.routing import APIRoute
-from fastapi.utils import generate_unique_id
 from strawberry.asgi import ASGIWebSocketAdapter
 from strawberry.exceptions import InvalidCustomContext
 from strawberry.fastapi.context import BaseContext, CustomContext

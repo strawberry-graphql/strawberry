@@ -7,10 +7,11 @@ from datetime import timedelta
 from io import BytesIO
 from typing import Any, Literal
 
-from litestar import Litestar, Request
 from litestar.exceptions import WebSocketDisconnect
 from litestar.testing import TestClient
 from litestar.testing.websocket_test_session import WebSocketTestSession
+
+from litestar import Litestar, Request
 from strawberry.http import GraphQLHTTPResponse
 from strawberry.http.ides import GraphQL_IDE
 from strawberry.litestar import make_graphql_controller

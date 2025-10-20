@@ -1,7 +1,8 @@
 from typing import Any
 
-from litestar import Litestar, Request
 from litestar.di import Provide
+
+from litestar import Litestar, Request
 from strawberry.litestar import make_graphql_controller
 from tests.views.schema import schema
 

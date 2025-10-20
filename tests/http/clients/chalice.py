@@ -8,6 +8,7 @@ from typing import Any, Literal
 from chalice.app import Chalice
 from chalice.app import Request as ChaliceRequest
 from chalice.test import Client
+
 from strawberry import Schema
 from strawberry.chalice.views import GraphQLView as BaseGraphQLView
 from strawberry.http import GraphQLHTTPResponse

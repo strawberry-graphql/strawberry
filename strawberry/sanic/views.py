@@ -9,9 +9,9 @@ from typing import (
 )
 
 from lia import HTTPException, SanicHTTPRequestAdapter
-
 from sanic.request import Request
 from sanic.response import HTTPResponse, html
+
 from sanic.views import HTTPMethodView
 from strawberry.http.async_base_view import AsyncBaseHTTPView
 from strawberry.http.temporal_response import TemporalResponse
