@@ -20,6 +20,6 @@ def test_can_use_info_with_one_argument():
 def test_cannot_use_info_with_more_than_two_arguments():
     with pytest.raises(
         TypeError,
-        match="Too many (arguments|parameters) for <class '.*.Info'>; actual 3, expected 2",
+        match=r"Too many (arguments|parameters) for <class '.*.Info'>; actual 3, expected 2",
     ):
         strawberry.Info[int, str, int]  # type: ignore

@@ -104,7 +104,7 @@ FieldType = TypeVar(
 )
 
 
-class FieldConverterProtocol(Generic[FieldType], Protocol):
+class FieldConverterProtocol(Protocol, Generic[FieldType]):
     def __call__(  # pragma: no cover
         self,
         field: StrawberryField,

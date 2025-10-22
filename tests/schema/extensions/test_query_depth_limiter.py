@@ -236,7 +236,7 @@ def test_should_catch_query_thats_too_deep():
     }
     }
     """
-    errors, result = run_query(query, 4)
+    errors, _result = run_query(query, 4)
 
     assert len(errors) == 1
     assert errors[0].message == "'anonymous' exceeds maximum operation depth of 4"
@@ -245,7 +245,7 @@ def test_should_catch_query_thats_too_deep():
 def test_should_raise_invalid_ignore():
     with pytest.raises(
         TypeError,
-        match="The `should_ignore` argument to `QueryDepthLimiter` must be a callable.",
+        match=r"The `should_ignore` argument to `QueryDepthLimiter` must be a callable.",
     ):
         strawberry.Schema(
             Query, extensions=[QueryDepthLimiter(max_depth=10, should_ignore=True)]

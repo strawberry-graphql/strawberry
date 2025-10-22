@@ -288,7 +288,7 @@ def test_raises_error_calling_uncallable_resolver():
 
     with pytest.raises(
         UncallableResolverError,
-        match="Attempted to call resolver (.*) with uncallable function (.*)",
+        match=r"Attempted to call resolver (.*) with uncallable function (.*)",
     ):
         resolver()
 

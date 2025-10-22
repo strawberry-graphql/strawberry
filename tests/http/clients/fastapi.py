@@ -9,6 +9,7 @@ from typing import Any, Literal
 
 from fastapi import BackgroundTasks, Depends, FastAPI, Request, WebSocket
 from fastapi.testclient import TestClient
+
 from strawberry.fastapi import GraphQLRouter as BaseGraphQLRouter
 from strawberry.http import GraphQLHTTPResponse
 from strawberry.http.ides import GraphQL_IDE

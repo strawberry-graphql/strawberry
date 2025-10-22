@@ -19,7 +19,7 @@ def test_raises_exception_with_unsupported_types():
         example: SomeType
 
     with pytest.raises(
-        TypeError, match="Query fields cannot be resolved. Unexpected type '.*'"
+        TypeError, match=r"Query fields cannot be resolved. Unexpected type '.*'"
     ):
         strawberry.Schema(query=Query)
 

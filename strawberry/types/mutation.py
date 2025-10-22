@@ -131,7 +131,7 @@ def mutation(
     # This init parameter is used by PyRight to determine whether this field
     # is added in the constructor or not. It is not used to change
     # any behavior at the moment.
-    init: Literal[True, False, None] = None,
+    init: Literal[True, False] | None = None,
 ) -> Any:
     """Annotates a method or property as a GraphQL mutation.
 
@@ -288,7 +288,7 @@ def subscription(
     directives: Sequence[object] | None = (),
     extensions: list[FieldExtension] | None = None,
     graphql_type: Any | None = None,
-    init: Literal[True, False, None] = None,
+    init: Literal[True, False] | None = None,
 ) -> Any:
     """Annotates a method or property as a GraphQL subscription.
 

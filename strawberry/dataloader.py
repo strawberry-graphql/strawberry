@@ -50,7 +50,7 @@ class Batch(Generic[K, T]):
         return len(self.tasks)
 
 
-class AbstractCache(Generic[K, T], ABC):
+class AbstractCache(ABC, Generic[K, T]):
     @abstractmethod
     def get(self, key: K) -> Future[T] | None:
         pass
