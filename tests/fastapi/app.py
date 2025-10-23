@@ -1,6 +1,7 @@
 from typing import Any
 
 from fastapi import BackgroundTasks, Depends, FastAPI, Request, WebSocket
+
 from strawberry.fastapi import GraphQLRouter
 from tests.views.schema import schema
 

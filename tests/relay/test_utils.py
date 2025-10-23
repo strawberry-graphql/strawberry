@@ -33,7 +33,7 @@ def test_from_base64_with_extra_colon():
 @pytest.mark.parametrize("value", [None, 1, 1.1, "dsadfas"])
 def test_from_base64_non_base64(value: Any):
     with pytest.raises(ValueError):
-        type_name, node_id = from_base64(value)
+        _type_name, _node_id = from_base64(value)
 
 
 @pytest.mark.parametrize(
@@ -46,7 +46,7 @@ def test_from_base64_non_base64(value: Any):
 )
 def test_from_base64_wrong_number_of_args(value: Any):
     with pytest.raises(ValueError):
-        type_name, node_id = from_base64(value)
+        _type_name, _node_id = from_base64(value)
 
 
 def test_to_base64():

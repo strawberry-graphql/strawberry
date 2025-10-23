@@ -15,8 +15,6 @@ from typing import (
 )
 
 from lia import HTTPException, LitestarRequestAdapter
-from msgspec import Struct
-
 from litestar import (
     Controller,
     MediaType,
@@ -36,6 +34,8 @@ from litestar.exceptions import (
 )
 from litestar.response.streaming import Stream
 from litestar.status_codes import HTTP_200_OK
+from msgspec import Struct
+
 from strawberry.exceptions import InvalidCustomContext
 from strawberry.http.async_base_view import (
     AsyncBaseHTTPView,
@@ -59,6 +59,7 @@ if TYPE_CHECKING:
     )
 
     from litestar.types import AnyCallable, Dependencies
+
     from strawberry.http import GraphQLHTTPResponse
     from strawberry.http.ides import GraphQL_IDE
     from strawberry.schema import BaseSchema

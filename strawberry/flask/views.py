@@ -17,6 +17,7 @@ from strawberry.http.typevars import Context, RootValue
 
 if TYPE_CHECKING:
     from flask.typing import ResponseReturnValue
+
     from strawberry.http import GraphQLHTTPResponse
     from strawberry.http.ides import GraphQL_IDE
     from strawberry.schema.base import BaseSchema

@@ -1138,7 +1138,7 @@ def test_generic_interface_extra_types():
         x: str = ""
 
     @strawberry.type
-    class Real(Generic[T], Abstract):
+    class Real(Abstract, Generic[T]):
         y: T
 
     @strawberry.type

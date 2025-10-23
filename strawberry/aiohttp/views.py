@@ -9,9 +9,9 @@ from typing import (
     TypeGuard,
 )
 
+from aiohttp import ClientConnectionResetError, http, web
 from lia import AiohttpHTTPRequestAdapter, HTTPException
 
-from aiohttp import ClientConnectionResetError, http, web
 from strawberry.http.async_base_view import (
     AsyncBaseHTTPView,
     AsyncWebSocketAdapter,

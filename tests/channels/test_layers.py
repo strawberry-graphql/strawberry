@@ -23,6 +23,7 @@ if TYPE_CHECKING:
 @pytest.fixture
 async def ws() -> AsyncGenerator[WebsocketCommunicator, None]:
     from channels.testing import WebsocketCommunicator
+
     from strawberry.channels import GraphQLWSConsumer
 
     client = WebsocketCommunicator(

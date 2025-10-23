@@ -896,7 +896,7 @@ def test_get_default_factory_for_field():
 
     with pytest.raises(
         BothDefaultAndDefaultFactoryDefinedError,
-        match=("Not allowed to specify both default and default_factory."),
+        match=r"Not allowed to specify both default and default_factory.",
     ):
         get_default_factory_for_field(field, compat)
 

@@ -397,7 +397,7 @@ def connection(
     # This init parameter is used by pyright to determine whether this field
     # is added in the constructor or not. It is not used to change
     # any behaviour at the moment.
-    init: Literal[True, False, None] = None,
+    init: Literal[True, False] | None = None,
 ) -> Any:
     """Annotate a property or a method to create a relay connection field.
 

@@ -7,9 +7,9 @@ from datetime import timedelta
 from io import BytesIO
 from typing import Any, Literal
 
+from channels.testing import HttpCommunicator, WebsocketCommunicator
 from urllib3 import encode_multipart_formdata
 
-from channels.testing import HttpCommunicator, WebsocketCommunicator
 from strawberry.channels import (
     GraphQLHTTPConsumer,
     GraphQLWSConsumer,

@@ -7,6 +7,7 @@ from typing import Any, Literal
 
 from sanic import Sanic
 from sanic.request import Request as SanicRequest
+
 from strawberry.http import GraphQLHTTPResponse
 from strawberry.http.ides import GraphQL_IDE
 from strawberry.http.temporal_response import TemporalResponse
@@ -97,7 +98,7 @@ class SanicHttpClient(HttpClient):
             else:
                 kwargs["content"] = dumps(body)
 
-        request, response = await self.app.asgi_client.request(
+        _request, response = await self.app.asgi_client.request(
             method,
             "/graphql",
             headers=self._get_headers(method=method, headers=headers, files=files),
@@ -117,7 +118,7 @@ class SanicHttpClient(HttpClient):
         method: Literal["head", "get", "post", "patch", "put", "delete"],
         headers: dict[str, str] | None = None,
     ) -> Response:
-        request, response = await self.app.asgi_client.request(
+        _request, response = await self.app.asgi_client.request(
             method,
             url,
             headers=headers,
@@ -145,7 +146,7 @@ class SanicHttpClient(HttpClient):
     ) -> Response:
         body = dumps(json) if json is not None else data
 
-        request, response = await self.app.asgi_client.request(
+        _request, response = await self.app.asgi_client.request(
             "post", url, content=body, headers=headers
         )
 

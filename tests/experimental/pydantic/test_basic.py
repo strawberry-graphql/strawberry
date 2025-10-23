@@ -75,7 +75,7 @@ def test_basic_type_all_fields_warn():
 
     with pytest.raises(
         UserWarning,
-        match=("Using all_fields overrides any explicitly defined fields"),
+        match="Using all_fields overrides any explicitly defined fields",
     ):
 
         @strawberry.experimental.pydantic.type(User, all_fields=True)
@@ -154,7 +154,7 @@ def test_referencing_other_models_fails_when_not_registered():
 
     with pytest.raises(
         strawberry.experimental.pydantic.UnregisteredTypeException,
-        match=("Cannot find a Strawberry Type for (.*) did you forget to register it?"),
+        match=r"Cannot find a Strawberry Type for (.*) did you forget to register it?",
     ):
 
         @strawberry.experimental.pydantic.type(User)
@@ -179,7 +179,7 @@ def test_referencing_other_input_models_fails_when_not_registered():
 
     with pytest.raises(
         strawberry.experimental.pydantic.UnregisteredTypeException,
-        match=("Cannot find a Strawberry Type for (.*) did you forget to register it?"),
+        match=r"Cannot find a Strawberry Type for (.*) did you forget to register it?",
     ):
 
         @strawberry.experimental.pydantic.input(User)
