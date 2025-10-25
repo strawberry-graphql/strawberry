@@ -202,7 +202,7 @@ def has_object_definition(
     obj: Any,
 ) -> TypeGuard[type[WithStrawberryObjectDefinition]]:
     if hasattr(obj, "__strawberry_definition__"):
-        return True
+        return isinstance(obj.__strawberry_definition__, StrawberryObjectDefinition)
     # TODO: Generics remove dunder members here, so we inject it here.
     #  Would be better to avoid it somehow.
     # https://github.com/python/cpython/blob/3a314f7c3df0dd7c37da7d12b827f169ee60e1ea/Lib/typing.py#L1152
@@ -210,7 +210,7 @@ def has_object_definition(
         concrete = obj.__origin__
         if hasattr(concrete, "__strawberry_definition__"):
             obj.__strawberry_definition__ = concrete.__strawberry_definition__
-            return True
+            return isinstance(obj.__strawberry_definition__, StrawberryObjectDefinition)
     return False
 
 
@@ -419,13 +419,18 @@ class StrawberryObjectDefinition(StrawberryType):
                 continue
 
             # Check if the expected type matches the type found on the type_map
-            real_concrete_type = type(value)
+            from strawberry.types.enum import StrawberryEnum
+
+            real_concrete_type: type | StrawberryEnum = type(value)
 
             # TODO: uniform type var map, at the moment we map object types
             # to their class (not to TypeDefinition) while we map enum to
-            # the EnumDefinition class. This is why we do this check here:
-            if hasattr(real_concrete_type, "_enum_definition"):
-                real_concrete_type = real_concrete_type._enum_definition
+            # the StrawberryEnum class. This is why we do this check here:
+
+            if hasattr(real_concrete_type, "__strawberry_definition__") and isinstance(
+                real_concrete_type.__strawberry_definition__, StrawberryEnum
+            ):
+                real_concrete_type = real_concrete_type.__strawberry_definition__
 
             if (
                 isinstance(expected_concrete_type, type)

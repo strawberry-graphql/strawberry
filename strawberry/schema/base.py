@@ -22,7 +22,7 @@ if TYPE_CHECKING:
         StrawberryObjectDefinition,
         WithStrawberryObjectDefinition,
     )
-    from strawberry.types.enum import EnumDefinition
+    from strawberry.types.enum import StrawberryEnum
     from strawberry.types.graphql import OperationType
     from strawberry.types.scalar import ScalarDefinition
     from strawberry.types.union import StrawberryUnion
@@ -82,7 +82,7 @@ class BaseSchema(Protocol):
     ) -> (
         StrawberryObjectDefinition
         | ScalarDefinition
-        | EnumDefinition
+        | StrawberryEnum
         | StrawberryUnion
         | None
     ):
