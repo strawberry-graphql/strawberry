@@ -7,8 +7,6 @@ from inspect import iscoroutinefunction
 from typing import (
     TYPE_CHECKING,
     Any,
-    Optional,
-    Union,
 )
 
 from strawberry.exceptions import StrawberryGraphQLError
@@ -50,18 +48,18 @@ class BasePermission(abc.ABC):
     ```
     """
 
-    message: Optional[str] = None
+    message: str | None = None
 
-    error_extensions: Optional[GraphQLErrorExtensions] = None
+    error_extensions: GraphQLErrorExtensions | None = None
 
     error_class: type[GraphQLError] = StrawberryGraphQLError
 
-    _schema_directive: Optional[object] = None
+    _schema_directive: object | None = None
 
     @abc.abstractmethod
     def has_permission(
         self, source: Any, info: Info, **kwargs: Any
-    ) -> Union[bool, Awaitable[bool]]:
+    ) -> bool | Awaitable[bool]:
         """Check if the permission should be accepted.
 
         This method should be overridden by the subclasses.

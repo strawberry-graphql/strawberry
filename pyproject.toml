@@ -1,6 +1,6 @@
 [project]
 name = "strawberry-graphql"
-version = "0.284.0"
+version = "0.284.1"
 description = "A library for creating GraphQL APIs"
 authors = [{ name = "Patrick Arminio", email = "patrick.arminio@gmail.com" }]
 license = { text = "MIT" }
@@ -74,7 +74,7 @@ pyinstrument = ["pyinstrument>=4.0.0"]
 
 [dependency-groups]
 dev = [
-  "ruff (>=0.12.3,<0.13.0)",
+  "ruff (>=0.14.1,<0.15.0)",
   "asgiref (>=3.2,<4.0)",
   "email-validator (>=1.1.3,<3.0.0)",
   "freezegun (>=1.2.1,<2.0.0)",
@@ -225,13 +225,6 @@ src = ["strawberry", "tests"]
 [tool.ruff.lint]
 select = ["ALL"]
 ignore = [
-  # https://github.com/astral-sh/ruff/pull/4427
-  # equivalent to keep-runtime-typing. We might want to enable those
-  # after we drop support for Python 3.9
-  "UP006",
-  "UP007",
-  "UP045",
-
   # we use asserts in tests and to hint mypy
   "S101",
 
@@ -372,11 +365,24 @@ ignore = [
   "TCH002",
   "TCH003",
   "TRY002",
+  "UP007",
+  "UP045",
 ]
 
 [tool.ruff.lint.isort]
 known-first-party = ["strawberry"]
-known-third-party = ["django", "graphql"]
+known-third-party = [
+  "django",
+  "graphql",
+  "fastapi",
+  "pydantic",
+  "litestar",
+  "aiohttp",
+  "channels",
+  "sanic",
+  "chalice",
+  "quart",
+]
 extra-standard-library = ["typing_extensions"]
 
 [tool.ruff.format]

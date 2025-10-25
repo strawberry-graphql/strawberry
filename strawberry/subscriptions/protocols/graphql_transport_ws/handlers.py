@@ -7,7 +7,6 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Generic,
-    Optional,
     cast,
 )
 
@@ -52,7 +51,7 @@ class BaseGraphQLTransportWSHandler(Generic[Context, RootValue]):
         view: AsyncBaseHTTPView[Any, Any, Any, Any, Any, Context, RootValue],
         websocket: AsyncWebSocketAdapter,
         context: Context,
-        root_value: Optional[RootValue],
+        root_value: RootValue | None,
         schema: BaseSchema,
         connection_init_wait_timeout: timedelta,
     ) -> None:
@@ -62,7 +61,7 @@ class BaseGraphQLTransportWSHandler(Generic[Context, RootValue]):
         self.root_value = root_value
         self.schema = schema
         self.connection_init_wait_timeout = connection_init_wait_timeout
-        self.connection_init_timeout_task: Optional[asyncio.Task] = None
+        self.connection_init_timeout_task: asyncio.Task | None = None
         self.connection_init_received = False
         self.connection_acknowledged = False
         self.connection_timed_out = False
@@ -361,8 +360,8 @@ class Operation(Generic[Context, RootValue]):
         id: str,
         operation_type: OperationType,
         query: str,
-        variables: Optional[dict[str, object]],
-        operation_name: Optional[str],
+        variables: dict[str, object] | None,
+        operation_name: str | None,
     ) -> None:
         self.handler = handler
         self.id = id
@@ -371,7 +370,7 @@ class Operation(Generic[Context, RootValue]):
         self.variables = variables
         self.operation_name = operation_name
         self.completed = False
-        self.task: Optional[asyncio.Task] = None
+        self.task: asyncio.Task | None = None
 
     async def send_operation_message(self, message: Message) -> None:
         if self.completed:

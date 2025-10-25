@@ -1,6 +1,5 @@
 import types
 from collections.abc import Sequence
-from typing import Optional
 
 import strawberry
 from strawberry.types.field import StrawberryField
@@ -11,8 +10,8 @@ def create_type(
     fields: list[StrawberryField],
     is_input: bool = False,
     is_interface: bool = False,
-    description: Optional[str] = None,
-    directives: Optional[Sequence[object]] = (),
+    description: str | None = None,
+    directives: Sequence[object] | None = (),
     extend: bool = False,
 ) -> type:
     """Create a Strawberry type from a list of StrawberryFields.

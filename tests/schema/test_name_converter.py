@@ -1,6 +1,6 @@
 import textwrap
 from enum import Enum
-from typing import Annotated, Generic, Optional, TypeVar, Union
+from typing import Annotated, Generic, TypeVar
 
 import strawberry
 from strawberry.directive import StrawberryDirective
@@ -35,7 +35,7 @@ class AppendsNameConverter(NameConverter):
     def from_generic(
         self,
         generic_type: StrawberryObjectDefinition,
-        types: list[Union[StrawberryType, type]],
+        types: list[StrawberryType | type],
     ) -> str:
         return super().from_generic(generic_type, types) + self.suffix
 
@@ -43,7 +43,7 @@ class AppendsNameConverter(NameConverter):
         return super().from_interface(interface) + self.suffix
 
     def from_directive(
-        self, directive: Union[StrawberryDirective, StrawberrySchemaDirective]
+        self, directive: StrawberryDirective | StrawberrySchemaDirective
     ) -> str:
         return super().from_directive(directive) + self.suffix
 
@@ -115,11 +115,11 @@ class MyGeneric(Generic[T]):
 @strawberry.type
 class Query:
     @strawberry.field(directives=[MyDirective(name="my-directive")])
-    def user(self, input: UserInput) -> Union[User, Error]:
+    def user(self, input: UserInput) -> User | Error:
         return User(name="Patrick")
 
     enum: MyEnum = MyEnum.A
-    field: Optional[MyGeneric[str]] = None
+    field: MyGeneric[str] | None = None
     field_with_lazy: MyGeneric[
         Annotated[
             "TypeWithDifferentNameThanClass",

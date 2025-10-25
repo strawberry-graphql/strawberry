@@ -4,8 +4,6 @@ from collections.abc import Callable
 from typing import (
     Generic,
     Literal,
-    Optional,
-    Union,
 )
 
 from graphql import GraphQLError
@@ -39,8 +37,8 @@ class SyncBaseHTTPView(
     Generic[Request, Response, SubResponse, Context, RootValue],
 ):
     schema: BaseSchema
-    graphiql: Optional[bool]
-    graphql_ide: Optional[GraphQL_IDE]
+    graphiql: bool | None
+    graphql_ide: GraphQL_IDE | None
     request_adapter_class: Callable[[Request], SyncHTTPRequestAdapter]
 
     # Methods that need to be implemented by individual frameworks
@@ -56,12 +54,12 @@ class SyncBaseHTTPView(
     def get_context(self, request: Request, response: SubResponse) -> Context: ...
 
     @abc.abstractmethod
-    def get_root_value(self, request: Request) -> Optional[RootValue]: ...
+    def get_root_value(self, request: Request) -> RootValue | None: ...
 
     @abc.abstractmethod
     def create_response(
         self,
-        response_data: Union[GraphQLHTTPResponse, list[GraphQLHTTPResponse]],
+        response_data: GraphQLHTTPResponse | list[GraphQLHTTPResponse],
         sub_response: SubResponse,
     ) -> Response: ...
 
@@ -72,9 +70,9 @@ class SyncBaseHTTPView(
         self,
         request: Request,
         context: Context,
-        root_value: Optional[RootValue],
+        root_value: RootValue | None,
         sub_response: SubResponse,
-    ) -> Union[ExecutionResult, list[ExecutionResult]]:
+    ) -> ExecutionResult | list[ExecutionResult]:
         request_adapter = self.request_adapter_class(request)
 
         try:
@@ -119,7 +117,7 @@ class SyncBaseHTTPView(
         request_adapter: SyncHTTPRequestAdapter,
         sub_response: SubResponse,
         context: Context,
-        root_value: Optional[RootValue],
+        root_value: RootValue | None,
         request_data: GraphQLRequestData,
     ) -> ExecutionResult:
         allowed_operation_types = OperationType.from_http(request_adapter.method)
@@ -159,7 +157,7 @@ class SyncBaseHTTPView(
 
     def parse_http_body(
         self, request: SyncHTTPRequestAdapter
-    ) -> Union[GraphQLRequestData, list[GraphQLRequestData]]:
+    ) -> GraphQLRequestData | list[GraphQLRequestData]:
         headers = {key.lower(): value for key, value in request.headers.items()}
         content_type, params = parse_content_type(request.content_type or "")
         accept = headers.get("accept", "")
@@ -233,7 +231,7 @@ class SyncBaseHTTPView(
         self,
         request: Request,
         context: Context = UNSET,
-        root_value: Optional[RootValue] = UNSET,
+        root_value: RootValue | None = UNSET,
     ) -> Response:
         request_adapter = self.request_adapter_class(request)
 
@@ -260,7 +258,7 @@ class SyncBaseHTTPView(
             sub_response=sub_response,
         )
 
-        response_data: Union[GraphQLHTTPResponse, list[GraphQLHTTPResponse]]
+        response_data: GraphQLHTTPResponse | list[GraphQLHTTPResponse]
 
         if isinstance(result, list):
             response_data = []

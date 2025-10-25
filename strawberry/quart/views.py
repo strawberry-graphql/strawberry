@@ -3,13 +3,13 @@ import warnings
 from collections.abc import AsyncGenerator, Callable, Mapping, Sequence
 from datetime import timedelta
 from json.decoder import JSONDecodeError
-from typing import TYPE_CHECKING, ClassVar, Optional, TypeGuard, Union
+from typing import TYPE_CHECKING, ClassVar, TypeGuard, Union
 
 from lia import HTTPException, QuartHTTPRequestAdapter
-
 from quart import Request, Response, Websocket, request, websocket
 from quart.ctx import has_websocket_context
 from quart.views import View
+
 from strawberry.http.async_base_view import (
     AsyncBaseHTTPView,
     AsyncWebSocketAdapter,
@@ -25,6 +25,7 @@ from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_P
 
 if TYPE_CHECKING:
     from quart.typing import ResponseReturnValue
+
     from strawberry.http import GraphQLHTTPResponse
     from strawberry.schema.base import BaseSchema
 
@@ -82,8 +83,8 @@ class GraphQLView(
     def __init__(
         self,
         schema: "BaseSchema",
-        graphiql: Optional[bool] = None,
-        graphql_ide: Optional[GraphQL_IDE] = "graphiql",
+        graphiql: bool | None = None,
+        graphql_ide: GraphQL_IDE | None = "graphiql",
         allow_queries_via_get: bool = True,
         keep_alive: bool = True,
         keep_alive_interval: float = 1,
@@ -125,13 +126,11 @@ class GraphQLView(
         return sub_response
 
     async def get_context(
-        self, request: Union[Request, Websocket], response: Response
+        self, request: Request | Websocket, response: Response
     ) -> Context:
         return {"request": request, "response": response}  # type: ignore
 
-    async def get_root_value(
-        self, request: Union[Request, Websocket]
-    ) -> Optional[RootValue]:
+    async def get_root_value(self, request: Request | Websocket) -> RootValue | None:
         return None
 
     async def get_sub_response(self, request: Request) -> Response:
@@ -165,18 +164,18 @@ class GraphQLView(
         )
 
     def is_websocket_request(
-        self, request: Union[Request, Websocket]
+        self, request: Request | Websocket
     ) -> TypeGuard[Websocket]:
         return has_websocket_context()
 
-    async def pick_websocket_subprotocol(self, request: Websocket) -> Optional[str]:
+    async def pick_websocket_subprotocol(self, request: Websocket) -> str | None:
         protocols = request.requested_subprotocols
         intersection = set(protocols) & set(self.subscription_protocols)
         sorted_intersection = sorted(intersection, key=protocols.index)
         return next(iter(sorted_intersection), None)
 
     async def create_websocket_response(
-        self, request: Websocket, subprotocol: Optional[str]
+        self, request: Websocket, subprotocol: str | None
     ) -> Response:
         await request.accept(subprotocol=subprotocol)
         return Response()

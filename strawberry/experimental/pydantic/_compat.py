@@ -25,12 +25,12 @@ class CompatModelField:
     type_: Any
     outer_type_: Any
     default: Any
-    default_factory: Optional[Callable[[], Any]]
+    default_factory: Callable[[], Any] | None
     required: bool
-    alias: Optional[str]
+    alias: str | None
     allow_none: bool
     has_alias: bool
-    description: Optional[str]
+    description: str | None
     _missing_type: Any
     is_v1: bool
 
@@ -44,8 +44,8 @@ class CompatModelField:
 
 
 ATTR_TO_TYPE_MAP = {
-    "NoneStr": Optional[str],
-    "NoneBytes": Optional[bytes],
+    "NoneStr": Optional[str],  # noqa: UP045
+    "NoneBytes": Optional[bytes],  # noqa: UP045
     "StrBytes": None,
     "NoneStrBytes": None,
     "StrictStr": str,

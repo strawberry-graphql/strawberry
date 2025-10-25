@@ -3,7 +3,7 @@ from __future__ import annotations
 import itertools
 from collections.abc import Awaitable, Callable
 from functools import cached_property
-from typing import TYPE_CHECKING, Any, Union
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from typing import TypeAlias
@@ -69,7 +69,7 @@ def _get_async_resolvers(
 
 def build_field_extension_resolvers(
     field: StrawberryField,
-) -> list[Union[SyncExtensionResolver, AsyncExtensionResolver]]:
+) -> list[SyncExtensionResolver | AsyncExtensionResolver]:
     """Builds a list of resolvers for a field with extensions.
 
     Verifies that all of the field extensions for a given field support

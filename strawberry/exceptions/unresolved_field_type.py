@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from functools import cached_property
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from strawberry.exceptions.utils.source_finder import SourceFinder
 
@@ -40,7 +40,7 @@ class UnresolvedFieldTypeError(StrawberryException):
         super().__init__(self.message)
 
     @cached_property
-    def exception_source(self) -> Optional[ExceptionSource]:
+    def exception_source(self) -> ExceptionSource | None:
         source_finder = SourceFinder()
 
         # field could be attached to the class or not

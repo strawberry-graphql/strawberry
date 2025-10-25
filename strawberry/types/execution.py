@@ -4,7 +4,6 @@ import dataclasses
 from typing import (
     TYPE_CHECKING,
     Any,
-    Optional,
     runtime_checkable,
 )
 from typing_extensions import Protocol, TypedDict, deprecated
@@ -29,36 +28,36 @@ if TYPE_CHECKING:
 
 @dataclasses.dataclass
 class ExecutionContext:
-    query: Optional[str]
+    query: str | None
     schema: Schema
     allowed_operations: Iterable[OperationType]
     context: Any = None
-    variables: Optional[dict[str, Any]] = None
+    variables: dict[str, Any] | None = None
     parse_options: ParseOptions = dataclasses.field(
         default_factory=lambda: ParseOptions()
     )
-    root_value: Optional[Any] = None
+    root_value: Any | None = None
     validation_rules: tuple[type[ASTValidationRule], ...] = dataclasses.field(
         default_factory=lambda: tuple(specified_rules)
     )
 
     # The operation name that is provided by the request
-    provided_operation_name: dataclasses.InitVar[Optional[str]] = None
+    provided_operation_name: dataclasses.InitVar[str | None] = None
 
     # Values that get populated during the GraphQL execution so that they can be
     # accessed by extensions
-    graphql_document: Optional[DocumentNode] = None
-    pre_execution_errors: Optional[list[GraphQLError]] = None
-    result: Optional[GraphQLExecutionResult] = None
+    graphql_document: DocumentNode | None = None
+    pre_execution_errors: list[GraphQLError] | None = None
+    result: GraphQLExecutionResult | None = None
     extensions_results: dict[str, Any] = dataclasses.field(default_factory=dict)
 
-    operation_extensions: Optional[dict[str, Any]] = None
+    operation_extensions: dict[str, Any] | None = None
 
     def __post_init__(self, provided_operation_name: str | None) -> None:
         self._provided_operation_name = provided_operation_name
 
     @property
-    def operation_name(self) -> Optional[str]:
+    def operation_name(self) -> str | None:
         if self._provided_operation_name is not None:
             return self._provided_operation_name
 
@@ -79,7 +78,7 @@ class ExecutionContext:
 
         return get_operation_type(graphql_document, self.operation_name)
 
-    def _get_first_operation(self) -> Optional[OperationDefinitionNode]:
+    def _get_first_operation(self) -> OperationDefinitionNode | None:
         graphql_document = self.graphql_document
         if not graphql_document:
             return None
@@ -88,16 +87,16 @@ class ExecutionContext:
 
     @property
     @deprecated("Use 'pre_execution_errors' instead")
-    def errors(self) -> Optional[list[GraphQLError]]:
+    def errors(self) -> list[GraphQLError] | None:
         """Deprecated: Use pre_execution_errors instead."""
         return self.pre_execution_errors
 
 
 @dataclasses.dataclass
 class ExecutionResult:
-    data: Optional[dict[str, Any]]
-    errors: Optional[list[GraphQLError]]
-    extensions: Optional[dict[str, Any]] = None
+    data: dict[str, Any] | None
+    errors: list[GraphQLError] | None
+    extensions: dict[str, Any] | None = None
 
 
 @dataclasses.dataclass

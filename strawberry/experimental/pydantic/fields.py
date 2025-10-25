@@ -50,7 +50,7 @@ def replace_types_recursively(
     if isinstance(replaced_type, TypingGenericAlias):
         return TypingGenericAlias(origin, converted)
     if isinstance(replaced_type, UnionType):
-        return Union[converted]
+        return Union[converted]  # noqa: UP007
 
     # TODO: investigate if we could move the check for annotated to the top
     if origin is Annotated and converted:

@@ -5,7 +5,7 @@ import json
 from collections.abc import AsyncGenerator, Mapping, Sequence
 from datetime import timedelta
 from io import BytesIO
-from typing import Any, Literal, Optional, Union
+from typing import Any, Literal
 
 from starlette.requests import Request
 from starlette.responses import Response as StarletteResponse
@@ -42,13 +42,13 @@ class GraphQLView(OnWSConnectMixin, BaseGraphQLView[dict[str, object], object]):
     graphql_transport_ws_handler_class = DebuggableGraphQLTransportWSHandler
     graphql_ws_handler_class = DebuggableGraphQLWSHandler
 
-    async def get_root_value(self, request: Union[WebSocket, Request]) -> Query:
+    async def get_root_value(self, request: WebSocket | Request) -> Query:
         return Query()
 
     async def get_context(
         self,
-        request: Union[Request, WebSocket],
-        response: Union[StarletteResponse, WebSocket],
+        request: Request | WebSocket,
+        response: StarletteResponse | WebSocket,
     ) -> dict[str, object]:
         context = await super().get_context(request, response)
 
@@ -67,8 +67,8 @@ class AsgiHttpClient(HttpClient):
     def __init__(
         self,
         schema: Schema,
-        graphiql: Optional[bool] = None,
-        graphql_ide: Optional[GraphQL_IDE] = "graphiql",
+        graphiql: bool | None = None,
+        graphql_ide: GraphQL_IDE | None = "graphiql",
         allow_queries_via_get: bool = True,
         keep_alive: bool = False,
         keep_alive_interval: float = 1,
@@ -98,12 +98,12 @@ class AsgiHttpClient(HttpClient):
     async def _graphql_request(
         self,
         method: Literal["get", "post"],
-        query: Optional[str] = None,
-        operation_name: Optional[str] = None,
-        variables: Optional[dict[str, object]] = None,
-        files: Optional[dict[str, BytesIO]] = None,
-        headers: Optional[dict[str, str]] = None,
-        extensions: Optional[dict[str, Any]] = None,
+        query: str | None = None,
+        operation_name: str | None = None,
+        variables: dict[str, object] | None = None,
+        files: dict[str, BytesIO] | None = None,
+        headers: dict[str, str] | None = None,
+        extensions: dict[str, Any] | None = None,
         **kwargs: Any,
     ) -> Response:
         body = self._build_body(
@@ -142,7 +142,7 @@ class AsgiHttpClient(HttpClient):
         self,
         url: str,
         method: Literal["get", "post", "patch", "put", "delete"],
-        headers: Optional[dict[str, str]] = None,
+        headers: dict[str, str] | None = None,
     ) -> Response:
         response = getattr(self.client, method)(url, headers=headers)
 
@@ -155,16 +155,16 @@ class AsgiHttpClient(HttpClient):
     async def get(
         self,
         url: str,
-        headers: Optional[dict[str, str]] = None,
+        headers: dict[str, str] | None = None,
     ) -> Response:
         return await self.request(url, "get", headers=headers)
 
     async def post(
         self,
         url: str,
-        data: Optional[bytes] = None,
-        json: Optional[JSON] = None,
-        headers: Optional[dict[str, str]] = None,
+        data: bytes | None = None,
+        json: JSON | None = None,
+        headers: dict[str, str] | None = None,
     ) -> Response:
         response = self.client.post(url, headers=headers, content=data, json=json)
 
@@ -189,8 +189,8 @@ class AsgiWebSocketClient(WebSocketClient):
     def __init__(self, ws: WebSocketTestSession):
         self.ws = ws
         self._closed: bool = False
-        self._close_code: Optional[int] = None
-        self._close_reason: Optional[str] = None
+        self._close_code: int | None = None
+        self._close_reason: str | None = None
 
     async def send_text(self, payload: str) -> None:
         self.ws.send_text(payload)
@@ -201,7 +201,7 @@ class AsgiWebSocketClient(WebSocketClient):
     async def send_bytes(self, payload: bytes) -> None:
         self.ws.send_bytes(payload)
 
-    async def receive(self, timeout: Optional[float] = None) -> Message:
+    async def receive(self, timeout: float | None = None) -> Message:
         if self._closed:
             # if close was received via exception, fake it so that recv works
             return Message(
@@ -217,7 +217,7 @@ class AsgiWebSocketClient(WebSocketClient):
             return Message(type=m["type"], data=m["text"])
         return Message(type=m["type"], data=m["data"], extra=m["extra"])
 
-    async def receive_json(self, timeout: Optional[float] = None) -> Any:
+    async def receive_json(self, timeout: float | None = None) -> Any:
         m = self.ws.receive()
         assert m["type"] == "websocket.send"
         assert "text" in m
@@ -228,7 +228,7 @@ class AsgiWebSocketClient(WebSocketClient):
         self._closed = True
 
     @property
-    def accepted_subprotocol(self) -> Optional[str]:
+    def accepted_subprotocol(self) -> str | None:
         return self.ws.accepted_subprotocol
 
     @property
@@ -241,5 +241,5 @@ class AsgiWebSocketClient(WebSocketClient):
         return self._close_code
 
     @property
-    def close_reason(self) -> Optional[str]:
+    def close_reason(self) -> str | None:
         return self._close_reason

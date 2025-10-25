@@ -1,14 +1,11 @@
 from __future__ import annotations
 
 import re
-import typing
 import warnings
 from decimal import Decimal
 from typing import (
     TYPE_CHECKING,
     Any,
-    Optional,
-    Union,
     cast,
 )
 
@@ -56,7 +53,7 @@ try:
 except ImportError:
     TypeVarDef = TypeVarType
 
-PYDANTIC_VERSION: Optional[tuple[int, ...]] = None
+PYDANTIC_VERSION: tuple[int, ...] | None = None
 
 # To be compatible with user who don't use pydantic
 try:
@@ -242,7 +239,7 @@ def enum_hook(ctx: DynamicClassDefContext) -> None:
             )
             return
 
-    enum_type: Optional[Type]
+    enum_type: Type | None
 
     try:
         enum_type = _get_type_for_expr(first_argument, ctx.api)
@@ -290,7 +287,7 @@ def scalar_hook(ctx: DynamicClassDefContext) -> None:
             )
             return
 
-    scalar_type: Optional[Type]
+    scalar_type: Type | None
 
     # TODO: add proper support for NewType
 
@@ -315,12 +312,12 @@ def scalar_hook(ctx: DynamicClassDefContext) -> None:
 
 
 def add_static_method_to_class(
-    api: Union[SemanticAnalyzerPluginInterface, CheckerPluginInterface],
+    api: SemanticAnalyzerPluginInterface | CheckerPluginInterface,
     cls: ClassDef,
     name: str,
     args: list[Argument],
     return_type: Type,
-    tvar_def: Optional[TypeVarType] = None,
+    tvar_def: TypeVarType | None = None,
 ) -> None:
     """Adds a static method.
 
@@ -528,7 +525,7 @@ def strawberry_pydantic_class_callback(ctx: ClassDefContext) -> None:
 class StrawberryPlugin(Plugin):
     def get_dynamic_class_hook(
         self, fullname: str
-    ) -> Optional[Callable[[DynamicClassDefContext], None]]:
+    ) -> Callable[[DynamicClassDefContext], None] | None:
         # TODO: investigate why we need this instead of `strawberry.union.union` on CI
         # we have the same issue in the other hooks
         if self._is_strawberry_union(fullname):
@@ -545,7 +542,7 @@ class StrawberryPlugin(Plugin):
 
         return None
 
-    def get_type_analyze_hook(self, fullname: str) -> Union[Callable[..., Type], None]:
+    def get_type_analyze_hook(self, fullname: str) -> Callable[..., Type] | None:
         if self._is_strawberry_lazy_type(fullname):
             return lazy_type_analyze_callback
 
@@ -553,7 +550,7 @@ class StrawberryPlugin(Plugin):
 
     def get_class_decorator_hook(
         self, fullname: str
-    ) -> Optional[Callable[[ClassDefContext], None]]:
+    ) -> Callable[[ClassDefContext], None] | None:
         if self._is_strawberry_pydantic_decorator(fullname):
             return strawberry_pydantic_class_callback
 
@@ -614,7 +611,7 @@ class StrawberryPlugin(Plugin):
         )
 
 
-def plugin(version: str) -> typing.Type[StrawberryPlugin]:
+def plugin(version: str) -> type[StrawberryPlugin]:
     match = VERSION_RE.match(version)
     if match:
         MypyVersion.VERSION = Decimal(".".join(match.groups()))

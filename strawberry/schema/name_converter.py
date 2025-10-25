@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Optional, Union, cast
+from typing import TYPE_CHECKING, cast
 from typing_extensions import Protocol
 
 from strawberry.directive import StrawberryDirective
@@ -26,7 +26,7 @@ if TYPE_CHECKING:
 
 class HasGraphQLName(Protocol):
     python_name: str
-    graphql_name: Optional[str]
+    graphql_name: str | None
 
 
 class NameConverter:
@@ -41,7 +41,7 @@ class NameConverter:
 
     def from_type(
         self,
-        type_: Union[StrawberryType, StrawberryDirective],
+        type_: StrawberryType | StrawberryDirective,
     ) -> str:
         if isinstance(type_, (StrawberryDirective, StrawberrySchemaDirective)):
             return self.from_directive(type_)
@@ -85,7 +85,7 @@ class NameConverter:
         return enum_value.name
 
     def from_directive(
-        self, directive: Union[StrawberryDirective, StrawberrySchemaDirective]
+        self, directive: StrawberryDirective | StrawberrySchemaDirective
     ) -> str:
         name = self.get_graphql_name(directive)
 
@@ -134,7 +134,7 @@ class NameConverter:
     def from_generic(
         self,
         generic_type: StrawberryObjectDefinition,
-        types: list[Union[StrawberryType, type]],
+        types: list[StrawberryType | type],
     ) -> str:
         generic_type_name = generic_type.name
 
@@ -146,7 +146,7 @@ class NameConverter:
 
         return "".join(names) + generic_type_name
 
-    def get_name_from_type(self, type_: Union[StrawberryType, type]) -> str:
+    def get_name_from_type(self, type_: StrawberryType | type) -> str:
         type_ = eval_type(type_)
 
         if isinstance(type_, LazyType):

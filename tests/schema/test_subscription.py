@@ -6,7 +6,6 @@ from collections.abc import AsyncGenerator, AsyncIterable, AsyncIterator  # noqa
 from typing import (
     Annotated,
     Any,
-    Union,
 )
 
 import pytest
@@ -151,7 +150,7 @@ async def test_subscription_with_unions():
     @strawberry.type
     class Subscription:
         @strawberry.subscription
-        async def example_with_union(self) -> AsyncGenerator[Union[A, B], None]:
+        async def example_with_union(self) -> AsyncGenerator[A | B, None]:
             yield A(a="Hi")
 
     schema = strawberry.Schema(query=Query, subscription=Subscription)
@@ -188,9 +187,7 @@ async def test_subscription_with_unions_and_annotated():
         @strawberry.subscription
         async def example_with_annotated_union(
             self,
-        ) -> AsyncGenerator[
-            Annotated[Union[C, D], strawberry.union("UnionName")], None
-        ]:
+        ) -> AsyncGenerator[Annotated[C | D, strawberry.union("UnionName")], None]:
             yield C(c="Hi")
 
     schema = strawberry.Schema(query=Query, subscription=Subscription)

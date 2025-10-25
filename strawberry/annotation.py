@@ -11,7 +11,6 @@ from typing import (
     Annotated,
     Any,
     ForwardRef,
-    Optional,
     TypeVar,
     Union,
     cast,
@@ -61,14 +60,14 @@ class StrawberryAnnotation:
 
     def __init__(
         self,
-        annotation: Union[object, str],
+        annotation: object | str,
         *,
-        namespace: Optional[dict[str, Any]] = None,
+        namespace: dict[str, Any] | None = None,
     ) -> None:
         self.raw_annotation = annotation
         self.namespace = namespace
 
-        self.__resolve_cache__: Optional[Union[StrawberryType, type]] = None
+        self.__resolve_cache__: StrawberryType | type | None = None
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, StrawberryAnnotation):
@@ -81,8 +80,8 @@ class StrawberryAnnotation:
 
     @staticmethod
     def from_annotation(
-        annotation: object, namespace: Optional[dict[str, Any]] = None
-    ) -> Optional[StrawberryAnnotation]:
+        annotation: object, namespace: dict[str, Any] | None = None
+    ) -> StrawberryAnnotation | None:
         if annotation is None:
             return None
 
@@ -91,7 +90,7 @@ class StrawberryAnnotation:
         return annotation
 
     @property
-    def annotation(self) -> Union[object, str]:
+    def annotation(self) -> object | str:
         """Return evaluated type on success or fallback to raw (string) annotation."""
         try:
             return self.evaluate()
@@ -101,7 +100,7 @@ class StrawberryAnnotation:
             return self.raw_annotation
 
     @annotation.setter
-    def annotation(self, value: Union[object, str]) -> None:
+    def annotation(self, value: object | str) -> None:
         self.raw_annotation = value
 
         self.__resolve_cache__ = None
@@ -131,8 +130,8 @@ class StrawberryAnnotation:
     def resolve(
         self,
         *,
-        type_definition: Optional[StrawberryObjectDefinition] = None,
-    ) -> Union[StrawberryType, type]:
+        type_definition: StrawberryObjectDefinition | None = None,
+    ) -> StrawberryType | type:
         """Return resolved (transformed) annotation."""
         if (resolved := self.__resolve_cache__) is None:
             resolved = self._resolve()
@@ -161,11 +160,11 @@ class StrawberryAnnotation:
 
         return resolved
 
-    def _resolve(self) -> Union[StrawberryType, type]:
+    def _resolve(self) -> StrawberryType | type:
         evaled_type = cast("Any", self.evaluate())
         return self._resolve_evaled_type(evaled_type)
 
-    def _resolve_evaled_type(self, evaled_type: Any) -> Union[StrawberryType, type]:
+    def _resolve_evaled_type(self, evaled_type: Any) -> StrawberryType | type:
         if is_private(evaled_type):
             return evaled_type
 
@@ -247,7 +246,7 @@ class StrawberryAnnotation:
         # passed as we can safely use `Union` for both optional types
         # (e.g. `Optional[str]`) and optional unions (e.g.
         # `Optional[Union[TypeA, TypeB]]`)
-        child_type = Union[non_optional_types]  # type: ignore
+        child_type = Union[non_optional_types]  # type: ignore  # noqa: UP007
 
         of_type = StrawberryAnnotation(
             annotation=child_type,
@@ -324,7 +323,7 @@ class StrawberryAnnotation:
         return issubclass(annotation, Enum)
 
     @classmethod
-    def _is_type_generic(cls, type_: Union[StrawberryType, type]) -> bool:
+    def _is_type_generic(cls, type_: StrawberryType | type) -> bool:
         """Returns True if `resolver_type` is generic else False."""
         from strawberry.types.base import StrawberryType
 

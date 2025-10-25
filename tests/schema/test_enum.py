@@ -1,7 +1,6 @@
-import typing
 from enum import Enum
 from textwrap import dedent
-from typing import Annotated, Optional
+from typing import Annotated
 
 import pytest
 
@@ -129,7 +128,7 @@ def test_enum_falsy_values():
     @strawberry.input
     class Input:
         flavour: IceCreamFlavour
-        optional_flavour: typing.Optional[IceCreamFlavour] = None
+        optional_flavour: IceCreamFlavour | None = None
 
     @strawberry.type
     class Query:
@@ -187,7 +186,7 @@ def test_enum_in_optional_list():
     @strawberry.type
     class Query:
         @strawberry.field
-        def best_flavours(self) -> Optional[list[IceCreamFlavour]]:
+        def best_flavours(self) -> list[IceCreamFlavour] | None:
             return None
 
     schema = strawberry.Schema(query=Query)

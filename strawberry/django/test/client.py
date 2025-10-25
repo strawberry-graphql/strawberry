@@ -1,4 +1,4 @@
-from typing import Any, Optional
+from typing import Any
 
 from strawberry.test import BaseGraphQLTestClient
 
@@ -7,8 +7,8 @@ class GraphQLTestClient(BaseGraphQLTestClient):
     def request(
         self,
         body: dict[str, object],
-        headers: Optional[dict[str, object]] = None,
-        files: Optional[dict[str, object]] = None,
+        headers: dict[str, object] | None = None,
+        files: dict[str, object] | None = None,
     ) -> Any:
         if files:
             return self._client.post(

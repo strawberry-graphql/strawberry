@@ -1,5 +1,5 @@
 from enum import Enum, auto
-from typing import Annotated, Union, cast
+from typing import Annotated, cast
 
 from graphql import (
     DirectiveLocation,
@@ -140,7 +140,7 @@ def test_union():
     class StrThing:
         value: str
 
-    SomeThing = Annotated[Union[JsonThing, StrThing], strawberry.union("SomeThing")]
+    SomeThing = Annotated[JsonThing | StrThing, strawberry.union("SomeThing")]
 
     @strawberry.type()
     class Query:

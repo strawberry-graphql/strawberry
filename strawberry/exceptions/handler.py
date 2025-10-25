@@ -3,7 +3,7 @@ import sys
 import threading
 from collections.abc import Callable
 from types import TracebackType
-from typing import Any, Optional, cast
+from typing import Any, cast
 
 from .exception import StrawberryException, UnableToFindExceptionSource
 
@@ -11,7 +11,7 @@ original_threading_exception_hook = threading.excepthook
 
 
 ExceptionHandler = Callable[
-    [type[BaseException], BaseException, Optional[TracebackType]], None
+    [type[BaseException], BaseException, TracebackType | None], None
 ]
 
 
@@ -32,7 +32,7 @@ def _get_handler(exception_type: type[BaseException]) -> ExceptionHandler:
             def _handler(
                 exception_type: type[BaseException],
                 exception: BaseException,
-                traceback: Optional[TracebackType],
+                traceback: TracebackType | None,
             ) -> None:
                 try:
                     rich.print(exception)
@@ -50,7 +50,7 @@ def _get_handler(exception_type: type[BaseException]) -> ExceptionHandler:
 def strawberry_exception_handler(
     exception_type: type[BaseException],
     exception: BaseException,
-    traceback: Optional[TracebackType],
+    traceback: TracebackType | None,
 ) -> None:
     _get_handler(exception_type)(exception_type, exception, traceback)
 
@@ -58,9 +58,9 @@ def strawberry_exception_handler(
 def strawberry_threading_exception_handler(
     args: tuple[
         type[BaseException],
-        Optional[BaseException],
-        Optional[TracebackType],
-        Optional[threading.Thread],
+        BaseException | None,
+        TracebackType | None,
+        threading.Thread | None,
     ],
 ) -> None:
     (exception_type, exception, traceback, _) = args

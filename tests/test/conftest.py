@@ -17,6 +17,7 @@ async def aiohttp_graphql_client() -> AsyncGenerator[BaseGraphQLTestClient]:
     try:
         from aiohttp import web
         from aiohttp.test_utils import TestClient, TestServer
+
         from strawberry.aiohttp.test import GraphQLTestClient
         from strawberry.aiohttp.views import GraphQLView
     except ImportError:

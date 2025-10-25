@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import copy
 import dataclasses
-from typing import TYPE_CHECKING, Any, Union, cast
+from typing import TYPE_CHECKING, Any, cast
 
 from strawberry.types.base import (
     StrawberryList,
@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 
 
 def _convert_from_pydantic_to_strawberry_type(
-    type_: Union[StrawberryType, type],
+    type_: StrawberryType | type,
     data_from_model=None,  # noqa: ANN001
     extra=None,  # noqa: ANN001
 ) -> Any:

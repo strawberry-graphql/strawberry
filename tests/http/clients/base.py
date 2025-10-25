@@ -31,14 +31,14 @@ ResultOverrideFunction = Optional[Callable[[ExecutionResult], GraphQLHTTPRespons
 @dataclass
 class Response:
     status_code: int
-    data: Union[bytes, AsyncIterable[bytes]]
+    data: bytes | AsyncIterable[bytes]
 
     def __init__(
         self,
         status_code: int,
-        data: Union[bytes, AsyncIterable[bytes]],
+        data: bytes | AsyncIterable[bytes],
         *,
-        headers: Optional[dict[str, str]] = None,
+        headers: dict[str, str] | None = None,
     ) -> None:
         self.status_code = status_code
         self.data = data
@@ -66,7 +66,7 @@ class Response:
         if not self.is_multipart:
             raise ValueError("Streaming not supported")
 
-        def parse_chunk(text: str) -> Union[JSON, None]:
+        def parse_chunk(text: str) -> JSON | None:
             # TODO: better parsing? :)
             with contextlib.suppress(json.JSONDecodeError):
                 return json.loads(text)
@@ -99,8 +99,8 @@ class HttpClient(abc.ABC):
     def __init__(
         self,
         schema: Schema,
-        graphiql: Optional[bool] = None,
-        graphql_ide: Optional[GraphQL_IDE] = "graphiql",
+        graphiql: bool | None = None,
+        graphql_ide: GraphQL_IDE | None = "graphiql",
         allow_queries_via_get: bool = True,
         keep_alive: bool = False,
         keep_alive_interval: float = 1,
@@ -114,12 +114,12 @@ class HttpClient(abc.ABC):
     async def _graphql_request(
         self,
         method: Literal["get", "post"],
-        query: Optional[str] = None,
-        operation_name: Optional[str] = None,
-        variables: Optional[dict[str, object]] = None,
-        files: Optional[dict[str, BytesIO]] = None,
-        headers: Optional[dict[str, str]] = None,
-        extensions: Optional[dict[str, Any]] = None,
+        query: str | None = None,
+        operation_name: str | None = None,
+        variables: dict[str, object] | None = None,
+        files: dict[str, BytesIO] | None = None,
+        headers: dict[str, str] | None = None,
+        extensions: dict[str, Any] | None = None,
         **kwargs: Any,
     ) -> Response: ...
 
@@ -128,34 +128,34 @@ class HttpClient(abc.ABC):
         self,
         url: str,
         method: Literal["head", "get", "post", "patch", "put", "delete"],
-        headers: Optional[dict[str, str]] = None,
+        headers: dict[str, str] | None = None,
     ) -> Response: ...
 
     @abc.abstractmethod
     async def get(
         self,
         url: str,
-        headers: Optional[dict[str, str]] = None,
+        headers: dict[str, str] | None = None,
     ) -> Response: ...
 
     @abc.abstractmethod
     async def post(
         self,
         url: str,
-        data: Optional[bytes] = None,
-        json: Optional[JSON] = None,
-        headers: Optional[dict[str, str]] = None,
+        data: bytes | None = None,
+        json: JSON | None = None,
+        headers: dict[str, str] | None = None,
     ) -> Response: ...
 
     async def query(
         self,
         query: str,
         method: Literal["get", "post"] = "post",
-        operation_name: Optional[str] = None,
-        variables: Optional[dict[str, object]] = None,
-        files: Optional[dict[str, BytesIO]] = None,
-        headers: Optional[dict[str, str]] = None,
-        extensions: Optional[dict[str, Any]] = None,
+        operation_name: str | None = None,
+        variables: dict[str, object] | None = None,
+        files: dict[str, BytesIO] | None = None,
+        headers: dict[str, str] | None = None,
+        extensions: dict[str, Any] | None = None,
     ) -> Response:
         return await self._graphql_request(
             method,
@@ -170,8 +170,8 @@ class HttpClient(abc.ABC):
     def _get_headers(
         self,
         method: Literal["get", "post"],
-        headers: Optional[dict[str, str]],
-        files: Optional[dict[str, BytesIO]],
+        headers: dict[str, str] | None,
+        files: dict[str, BytesIO] | None,
     ) -> dict[str, str]:
         additional_headers = {}
         headers = headers or {}
@@ -188,13 +188,13 @@ class HttpClient(abc.ABC):
 
     def _build_body(
         self,
-        query: Optional[str] = None,
-        operation_name: Optional[str] = None,
-        variables: Optional[dict[str, object]] = None,
-        files: Optional[dict[str, BytesIO]] = None,
+        query: str | None = None,
+        operation_name: str | None = None,
+        variables: dict[str, object] | None = None,
+        files: dict[str, BytesIO] | None = None,
         method: Literal["get", "post"] = "post",
-        extensions: Optional[dict[str, Any]] = None,
-    ) -> Optional[dict[str, object]]:
+        extensions: dict[str, Any] | None = None,
+    ) -> dict[str, object] | None:
         if query is None:
             assert files is None
             assert variables is None
@@ -271,7 +271,7 @@ class HttpClient(abc.ABC):
 class Message:
     type: Any
     data: Any
-    extra: Optional[str] = None
+    extra: str | None = None
 
     def json(self) -> Any:
         return json.loads(self.data)
@@ -291,17 +291,17 @@ class WebSocketClient(abc.ABC):
     async def send_bytes(self, payload: bytes) -> None: ...
 
     @abc.abstractmethod
-    async def receive(self, timeout: Optional[float] = None) -> Message: ...
+    async def receive(self, timeout: float | None = None) -> Message: ...
 
     @abc.abstractmethod
-    async def receive_json(self, timeout: Optional[float] = None) -> Any: ...
+    async def receive_json(self, timeout: float | None = None) -> Any: ...
 
     @abc.abstractmethod
     async def close(self) -> None: ...
 
     @property
     @abc.abstractmethod
-    def accepted_subprotocol(self) -> Optional[str]: ...
+    def accepted_subprotocol(self) -> str | None: ...
 
     @property
     @abc.abstractmethod
@@ -313,7 +313,7 @@ class WebSocketClient(abc.ABC):
 
     @property
     @abc.abstractmethod
-    def close_reason(self) -> Optional[str]: ...
+    def close_reason(self) -> str | None: ...
 
     async def __aiter__(self) -> AsyncGenerator[Message, None]:
         while not self.closed:

@@ -1,5 +1,3 @@
-from typing import Optional
-
 import strawberry
 
 
@@ -24,7 +22,7 @@ def test_of_optional():
     @strawberry.type
     class Query:
         @strawberry.field
-        def example(self) -> list[Optional[str]]:
+        def example(self) -> list[str | None]:
             return ["Example", None]
 
     schema = strawberry.Schema(query=Query)

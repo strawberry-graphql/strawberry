@@ -6,14 +6,12 @@ from datetime import timedelta
 from json.decoder import JSONDecodeError
 from typing import (
     TYPE_CHECKING,
-    Optional,
     TypeGuard,
-    Union,
 )
 
+from aiohttp import ClientConnectionResetError, http, web
 from lia import AiohttpHTTPRequestAdapter, HTTPException
 
-from aiohttp import ClientConnectionResetError, http, web
 from strawberry.http.async_base_view import (
     AsyncBaseHTTPView,
     AsyncWebSocketAdapter,
@@ -72,7 +70,7 @@ class AiohttpWebSocketAdapter(AsyncWebSocketAdapter):
 class GraphQLView(
     AsyncBaseHTTPView[
         web.Request,
-        Union[web.Response, web.StreamResponse],
+        web.Response | web.StreamResponse,
         web.Response,
         web.Request,
         web.WebSocketResponse,
@@ -91,8 +89,8 @@ class GraphQLView(
     def __init__(
         self,
         schema: BaseSchema,
-        graphiql: Optional[bool] = None,
-        graphql_ide: Optional[GraphQL_IDE] = "graphiql",
+        graphiql: bool | None = None,
+        graphql_ide: GraphQL_IDE | None = "graphiql",
         allow_queries_via_get: bool = True,
         keep_alive: bool = True,
         keep_alive_interval: float = 1,
@@ -131,12 +129,12 @@ class GraphQLView(
         ws = web.WebSocketResponse(protocols=self.subscription_protocols)
         return ws.can_prepare(request).ok
 
-    async def pick_websocket_subprotocol(self, request: web.Request) -> Optional[str]:
+    async def pick_websocket_subprotocol(self, request: web.Request) -> str | None:
         ws = web.WebSocketResponse(protocols=self.subscription_protocols)
         return ws.can_prepare(request).protocol
 
     async def create_websocket_response(
-        self, request: web.Request, subprotocol: Optional[str]
+        self, request: web.Request, subprotocol: str | None
     ) -> web.WebSocketResponse:
         protocols = [subprotocol] if subprotocol else []
         ws = web.WebSocketResponse(protocols=protocols)
@@ -152,17 +150,17 @@ class GraphQLView(
                 status=e.status_code,
             )
 
-    async def get_root_value(self, request: web.Request) -> Optional[RootValue]:
+    async def get_root_value(self, request: web.Request) -> RootValue | None:
         return None
 
     async def get_context(
-        self, request: web.Request, response: Union[web.Response, web.WebSocketResponse]
+        self, request: web.Request, response: web.Response | web.WebSocketResponse
     ) -> Context:
         return {"request": request, "response": response}  # type: ignore
 
     def create_response(
         self,
-        response_data: Union[GraphQLHTTPResponse, list[GraphQLHTTPResponse]],
+        response_data: GraphQLHTTPResponse | list[GraphQLHTTPResponse],
         sub_response: web.Response,
     ) -> web.Response:
         sub_response.text = self.encode_json(response_data)

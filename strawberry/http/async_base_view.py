@@ -8,9 +8,7 @@ from typing import (
     Any,
     Generic,
     Literal,
-    Optional,
     TypeGuard,
-    Union,
     cast,
     overload,
 )
@@ -86,9 +84,9 @@ class AsyncBaseHTTPView(
     ],
 ):
     schema: BaseSchema
-    graphql_ide: Optional[GraphQL_IDE]
+    graphql_ide: GraphQL_IDE | None
     keep_alive = False
-    keep_alive_interval: Optional[float] = None
+    keep_alive_interval: float | None = None
     connection_init_wait_timeout: timedelta = timedelta(minutes=1)
     request_adapter_class: Callable[[Request], AsyncHTTPRequestAdapter]
     websocket_adapter_class: Callable[
@@ -116,19 +114,19 @@ class AsyncBaseHTTPView(
     @abc.abstractmethod
     async def get_context(
         self,
-        request: Union[Request, WebSocketRequest],
-        response: Union[SubResponse, WebSocketResponse],
+        request: Request | WebSocketRequest,
+        response: SubResponse | WebSocketResponse,
     ) -> Context: ...
 
     @abc.abstractmethod
     async def get_root_value(
-        self, request: Union[Request, WebSocketRequest]
-    ) -> Optional[RootValue]: ...
+        self, request: Request | WebSocketRequest
+    ) -> RootValue | None: ...
 
     @abc.abstractmethod
     def create_response(
         self,
-        response_data: Union[GraphQLHTTPResponse, list[GraphQLHTTPResponse]],
+        response_data: GraphQLHTTPResponse | list[GraphQLHTTPResponse],
         sub_response: SubResponse,
     ) -> Response: ...
 
@@ -146,26 +144,26 @@ class AsyncBaseHTTPView(
 
     @abc.abstractmethod
     def is_websocket_request(
-        self, request: Union[Request, WebSocketRequest]
+        self, request: Request | WebSocketRequest
     ) -> TypeGuard[WebSocketRequest]: ...
 
     @abc.abstractmethod
     async def pick_websocket_subprotocol(
         self, request: WebSocketRequest
-    ) -> Optional[str]: ...
+    ) -> str | None: ...
 
     @abc.abstractmethod
     async def create_websocket_response(
-        self, request: WebSocketRequest, subprotocol: Optional[str]
+        self, request: WebSocketRequest, subprotocol: str | None
     ) -> WebSocketResponse: ...
 
     async def execute_operation(
         self,
         request: Request,
         context: Context,
-        root_value: Optional[RootValue],
+        root_value: RootValue | None,
         sub_response: SubResponse,
-    ) -> Union[ExecutionResult, list[ExecutionResult], SubscriptionExecutionResult]:
+    ) -> ExecutionResult | list[ExecutionResult] | SubscriptionExecutionResult:
         request_adapter = self.request_adapter_class(request)
 
         try:
@@ -222,7 +220,7 @@ class AsyncBaseHTTPView(
         request_adapter: AsyncHTTPRequestAdapter,
         sub_response: SubResponse,
         context: Context,
-        root_value: Optional[RootValue],
+        root_value: RootValue | None,
         request_data: GraphQLRequestData,
     ) -> ExecutionResult:
         allowed_operation_types = OperationType.from_http(request_adapter.method)
@@ -282,7 +280,7 @@ class AsyncBaseHTTPView(
         self,
         request: Request,
         context: Context = UNSET,
-        root_value: Optional[RootValue] = UNSET,
+        root_value: RootValue | None = UNSET,
     ) -> Response: ...
 
     @overload
@@ -290,15 +288,15 @@ class AsyncBaseHTTPView(
         self,
         request: WebSocketRequest,
         context: Context = UNSET,
-        root_value: Optional[RootValue] = UNSET,
+        root_value: RootValue | None = UNSET,
     ) -> WebSocketResponse: ...
 
     async def run(
         self,
-        request: Union[Request, WebSocketRequest],
+        request: Request | WebSocketRequest,
         context: Context = UNSET,
-        root_value: Optional[RootValue] = UNSET,
-    ) -> Union[Response, WebSocketResponse]:
+        root_value: RootValue | None = UNSET,
+    ) -> Response | WebSocketResponse:
         root_value = (
             await self.get_root_value(request) if root_value is UNSET else root_value
         )
@@ -446,7 +444,7 @@ class AsyncBaseHTTPView(
                 },
             )
 
-        response_data: Union[GraphQLHTTPResponse, list[GraphQLHTTPResponse]]
+        response_data: GraphQLHTTPResponse | list[GraphQLHTTPResponse]
 
         if isinstance(result, list):
             response_data = []
@@ -617,7 +615,7 @@ class AsyncBaseHTTPView(
 
     async def parse_http_body(
         self, request: AsyncHTTPRequestAdapter
-    ) -> Union[GraphQLRequestData, list[GraphQLRequestData]]:
+    ) -> GraphQLRequestData | list[GraphQLRequestData]:
         headers = {key.lower(): value for key, value in request.headers.items()}
         content_type, _ = parse_content_type(request.content_type or "")
         accept = headers.get("accept", "")
@@ -686,7 +684,7 @@ class AsyncBaseHTTPView(
 
     async def on_ws_connect(
         self, context: Context
-    ) -> Union[UnsetType, None, dict[str, object]]:
+    ) -> UnsetType | None | dict[str, object]:
         return UNSET
 
 

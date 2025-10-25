@@ -12,9 +12,9 @@ from strawberry.utils.deprecations import DEPRECATION_MESSAGES, DeprecatedDescri
 class EnumValue:
     name: str
     value: Any
-    deprecation_reason: Optional[str] = None
+    deprecation_reason: str | None = None
     directives: Iterable[object] = ()
-    description: Optional[str] = None
+    description: str | None = None
 
 
 @dataclasses.dataclass
@@ -22,7 +22,7 @@ class StrawberryEnum(StrawberryType):
     wrapped_cls: EnumMeta
     name: str
     values: list[EnumValue]
-    description: Optional[str]
+    description: str | None
     directives: Iterable[object] = ()
 
     def __hash__(self) -> int:
@@ -30,8 +30,8 @@ class StrawberryEnum(StrawberryType):
         return hash(self.name)
 
     def copy_with(
-        self, type_var_map: Mapping[str, Union[StrawberryType, type]]
-    ) -> Union[StrawberryType, type]:
+        self, type_var_map: Mapping[str, StrawberryType | type]
+    ) -> StrawberryType | type:
         # enum don't support type parameters, so we can safely return self
         return self
 
@@ -48,10 +48,10 @@ class StrawberryEnum(StrawberryType):
 @dataclasses.dataclass
 class EnumValueDefinition:
     value: Any
-    graphql_name: Optional[str] = None
-    deprecation_reason: Optional[str] = None
+    graphql_name: str | None = None
+    deprecation_reason: str | None = None
     directives: Iterable[object] = ()
-    description: Optional[str] = None
+    description: str | None = None
 
     def __int__(self) -> int:
         return self.value
@@ -59,10 +59,10 @@ class EnumValueDefinition:
 
 def enum_value(
     value: Any,
-    name: Optional[str] = None,
-    deprecation_reason: Optional[str] = None,
+    name: str | None = None,
+    deprecation_reason: str | None = None,
     directives: Iterable[object] = (),
-    description: Optional[str] = None,
+    description: str | None = None,
 ) -> EnumValueDefinition:
     """Function to customise an enum value, for example to add a description or deprecation reason.
 
@@ -103,8 +103,8 @@ EnumType = TypeVar("EnumType", bound=EnumMeta)
 
 def _process_enum(
     cls: EnumType,
-    name: Optional[str] = None,
-    description: Optional[str] = None,
+    name: str | None = None,
+    description: str | None = None,
     directives: Iterable[object] = (),
 ) -> EnumType:
     if not isinstance(cls, EnumMeta):
@@ -167,8 +167,8 @@ def _process_enum(
 def enum(
     cls: EnumType,
     *,
-    name: Optional[str] = None,
-    description: Optional[str] = None,
+    name: str | None = None,
+    description: str | None = None,
     directives: Iterable[object] = (),
 ) -> EnumType: ...
 
@@ -177,19 +177,19 @@ def enum(
 def enum(
     cls: None = None,
     *,
-    name: Optional[str] = None,
-    description: Optional[str] = None,
+    name: str | None = None,
+    description: str | None = None,
     directives: Iterable[object] = (),
 ) -> Callable[[EnumType], EnumType]: ...
 
 
 def enum(
-    cls: Optional[EnumType] = None,
+    cls: EnumType | None = None,
     *,
-    name: Optional[str] = None,
-    description: Optional[str] = None,
+    name: str | None = None,
+    description: str | None = None,
     directives: Iterable[object] = (),
-) -> Union[EnumType, Callable[[EnumType], EnumType]]:
+) -> EnumType | Callable[[EnumType], EnumType]:
     """Annotates an Enum class a GraphQL enum.
 
     GraphQL enums only have names, while Python enums have names and values,
