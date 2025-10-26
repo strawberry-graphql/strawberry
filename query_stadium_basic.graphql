@@ -1,0 +1,8 @@
+
+            {
+                stadium(name: "Test Stadium") {
+                    name
+                    city
+                    country
+                }
+            }

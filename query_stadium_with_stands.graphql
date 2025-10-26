@@ -1,0 +1,12 @@
+
+            {
+                stadium {
+                    name
+                    city
+                    stands {
+                        name
+                        sectionType
+                        priceCategory
+                    }
+                }
+            }

@@ -1,0 +1,18 @@
+
+            {
+                stadium {
+                    name
+                    city
+                    country
+                    stands {
+                        name
+                        sectionType
+                        priceCategory
+                        seats {
+                            x
+                            y
+                            labels
+                        }
+                    }
+                }
+            }

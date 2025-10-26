@@ -1,0 +1,24 @@
+type Query {
+  hello: String!
+  stadium(name: String! = "Grand Stadium"): Stadium!
+}
+
+type Seat {
+  x: Int!
+  y: Int!
+  labels: [String!]!
+}
+
+type Stadium {
+  name: String!
+  city: String!
+  country: String!
+  stands: [Stand!]!
+}
+
+type Stand {
+  name: String!
+  seats: [Seat!]!
+  sectionType: String!
+  priceCategory: String!
+}

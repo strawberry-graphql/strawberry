@@ -1,0 +1,23 @@
+[package]
+name = "strawberry-core-rs"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "strawberry_core_rs"
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+pyo3 = { version = "0.20", features = ["extension-module"] }
+apollo-compiler = "1.0"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+[[bin]]
+name = "test_execution"
+path = "src/bin/test_execution.rs"
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
