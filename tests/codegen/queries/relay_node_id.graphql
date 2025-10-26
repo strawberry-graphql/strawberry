@@ -1,8 +1,0 @@
-query GetNodeWithID {
-  node {
-    id
-    ... on User {
-      name
-    }
-  }
-}
