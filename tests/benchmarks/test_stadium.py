@@ -7,7 +7,6 @@ seat objects across multiple stands, each with multiple labels and coordinates.
 
 import asyncio
 from pathlib import Path
-from typing import List
 
 import pytest
 from pytest_codspeed.plugin import BenchmarkFixture
@@ -19,13 +18,13 @@ import strawberry
 class Seat:
     x: int
     y: int
-    labels: List[str]
+    labels: list[str]
 
 
 @strawberry.type
 class Stand:
     name: str
-    seats: List[Seat]
+    seats: list[Seat]
     section_type: str
     price_category: str
 
@@ -35,7 +34,7 @@ class Stadium:
     name: str
     city: str
     country: str
-    stands: List[Stand]
+    stands: list[Stand]
 
 
 def generate_seats_for_stand(
@@ -45,7 +44,7 @@ def generate_seats_for_stand(
     x_offset: int,
     y_offset: int,
     section_type: str,
-) -> List[Seat]:
+) -> list[Seat]:
     """Generate seats for a stand with proper coordinates and labels."""
     seats = []
 
