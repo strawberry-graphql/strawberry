@@ -36,7 +36,7 @@ def is_scalar(
     return is_strawberry_scalar(type_, scalar_registry)
 
 
-def is_enum(type_: Union[StrawberryType, type]) -> TypeGuard[type]:
+def is_enum(type_: StrawberryType | type) -> TypeGuard[type]:
     if hasattr(type_, "__strawberry_definition__"):
         return isinstance(type_.__strawberry_definition__, StrawberryEnum)
 
