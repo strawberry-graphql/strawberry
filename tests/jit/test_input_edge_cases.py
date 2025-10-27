@@ -177,8 +177,8 @@ def test_enum_input():
     compiled_fn = compile_query(schema, query)
     result = compiled_fn(Mutation(), variables=variables)
 
-    assert result["createTask"]["title"] == "Urgent Task"
-    assert result["createTask"]["priority"] == "URGENT"
+    assert result["data"]["createTask"]["title"] == "Urgent Task"
+    assert result["data"]["createTask"]["priority"] == "URGENT"
 
     print("✅ Enum input works")
 
@@ -237,13 +237,13 @@ def test_deeply_nested_input():
     compiled_fn = compile_query(schema, query)
     result = compiled_fn(Mutation(), variables=variables)
 
-    assert result["createTask"]["title"] == "Complex Task"
-    assert len(result["createTask"]["tags"]) == 2
-    assert result["createTask"]["tags"][0]["name"] == "frontend"
-    assert result["createTask"]["tags"][0]["metadata"][0]["key"] == "framework"
-    assert result["createTask"]["tags"][0]["metadata"][0]["value"] == "react"
-    assert len(result["createTask"]["metadata"]) == 2
-    assert result["createTask"]["metadata"][1]["value"] == "42"
+    assert result["data"]["createTask"]["title"] == "Complex Task"
+    assert len(result["data"]["createTask"]["tags"]) == 2
+    assert result["data"]["createTask"]["tags"][0]["name"] == "frontend"
+    assert result["data"]["createTask"]["tags"][0]["metadata"][0]["key"] == "framework"
+    assert result["data"]["createTask"]["tags"][0]["metadata"][0]["value"] == "react"
+    assert len(result["data"]["createTask"]["metadata"]) == 2
+    assert result["data"]["createTask"]["metadata"][1]["value"] == "42"
 
     print("✅ Deeply nested input works")
 
@@ -282,11 +282,11 @@ def test_list_of_input_objects():
     compiled_fn = compile_query(schema, query)
     result = compiled_fn(Mutation(), variables=variables)
 
-    assert result["createBulkTasks"]["totalCount"] == 3
-    assert result["createBulkTasks"]["success"] is True
-    assert result["createBulkTasks"]["createdTasks"][0]["priority"] == "HIGH"
+    assert result["data"]["createBulkTasks"]["totalCount"] == 3
+    assert result["data"]["createBulkTasks"]["success"] is True
+    assert result["data"]["createBulkTasks"]["createdTasks"][0]["priority"] == "HIGH"
     assert (
-        result["createBulkTasks"]["createdTasks"][2]["priority"] == "URGENT"
+        result["data"]["createBulkTasks"]["createdTasks"][2]["priority"] == "URGENT"
     )  # Default applied
 
     print("✅ List of input objects works")
@@ -314,8 +314,8 @@ def test_boolean_and_float_inputs():
     compiled_fn = compile_query(schema, query)
     result = compiled_fn(Mutation(), variables=variables)
 
-    assert result["createTask"]["isActive"] is False
-    assert result["createTask"]["estimatedHours"] == 3.5
+    assert result["data"]["createTask"]["isActive"] is False
+    assert result["data"]["createTask"]["estimatedHours"] == 3.5
 
     print("✅ Boolean and float inputs work")
 
@@ -339,15 +339,15 @@ def test_null_vs_undefined_inputs():
     compiled_fn = compile_query(schema, query)
     result = compiled_fn(Mutation(), variables=variables)
 
-    assert result["createTask"]["title"] == "Task with null description"
-    assert result["createTask"]["description"] is None
+    assert result["data"]["createTask"]["title"] == "Task with null description"
+    assert result["data"]["createTask"]["description"] is None
 
     # Test with undefined description (not in variables)
     variables = {"title": "Task with undefined description"}
 
     result = compiled_fn(Mutation(), variables=variables)
-    assert result["createTask"]["title"] == "Task with undefined description"
-    assert result["createTask"]["description"] is None
+    assert result["data"]["createTask"]["title"] == "Task with undefined description"
+    assert result["data"]["createTask"]["description"] is None
 
     print("✅ Null vs undefined inputs work")
 
@@ -384,11 +384,11 @@ def test_mixed_inline_and_variable_inputs():
     compiled_fn = compile_query(schema, query)
     result = compiled_fn(Mutation(), variables=variables)
 
-    assert result["createTask"]["title"] == "Mixed Input Task"
-    assert result["createTask"]["priority"] == "HIGH"
-    assert result["createTask"]["isActive"] is True
-    assert len(result["createTask"]["tags"]) == 2
-    assert result["createTask"]["estimatedHours"] == 5.0
+    assert result["data"]["createTask"]["title"] == "Mixed Input Task"
+    assert result["data"]["createTask"]["priority"] == "HIGH"
+    assert result["data"]["createTask"]["isActive"] is True
+    assert len(result["data"]["createTask"]["tags"]) == 2
+    assert result["data"]["createTask"]["estimatedHours"] == 5.0
 
     print("✅ Mixed inline and variable inputs work")
 
@@ -416,9 +416,9 @@ def test_empty_list_inputs():
     compiled_fn = compile_query(schema, query)
     result = compiled_fn(Mutation(), variables=variables)
 
-    assert result["createTask"]["title"] == "Task with empty lists"
-    assert result["createTask"]["tags"] == []
-    assert result["createTask"]["assigneeIds"] == []
+    assert result["data"]["createTask"]["title"] == "Task with empty lists"
+    assert result["data"]["createTask"]["tags"] == []
+    assert result["data"]["createTask"]["assigneeIds"] == []
 
     print("✅ Empty list inputs work")
 

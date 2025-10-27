@@ -6,6 +6,7 @@ import pytest
 from graphql import execute, parse
 
 from strawberry.jit import compile_query
+from tests.jit.conftest import assert_jit_results_match
 
 
 @pytest.mark.asyncio
@@ -27,8 +28,8 @@ async def test_async_simple_field(jit_schema, query_type):
     standard_result = await execute(schema._schema, parse(query), root_value=query_type)
 
     # Verify results match
-    assert jit_result == standard_result.data
-    assert jit_result["asyncHello"] == "Hello GraphQL"
+    assert_jit_results_match(jit_result, standard_result)
+    assert jit_result["data"]["asyncHello"] == "Hello GraphQL"
 
 
 @pytest.mark.asyncio
@@ -59,10 +60,10 @@ async def test_async_nested_fields(jit_schema, query_type):
     standard_result = await execute(schema._schema, parse(query), root_value=query_type)
 
     # Verify results match
-    assert jit_result == standard_result.data
-    assert len(jit_result["asyncPosts"]) == 2
-    assert jit_result["asyncPosts"][0]["author"]["bio"] == "Bio of Alice"
-    assert jit_result["asyncPosts"][0]["viewCount"] == 0
+    assert_jit_results_match(jit_result, standard_result)
+    assert len(jit_result["data"]["asyncPosts"]) == 2
+    assert jit_result["data"]["asyncPosts"][0]["author"]["bio"] == "Bio of Alice"
+    assert jit_result["data"]["asyncPosts"][0]["viewCount"] == 0
 
 
 @pytest.mark.asyncio
@@ -105,12 +106,12 @@ async def test_mixed_sync_async_fields(jit_schema, query_type):
     standard_result = await execute(schema._schema, parse(query), root_value=query_type)
 
     # Verify results match
-    assert jit_result == standard_result.data
-    assert jit_result["asyncPosts"][0]["syncAuthor"]["id"] == "a1"
-    assert jit_result["asyncPosts"][0]["author"]["bio"] == "Bio of Alice"
-    assert len(jit_result["asyncPosts"][0]["asyncComments"]) <= 2
-    if jit_result["asyncPosts"][0]["asyncComments"]:
-        assert jit_result["asyncPosts"][0]["asyncComments"][0]["likes"] == 42
+    assert_jit_results_match(jit_result, standard_result)
+    assert jit_result["data"]["asyncPosts"][0]["syncAuthor"]["id"] == "a1"
+    assert jit_result["data"]["asyncPosts"][0]["author"]["bio"] == "Bio of Alice"
+    assert len(jit_result["data"]["asyncPosts"][0]["asyncComments"]) <= 2
+    if jit_result["data"]["asyncPosts"][0]["asyncComments"]:
+        assert jit_result["data"]["asyncPosts"][0]["asyncComments"][0]["likes"] == 42
 
 
 @pytest.mark.asyncio
@@ -140,10 +141,10 @@ async def test_async_with_list_fields(jit_schema, query_type):
     standard_result = await execute(schema._schema, parse(query), root_value=query_type)
 
     # Verify results match
-    assert jit_result == standard_result.data
-    assert len(jit_result["asyncPosts"]) == 2
+    assert_jit_results_match(jit_result, standard_result)
+    assert len(jit_result["data"]["asyncPosts"]) == 2
     # Check that async fields work properly
-    for post in jit_result["asyncPosts"]:
+    for post in jit_result["data"]["asyncPosts"]:
         if post["asyncComments"]:
             assert all(c["likes"] == 42 for c in post["asyncComments"])
 
@@ -176,8 +177,8 @@ def test_sync_only_query(jit_schema, query_type):
     standard_result = execute(schema._schema, parse(query), root_value=query_type)
 
     # Verify results match
-    assert jit_result == standard_result.data
-    assert jit_result["posts"][0]["id"] == "p0"
+    assert_jit_results_match(jit_result, standard_result)
+    assert jit_result["data"]["posts"][0]["id"] == "p0"
 
 
 @pytest.mark.asyncio
@@ -208,9 +209,9 @@ async def test_async_with_variables(jit_schema, query_type):
     )
 
     # Verify results match
-    assert jit_result == standard_result.data
-    assert len(jit_result["asyncPosts"]) == 1
-    assert jit_result["asyncHello"] == "Hello Test"
+    assert_jit_results_match(jit_result, standard_result)
+    assert len(jit_result["data"]["asyncPosts"]) == 1
+    assert jit_result["data"]["asyncHello"] == "Hello Test"
 
 
 @pytest.mark.asyncio
@@ -245,8 +246,8 @@ async def test_async_with_fragments(jit_schema, query_type):
     standard_result = await execute(schema._schema, parse(query), root_value=query_type)
 
     # Verify results match
-    assert jit_result == standard_result.data
-    assert jit_result["posts"][0]["author"]["bio"] == "Bio of Alice"
+    assert_jit_results_match(jit_result, standard_result)
+    assert jit_result["data"]["posts"][0]["author"]["bio"] == "Bio of Alice"
 
 
 if __name__ == "__main__":

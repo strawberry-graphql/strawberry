@@ -9,6 +9,7 @@ from graphql import execute, parse
 
 import strawberry
 from strawberry.jit import compile_query
+from tests.jit.conftest import assert_jit_results_match
 
 
 @strawberry.type
@@ -156,10 +157,10 @@ def test_jit_with_simple_arguments():
 
     # Verify results match
     standard_result = execute(schema._schema, parse(query), root_value=root)
-    assert result == standard_result.data
-    assert result["user"]["id"] == "123"
-    assert len(result["user"]["posts"]) <= 5
-    assert all(p["published"] for p in result["user"]["posts"])
+    assert_jit_results_match(result, standard_result)
+    assert result["data"]["user"]["id"] == "123"
+    assert len(result["data"]["user"]["posts"]) <= 5
+    assert all(p["published"] for p in result["data"]["user"]["posts"])
 
 
 def test_jit_with_default_arguments():
@@ -191,14 +192,14 @@ def test_jit_with_default_arguments():
     standard_result = execute(schema._schema, parse(query), root_value=root)
 
     # Verify results match
-    assert jit_result == standard_result.data
-    assert jit_result["user"]["id"] == "456"
+    assert_jit_results_match(jit_result, standard_result)
+    assert jit_result["data"]["user"]["id"] == "456"
     # Should use default limit=10
-    assert len(jit_result["user"]["posts"]) <= 10
+    assert len(jit_result["data"]["user"]["posts"]) <= 10
     # Should use default days=7
-    assert len(jit_result["user"]["recentPosts"]) <= 7
+    assert len(jit_result["data"]["user"]["recentPosts"]) <= 7
     # All should have views >= 500
-    for post in jit_result["user"]["recentPosts"]:
+    for post in jit_result["data"]["user"]["recentPosts"]:
         assert post["views"] >= 500
 
 
@@ -231,9 +232,9 @@ def test_jit_with_variables():
     )
 
     # Verify results match
-    assert jit_result == standard_result.data
-    assert jit_result["user"]["id"] == "789"
-    assert len(jit_result["user"]["posts"]) <= 3
+    assert_jit_results_match(jit_result, standard_result)
+    assert jit_result["data"]["user"]["id"] == "789"
+    assert len(jit_result["data"]["user"]["posts"]) <= 3
 
 
 def test_jit_with_list_arguments():
@@ -260,9 +261,13 @@ def test_jit_with_list_arguments():
     )
 
     # Verify results match
-    assert jit_result == standard_result.data
-    assert len(jit_result["postsByIds"]) == 3
-    assert [p["id"] for p in jit_result["postsByIds"]] == ["post1", "post2", "post3"]
+    assert_jit_results_match(jit_result, standard_result)
+    assert len(jit_result["data"]["postsByIds"]) == 3
+    assert [p["id"] for p in jit_result["data"]["postsByIds"]] == [
+        "post1",
+        "post2",
+        "post3",
+    ]
 
 
 def test_jit_with_complex_arguments():
@@ -293,9 +298,9 @@ def test_jit_with_complex_arguments():
     )
 
     # Verify results match
-    assert jit_result == standard_result.data
-    if jit_result["searchPosts"]["posts"]:
-        for post in jit_result["searchPosts"]["posts"]:
+    assert_jit_results_match(jit_result, standard_result)
+    if jit_result["data"]["searchPosts"]["posts"]:
+        for post in jit_result["data"]["searchPosts"]["posts"]:
             assert post["views"] >= 200
 
 
@@ -325,10 +330,12 @@ def test_jit_with_null_arguments():
         schema._schema, parse(query), root_value=root, variable_values=variables
     )
 
-    assert jit_result == standard_result.data
+    assert_jit_results_match(jit_result, standard_result)
     # Should return both published and unpublished
-    published_count = sum(1 for p in jit_result["user"]["posts"] if p["published"])
-    unpublished_count = len(jit_result["user"]["posts"]) - published_count
+    published_count = sum(
+        1 for p in jit_result["data"]["user"]["posts"] if p["published"]
+    )
+    unpublished_count = len(jit_result["data"]["user"]["posts"]) - published_count
     assert published_count > 0
     assert unpublished_count > 0
 

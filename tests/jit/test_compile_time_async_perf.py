@@ -154,10 +154,11 @@ async def test_async_execution_still_works():
     result = await compiled_fn(Query())
 
     # Verify results
-    assert "items" in result
-    assert len(result["items"]) == 5
+    assert "data" in result
+    assert "items" in result["data"]
+    assert len(result["data"]["items"]) == 5
 
-    for item in result["items"]:
+    for item in result["data"]["items"]:
         assert item["asyncField1"] == "async1"
         assert item["asyncField2"] == "async2"
         assert item["syncField1"] == "sync1"

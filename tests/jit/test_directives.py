@@ -5,6 +5,7 @@ Test JIT compilation with GraphQL directives (@skip and @include).
 from graphql import execute, parse
 
 from strawberry.jit import compile_query
+from tests.jit.conftest import assert_jit_results_match
 
 
 def test_skip_directive_with_literal(jit_schema, query_type):
@@ -27,9 +28,9 @@ def test_skip_directive_with_literal(jit_schema, query_type):
 
     standard_result = execute(schema._schema, parse(query), root_value=query_type)
 
-    assert jit_result == standard_result.data
-    assert "title" not in jit_result["posts"][0]  # Skipped
-    assert "content" in jit_result["posts"][0]  # Not skipped
+    assert_jit_results_match(jit_result, standard_result)
+    assert "title" not in jit_result["data"]["posts"][0]  # Skipped
+    assert "content" in jit_result["data"]["posts"][0]  # Not skipped
 
 
 def test_skip_directive_with_variable(jit_schema, query_type):
@@ -56,16 +57,16 @@ def test_skip_directive_with_variable(jit_schema, query_type):
         schema._schema, parse(query), root_value=query_type, variable_values=variables
     )
 
-    assert jit_result == standard_result.data
-    assert "title" not in jit_result["posts"][0]
-    assert "content" in jit_result["posts"][0]
+    assert_jit_results_match(jit_result, standard_result)
+    assert "title" not in jit_result["data"]["posts"][0]
+    assert "content" in jit_result["data"]["posts"][0]
 
     # Test not skipping either
     variables = {"skipTitle": False, "skipContent": False}
     jit_result = compiled_fn(query_type, variables=variables)
 
-    assert "title" in jit_result["posts"][0]
-    assert "content" in jit_result["posts"][0]
+    assert "title" in jit_result["data"]["posts"][0]
+    assert "content" in jit_result["data"]["posts"][0]
 
 
 def test_include_directive_with_literal(jit_schema, query_type):
@@ -88,9 +89,9 @@ def test_include_directive_with_literal(jit_schema, query_type):
 
     standard_result = execute(schema._schema, parse(query), root_value=query_type)
 
-    assert jit_result == standard_result.data
-    assert "title" not in jit_result["posts"][0]  # Not included
-    assert "content" in jit_result["posts"][0]  # Included
+    assert_jit_results_match(jit_result, standard_result)
+    assert "title" not in jit_result["data"]["posts"][0]  # Not included
+    assert "content" in jit_result["data"]["posts"][0]  # Included
 
 
 def test_include_directive_with_variable(jit_schema, query_type):
@@ -121,9 +122,9 @@ def test_include_directive_with_variable(jit_schema, query_type):
         schema._schema, parse(query), root_value=query_type, variable_values=variables
     )
 
-    assert jit_result == standard_result.data
-    assert "author" in jit_result["posts"][0]
-    assert "views" not in jit_result["posts"][0]
+    assert_jit_results_match(jit_result, standard_result)
+    assert "author" in jit_result["data"]["posts"][0]
+    assert "views" not in jit_result["data"]["posts"][0]
 
 
 def test_combined_skip_and_include(jit_schema, query_type):
@@ -160,11 +161,11 @@ def test_combined_skip_and_include(jit_schema, query_type):
             variable_values=variables,
         )
 
-        assert jit_result == standard_result.data
+        assert_jit_results_match(jit_result, standard_result)
         if should_have_title:
-            assert "title" in jit_result["posts"][0]
+            assert "title" in jit_result["data"]["posts"][0]
         else:
-            assert "title" not in jit_result["posts"][0]
+            assert "title" not in jit_result["data"]["posts"][0]
 
 
 def test_directives_on_nested_fields(jit_schema, query_type):
@@ -194,9 +195,9 @@ def test_directives_on_nested_fields(jit_schema, query_type):
         schema._schema, parse(query), root_value=query_type, variable_values=variables
     )
 
-    assert jit_result == standard_result.data
-    assert "name" not in jit_result["posts"][0]["author"]
-    assert "verified" in jit_result["posts"][0]["author"]
+    assert_jit_results_match(jit_result, standard_result)
+    assert "name" not in jit_result["data"]["posts"][0]["author"]
+    assert "verified" in jit_result["data"]["posts"][0]["author"]
 
 
 def test_directives_with_fragments(jit_schema, query_type):
@@ -227,10 +228,12 @@ def test_directives_with_fragments(jit_schema, query_type):
         schema._schema, parse(query), root_value=query_type, variable_values=variables
     )
 
-    assert jit_result == standard_result.data
-    assert "title" not in jit_result["posts"][0]  # Not included due to directive
-    assert "content" in jit_result["posts"][0]  # From fragment
-    assert "views" in jit_result["posts"][0]  # Not skipped
+    assert_jit_results_match(jit_result, standard_result)
+    assert (
+        "title" not in jit_result["data"]["posts"][0]
+    )  # Not included due to directive
+    assert "content" in jit_result["data"]["posts"][0]  # From fragment
+    assert "views" in jit_result["data"]["posts"][0]  # Not skipped
 
 
 def test_directives_on_inline_fragments():
@@ -272,9 +275,9 @@ def test_directive_on_root_field(jit_schema, query_type):
         schema._schema, parse(query), root_value=query_type, variable_values=variables
     )
 
-    assert jit_result == standard_result.data
-    assert "posts" in jit_result
-    assert "featuredPost" not in jit_result
+    assert_jit_results_match(jit_result, standard_result)
+    assert "posts" in jit_result["data"]
+    assert "featuredPost" not in jit_result["data"]
 
 
 def test_directives_performance(jit_schema, query_type):

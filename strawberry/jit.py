@@ -261,12 +261,8 @@ class JITCompiler:
             self.indent_level -= 1
             self._emit("except Exception as root_error:")
             self.indent_level += 1
-            self._emit(
-                "if not any(e.get('message') == str(root_error) for e in errors):"
-            )
-            self.indent_level += 1
-            self._emit("errors.append({'message': str(root_error), 'path': []})")
-            self.indent_level -= 1
+            # Don't add error if it already exists (from field-level handling)
+            # Just null the result since a non-null field errored
             self._emit("result = None")
             self.indent_level -= 1
 
@@ -276,7 +272,7 @@ class JITCompiler:
         self.indent_level += 1
         self._emit('return {"data": result, "errors": errors}')
         self.indent_level -= 1
-        self._emit("return result")
+        self._emit('return {"data": result}')
 
         return "\n".join(self.generated_code)
 
@@ -585,8 +581,36 @@ class JITCompiler:
 
                     self._emit(f"for idx, {item_var} in enumerate({temp_var}):")
                     self.indent_level += 1
-                    self._emit(f"{item_result_var} = {{}}")
                     item_path = f"{field_path} + [idx]"
+
+                    # Check if list items can be nullable
+                    from graphql import is_non_null_type
+
+                    inner_type = field_def.type
+                    # Unwrap non-null wrapper if present
+                    if is_non_null_type(inner_type):
+                        inner_type = inner_type.of_type
+                    # Check if list items are nullable
+                    item_type = (
+                        inner_type.of_type if hasattr(inner_type, "of_type") else None
+                    )
+                    items_nullable = item_type and not is_non_null_type(item_type)
+
+                    if items_nullable:
+                        # Add null check for nullable list items
+                        self._emit(f"if {item_var} is None:")
+                        self.indent_level += 1
+                        self._emit(f'{result_var}["{alias}"].append(None)')
+                        self.indent_level -= 1
+                        self._emit("else:")
+                        self.indent_level += 1
+
+                    # Wrap item processing in try-except for nullable items
+                    if items_nullable:
+                        self._emit("try:")
+                        self.indent_level += 1
+
+                    self._emit(f"{item_result_var} = {{}}")
 
                     # For unions/interfaces, we need runtime type resolution
                     if isinstance(field_type, (GraphQLUnionType, GraphQLInterfaceType)):
@@ -608,6 +632,18 @@ class JITCompiler:
                             item_path,
                         )
                     self._emit(f'{result_var}["{alias}"].append({item_result_var})')
+
+                    # Add error handling for nullable items
+                    if items_nullable:
+                        self.indent_level -= 1
+                        self._emit("except Exception as item_error:")
+                        self.indent_level += 1
+                        # Error already added by field-level handler, just append None
+                        self._emit(f'{result_var}["{alias}"].append(None)')
+                        self.indent_level -= 1
+
+                    if items_nullable:
+                        self.indent_level -= 1  # Close the else block
                     self.indent_level -= 1
                 else:
                     # Use a unique variable name for nested results
@@ -711,10 +747,19 @@ class JITCompiler:
         self.indent_level -= 1
         self._emit("except Exception as e:")
         self.indent_level += 1
+        # Only add error if no error with this message exists yet
+        # This prevents duplicate errors when non-null fields propagate
+        self._emit("if not any(err.get('message') == str(e) for err in errors):")
+        self.indent_level += 1
         self._emit(f"errors.append({{'message': str(e), 'path': {field_path}}})")
+        self.indent_level -= 1
+
         if is_nullable:
+            # For nullable fields, set to null and don't propagate
             self._emit(f'{result_var}["{alias}"] = None')
         else:
+            # For non-null fields, propagate the exception
+            # Error was already added at the deepest level
             self._emit("raise  # Propagate non-nullable error")
         self.indent_level -= 1
 
@@ -785,11 +830,11 @@ class JITCompiler:
 
                     # Check if item type is a custom scalar
                     if hasattr(item_type, "name") and hasattr(item_type, "parse_value"):
-                        # Apply parse_value to each element in the list
+                        # Apply parse_value to each element in the list, preserving None
                         parser_func = (
                             f"_scalar_parsers.get('{item_type.name}', lambda x: x)"
                         )
-                        return f"([{parser_func}(item) for item in {var_code}] if {var_code} is not None else None)"
+                        return f"([{parser_func}(item) if item is not None else None for item in {var_code}] if {var_code} is not None else None)"
                 else:
                     # Single value - check if it's a custom scalar
                     scalar_type = arg_type

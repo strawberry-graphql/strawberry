@@ -134,9 +134,11 @@ def test_union_type_resolution():
     compiled_fn = compile_query(schema, query)
     jit_result = compiled_fn(Query())
 
-    assert jit_result["library"]["featuredItem"]["__typename"] == "Movie"
-    assert jit_result["library"]["featuredItem"]["title"] == "The Matrix"
-    assert jit_result["library"]["featuredItem"]["director"] == "Wachowski Sisters"
+    assert jit_result["data"]["library"]["featuredItem"]["__typename"] == "Movie"
+    assert jit_result["data"]["library"]["featuredItem"]["title"] == "The Matrix"
+    assert (
+        jit_result["data"]["library"]["featuredItem"]["director"] == "Wachowski Sisters"
+    )
 
     print("✅ Basic union type resolution works")
 
@@ -174,7 +176,7 @@ def test_union_list_field():
     compiled_fn = compile_query(schema, query)
     result = compiled_fn(Query())
 
-    items = result["library"]["items"]
+    items = result["data"]["library"]["items"]
     assert len(items) == 4
 
     # Check first item (Book)
@@ -232,7 +234,7 @@ def test_union_with_fragments():
     compiled_fn = compile_query(schema, query)
     result = compiled_fn(Query())
 
-    item = result["library"]["featuredItem"]
+    item = result["data"]["library"]["featuredItem"]
     assert item["__typename"] == "Movie"
     assert item["title"] == "The Matrix"
     assert item["director"] == "Wachowski Sisters"
@@ -278,19 +280,19 @@ def test_union_with_arguments():
     result = compiled_fn(Query())
 
     # Check book
-    assert result["library"]["bookItem"]["__typename"] == "Book"
-    assert result["library"]["bookItem"]["title"] == "Dune"
-    assert result["library"]["bookItem"]["author"] == "Frank Herbert"
+    assert result["data"]["library"]["bookItem"]["__typename"] == "Book"
+    assert result["data"]["library"]["bookItem"]["title"] == "Dune"
+    assert result["data"]["library"]["bookItem"]["author"] == "Frank Herbert"
 
     # Check movie
-    assert result["library"]["movieItem"]["__typename"] == "Movie"
-    assert result["library"]["movieItem"]["title"] == "Star Wars"
-    assert result["library"]["movieItem"]["director"] == "George Lucas"
+    assert result["data"]["library"]["movieItem"]["__typename"] == "Movie"
+    assert result["data"]["library"]["movieItem"]["title"] == "Star Wars"
+    assert result["data"]["library"]["movieItem"]["director"] == "George Lucas"
 
     # Check song
-    assert result["library"]["songItem"]["__typename"] == "Song"
-    assert result["library"]["songItem"]["title"] == "Imagine"
-    assert result["library"]["songItem"]["artist"] == "John Lennon"
+    assert result["data"]["library"]["songItem"]["__typename"] == "Song"
+    assert result["data"]["library"]["songItem"]["title"] == "Imagine"
+    assert result["data"]["library"]["songItem"]["artist"] == "John Lennon"
 
     print("✅ Union with arguments works")
 
@@ -320,7 +322,7 @@ def test_union_without_typename():
     compiled_fn = compile_query(schema, query)
     result = compiled_fn(Query())
 
-    item = result["library"]["featuredItem"]
+    item = result["data"]["library"]["featuredItem"]
     # Should still resolve correctly based on type
     assert item["title"] == "The Matrix"
     assert item["director"] == "Wachowski Sisters"
@@ -355,9 +357,9 @@ def test_union_search_query():
     # Search for both book and movie
     result = compiled_fn(Query(), variables={"q": "book movie"})
 
-    assert len(result["search"]) == 2
-    assert result["search"][0]["__typename"] == "Book"
-    assert result["search"][1]["__typename"] == "Movie"
+    assert len(result["data"]["search"]) == 2
+    assert result["data"]["search"][0]["__typename"] == "Book"
+    assert result["data"]["search"][1]["__typename"] == "Movie"
 
     print("✅ Union search with variables works")
 

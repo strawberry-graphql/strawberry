@@ -4,6 +4,7 @@ from graphql import execute_sync, parse
 
 import strawberry
 from strawberry.jit import compile_query
+from tests.jit.conftest import assert_jit_results_match
 
 
 @strawberry.type
@@ -82,7 +83,7 @@ def test_schema_introspection():
     compiled_fn = compile_query(schema, query)
     jit_result = compiled_fn(None)
 
-    assert jit_result == {
+    assert jit_result["data"] == {
         "__schema": {
             "queryType": {"name": "Query"},
             "mutationType": {"name": "Mutation"},
@@ -121,12 +122,14 @@ def test_type_introspection():
     jit_result = compiled_fn(None)
 
     # Compare results
-    assert jit_result["__type"]["name"] == standard_data["__type"]["name"]
-    assert jit_result["__type"]["kind"] == standard_data["__type"]["kind"]
-    assert len(jit_result["__type"]["fields"]) == len(standard_data["__type"]["fields"])
+    assert jit_result["data"]["__type"]["name"] == standard_data["__type"]["name"]
+    assert jit_result["data"]["__type"]["kind"] == standard_data["__type"]["kind"]
+    assert len(jit_result["data"]["__type"]["fields"]) == len(
+        standard_data["__type"]["fields"]
+    )
 
     # Check fields
-    jit_fields = {f["name"]: f for f in jit_result["__type"]["fields"]}
+    jit_fields = {f["name"]: f for f in jit_result["data"]["__type"]["fields"]}
     standard_fields = {f["name"]: f for f in standard_data["__type"]["fields"]}
     assert set(jit_fields.keys()) == set(standard_fields.keys())
 
@@ -163,7 +166,7 @@ def test_type_kind_introspection():
     jit_result = compiled_fn(None)
 
     # Compare results
-    assert jit_result == standard_data
+    assert_jit_results_match(jit_result, result)
 
     print("✅ Type kind introspection works")
 
@@ -202,7 +205,7 @@ def test_field_introspection():
     jit_result = compiled_fn(None)
 
     # Find author field in both results
-    jit_fields = {f["name"]: f for f in jit_result["__type"]["fields"]}
+    jit_fields = {f["name"]: f for f in jit_result["data"]["__type"]["fields"]}
     standard_fields = {f["name"]: f for f in standard_data["__type"]["fields"]}
 
     # Check author field has id argument
@@ -237,12 +240,12 @@ def test_all_types_introspection():
     jit_result = compiled_fn(None)
 
     # Compare number of types
-    assert len(jit_result["__schema"]["types"]) == len(
+    assert len(jit_result["data"]["__schema"]["types"]) == len(
         standard_data["__schema"]["types"]
     )
 
     # Check key types are present
-    jit_type_names = {t["name"] for t in jit_result["__schema"]["types"]}
+    jit_type_names = {t["name"] for t in jit_result["data"]["__schema"]["types"]}
     standard_type_names = {t["name"] for t in standard_data["__schema"]["types"]}
 
     assert "Query" in jit_type_names
@@ -289,7 +292,7 @@ def test_nested_type_introspection():
     jit_result = compiled_fn(None)
 
     # Find author field
-    jit_fields = {f["name"]: f for f in jit_result["__type"]["fields"]}
+    jit_fields = {f["name"]: f for f in jit_result["data"]["__type"]["fields"]}
     standard_fields = {f["name"]: f for f in standard_data["__type"]["fields"]}
 
     # Check author field type
@@ -337,7 +340,9 @@ def test_directives_introspection():
     jit_result = compiled_fn(None)
 
     # Check directives
-    jit_directives = {d["name"]: d for d in jit_result["__schema"]["directives"]}
+    jit_directives = {
+        d["name"]: d for d in jit_result["data"]["__schema"]["directives"]
+    }
     standard_directives = {
         d["name"]: d for d in standard_data["__schema"]["directives"]
     }
@@ -392,7 +397,7 @@ def test_list_type_introspection():
     jit_result = compiled_fn(None)
 
     # Find books field (which returns [Book!]!)
-    jit_fields = {f["name"]: f for f in jit_result["__type"]["fields"]}
+    jit_fields = {f["name"]: f for f in jit_result["data"]["__type"]["fields"]}
     standard_fields = {f["name"]: f for f in standard_data["__type"]["fields"]}
 
     # Check books field type structure
@@ -444,10 +449,12 @@ def test_introspection_with_variables():
     jit_result = compiled_fn(None, variables=variables)
 
     # Compare results
-    assert jit_result["__type"]["name"] == "Author"
-    assert jit_result["__type"]["name"] == standard_data["__type"]["name"]
-    assert jit_result["__type"]["kind"] == standard_data["__type"]["kind"]
-    assert len(jit_result["__type"]["fields"]) == len(standard_data["__type"]["fields"])
+    assert jit_result["data"]["__type"]["name"] == "Author"
+    assert jit_result["data"]["__type"]["name"] == standard_data["__type"]["name"]
+    assert jit_result["data"]["__type"]["kind"] == standard_data["__type"]["kind"]
+    assert len(jit_result["data"]["__type"]["fields"]) == len(
+        standard_data["__type"]["fields"]
+    )
 
     print("✅ Introspection with variables works")
 
@@ -553,15 +560,18 @@ def test_graphiql_introspection_query():
     jit_result = compiled_fn(None)
 
     # Basic checks
-    assert "__schema" in jit_result
-    assert jit_result["__schema"]["queryType"]["name"] == "Query"
-    assert "types" in jit_result["__schema"]
-    assert len(jit_result["__schema"]["types"]) == len(
+    assert "data" in jit_result
+    assert "__schema" in jit_result["data"]
+    assert jit_result["data"]["__schema"]["queryType"]["name"] == "Query"
+    assert "types" in jit_result["data"]["__schema"]
+    assert len(jit_result["data"]["__schema"]["types"]) == len(
         standard_data["__schema"]["types"]
     )
 
     # Check that key types are present with correct structure
-    jit_types = {t["name"]: t for t in jit_result["__schema"]["types"] if t.get("name")}
+    jit_types = {
+        t["name"]: t for t in jit_result["data"]["__schema"]["types"] if t.get("name")
+    }
     standard_types = {
         t["name"]: t for t in standard_data["__schema"]["types"] if t.get("name")
     }

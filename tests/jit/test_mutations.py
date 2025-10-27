@@ -345,8 +345,8 @@ def test_single_mutation():
     compiled_fn = compile_query(schema, query)
     jit_result = compiled_fn(Mutation(), variables=variables)
 
-    assert jit_result["createUser"]["success"] is True
-    assert jit_result["createUser"]["user"]["username"] == "johndoe"
+    assert jit_result["data"]["createUser"]["success"] is True
+    assert jit_result["data"]["createUser"]["user"]["username"] == "johndoe"
 
     print("✅ Single mutation works")
 
@@ -378,9 +378,9 @@ def test_multiple_mutations_serial_execution():
     result = compiled_fn(Mutation())
 
     # Check all mutations succeeded
-    assert result["user1"]["success"] is True
-    assert result["user2"]["success"] is True
-    assert result["user3"]["success"] is True
+    assert result["data"]["user1"]["success"] is True
+    assert result["data"]["user2"]["success"] is True
+    assert result["data"]["user3"]["success"] is True
 
     # Check mutations executed in order
     assert len(mutation_log) == 3
@@ -428,10 +428,10 @@ def test_mutation_with_dependency():
     result = compiled_fn(Mutation())
 
     # Both should succeed because user_0 is created first
-    assert result["createUser"]["success"] is True
-    assert result["createUser"]["user"]["id"] == "user_0"
-    assert result["createPost"]["success"] is True
-    assert result["createPost"]["post"]["authorId"] == "user_0"
+    assert result["data"]["createUser"]["success"] is True
+    assert result["data"]["createUser"]["user"]["id"] == "user_0"
+    assert result["data"]["createPost"]["success"] is True
+    assert result["data"]["createPost"]["post"]["authorId"] == "user_0"
 
     print("✅ Mutations with dependencies work")
 
@@ -463,15 +463,15 @@ def test_mutation_error_handling():
     result = compiled_fn(Mutation())
 
     # First should succeed
-    assert result["success"]["success"] is True
+    assert result["data"]["success"]["success"] is True
 
     # Second should fail (duplicate email)
-    assert result["duplicate"]["success"] is False
-    assert "already exists" in result["duplicate"]["message"]
+    assert result["data"]["duplicate"]["success"] is False
+    assert "already exists" in result["data"]["duplicate"]["message"]
 
     # Third should fail (user doesn't exist)
-    assert result["deleteNonExistent"]["success"] is False
-    assert "not found" in result["deleteNonExistent"]["message"]
+    assert result["data"]["deleteNonExistent"]["success"] is False
+    assert "not found" in result["data"]["deleteNonExistent"]["message"]
 
     print("✅ Mutation error handling works")
 
@@ -549,9 +549,9 @@ def test_mutation_side_effects():
     result = compiled_fn(Mutation())
 
     # Each mutation should see the effect of the previous one
-    assert result["view1"]["post"]["viewCount"] == 1
-    assert result["view2"]["post"]["viewCount"] == 2
-    assert result["view3"]["post"]["viewCount"] == 3
+    assert result["data"]["view1"]["post"]["viewCount"] == 1
+    assert result["data"]["view2"]["post"]["viewCount"] == 2
+    assert result["data"]["view3"]["post"]["viewCount"] == 3
 
     # Verify in database
     assert database["posts"]["post_0"].view_count == 3
@@ -599,9 +599,9 @@ def test_async_mutations_serial_execution():
         return
 
     # Check all mutations succeeded
-    assert result["user1"]["success"] is True
-    assert result["user2"]["success"] is True
-    assert result["user3"]["success"] is True
+    assert result["data"]["user1"]["success"] is True
+    assert result["data"]["user2"]["success"] is True
+    assert result["data"]["user3"]["success"] is True
 
     # Check mutations executed in order (serial, not parallel)
     assert len(mutation_log) == 3
@@ -664,11 +664,11 @@ def test_mutation_with_nested_fields():
     compiled_fn = compile_query(schema, query)
     result = compiled_fn(Mutation())
 
-    assert result["createPost"]["success"] is True
-    assert result["createPost"]["post"]["title"] == "Post Title"
-    assert result["createPost"]["post"]["published"] is True
-    assert result["createPost"]["post"]["authorId"] == "user_0"
-    assert result["createPost"]["post"]["viewCount"] == 0
+    assert result["data"]["createPost"]["success"] is True
+    assert result["data"]["createPost"]["post"]["title"] == "Post Title"
+    assert result["data"]["createPost"]["post"]["published"] is True
+    assert result["data"]["createPost"]["post"]["authorId"] == "user_0"
+    assert result["data"]["createPost"]["post"]["viewCount"] == 0
 
     print("✅ Mutations with nested fields work")
 

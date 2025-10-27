@@ -35,9 +35,9 @@ def test_simple_query_snapshot(snapshot, jit_schema, query_type):
 
     # Verify the function works
     result = compiled_fn(query_type)
-    assert len(result["posts"]) == 2
-    assert result["posts"][0]["id"] == "p0"
-    assert result["posts"][0]["title"] == "Post 0"
+    assert len(result["data"]["posts"]) == 2
+    assert result["data"]["posts"][0]["id"] == "p0"
+    assert result["data"]["posts"][0]["title"] == "Post 0"
 
     # Snapshot the generated source code
     snapshot.assert_match(generated_code, "simple_query_source.py")
@@ -65,8 +65,8 @@ def test_nested_query_snapshot(snapshot, jit_schema, query_type):
 
     # Execute and verify
     result = compiled_fn(query_type)
-    assert len(result["posts"]) == 2
-    assert result["posts"][0]["author"]["name"] == "Alice"
+    assert len(result["data"]["posts"]) == 2
+    assert result["data"]["posts"][0]["author"]["name"] == "Alice"
 
     # Snapshot the generated source code
     generated_code = get_jit_source(compiled_fn)
@@ -92,7 +92,7 @@ def test_query_with_variables_snapshot(snapshot, jit_schema, query_type):
     # Execute with variables
     variables = {"limit": 3}
     result = compiled_fn(query_type, variables=variables)
-    assert len(result["posts"]) == 3
+    assert len(result["data"]["posts"]) == 3
 
     # Snapshot the generated source code
     generated_code = get_jit_source(compiled_fn)
@@ -119,8 +119,8 @@ def test_query_with_directives_snapshot(snapshot, jit_schema, query_type):
     # Execute with variables
     variables = {"includeContent": True}
     result = compiled_fn(query_type, variables=variables)
-    assert "content" in result["posts"][0]
-    assert "published" in result["posts"][0]
+    assert "content" in result["data"]["posts"][0]
+    assert "published" in result["data"]["posts"][0]
 
     # Snapshot the generated source code
     generated_code = get_jit_source(compiled_fn)
@@ -152,8 +152,8 @@ def test_query_with_fragments_snapshot(snapshot, jit_schema, query_type):
 
     # Execute
     result = compiled_fn(query_type)
-    assert "content" in result["posts"][0]
-    assert result["posts"][0]["author"]["name"] == "Alice"
+    assert "content" in result["data"]["posts"][0]
+    assert result["data"]["posts"][0]["author"]["name"] == "Alice"
 
     # Snapshot the generated source code
     generated_code = get_jit_source(compiled_fn)
@@ -183,7 +183,7 @@ async def test_async_query_snapshot(snapshot, jit_schema, query_type):
 
     # Execute
     result = await compiled_fn(query_type)
-    assert len(result["asyncPosts"]) == 2
+    assert len(result["data"]["asyncPosts"]) == 2
 
     # Snapshot the generated source code
     generated_code = get_jit_source(compiled_fn)

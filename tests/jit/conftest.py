@@ -534,3 +534,36 @@ def sample_posts(sample_authors):
             )
         )
     return posts
+
+
+def assert_jit_results_match(jit_result, standard_result):
+    """
+    Helper to compare JIT and standard execution results.
+    Handles the data wrapper format correctly.
+    """
+    # Get JIT data - it's wrapped in {"data": ...}
+    if isinstance(jit_result, dict) and "data" in jit_result:
+        jit_data = jit_result["data"]
+        jit_errors = jit_result.get("errors", [])
+    else:
+        # Fallback for older format
+        jit_data = jit_result
+        jit_errors = []
+
+    # Get standard data
+    std_data = (
+        standard_result.data if hasattr(standard_result, "data") else standard_result
+    )
+    std_errors = standard_result.errors if hasattr(standard_result, "errors") else []
+    std_errors = std_errors or []
+
+    # Compare data
+    assert jit_data == std_data, (
+        f"Data mismatch:\nJIT: {jit_data}\nStandard: {std_data}"
+    )
+
+    # Compare errors
+    assert len(jit_errors) == len(std_errors), (
+        f"Error count mismatch:\nJIT: {len(jit_errors)} errors\n"
+        f"Standard: {len(std_errors)} errors"
+    )

@@ -214,8 +214,9 @@ def test_jit_with_type_map():
     result = compiled_fn(Query())
 
     # Should execute without errors
-    assert "getPostsByAuthor" in result
-    assert result["getPostsByAuthor"] == []
+    assert "data" in result
+    assert "getPostsByAuthor" in result["data"]
+    assert result["data"]["getPostsByAuthor"] == []
 
     print("✅ JIT compiler works with Strawberry schema and type map!")
 

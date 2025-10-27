@@ -145,10 +145,11 @@ def test_jit_with_small_dataset():
     result = compiled_fn(root)
 
     # Verify we got results
-    assert "posts" in result
-    assert len(result["posts"]) == 10
-    assert "engagementRate" in result["posts"][0]
-    assert "reputationScore" in result["posts"][0]["author"]
+    assert "data" in result
+    assert "posts" in result["data"]
+    assert len(result["data"]["posts"]) == 10
+    assert "engagementRate" in result["data"]["posts"][0]
+    assert "reputationScore" in result["data"]["posts"][0]["author"]
 
 
 def test_jit_with_large_dataset():
@@ -211,8 +212,10 @@ def test_jit_with_large_dataset():
     print(f"  Speedup:  {speedup:.1f}x")
 
     # Verify results match
-    assert jit_result["posts"][0]["id"] == standard_result.data["posts"][0]["id"]
-    assert len(jit_result["posts"]) == len(posts_data)
+    assert (
+        jit_result["data"]["posts"][0]["id"] == standard_result.data["posts"][0]["id"]
+    )
+    assert len(jit_result["data"]["posts"]) == len(posts_data)
 
     # Assert significant speedup with large dataset
     assert speedup > 1.5, f"Expected speedup > 1.5x, got {speedup:.1f}x"

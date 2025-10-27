@@ -63,8 +63,8 @@ def test_custom_scalar_serialization():
     compiled_fn = compile_query(schema, query)
     jit_result = compiled_fn(None)
 
-    assert jit_result["encodedData"] == standard_data["encodedData"]
-    assert base64.b64decode(jit_result["encodedData"]) == b"Hello World"
+    assert jit_result["data"]["encodedData"] == standard_data["encodedData"]
+    assert base64.b64decode(jit_result["data"]["encodedData"]) == b"Hello World"
 
     # Test DateTime scalar
     query = "{ currentTime }"
@@ -77,8 +77,8 @@ def test_custom_scalar_serialization():
     compiled_fn = compile_query(schema, query)
     jit_result = compiled_fn(None)
 
-    assert jit_result["currentTime"] == standard_data["currentTime"]
-    assert jit_result["currentTime"] == "2023-01-01T12:00:00"
+    assert jit_result["data"]["currentTime"] == standard_data["currentTime"]
+    assert jit_result["data"]["currentTime"] == "2023-01-01T12:00:00"
 
     # Test CaseInsensitive scalar
     query = "{ caseTest }"
@@ -91,8 +91,8 @@ def test_custom_scalar_serialization():
     compiled_fn = compile_query(schema, query)
     jit_result = compiled_fn(None)
 
-    assert jit_result["caseTest"] == standard_data["caseTest"]
-    assert jit_result["caseTest"] == "HELLO"  # Serialized to uppercase
+    assert jit_result["data"]["caseTest"] == standard_data["caseTest"]
+    assert jit_result["data"]["caseTest"] == "HELLO"  # Serialized to uppercase
 
     print("✅ Custom scalar serialization works")
 
@@ -132,8 +132,8 @@ def test_custom_scalar_deserialization():
     compiled_fn = compile_query(schema, query)
     jit_result = compiled_fn(None, variables=variables)
 
-    assert jit_result["decodeBase64"] == standard_data["decodeBase64"]
-    assert jit_result["decodeBase64"] == "Hello JIT"
+    assert jit_result["data"]["decodeBase64"] == standard_data["decodeBase64"]
+    assert jit_result["data"]["decodeBase64"] == "Hello JIT"
 
     # Test DateTime input
     query = """query FormatDate($date: DateTime!) {
@@ -150,8 +150,8 @@ def test_custom_scalar_deserialization():
     compiled_fn = compile_query(schema, query)
     jit_result = compiled_fn(None, variables=variables)
 
-    assert jit_result["formatDate"] == standard_data["formatDate"]
-    assert jit_result["formatDate"] == "2023-06-15"
+    assert jit_result["data"]["formatDate"] == standard_data["formatDate"]
+    assert jit_result["data"]["formatDate"] == "2023-06-15"
 
     # Test CaseInsensitive input with inline value
     query = """{
@@ -166,8 +166,8 @@ def test_custom_scalar_deserialization():
     compiled_fn = compile_query(schema, query)
     jit_result = compiled_fn(None)
 
-    assert jit_result["echoCase"] == standard_data["echoCase"]
-    assert jit_result["echoCase"] == "uppercase"  # Parsed to lowercase
+    assert jit_result["data"]["echoCase"] == standard_data["echoCase"]
+    assert jit_result["data"]["echoCase"] == "uppercase"  # Parsed to lowercase
 
     print("✅ Custom scalar deserialization works")
 
@@ -202,9 +202,9 @@ def test_list_of_custom_scalars():
     compiled_fn = compile_query(schema, query)
     jit_result = compiled_fn(None)
 
-    assert jit_result["encodeMultiple"] == standard_data["encodeMultiple"]
-    assert len(jit_result["encodeMultiple"]) == 3
-    assert base64.b64decode(jit_result["encodeMultiple"][0]) == b"First"
+    assert jit_result["data"]["encodeMultiple"] == standard_data["encodeMultiple"]
+    assert len(jit_result["data"]["encodeMultiple"]) == 3
+    assert base64.b64decode(jit_result["data"]["encodeMultiple"][0]) == b"First"
 
     # Test list input
     query = """query DecodeMultiple($encoded: [Base64Encoded!]!) {
@@ -227,8 +227,8 @@ def test_list_of_custom_scalars():
     compiled_fn = compile_query(schema, query)
     jit_result = compiled_fn(None, variables=variables)
 
-    assert jit_result["decodeMultiple"] == standard_data["decodeMultiple"]
-    assert jit_result["decodeMultiple"] == ["One", "Two", "Three"]
+    assert jit_result["data"]["decodeMultiple"] == standard_data["decodeMultiple"]
+    assert jit_result["data"]["decodeMultiple"] == ["One", "Two", "Three"]
 
     print("✅ List of custom scalars works")
 
@@ -262,9 +262,12 @@ def test_nested_custom_scalars():
     compiled_fn = compile_query(schema, query)
     jit_result = compiled_fn(None)
 
-    assert jit_result == standard_data
-    assert base64.b64decode(jit_result["getMessage"]["content"]) == b"Secret Message"
-    assert jit_result["getMessage"]["timestamp"] == "2023-12-25T00:00:00"
+    assert jit_result["data"] == standard_data
+    assert (
+        base64.b64decode(jit_result["data"]["getMessage"]["content"])
+        == b"Secret Message"
+    )
+    assert jit_result["data"]["getMessage"]["timestamp"] == "2023-12-25T00:00:00"
 
     print("✅ Nested custom scalars work")
 
@@ -301,8 +304,8 @@ def test_nullable_custom_scalars():
     compiled_fn = compile_query(schema, query)
     jit_result = compiled_fn(None)
 
-    assert jit_result == standard_data
-    assert jit_result["maybeEncoded"] is None
+    assert jit_result["data"] == standard_data
+    assert jit_result["data"]["maybeEncoded"] is None
 
     # Test with non-null value
     query = "{ maybeEncoded(returnNull: false) }"
@@ -315,8 +318,8 @@ def test_nullable_custom_scalars():
     compiled_fn = compile_query(schema, query)
     jit_result = compiled_fn(None)
 
-    assert jit_result == standard_data
-    assert base64.b64decode(jit_result["maybeEncoded"]) == b"Not null"
+    assert jit_result["data"] == standard_data
+    assert base64.b64decode(jit_result["data"]["maybeEncoded"]) == b"Not null"
 
     # Test nullable input
     query = "{ processOptional }"
@@ -329,8 +332,8 @@ def test_nullable_custom_scalars():
     compiled_fn = compile_query(schema, query)
     jit_result = compiled_fn(None)
 
-    assert jit_result == standard_data
-    assert jit_result["processOptional"] == "No data"
+    assert jit_result["data"] == standard_data
+    assert jit_result["data"]["processOptional"] == "No data"
 
     print("✅ Nullable custom scalars work")
 

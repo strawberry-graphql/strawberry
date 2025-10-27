@@ -193,9 +193,9 @@ def test_simple_input():
     compiled_fn = compile_query(schema, query)
     jit_result = compiled_fn(Query(), variables={"id": "1"})
 
-    assert jit_result["person"]["id"] == "1"
-    assert jit_result["person"]["name"] == "John Doe"
-    assert jit_result["person"]["age"] == 30
+    assert jit_result["data"]["person"]["id"] == "1"
+    assert jit_result["data"]["person"]["name"] == "John Doe"
+    assert jit_result["data"]["person"]["age"] == 30
 
     print("✅ Simple input works")
 
@@ -223,10 +223,10 @@ def test_input_object():
     compiled_fn = compile_query(schema, query)
     result = compiled_fn(Query(), variables=variables)
 
-    assert len(result["search"]["items"]) == 1
-    assert result["search"]["items"][0]["name"] == "John Doe"
-    assert result["search"]["total"] == 1
-    assert result["search"]["hasMore"] is False
+    assert len(result["data"]["search"]["items"]) == 1
+    assert result["data"]["search"]["items"][0]["name"] == "John Doe"
+    assert result["data"]["search"]["total"] == 1
+    assert result["data"]["search"]["hasMore"] is False
 
     print("✅ Input object works")
 
@@ -272,12 +272,12 @@ def test_nested_input():
     compiled_fn = compile_query(schema, query)
     result = compiled_fn(Mutation(), variables=variables)
 
-    assert result["createPerson"]["name"] == "Jane Smith"
-    assert result["createPerson"]["age"] == 25
-    assert result["createPerson"]["email"] == "jane@example.com"
-    assert result["createPerson"]["address"]["street"] == "456 Oak Ave"
-    assert result["createPerson"]["address"]["city"] == "San Francisco"
-    assert result["createPerson"]["tags"] == ["designer", "ui/ux"]
+    assert result["data"]["createPerson"]["name"] == "Jane Smith"
+    assert result["data"]["createPerson"]["age"] == 25
+    assert result["data"]["createPerson"]["email"] == "jane@example.com"
+    assert result["data"]["createPerson"]["address"]["street"] == "456 Oak Ave"
+    assert result["data"]["createPerson"]["address"]["city"] == "San Francisco"
+    assert result["data"]["createPerson"]["tags"] == ["designer", "ui/ux"]
 
     print("✅ Nested input works")
 
@@ -301,8 +301,8 @@ def test_input_with_defaults():
     compiled_fn = compile_query(schema, query)
     result = compiled_fn(Query(), variables={"query": "John"})
 
-    assert len(result["search"]["items"]) == 1
-    assert result["search"]["total"] == 1
+    assert len(result["data"]["search"]["items"]) == 1
+    assert result["data"]["search"]["total"] == 1
 
     print("✅ Input with defaults works")
 
@@ -329,10 +329,12 @@ def test_optional_input_fields():
     compiled_fn = compile_query(schema, query)
     result = compiled_fn(Mutation(), variables=variables)
 
-    assert result["updatePerson"]["id"] == "1"
-    assert result["updatePerson"]["name"] == "John Updated"
-    assert result["updatePerson"]["age"] == 30  # Should keep original
-    assert result["updatePerson"]["email"] == "john@example.com"  # Should keep original
+    assert result["data"]["updatePerson"]["id"] == "1"
+    assert result["data"]["updatePerson"]["name"] == "John Updated"
+    assert result["data"]["updatePerson"]["age"] == 30  # Should keep original
+    assert (
+        result["data"]["updatePerson"]["email"] == "john@example.com"
+    )  # Should keep original
 
     print("✅ Optional input fields work")
 
@@ -356,8 +358,8 @@ def test_list_input():
     compiled_fn = compile_query(schema, query)
     result = compiled_fn(Mutation(), variables=variables)
 
-    assert result["createPerson"]["name"] == "Bob"
-    assert result["createPerson"]["tags"] == ["manager", "agile", "scrum"]
+    assert result["data"]["createPerson"]["name"] == "Bob"
+    assert result["data"]["createPerson"]["tags"] == ["manager", "agile", "scrum"]
 
     print("✅ List input works")
 
@@ -381,8 +383,8 @@ def test_inline_input_object():
     compiled_fn = compile_query(schema, query)
     result = compiled_fn(Query())
 
-    assert len(result["search"]["items"]) == 1
-    assert result["search"]["items"][0]["name"] == "John Doe"
+    assert len(result["data"]["search"]["items"]) == 1
+    assert result["data"]["search"]["items"][0]["name"] == "John Doe"
 
     print("✅ Inline input object works")
 

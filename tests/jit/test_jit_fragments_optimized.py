@@ -8,6 +8,7 @@ from graphql import execute, parse
 
 import strawberry
 from strawberry.jit import compile_query
+from tests.jit.conftest import assert_jit_results_match
 
 
 @strawberry.type
@@ -94,15 +95,15 @@ def test_optimized_simple_fragment():
     result = compiled_fn(root)
 
     # Verify results
-    assert len(result["posts"]) == 2
-    assert result["posts"][0]["id"] == "p1"
-    assert result["posts"][0]["title"] == "GraphQL Basics"
-    assert result["posts"][0]["content"] == "Introduction to GraphQL"
-    assert result["posts"][0]["author"]["name"] == "Alice"
+    assert len(result["data"]["posts"]) == 2
+    assert result["data"]["posts"][0]["id"] == "p1"
+    assert result["data"]["posts"][0]["title"] == "GraphQL Basics"
+    assert result["data"]["posts"][0]["content"] == "Introduction to GraphQL"
+    assert result["data"]["posts"][0]["author"]["name"] == "Alice"
 
     # Compare with standard GraphQL execution
     standard_result = execute(schema._schema, parse(query), root_value=root)
-    assert result == standard_result.data
+    assert_jit_results_match(result, standard_result)
 
 
 def test_optimized_nested_fragments():
@@ -138,13 +139,13 @@ def test_optimized_nested_fragments():
     result = compiled_fn(root)
 
     # Verify results
-    assert len(result["posts"]) == 2
-    assert result["posts"][0]["author"]["name"] == "Alice"
-    assert result["posts"][0]["author"]["email"] == "alice@example.com"
+    assert len(result["data"]["posts"]) == 2
+    assert result["data"]["posts"][0]["author"]["name"] == "Alice"
+    assert result["data"]["posts"][0]["author"]["email"] == "alice@example.com"
 
     # Compare with standard GraphQL execution
     standard_result = execute(schema._schema, parse(query), root_value=root)
-    assert result == standard_result.data
+    assert_jit_results_match(result, standard_result)
 
 
 def test_optimized_inline_fragment():
@@ -173,14 +174,14 @@ def test_optimized_inline_fragment():
     result = compiled_fn(root)
 
     # Verify results
-    assert len(result["posts"]) == 2
-    assert "content" in result["posts"][0]
-    assert "published" in result["posts"][0]
-    assert result["posts"][0]["author"]["name"] == "Alice"
+    assert len(result["data"]["posts"]) == 2
+    assert "content" in result["data"]["posts"][0]
+    assert "published" in result["data"]["posts"][0]
+    assert result["data"]["posts"][0]["author"]["name"] == "Alice"
 
     # Compare with standard GraphQL execution
     standard_result = execute(schema._schema, parse(query), root_value=root)
-    assert result == standard_result.data
+    assert_jit_results_match(result, standard_result)
 
 
 def test_optimized_multiple_fragments():
@@ -222,16 +223,16 @@ def test_optimized_multiple_fragments():
     result = compiled_fn(root)
 
     # Verify results
-    assert len(result["posts"]) == 2
-    assert result["posts"][0]["id"] == "p1"
-    assert result["posts"][0]["title"] == "GraphQL Basics"
-    assert result["posts"][0]["content"] == "Introduction to GraphQL"
-    assert len(result["posts"][0]["comments"]) == 2
-    assert result["posts"][0]["comments"][0]["text"] == "Great post!"
+    assert len(result["data"]["posts"]) == 2
+    assert result["data"]["posts"][0]["id"] == "p1"
+    assert result["data"]["posts"][0]["title"] == "GraphQL Basics"
+    assert result["data"]["posts"][0]["content"] == "Introduction to GraphQL"
+    assert len(result["data"]["posts"][0]["comments"]) == 2
+    assert result["data"]["posts"][0]["comments"][0]["text"] == "Great post!"
 
     # Compare with standard GraphQL execution
     standard_result = execute(schema._schema, parse(query), root_value=root)
-    assert result == standard_result.data
+    assert_jit_results_match(result, standard_result)
 
 
 if __name__ == "__main__":

@@ -32,14 +32,16 @@ async def execute_query(root, context=None, variables=None):
                         field_id_value = _resolvers['resolver_2'](item_0, info)
                         item_result_0["id"] = field_id_value
                     except Exception as e:
-                        errors.append({'message': str(e), 'path': [] + ['asyncPosts'] + [idx] + ['id']})
+                        if not any(err.get('message') == str(e) for err in errors):
+                            errors.append({'message': str(e), 'path': [] + ['asyncPosts'] + [idx] + ['id']})
                         raise  # Propagate non-nullable error
                     try:
                         info.field_name = "title"
                         field_title_value = _resolvers['resolver_3'](item_0, info)
                         item_result_0["title"] = field_title_value
                     except Exception as e:
-                        errors.append({'message': str(e), 'path': [] + ['asyncPosts'] + [idx] + ['title']})
+                        if not any(err.get('message') == str(e) for err in errors):
+                            errors.append({'message': str(e), 'path': [] + ['asyncPosts'] + [idx] + ['title']})
                         raise  # Propagate non-nullable error
                     try:
                         info.field_name = "author"
@@ -51,26 +53,27 @@ async def execute_query(root, context=None, variables=None):
                                 field_name_value = _resolvers['resolver_5'](field_author_value, info)
                                 nested_result_1["name"] = field_name_value
                             except Exception as e:
-                                errors.append({'message': str(e), 'path': [] + ['asyncPosts'] + [idx] + ['author'] + ['name']})
+                                if not any(err.get('message') == str(e) for err in errors):
+                                    errors.append({'message': str(e), 'path': [] + ['asyncPosts'] + [idx] + ['author'] + ['name']})
                                 raise  # Propagate non-nullable error
                             item_result_0["author"] = nested_result_1
                         else:
                             item_result_0["author"] = None
                     except Exception as e:
-                        errors.append({'message': str(e), 'path': [] + ['asyncPosts'] + [idx] + ['author']})
+                        if not any(err.get('message') == str(e) for err in errors):
+                            errors.append({'message': str(e), 'path': [] + ['asyncPosts'] + [idx] + ['author']})
                         raise  # Propagate non-nullable error
                     result["asyncPosts"].append(item_result_0)
             else:
                 result["asyncPosts"] = None
         except Exception as e:
-            errors.append({'message': str(e), 'path': [] + ['asyncPosts']})
+            if not any(err.get('message') == str(e) for err in errors):
+                errors.append({'message': str(e), 'path': [] + ['asyncPosts']})
             raise  # Propagate non-nullable error
     except Exception as root_error:
-        if not any(e.get('message') == str(root_error) for e in errors):
-            errors.append({'message': str(root_error), 'path': []})
         result = None
     
     # Return result with errors if any
     if errors:
         return {"data": result, "errors": errors}
-    return result
+    return {"data": result}
