@@ -1,4 +1,4 @@
-from typing import Any, Optional, Union
+from typing import Any, Union
 
 from starlette.background import BackgroundTasks
 from starlette.requests import Request
@@ -7,17 +7,17 @@ from starlette.websockets import WebSocket
 
 CustomContext = Union["BaseContext", dict[str, Any]]
 MergedContext = Union[
-    "BaseContext", dict[str, Union[Any, BackgroundTasks, Request, Response, WebSocket]]
+    "BaseContext", dict[str, Any | BackgroundTasks | Request | Response | WebSocket]
 ]
 
 
 class BaseContext:
-    connection_params: Optional[Any] = None
+    connection_params: Any | None = None
 
     def __init__(self) -> None:
-        self.request: Optional[Union[Request, WebSocket]] = None
-        self.background_tasks: Optional[BackgroundTasks] = None
-        self.response: Optional[Response] = None
+        self.request: Request | WebSocket | None = None
+        self.background_tasks: BackgroundTasks | None = None
+        self.response: Response | None = None
 
 
 __all__ = ["BaseContext"]

@@ -1,5 +1,3 @@
-from typing import Optional, Union
-
 import pytest
 from graphql import (
     GraphQLError,
@@ -61,15 +59,15 @@ class Query:
     @strawberry.field
     def user(
         self,
-        name: Optional[str],
-        id: Optional[int],
-        age: Optional[float],
-        is_cool: Optional[bool],
+        name: str | None,
+        id: int | None,
+        age: float | None,
+        is_cool: bool | None,
     ) -> Human:
         pass
 
     @strawberry.field
-    def users(self, names: Optional[list[str]]) -> list[Human]:
+    def users(self, names: list[str] | None) -> list[Human]:
         pass
 
     @strawberry.field
@@ -87,7 +85,7 @@ schema = strawberry.Schema(Query)
 
 def run_query(
     query: str, max_depth: int, should_ignore: ShouldIgnoreType = None
-) -> tuple[list[GraphQLError], Union[dict[str, int], None]]:
+) -> tuple[list[GraphQLError], dict[str, int] | None]:
     document = parse(query)
 
     result = None
@@ -238,7 +236,7 @@ def test_should_catch_query_thats_too_deep():
     }
     }
     """
-    errors, result = run_query(query, 4)
+    errors, _result = run_query(query, 4)
 
     assert len(errors) == 1
     assert errors[0].message == "'anonymous' exceeds maximum operation depth of 4"
@@ -247,7 +245,7 @@ def test_should_catch_query_thats_too_deep():
 def test_should_raise_invalid_ignore():
     with pytest.raises(
         TypeError,
-        match="The `should_ignore` argument to `QueryDepthLimiter` must be a callable.",
+        match=r"The `should_ignore` argument to `QueryDepthLimiter` must be a callable.",
     ):
         strawberry.Schema(
             Query, extensions=[QueryDepthLimiter(max_depth=10, should_ignore=True)]

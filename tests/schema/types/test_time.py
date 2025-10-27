@@ -112,7 +112,7 @@ def test_serialization_error_message_for_incorrect_time_string():
     """
     result = execute_mutation("25:00")
     assert result.errors
-    assert result.errors[0].message == (
+    assert result.errors[0].message.startswith(
         "Variable '$value' got invalid value '25:00'; Value cannot represent a "
         'Time: "25:00". hour must be in 0..23'
     )

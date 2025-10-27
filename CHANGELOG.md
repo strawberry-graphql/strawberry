@@ -1,6 +1,134 @@
 CHANGELOG
 =========
 
+0.284.1 - 2025-10-18
+--------------------
+
+This release fixes the usage of `strawberry.Maybe` inside modules using `from __future__ import annotations`
+
+Contributed by [Thiago Bellini Ribeiro](https://github.com/bellini666) via [PR #4031](https://github.com/strawberry-graphql/strawberry/pull/4031/)
+
+
+0.284.0 - 2025-10-17
+--------------------
+
+This release drops support for Python 3.9, which reached its end-of-life (EOL)
+in October 2025. The minimum supported Python version is now 3.10.
+
+We strongly recommend upgrading to Python 3.10 or a newer version, as older
+versions are no longer maintained and may contain security vulnerabilities.
+
+Contributed by [Thiago Bellini Ribeiro](https://github.com/bellini666) via [PR #4018](https://github.com/strawberry-graphql/strawberry/pull/4018/)
+
+
+0.283.3 - 2025-10-10
+--------------------
+
+Adds support for lazy unions.
+
+Contributed by [Radosław Cybulski](https://github.com/rcybulski1122012) via [PR #4017](https://github.com/strawberry-graphql/strawberry/pull/4017/)
+
+
+0.283.2 - 2025-10-07
+--------------------
+
+This release adds support for the upcoming Python 3.14
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #3828](https://github.com/strawberry-graphql/strawberry/pull/3828/)
+
+
+0.283.1 - 2025-10-06
+--------------------
+
+Fixed multipart subscription header parsing to properly handle optional boundary parameters and quoted subscription spec values. This improves compatibility with different GraphQL clients that may send headers in various formats.
+
+**Key improvements:**
+
+- Made the `boundary=graphql` parameter optional in multipart subscription detection
+- Added proper quote stripping for `subscriptionSpec` values (e.g., `subscriptionSpec="1.0"`)
+- Enhanced test coverage for different header format scenarios
+
+**Example of supported headers:**
+
+```raw
+Accept: multipart/mixed;boundary=graphql;subscriptionSpec=1.0,application/json
+Accept: multipart/mixed;subscriptionSpec="1.0",application/json
+```
+
+Contributed by [Louis Amon](https://github.com/LouisAmon) via [PR #4002](https://github.com/strawberry-graphql/strawberry/pull/4002/)
+
+
+0.283.0 - 2025-10-06
+--------------------
+
+In this release, we renamed the `strawberry server` command to `strawberry dev`
+to better reflect its purpose as a development server.
+
+We also deprecated the `strawberry-graphql[debug-server]` extra in favor of
+`strawberry-graphql[cli]`. Please update your dependencies accordingly.
+
+Contributed by [Jonathan Ehwald](https://github.com/DoctorJohn) via [PR #4011](https://github.com/strawberry-graphql/strawberry/pull/4011/)
+
+
+0.282.0 - 2025-09-07
+--------------------
+
+This release fixes mask errors to support strawberry execution results.
+
+Contributed by [Aryan Iyappan](https://github.com/aryaniyaps) via [PR #3987](https://github.com/strawberry-graphql/strawberry/pull/3987/)
+
+
+0.281.0 - 2025-08-26
+--------------------
+
+In this release we removed the `--log-operations` option from the
+`strawberry server` command. The option only worked for WebSocket connections to
+the debug server, and had limited utility.
+
+Removing this option allowed us to remove the undocumented `debug` option from
+all HTTP view integrations and WebSocket protocol implementation, simplifying
+the codebase.
+
+Contributed by [Jonathan Ehwald](https://github.com/DoctorJohn) via [PR #3979](https://github.com/strawberry-graphql/strawberry/pull/3979/)
+
+
+0.280.0 - 2025-08-19
+--------------------
+
+This release unifies the format of HTTP error response bodies across all HTTP
+view integrations. Previously, the Chalice integration used a custom JSON body
+response different from the plain string used by other integrations. Now, all
+integrations will return a plain string for HTTP error responses.
+
+Contributed by [Jonathan Ehwald](https://github.com/DoctorJohn) via [PR #3978](https://github.com/strawberry-graphql/strawberry/pull/3978/)
+
+
+0.279.0 - 2025-08-19
+--------------------
+
+This release changes the `strawberry.Maybe` type to provide a more consistent and intuitive API for handling optional fields in GraphQL inputs.
+
+**Breaking Change**: The `Maybe` type definition has been changed from `Union[Some[Union[T, None]], None]` to `Union[Some[T], None]`. This means:
+
+- `Maybe[str]` now only accepts string values or absent fields (refuses explicit null)
+- `Maybe[str | None]` accepts strings, null, or absent fields (maintains previous behavior)
+
+This provides a cleaner API where `if field is not None` consistently means "field was provided" for all Maybe fields. A codemod is available to automatically migrate your code: `strawberry upgrade maybe-optional`
+
+See the [breaking changes documentation](https://strawberry.rocks/docs/breaking-changes/0.279.0) for migration details.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #3961](https://github.com/strawberry-graphql/strawberry/pull/3961/)
+
+
+0.278.1 - 2025-08-05
+--------------------
+
+This release removes some internal code in favour of using an external dependency,
+this will help us with maintaining the codebase in the future 😊
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #3967](https://github.com/strawberry-graphql/strawberry/pull/3967/)
+
+
 0.278.0 - 2025-07-19
 --------------------
 

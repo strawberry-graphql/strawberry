@@ -1,6 +1,7 @@
 import dataclasses
+from collections.abc import Callable
 from enum import Enum
-from typing import Callable, Optional, TypeVar
+from typing import TypeVar
 from typing_extensions import dataclass_transform
 
 from strawberry.types.field import StrawberryField, field
@@ -27,13 +28,13 @@ class Location(Enum):
 @dataclasses.dataclass
 class StrawberrySchemaDirective:
     python_name: str
-    graphql_name: Optional[str]
+    graphql_name: str | None
     locations: list[Location]
     fields: list["StrawberryField"]
-    description: Optional[str] = None
+    description: str | None = None
     repeatable: bool = False
     print_definition: bool = True
-    origin: Optional[type] = None
+    origin: type | None = None
 
 
 T = TypeVar("T", bound=type)
@@ -47,8 +48,8 @@ T = TypeVar("T", bound=type)
 def schema_directive(
     *,
     locations: list[Location],
-    description: Optional[str] = None,
-    name: Optional[str] = None,
+    description: str | None = None,
+    name: str | None = None,
     repeatable: bool = False,
     print_definition: bool = True,
 ) -> Callable[[T], T]:

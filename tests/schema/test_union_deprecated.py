@@ -1,7 +1,5 @@
-import sys
 from dataclasses import dataclass
 from textwrap import dedent
-from typing import Optional
 
 import pytest
 
@@ -108,7 +106,7 @@ def test_can_use_union_in_optional():
 
     @strawberry.type
     class Query:
-        ab: Optional[Result] = None
+        ab: Result | None = None
 
     schema = strawberry.Schema(query=Query)
 
@@ -210,10 +208,6 @@ def test_union_explicit_type_resolution():
     assert result.data == {"myField": {"__typename": "A", "a": 1}}
 
 
-@pytest.mark.skipif(
-    sys.version_info < (3, 10),
-    reason="pipe syntax for union is only available on python 3.10+",
-)
 def test_union_optional_with_or_operator():
     """Verify that the `|` operator is supported when annotating unions as
     optional in schemas.

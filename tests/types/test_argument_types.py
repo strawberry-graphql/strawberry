@@ -79,7 +79,7 @@ def test_object():
 
 def test_optional():
     @strawberry.field
-    def set_age(age: Optional[int]) -> bool:
+    def set_age(age: int | None) -> bool:
         _ = age
         return True
 

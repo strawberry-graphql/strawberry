@@ -6,11 +6,10 @@ from typing import (
     TYPE_CHECKING,
     Annotated,
     Any,
-    Optional,
-    Union,
     cast,
+    get_args,
+    get_origin,
 )
-from typing_extensions import get_args, get_origin
 
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.exceptions import MultipleStrawberryArgumentsError, UnsupportedTypeError
@@ -47,19 +46,19 @@ DEPRECATED_NAMES: dict[str, str] = {
 
 
 class StrawberryArgumentAnnotation:
-    description: Optional[str]
-    name: Optional[str]
-    deprecation_reason: Optional[str]
+    description: str | None
+    name: str | None
+    deprecation_reason: str | None
     directives: Iterable[object]
     metadata: Mapping[Any, Any]
 
     def __init__(
         self,
-        description: Optional[str] = None,
-        name: Optional[str] = None,
-        deprecation_reason: Optional[str] = None,
+        description: str | None = None,
+        name: str | None = None,
+        deprecation_reason: str | None = None,
         directives: Iterable[object] = (),
-        metadata: Optional[Mapping[Any, Any]] = None,
+        metadata: Mapping[Any, Any] | None = None,
     ) -> None:
         self.description = description
         self.name = name
@@ -72,14 +71,14 @@ class StrawberryArgument:
     def __init__(
         self,
         python_name: str,
-        graphql_name: Optional[str],
+        graphql_name: str | None,
         type_annotation: StrawberryAnnotation,
         is_subscription: bool = False,
-        description: Optional[str] = None,
+        description: str | None = None,
         default: object = _deprecated_UNSET,
-        deprecation_reason: Optional[str] = None,
+        deprecation_reason: str | None = None,
         directives: Iterable[object] = (),
-        metadata: Optional[Mapping[Any, Any]] = None,
+        metadata: Mapping[Any, Any] | None = None,
     ) -> None:
         self.python_name = python_name
         self.graphql_name = graphql_name
@@ -130,7 +129,7 @@ class StrawberryArgument:
                         )
 
     @property
-    def type(self) -> Union[StrawberryType, type]:
+    def type(self) -> StrawberryType | type:
         return self.type_annotation.resolve()
 
     @property
@@ -145,8 +144,8 @@ class StrawberryArgument:
 
 
 def _is_leaf_type(
-    type_: Union[StrawberryType, type],
-    scalar_registry: Mapping[object, Union[ScalarWrapper, ScalarDefinition]],
+    type_: StrawberryType | type,
+    scalar_registry: Mapping[object, ScalarWrapper | ScalarDefinition],
     skip_classes: tuple[type, ...] = (),
 ) -> bool:
     if type_ in skip_classes:
@@ -169,8 +168,8 @@ def _is_leaf_type(
 
 
 def _is_optional_leaf_type(
-    type_: Union[StrawberryType, type],
-    scalar_registry: Mapping[object, Union[ScalarWrapper, ScalarDefinition]],
+    type_: StrawberryType | type,
+    scalar_registry: Mapping[object, ScalarWrapper | ScalarDefinition],
     skip_classes: tuple[type, ...] = (),
 ) -> bool:
     if type_ in skip_classes:
@@ -184,17 +183,31 @@ def _is_optional_leaf_type(
 
 def convert_argument(
     value: object,
-    type_: Union[StrawberryType, type],
-    scalar_registry: Mapping[object, Union[ScalarWrapper, ScalarDefinition]],
+    type_: StrawberryType | type,
+    scalar_registry: Mapping[object, ScalarWrapper | ScalarDefinition],
     config: StrawberryConfig,
 ) -> object:
     from strawberry.relay.types import GlobalID
 
     # TODO: move this somewhere else and make it first class
-    if isinstance(type_, StrawberryOptional):
+    # Handle StrawberryMaybe first, since it extends StrawberryOptional
+    if isinstance(type_, StrawberryMaybe):
+        # Check if this is Maybe[T | None] (has StrawberryOptional as of_type)
+        if isinstance(type_.of_type, StrawberryOptional):
+            # This is Maybe[T | None] - allows null values
+            res = convert_argument(value, type_.of_type, scalar_registry, config)
+
+            return Some(res)
+
+        # This is Maybe[T] - validation for null values is handled by MaybeNullValidationRule
+        # Convert the value and wrap in Some()
         res = convert_argument(value, type_.of_type, scalar_registry, config)
 
-        return Some(res) if isinstance(type_, StrawberryMaybe) else res
+        return Some(res)
+
+    # Handle regular StrawberryOptional (not Maybe)
+    if isinstance(type_, StrawberryOptional):
+        return convert_argument(value, type_.of_type, scalar_registry, config)
 
     if value is None:
         return None
@@ -257,7 +270,7 @@ def convert_argument(
 def convert_arguments(
     value: dict[str, Any],
     arguments: list[StrawberryArgument],
-    scalar_registry: Mapping[object, Union[ScalarWrapper, ScalarDefinition]],
+    scalar_registry: Mapping[object, ScalarWrapper | ScalarDefinition],
     config: StrawberryConfig,
 ) -> dict[str, Any]:
     """Converts a nested dictionary to a dictionary of actual types.
@@ -289,11 +302,11 @@ def convert_arguments(
 
 
 def argument(
-    description: Optional[str] = None,
-    name: Optional[str] = None,
-    deprecation_reason: Optional[str] = None,
+    description: str | None = None,
+    name: str | None = None,
+    deprecation_reason: str | None = None,
     directives: Iterable[object] = (),
-    metadata: Optional[Mapping[Any, Any]] = None,
+    metadata: Mapping[Any, Any] | None = None,
 ) -> StrawberryArgumentAnnotation:
     """Function to add metadata to an argument, like a description or deprecation reason.
 

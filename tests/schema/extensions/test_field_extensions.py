@@ -1,5 +1,6 @@
 import re
-from typing import Annotated, Any, Callable, Optional
+from collections.abc import Callable
+from typing import Annotated, Any
 
 import pytest
 
@@ -359,7 +360,7 @@ def test_extension_access_argument_metadata():
         def string(
             self,
             some_input: Annotated[str, strawberry.argument(metadata={"test": "foo"})],
-            another_input: Optional[str] = None,
+            another_input: str | None = None,
         ) -> str:
             return f"This is a test!! {some_input}"
 

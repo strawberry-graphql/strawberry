@@ -4,8 +4,8 @@ import dataclasses
 import keyword
 from collections import defaultdict
 from graphlib import TopologicalSorter
-from typing import TYPE_CHECKING, Union
-from typing_extensions import Protocol, TypeAlias
+from typing import TYPE_CHECKING, TypeAlias
+from typing_extensions import Protocol
 
 import libcst as cst
 from graphql import (
@@ -256,7 +256,7 @@ def _get_field(
     )
 
 
-ArgumentValue: TypeAlias = Union[str, bool, list["ArgumentValue"]]
+ArgumentValue: TypeAlias = str | bool | list["ArgumentValue"]
 
 
 def _get_argument_value(argument_value: ConstValueNode) -> ArgumentValue:

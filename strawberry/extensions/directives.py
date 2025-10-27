@@ -1,12 +1,14 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Callable
+from typing import TYPE_CHECKING, Any
 
 from strawberry.extensions import SchemaExtension
 from strawberry.types.nodes import convert_arguments
 from strawberry.utils.await_maybe import await_maybe
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from graphql import DirectiveNode, GraphQLResolveInfo
 
     from strawberry.directive import StrawberryDirective

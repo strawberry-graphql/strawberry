@@ -5,12 +5,8 @@ import warnings
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
-    Optional,
-    Union,
-    cast,
+    TypeGuard,
 )
-from typing_extensions import TypeGuard
 
 from asgiref.sync import markcoroutinefunction
 from django.core.serializers.json import DjangoJSONEncoder
@@ -26,11 +22,10 @@ from django.template.exceptions import TemplateDoesNotExist
 from django.template.loader import render_to_string
 from django.utils.decorators import classonlymethod
 from django.views.generic import View
+from lia import AsyncDjangoHTTPRequestAdapter, DjangoHTTPRequestAdapter, HTTPException
 
-from strawberry.http.async_base_view import AsyncBaseHTTPView, AsyncHTTPRequestAdapter
-from strawberry.http.exceptions import HTTPException
-from strawberry.http.sync_base_view import SyncBaseHTTPView, SyncHTTPRequestAdapter
-from strawberry.http.types import FormData, HTTPMethod, QueryParams
+from strawberry.http.async_base_view import AsyncBaseHTTPView
+from strawberry.http.sync_base_view import SyncBaseHTTPView
 from strawberry.http.typevars import (
     Context,
     RootValue,
@@ -39,7 +34,7 @@ from strawberry.http.typevars import (
 from .context import StrawberryDjangoContext
 
 if TYPE_CHECKING:
-    from collections.abc import AsyncIterator, Mapping
+    from collections.abc import AsyncIterator, Callable
 
     from django.template.response import TemplateResponse
 
@@ -50,7 +45,7 @@ if TYPE_CHECKING:
 
 # TODO: remove this and unify temporal responses
 class TemporalHttpResponse(JsonResponse):
-    status_code: Optional[int] = None  # pyright: ignore
+    status_code: int | None = None  # pyright: ignore
 
     def __init__(self) -> None:
         super().__init__({})
@@ -67,81 +62,14 @@ class TemporalHttpResponse(JsonResponse):
         )
 
 
-class DjangoHTTPRequestAdapter(SyncHTTPRequestAdapter):
-    def __init__(self, request: HttpRequest) -> None:
-        self.request = request
-
-    @property
-    def query_params(self) -> QueryParams:
-        return self.request.GET.dict()
-
-    @property
-    def body(self) -> Union[str, bytes]:
-        return self.request.body.decode()
-
-    @property
-    def method(self) -> HTTPMethod:
-        assert self.request.method is not None
-
-        return cast("HTTPMethod", self.request.method.upper())
-
-    @property
-    def headers(self) -> Mapping[str, str]:
-        return self.request.headers
-
-    @property
-    def post_data(self) -> Mapping[str, Union[str, bytes]]:
-        return self.request.POST
-
-    @property
-    def files(self) -> Mapping[str, Any]:
-        return self.request.FILES
-
-    @property
-    def content_type(self) -> Optional[str]:
-        return self.request.content_type
-
-
-class AsyncDjangoHTTPRequestAdapter(AsyncHTTPRequestAdapter):
-    def __init__(self, request: HttpRequest) -> None:
-        self.request = request
-
-    @property
-    def query_params(self) -> QueryParams:
-        return self.request.GET.dict()
-
-    @property
-    def method(self) -> HTTPMethod:
-        assert self.request.method is not None
-
-        return cast("HTTPMethod", self.request.method.upper())
-
-    @property
-    def headers(self) -> Mapping[str, str]:
-        return self.request.headers
-
-    @property
-    def content_type(self) -> Optional[str]:
-        return self.headers.get("Content-type")
-
-    async def get_body(self) -> str:
-        return self.request.body.decode()
-
-    async def get_form_data(self) -> FormData:
-        return FormData(
-            files=self.request.FILES,
-            form=self.request.POST,
-        )
-
-
 class BaseView:
     graphql_ide_html: str
 
     def __init__(
         self,
         schema: BaseSchema,
-        graphiql: Optional[str] = None,
-        graphql_ide: Optional[GraphQL_IDE] = "graphiql",
+        graphiql: str | None = None,
+        graphql_ide: GraphQL_IDE | None = "graphiql",
         allow_queries_via_get: bool = True,
         multipart_uploads_enabled: bool = False,
         **kwargs: Any,
@@ -164,7 +92,7 @@ class BaseView:
 
     def create_response(
         self,
-        response_data: Union[GraphQLHTTPResponse, list[GraphQLHTTPResponse]],
+        response_data: GraphQLHTTPResponse | list[GraphQLHTTPResponse],
         sub_response: HttpResponse,
     ) -> HttpResponseBase:
         data = self.encode_json(response_data)
@@ -212,13 +140,13 @@ class GraphQLView(
     ],
     View,
 ):
-    graphiql: Optional[bool] = None
-    graphql_ide: Optional[GraphQL_IDE] = "graphiql"
+    graphiql: bool | None = None
+    graphql_ide: GraphQL_IDE | None = "graphiql"
     allow_queries_via_get = True
     schema: BaseSchema = None  # type: ignore
     request_adapter_class = DjangoHTTPRequestAdapter
 
-    def get_root_value(self, request: HttpRequest) -> Optional[RootValue]:
+    def get_root_value(self, request: HttpRequest) -> RootValue | None:
         return None
 
     def get_context(self, request: HttpRequest, response: HttpResponse) -> Context:
@@ -229,7 +157,7 @@ class GraphQLView(
 
     def dispatch(
         self, request: HttpRequest, *args: Any, **kwargs: Any
-    ) -> Union[HttpResponseNotAllowed, TemplateResponse, HttpResponseBase]:
+    ) -> HttpResponseNotAllowed | TemplateResponse | HttpResponseBase:
         try:
             return self.run(request=request)
         except HTTPException as e:
@@ -260,8 +188,8 @@ class AsyncGraphQLView(
     ],
     View,
 ):
-    graphiql: Optional[bool] = None
-    graphql_ide: Optional[GraphQL_IDE] = "graphiql"
+    graphiql: bool | None = None
+    graphql_ide: GraphQL_IDE | None = "graphiql"
     allow_queries_via_get = True
     schema: BaseSchema = None  # type: ignore
     request_adapter_class = AsyncDjangoHTTPRequestAdapter
@@ -276,7 +204,7 @@ class AsyncGraphQLView(
 
         return view
 
-    async def get_root_value(self, request: HttpRequest) -> Optional[RootValue]:
+    async def get_root_value(self, request: HttpRequest) -> RootValue | None:
         return None
 
     async def get_context(
@@ -289,7 +217,7 @@ class AsyncGraphQLView(
 
     async def dispatch(  # pyright: ignore
         self, request: HttpRequest, *args: Any, **kwargs: Any
-    ) -> Union[HttpResponseNotAllowed, TemplateResponse, HttpResponseBase]:
+    ) -> HttpResponseNotAllowed | TemplateResponse | HttpResponseBase:
         try:
             return await self.run(request=request)
         except HTTPException as e:
@@ -309,11 +237,11 @@ class AsyncGraphQLView(
     def is_websocket_request(self, request: HttpRequest) -> TypeGuard[HttpRequest]:
         return False
 
-    async def pick_websocket_subprotocol(self, request: HttpRequest) -> Optional[str]:
+    async def pick_websocket_subprotocol(self, request: HttpRequest) -> str | None:
         raise NotImplementedError
 
     async def create_websocket_response(
-        self, request: HttpRequest, subprotocol: Optional[str]
+        self, request: HttpRequest, subprotocol: str | None
     ) -> TemporalHttpResponse:
         raise NotImplementedError
 

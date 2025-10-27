@@ -7,7 +7,6 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Generic,
-    Optional,
     cast,
 )
 
@@ -34,7 +33,6 @@ from strawberry.types import ExecutionResult
 from strawberry.types.execution import PreExecutionError
 from strawberry.types.graphql import OperationType
 from strawberry.types.unset import UnsetType
-from strawberry.utils.debug import pretty_print_graphql_operation
 from strawberry.utils.operation import get_operation_type
 
 if TYPE_CHECKING:
@@ -53,9 +51,8 @@ class BaseGraphQLTransportWSHandler(Generic[Context, RootValue]):
         view: AsyncBaseHTTPView[Any, Any, Any, Any, Any, Context, RootValue],
         websocket: AsyncWebSocketAdapter,
         context: Context,
-        root_value: Optional[RootValue],
+        root_value: RootValue | None,
         schema: BaseSchema,
-        debug: bool,
         connection_init_wait_timeout: timedelta,
     ) -> None:
         self.view = view
@@ -63,9 +60,8 @@ class BaseGraphQLTransportWSHandler(Generic[Context, RootValue]):
         self.context = context
         self.root_value = root_value
         self.schema = schema
-        self.debug = debug
         self.connection_init_wait_timeout = connection_init_wait_timeout
-        self.connection_init_timeout_task: Optional[asyncio.Task] = None
+        self.connection_init_timeout_task: asyncio.Task | None = None
         self.connection_init_received = False
         self.connection_acknowledged = False
         self.connection_timed_out = False
@@ -237,13 +233,6 @@ class BaseGraphQLTransportWSHandler(Generic[Context, RootValue]):
             await self.websocket.close(code=4409, reason=reason)
             return
 
-        if self.debug:  # pragma: no cover
-            pretty_print_graphql_operation(
-                message["payload"].get("operationName"),
-                message["payload"]["query"],
-                message["payload"].get("variables"),
-            )
-
         operation = Operation(
             self,
             message["id"],
@@ -371,8 +360,8 @@ class Operation(Generic[Context, RootValue]):
         id: str,
         operation_type: OperationType,
         query: str,
-        variables: Optional[dict[str, object]],
-        operation_name: Optional[str],
+        variables: dict[str, object] | None,
+        operation_name: str | None,
     ) -> None:
         self.handler = handler
         self.id = id
@@ -381,7 +370,7 @@ class Operation(Generic[Context, RootValue]):
         self.variables = variables
         self.operation_name = operation_name
         self.completed = False
-        self.task: Optional[asyncio.Task] = None
+        self.task: asyncio.Task | None = None
 
     async def send_operation_message(self, message: Message) -> None:
         if self.completed:

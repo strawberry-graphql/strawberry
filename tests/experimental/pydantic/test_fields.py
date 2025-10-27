@@ -1,5 +1,5 @@
 import re
-from typing_extensions import Literal
+from typing import Literal
 
 import pydantic
 import pytest

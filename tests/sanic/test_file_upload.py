@@ -29,6 +29,7 @@ class Mutation:
 @pytest.fixture
 def app():
     from sanic import Sanic
+
     from strawberry.sanic.views import GraphQLView
 
     sanic_app = Sanic("sanic_testing")
@@ -47,6 +48,7 @@ def app():
 def test_file_cast(app: Sanic):
     """Tests that the list of files in a sanic Request gets correctly turned into a dictionary"""
     from sanic.request import File
+
     from strawberry.sanic import utils
 
     file_name = "test.txt"

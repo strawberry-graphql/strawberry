@@ -142,8 +142,8 @@ def test_basic_types():
 def test_optional():
     @strawberry.type
     class Query:
-        name: "Optional[str]"
-        age: "Optional[int]"
+        name: "str | None"
+        age: "int | None"
 
     definition = Query.__strawberry_definition__
     assert definition.name == "Query"

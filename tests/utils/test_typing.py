@@ -12,13 +12,10 @@ class Fruit: ...
 
 def test_get_optional_annotation():
     # Pair Union
-    assert get_optional_annotation(Optional[Union[str, bool]]) == Union[str, bool]
+    assert get_optional_annotation(Optional[str | bool]) == Union[str, bool]
 
     # More than pair Union
-    assert (
-        get_optional_annotation(Optional[Union[str, int, bool]])
-        == Union[str, int, bool]
-    )
+    assert get_optional_annotation(Optional[str | int | bool]) == Union[str, int, bool]
 
 
 def test_eval_type():

@@ -1,63 +1,33 @@
 import asyncio
 import warnings
-from collections.abc import AsyncGenerator, Mapping, Sequence
+from collections.abc import AsyncGenerator, Callable, Mapping, Sequence
 from datetime import timedelta
 from json.decoder import JSONDecodeError
-from typing import TYPE_CHECKING, Callable, ClassVar, Optional, Union, cast
-from typing_extensions import TypeGuard
+from typing import TYPE_CHECKING, ClassVar, TypeGuard, Union
 
+from lia import HTTPException, QuartHTTPRequestAdapter
 from quart import Request, Response, Websocket, request, websocket
 from quart.ctx import has_websocket_context
 from quart.views import View
+
 from strawberry.http.async_base_view import (
     AsyncBaseHTTPView,
-    AsyncHTTPRequestAdapter,
     AsyncWebSocketAdapter,
 )
 from strawberry.http.exceptions import (
-    HTTPException,
     NonJsonMessageReceived,
     NonTextMessageReceived,
     WebSocketDisconnected,
 )
 from strawberry.http.ides import GraphQL_IDE
-from strawberry.http.types import FormData, HTTPMethod, QueryParams
 from strawberry.http.typevars import Context, RootValue
 from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
 
 if TYPE_CHECKING:
     from quart.typing import ResponseReturnValue
+
     from strawberry.http import GraphQLHTTPResponse
     from strawberry.schema.base import BaseSchema
-
-
-class QuartHTTPRequestAdapter(AsyncHTTPRequestAdapter):
-    def __init__(self, request: Request) -> None:
-        self.request = request
-
-    @property
-    def query_params(self) -> QueryParams:
-        return self.request.args.to_dict()
-
-    @property
-    def method(self) -> HTTPMethod:
-        return cast("HTTPMethod", self.request.method.upper())
-
-    @property
-    def content_type(self) -> Optional[str]:
-        return self.request.content_type
-
-    @property
-    def headers(self) -> Mapping[str, str]:
-        return self.request.headers  # type: ignore
-
-    async def get_body(self) -> str:
-        return (await self.request.data).decode()
-
-    async def get_form_data(self) -> FormData:
-        files = await self.request.files
-        form = await self.request.form
-        return FormData(files=files, form=form)
 
 
 class QuartWebSocketAdapter(AsyncWebSocketAdapter):
@@ -108,17 +78,16 @@ class GraphQLView(
     methods: ClassVar[list[str]] = ["GET", "POST"]
     allow_queries_via_get: bool = True
     request_adapter_class = QuartHTTPRequestAdapter
-    websocket_adapter_class = QuartWebSocketAdapter
+    websocket_adapter_class = QuartWebSocketAdapter  # type: ignore
 
     def __init__(
         self,
         schema: "BaseSchema",
-        graphiql: Optional[bool] = None,
-        graphql_ide: Optional[GraphQL_IDE] = "graphiql",
+        graphiql: bool | None = None,
+        graphql_ide: GraphQL_IDE | None = "graphiql",
         allow_queries_via_get: bool = True,
         keep_alive: bool = True,
         keep_alive_interval: float = 1,
-        debug: bool = False,
         subscription_protocols: Sequence[str] = (
             GRAPHQL_TRANSPORT_WS_PROTOCOL,
             GRAPHQL_WS_PROTOCOL,
@@ -130,7 +99,6 @@ class GraphQLView(
         self.allow_queries_via_get = allow_queries_via_get
         self.keep_alive = keep_alive
         self.keep_alive_interval = keep_alive_interval
-        self.debug = debug
         self.subscription_protocols = subscription_protocols
         self.connection_init_wait_timeout = connection_init_wait_timeout
         self.multipart_uploads_enabled = multipart_uploads_enabled
@@ -158,13 +126,11 @@ class GraphQLView(
         return sub_response
 
     async def get_context(
-        self, request: Union[Request, Websocket], response: Response
+        self, request: Request | Websocket, response: Response
     ) -> Context:
         return {"request": request, "response": response}  # type: ignore
 
-    async def get_root_value(
-        self, request: Union[Request, Websocket]
-    ) -> Optional[RootValue]:
+    async def get_root_value(self, request: Request | Websocket) -> RootValue | None:
         return None
 
     async def get_sub_response(self, request: Request) -> Response:
@@ -198,18 +164,18 @@ class GraphQLView(
         )
 
     def is_websocket_request(
-        self, request: Union[Request, Websocket]
+        self, request: Request | Websocket
     ) -> TypeGuard[Websocket]:
         return has_websocket_context()
 
-    async def pick_websocket_subprotocol(self, request: Websocket) -> Optional[str]:
+    async def pick_websocket_subprotocol(self, request: Websocket) -> str | None:
         protocols = request.requested_subprotocols
         intersection = set(protocols) & set(self.subscription_protocols)
         sorted_intersection = sorted(intersection, key=protocols.index)
         return next(iter(sorted_intersection), None)
 
     async def create_websocket_response(
-        self, request: Websocket, subprotocol: Optional[str]
+        self, request: Websocket, subprotocol: str | None
     ) -> Response:
         await request.accept(subprotocol=subprotocol)
         return Response()

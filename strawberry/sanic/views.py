@@ -5,69 +5,27 @@ import warnings
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
-    Optional,
-    Union,
-    cast,
+    TypeGuard,
 )
-from typing_extensions import TypeGuard
 
+from lia import HTTPException, SanicHTTPRequestAdapter
 from sanic.request import Request
 from sanic.response import HTTPResponse, html
 from sanic.views import HTTPMethodView
-from strawberry.http.async_base_view import AsyncBaseHTTPView, AsyncHTTPRequestAdapter
-from strawberry.http.exceptions import HTTPException
+
+from strawberry.http.async_base_view import AsyncBaseHTTPView
 from strawberry.http.temporal_response import TemporalResponse
-from strawberry.http.types import FormData, HTTPMethod, QueryParams
 from strawberry.http.typevars import (
     Context,
     RootValue,
 )
-from strawberry.sanic.utils import convert_request_to_files_dict
 
 if TYPE_CHECKING:
-    from collections.abc import AsyncGenerator, Mapping
+    from collections.abc import AsyncGenerator, Callable
 
     from strawberry.http import GraphQLHTTPResponse
     from strawberry.http.ides import GraphQL_IDE
     from strawberry.schema import BaseSchema
-
-
-class SanicHTTPRequestAdapter(AsyncHTTPRequestAdapter):
-    def __init__(self, request: Request) -> None:
-        self.request = request
-
-    @property
-    def query_params(self) -> QueryParams:
-        # Just a heads up, Sanic's request.args uses urllib.parse.parse_qs
-        # to parse query string parameters. This returns a dictionary where
-        # the keys are the unique variable names and the values are lists
-        # of values for each variable name. To ensure consistency, we're
-        # enforcing the use of the first value in each list.
-        args = self.request.get_args(keep_blank_values=True)
-        return {k: args.get(k, None) for k in args}
-
-    @property
-    def method(self) -> HTTPMethod:
-        return cast("HTTPMethod", self.request.method.upper())
-
-    @property
-    def headers(self) -> Mapping[str, str]:
-        return self.request.headers
-
-    @property
-    def content_type(self) -> Optional[str]:
-        return self.request.content_type
-
-    async def get_body(self) -> str:
-        return self.request.body.decode()
-
-    async def get_form_data(self) -> FormData:
-        assert self.request.form is not None
-
-        files = convert_request_to_files_dict(self.request)
-
-        return FormData(form=self.request.form, files=files)
 
 
 class GraphQLView(
@@ -105,11 +63,11 @@ class GraphQLView(
     def __init__(
         self,
         schema: BaseSchema,
-        graphiql: Optional[bool] = None,
-        graphql_ide: Optional[GraphQL_IDE] = "graphiql",
+        graphiql: bool | None = None,
+        graphql_ide: GraphQL_IDE | None = "graphiql",
         allow_queries_via_get: bool = True,
-        json_encoder: Optional[type[json.JSONEncoder]] = None,
-        json_dumps_params: Optional[dict[str, Any]] = None,
+        json_encoder: type[json.JSONEncoder] | None = None,
+        json_dumps_params: dict[str, Any] | None = None,
         multipart_uploads_enabled: bool = False,
     ) -> None:
         self.schema = schema
@@ -144,7 +102,7 @@ class GraphQLView(
         else:
             self.graphql_ide = graphql_ide
 
-    async def get_root_value(self, request: Request) -> Optional[RootValue]:
+    async def get_root_value(self, request: Request) -> RootValue | None:
         return None
 
     async def get_context(
@@ -160,7 +118,7 @@ class GraphQLView(
 
     def create_response(
         self,
-        response_data: Union[GraphQLHTTPResponse, list[GraphQLHTTPResponse]],
+        response_data: GraphQLHTTPResponse | list[GraphQLHTTPResponse],
         sub_response: TemporalResponse,
     ) -> HTTPResponse:
         status_code = sub_response.status_code
@@ -219,11 +177,11 @@ class GraphQLView(
     def is_websocket_request(self, request: Request) -> TypeGuard[Request]:
         return False
 
-    async def pick_websocket_subprotocol(self, request: Request) -> Optional[str]:
+    async def pick_websocket_subprotocol(self, request: Request) -> str | None:
         raise NotImplementedError
 
     async def create_websocket_response(
-        self, request: Request, subprotocol: Optional[str]
+        self, request: Request, subprotocol: str | None
     ) -> TemporalResponse:
         raise NotImplementedError
 

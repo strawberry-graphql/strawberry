@@ -1,14 +1,12 @@
 import asyncio
 import inspect
+from collections.abc import Callable
 from functools import lru_cache
 from typing import (
     Any,
-    Callable,
     Generic,
-    Optional,
     Protocol,
     TypeVar,
-    Union,
     get_args,
     get_origin,
 )
@@ -39,7 +37,7 @@ def get_func_args(func: Callable[[Any], Any]) -> list[str]:
     ]
 
 
-def get_specialized_type_var_map(cls: type) -> Optional[dict[str, type]]:
+def get_specialized_type_var_map(cls: type) -> dict[str, type] | None:
     """Get a type var map for specialized types.
 
     Consider the following:
@@ -84,7 +82,7 @@ def get_specialized_type_var_map(cls: type) -> Optional[dict[str, type]]:
     """
     from strawberry.types.base import has_object_definition
 
-    param_args: dict[TypeVar, Union[TypeVar, type]] = {}
+    param_args: dict[TypeVar, TypeVar | type] = {}
 
     types: list[type] = [cls]
     while types:
@@ -99,7 +97,7 @@ def get_specialized_type_var_map(cls: type) -> Optional[dict[str, type]]:
         if (type_params := getattr(origin, "__parameters__", None)) is not None:
             args = get_args(tp)
             if args:
-                for type_param, arg in zip(type_params, args):
+                for type_param, arg in zip(type_params, args, strict=True):
                     if type_param not in param_args:
                         param_args[type_param] = arg
             else:

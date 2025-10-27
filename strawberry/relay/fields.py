@@ -8,6 +8,7 @@ from collections.abc import (
     AsyncIterable,
     AsyncIterator,
     Awaitable,
+    Callable,
     Iterable,
     Iterator,
     Mapping,
@@ -17,13 +18,12 @@ from typing import (
     TYPE_CHECKING,
     Annotated,
     Any,
-    Callable,
     ForwardRef,
     Optional,
-    Union,
     cast,
+    get_args,
+    get_origin,
 )
-from typing_extensions import get_args, get_origin
 
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.extensions.field_extension import (
@@ -47,7 +47,7 @@ from strawberry.utils.typing import eval_type, is_generic_alias, is_optional, is
 from .types import Connection, GlobalID, Node
 
 if TYPE_CHECKING:
-    from typing_extensions import Literal
+    from typing import Literal
 
     from strawberry.permission import BasePermission
     from strawberry.types.info import Info
@@ -81,14 +81,14 @@ class NodeExtension(FieldExtension):
 
     def get_node_resolver(
         self, field: StrawberryField
-    ) -> Callable[[Info, GlobalID], Union[Node, None, Awaitable[Union[Node, None]]]]:
+    ) -> Callable[[Info, GlobalID], Node | None | Awaitable[Node | None]]:
         type_ = field.type
         is_optional = isinstance(type_, StrawberryOptional)
 
         def resolver(
             info: Info,
             id: Annotated[GlobalID, argument(description="The ID of the object.")],
-        ) -> Union[Node, None, Awaitable[Union[Node, None]]]:
+        ) -> Node | None | Awaitable[Node | None]:
             node_type = id.resolve_type(info)
             resolved_node = node_type.resolve_node(
                 id.node_id,
@@ -114,7 +114,7 @@ class NodeExtension(FieldExtension):
 
     def get_node_list_resolver(
         self, field: StrawberryField
-    ) -> Callable[[Info, list[GlobalID]], Union[list[Node], Awaitable[list[Node]]]]:
+    ) -> Callable[[Info, list[GlobalID]], list[Node] | Awaitable[list[Node]]]:
         type_ = field.type
         assert isinstance(type_, StrawberryList)
         is_optional = isinstance(type_.of_type, StrawberryOptional)
@@ -124,7 +124,7 @@ class NodeExtension(FieldExtension):
             ids: Annotated[
                 list[GlobalID], argument(description="The IDs of the objects.")
             ],
-        ) -> Union[list[Node], Awaitable[list[Node]]]:
+        ) -> list[Node] | Awaitable[list[Node]]:
             nodes_map: defaultdict[type[Node], list[str]] = defaultdict(list)
             # Store the index of the node in the list of nodes of the same type
             # so that we can return them in the same order while also supporting
@@ -180,6 +180,7 @@ class NodeExtension(FieldExtension):
                                     for nodes in asyncgen_nodes.values()
                                 ),
                             ),
+                            strict=True,
                         )
                     )
 
@@ -207,7 +208,7 @@ class NodeExtension(FieldExtension):
 class ConnectionExtension(FieldExtension):
     connection_type: type[Connection[Node]]
 
-    def __init__(self, max_results: Optional[int] = None) -> None:
+    def __init__(self, max_results: int | None = None) -> None:
         self.max_results = max_results
 
     def apply(self, field: StrawberryField) -> None:
@@ -216,7 +217,7 @@ class ConnectionExtension(FieldExtension):
             StrawberryArgument(
                 python_name="before",
                 graphql_name=None,
-                type_annotation=StrawberryAnnotation(Optional[str]),
+                type_annotation=StrawberryAnnotation(Optional[str]),  # noqa: UP045
                 description=(
                     "Returns the items in the list that come before the "
                     "specified cursor."
@@ -226,7 +227,7 @@ class ConnectionExtension(FieldExtension):
             StrawberryArgument(
                 python_name="after",
                 graphql_name=None,
-                type_annotation=StrawberryAnnotation(Optional[str]),
+                type_annotation=StrawberryAnnotation(Optional[str]),  # noqa: UP045
                 description=(
                     "Returns the items in the list that come after the "
                     "specified cursor."
@@ -236,14 +237,14 @@ class ConnectionExtension(FieldExtension):
             StrawberryArgument(
                 python_name="first",
                 graphql_name=None,
-                type_annotation=StrawberryAnnotation(Optional[int]),
+                type_annotation=StrawberryAnnotation(Optional[int]),  # noqa: UP045
                 description="Returns the first n items from the list.",
                 default=None,
             ),
             StrawberryArgument(
                 python_name="last",
                 graphql_name=None,
-                type_annotation=StrawberryAnnotation(Optional[int]),
+                type_annotation=StrawberryAnnotation(Optional[int]),  # noqa: UP045
                 description=(
                     "Returns the items in the list that come after the "
                     "specified cursor."
@@ -307,10 +308,10 @@ class ConnectionExtension(FieldExtension):
         source: Any,
         info: Info,
         *,
-        before: Optional[str] = None,
-        after: Optional[str] = None,
-        first: Optional[int] = None,
-        last: Optional[int] = None,
+        before: str | None = None,
+        after: str | None = None,
+        first: int | None = None,
+        last: int | None = None,
         **kwargs: Any,
     ) -> Any:
         assert self.connection_type is not None
@@ -330,10 +331,10 @@ class ConnectionExtension(FieldExtension):
         source: Any,
         info: Info,
         *,
-        before: Optional[str] = None,
-        after: Optional[str] = None,
-        first: Optional[int] = None,
-        last: Optional[int] = None,
+        before: str | None = None,
+        after: str | None = None,
+        first: int | None = None,
+        last: int | None = None,
         **kwargs: Any,
     ) -> Any:
         assert self.connection_type is not None
@@ -379,24 +380,24 @@ ConnectionGraphQLType = Any
 
 
 def connection(
-    graphql_type: Optional[ConnectionGraphQLType] = None,
+    graphql_type: ConnectionGraphQLType | None = None,
     *,
-    resolver: Optional[_RESOLVER_TYPE[Any]] = None,
-    name: Optional[str] = None,
+    resolver: _RESOLVER_TYPE[Any] | None = None,
+    name: str | None = None,
     is_subscription: bool = False,
-    description: Optional[str] = None,
-    permission_classes: Optional[list[type[BasePermission]]] = None,
-    deprecation_reason: Optional[str] = None,
+    description: str | None = None,
+    permission_classes: list[type[BasePermission]] | None = None,
+    deprecation_reason: str | None = None,
     default: Any = dataclasses.MISSING,
-    default_factory: Union[Callable[..., object], object] = dataclasses.MISSING,
-    metadata: Optional[Mapping[Any, Any]] = None,
-    directives: Optional[Sequence[object]] = (),
+    default_factory: Callable[..., object] | object = dataclasses.MISSING,
+    metadata: Mapping[Any, Any] | None = None,
+    directives: Sequence[object] | None = (),
     extensions: list[FieldExtension] | None = None,
-    max_results: Optional[int] = None,
+    max_results: int | None = None,
     # This init parameter is used by pyright to determine whether this field
     # is added in the constructor or not. It is not used to change
     # any behaviour at the moment.
-    init: Literal[True, False, None] = None,
+    init: Literal[True, False] | None = None,
 ) -> Any:
     """Annotate a property or a method to create a relay connection field.
 

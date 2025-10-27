@@ -1,6 +1,6 @@
 import textwrap
 from textwrap import dedent
-from typing import Annotated, Optional
+from typing import Annotated
 
 import strawberry
 from strawberry.types.unset import UNSET
@@ -83,7 +83,7 @@ def test_argument_with_default_value_none():
     @strawberry.type
     class Query:
         @strawberry.field
-        def hello(self, name: Optional[str] = None) -> str:
+        def hello(self, name: str | None = None) -> str:
             return f"Hi {name}"
 
     schema = strawberry.Schema(query=Query)
@@ -100,7 +100,7 @@ def test_optional_argument_unset():
     @strawberry.type
     class Query:
         @strawberry.field
-        def hello(self, name: Optional[str] = UNSET, age: Optional[int] = UNSET) -> str:
+        def hello(self, name: str | None = UNSET, age: int | None = UNSET) -> str:
             if name is UNSET:
                 return "Hi there"
             return f"Hi {name}"
@@ -128,8 +128,8 @@ def test_optional_argument_unset():
 def test_optional_input_field_unset():
     @strawberry.input
     class TestInput:
-        name: Optional[str] = UNSET
-        age: Optional[int] = UNSET
+        name: str | None = UNSET
+        age: int | None = UNSET
 
     @strawberry.type
     class Query:

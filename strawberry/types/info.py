@@ -7,8 +7,6 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Generic,
-    Optional,
-    Union,
 )
 from typing_extensions import TypeVar
 
@@ -21,11 +19,7 @@ if TYPE_CHECKING:
 
     from strawberry.schema import Schema
     from strawberry.types.arguments import StrawberryArgument
-    from strawberry.types.base import (
-        StrawberryType,
-        WithStrawberryObjectDefinition,
-    )
-    from strawberry.types.field import StrawberryField
+    from strawberry.types.field import FieldType, StrawberryField
 
     from .nodes import Selection
 
@@ -68,7 +62,7 @@ class Info(Generic[ContextType, RootValueType]):
     _raw_info: GraphQLResolveInfo
     _field: StrawberryField
 
-    def __class_getitem__(cls, types: Union[type, tuple[type, ...]]) -> type[Info]:
+    def __class_getitem__(cls, types: type | tuple[type, ...]) -> type[Info]:
         """Workaround for when passing only one type.
 
         Python doesn't yet support directly passing only one type to a generic class
@@ -78,7 +72,7 @@ class Info(Generic[ContextType, RootValueType]):
         https://discuss.python.org/t/passing-only-one-typevar-of-two-when-using-defaults/49134
         """
         if not isinstance(types, tuple):
-            types = (types, Any)  # type: ignore
+            types = (types, Any)
 
         return super().__class_getitem__(types)  # type: ignore
 
@@ -131,7 +125,7 @@ class Info(Generic[ContextType, RootValueType]):
     @property
     def return_type(
         self,
-    ) -> Optional[Union[type[WithStrawberryObjectDefinition], StrawberryType]]:
+    ) -> FieldType:
         """The return type of the current field being resolved."""
         return self._field.type
 
@@ -154,7 +148,7 @@ class Info(Generic[ContextType, RootValueType]):
     # TODO: parent_type as strawberry types
 
     # Helper functions
-    def get_argument_definition(self, name: str) -> Optional[StrawberryArgument]:
+    def get_argument_definition(self, name: str) -> StrawberryArgument | None:
         """Get the StrawberryArgument definition for the current field by name."""
         try:
             return next(arg for arg in self._field.arguments if arg.python_name == name)

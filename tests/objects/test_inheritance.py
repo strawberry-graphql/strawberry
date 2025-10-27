@@ -1,5 +1,3 @@
-from typing import Optional
-
 import strawberry
 
 
@@ -10,6 +8,6 @@ def test_inherited_fields():
 
     @strawberry.type
     class B(A):
-        b: Optional[str] = strawberry.field(default=None)
+        b: str | None = strawberry.field(default=None)
 
     assert strawberry.Schema(query=B)

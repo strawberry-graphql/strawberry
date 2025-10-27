@@ -1,5 +1,5 @@
 import textwrap
-from typing import Generic, Optional, TypeVar, Union
+from typing import Generic, TypeVar
 
 import strawberry
 from strawberry.scalars import JSON
@@ -68,7 +68,7 @@ def test_unions_nested_inside_a_list():
         @strawberry.field
         def blocks(
             self,
-        ) -> list[Union[BlockRowtype[int], BlockRowtype[str], JsonBlock]]:
+        ) -> list[BlockRowtype[int] | BlockRowtype[str] | JsonBlock]:
             return [
                 BlockRowtype(total=3, items=["a", "b", "c"]),
                 BlockRowtype(total=1, items=[1, 2, 3, 4]),
@@ -122,7 +122,7 @@ def test_unions_nested_inside_a_list_with_no_items():
         @strawberry.field
         def blocks(
             self,
-        ) -> list[Union[BlockRowtype[int], BlockRowtype[str], JsonBlock]]:
+        ) -> list[BlockRowtype[int] | BlockRowtype[str] | JsonBlock]:
             return [
                 BlockRowtype(total=3, items=[]),
                 BlockRowtype(total=1, items=[]),
@@ -176,7 +176,7 @@ def test_unions_nested_inside_a_list_of_lists():
         @strawberry.field
         def blocks(
             self,
-        ) -> list[Union[BlockRowtype[int], BlockRowtype[str], JsonBlock]]:
+        ) -> list[BlockRowtype[int] | BlockRowtype[str] | JsonBlock]:
             return [
                 BlockRowtype(total=3, items=[["a", "b", "c"]]),
                 BlockRowtype(total=1, items=[[1, 2, 3, 4]]),
@@ -219,7 +219,7 @@ def test_using_generics_with_an_interface():
     @strawberry.interface
     class BlockInterface:
         id: strawberry.ID
-        disclaimer: Optional[str] = strawberry.field(default=None)
+        disclaimer: str | None = strawberry.field(default=None)
 
     @strawberry.type
     class JsonBlock(BlockInterface):
@@ -335,7 +335,7 @@ def test_supports_generic_in_unions_with_nesting():
     @strawberry.type
     class Query:
         @strawberry.field
-        def users(self) -> Union[Connection[User], Fallback]:
+        def users(self) -> Connection[User] | Fallback:
             return Connection(edge=Edge(node=User(name="Patrick")))
 
     schema = strawberry.Schema(query=Query)

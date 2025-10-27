@@ -3,11 +3,11 @@ from __future__ import annotations
 import base64
 import dataclasses
 import sys
-from typing import TYPE_CHECKING, Any, Union
+from typing import TYPE_CHECKING, Any
 from typing_extensions import Self, assert_never
 
 from strawberry.types.base import StrawberryObjectDefinition
-from strawberry.types.nodes import InlineFragment, Selection
+from strawberry.types.nodes import InlineFragment
 
 if TYPE_CHECKING:
     from strawberry.types.info import Info
@@ -39,7 +39,7 @@ def from_base64(value: str) -> tuple[str, str]:
     return res[0], res[1]
 
 
-def to_base64(type_: Union[str, type, StrawberryObjectDefinition], node_id: Any) -> str:
+def to_base64(type_: str | type | StrawberryObjectDefinition, node_id: Any) -> str:
     """Encode the type name and node id to a base64 string.
 
     Args:
@@ -83,31 +83,19 @@ def should_resolve_list_connection_edges(info: Info) -> bool:
 
     """
     resolve_for_field_names = {"edges", "pageInfo"}
-
-    def _check_selection(selection: Selection) -> bool:
-        """Recursively inspect the selection to check if the user requested to resolve the `edges` field.
-
-        Args:
-            selection (Selection): The selection to check.
-
-        Returns:
-            bool: True if the user requested to resolve the `edges` field of a connection, False otherwise.
-        """
+    # Recursively inspect the selection to check if the user requested to resolve the `edges` field.
+    stack = []
+    for selection_field in info.selected_fields:
+        stack.extend(selection_field.selections)
+    while stack:
+        selection = stack.pop()
         if (
             not isinstance(selection, InlineFragment)
             and selection.name in resolve_for_field_names
         ):
             return True
-        if selection.selections:
-            return any(
-                _check_selection(selection) for selection in selection.selections
-            )
-        return False
-
-    for selection_field in info.selected_fields:
-        for selection in selection_field.selections:
-            if _check_selection(selection):
-                return True
+        if nested_selections := getattr(selection, "selections", None):
+            stack.extend(nested_selections)
     return False
 
 

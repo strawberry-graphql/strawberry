@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-import sys
 from typing import TYPE_CHECKING
 
 import pytest
-from pytest_mock import MockFixture
 from typer.testing import CliRunner
+
+from strawberry.cli.constants import DEV_SERVER_SCHEMA_ENV_VAR_KEY
 
 if TYPE_CHECKING:
     from starlette.testclient import TestClient
@@ -13,21 +13,20 @@ if TYPE_CHECKING:
 
 
 @pytest.fixture
-def cli_runner(mocker: MockFixture) -> CliRunner:
-    # Mock of uvicorn.run
-    uvicorn_run_patch = mocker.patch("uvicorn.run")
-    uvicorn_run_patch.return_value = True
+def cli_runner() -> CliRunner:
     return CliRunner()
 
 
 @pytest.fixture
-def debug_server_client(mocker: MockFixture) -> TestClient:
+def dev_server_client(monkeypatch: pytest.MonkeyPatch) -> TestClient:
     from starlette.testclient import TestClient
 
-    schema_import_path = "tests.fixtures.sample_package.sample_module"
-    mocker.patch.object(sys, "argv", ["strawberry", "server", schema_import_path])
+    from strawberry.cli.dev_server import app
 
-    from strawberry.cli.debug_server import app
+    monkeypatch.setenv(
+        DEV_SERVER_SCHEMA_ENV_VAR_KEY,
+        "tests.fixtures.sample_package.sample_module",
+    )
 
     return TestClient(app)
 

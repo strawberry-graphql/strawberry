@@ -1,11 +1,7 @@
 # type: ignore
 import enum
-import sys
 import textwrap
-from typing import Annotated, Generic, TypeVar, Union
-from typing_extensions import TypeAlias
-
-import pytest
+from typing import Annotated, Generic, TypeAlias, TypeVar
 
 import strawberry
 from strawberry.annotation import StrawberryAnnotation
@@ -167,7 +163,7 @@ def test_lazy_type_in_union():
     ActiveType = LazyType("LaziestType", "tests.types.test_lazy_types")
     ActiveEnum = LazyType("LazyEnum", "tests.types.test_lazy_types")
 
-    something = Annotated[Union[ActiveType, ActiveEnum], union(name="CoolUnion")]
+    something = Annotated[ActiveType | ActiveEnum, union(name="CoolUnion")]
     annotation = StrawberryAnnotation(something)
 
     resolved = annotation.resolve()
@@ -186,7 +182,7 @@ def test_lazy_function_in_union():
     ]
     ActiveEnum = Annotated["LazyEnum", strawberry.lazy("tests.types.test_lazy_types")]
 
-    something = Annotated[Union[ActiveType, ActiveEnum], union(name="CoolUnion")]
+    something = Annotated[ActiveType | ActiveEnum, union(name="CoolUnion")]
     annotation = StrawberryAnnotation(something)
 
     resolved = annotation.resolve()
@@ -197,10 +193,6 @@ def test_lazy_function_in_union():
     assert type2.resolve_type() is LazyEnum
 
 
-@pytest.mark.skipif(
-    sys.version_info < (3, 10),
-    reason="| operator without future annotations is only available on python 3.10+",
-)
 def test_optional_lazy_type_using_or_operator():
     from tests.schema.test_lazy.type_a import TypeA
 

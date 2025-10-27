@@ -4,7 +4,7 @@ import contextlib
 import os
 from importlib.metadata import version
 from multiprocessing import Pool, cpu_count
-from typing import TYPE_CHECKING, Any, Union
+from typing import TYPE_CHECKING, Any, TypeAlias
 
 from libcst.codemod._cli import ExecutionConfig, ExecutionResult, _execute_transform
 from rich.progress import Progress
@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 
     from libcst.codemod import Codemod
 
-ProgressType = Union[type[Progress], type[FakeProgress]]
+ProgressType: TypeAlias = type[Progress] | type[FakeProgress]
 
 
 def _get_libcst_version() -> tuple[int, int, int]:

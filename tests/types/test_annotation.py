@@ -1,6 +1,6 @@
 import itertools
 from enum import Enum
-from typing import Optional, TypeVar, Union
+from typing import Optional, TypeVar
 
 import pytest
 
@@ -39,7 +39,7 @@ types = [
 @pytest.mark.parametrize(
     ("type1", "type2"), itertools.combinations_with_replacement(types, 2)
 )
-def test_annotation_hash(type1: Union[object, str], type2: Union[object, str]):
+def test_annotation_hash(type1: object | str, type2: object | str):
     annotation1 = StrawberryAnnotation(type1)
     annotation2 = StrawberryAnnotation(type2)
     assert (

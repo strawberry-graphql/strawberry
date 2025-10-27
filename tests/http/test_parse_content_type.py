@@ -5,7 +5,7 @@ from strawberry.http.parse_content_type import parse_content_type
 
 @pytest.mark.parametrize(
     ("content_type", "expected"),
-    [  # type: ignore
+    [
         ("application/json", ("application/json", {})),
         ("", ("", {})),
         ("application/json; charset=utf-8", ("application/json", {"charset": "utf-8"})),
@@ -35,6 +35,15 @@ from strawberry.http.parse_content_type import parse_content_type
                 {
                     "boundary": "graphql",
                     "subscriptionspec": "1.0, application/json",
+                },
+            ),
+        ),
+        (
+            'multipart/mixed; subscriptionSpec="1.0", application/json',
+            (
+                "multipart/mixed",
+                {
+                    "subscriptionspec": '"1.0", application/json',
                 },
             ),
         ),

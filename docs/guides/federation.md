@@ -220,12 +220,12 @@ In two terminal windows, run the following commands:
 
 ```shell
 cd books
-strawberry server --port 3500 app
+strawberry dev --port 3500 app
 ```
 
 ```shell
 cd reviews
-strawberry server --port 3000 app
+strawberry dev --port 3000 app
 ```
 
 ## Apollo Router

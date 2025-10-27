@@ -1,21 +1,21 @@
 from __future__ import annotations
 
 import json
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 from strawberry.test import BaseGraphQLTestClient
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
-    from typing_extensions import Literal
+    from typing import Literal
 
 
 class GraphQLTestClient(BaseGraphQLTestClient):
     def _build_body(
         self,
         query: str,
-        variables: Optional[dict[str, Mapping]] = None,
-        files: Optional[dict[str, object]] = None,
+        variables: dict[str, Mapping] | None = None,
+        files: dict[str, object] | None = None,
     ) -> dict[str, object]:
         body: dict[str, object] = {"query": query}
 
@@ -36,8 +36,8 @@ class GraphQLTestClient(BaseGraphQLTestClient):
     def request(
         self,
         body: dict[str, object],
-        headers: Optional[dict[str, object]] = None,
-        files: Optional[dict[str, object]] = None,
+        headers: dict[str, object] | None = None,
+        files: dict[str, object] | None = None,
     ) -> Any:
         return self._client.post(
             self.url,

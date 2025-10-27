@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import base64
-from typing import TYPE_CHECKING, Any, NewType, Union
+from typing import TYPE_CHECKING, Any, NewType
 
 from strawberry.types.scalar import scalar
 
@@ -59,7 +59,7 @@ Base64 = scalar(
 
 def is_scalar(
     annotation: Any,
-    scalar_registry: Mapping[object, Union[ScalarWrapper, ScalarDefinition]],
+    scalar_registry: Mapping[object, ScalarWrapper | ScalarDefinition],
 ) -> bool:
     if annotation in scalar_registry:
         return True

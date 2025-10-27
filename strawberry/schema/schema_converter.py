@@ -2,15 +2,14 @@ from __future__ import annotations
 
 import dataclasses
 import sys
+import typing
 from functools import partial, reduce
 from typing import (
     TYPE_CHECKING,
+    Annotated,
     Any,
-    Callable,
     Generic,
-    Optional,
     TypeVar,
-    Union,
     cast,
 )
 from typing_extensions import Protocol
@@ -80,7 +79,7 @@ from . import compat
 from .types.concrete_type import ConcreteType
 
 if TYPE_CHECKING:
-    from collections.abc import Awaitable, Mapping
+    from collections.abc import Awaitable, Callable, Mapping
 
     from graphql import (
         GraphQLInputType,
@@ -100,17 +99,17 @@ if TYPE_CHECKING:
 
 FieldType = TypeVar(
     "FieldType",
-    bound=Union[GraphQLField, GraphQLInputField],
+    bound=GraphQLField | GraphQLInputField,
     covariant=True,
 )
 
 
-class FieldConverterProtocol(Generic[FieldType], Protocol):
+class FieldConverterProtocol(Protocol, Generic[FieldType]):
     def __call__(  # pragma: no cover
         self,
         field: StrawberryField,
         *,
-        type_definition: Optional[StrawberryObjectDefinition] = None,
+        type_definition: StrawberryObjectDefinition | None = None,
     ) -> FieldType: ...
 
 
@@ -180,7 +179,7 @@ class CustomGraphQLEnumType(GraphQLEnumType):
         return self.wrapped_cls(super().parse_value(input_value))
 
     def parse_literal(
-        self, value_node: ValueNode, _variables: Optional[dict[str, Any]] = None
+        self, value_node: ValueNode, _variables: dict[str, Any] | None = None
     ) -> Any:
         return self.wrapped_cls(super().parse_literal(value_node, _variables))
 
@@ -192,7 +191,7 @@ def get_arguments(
     info: Info,
     kwargs: Any,
     config: StrawberryConfig,
-    scalar_registry: Mapping[object, Union[ScalarWrapper, ScalarDefinition]],
+    scalar_registry: Mapping[object, ScalarWrapper | ScalarDefinition],
 ) -> tuple[list[Any], dict[str, Any]]:
     # TODO: An extension might have changed the resolver arguments,
     # but we need them here since we are calling it.
@@ -249,7 +248,7 @@ class GraphQLCoreConverter:
     def __init__(
         self,
         config: StrawberryConfig,
-        scalar_overrides: Mapping[object, Union[ScalarWrapper, ScalarDefinition]],
+        scalar_overrides: Mapping[object, ScalarWrapper | ScalarDefinition],
         get_fields: Callable[[StrawberryObjectDefinition], list[StrawberryField]],
     ) -> None:
         self.type_map: dict[str, ConcreteType] = {}
@@ -259,8 +258,8 @@ class GraphQLCoreConverter:
 
     def _get_scalar_registry(
         self,
-        scalar_overrides: Mapping[object, Union[ScalarWrapper, ScalarDefinition]],
-    ) -> Mapping[object, Union[ScalarWrapper, ScalarDefinition]]:
+        scalar_overrides: Mapping[object, ScalarWrapper | ScalarDefinition],
+    ) -> Mapping[object, ScalarWrapper | ScalarDefinition]:
         scalar_registry = {**DEFAULT_SCALAR_REGISTRY}
 
         global_id_name = "GlobalID" if self.config.relay_use_legacy_global_id else "ID"
@@ -407,7 +406,7 @@ class GraphQLCoreConverter:
         self,
         field: StrawberryField,
         *,
-        type_definition: Optional[StrawberryObjectDefinition] = None,
+        type_definition: StrawberryObjectDefinition | None = None,
     ) -> GraphQLField:
         # self.from_resolver needs to be called before accessing field.type because
         # in there a field extension might want to change the type during its apply
@@ -445,7 +444,7 @@ class GraphQLCoreConverter:
         self,
         field: StrawberryField,
         *,
-        type_definition: Optional[StrawberryObjectDefinition] = None,
+        type_definition: StrawberryObjectDefinition | None = None,
     ) -> GraphQLInputField:
         field_type = cast(
             "GraphQLInputType",
@@ -556,14 +555,14 @@ class GraphQLCoreConverter:
 
         def _get_resolve_type() -> Callable[
             [Any, GraphQLResolveInfo, GraphQLAbstractType],
-            Union[Awaitable[Optional[str]], str, None],
+            Awaitable[str | None] | str | None,
         ]:
             if interface.resolve_type:
                 return interface.resolve_type
 
             def resolve_type(
                 obj: Any, info: GraphQLResolveInfo, abstract_type: GraphQLAbstractType
-            ) -> Union[Awaitable[Optional[str]], str, None]:
+            ) -> Awaitable[str | None] | str | None:
                 if isinstance(obj, interface.origin):
                     type_definition = get_object_definition(obj, strict=True)
 
@@ -578,7 +577,7 @@ class GraphQLCoreConverter:
                     # all the types in the schema, but we should probably
                     # optimize this
 
-                    return_type: Optional[GraphQLType] = None
+                    return_type: GraphQLType | None = None
 
                     for possible_concrete_type in self.type_map.values():
                         possible_type = possible_concrete_type.definition
@@ -639,7 +638,7 @@ class GraphQLCoreConverter:
             assert isinstance(graphql_object_type, GraphQLObjectType)  # For mypy
             return graphql_object_type
 
-        def _get_is_type_of() -> Optional[Callable[[Any, GraphQLResolveInfo], bool]]:
+        def _get_is_type_of() -> Callable[[Any, GraphQLResolveInfo], bool] | None:
             if object_type.is_type_of:
                 return object_type.is_type_of
 
@@ -849,18 +848,31 @@ class GraphQLCoreConverter:
         return implementation
 
     def from_maybe_optional(
-        self, type_: Union[StrawberryType, type]
-    ) -> Union[GraphQLNullableType, GraphQLNonNull]:
+        self, type_: StrawberryType | type
+    ) -> GraphQLNullableType | GraphQLNonNull:
         NoneType = type(None)
         if type_ is None or type_ is NoneType:
             return self.from_type(type_)
+        if isinstance(type_, StrawberryMaybe):
+            # StrawberryMaybe should always generate optional types
+            # because Maybe[T] = Union[Some[T], None] (field can be absent)
+            # But we need to handle the case where of_type is itself optional
+            if isinstance(type_.of_type, StrawberryOptional):
+                return self.from_type(type_.of_type.of_type)
+            return self.from_type(type_.of_type)
         if isinstance(type_, StrawberryOptional):
             return self.from_type(type_.of_type)
         return GraphQLNonNull(self.from_type(type_))
 
-    def from_type(self, type_: Union[StrawberryType, type]) -> GraphQLNullableType:
+    def from_type(self, type_: StrawberryType | type) -> GraphQLNullableType:
         if compat.is_graphql_generic(type_):
             raise MissingTypesForGenericError(type_)
+
+        # to handle lazy unions
+        if typing.get_origin(type_) is Annotated:
+            args = typing.get_args(type_)
+            if len(args) >= 2 and isinstance(args[1], StrawberryUnion):
+                type_ = args[1]
 
         if isinstance(type_, EnumDefinition):  # TODO: Replace with StrawberryEnum
             return self.from_enum(type_)
@@ -945,7 +957,7 @@ class GraphQLCoreConverter:
     def _get_is_type_of(
         self,
         object_type: StrawberryObjectDefinition,
-    ) -> Optional[Callable[[Any, GraphQLResolveInfo], bool]]:
+    ) -> Callable[[Any, GraphQLResolveInfo], bool] | None:
         if object_type.is_type_of:
             return object_type.is_type_of
 

@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Annotated, NewType, Union
+from typing import Annotated, NewType
 
 import strawberry
 
@@ -20,7 +20,7 @@ class B:
     a: A
 
 
-UnionExample = Annotated[Union[A, B], strawberry.union("UnionExample")]
+UnionExample = Annotated[A | B, strawberry.union("UnionExample")]
 
 
 class SampleClass:
@@ -41,7 +41,7 @@ class User:
     role: Role
     example_scalar: ExampleScalar
     union_example: UnionExample
-    inline_union: Annotated[Union[A, B], strawberry.union("InlineUnion")]
+    inline_union: Annotated[A | B, strawberry.union("InlineUnion")]
 
 
 @strawberry.type

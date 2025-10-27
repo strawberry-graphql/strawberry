@@ -1,5 +1,4 @@
 import textwrap
-from typing import Optional
 
 import pydantic
 
@@ -12,7 +11,7 @@ from tests.experimental.pydantic.utils import needs_pydantic_v2
 def test_field_type_default():
     class User(pydantic.BaseModel):
         name: str = "James"
-        nickname: Optional[str] = "Jim"
+        nickname: str | None = "Jim"
 
     @strawberry.experimental.pydantic.type(User, all_fields=True)
     class PydanticUser: ...
@@ -55,7 +54,7 @@ def test_field_type_default():
 
 def test_pydantic_type_default_none():
     class UserPydantic(pydantic.BaseModel):
-        name: Optional[str] = None
+        name: str | None = None
 
     @strawberry.experimental.pydantic.type(UserPydantic, all_fields=True)
     class User: ...
@@ -82,7 +81,7 @@ def test_pydantic_type_default_none():
 def test_pydantic_type_no_default_but_optional():
     class UserPydantic(pydantic.BaseModel):
         # pydantic automatically adds a default of None for Optional fields
-        name: Optional[str]
+        name: str | None
 
     @strawberry.experimental.pydantic.type(UserPydantic, all_fields=True)
     class User: ...
@@ -151,7 +150,7 @@ def test_input_type_default():
 @needs_pydantic_v2
 def test_v2_explicit_default():
     class User(pydantic.BaseModel):
-        name: Optional[str]
+        name: str | None
 
     @strawberry.experimental.pydantic.type(User, all_fields=True)
     class PydanticUser: ...
@@ -182,7 +181,7 @@ def test_v2_explicit_default():
 def test_v2_input_with_nonscalar_default():
     class NonScalarType(pydantic.BaseModel):
         id: int = 10
-        nullable_field: Optional[int] = None
+        nullable_field: int | None = None
 
     class Owning(pydantic.BaseModel):
         non_scalar_type: NonScalarType = NonScalarType()
@@ -200,7 +199,7 @@ def test_v2_input_with_nonscalar_default():
     class ExampleOutput:
         owning_id: int
         non_scalar_id: int
-        non_scalar_nullable_field: Optional[int]
+        non_scalar_nullable_field: int | None
 
     @strawberry.type
     class Query:

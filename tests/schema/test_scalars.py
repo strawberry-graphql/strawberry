@@ -1,8 +1,6 @@
-import sys
 from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal
 from textwrap import dedent
-from typing import Optional
 from uuid import UUID
 
 import pytest
@@ -168,7 +166,7 @@ def test_json():
             return data
 
         @strawberry.field
-        def echo_json_nullable(data: Optional[JSON]) -> Optional[JSON]:
+        def echo_json_nullable(data: JSON | None) -> JSON | None:
             return data
 
     schema = strawberry.Schema(query=Query)
@@ -445,10 +443,6 @@ def test_duplicate_scalars_raises_exception_using_alias():
     strawberry.Schema(Query)
 
 
-@pytest.mark.skipif(
-    sys.version_info < (3, 10),
-    reason="pipe syntax for union is only available on python 3.10+",
-)
 def test_optional_scalar_with_or_operator():
     """Check `|` operator support with an optional scalar."""
 

@@ -2,13 +2,12 @@ import asyncio
 import contextlib
 import warnings
 from collections import defaultdict
-from collections.abc import AsyncGenerator, Awaitable, Sequence
+from collections.abc import AsyncGenerator, Awaitable, Callable, Sequence
 from typing import (
     Any,
-    Callable,
-    Optional,
+    Literal,
 )
-from typing_extensions import Literal, Protocol, TypedDict
+from typing_extensions import Protocol, TypedDict
 from weakref import WeakSet
 
 from channels.consumer import AsyncConsumer
@@ -54,7 +53,7 @@ class ChannelsConsumer(AsyncConsumer):
     """Base channels async consumer."""
 
     channel_name: str
-    channel_layer: Optional[ChannelsLayer]
+    channel_layer: ChannelsLayer | None
     channel_receive: Callable[[], Awaitable[dict]]
 
     def __init__(self, *args: str, **kwargs: Any) -> None:
@@ -80,7 +79,7 @@ class ChannelsConsumer(AsyncConsumer):
         self,
         type: str,
         *,
-        timeout: Optional[float] = None,
+        timeout: float | None = None,
         groups: Sequence[str] = (),
     ) -> AsyncGenerator[Any, None]:
         """Listen for messages sent to this consumer.
@@ -139,7 +138,7 @@ class ChannelsConsumer(AsyncConsumer):
         self,
         type: str,
         *,
-        timeout: Optional[float] = None,
+        timeout: float | None = None,
         groups: Sequence[str] = (),
     ) -> AsyncGenerator[Any, None]:
         """Listen for messages sent to this consumer.
@@ -188,7 +187,7 @@ class ChannelsConsumer(AsyncConsumer):
                     await self.channel_layer.group_discard(group, self.channel_name)
 
     async def _listen_to_channel_generator(
-        self, queue: asyncio.Queue, timeout: Optional[float]
+        self, queue: asyncio.Queue, timeout: float | None
     ) -> AsyncGenerator[Any, None]:
         """Generator for listen_to_channel method.
 

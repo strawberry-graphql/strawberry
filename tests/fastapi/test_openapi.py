@@ -8,6 +8,7 @@ class Query:
 
 def test_enable_graphiql_view_and_allow_queries_via_get():
     from fastapi import FastAPI
+
     from strawberry.fastapi import GraphQLRouter
 
     app = FastAPI()
@@ -21,6 +22,7 @@ def test_enable_graphiql_view_and_allow_queries_via_get():
 
 def test_disable_graphiql_view_and_allow_queries_via_get():
     from fastapi import FastAPI
+
     from strawberry.fastapi import GraphQLRouter
 
     app = FastAPI()
@@ -36,6 +38,7 @@ def test_disable_graphiql_view_and_allow_queries_via_get():
 
 def test_graphql_router_with_tags():
     from fastapi import FastAPI
+
     from strawberry.fastapi import GraphQLRouter
 
     app = FastAPI()
