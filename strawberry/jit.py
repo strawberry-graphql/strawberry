@@ -13,6 +13,7 @@ from __future__ import annotations
 import hashlib
 import inspect
 import time
+import warnings
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from graphql import (
@@ -29,6 +30,7 @@ from graphql import (
     InlineFragmentNode,
     SelectionSetNode,
     Undefined,
+    execute_sync,
     get_operation_root_type,
     parse,
     validate,
@@ -97,6 +99,55 @@ class JITCompiler:
         """Compile a GraphQL query into optimized Python code."""
         document = parse(query)
 
+        # Check for @defer/@stream directives BEFORE validation
+        # (GraphQL validation will fail on unknown directives)
+        if self._has_defer_or_stream(document):
+            warnings.warn(
+                "Query contains @defer or @stream directives which are not "
+                "supported by the JIT compiler. Falling back to standard GraphQL "
+                "executor. Performance will be the same as non-JIT execution.",
+                UserWarning,
+                stacklevel=2,
+            )
+
+            # Return a wrapper that calls standard GraphQL executor
+            def fallback_executor(
+                root_value: Any = None,
+                variables: Optional[Dict[str, Any]] = None,
+                context_value: Any = None,
+                operation_name: Optional[str] = None,
+            ) -> Dict[str, Any]:
+                """Fallback to standard GraphQL executor for @defer/@stream."""
+                result = execute_sync(
+                    self.schema,
+                    document,
+                    root_value=root_value,
+                    variable_values=variables,
+                    context_value=context_value,
+                    operation_name=operation_name,
+                )
+
+                # Convert to JIT-compatible format
+                return {
+                    "data": result.data,
+                    "errors": [
+                        {
+                            "message": str(e.message),
+                            "locations": [
+                                {"line": loc.line, "column": loc.column}
+                                for loc in (e.locations or [])
+                            ],
+                            "path": list(e.path) if e.path else None,
+                        }
+                        for e in (result.errors or [])
+                    ]
+                    if result.errors
+                    else [],
+                }
+
+            return fallback_executor
+
+        # Validate query (only for non-defer/stream queries)
         errors = validate(self.schema, document)
         if errors:
             raise ValueError(f"Query validation failed: {errors}")
@@ -1933,6 +1984,70 @@ class JITCompiler:
         """Emit line of code with proper indentation."""
         indent = "    " * self.indent_level
         self.generated_code.append(f"{indent}{line}")
+
+    def _has_defer_or_stream(self, document: DocumentNode) -> bool:
+        """Check if document contains @defer or @stream directives.
+
+        These directives require incremental response delivery which is not
+        supported by the JIT compiler. Queries containing them will fall back
+        to the standard GraphQL executor.
+
+        Args:
+            document: The parsed GraphQL document
+
+        Returns:
+            True if @defer or @stream directives are found
+        """
+
+        def check_directives(directives: Optional[List[DirectiveNode]]) -> bool:
+            """Check if any directive is defer or stream."""
+            if not directives:
+                return False
+            return any(d.name.value in ("defer", "stream") for d in directives)
+
+        def check_selection_set(selection_set: Optional[SelectionSetNode]) -> bool:
+            """Recursively check selection set for defer/stream directives."""
+            if not selection_set:
+                return False
+
+            for selection in selection_set.selections:
+                # Check directives on fields
+                if isinstance(selection, FieldNode):
+                    if check_directives(selection.directives):
+                        return True
+                    # Recurse into nested selections
+                    if check_selection_set(selection.selection_set):
+                        return True
+
+                # Check directives on fragment spreads
+                elif isinstance(selection, FragmentSpreadNode):
+                    if check_directives(selection.directives):
+                        return True
+
+                # Check directives on inline fragments
+                elif isinstance(selection, InlineFragmentNode):
+                    if check_directives(selection.directives):
+                        return True
+                    # Recurse into inline fragment selections
+                    if check_selection_set(selection.selection_set):
+                        return True
+
+            return False
+
+        # Check all operations and fragments in the document
+        for definition in document.definitions:
+            if isinstance(definition, OperationDefinitionNode):
+                if check_directives(definition.directives):
+                    return True
+                if check_selection_set(definition.selection_set):
+                    return True
+            elif isinstance(definition, FragmentDefinitionNode):
+                if check_directives(definition.directives):
+                    return True
+                if check_selection_set(definition.selection_set):
+                    return True
+
+        return False
 
 
 class CachedJITCompiler:
