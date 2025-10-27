@@ -76,10 +76,10 @@ def create_stadium(seats_per_row: int = 250) -> Stadium:
     """Create a stadium with a configurable number of seats per row.
 
     Default configuration (250 seats/row) creates approximately 50,000 seats:
-    - North Stand: 12,500 seats (50 rows × 250 seats)
-    - South Stand: 12,500 seats (50 rows × 250 seats)
-    - East Stand: 10,000 seats (40 rows × 250 seats)
-    - West Stand: 10,000 seats (40 rows × 250 seats)
+    - North Stand: 12,500 seats (50 rows x 250 seats)
+    - South Stand: 12,500 seats (50 rows x 250 seats)
+    - East Stand: 10,000 seats (40 rows x 250 seats)
+    - West Stand: 10,000 seats (40 rows x 250 seats)
     """
     stands = []
 
