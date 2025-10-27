@@ -1,0 +1,17 @@
+query StadiumQuery($seatsPerRow: Int!) {
+  stadium(seatsPerRow: $seatsPerRow) {
+    city
+    country
+    name
+    stands {
+      sectionType
+      seats {
+        labels
+        x
+        y
+      }
+      priceCategory
+      name
+    }
+  }
+}
