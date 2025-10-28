@@ -2,7 +2,7 @@
 Test various error handling scenarios in JIT compiler.
 """
 
-from typing import List, Optional
+from typing import Optional
 
 import strawberry
 from strawberry.jit import compile_query
@@ -17,7 +17,7 @@ class Item:
         return f"Item {self.id}"
 
     @strawberry.field
-    def error_field(self) -> str:
+    def error_field(self) -> Optional[str]:
         raise Exception(f"Error in item {self.id}")
 
     @strawberry.field
@@ -28,7 +28,7 @@ class Item:
 @strawberry.type
 class Container:
     @strawberry.field
-    def items(self) -> List[Item]:
+    def items(self) -> list[Item]:
         return [Item(id=i) for i in range(3)]
 
     @strawberry.field
@@ -59,7 +59,7 @@ def test_list_errors():
     }
     """
 
-    compiled_fn = compile_query(schema._schema, query)
+    compiled_fn = compile_query(schema, query)
     result = compiled_fn(Query())
 
     print("List field errors test:")
@@ -99,7 +99,7 @@ def test_nested_errors():
     }
     """
 
-    compiled_fn = compile_query(schema._schema, query)
+    compiled_fn = compile_query(schema, query)
     result = compiled_fn(Query())
 
     print("Nested errors test:")
@@ -131,7 +131,7 @@ def test_error_paths():
     }
     """
 
-    compiled_fn = compile_query(schema._schema, query)
+    compiled_fn = compile_query(schema, query)
     result = compiled_fn(Query())
 
     print("Error paths test:")

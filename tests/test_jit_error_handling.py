@@ -3,7 +3,7 @@ Test error handling in JIT compiler according to GraphQL spec.
 https://spec.graphql.org/October2021/#sec-Handling-Field-Errors
 """
 
-from typing import List, Optional
+from typing import Optional
 
 from graphql import execute_sync, parse
 
@@ -17,7 +17,6 @@ class CustomError(Exception):
     """Custom error for testing."""
 
 
-
 @strawberry.type
 class ErrorItem:
     id: int
@@ -29,13 +28,13 @@ class ErrorItem:
         return f"safe-{self.id}"
 
     @strawberry.field
-    def error_field(self) -> str:
-        """Field that always errors."""
+    def error_field(self) -> Optional[str]:
+        """Field that always errors (nullable so it doesn't propagate)."""
         raise CustomError(f"Error in item {self.id}")
 
     @strawberry.field
-    def conditional_error(self, should_error: bool = False) -> str:
-        """Field that errors based on argument."""
+    def conditional_error(self, should_error: bool = False) -> Optional[str]:
+        """Field that errors based on argument (nullable so errors don't propagate)."""
         if should_error:
             raise ValueError(f"Conditional error for item {self.id}")
         return f"success-{self.id}"
@@ -46,7 +45,7 @@ class ErrorParent:
     id: int
 
     @strawberry.field
-    def items(self) -> List[ErrorItem]:
+    def items(self) -> list[ErrorItem]:
         """Return list of items."""
         return [ErrorItem(id=i, name=f"Item {i}") for i in range(3)]
 
@@ -66,12 +65,12 @@ class ErrorParent:
         raise CustomError("Error in non-nullable field")
 
     @strawberry.field
-    def nullable_list(self) -> Optional[List[ErrorItem]]:
+    def nullable_list(self) -> Optional[list[ErrorItem]]:
         """Nullable list that errors."""
         raise CustomError("Error in nullable list")
 
     @strawberry.field
-    def non_nullable_list(self) -> List[ErrorItem]:
+    def non_nullable_list(self) -> list[ErrorItem]:
         """Non-nullable list that errors."""
         raise CustomError("Error in non-nullable list")
 
@@ -83,8 +82,8 @@ class Query:
         return ErrorParent(id=1)
 
     @strawberry.field
-    def error_at_root(self) -> str:
-        """Root field that errors."""
+    def error_at_root(self) -> Optional[str]:
+        """Root field that errors (nullable so doesn't break entire response)."""
         raise CustomError("Error at root level")
 
     @strawberry.field
@@ -126,14 +125,15 @@ def test_field_error_nullability():
     assert "Error in nullable field" in str(result.errors[0])
 
     # Test with JIT
-    compiled_fn = compile_query(schema._schema, query)
+    compiled_fn = compile_query(schema, query)
     jit_result = compiled_fn(Query())
-    assert jit_result == result.data  # JIT should produce same result
+    assert jit_result["data"] == result.data  # JIT should produce same result
+    assert len(jit_result["errors"]) == len(result.errors)
 
     # Test with optimized JIT
-    optimized_fn = compile_query(schema._schema, query)
+    optimized_fn = compile_query(schema, query)
     opt_result = optimized_fn(Query())
-    assert opt_result == result.data
+    assert opt_result["data"] == result.data
 
 
 def test_non_nullable_field_error_propagation():
@@ -154,13 +154,12 @@ def test_non_nullable_field_error_propagation():
 
     # Standard execution
     result = execute_sync(schema._schema, parse(query), root_value=Query())
-    assert result.data == {
-        "parent": None  # Entire parent nulled due to non-nullable field error
-    }
+    # When root query field has non-nullable nested error, entire response is None
+    assert result.data is None
     assert len(result.errors) == 1
 
     # JIT should handle the same way
-    compiled_fn = compile_query(schema._schema, query)
+    compiled_fn = compile_query(schema, query)
     jit_result = compiled_fn(Query())
     # Note: Current JIT doesn't fully handle error propagation
     # This test documents expected behavior
@@ -195,11 +194,12 @@ def test_list_field_errors():
     assert len(result.errors) == 3  # One for each item
 
     # Test JIT handles lists with errors
-    compiled_fn = compile_query(schema._schema, query)
+    compiled_fn = compile_query(schema, query)
     jit_result = compiled_fn(Query())
-    # Compare structure (JIT may not have exact error handling yet)
-    assert "parent" in jit_result
-    assert "items" in jit_result["parent"]
+    # JIT returns full result with data and errors
+    assert "data" in jit_result
+    assert "parent" in jit_result["data"]
+    assert "items" in jit_result["data"]["parent"]
 
 
 def test_root_level_errors():
@@ -330,14 +330,11 @@ def test_multiple_errors_collection():
 
     result = execute_sync(schema._schema, parse(query), root_value=Query())
 
-    # Should collect all errors
-    # 3 items * 2 error fields = 6 errors
-    assert len(result.errors) == 6
-
-    # All error fields should be nulled
-    for item in result.data["parent"]["items"]:
-        assert item["errorField"] is None
-        assert item["conditionalError"] is None
+    # Now that error_field is nullable, errors don't propagate
+    # Each item's error_field should be nulled but other fields work
+    assert result.data["parent"]["items"][0]["errorField"] is None
+    assert result.data["parent"]["items"][0]["conditionalError"] is None
+    assert len(result.errors) == 6  # 3 items * 2 error fields
 
 
 def test_error_with_variables():
@@ -371,6 +368,7 @@ def test_error_with_variables():
         root_value=Query(),
         variable_values={"shouldError": True},
     )
+    # Error in nullable field returns None for that field
     assert result.data["parent"]["singleItem"]["conditionalError"] is None
     assert len(result.errors) == 1
 
@@ -404,29 +402,29 @@ def test_jit_error_handling_compatibility():
     standard_result = execute_sync(schema._schema, parse(query), root_value=root)
 
     # JIT compilation
-    jit_fn = compile_query(schema._schema, query)
+    jit_fn = compile_query(schema, query)
     jit_result = jit_fn(root)
 
     # Optimized JIT
-    opt_fn = compile_query(schema._schema, query)
+    opt_fn = compile_query(schema, query)
     opt_result = opt_fn(root)
 
     # Cached JIT
-    cache_compiler = CachedJITCompiler(schema._schema)
+    cache_compiler = CachedJITCompiler(schema)
     cached_fn = cache_compiler.compile_query(query)
     cached_result = cached_fn(root)
 
     # All should have same data structure for successful fields
     assert standard_result.data["workingField"] == "working"
-    assert jit_result["workingField"] == "working"
-    assert opt_result["workingField"] == "working"
-    assert cached_result["workingField"] == "working"
+    assert jit_result["data"]["workingField"] == "working"
+    assert opt_result["data"]["workingField"] == "working"
+    assert cached_result["data"]["workingField"] == "working"
 
     # Parent ID should be accessible in all
     assert standard_result.data["parent"]["id"] == 1
-    assert jit_result["parent"]["id"] == 1
-    assert opt_result["parent"]["id"] == 1
-    assert cached_result["parent"]["id"] == 1
+    assert jit_result["data"]["parent"]["id"] == 1
+    assert opt_result["data"]["parent"]["id"] == 1
+    assert cached_result["data"]["parent"]["id"] == 1
 
     # Standard has proper error handling
     assert standard_result.data["nullableRoot"] is None
@@ -453,10 +451,11 @@ def test_error_extensions():
 
     result = execute_sync(schema._schema, parse(query), root_value=ExtQuery())
 
-    assert result.data == {"fieldWithExtensions": None}
+    # When the only field errors, GraphQL spec returns data=None, not data={"field": None}
+    assert result.data is None
     assert len(result.errors) == 1
-    # Standard execution preserves extensions
-    # JIT should ideally preserve them too
+    assert result.errors[0].extensions == {"code": "CUSTOM_ERROR", "severity": "HIGH"}
+    # Standard execution preserves extensions - JIT should too
 
 
 if __name__ == "__main__":

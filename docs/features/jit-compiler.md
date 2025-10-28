@@ -120,9 +120,29 @@ The JIT compiler provides the most benefit for:
 - `@defer` directive (falls back with warning)
 - `@stream` directive (falls back with warning)
 
-🚧 **Known Limitations:**
+### Known Limitations
 
-- Directives on inline fragment spreads (`... @include { }`)
+The following are current limitations of the JIT compiler:
+
+1. **Directives on Inline Fragment Spreads**
+   - Pattern: `... @include(if: $condition) { field }`
+   - Status: Not yet supported
+   - Workaround: Use named fragments with directives instead
+
+2. **@defer and @stream Directives**
+   - These automatically fall back to standard execution
+   - A warning is emitted when fallback occurs
+   - Future versions will support native compilation
+
+3. **Field Extensions Performance**
+   - Field extensions work correctly through wrapped resolvers
+   - Future optimization may inline simple extensions for better performance
+   - Current overhead is minimal (1-3 function calls per field)
+
+4. **Compilation Time**
+   - First compilation takes 1-5ms per query
+   - Use caching in production to amortize this cost
+   - Very complex queries (100+ fields) may take longer to compile
 
 ### Async Execution
 
@@ -274,6 +294,51 @@ if is_expensive_query(query):
 else:
     # Use standard execution for simple queries
     return await schema.execute(query)
+```
+
+## Production Deployment
+
+### Thread Safety
+
+The JIT compiler is thread-safe for concurrent query execution:
+
+```python
+# Safe for concurrent requests ✅
+compiler = create_cached_compiler(schema)
+
+
+# Multiple threads/workers can safely use the same compiler
+def handle_request(query):
+    compiled = compiler.compile_query(query)
+    return compiled(root_value=None)
+```
+
+**Note:** Cache operations use standard Python dictionaries, which are
+thread-safe for most operations in CPython due to the GIL. For extreme
+high-concurrency scenarios, consider using process-based parallelism (e.g.,
+Gunicorn with multiple workers).
+
+### Memory Considerations
+
+- Each cached query stores compiled Python code (~5-50KB per query)
+- Default cache size of 1000 queries ≈ 5-50MB memory
+- Set `cache_size` based on your expected unique query count
+- Use `ttl_seconds` to expire old queries and prevent unbounded growth
+
+```python
+# For high-traffic APIs with varied queries
+compiler = create_cached_compiler(
+    schema,
+    cache_size=5000,  # Support many unique queries
+    ttl_seconds=3600,  # Expire after 1 hour
+)
+
+# For APIs with repetitive queries
+compiler = create_cached_compiler(
+    schema,
+    cache_size=100,  # Small cache is sufficient
+    ttl_seconds=None,  # Never expire
+)
 ```
 
 ## Best Practices

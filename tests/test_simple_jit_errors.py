@@ -47,7 +47,7 @@ def test_basic_error_handling():
 
     # JIT should handle errors too
     try:
-        compiled_fn = compile_query(schema._schema, query)
+        compiled_fn = compile_query(schema, query)
         jit_result = compiled_fn(Query())
         print("JIT result:", jit_result)
     except Exception as e:
