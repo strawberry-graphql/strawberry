@@ -16,14 +16,7 @@ import time
 from graphql import execute_sync, parse
 
 import strawberry
-
-# Try importing JIT
-try:
-    from strawberry.jit import CachedJITCompiler, compile_query
-
-    JIT_AVAILABLE = True
-except ImportError:
-    JIT_AVAILABLE = False
+from strawberry.jit import CachedJITCompiler, compile_query
 
 
 # Schema with EXTREME nesting and field count
@@ -306,12 +299,9 @@ def run_extreme_benchmark() -> None:
     wide_fields = 200 * 25
     nested_fields + wide_fields
 
-    if not JIT_AVAILABLE:
-        return
-
     # 2. JIT Compiled
     start_compile = time.perf_counter()
-    compiled_fn = compile_query(schema._schema, query)
+    compiled_fn = compile_query(schema, query)
     (time.perf_counter() - start_compile) * 1000
 
     times = []
@@ -335,7 +325,7 @@ def run_extreme_benchmark() -> None:
 
     # 4. Cache simulation
     if speedup > 3:
-        compiler = CachedJITCompiler(schema._schema, enable_parallel=False)
+        compiler = CachedJITCompiler(schema)
 
         # Simulate production traffic
         times = []

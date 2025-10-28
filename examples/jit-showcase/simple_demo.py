@@ -2,26 +2,19 @@
 This example uses synchronous resolvers where JIT really shines.
 """
 
+import os
 import statistics
+import sys
 import time
+
+sys.path.insert(
+    0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+)
 
 from graphql import execute_sync, parse
 
 import strawberry
-
-# Try importing JIT compilers
-try:
-    import os
-    import sys
-
-    sys.path.insert(
-        0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-    )
-    from strawberry.jit import CachedJITCompiler, compile_query
-
-    JIT_AVAILABLE = True
-except ImportError:
-    JIT_AVAILABLE = False
+from strawberry.jit import CachedJITCompiler, compile_query
 
 
 # Simple schema with SYNC resolvers (where JIT excels)
@@ -168,12 +161,9 @@ def run_simple_benchmark() -> None:
     min(times) * 1000
     max(times) * 1000
 
-    if not JIT_AVAILABLE:
-        return
-
     # 2. JIT Compiled (first time - includes compilation)
     start_compile = time.perf_counter()
-    compiled_fn = compile_query(schema._schema, query)
+    compiled_fn = compile_query(schema, query)
     (time.perf_counter() - start_compile) * 1000
 
     # Run compiled version
@@ -188,7 +178,7 @@ def run_simple_benchmark() -> None:
     max(times) * 1000
 
     # 3. JIT with Cache (simulating production)
-    compiler = CachedJITCompiler(schema._schema, enable_parallel=False)
+    compiler = CachedJITCompiler(schema)
 
     # Simulate 100 requests of the same query
     times = []

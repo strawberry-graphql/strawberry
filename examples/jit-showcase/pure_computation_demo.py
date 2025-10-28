@@ -18,14 +18,7 @@ import time
 from graphql import execute_sync, parse
 
 import strawberry
-
-# Try importing JIT
-try:
-    from strawberry.jit import CachedJITCompiler, compile_query
-
-    JIT_AVAILABLE = True
-except ImportError:
-    JIT_AVAILABLE = False
+from strawberry.jit import CachedJITCompiler, compile_query
 
 
 # Schema with LOTS of pure computed fields
@@ -427,12 +420,9 @@ def run_pure_computation_benchmark() -> None:
         total_points * (fields_per_point + metrics_fields) + datasets * 6
     )
 
-    if not JIT_AVAILABLE:
-        return
-
     # 2. JIT Compiled
     start_compile = time.perf_counter()
-    compiled_fn = compile_query(schema._schema, query)
+    compiled_fn = compile_query(schema, query)
     (time.perf_counter() - start_compile) * 1000
 
     times = []
@@ -447,7 +437,7 @@ def run_pure_computation_benchmark() -> None:
     max(times) * 1000
 
     # 3. Production simulation with cache
-    compiler = CachedJITCompiler(schema._schema, enable_parallel=False)
+    compiler = CachedJITCompiler(schema)
 
     times = []
     for i in range(20):

@@ -18,14 +18,7 @@ from datetime import datetime, timedelta
 from graphql import execute_sync, parse
 
 import strawberry
-
-# Try importing JIT
-try:
-    from strawberry.jit import CachedJITCompiler, compile_query
-
-    JIT_AVAILABLE = True
-except ImportError:
-    JIT_AVAILABLE = False
+from strawberry.jit import CachedJITCompiler, compile_query
 
 
 # Schema with lots of computed fields and data
@@ -756,12 +749,9 @@ def run_large_dataset_benchmark() -> None:
         + analytics_fields
     )
 
-    if not JIT_AVAILABLE:
-        return
-
     # 2. JIT Compiled
     start_compile = time.perf_counter()
-    compiled_fn = compile_query(schema._schema, query)
+    compiled_fn = compile_query(schema, query)
     (time.perf_counter() - start_compile) * 1000
 
     times = []
@@ -776,7 +766,7 @@ def run_large_dataset_benchmark() -> None:
     max(times) * 1000
 
     # 3. Production simulation with cache
-    compiler = CachedJITCompiler(schema._schema, enable_parallel=False)
+    compiler = CachedJITCompiler(schema)
 
     times = []
     for i in range(20):

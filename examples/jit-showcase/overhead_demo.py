@@ -16,14 +16,7 @@ import time
 from graphql import execute_sync, parse
 
 import strawberry
-
-# Try importing JIT
-try:
-    from strawberry.jit import CachedJITCompiler, compile_query
-
-    JIT_AVAILABLE = True
-except ImportError:
-    JIT_AVAILABLE = False
+from strawberry.jit import CachedJITCompiler, compile_query
 
 
 # Schema with many simple fields to maximize overhead impact
@@ -200,12 +193,9 @@ def run_overhead_benchmark() -> None:
     total_fields = 500 * 101  # 500 items * 101 fields each
     overhead_per_field = standard_avg / total_fields
 
-    if not JIT_AVAILABLE:
-        return
-
     # 2. JIT Compiled
     start_compile = time.perf_counter()
-    compiled_fn = compile_query(schema._schema, query)
+    compiled_fn = compile_query(schema, query)
     (time.perf_counter() - start_compile) * 1000
 
     times = []
@@ -225,7 +215,7 @@ def run_overhead_benchmark() -> None:
     overhead_per_field - jit_per_field
 
     # 3. Production with Cache
-    compiler = CachedJITCompiler(schema._schema, enable_parallel=False)
+    compiler = CachedJITCompiler(schema)
 
     times = []
     for _i in range(100):

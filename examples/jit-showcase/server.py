@@ -16,17 +16,10 @@ sys.path.insert(
     0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 )
 
-try:
-    from strawberry.jit import CachedJITCompiler, GlobalQueryCache
-
-    JIT_AVAILABLE = True
-except ImportError:
-    JIT_AVAILABLE = False
-
+from strawberry.jit import GlobalQueryCache
 
 # Global JIT cache for production use
-if JIT_AVAILABLE:
-    jit_cache = GlobalQueryCache(max_size=1000, ttl=3600)  # 1 hour TTL
+jit_cache = GlobalQueryCache(max_size=1000, ttl=3600)  # 1 hour TTL
 
 
 class JITGraphQLRouter(GraphQLRouter):
@@ -36,20 +29,18 @@ class JITGraphQLRouter(GraphQLRouter):
         self, *args, enable_jit: bool = True, enable_cache: bool = True, **kwargs
     ) -> None:
         super().__init__(*args, **kwargs)
-        self.enable_jit = enable_jit and JIT_AVAILABLE
+        self.enable_jit = enable_jit
         self.enable_cache = enable_cache
         self.request_count = 0
         self.total_time = 0.0
 
         if self.enable_jit and self.enable_cache:
             # Get or create cached compiler for this schema
-            self.jit_compiler = jit_cache.get_compiler(
-                self.schema._schema, enable_parallel=True
-            )
+            self.jit_compiler = jit_cache.get_compiler(self.schema)
         elif self.enable_jit:
             from strawberry.jit import JITCompiler
 
-            self.jit_compiler = JITCompiler(self.schema._schema)
+            self.jit_compiler = JITCompiler(self.schema)
         else:
             self.jit_compiler = None
 
@@ -77,16 +68,10 @@ class JITGraphQLRouter(GraphQLRouter):
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Manage application lifecycle."""
-    if JIT_AVAILABLE:
-        pass
-    else:
-        pass
-
     yield
 
     # Cleanup
-    if JIT_AVAILABLE and jit_cache:
-        jit_cache.get_stats()
+    jit_cache.get_stats()
 
 
 # Create FastAPI app
@@ -116,7 +101,7 @@ async def root():
             "playground": "/graphql",
             "metrics": "/metrics",
         },
-        "jit_enabled": JIT_AVAILABLE,
+        "jit_enabled": True,
         "features": [
             "JIT compilation",
             "Query caching",
@@ -146,7 +131,7 @@ async def metrics():
         "total_time_seconds": graphql_router.total_time,
     }
 
-    if graphql_router.enable_cache and JIT_AVAILABLE:
+    if graphql_router.enable_cache:
         stats = jit_cache.get_stats()
         metrics_data["cache"] = {
             "hits": stats.hits,

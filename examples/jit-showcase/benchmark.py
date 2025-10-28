@@ -1,27 +1,18 @@
 """Benchmark tool to compare standard GraphQL vs JIT compiled execution."""
 
 import asyncio
-import os
 import statistics
 import sys
 import time
+from pathlib import Path
 
 # Add parent directory to path for imports
-sys.path.insert(
-    0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-)
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
 from graphql import execute, parse
 
 from schema import schema
-
-try:
-    from strawberry.jit import CachedJITCompiler, compile_query
-
-    JIT_AVAILABLE = True
-except ImportError:
-    JIT_AVAILABLE = False
-
+from strawberry.jit import CachedJITCompiler, compile_query
 
 # Test queries of varying complexity
 QUERIES = {
@@ -144,11 +135,8 @@ async def benchmark_query(query_name: str, query: str, iterations: int = 10):
     avg_standard = statistics.mean(times)
     results["Standard GraphQL"] = avg_standard
 
-    if not JIT_AVAILABLE:
-        return results
-
     # 2. JIT Compiled (sequential)
-    compiled_fn = compile_query(schema._schema, query)
+    compiled_fn = compile_query(schema, query)
     times = []
     for _ in range(iterations):
         start = time.perf_counter()
@@ -160,7 +148,7 @@ async def benchmark_query(query_name: str, query: str, iterations: int = 10):
     avg_standard / avg_jit
 
     # 3. JIT Compiled with Parallel Async
-    compiled_parallel = compile_query(schema._schema, query)
+    compiled_parallel = compile_query(schema, query)
     times = []
     for _ in range(iterations):
         start = time.perf_counter()
@@ -172,7 +160,7 @@ async def benchmark_query(query_name: str, query: str, iterations: int = 10):
     avg_standard / avg_parallel
 
     # 4. JIT with Caching (simulate multiple requests)
-    compiler = CachedJITCompiler(schema._schema, enable_parallel=True)
+    compiler = CachedJITCompiler(schema)
 
     # First execution (cache miss)
     start = time.perf_counter()
@@ -209,35 +197,31 @@ async def run_comprehensive_benchmark() -> None:
 
     # Summary
 
-    if JIT_AVAILABLE:
-        # Calculate average speedups
-        speedups = {"JIT Sequential": [], "JIT Parallel": [], "JIT Cached": []}
+    # Calculate average speedups
+    speedups = {"JIT Sequential": [], "JIT Parallel": [], "JIT Cached": []}
 
-        for query_name, results in all_results.items():
-            baseline = results["Standard GraphQL"]
-            for method in speedups:
-                if method in results:
-                    speedups[method].append(baseline / results[method])
+    for query_name, results in all_results.items():
+        baseline = results["Standard GraphQL"]
+        for method in speedups:
+            if method in results:
+                speedups[method].append(baseline / results[method])
 
-        for method, values in speedups.items():
-            if values:
-                statistics.mean(values)
+    for method, values in speedups.items():
+        if values:
+            statistics.mean(values)
 
-        # Find best improvement
-        max_speedup = 0
-        for query_name, results in all_results.items():
-            baseline = results["Standard GraphQL"]
-            for method, time in results.items():
-                if method != "Standard GraphQL":
-                    speedup = baseline / time
-                    max_speedup = max(max_speedup, speedup)
+    # Find best improvement
+    max_speedup = 0
+    for query_name, results in all_results.items():
+        baseline = results["Standard GraphQL"]
+        for method, time in results.items():
+            if method != "Standard GraphQL":
+                speedup = baseline / time
+                max_speedup = max(max_speedup, speedup)
 
 
 async def simulate_production_load() -> None:
     """Simulate production-like query load."""
-    if not JIT_AVAILABLE:
-        return
-
     from schema import Query
 
     root = Query()
@@ -257,7 +241,7 @@ async def simulate_production_load() -> None:
     standard_time = time.perf_counter() - start
 
     # JIT with caching (production setup)
-    compiler = CachedJITCompiler(schema._schema, enable_parallel=True)
+    compiler = CachedJITCompiler(schema)
     start = time.perf_counter()
     for query_type in query_distribution:
         query = QUERIES[query_type]

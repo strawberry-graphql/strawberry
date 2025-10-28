@@ -148,7 +148,7 @@ def demo_nullable_field_errors() -> None:
         pass
 
     # JIT execution
-    compiled_fn = compile_query(schema._schema, query)
+    compiled_fn = compile_query(schema, query)
     jit_result = compiled_fn(Query())
     if "data" in jit_result:
         pass
@@ -183,7 +183,7 @@ def demo_non_nullable_field_errors() -> None:
         pass
 
     # JIT execution
-    compiled_fn = compile_query(schema._schema, query)
+    compiled_fn = compile_query(schema, query)
     jit_result = compiled_fn(Query())
     if jit_result.get("errors"):
         pass
@@ -227,7 +227,7 @@ def demo_partial_success() -> None:
     """
 
     # JIT execution with caching
-    cache_compiler = CachedJITCompiler(schema._schema)
+    cache_compiler = CachedJITCompiler(schema)
     cached_fn = cache_compiler.compile_query(query)
     result = cached_fn(Query())
 
@@ -260,7 +260,7 @@ def demo_root_level_errors() -> None:
     execute_sync(schema._schema, parse(query), root_value=Query())
 
     # JIT execution
-    compiled_fn = compile_query(schema._schema, query)
+    compiled_fn = compile_query(schema, query)
     jit_result = compiled_fn(Query())
     if "errors" in jit_result:
         pass
@@ -298,14 +298,14 @@ def demo_performance_with_errors() -> None:
     (time.perf_counter() - start) * 1000 / iterations
 
     # JIT execution
-    compiled_fn = compile_query(schema._schema, query)
+    compiled_fn = compile_query(schema, query)
     start = time.perf_counter()
     for _ in range(iterations):
         compiled_fn(Query())
     (time.perf_counter() - start) * 1000 / iterations
 
     # Cached JIT
-    cache_compiler = CachedJITCompiler(schema._schema)
+    cache_compiler = CachedJITCompiler(schema)
     cached_fn = cache_compiler.compile_query(query)
     start = time.perf_counter()
     for _ in range(iterations):

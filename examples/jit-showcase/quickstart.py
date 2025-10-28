@@ -15,14 +15,7 @@ import time
 from graphql import execute_sync, parse
 
 import strawberry
-
-# Try importing JIT
-try:
-    from strawberry.jit import CachedJITCompiler, compile_query
-
-    JIT_AVAILABLE = True
-except ImportError:
-    JIT_AVAILABLE = False
+from strawberry.jit import CachedJITCompiler, compile_query
 
 
 # Simple schema
@@ -69,39 +62,38 @@ def main() -> None:
         execute_sync(schema._schema, parse(query), root_value=root)
     standard_time = time.perf_counter() - start
 
-    if JIT_AVAILABLE:
-        # JIT compiled execution
+    # JIT compiled execution
 
-        # Compile once
+    # Compile once
+    start = time.perf_counter()
+    compiled_fn = compile_query(schema, query)
+    time.perf_counter() - start
+
+    # Execute 100 times
+    start = time.perf_counter()
+    for _ in range(100):
+        compiled_fn(root)
+    jit_time = time.perf_counter() - start
+
+    # Results
+    standard_time / jit_time
+
+    # 3. JIT with Cache
+    compiler = CachedJITCompiler(schema)
+
+    # Simulate production usage
+    cache_times = []
+    for _i in range(100):
         start = time.perf_counter()
-        compiled_fn = compile_query(schema._schema, query)
-        time.perf_counter() - start
+        fn = compiler.compile_query(query)
+        fn(root)
+        cache_times.append(time.perf_counter() - start)
 
-        # Execute 100 times
-        start = time.perf_counter()
-        for _ in range(100):
-            compiled_fn(root)
-        jit_time = time.perf_counter() - start
+    cache_times[0] * 1000
+    cached_avg = sum(cache_times[1:]) * 1000 / 99  # Average of cached requests
+    (standard_time * 10) / cached_avg
 
-        # Results
-        standard_time / jit_time
-
-        # 3. JIT with Cache
-        compiler = CachedJITCompiler(schema._schema, enable_parallel=False)
-
-        # Simulate production usage
-        cache_times = []
-        for _i in range(100):
-            start = time.perf_counter()
-            fn = compiler.compile_query(query)
-            fn(root)
-            cache_times.append(time.perf_counter() - start)
-
-        cache_times[0] * 1000
-        cached_avg = sum(cache_times[1:]) * 1000 / 99  # Average of cached requests
-        (standard_time * 10) / cached_avg
-
-        compiler.get_cache_stats()
+    compiler.get_cache_stats()
 
 
 if __name__ == "__main__":

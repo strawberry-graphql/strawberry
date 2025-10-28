@@ -3,12 +3,10 @@
 This runs all demo benchmarks and presents a unified view.
 """
 
-import os
 import sys
+from pathlib import Path
 
-sys.path.insert(
-    0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-)
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
 import statistics
 import time
@@ -18,14 +16,7 @@ from graphql import execute_sync, parse
 
 # Import all demos
 import strawberry
-
-# Import unified JIT
-try:
-    from strawberry.jit import compile_query, create_cached_compiler
-
-    JIT_AVAILABLE = True
-except ImportError:
-    JIT_AVAILABLE = False
+from strawberry.jit import compile_query, create_cached_compiler
 
 
 @dataclass
@@ -88,7 +79,7 @@ def run_quickstart_benchmark() -> BenchmarkResult:
     standard_time = statistics.mean(times) * 1000
 
     # JIT
-    compiled_fn = compile_query(schema._schema, query)
+    compiled_fn = compile_query(schema, query)
     times = []
     for _ in range(iterations):
         start = time.perf_counter()
@@ -272,7 +263,7 @@ def run_overhead_elimination_benchmark() -> BenchmarkResult:
     standard_time = statistics.mean(times) * 1000
 
     # JIT
-    compiled_fn = compile_query(schema._schema, query)
+    compiled_fn = compile_query(schema, query)
     times = []
     for _ in range(iterations):
         start = time.perf_counter()
@@ -324,9 +315,6 @@ def print_benchmark_summary(results: list[BenchmarkResult]) -> None:
 
 
 def main() -> None:
-    if not JIT_AVAILABLE:
-        return
-
     results = []
 
     # Run benchmarks
@@ -336,11 +324,8 @@ def main() -> None:
     ]
 
     for _name, bench_fn in benchmarks:
-        try:
-            result = bench_fn()
-            results.append(result)
-        except Exception:
-            pass
+        result = bench_fn()
+        results.append(result)
 
     # Print summary
     print_benchmark_summary(results)
