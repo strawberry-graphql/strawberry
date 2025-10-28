@@ -557,36 +557,23 @@ if __name__ == "__main__":
 
     # Run all tests
     test_nullable_list_of_nullable_items()
-    print("✅ Nullable list of nullable items")
 
     test_nullable_list_of_non_null_items()
-    print("✅ Nullable list of non-null items")
 
     test_non_null_list_of_nullable_items()
-    print("✅ Non-null list of nullable items")
 
     test_non_null_list_of_non_null_items()
-    print("✅ Non-null list of non-null items")
 
     test_empty_list()
-    print("✅ Empty lists")
 
     test_single_item_list()
-    print("✅ Single item list")
 
     test_error_in_list_item_field()
-    print("✅ Error in list item field")
 
     test_multiple_errors_in_list()
-    print("✅ Multiple errors in list")
 
     test_nested_lists()
-    print("✅ Nested lists")
 
     asyncio.run(test_async_list_field())
-    print("✅ Async list field")
 
     test_large_list()
-    print("✅ Large list (1000 items)")
-
-    print("\n✅ All list tests passed!")

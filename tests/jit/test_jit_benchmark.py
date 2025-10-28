@@ -205,11 +205,6 @@ def test_jit_with_large_dataset():
 
     speedup = standard_time / jit_time
 
-    print("\nLarge dataset (500 posts, 5000 comments):")
-    print(f"  Standard: {standard_time:.3f}s for {iterations} iterations")
-    print(f"  JIT:      {jit_time:.3f}s for {iterations} iterations")
-    print(f"  Speedup:  {speedup:.1f}x")
-
     # Verify results match
     assert (
         jit_result["data"]["posts"][0]["id"] == standard_result.data["posts"][0]["id"]
@@ -260,10 +255,6 @@ def test_jit_benchmark_comparison():
         (1000, 20, 5),  # 1000 posts, 20 comments each, 5 iterations
     ]
 
-    print("\n" + "=" * 70)
-    print("JIT Compiler Performance Benchmark with Large Datasets")
-    print("=" * 70)
-
     for num_posts, comments_per_post, iterations in dataset_configs:
         posts_data = generate_large_dataset(num_posts, comments_per_post)
         root = Query(posts_data)
@@ -277,33 +268,18 @@ def test_jit_benchmark_comparison():
         # Measure JIT
         start = time.perf_counter()
         for _ in range(iterations):
-            jit_result = compiled_fn(root)
+            compiled_fn(root)
         jit_time = time.perf_counter() - start
 
         # Measure standard
         start = time.perf_counter()
         for _ in range(iterations):
-            standard_result = execute(schema._schema, parsed_query, root_value=root)
+            execute(schema._schema, parsed_query, root_value=root)
         standard_time = time.perf_counter() - start
 
-        speedup = standard_time / jit_time
-        items_per_second_jit = (total_items * iterations) / jit_time
-        items_per_second_std = (total_items * iterations) / standard_time
-
-        print(
-            f"\nDataset: {num_posts} posts × {comments_per_post} comments = {total_items} items"
-        )
-        print(f"  Iterations: {iterations}")
-        print(
-            f"  Standard GraphQL: {standard_time:.3f}s ({items_per_second_std:.0f} items/sec)"
-        )
-        print(
-            f"  JIT Compiled:     {jit_time:.3f}s ({items_per_second_jit:.0f} items/sec)"
-        )
-        print(f"  🚀 Speedup:       {speedup:.1f}x faster")
-
-    print("\n" + "=" * 70)
-    print("✅ JIT compilation shows increasing benefits with larger datasets!")
+        standard_time / jit_time
+        (total_items * iterations) / jit_time
+        (total_items * iterations) / standard_time
 
 
 def test_jit_with_minimal_fields():
@@ -330,21 +306,16 @@ def test_jit_with_minimal_fields():
     # Measure JIT
     start = time.perf_counter()
     for _ in range(iterations):
-        jit_result = compiled_fn(root)
+        compiled_fn(root)
     jit_time = time.perf_counter() - start
 
     # Measure standard
     start = time.perf_counter()
     for _ in range(iterations):
-        standard_result = execute(schema._schema, parsed_query, root_value=root)
+        execute(schema._schema, parsed_query, root_value=root)
     standard_time = time.perf_counter() - start
 
     speedup = standard_time / jit_time
-
-    print("\nMinimal fields query (1000 posts, only id+title):")
-    print(f"  Standard: {standard_time:.3f}s")
-    print(f"  JIT:      {jit_time:.3f}s")
-    print(f"  Speedup:  {speedup:.1f}x")
 
     # With minimal fields, JIT should show even better performance
     assert speedup > 2.0, (

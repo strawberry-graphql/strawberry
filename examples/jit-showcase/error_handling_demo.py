@@ -120,12 +120,8 @@ class Query:
         return Store(name=name)
 
 
-def demo_nullable_field_errors():
+def demo_nullable_field_errors() -> None:
     """Demonstrate nullable field error handling."""
-    print("\n" + "=" * 60)
-    print("DEMO 1: Nullable Field Errors")
-    print("=" * 60)
-
     schema = strawberry.Schema(Query)
 
     # Query with nullable field that errors
@@ -146,39 +142,22 @@ def demo_nullable_field_errors():
     }
     """
 
-    print("\nQuery: Fetching unlucky products (will error on descriptions)")
-
     # Standard execution
     result = execute_sync(schema._schema, parse(query), root_value=Query())
-    print("\nStandard GraphQL execution:")
-    print(
-        f"  ✅ Successful fields: {sum(1 for p in result.data['store']['category']['products'] if p['name'])}"
-    )
-    print(f"  ❌ Errors: {len(result.errors) if result.errors else 0}")
     if result.errors:
-        print(f"     First error: {result.errors[0].message}")
+        pass
 
     # JIT execution
     compiled_fn = compile_query(schema._schema, query)
     jit_result = compiled_fn(Query())
-    print("\nJIT compiled execution:")
     if "data" in jit_result:
-        print(
-            f"  ✅ Successful fields: {sum(1 for p in jit_result['data']['store']['category']['products'] if p['name'])}"
-        )
+        pass
     if "errors" in jit_result:
-        print(f"  ❌ Errors: {len(jit_result['errors'])}")
-        print(f"     First error: {jit_result['errors'][0]['message']}")
-
-    print("\n💡 Nullable fields set to null on error, query continues")
+        pass
 
 
-def demo_non_nullable_field_errors():
+def demo_non_nullable_field_errors() -> None:
     """Demonstrate non-nullable field error propagation."""
-    print("\n" + "=" * 60)
-    print("DEMO 2: Non-Nullable Field Error Propagation")
-    print("=" * 60)
-
     schema = strawberry.Schema(Query)
 
     # Query with non-nullable field that errors
@@ -198,37 +177,20 @@ def demo_non_nullable_field_errors():
     }
     """
 
-    print("\nQuery: Fetching cursed products (will error on price)")
-
     # Standard execution
     result = execute_sync(schema._schema, parse(query), root_value=Query())
-    print("\nStandard GraphQL execution:")
-    print(f"  Data: {result.data}")
-    print(f"  ❌ Errors: {len(result.errors) if result.errors else 0}")
     if result.errors:
-        print(f"     Error: {result.errors[0].message}")
-        print(f"     Path: {result.errors[0].path}")
+        pass
 
     # JIT execution
     compiled_fn = compile_query(schema._schema, query)
     jit_result = compiled_fn(Query())
-    print("\nJIT compiled execution:")
-    print(f"  Data: {jit_result.get('data')}")
-    if "errors" in jit_result:
-        print(f"  ❌ Errors: {len(jit_result['errors'])}")
-        if jit_result["errors"]:
-            print(f"     Error: {jit_result['errors'][0]['message']}")
-            print(f"     Path: {jit_result['errors'][0]['path']}")
-
-    print("\n💡 Non-nullable error propagated to nearest nullable ancestor (store)")
+    if jit_result.get("errors"):
+        pass
 
 
-def demo_partial_success():
+def demo_partial_success() -> None:
     """Demonstrate partial query success with mixed errors."""
-    print("\n" + "=" * 60)
-    print("DEMO 3: Partial Success with Mixed Errors")
-    print("=" * 60)
-
     schema = strawberry.Schema(Query)
 
     # Query with mix of successful and failing fields
@@ -264,37 +226,24 @@ def demo_partial_success():
     }
     """
 
-    print("\nQuery: Fetching from multiple stores (mixed success/errors)")
-
     # JIT execution with caching
     cache_compiler = CachedJITCompiler(schema._schema)
     cached_fn = cache_compiler.compile_query(query)
     result = cached_fn(Query())
 
-    print("\nJIT with caching execution:")
     if "data" in result:
         normal = result["data"].get("normalStore", {})
-        silent = result["data"].get("silentStore", {})
-        print(f"  ✅ Normal store: {normal.get('name', 'N/A')}")
+        result["data"].get("silentStore", {})
         if normal.get("category", {}).get("products"):
-            print(f"     Products fetched: {len(normal['category']['products'])}")
-        print(f"  ⚠️  Silent store: {silent.get('name', 'N/A')}")
-        print(f"     Announcement: {silent.get('announcement', 'null (errored)')}")
+            pass
 
     if "errors" in result:
-        print(f"\n  ❌ Total errors collected: {len(result['errors'])}")
-        for i, error in enumerate(result["errors"][:3], 1):
-            print(f"     {i}. {error['message'][:50]}...")
-
-    print("\n💡 Query partially succeeds, errors are collected and reported")
+        for _i, _error in enumerate(result["errors"][:3], 1):
+            pass
 
 
-def demo_root_level_errors():
+def demo_root_level_errors() -> None:
     """Demonstrate root-level error handling."""
-    print("\n" + "=" * 60)
-    print("DEMO 4: Root-Level Error Handling")
-    print("=" * 60)
-
     schema = strawberry.Schema(Query)
 
     # Query with non-nullable root that errors
@@ -307,33 +256,18 @@ def demo_root_level_errors():
     }
     """
 
-    print("\nQuery: Fetching non-existent store (root level error)")
-
     # Standard execution
-    result = execute_sync(schema._schema, parse(query), root_value=Query())
-    print("\nStandard GraphQL execution:")
-    print(f"  Data: {result.data}")
-    print(f"  ❌ Error: {result.errors[0].message if result.errors else 'None'}")
+    execute_sync(schema._schema, parse(query), root_value=Query())
 
     # JIT execution
     compiled_fn = compile_query(schema._schema, query)
     jit_result = compiled_fn(Query())
-    print("\nJIT compiled execution:")
-    print(f"  Data: {jit_result.get('data')}")
     if "errors" in jit_result:
-        print(
-            f"  ❌ Error: {jit_result['errors'][0]['message'] if jit_result['errors'] else 'None'}"
-        )
-
-    print("\n💡 Non-nullable root error nulls entire result")
+        pass
 
 
-def demo_performance_with_errors():
+def demo_performance_with_errors() -> None:
     """Show that error handling doesn't impact performance."""
-    print("\n" + "=" * 60)
-    print("DEMO 5: Performance with Error Handling")
-    print("=" * 60)
-
     import time
 
     schema = strawberry.Schema(Query)
@@ -356,79 +290,35 @@ def demo_performance_with_errors():
     }
     """
 
-    print("\nBenchmarking query with error handling...")
-
     # Standard execution
     iterations = 100
     start = time.perf_counter()
     for _ in range(iterations):
-        result = execute_sync(schema._schema, parse(query), root_value=Query())
-    standard_time = (time.perf_counter() - start) * 1000 / iterations
+        execute_sync(schema._schema, parse(query), root_value=Query())
+    (time.perf_counter() - start) * 1000 / iterations
 
     # JIT execution
     compiled_fn = compile_query(schema._schema, query)
     start = time.perf_counter()
     for _ in range(iterations):
-        result = compiled_fn(Query())
-    jit_time = (time.perf_counter() - start) * 1000 / iterations
+        compiled_fn(Query())
+    (time.perf_counter() - start) * 1000 / iterations
 
     # Cached JIT
     cache_compiler = CachedJITCompiler(schema._schema)
     cached_fn = cache_compiler.compile_query(query)
     start = time.perf_counter()
     for _ in range(iterations):
-        result = cached_fn(Query())
-    cached_time = (time.perf_counter() - start) * 1000 / iterations
-
-    print(f"\nPerformance (avg of {iterations} runs):")
-    print(f"  Standard:    {standard_time:.2f} ms")
-    print(f"  JIT:         {jit_time:.2f} ms ({standard_time / jit_time:.1f}x faster)")
-    print(
-        f"  Cached JIT:  {cached_time:.2f} ms ({standard_time / cached_time:.1f}x faster)"
-    )
-
-    print("\n💡 Error handling adds minimal overhead, JIT still provides major speedup")
+        cached_fn(Query())
+    (time.perf_counter() - start) * 1000 / iterations
 
 
-def main():
-    print("\n" + "🚀" * 30)
-    print("   STRAWBERRY JIT COMPILER - ERROR HANDLING SHOWCASE")
-    print("   GraphQL Spec-Compliant Error Handling with Performance")
-    print("🚀" * 30)
-
+def main() -> None:
     demo_nullable_field_errors()
     demo_non_nullable_field_errors()
     demo_partial_success()
     demo_root_level_errors()
     demo_performance_with_errors()
-
-    print("\n" + "=" * 60)
-    print("✅ ERROR HANDLING SUMMARY")
-    print("=" * 60)
-    print("""
-The JIT compiler now provides:
-
-1. **Spec-Compliant Error Handling**
-   - Nullable fields are set to null on error
-   - Non-nullable errors propagate to nearest nullable ancestor
-   - Errors are collected with proper paths
-
-2. **Partial Query Success**
-   - Queries continue executing after errors
-   - Successful fields return data
-   - All errors are collected and reported
-
-3. **Maintained Performance**
-   - Error handling adds minimal overhead
-   - Still provides 2-6x performance improvements
-   - Production-ready with caching
-
-4. **Full GraphQL Compatibility**
-   - Behaves identically to standard GraphQL execution
-   - Supports complex nested queries
-   - Handles lists, fragments, and directives
-    """)
-    print("=" * 60)
 
 
 if __name__ == "__main__":

@@ -21,7 +21,6 @@ try:
 
     JIT_AVAILABLE = True
 except ImportError:
-    print("⚠️  JIT compiler not available, using standard execution")
     JIT_AVAILABLE = False
 
 
@@ -35,7 +34,7 @@ class JITGraphQLRouter(GraphQLRouter):
 
     def __init__(
         self, *args, enable_jit: bool = True, enable_cache: bool = True, **kwargs
-    ):
+    ) -> None:
         super().__init__(*args, **kwargs)
         self.enable_jit = enable_jit and JIT_AVAILABLE
         self.enable_cache = enable_cache
@@ -47,15 +46,12 @@ class JITGraphQLRouter(GraphQLRouter):
             self.jit_compiler = jit_cache.get_compiler(
                 self.schema._schema, enable_parallel=True
             )
-            print("✅ JIT compiler with caching enabled")
         elif self.enable_jit:
             from strawberry.jit import JITCompiler
 
             self.jit_compiler = JITCompiler(self.schema._schema)
-            print("✅ JIT compiler enabled (no cache)")
         else:
             self.jit_compiler = None
-            print("ℹ️  Using standard GraphQL execution")
 
     async def process_result(self, request: Request, result):
         """Override to add performance metrics."""
@@ -81,34 +77,16 @@ class JITGraphQLRouter(GraphQLRouter):
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Manage application lifecycle."""
-    print("\n" + "=" * 60)
-    print("🚀 Strawberry JIT Compiler Showcase Server")
-    print("=" * 60)
-
     if JIT_AVAILABLE:
-        print("✅ JIT Compiler: ENABLED")
-        print("✅ Query Caching: ENABLED")
-        print("✅ Parallel Async: ENABLED")
+        pass
     else:
-        print("⚠️  JIT Compiler: DISABLED")
-
-    print("\n📊 Performance Features:")
-    print("- JIT compilation: 3-6x faster")
-    print("- Parallel async: +3.7x faster")
-    print("- Query caching: +10x faster for hits")
-    print("- Combined: Up to 60x faster!")
-
-    print("\n🌐 Server starting at http://localhost:8000")
-    print("📝 GraphQL endpoint: http://localhost:8000/graphql")
-    print("📊 Metrics endpoint: http://localhost:8000/metrics")
-    print("=" * 60 + "\n")
+        pass
 
     yield
 
     # Cleanup
     if JIT_AVAILABLE and jit_cache:
-        stats = jit_cache.get_stats()
-        print(f"\n📊 Final cache stats: {stats}")
+        jit_cache.get_stats()
 
 
 # Create FastAPI app

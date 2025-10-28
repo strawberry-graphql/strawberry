@@ -197,8 +197,6 @@ def test_simple_input():
     assert jit_result["data"]["person"]["name"] == "John Doe"
     assert jit_result["data"]["person"]["age"] == 30
 
-    print("✅ Simple input works")
-
 
 def test_input_object():
     """Test input object type."""
@@ -227,8 +225,6 @@ def test_input_object():
     assert result["data"]["search"]["items"][0]["name"] == "John Doe"
     assert result["data"]["search"]["total"] == 1
     assert result["data"]["search"]["hasMore"] is False
-
-    print("✅ Input object works")
 
 
 def test_nested_input():
@@ -279,8 +275,6 @@ def test_nested_input():
     assert result["data"]["createPerson"]["address"]["city"] == "San Francisco"
     assert result["data"]["createPerson"]["tags"] == ["designer", "ui/ux"]
 
-    print("✅ Nested input works")
-
 
 def test_input_with_defaults():
     """Test input fields with default values."""
@@ -303,8 +297,6 @@ def test_input_with_defaults():
 
     assert len(result["data"]["search"]["items"]) == 1
     assert result["data"]["search"]["total"] == 1
-
-    print("✅ Input with defaults works")
 
 
 def test_optional_input_fields():
@@ -336,8 +328,6 @@ def test_optional_input_fields():
         result["data"]["updatePerson"]["email"] == "john@example.com"
     )  # Should keep original
 
-    print("✅ Optional input fields work")
-
 
 def test_list_input():
     """Test list input fields."""
@@ -361,8 +351,6 @@ def test_list_input():
     assert result["data"]["createPerson"]["name"] == "Bob"
     assert result["data"]["createPerson"]["tags"] == ["manager", "agile", "scrum"]
 
-    print("✅ List input works")
-
 
 def test_inline_input_object():
     """Test inline input object in query."""
@@ -385,8 +373,6 @@ def test_inline_input_object():
 
     assert len(result["data"]["search"]["items"]) == 1
     assert result["data"]["search"]["items"][0]["name"] == "John Doe"
-
-    print("✅ Inline input object works")
 
 
 def test_input_performance():
@@ -429,7 +415,7 @@ def test_input_performance():
     # Standard execution
     start = time.perf_counter()
     for _ in range(iterations):
-        result = execute_sync(
+        execute_sync(
             schema._schema, parse(query), root_value=root, variable_values=variables
         )
     standard_time = time.perf_counter() - start
@@ -438,11 +424,10 @@ def test_input_performance():
     compiled_fn = compile_query(schema, query)
     start = time.perf_counter()
     for _ in range(iterations):
-        result = compiled_fn(root, variables=variables)
+        compiled_fn(root, variables=variables)
     jit_time = time.perf_counter() - start
 
     speedup = standard_time / jit_time
-    print(f"✅ Input performance: {speedup:.2f}x faster with JIT")
     assert speedup > 1.5, "JIT should be at least 1.5x faster for inputs"
 
 
@@ -455,5 +440,3 @@ if __name__ == "__main__":
     test_list_input()
     test_inline_input_object()
     test_input_performance()
-
-    print("\n✅ All input type tests passed!")

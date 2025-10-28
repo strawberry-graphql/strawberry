@@ -140,8 +140,6 @@ def test_union_type_resolution():
         jit_result["data"]["library"]["featuredItem"]["director"] == "Wachowski Sisters"
     )
 
-    print("✅ Basic union type resolution works")
-
 
 def test_union_list_field():
     """Test union types in list fields."""
@@ -197,8 +195,6 @@ def test_union_list_field():
     assert items[2]["artist"] == "Queen"
     assert items[2]["album"] == "Greatest Hits"
 
-    print("✅ Union list fields work")
-
 
 def test_union_with_fragments():
     """Test union types with named fragments."""
@@ -239,8 +235,6 @@ def test_union_with_fragments():
     assert item["title"] == "The Matrix"
     assert item["director"] == "Wachowski Sisters"
     assert item["summary"] == "The Matrix directed by Wachowski Sisters"
-
-    print("✅ Union with fragments works")
 
 
 def test_union_with_arguments():
@@ -294,8 +288,6 @@ def test_union_with_arguments():
     assert result["data"]["library"]["songItem"]["title"] == "Imagine"
     assert result["data"]["library"]["songItem"]["artist"] == "John Lennon"
 
-    print("✅ Union with arguments works")
-
 
 def test_union_without_typename():
     """Test union resolution without explicit __typename."""
@@ -328,8 +320,6 @@ def test_union_without_typename():
     assert item["director"] == "Wachowski Sisters"
     assert "author" not in item  # Book fields should not be present
 
-    print("✅ Union without explicit __typename works")
-
 
 def test_union_search_query():
     """Test union in search results."""
@@ -360,8 +350,6 @@ def test_union_search_query():
     assert len(result["data"]["search"]) == 2
     assert result["data"]["search"][0]["__typename"] == "Book"
     assert result["data"]["search"][1]["__typename"] == "Movie"
-
-    print("✅ Union search with variables works")
 
 
 def test_union_performance():
@@ -404,18 +392,17 @@ def test_union_performance():
     # Standard execution
     start = time.perf_counter()
     for _ in range(iterations):
-        result = execute_sync(schema._schema, parse(query), root_value=root)
+        execute_sync(schema._schema, parse(query), root_value=root)
     standard_time = time.perf_counter() - start
 
     # JIT execution
     compiled_fn = compile_query(schema, query)
     start = time.perf_counter()
     for _ in range(iterations):
-        result = compiled_fn(root)
+        compiled_fn(root)
     jit_time = time.perf_counter() - start
 
     speedup = standard_time / jit_time
-    print(f"✅ Union performance: {speedup:.2f}x faster with JIT")
     assert speedup > 1.5, "JIT should be at least 1.5x faster for unions"
 
 
@@ -466,8 +453,6 @@ def test_union_error_handling():
     assert len(result["errors"]) >= 1
     assert any("Author not found" in err["message"] for err in result["errors"])
 
-    print("✅ Union error handling works")
-
 
 if __name__ == "__main__":
     test_union_type_resolution()
@@ -478,5 +463,3 @@ if __name__ == "__main__":
     test_union_search_query()
     test_union_performance()
     test_union_error_handling()
-
-    print("\n✅ All union type tests passed!")

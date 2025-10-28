@@ -347,30 +347,19 @@ def test_defer_in_fragment_definition():
 if __name__ == "__main__":
     # Run all tests
     test_defer_directive_triggers_fallback()
-    print("✅ @defer directive fallback works")
 
     test_stream_directive_triggers_fallback()
-    print("✅ @stream directive fallback works")
 
     test_defer_on_named_fragment_triggers_fallback()
-    print("✅ @defer on named fragment fallback works")
 
     test_normal_query_no_fallback()
-    print("✅ Normal queries don't trigger fallback")
 
     test_skip_and_include_directives_work_normally()
-    print("✅ @skip and @include directives work normally")
 
     test_fallback_matches_standard_execution()
-    print("✅ Fallback matches standard execution")
 
     test_defer_with_variables()
-    print("✅ @defer with variables works")
 
     test_nested_defer_triggers_fallback()
-    print("✅ Nested @defer triggers fallback")
 
     test_defer_in_fragment_definition()
-    print("✅ @defer in fragment definition triggers fallback")
-
-    print("\n✅ All defer/stream fallback tests passed!")

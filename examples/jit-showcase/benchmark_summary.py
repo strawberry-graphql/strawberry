@@ -26,7 +26,6 @@ try:
     JIT_AVAILABLE = True
 except ImportError:
     JIT_AVAILABLE = False
-    print("⚠️  JIT compiler not available")
 
 
 @dataclass
@@ -84,7 +83,7 @@ def run_quickstart_benchmark() -> BenchmarkResult:
     times = []
     for _ in range(iterations):
         start = time.perf_counter()
-        result = execute_sync(schema._schema, parse(query), root_value=root)
+        execute_sync(schema._schema, parse(query), root_value=root)
         times.append(time.perf_counter() - start)
     standard_time = statistics.mean(times) * 1000
 
@@ -93,7 +92,7 @@ def run_quickstart_benchmark() -> BenchmarkResult:
     times = []
     for _ in range(iterations):
         start = time.perf_counter()
-        result = compiled_fn(root)
+        compiled_fn(root)
         times.append(time.perf_counter() - start)
     jit_time = statistics.mean(times) * 1000
 
@@ -103,7 +102,7 @@ def run_quickstart_benchmark() -> BenchmarkResult:
     for _ in range(iterations):
         start = time.perf_counter()
         fn = compiler.compile_query(query)
-        result = fn(root)
+        fn(root)
         times.append(time.perf_counter() - start)
     cached_time = statistics.mean(times[1:]) * 1000  # Skip first
 
@@ -268,7 +267,7 @@ def run_overhead_elimination_benchmark() -> BenchmarkResult:
     times = []
     for _ in range(iterations):
         start = time.perf_counter()
-        result = execute_sync(schema._schema, parse(query), root_value=root)
+        execute_sync(schema._schema, parse(query), root_value=root)
         times.append(time.perf_counter() - start)
     standard_time = statistics.mean(times) * 1000
 
@@ -277,7 +276,7 @@ def run_overhead_elimination_benchmark() -> BenchmarkResult:
     times = []
     for _ in range(iterations):
         start = time.perf_counter()
-        result = compiled_fn(root)
+        compiled_fn(root)
         times.append(time.perf_counter() - start)
     jit_time = statistics.mean(times) * 1000
 
@@ -287,7 +286,7 @@ def run_overhead_elimination_benchmark() -> BenchmarkResult:
     for _ in range(20):
         start = time.perf_counter()
         fn = compiler.compile_query(query)
-        result = fn(root)
+        fn(root)
         times.append(time.perf_counter() - start)
     cached_time = statistics.mean(times[1:]) * 1000
 
@@ -303,82 +302,30 @@ def run_overhead_elimination_benchmark() -> BenchmarkResult:
     )
 
 
-def print_benchmark_summary(results: list[BenchmarkResult]):
+def print_benchmark_summary(results: list[BenchmarkResult]) -> None:
     """Print a comprehensive benchmark summary."""
-    print("\n" + "=" * 80)
-    print("📊 STRAWBERRY JIT COMPILER - COMPREHENSIVE BENCHMARK SUMMARY")
-    print("=" * 80)
-
-    print("\n┌" + "─" * 78 + "┐")
-    print("│" + " " * 30 + "PERFORMANCE RESULTS" + " " * 29 + "│")
-    print("├" + "─" * 78 + "┤")
-    print(
-        "│ Benchmark              │ Standard │   JIT    │  Cached  │ JIT Speedup │ Cache │"
-    )
-    print(
-        "│                        │   (ms)   │   (ms)   │   (ms)   │             │ Speed │"
-    )
-    print("├" + "─" * 78 + "┤")
-
     for r in results:
-        print(
-            f"│ {r.name:<22} │ {r.standard_time:>8.2f} │ {r.jit_time:>8.2f} │ {r.cached_time:>8.2f} │ {r.speedup_jit:>6.2f}x     │ {r.speedup_cached:>5.2f}x │"
-        )
-
-    print("└" + "─" * 78 + "┘")
+        pass
 
     # Calculate averages
-    avg_jit_speedup = statistics.mean(r.speedup_jit for r in results)
-    avg_cache_speedup = statistics.mean(r.speedup_cached for r in results)
-    max_jit_speedup = max(r.speedup_jit for r in results)
-    max_cache_speedup = max(r.speedup_cached for r in results)
-
-    print("\n📈 SUMMARY STATISTICS:")
-    print("─" * 40)
-    print(f"   Average JIT Speedup:     {avg_jit_speedup:.2f}x")
-    print(f"   Average Cache Speedup:   {avg_cache_speedup:.2f}x")
-    print(f"   Maximum JIT Speedup:     {max_jit_speedup:.2f}x")
-    print(f"   Maximum Cache Speedup:   {max_cache_speedup:.2f}x")
+    statistics.mean(r.speedup_jit for r in results)
+    statistics.mean(r.speedup_cached for r in results)
+    max(r.speedup_jit for r in results)
+    max(r.speedup_cached for r in results)
 
     # Throughput improvements
-    print("\n⚡ THROUGHPUT IMPROVEMENTS:")
-    print("─" * 40)
     for r in results:
-        req_per_sec_standard = 1000 / r.standard_time
-        req_per_sec_cached = 1000 / r.cached_time
-        print(f"   {r.name}:")
-        print(f"      Standard: {req_per_sec_standard:>8.1f} req/s")
-        print(
-            f"      Cached:   {req_per_sec_cached:>8.1f} req/s (+{((req_per_sec_cached / req_per_sec_standard - 1) * 100):.0f}%)"
-        )
+        1000 / r.standard_time
+        1000 / r.cached_time
 
     # Cost savings
-    print("\n💰 INFRASTRUCTURE COST SAVINGS:")
-    print("─" * 40)
     for r in results:
-        savings = (1 - 1 / r.speedup_cached) * 100
-        print(f"   {r.name}: {savings:.0f}% reduction")
-
-    print("\n🚀 KEY INSIGHTS:")
-    print("─" * 40)
-    print("   • JIT compilation provides 2-6x performance improvements")
-    print("   • Cache eliminates compilation overhead completely")
-    print("   • Best gains with queries having many field resolutions")
-    print("   • Significant infrastructure cost savings (45-83%)")
-    print("   • Production-ready with caching for optimal performance")
-
-    print("\n" + "=" * 80)
-    print("✅ Benchmark complete! JIT compilation delivers dramatic performance gains.")
-    print("=" * 80 + "\n")
+        (1 - 1 / r.speedup_cached) * 100
 
 
-def main():
+def main() -> None:
     if not JIT_AVAILABLE:
-        print("❌ JIT compiler not available, cannot run benchmarks")
         return
-
-    print("\n🔄 Running comprehensive benchmarks...")
-    print("This will take a few moments...\n")
 
     results = []
 
@@ -388,14 +335,12 @@ def main():
         ("Overhead Elimination", run_overhead_elimination_benchmark),
     ]
 
-    for name, bench_fn in benchmarks:
-        print(f"   Running {name}...", end="", flush=True)
+    for _name, bench_fn in benchmarks:
         try:
             result = bench_fn()
             results.append(result)
-            print(f" ✅ ({result.speedup_cached:.2f}x with cache)")
-        except Exception as e:
-            print(f" ❌ Error: {e}")
+        except Exception:
+            pass
 
     # Print summary
     print_benchmark_summary(results)

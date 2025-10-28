@@ -67,7 +67,7 @@ class Query:
 def benchmark_name_conversion():
     """Benchmark the performance of name conversions."""
     schema = strawberry.Schema(Query)
-    config = StrawberryConfig()
+    StrawberryConfig()
 
     # Fields that need conversion
     field_names = [
@@ -100,7 +100,7 @@ def benchmark_name_conversion():
     for _ in range(iterations):
         for graphql_name in field_names:
             # Simulate what would happen without pre-computed names
-            python_name = camel_to_snake(graphql_name)
+            camel_to_snake(graphql_name)
     old_time = time.perf_counter() - start
 
     # Benchmark new way: using type map with pre-computed names
@@ -132,15 +132,7 @@ def benchmark_name_conversion():
     new_time = time.perf_counter() - start
 
     speedup = old_time / new_time
-    per_lookup_saving_ns = (
-        (old_time - new_time) / (iterations * len(field_names))
-    ) * 1_000_000_000
-
-    print("\\n📊 Name Conversion Performance:")
-    print(f"   Old way (repeated conversion): {old_time * 1000:.2f}ms")
-    print(f"   New way (pre-computed lookup): {new_time * 1000:.2f}ms")
-    print(f"   Speedup: {speedup:.1f}x faster")
-    print(f"   Per-lookup saving: {per_lookup_saving_ns:.1f}ns")
+    ((old_time - new_time) / (iterations * len(field_names))) * 1_000_000_000
 
     assert speedup > 5.0, f"Expected significant speedup, got {speedup:.1f}x"
 
@@ -159,7 +151,7 @@ def benchmark_field_access():
         query_type = graphql_schema.type_map["Query"]
         field = query_type.fields.get("getPostsByAuthor")
         if field and hasattr(field, "extensions"):
-            strawberry_field = field.extensions.get("strawberry-definition")
+            field.extensions.get("strawberry-definition")
     old_time = time.perf_counter() - start
 
     # Benchmark new way: direct type map access
@@ -171,13 +163,7 @@ def benchmark_field_access():
     new_time = time.perf_counter() - start
 
     speedup = old_time / new_time
-    per_access_saving_ns = ((old_time - new_time) / iterations) * 1_000_000_000
-
-    print("\\n📊 Field Access Performance:")
-    print(f"   GraphQL Core access: {old_time * 1000:.2f}ms")
-    print(f"   Type map access: {new_time * 1000:.2f}ms")
-    print(f"   Speedup: {speedup:.1f}x faster")
-    print(f"   Per-access saving: {per_access_saving_ns:.1f}ns")
+    ((old_time - new_time) / iterations) * 1_000_000_000
 
     # Even a small speedup is good, the main benefit is cleaner code
     # and the massive speedup in name conversion
@@ -217,8 +203,6 @@ def test_jit_with_type_map():
     assert "data" in result
     assert "getPostsByAuthor" in result["data"]
     assert result["data"]["getPostsByAuthor"] == []
-
-    print("✅ JIT compiler works with Strawberry schema and type map!")
 
 
 def benchmark_jit_compilation_with_type_map():
@@ -264,13 +248,7 @@ def benchmark_jit_compilation_with_type_map():
     start = time.perf_counter()
     for _ in range(iterations):
         compiler.compile_query(query)
-    compilation_time = time.perf_counter() - start
-
-    print("\\n📊 JIT Compilation Performance:")
-    print(
-        f"   With Strawberry type map: {compilation_time * 1000:.2f}ms for {iterations} compilations"
-    )
-    print(f"   Average per compilation: {compilation_time * 1000 / iterations:.2f}ms")
+    time.perf_counter() - start
 
 
 if __name__ == "__main__":
@@ -278,4 +256,3 @@ if __name__ == "__main__":
     benchmark_field_access()
     test_jit_with_type_map()
     benchmark_jit_compilation_with_type_map()
-    print("\\n🎉 All performance tests passed!")

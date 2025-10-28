@@ -26,7 +26,6 @@ try:
     JIT_AVAILABLE = True
 except ImportError:
     JIT_AVAILABLE = False
-    print("⚠️  JIT compiler not available")
 
 
 # Schema with LOTS of pure computed fields
@@ -85,10 +84,7 @@ class Metrics:
             return True
         if n % 2 == 0:
             return False
-        for i in range(3, min(int(n**0.5) + 1, 100), 2):
-            if n % i == 0:
-                return False
-        return True
+        return all(n % i != 0 for i in range(3, min(int(n**0.5) + 1, 100), 2))
 
     @strawberry.field
     def fibonacci_term(self) -> int:
@@ -321,7 +317,7 @@ class Query:
         return Dataset(name="Large", size=500)
 
 
-def run_pure_computation_benchmark():
+def run_pure_computation_benchmark() -> None:
     """Benchmark pure computation to show dramatic JIT benefits."""
     schema = strawberry.Schema(Query)
 
@@ -402,44 +398,24 @@ def run_pure_computation_benchmark():
     }
     """
 
-    print("\n" + "=" * 60)
-    print("⚡ PURE COMPUTATION PERFORMANCE TEST")
-    print("=" * 60)
-    print("\n📊 Processing:")
-    print("   • 10 datasets")
-    print("   • 1,000 data points (100 per dataset)")
-    print("   • 18 fields per point")
-    print("   • 15 metric fields per coordinate")
-    print("   • ~50,000+ pure mathematical computations")
-    print("   • Zero I/O, zero async, pure CPU-bound work\n")
-
     root = Query()
 
     # Warm up
-    print("Warming up...")
     for _ in range(2):
         execute_sync(schema._schema, parse(query), root_value=root)
 
     # 1. Standard GraphQL
-    print("\n1️⃣  Standard GraphQL Execution:")
     iterations = 5
     times = []
     for i in range(iterations):
-        print(f"   Run {i + 1}/{iterations}...", end="", flush=True)
         start = time.perf_counter()
-        result = execute_sync(schema._schema, parse(query), root_value=root)
+        execute_sync(schema._schema, parse(query), root_value=root)
         elapsed = time.perf_counter() - start
         times.append(elapsed)
-        print(f" {elapsed * 1000:.0f}ms")
 
     standard_avg = statistics.mean(times) * 1000
-    standard_min = min(times) * 1000
-    standard_max = max(times) * 1000
-
-    print("\n   📊 Results:")
-    print(f"   Average: {standard_avg:.2f}ms")
-    print(f"   Min:     {standard_min:.2f}ms")
-    print(f"   Max:     {standard_max:.2f}ms")
+    min(times) * 1000
+    max(times) * 1000
 
     # Approximate computation count
     datasets = 10
@@ -451,112 +427,52 @@ def run_pure_computation_benchmark():
         total_points * (fields_per_point + metrics_fields) + datasets * 6
     )
 
-    print(f"   Computations/sec: {(total_computations / (standard_avg / 1000)):,.0f}")
-
     if not JIT_AVAILABLE:
-        print("\n⚠️  JIT not available for comparison")
         return
 
     # 2. JIT Compiled
-    print("\n2️⃣  JIT Compiled Execution:")
-    print("   Compiling query...", end="", flush=True)
     start_compile = time.perf_counter()
     compiled_fn = compile_query(schema._schema, query)
-    compilation_time = (time.perf_counter() - start_compile) * 1000
-    print(f" done ({compilation_time:.2f}ms)")
+    (time.perf_counter() - start_compile) * 1000
 
     times = []
     for i in range(iterations):
-        print(f"   Run {i + 1}/{iterations}...", end="", flush=True)
         start = time.perf_counter()
-        result = compiled_fn(root)
+        compiled_fn(root)
         elapsed = time.perf_counter() - start
         times.append(elapsed)
-        print(f" {elapsed * 1000:.0f}ms")
 
     jit_avg = statistics.mean(times) * 1000
-    jit_min = min(times) * 1000
-    jit_max = max(times) * 1000
-
-    print("\n   📊 Results:")
-    print(f"   Average: {jit_avg:.2f}ms ({standard_avg / jit_avg:.2f}x faster)")
-    print(f"   Min:     {jit_min:.2f}ms")
-    print(f"   Max:     {jit_max:.2f}ms")
-    print(f"   Computations/sec: {(total_computations / (jit_avg / 1000)):,.0f}")
+    min(times) * 1000
+    max(times) * 1000
 
     # 3. Production simulation with cache
-    print("\n3️⃣  Production Mode (JIT + Cache):")
     compiler = CachedJITCompiler(schema._schema, enable_parallel=False)
 
-    print("   Simulating 20 requests...")
     times = []
     for i in range(20):
         start = time.perf_counter()
         fn = compiler.compile_query(query)
-        result = fn(root)
+        fn(root)
         elapsed = time.perf_counter() - start
         times.append(elapsed)
         if i == 0:
-            print(f"   First request (compilation): {elapsed * 1000:.2f}ms")
+            pass
 
-    avg_all = statistics.mean(times) * 1000
+    statistics.mean(times) * 1000
     avg_cached = statistics.mean(times[1:]) * 1000  # Exclude first
 
-    stats = compiler.get_cache_stats()
-
-    print(
-        f"   Subsequent requests (avg):   {avg_cached:.2f}ms ({standard_avg / avg_cached:.2f}x faster)"
-    )
-    print(f"   Cache hit rate:               {stats.hit_rate:.1%}")
-    print(
-        f"   Computations/sec (cached):    {(total_computations / (avg_cached / 1000)):,.0f}"
-    )
+    compiler.get_cache_stats()
 
     # Summary
-    print("\n" + "=" * 60)
-    print("🎯 PERFORMANCE SUMMARY")
-    print("=" * 60)
 
-    speedup_jit = standard_avg / jit_avg
-    speedup_cached = standard_avg / avg_cached
+    standard_avg / jit_avg
+    standard_avg / avg_cached
 
-    print("\n📊 Speed Improvements:")
-    print(f"   JIT Compilation:    {speedup_jit:.2f}x faster")
-    print(f"   JIT + Cache:        {speedup_cached:.2f}x faster")
-
-    print("\n⚡ Throughput (computations/second):")
-    print(f"   Standard:   {(total_computations / (standard_avg / 1000)):>12,.0f}")
-    print(f"   JIT:        {(total_computations / (jit_avg / 1000)):>12,.0f}")
-    print(f"   Cached:     {(total_computations / (avg_cached / 1000)):>12,.0f}")
-
-    print("\n⏱️  Time to process 1M computations:")
-    time_standard = (1_000_000 / total_computations) * standard_avg / 1000
-    time_jit = (1_000_000 / total_computations) * jit_avg / 1000
-    time_cached = (1_000_000 / total_computations) * avg_cached / 1000
-
-    print(f"   Standard:   {time_standard:.2f}s")
-    print(f"   JIT:        {time_jit:.2f}s")
-    print(f"   Cached:     {time_cached:.2f}s")
-
-    print("\n💰 For CPU-intensive GraphQL APIs:")
-    print(f"   • {speedup_cached:.0f}x more computations with same CPU")
-    print(f"   • {((1 - 1 / speedup_cached) * 100):.0f}% reduction in CPU costs")
-    print(f"   • {speedup_cached:.0f}x more concurrent users")
-
-    print("\n🚀 Bottom Line:")
-    print("   Pure computation workloads show the TRUE power of JIT!")
-    print("   • No I/O wait times to hide the optimization gains")
-    print("   • Eliminates ALL GraphQL execution overhead")
-    print("   • Near-native Python performance for field resolution")
+    (1_000_000 / total_computations) * standard_avg / 1000
+    (1_000_000 / total_computations) * jit_avg / 1000
+    (1_000_000 / total_computations) * avg_cached / 1000
 
 
 if __name__ == "__main__":
-    print("\n🎯 JIT Compiler - Pure Computation Demonstration")
-    print("This shows the MAXIMUM performance gains possible with JIT compilation.\n")
-
     run_pure_computation_benchmark()
-
-    print("\n✅ Demo complete!")
-    print("\n💡 Key Insight:")
-    print("   JIT compilation eliminates GraphQL's execution overhead,")
-    print("   providing near-native performance for pure computations!")

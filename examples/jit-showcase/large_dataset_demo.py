@@ -26,7 +26,6 @@ try:
     JIT_AVAILABLE = True
 except ImportError:
     JIT_AVAILABLE = False
-    print("⚠️  JIT compiler not available")
 
 
 # Schema with lots of computed fields and data
@@ -166,7 +165,7 @@ class Customer:
         phone: str,
         registration_date: str,
         vip_status: bool,
-    ):
+    ) -> None:
         self.id = id
         self.first_name = first_name
         self.last_name = last_name
@@ -317,7 +316,7 @@ class Order:
         order_date: str,
         status: str,
         shipping_method: str,
-    ):
+    ) -> None:
         self.id = id
         self.customer_id = customer_id
         self.order_date = order_date
@@ -515,7 +514,7 @@ class Order:
 
 @strawberry.type
 class Analytics:
-    def __init__(self):
+    def __init__(self) -> None:
         self._total_revenue = None
 
     @strawberry.field
@@ -620,7 +619,7 @@ class Query:
         return Analytics()
 
 
-def run_large_dataset_benchmark():
+def run_large_dataset_benchmark() -> None:
     """Benchmark with large dataset."""
     schema = strawberry.Schema(Query)
 
@@ -722,43 +721,24 @@ def run_large_dataset_benchmark():
     }
     """
 
-    print("\n" + "=" * 60)
-    print("🔥 LARGE DATASET PERFORMANCE TEST")
-    print("=" * 60)
-    print("\n📊 Processing:")
-    print("   • 1,000 orders")
-    print("   • ~20,000 order items (avg 20 per order)")
-    print("   • 500 customers")
-    print("   • 2,000+ computed fields")
-    print("   • ~50,000+ total field resolutions\n")
-
     root = Query()
 
     # Warm up
-    print("Warming up...")
     for _ in range(3):
         execute_sync(schema._schema, parse(query), root_value=root)
 
     # 1. Standard GraphQL
-    print("\n1️⃣  Standard GraphQL Execution:")
     iterations = 5
     times = []
     for i in range(iterations):
-        print(f"   Run {i + 1}/{iterations}...", end="", flush=True)
         start = time.perf_counter()
-        result = execute_sync(schema._schema, parse(query), root_value=root)
+        execute_sync(schema._schema, parse(query), root_value=root)
         elapsed = time.perf_counter() - start
         times.append(elapsed)
-        print(f" {elapsed * 1000:.0f}ms")
 
     standard_avg = statistics.mean(times) * 1000
-    standard_min = min(times) * 1000
-    standard_max = max(times) * 1000
-
-    print("\n   📊 Results:")
-    print(f"   Average: {standard_avg:.2f}ms")
-    print(f"   Min:     {standard_min:.2f}ms")
-    print(f"   Max:     {standard_max:.2f}ms")
+    min(times) * 1000
+    max(times) * 1000
 
     # Count approximate field resolutions
     orders_fields = 1000 * 17  # 17 fields per order
@@ -776,94 +756,52 @@ def run_large_dataset_benchmark():
         + analytics_fields
     )
 
-    print(f"   Fields/sec: {(total_fields / (standard_avg / 1000)):,.0f}")
-
     if not JIT_AVAILABLE:
-        print("\n⚠️  JIT not available for comparison")
         return
 
     # 2. JIT Compiled
-    print("\n2️⃣  JIT Compiled Execution:")
-    print("   Compiling query...", end="", flush=True)
     start_compile = time.perf_counter()
     compiled_fn = compile_query(schema._schema, query)
-    compilation_time = (time.perf_counter() - start_compile) * 1000
-    print(f" done ({compilation_time:.2f}ms)")
+    (time.perf_counter() - start_compile) * 1000
 
     times = []
     for i in range(iterations):
-        print(f"   Run {i + 1}/{iterations}...", end="", flush=True)
         start = time.perf_counter()
-        result = compiled_fn(root)
+        compiled_fn(root)
         elapsed = time.perf_counter() - start
         times.append(elapsed)
-        print(f" {elapsed * 1000:.0f}ms")
 
     jit_avg = statistics.mean(times) * 1000
-    jit_min = min(times) * 1000
-    jit_max = max(times) * 1000
-
-    print("\n   📊 Results:")
-    print(f"   Average: {jit_avg:.2f}ms ({standard_avg / jit_avg:.2f}x faster)")
-    print(f"   Min:     {jit_min:.2f}ms")
-    print(f"   Max:     {jit_max:.2f}ms")
-    print(f"   Fields/sec: {(total_fields / (jit_avg / 1000)):,.0f}")
+    min(times) * 1000
+    max(times) * 1000
 
     # 3. Production simulation with cache
-    print("\n3️⃣  Production Mode (JIT + Cache):")
     compiler = CachedJITCompiler(schema._schema, enable_parallel=False)
 
-    print("   Simulating 20 requests...")
     times = []
     for i in range(20):
         start = time.perf_counter()
         fn = compiler.compile_query(query)
-        result = fn(root)
+        fn(root)
         elapsed = time.perf_counter() - start
         times.append(elapsed)
         if i == 0:
-            print(f"   First request (compilation): {elapsed * 1000:.2f}ms")
+            pass
 
-    avg_all = statistics.mean(times) * 1000
+    statistics.mean(times) * 1000
     avg_cached = statistics.mean(times[1:]) * 1000  # Exclude first
 
-    stats = compiler.get_cache_stats()
-
-    print(
-        f"   Subsequent requests (avg):   {avg_cached:.2f}ms ({standard_avg / avg_cached:.2f}x faster)"
-    )
-    print(f"   Cache hit rate:               {stats.hit_rate:.1%}")
-    print(
-        f"   Fields/sec (cached):          {(total_fields / (avg_cached / 1000)):,.0f}"
-    )
+    compiler.get_cache_stats()
 
     # Summary
-    print("\n" + "=" * 60)
-    print("🎯 PERFORMANCE SUMMARY")
-    print("=" * 60)
 
-    speedup_jit = standard_avg / jit_avg
-    speedup_cached = standard_avg / avg_cached
+    standard_avg / jit_avg
+    standard_avg / avg_cached
 
-    print("\n📊 Speed Improvements:")
-    print(f"   JIT Compilation:    {speedup_jit:.2f}x faster")
-    print(f"   JIT + Cache:        {speedup_cached:.2f}x faster")
+    (1_000_000 / total_fields) * standard_avg / 1000
+    (1_000_000 / total_fields) * jit_avg / 1000
+    (1_000_000 / total_fields) * avg_cached / 1000
 
-    print("\n⚡ Throughput (fields/second):")
-    print(f"   Standard:   {(total_fields / (standard_avg / 1000)):>10,.0f}")
-    print(f"   JIT:        {(total_fields / (jit_avg / 1000)):>10,.0f}")
-    print(f"   Cached:     {(total_fields / (avg_cached / 1000)):>10,.0f}")
-
-    print("\n⏱️  Time to process 1M field resolutions:")
-    time_standard = (1_000_000 / total_fields) * standard_avg / 1000
-    time_jit = (1_000_000 / total_fields) * jit_avg / 1000
-    time_cached = (1_000_000 / total_fields) * avg_cached / 1000
-
-    print(f"   Standard:   {time_standard:.2f}s")
-    print(f"   JIT:        {time_jit:.2f}s")
-    print(f"   Cached:     {time_cached:.2f}s")
-
-    print("\n💰 Cost Savings (for 1M requests):")
     requests = 1_000_000
     cost_per_second = 0.001  # $0.001 per CPU second
 
@@ -871,34 +809,10 @@ def run_large_dataset_benchmark():
     total_time_jit = (requests * jit_avg) / 1000
     total_time_cached = (requests * avg_cached) / 1000
 
-    cost_standard = total_time_standard * cost_per_second
-    cost_jit = total_time_jit * cost_per_second
-    cost_cached = total_time_cached * cost_per_second
-
-    print(f"   Standard:   ${cost_standard:,.2f}")
-    print(f"   JIT:        ${cost_jit:,.2f} (save ${cost_standard - cost_jit:,.2f})")
-    print(
-        f"   Cached:     ${cost_cached:,.2f} (save ${cost_standard - cost_cached:,.2f})"
-    )
-
-    print("\n🚀 Bottom Line:")
-    print(f"   • Process {speedup_cached:.1f}x more data with same resources")
-    print(
-        f"   • Reduce infrastructure costs by {((1 - cost_cached / cost_standard) * 100):.0f}%"
-    )
-    print(f"   • Handle {speedup_cached:.1f}x more concurrent users")
-    print(
-        f"   • Save ${(cost_standard - cost_cached) * 12:,.0f}/year on $1M infrastructure"
-    )
+    total_time_standard * cost_per_second
+    total_time_jit * cost_per_second
+    total_time_cached * cost_per_second
 
 
 if __name__ == "__main__":
-    print("\n🎯 JIT Compiler - Large Dataset Demonstration")
-    print("This shows the dramatic performance gains with real-world data volumes.\n")
-
     run_large_dataset_benchmark()
-
-    print("\n✅ Demo complete!")
-    print("\n💡 Key Takeaway:")
-    print("   The more data and computed fields you have,")
-    print("   the more dramatic the JIT performance gains!")

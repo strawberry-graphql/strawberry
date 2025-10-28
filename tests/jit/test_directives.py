@@ -310,18 +310,16 @@ def test_directives_performance(jit_schema, query_type):
     # Benchmark JIT
     start = time.time()
     for _ in range(100):
-        jit_result = compiled_fn(query_type, variables=variables)
+        compiled_fn(query_type, variables=variables)
     jit_time = time.time() - start
 
     # Benchmark standard
     start = time.time()
     for _ in range(100):
-        standard_result = execute(
+        execute(
             schema._schema, parsed, root_value=query_type, variable_values=variables
         )
     standard_time = time.time() - start
-
-    print(f"Directives performance: {standard_time / jit_time:.1f}x faster with JIT")
 
     # JIT should still be faster even with directive conditions
     assert jit_time < standard_time

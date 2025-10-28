@@ -99,7 +99,6 @@ async def test_mixed_sync_async_fields(jit_schema, query_type):
 
     # Execute the compiled function
     compiled_fn = compile_query(schema, query)
-    root = query_type
     jit_result = await compiled_fn(query_type)
 
     # Execute standard way
@@ -134,7 +133,6 @@ async def test_async_with_list_fields(jit_schema, query_type):
 
     # Execute the compiled function
     compiled_fn = compile_query(schema, query)
-    root = query_type
     jit_result = await compiled_fn(query_type)
 
     # Execute standard way
@@ -168,7 +166,6 @@ def test_sync_only_query(jit_schema, query_type):
 
     # Execute the compiled function
     compiled_fn = compile_query(schema, query)
-    root = query_type
 
     # This should work synchronously
     jit_result = compiled_fn(query_type)
@@ -239,7 +236,6 @@ async def test_async_with_fragments(jit_schema, query_type):
 
     # Execute the compiled function
     compiled_fn = compile_query(schema, query)
-    root = query_type
     jit_result = await compiled_fn(query_type)
 
     # Execute standard way
@@ -259,4 +255,3 @@ if __name__ == "__main__":
     test_sync_only_query()
     asyncio.run(test_async_with_variables())
     asyncio.run(test_async_with_fragments())
-    print("✅ All async tests passed!")

@@ -171,11 +171,6 @@ async def benchmark_sync_query():
         assert len(result["syncPosts"]) == 10
     jit_time = time.perf_counter() - start
 
-    print("\n🔄 SYNC QUERY BENCHMARK (10 posts, 10 iterations)")
-    print(f"Standard GraphQL: {standard_time:.4f}s")
-    print(f"JIT Compiled:     {jit_time:.4f}s")
-    print(f"Speedup:          {standard_time / jit_time:.2f}x faster")
-
     return standard_time, jit_time
 
 
@@ -215,11 +210,6 @@ async def benchmark_async_query():
         result = await compiled_fn(root)
         assert len(result["posts"]) == 10
     jit_time = time.perf_counter() - start
-
-    print("\n⚡ ASYNC QUERY BENCHMARK (10 posts, 10 iterations)")
-    print(f"Standard GraphQL: {standard_time:.4f}s")
-    print(f"JIT Compiled:     {jit_time:.4f}s")
-    print(f"Speedup:          {standard_time / jit_time:.2f}x faster")
 
     return standard_time, jit_time
 
@@ -269,11 +259,6 @@ async def benchmark_mixed_query():
         assert len(result["syncPosts"]) == 5
     jit_time = time.perf_counter() - start
 
-    print("\n🔀 MIXED SYNC/ASYNC QUERY BENCHMARK (5+5 posts, 10 iterations)")
-    print(f"Standard GraphQL: {standard_time:.4f}s")
-    print(f"JIT Compiled:     {jit_time:.4f}s")
-    print(f"Speedup:          {standard_time / jit_time:.2f}x faster")
-
     return standard_time, jit_time
 
 
@@ -320,11 +305,6 @@ async def benchmark_complex_async_query():
         assert len(result["posts"]) == 5
     jit_time = time.perf_counter() - start
 
-    print("\n🔥 COMPLEX ASYNC QUERY BENCHMARK (5 posts, 3 comments each, 5 iterations)")
-    print(f"Standard GraphQL: {standard_time:.4f}s")
-    print(f"JIT Compiled:     {jit_time:.4f}s")
-    print(f"Speedup:          {standard_time / jit_time:.2f}x faster")
-
     return standard_time, jit_time
 
 
@@ -359,19 +339,10 @@ async def benchmark_simple_query():
         assert len(result["posts"]) == 100
     jit_time = time.perf_counter() - start
 
-    print("\n📊 SIMPLE ASYNC QUERY BENCHMARK (100 posts, no nesting, 10 iterations)")
-    print(f"Standard GraphQL: {standard_time:.4f}s")
-    print(f"JIT Compiled:     {jit_time:.4f}s")
-    print(f"Speedup:          {standard_time / jit_time:.2f}x faster")
-
     return standard_time, jit_time
 
 
 async def main():
-    print("=" * 60)
-    print("🚀 JIT COMPILER ASYNC PERFORMANCE BENCHMARKS")
-    print("=" * 60)
-
     # Run benchmarks
     results = []
 
@@ -382,33 +353,20 @@ async def main():
     results.append(("Complex Async", await benchmark_complex_async_query()))
 
     # Summary
-    print("\n" + "=" * 60)
-    print("📈 SUMMARY")
-    print("=" * 60)
 
     total_standard = 0
     total_jit = 0
 
-    for name, (standard, jit) in results:
-        speedup = standard / jit
+    for _name, (standard, jit) in results:
+        standard / jit
         total_standard += standard
         total_jit += jit
-        print(f"{name:15} - {speedup:.2f}x faster with JIT")
 
-    overall_speedup = total_standard / total_jit
-    print(f"\n{'OVERALL':15} - {overall_speedup:.2f}x faster with JIT")
-
-    print("\n💡 Key Insights:")
-    print("- JIT compilation provides significant speedup even for async queries")
-    print("- The overhead reduction is especially visible in field resolution")
-    print("- Mixed sync/async queries benefit from optimized code paths")
-    print("- Complex nested queries show the most improvement")
+    total_standard / total_jit
 
     # Calculate overhead percentages
-    print("\n📊 Overhead Reduction:")
-    for name, (standard, jit) in results:
-        overhead_reduction = ((standard - jit) / standard) * 100
-        print(f"{name:15} - {overhead_reduction:.1f}% overhead removed")
+    for _name, (standard, jit) in results:
+        ((standard - jit) / standard) * 100
 
 
 if __name__ == "__main__":

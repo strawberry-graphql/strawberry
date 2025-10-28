@@ -24,7 +24,6 @@ try:
     JIT_AVAILABLE = True
 except ImportError:
     JIT_AVAILABLE = False
-    print("⚠️  JIT compiler not available")
 
 
 # Schema with many simple fields to maximize overhead impact
@@ -156,7 +155,7 @@ class Query:
         return SimpleData(id="single")
 
 
-def run_overhead_benchmark():
+def run_overhead_benchmark() -> None:
     """Benchmark to show overhead elimination."""
     schema = strawberry.Schema(Query)
 
@@ -179,167 +178,78 @@ def run_overhead_benchmark():
     }
     """
 
-    print("\n" + "=" * 60)
-    print("⚡ GRAPHQL OVERHEAD ELIMINATION TEST")
-    print("=" * 60)
-    print("\n📊 Test Details:")
-    print("   • 500 items")
-    print("   • 101 fields per item")
-    print("   • 50,500 total field resolutions")
-    print("   • Each field is trivial (just returns a value)")
-    print("   • Performance difference = pure GraphQL overhead\n")
-
     root = Query()
 
     # Warm up
-    print("Warming up...")
     for _ in range(3):
         execute_sync(schema._schema, parse(query), root_value=root)
 
     # 1. Standard GraphQL
-    print("\n1️⃣  Standard GraphQL Execution:")
     iterations = 10
     times = []
-    for i in range(iterations):
-        print(f"   Run {i + 1}/{iterations}...", end="", flush=True)
+    for _i in range(iterations):
         start = time.perf_counter()
-        result = execute_sync(schema._schema, parse(query), root_value=root)
+        execute_sync(schema._schema, parse(query), root_value=root)
         elapsed = time.perf_counter() - start
         times.append(elapsed)
-        print(f" {elapsed * 1000:.0f}ms")
 
     standard_avg = statistics.mean(times) * 1000
-    standard_min = min(times) * 1000
-    standard_max = max(times) * 1000
-
-    print("\n   📊 Results:")
-    print(f"   Average: {standard_avg:.2f}ms")
-    print(f"   Min:     {standard_min:.2f}ms")
-    print(f"   Max:     {standard_max:.2f}ms")
+    min(times) * 1000
+    max(times) * 1000
 
     total_fields = 500 * 101  # 500 items * 101 fields each
     overhead_per_field = standard_avg / total_fields
 
-    print("\n   📈 Performance Metrics:")
-    print(f"   Total fields:         {total_fields:,}")
-    print(f"   Fields/second:        {(total_fields / (standard_avg / 1000)):,.0f}")
-    print(f"   Overhead per field:   {overhead_per_field:.4f}ms")
-    print("   Overhead percentage:  ~100% (fields are trivial)")
-
     if not JIT_AVAILABLE:
-        print("\n⚠️  JIT not available for comparison")
         return
 
     # 2. JIT Compiled
-    print("\n2️⃣  JIT Compiled Execution:")
-    print("   Compiling query...", end="", flush=True)
     start_compile = time.perf_counter()
     compiled_fn = compile_query(schema._schema, query)
-    compilation_time = (time.perf_counter() - start_compile) * 1000
-    print(f" done ({compilation_time:.2f}ms)")
+    (time.perf_counter() - start_compile) * 1000
 
     times = []
-    for i in range(iterations):
-        print(f"   Run {i + 1}/{iterations}...", end="", flush=True)
+    for _i in range(iterations):
         start = time.perf_counter()
-        result = compiled_fn(root)
+        compiled_fn(root)
         elapsed = time.perf_counter() - start
         times.append(elapsed)
-        print(f" {elapsed * 1000:.0f}ms")
 
     jit_avg = statistics.mean(times) * 1000
-    jit_min = min(times) * 1000
-    jit_max = max(times) * 1000
+    min(times) * 1000
+    max(times) * 1000
 
     speedup = standard_avg / jit_avg
 
-    print("\n   📊 Results:")
-    print(f"   Average: {jit_avg:.2f}ms ({speedup:.2f}x faster)")
-    print(f"   Min:     {jit_min:.2f}ms")
-    print(f"   Max:     {jit_max:.2f}ms")
-
     jit_per_field = jit_avg / total_fields
-    overhead_eliminated = overhead_per_field - jit_per_field
-
-    print("\n   📈 Performance Metrics:")
-    print(f"   Fields/second:        {(total_fields / (jit_avg / 1000)):,.0f}")
-    print(f"   Time per field:       {jit_per_field:.4f}ms")
-    print(f"   Overhead eliminated:  {overhead_eliminated:.4f}ms per field")
-    print(
-        f"   Overhead reduction:   {(overhead_eliminated / overhead_per_field * 100):.0f}%"
-    )
+    overhead_per_field - jit_per_field
 
     # 3. Production with Cache
-    print("\n3️⃣  Production Mode (JIT + Cache):")
     compiler = CachedJITCompiler(schema._schema, enable_parallel=False)
 
-    print("   Simulating 100 requests...")
     times = []
-    for i in range(100):
+    for _i in range(100):
         start = time.perf_counter()
         fn = compiler.compile_query(query)
-        result = fn(root)
+        fn(root)
         elapsed = time.perf_counter() - start
         times.append(elapsed)
 
-    first_request = times[0] * 1000
+    times[0] * 1000
     cached_avg = statistics.mean(times[1:]) * 1000
-    cache_speedup = standard_avg / cached_avg
+    standard_avg / cached_avg
 
-    stats = compiler.get_cache_stats()
-
-    print(f"   First request:        {first_request:.2f}ms (includes compilation)")
-    print(f"   Cached requests:      {cached_avg:.2f}ms ({cache_speedup:.2f}x faster)")
-    print(f"   Cache hit rate:       {stats.hit_rate:.1%}")
+    compiler.get_cache_stats()
 
     # Summary
-    print("\n" + "=" * 60)
-    print("🎯 OVERHEAD ELIMINATION SUMMARY")
-    print("=" * 60)
 
-    print("\n📊 Performance Gains:")
-    print(f"   JIT Compilation:      {speedup:.2f}x faster")
-    print(f"   JIT + Cache:          {cache_speedup:.2f}x faster")
-
-    print("\n⚡ GraphQL Overhead Analysis:")
-    print(f"   Standard overhead:    {overhead_per_field:.4f}ms per field")
-    print(f"   JIT overhead:         {jit_per_field:.4f}ms per field")
-    print(
-        f"   Reduction:            {(overhead_eliminated / overhead_per_field * 100):.0f}%"
-    )
-
-    print("\n📈 Throughput Improvement:")
-    req_per_sec_standard = 1000 / standard_avg
-    req_per_sec_jit = 1000 / jit_avg
-    req_per_sec_cached = 1000 / cached_avg
-
-    print(f"   Standard:   {req_per_sec_standard:>6.1f} req/s")
-    print(
-        f"   JIT:        {req_per_sec_jit:>6.1f} req/s (+{((req_per_sec_jit / req_per_sec_standard - 1) * 100):.0f}%)"
-    )
-    print(
-        f"   Cached:     {req_per_sec_cached:>6.1f} req/s (+{((req_per_sec_cached / req_per_sec_standard - 1) * 100):.0f}%)"
-    )
-
-    print("\n💰 Real-World Impact:")
-    print(f"   • Process {speedup:.0f}x more requests with same hardware")
-    print(f"   • Reduce latency by {((1 - 1 / speedup) * 100):.0f}%")
-    print(f"   • Cut infrastructure costs by {((1 - 1 / speedup) * 100):.0f}%")
+    1000 / standard_avg
+    1000 / jit_avg
+    1000 / cached_avg
 
     if speedup >= 3:
-        print("\n🏆 DRAMATIC IMPROVEMENT ACHIEVED!")
-        print(f"   {speedup:.1f}x performance gain demonstrates")
-        print("   the power of eliminating GraphQL overhead!")
+        pass
 
 
 if __name__ == "__main__":
-    print("\n🚀 JIT Compiler - Overhead Elimination Demo")
-    print("Shows how JIT eliminates per-field execution overhead.\n")
-
     run_overhead_benchmark()
-
-    print("\n✅ Demo complete!")
-    print("\n💡 The Big Picture:")
-    print("   JIT compilation transforms GraphQL from an")
-    print("   interpreted query language to compiled code,")
-    print("   eliminating overhead and delivering native performance!")

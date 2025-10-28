@@ -21,7 +21,6 @@ try:
 
     JIT_AVAILABLE = True
 except ImportError:
-    print("⚠️  JIT compiler not available")
     JIT_AVAILABLE = False
 
 
@@ -119,7 +118,7 @@ class Query:
         return products
 
 
-def run_simple_benchmark():
+def run_simple_benchmark() -> None:
     """Run a simple benchmark showing JIT benefits."""
     schema = strawberry.Schema(Query)
 
@@ -151,12 +150,6 @@ def run_simple_benchmark():
     }
     """
 
-    print("\n" + "=" * 60)
-    print("⚡ SYNCHRONOUS QUERY PERFORMANCE COMPARISON")
-    print("=" * 60)
-    print("\nThis demonstrates where JIT compilation really shines:")
-    print("Synchronous queries with many field resolutions.\n")
-
     root = Query()
     iterations = 50
 
@@ -165,119 +158,63 @@ def run_simple_benchmark():
         execute_sync(schema._schema, parse(query), root_value=root)
 
     # 1. Standard GraphQL
-    print("Running standard GraphQL execution...")
     times = []
     for _ in range(iterations):
         start = time.perf_counter()
-        result = execute_sync(schema._schema, parse(query), root_value=root)
+        execute_sync(schema._schema, parse(query), root_value=root)
         times.append(time.perf_counter() - start)
 
     standard_avg = statistics.mean(times) * 1000
-    standard_min = min(times) * 1000
-    standard_max = max(times) * 1000
-
-    print("✅ Standard GraphQL:")
-    print(f"   Average: {standard_avg:.2f}ms")
-    print(f"   Min:     {standard_min:.2f}ms")
-    print(f"   Max:     {standard_max:.2f}ms")
+    min(times) * 1000
+    max(times) * 1000
 
     if not JIT_AVAILABLE:
-        print("\n⚠️  JIT not available for comparison")
         return
 
     # 2. JIT Compiled (first time - includes compilation)
-    print("\nCompiling query with JIT...")
     start_compile = time.perf_counter()
     compiled_fn = compile_query(schema._schema, query)
-    compilation_time = (time.perf_counter() - start_compile) * 1000
-
-    print(f"   Compilation time: {compilation_time:.2f}ms")
+    (time.perf_counter() - start_compile) * 1000
 
     # Run compiled version
-    print("Running JIT compiled version...")
     times = []
     for _ in range(iterations):
         start = time.perf_counter()
-        result = compiled_fn(root)
+        compiled_fn(root)
         times.append(time.perf_counter() - start)
 
     jit_avg = statistics.mean(times) * 1000
-    jit_min = min(times) * 1000
-    jit_max = max(times) * 1000
-
-    print("✅ JIT Compiled:")
-    print(f"   Average: {jit_avg:.2f}ms ({standard_avg / jit_avg:.2f}x faster)")
-    print(f"   Min:     {jit_min:.2f}ms")
-    print(f"   Max:     {jit_max:.2f}ms")
+    min(times) * 1000
+    max(times) * 1000
 
     # 3. JIT with Cache (simulating production)
-    print("\nSimulating production with query cache...")
     compiler = CachedJITCompiler(schema._schema, enable_parallel=False)
 
     # Simulate 100 requests of the same query
     times = []
-    for i in range(100):
+    for _i in range(100):
         start = time.perf_counter()
         fn = compiler.compile_query(query)
-        result = fn(root)
+        fn(root)
         times.append(time.perf_counter() - start)
 
-    cached_avg = statistics.mean(times) * 1000
-    cached_first = times[0] * 1000  # First request (compilation)
+    statistics.mean(times) * 1000
+    times[0] * 1000  # First request (compilation)
     cached_rest_avg = statistics.mean(times[1:]) * 1000  # Subsequent (cached)
 
-    stats = compiler.get_cache_stats()
-
-    print("✅ JIT with Cache (100 requests):")
-    print(f"   First request:  {cached_first:.2f}ms (compilation)")
-    print(
-        f"   Subsequent avg: {cached_rest_avg:.2f}ms ({standard_avg / cached_rest_avg:.2f}x faster)"
-    )
-    print(f"   Cache hit rate: {stats.hit_rate:.1%}")
+    compiler.get_cache_stats()
 
     # Summary
-    print("\n" + "=" * 60)
-    print("📊 RESULTS SUMMARY")
-    print("=" * 60)
 
-    speedup_jit = standard_avg / jit_avg
-    speedup_cached = standard_avg / cached_rest_avg
-
-    print("\n🚀 Performance Improvements:")
-    print(f"   JIT Compilation:    {speedup_jit:.2f}x faster")
-    print(f"   JIT + Cache:        {speedup_cached:.2f}x faster")
-
-    print("\n💡 Key Insights:")
-    print(f"   • Compilation overhead: {compilation_time:.2f}ms (one-time cost)")
-    print(
-        f"   • Break-even point: After {compilation_time // (standard_avg - jit_avg):.0f} requests"
-    )
-    print("   • Cache eliminates compilation overhead completely")
+    standard_avg / jit_avg
+    standard_avg / cached_rest_avg
 
     # Show the actual difference in execution
-    print("\n⏱️  Time Savings per Request:")
-    print(f"   JIT:        {standard_avg - jit_avg:.2f}ms saved")
-    print(f"   JIT+Cache:  {standard_avg - cached_rest_avg:.2f}ms saved")
 
-    requests_per_second_standard = 1000 / standard_avg
-    requests_per_second_jit = 1000 / jit_avg
-    requests_per_second_cached = 1000 / cached_rest_avg
-
-    print("\n📈 Throughput (requests/second):")
-    print(f"   Standard:   {requests_per_second_standard:.0f} req/s")
-    print(f"   JIT:        {requests_per_second_jit:.0f} req/s")
-    print(f"   JIT+Cache:  {requests_per_second_cached:.0f} req/s")
+    1000 / standard_avg
+    1000 / jit_avg
+    1000 / cached_rest_avg
 
 
 if __name__ == "__main__":
-    print("\n🎯 JIT Compiler Simple Demonstration")
-    print("This example uses synchronous resolvers to clearly show JIT benefits.\n")
-
     run_simple_benchmark()
-
-    print("\n✅ Demo complete!")
-    print("\n📝 Note: JIT compilation excels with:")
-    print("   • Synchronous field resolvers")
-    print("   • Complex nested queries")
-    print("   • Frequently repeated queries (with caching)")
-    print("   • High-throughput APIs")

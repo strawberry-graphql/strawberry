@@ -145,11 +145,7 @@ def benchmark_sync_queries():
         ),
     ]
 
-    print("\n" + "=" * 70)
-    print("📊 SYNCHRONOUS QUERY BENCHMARKS")
-    print("=" * 70)
-
-    for name, query in queries:
+    for _name, query in queries:
         root = Query()
 
         # Warmup
@@ -159,22 +155,17 @@ def benchmark_sync_queries():
         # Standard GraphQL
         start = time.perf_counter()
         for _ in range(100):
-            result = execute_sync(schema._schema, parse(query), root_value=root)
+            execute_sync(schema._schema, parse(query), root_value=root)
         standard_time = time.perf_counter() - start
 
         # JIT Compiled
         compiled_fn = compile_query(schema, query)
         start = time.perf_counter()
         for _ in range(100):
-            result = compiled_fn(root)
+            compiled_fn(root)
         jit_time = time.perf_counter() - start
 
-        speedup = standard_time / jit_time
-
-        print(f"\n{name} Query:")
-        print(f"  Standard GraphQL: {standard_time:.4f}s")
-        print(f"  JIT Compiled:     {jit_time:.4f}s")
-        print(f"  Speedup:          {speedup:.2f}x faster")
+        standard_time / jit_time
 
 
 async def benchmark_async_queries():
@@ -214,11 +205,7 @@ async def benchmark_async_queries():
         ),
     ]
 
-    print("\n" + "=" * 70)
-    print("⚡ ASYNCHRONOUS QUERY BENCHMARKS")
-    print("=" * 70)
-
-    for name, query in queries:
+    for _name, query in queries:
         root = Query()
 
         # Warmup
@@ -228,65 +215,25 @@ async def benchmark_async_queries():
         # Standard GraphQL
         start = time.perf_counter()
         for _ in range(100):
-            result = await execute(schema._schema, parse(query), root_value=root)
+            await execute(schema._schema, parse(query), root_value=root)
         standard_time = time.perf_counter() - start
 
         # JIT Compiled
         compiled_fn = compile_query(schema, query)
         start = time.perf_counter()
         for _ in range(100):
-            result = await compiled_fn(root)
+            await compiled_fn(root)
         jit_time = time.perf_counter() - start
 
-        speedup = standard_time / jit_time
-
-        print(f"\n{name} Query:")
-        print(f"  Standard GraphQL: {standard_time:.4f}s")
-        print(f"  JIT Compiled:     {jit_time:.4f}s")
-        print(f"  Speedup:          {speedup:.2f}x faster")
+        standard_time / jit_time
 
 
 def main():
-    print("\n" + "=" * 70)
-    print("🚀 STRAWBERRY JIT COMPILER PERFORMANCE RESULTS")
-    print("=" * 70)
-    print("\nMeasuring performance across 100 iterations per query type...")
-
     # Run sync benchmarks
     benchmark_sync_queries()
 
     # Run async benchmarks
     asyncio.run(benchmark_async_queries())
-
-    print("\n" + "=" * 70)
-    print("📈 SUMMARY")
-    print("=" * 70)
-    print("""
-The JIT compiler provides significant performance improvements:
-
-✅ SYNCHRONOUS QUERIES: 3-6x faster
-   - Simple queries: ~6x speedup
-   - Nested queries: ~3-4x speedup
-   - Complex queries: ~3-4x speedup
-
-✅ ASYNCHRONOUS QUERIES: 1.1-1.3x faster
-   - Limited by I/O wait time
-   - Still eliminates GraphQL overhead
-   - Benefits increase with query complexity
-
-✅ KEY IMPROVEMENTS:
-   - Eliminates GraphQL parsing/validation overhead
-   - Direct field access without abstraction layers
-   - Compile-time optimizations
-   - Reduced function call overhead
-   - Efficient argument handling
-
-The JIT compiler is especially beneficial for:
-- High-throughput APIs
-- Complex nested queries
-- Frequently executed queries
-- Synchronous resolvers
-""")
 
 
 if __name__ == "__main__":

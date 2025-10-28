@@ -567,33 +567,21 @@ def test_union_with_error_in_field():
 if __name__ == "__main__":
     # Run all tests
     test_union_with_typename()
-    print("✅ Union with __typename")
 
     test_union_list()
-    print("✅ Union list")
 
     test_union_with_fragment()
-    print("✅ Union with fragment")
 
     test_nullable_union()
-    print("✅ Nullable union")
 
     test_union_with_multiple_fragments()
-    print("✅ Union with multiple fragments")
 
     test_nested_union_types()
-    print("✅ Nested union types")
 
     test_union_specific_field_resolution()
-    print("✅ Union specific field resolution")
 
     test_union_with_inline_fragments()
-    print("✅ Union with inline fragments")
 
     test_union_common_fields_with_typename()
-    print("✅ Union common fields")
 
     test_union_with_error_in_field()
-    print("✅ Union with error in field")
-
-    print("\n✅ All abstract type tests passed!")

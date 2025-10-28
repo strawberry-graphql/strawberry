@@ -97,7 +97,9 @@ class Comment:
     likes: int
     created_at: str
 
-    def __init__(self, id: str, text: str, likes: int, created_at: str, author_id: str):
+    def __init__(
+        self, id: str, text: str, likes: int, created_at: str, author_id: str
+    ) -> None:
         self.id = id
         self.text = text
         self.likes = likes
@@ -132,7 +134,7 @@ class Post:
         created_at: str,
         author_id: str,
         view_count: int,
-    ):
+    ) -> None:
         self.id = id
         self.title = title
         self.content = content

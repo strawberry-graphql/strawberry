@@ -1,5 +1,5 @@
 """Example GraphQL queries to test with the JIT compiler.
-Copy and paste these into GraphQL Playground at http://localhost:8000/graphql
+Copy and paste these into GraphQL Playground at http://localhost:8000/graphql.
 """
 
 # Simple query - fast baseline
@@ -201,7 +201,7 @@ query ConditionalFields($includeComments: Boolean!, $skipAuthor: Boolean!) {
 DIRECTIVE_VARIABLES = {"includeComments": True, "skipAuthor": False}
 
 
-def print_example_queries():
+def print_example_queries() -> None:
     """Print example queries for easy copying."""
     examples = [
         ("Simple Query", SIMPLE_QUERY, None),
@@ -213,34 +213,9 @@ def print_example_queries():
         ("Directive Query", DIRECTIVE_QUERY, DIRECTIVE_VARIABLES),
     ]
 
-    print("\n" + "=" * 60)
-    print("📝 EXAMPLE GRAPHQL QUERIES")
-    print("=" * 60)
-    print("\nCopy these queries to test in GraphQL Playground:")
-    print("http://localhost:8000/graphql\n")
-
-    for i, (name, query, variables) in enumerate(examples, 1):
-        print(f"\n{i}. {name}")
-        print("-" * 40)
-        print(query.strip())
+    for _i, (_name, _query, variables) in enumerate(examples, 1):
         if variables:
-            print("\nVariables:")
-            print(variables)
-
-    print("\n" + "=" * 60)
-    print("💡 PERFORMANCE TIPS")
-    print("=" * 60)
-    print("""
-1. The first execution of each unique query will be slower (compilation)
-2. Subsequent executions use the cached compiled version (10x faster)
-3. Complex queries with many async fields benefit most from parallel execution
-4. Check the response headers for execution metrics:
-   - X-Execution-Time: Time taken for this request
-   - X-JIT-Enabled: Whether JIT is active
-   - X-Cache-Hit-Rate: Percentage of cache hits
-
-5. Visit http://localhost:8000/metrics to see overall performance stats
-""")
+            pass
 
 
 if __name__ == "__main__":

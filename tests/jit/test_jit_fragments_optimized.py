@@ -238,4 +238,3 @@ if __name__ == "__main__":
     test_optimized_nested_fragments()
     test_optimized_inline_fragment()
     test_optimized_multiple_fragments()
-    print("\n✅ All optimized fragment JIT tests passed!")

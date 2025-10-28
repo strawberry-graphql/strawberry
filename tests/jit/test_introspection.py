@@ -90,8 +90,6 @@ def test_schema_introspection():
         }
     }
 
-    print("✅ __schema introspection works")
-
 
 def test_type_introspection():
     """Test __type introspection query."""
@@ -133,8 +131,6 @@ def test_type_introspection():
     standard_fields = {f["name"]: f for f in standard_data["__type"]["fields"]}
     assert set(jit_fields.keys()) == set(standard_fields.keys())
 
-    print("✅ __type introspection works")
-
 
 def test_type_kind_introspection():
     """Test type kind introspection."""
@@ -159,7 +155,6 @@ def test_type_kind_introspection():
 
     # Standard execution
     result = execute_sync(schema._schema, parse(query))
-    standard_data = result.data
 
     # JIT execution
     compiled_fn = compile_query(schema, query)
@@ -167,8 +162,6 @@ def test_type_kind_introspection():
 
     # Compare results
     assert_jit_results_match(jit_result, result)
-
-    print("✅ Type kind introspection works")
 
 
 def test_field_introspection():
@@ -213,8 +206,6 @@ def test_field_introspection():
     assert "author" in standard_fields
     assert len(jit_fields["author"]["args"]) == len(standard_fields["author"]["args"])
 
-    print("✅ Field introspection with arguments works")
-
 
 def test_all_types_introspection():
     """Test getting all types from schema."""
@@ -256,8 +247,6 @@ def test_all_types_introspection():
 
     # Types should match
     assert jit_type_names == standard_type_names
-
-    print("✅ All types introspection works")
 
 
 def test_nested_type_introspection():
@@ -305,8 +294,6 @@ def test_nested_type_introspection():
         jit_fields["author"]["type"]["kind"]
         == standard_fields["author"]["type"]["kind"]
     )
-
-    print("✅ Nested type introspection works")
 
 
 def test_directives_introspection():
@@ -358,8 +345,6 @@ def test_directives_introspection():
     assert len(jit_directives["skip"]["args"]) == len(
         standard_directives["skip"]["args"]
     )
-
-    print("✅ Directives introspection works")
 
 
 def test_list_type_introspection():
@@ -419,8 +404,6 @@ def test_list_type_introspection():
             == standard_books["ofType"]["ofType"]["ofType"]["name"]
         )  # Book
 
-    print("✅ List type introspection works")
-
 
 def test_introspection_with_variables():
     """Test introspection with variables."""
@@ -455,8 +438,6 @@ def test_introspection_with_variables():
     assert len(jit_result["data"]["__type"]["fields"]) == len(
         standard_data["__type"]["fields"]
     )
-
-    print("✅ Introspection with variables works")
 
 
 def test_graphiql_introspection_query():
@@ -581,8 +562,6 @@ def test_graphiql_introspection_query():
     assert jit_types["Query"]["kind"] == standard_types["Query"]["kind"]
     assert len(jit_types["Query"]["fields"]) == len(standard_types["Query"]["fields"])
 
-    print("✅ GraphiQL introspection query works")
-
 
 if __name__ == "__main__":
     test_schema_introspection()
@@ -595,5 +574,3 @@ if __name__ == "__main__":
     test_list_type_introspection()
     test_introspection_with_variables()
     test_graphiql_introspection_query()
-
-    print("\n✅ All introspection tests passed!")

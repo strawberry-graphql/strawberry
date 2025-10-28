@@ -180,8 +180,6 @@ def test_enum_input():
     assert result["data"]["createTask"]["title"] == "Urgent Task"
     assert result["data"]["createTask"]["priority"] == "URGENT"
 
-    print("✅ Enum input works")
-
 
 def test_deeply_nested_input():
     """Test deeply nested input objects."""
@@ -245,8 +243,6 @@ def test_deeply_nested_input():
     assert len(result["data"]["createTask"]["metadata"]) == 2
     assert result["data"]["createTask"]["metadata"][1]["value"] == "42"
 
-    print("✅ Deeply nested input works")
-
 
 def test_list_of_input_objects():
     """Test list of input objects."""
@@ -289,8 +285,6 @@ def test_list_of_input_objects():
         result["data"]["createBulkTasks"]["createdTasks"][2]["priority"] == "URGENT"
     )  # Default applied
 
-    print("✅ List of input objects works")
-
 
 def test_boolean_and_float_inputs():
     """Test boolean and float input fields."""
@@ -316,8 +310,6 @@ def test_boolean_and_float_inputs():
 
     assert result["data"]["createTask"]["isActive"] is False
     assert result["data"]["createTask"]["estimatedHours"] == 3.5
-
-    print("✅ Boolean and float inputs work")
 
 
 def test_null_vs_undefined_inputs():
@@ -348,8 +340,6 @@ def test_null_vs_undefined_inputs():
     result = compiled_fn(Mutation(), variables=variables)
     assert result["data"]["createTask"]["title"] == "Task with undefined description"
     assert result["data"]["createTask"]["description"] is None
-
-    print("✅ Null vs undefined inputs work")
 
 
 def test_mixed_inline_and_variable_inputs():
@@ -390,8 +380,6 @@ def test_mixed_inline_and_variable_inputs():
     assert len(result["data"]["createTask"]["tags"]) == 2
     assert result["data"]["createTask"]["estimatedHours"] == 5.0
 
-    print("✅ Mixed inline and variable inputs work")
-
 
 def test_empty_list_inputs():
     """Test empty list inputs."""
@@ -419,8 +407,6 @@ def test_empty_list_inputs():
     assert result["data"]["createTask"]["title"] == "Task with empty lists"
     assert result["data"]["createTask"]["tags"] == []
     assert result["data"]["createTask"]["assigneeIds"] == []
-
-    print("✅ Empty list inputs work")
 
 
 def test_input_validation_performance():
@@ -470,7 +456,7 @@ def test_input_validation_performance():
     # Standard execution
     start = time.perf_counter()
     for _ in range(iterations):
-        result = execute_sync(
+        execute_sync(
             schema._schema, parse(query), root_value=root, variable_values=variables
         )
     standard_time = time.perf_counter() - start
@@ -479,11 +465,10 @@ def test_input_validation_performance():
     compiled_fn = compile_query(schema, query)
     start = time.perf_counter()
     for _ in range(iterations):
-        result = compiled_fn(root, variables=variables)
+        compiled_fn(root, variables=variables)
     jit_time = time.perf_counter() - start
 
     speedup = standard_time / jit_time
-    print(f"✅ Complex input performance: {speedup:.2f}x faster with JIT")
     # JIT should provide measurable speedup, but exact amount varies by system
     assert speedup > 1.0, "JIT should be faster than standard execution"
 
@@ -497,5 +482,3 @@ if __name__ == "__main__":
     test_mixed_inline_and_variable_inputs()
     test_empty_list_inputs()
     test_input_validation_performance()
-
-    print("\n✅ All input edge case tests passed!")

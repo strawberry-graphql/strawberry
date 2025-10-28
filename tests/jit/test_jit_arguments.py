@@ -366,21 +366,17 @@ def test_jit_arguments_performance():
     # Measure JIT performance
     jit_start = time.time()
     for _ in range(100):
-        jit_result = compiled_fn(root, variables=variables)
+        compiled_fn(root, variables=variables)
     jit_time = time.time() - jit_start
 
     # Measure standard performance
     parsed_query = parse(query)
     standard_start = time.time()
     for _ in range(100):
-        standard_result = execute(
+        execute(
             schema._schema, parsed_query, root_value=root, variable_values=variables
         )
     standard_time = time.time() - standard_start
-
-    print(f"JIT time: {jit_time:.4f}s")
-    print(f"Standard time: {standard_time:.4f}s")
-    print(f"Speedup: {standard_time / jit_time:.2f}x")
 
     # JIT should be faster
     assert jit_time < standard_time
@@ -394,4 +390,3 @@ if __name__ == "__main__":
     test_jit_with_complex_arguments()
     test_jit_with_null_arguments()
     test_jit_arguments_performance()
-    print("✅ All argument tests passed!")

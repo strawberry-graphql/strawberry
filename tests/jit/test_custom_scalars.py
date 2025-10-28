@@ -94,8 +94,6 @@ def test_custom_scalar_serialization():
     assert jit_result["data"]["caseTest"] == standard_data["caseTest"]
     assert jit_result["data"]["caseTest"] == "HELLO"  # Serialized to uppercase
 
-    print("✅ Custom scalar serialization works")
-
 
 def test_custom_scalar_deserialization():
     """Test that custom scalars are properly parsed from input."""
@@ -169,8 +167,6 @@ def test_custom_scalar_deserialization():
     assert jit_result["data"]["echoCase"] == standard_data["echoCase"]
     assert jit_result["data"]["echoCase"] == "uppercase"  # Parsed to lowercase
 
-    print("✅ Custom scalar deserialization works")
-
 
 def test_list_of_custom_scalars():
     """Test lists of custom scalars."""
@@ -230,8 +226,6 @@ def test_list_of_custom_scalars():
     assert jit_result["data"]["decodeMultiple"] == standard_data["decodeMultiple"]
     assert jit_result["data"]["decodeMultiple"] == ["One", "Two", "Three"]
 
-    print("✅ List of custom scalars works")
-
 
 def test_nested_custom_scalars():
     """Test custom scalars in nested types."""
@@ -268,8 +262,6 @@ def test_nested_custom_scalars():
         == b"Secret Message"
     )
     assert jit_result["data"]["getMessage"]["timestamp"] == "2023-12-25T00:00:00"
-
-    print("✅ Nested custom scalars work")
 
 
 def test_nullable_custom_scalars():
@@ -335,8 +327,6 @@ def test_nullable_custom_scalars():
     assert jit_result["data"] == standard_data
     assert jit_result["data"]["processOptional"] == "No data"
 
-    print("✅ Nullable custom scalars work")
-
 
 def test_custom_scalar_errors():
     """Test error handling with custom scalars."""
@@ -368,8 +358,6 @@ def test_custom_scalar_errors():
     assert "errors" in jit_result
     assert len(jit_result["errors"]) > 0
 
-    print("✅ Custom scalar error handling works")
-
 
 if __name__ == "__main__":
     test_custom_scalar_serialization()
@@ -378,5 +366,3 @@ if __name__ == "__main__":
     test_nested_custom_scalars()
     test_nullable_custom_scalars()
     test_custom_scalar_errors()
-
-    print("\n✅ All custom scalar tests passed!")

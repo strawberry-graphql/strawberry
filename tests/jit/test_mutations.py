@@ -348,8 +348,6 @@ def test_single_mutation():
     assert jit_result["data"]["createUser"]["success"] is True
     assert jit_result["data"]["createUser"]["user"]["username"] == "johndoe"
 
-    print("✅ Single mutation works")
-
 
 def test_multiple_mutations_serial_execution():
     """Test that multiple mutations execute serially, not in parallel."""
@@ -392,8 +390,6 @@ def test_multiple_mutations_serial_execution():
     assert mutation_log[0][1] <= mutation_log[1][1]
     assert mutation_log[1][1] <= mutation_log[2][1]
 
-    print("✅ Multiple mutations execute serially")
-
 
 def test_mutation_with_dependency():
     """Test mutations that depend on previous mutations."""
@@ -433,8 +429,6 @@ def test_mutation_with_dependency():
     assert result["data"]["createPost"]["success"] is True
     assert result["data"]["createPost"]["post"]["authorId"] == "user_0"
 
-    print("✅ Mutations with dependencies work")
-
 
 def test_mutation_error_handling():
     """Test error handling in mutations."""
@@ -473,8 +467,6 @@ def test_mutation_error_handling():
     assert result["data"]["deleteNonExistent"]["success"] is False
     assert "not found" in result["data"]["deleteNonExistent"]["message"]
 
-    print("✅ Mutation error handling works")
-
 
 def test_mutation_with_exception():
     """Test mutation that throws an exception."""
@@ -498,8 +490,6 @@ def test_mutation_with_exception():
     assert "errors" in result
     assert len(result["errors"]) > 0
     assert "This mutation always fails" in result["errors"][0]["message"]
-
-    print("✅ Mutation exception handling works")
 
 
 def test_mutation_side_effects():
@@ -556,8 +546,6 @@ def test_mutation_side_effects():
     # Verify in database
     assert database["posts"]["post_0"].view_count == 3
 
-    print("✅ Mutation side effects work correctly")
-
 
 def test_async_mutations_serial_execution():
     """Test that async mutations also execute serially."""
@@ -586,16 +574,13 @@ def test_async_mutations_serial_execution():
 
     # Run in asyncio event loop
     async def run_test():
-        result = await compiled_fn(Mutation())
-        return result
+        return await compiled_fn(Mutation())
 
     result = asyncio.run(run_test())
 
     # Check if there's an error
     if "errors" in result:
-        print(f"Async mutation errors: {result['errors']}")
         # Skip this test for now if async isn't working
-        print("⚠️ Async mutations test skipped (not yet supported)")
         return
 
     # Check all mutations succeeded
@@ -616,8 +601,6 @@ def test_async_mutations_serial_execution():
     # Each should take at least 0.01 seconds (our sleep time)
     assert time_gap_1 >= 0.01
     assert time_gap_2 >= 0.01
-
-    print("✅ Async mutations execute serially")
 
 
 def test_mutation_with_nested_fields():
@@ -670,8 +653,6 @@ def test_mutation_with_nested_fields():
     assert result["data"]["createPost"]["post"]["authorId"] == "user_0"
     assert result["data"]["createPost"]["post"]["viewCount"] == 0
 
-    print("✅ Mutations with nested fields work")
-
 
 def test_mutation_performance():
     """Compare mutation performance between standard and JIT."""
@@ -702,7 +683,7 @@ def test_mutation_performance():
     for i in range(iterations):
         reset_database()
         variables = {"input": {"username": f"user{i}", "email": f"user{i}@example.com"}}
-        result = execute_sync(
+        execute_sync(
             schema._schema,
             parse(query),
             root_value=Mutation(),
@@ -716,11 +697,10 @@ def test_mutation_performance():
     for i in range(iterations):
         reset_database()
         variables = {"input": {"username": f"user{i}", "email": f"user{i}@example.com"}}
-        result = compiled_fn(Mutation(), variables=variables)
+        compiled_fn(Mutation(), variables=variables)
     jit_time = time.perf_counter() - start
 
     speedup = standard_time / jit_time
-    print(f"✅ Mutation performance: {speedup:.2f}x faster with JIT")
     assert speedup > 2.0, "JIT should be at least 2x faster for mutations"
 
 
@@ -734,5 +714,3 @@ if __name__ == "__main__":
     test_async_mutations_serial_execution()
     test_mutation_with_nested_fields()
     test_mutation_performance()
-
-    print("\n✅ All mutation tests passed!")

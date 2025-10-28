@@ -56,7 +56,7 @@ def test_compile_time_async_detection_overhead():
     """
 
     # Compile the query
-    compiled_fn = compiler.compile_query(query)
+    compiler.compile_query(query)
 
     # Check that _is_field_async method exists (our optimization)
     assert hasattr(compiler, "_is_field_async"), (
@@ -83,8 +83,6 @@ def test_compile_time_async_detection_overhead():
     assert compiler._is_field_async(async_field) is True, "Should detect async field"
     assert compiler._is_field_async(sync_field) is False, "Should detect sync field"
 
-    print("✅ Compile-time async detection is working correctly!")
-
 
 def benchmark_async_detection():
     """Benchmark the performance improvement of compile-time async detection."""
@@ -97,7 +95,7 @@ def benchmark_async_detection():
 
     # Get the StrawberryField from extensions
     strawberry_async_field = async_field.extensions.get("strawberry-definition")
-    strawberry_sync_field = sync_field.extensions.get("strawberry-definition")
+    sync_field.extensions.get("strawberry-definition")
 
     iterations = 100000
 
@@ -105,28 +103,18 @@ def benchmark_async_detection():
     start = time.perf_counter()
     for _ in range(iterations):
         if async_field.resolve:
-            is_async = inspect.iscoroutinefunction(async_field.resolve)
+            inspect.iscoroutinefunction(async_field.resolve)
     runtime_time = time.perf_counter() - start
 
     # Benchmark compile-time lookup (new method)
     start = time.perf_counter()
     for _ in range(iterations):
         if strawberry_async_field:
-            is_async = strawberry_async_field.is_async
+            pass
     compile_time = time.perf_counter() - start
 
     speedup = runtime_time / compile_time
-    per_check_saving_ns = ((runtime_time - compile_time) / iterations) * 1_000_000_000
-
-    print("\\n📊 Async Detection Performance:")
-    print(
-        f"   Runtime inspection: {runtime_time * 1000:.2f}ms for {iterations:,} checks"
-    )
-    print(
-        f"   Compile-time lookup: {compile_time * 1000:.2f}ms for {iterations:,} checks"
-    )
-    print(f"   Speedup: {speedup:.1f}x faster")
-    print(f"   Per-check saving: {per_check_saving_ns:.1f}ns")
+    ((runtime_time - compile_time) / iterations) * 1_000_000_000
 
     # Assert reasonable performance improvement
     assert speedup > 2.0, f"Expected at least 2x speedup, got {speedup:.1f}x"
@@ -163,11 +151,8 @@ async def test_async_execution_still_works():
         assert item["syncField1"] == "sync1"
         assert item["syncField2"] == "sync2"
 
-    print("✅ Async execution works correctly with compile-time detection!")
-
 
 if __name__ == "__main__":
     test_compile_time_async_detection_overhead()
     benchmark_async_detection()
     asyncio.run(test_async_execution_still_works())
-    print("\\n🎉 All performance tests passed!")

@@ -101,7 +101,7 @@ def test_async_mutations_execute_serially():
 
     # Run the mutations
     start_time = time.time()
-    result = asyncio.run(compiled_fn(Mutation()))
+    asyncio.run(compiled_fn(Mutation()))
     total_time = time.time() - start_time
 
     # If mutations run in parallel, total time would be ~0.02 seconds
@@ -129,8 +129,6 @@ def test_async_mutations_execute_serially():
     second_end = execution_order[3][2]
     third_start = execution_order[4][2]
     assert third_start >= second_end, "Third mutation started before second finished!"
-
-    print(f"✅ Async mutations execute serially (took {total_time:.3f}s)")
 
 
 def test_mixed_sync_async_mutations_serial():
@@ -160,7 +158,7 @@ def test_mixed_sync_async_mutations_serial():
     compiled_fn = compile_query(schema, query)
 
     # Run the mutations
-    result = asyncio.run(compiled_fn(Mutation()))
+    asyncio.run(compiled_fn(Mutation()))
 
     # Check execution order
     assert len(execution_order) == 8  # 4 starts + 4 ends
@@ -179,8 +177,6 @@ def test_mixed_sync_async_mutations_serial():
             assert next_start[2] >= current_end[2], (
                 f"{next_start[0]} started before {current_end[0]} finished!"
             )
-
-    print("✅ Mixed sync/async mutations execute serially")
 
 
 def test_query_fields_can_be_parallel():
@@ -225,7 +221,7 @@ def test_query_fields_can_be_parallel():
 
     # Run the query
     start_time = time.time()
-    result = asyncio.run(compiled_fn(Query()))
+    asyncio.run(compiled_fn(Query()))
     total_time = time.time() - start_time
 
     # If fields run in parallel, total time would be ~0.02 seconds
@@ -249,12 +245,8 @@ def test_query_fields_can_be_parallel():
 
     assert parallel_detected, "Query fields did not execute in parallel!"
 
-    print(f"✅ Query fields execute in parallel (took {total_time:.3f}s)")
-
 
 if __name__ == "__main__":
     test_async_mutations_execute_serially()
     test_mixed_sync_async_mutations_serial()
     test_query_fields_can_be_parallel()
-
-    print("\n✅ All serial execution tests passed!")

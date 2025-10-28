@@ -608,54 +608,35 @@ def test_partial_variables():
 if __name__ == "__main__":
     # Run all tests
     test_missing_variable()
-    print("✅ Missing variable")
 
     test_null_variable()
-    print("✅ Null variable")
 
     test_provided_variable()
-    print("✅ Provided variable")
 
     test_default_value_used_when_missing()
-    print("✅ Default value used when missing")
 
     test_default_value_overridden_by_variable()
-    print("✅ Default value overridden")
 
     test_null_overrides_default()
-    print("✅ Null overrides default")
 
     test_complex_input_object()
-    print("✅ Complex input object")
 
     test_input_object_with_null_fields()
-    print("✅ Input object with null fields")
 
     test_input_object_with_defaults()
-    print("✅ Input object with defaults")
 
     test_list_variable_with_nullable_items()
-    print("✅ List variable with nullable items")
 
     test_list_variable_with_non_null_items()
-    print("✅ List variable with non-null items")
 
     test_empty_list_variable()
-    print("✅ Empty list variable")
 
     test_nested_list_variables()
-    print("✅ Nested list variables")
 
     test_int_to_float_coercion()
-    print("✅ Int to float coercion")
 
     test_string_list_coercion()
-    print("✅ String list coercion")
 
     test_multiple_variables()
-    print("✅ Multiple variables")
 
     test_partial_variables()
-    print("✅ Partial variables")
-
-    print("\n✅ All variable tests passed!")

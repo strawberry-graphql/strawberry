@@ -231,4 +231,3 @@ if __name__ == "__main__":
     test_type_map_field_arguments()
     test_type_map_with_mutations()
     test_field_map_operations()
-    print("✅ All type map tests passed!")

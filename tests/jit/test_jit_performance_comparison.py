@@ -102,7 +102,7 @@ def benchmark_sync_simple():
     iterations = 100
     start = time.perf_counter()
     for _ in range(iterations):
-        result = execute_sync(schema._schema, parsed_query, root_value=root)
+        execute_sync(schema._schema, parsed_query, root_value=root)
     standard_time = time.perf_counter() - start
 
     # JIT compiled execution
@@ -114,7 +114,7 @@ def benchmark_sync_simple():
 
     start = time.perf_counter()
     for _ in range(iterations):
-        result = compiled_fn(root)
+        compiled_fn(root)
     jit_time = time.perf_counter() - start
 
     return standard_time, jit_time, iterations
@@ -152,7 +152,7 @@ def benchmark_sync_nested():
     iterations = 100
     start = time.perf_counter()
     for _ in range(iterations):
-        result = execute_sync(schema._schema, parsed_query, root_value=root)
+        execute_sync(schema._schema, parsed_query, root_value=root)
     standard_time = time.perf_counter() - start
 
     # JIT compiled execution
@@ -164,7 +164,7 @@ def benchmark_sync_nested():
 
     start = time.perf_counter()
     for _ in range(iterations):
-        result = compiled_fn(root)
+        compiled_fn(root)
     jit_time = time.perf_counter() - start
 
     return standard_time, jit_time, iterations
@@ -212,7 +212,7 @@ def benchmark_sync_complex():
     iterations = 50
     start = time.perf_counter()
     for _ in range(iterations):
-        result = execute_sync(schema._schema, parsed_query, root_value=root)
+        execute_sync(schema._schema, parsed_query, root_value=root)
     standard_time = time.perf_counter() - start
 
     # JIT compiled execution
@@ -224,7 +224,7 @@ def benchmark_sync_complex():
 
     start = time.perf_counter()
     for _ in range(iterations):
-        result = compiled_fn(root)
+        compiled_fn(root)
     jit_time = time.perf_counter() - start
 
     return standard_time, jit_time, iterations
@@ -255,7 +255,7 @@ async def benchmark_async_simple():
     iterations = 100
     start = time.perf_counter()
     for _ in range(iterations):
-        result = await execute(schema._schema, parsed_query, root_value=root)
+        await execute(schema._schema, parsed_query, root_value=root)
     standard_time = time.perf_counter() - start
 
     # JIT compiled execution
@@ -267,96 +267,35 @@ async def benchmark_async_simple():
 
     start = time.perf_counter()
     for _ in range(iterations):
-        result = await compiled_fn(root)
+        await compiled_fn(root)
     jit_time = time.perf_counter() - start
 
     return standard_time, jit_time, iterations
 
 
 def main():
-    print("=" * 70)
-    print("⚡ GRAPHQL JIT COMPILER PERFORMANCE COMPARISON")
-    print("=" * 70)
-    print()
-
     # Sync benchmarks
-    print("📊 SYNCHRONOUS QUERIES")
-    print("-" * 40)
 
     # Simple query
     standard, jit, iterations = benchmark_sync_simple()
-    speedup = standard / jit
-    print(f"\n✅ Simple Query (100 posts, {iterations} iterations)")
-    print(
-        f"   Standard: {standard * 1000:.2f}ms total, {standard * 1000 / iterations:.3f}ms per query"
-    )
-    print(
-        f"   JIT:      {jit * 1000:.2f}ms total, {jit * 1000 / iterations:.3f}ms per query"
-    )
-    print(f"   Speedup:  {speedup:.2f}x faster")
+    standard / jit
 
     # Nested query
     standard, jit, iterations = benchmark_sync_nested()
-    speedup = standard / jit
-    print(f"\n✅ Nested Query (20 posts with authors, {iterations} iterations)")
-    print(
-        f"   Standard: {standard * 1000:.2f}ms total, {standard * 1000 / iterations:.3f}ms per query"
-    )
-    print(
-        f"   JIT:      {jit * 1000:.2f}ms total, {jit * 1000 / iterations:.3f}ms per query"
-    )
-    print(f"   Speedup:  {speedup:.2f}x faster")
+    standard / jit
 
     # Complex query
     standard, jit, iterations = benchmark_sync_complex()
-    speedup = standard / jit
-    print(f"\n✅ Complex Query (10 posts with comments, {iterations} iterations)")
-    print(
-        f"   Standard: {standard * 1000:.2f}ms total, {standard * 1000 / iterations:.3f}ms per query"
-    )
-    print(
-        f"   JIT:      {jit * 1000:.2f}ms total, {jit * 1000 / iterations:.3f}ms per query"
-    )
-    print(f"   Speedup:  {speedup:.2f}x faster")
+    standard / jit
 
     # Async benchmarks
-    print("\n" + "=" * 70)
-    print("⚡ ASYNCHRONOUS QUERIES")
-    print("-" * 40)
 
     # Run async benchmark
     async def run_async():
         standard, jit, iterations = await benchmark_async_simple()
-        speedup = standard / jit
-        print(f"\n✅ Async Query (10 posts, {iterations} iterations)")
-        print(
-            f"   Standard: {standard * 1000:.2f}ms total, {standard * 1000 / iterations:.3f}ms per query"
-        )
-        print(
-            f"   JIT:      {jit * 1000:.2f}ms total, {jit * 1000 / iterations:.3f}ms per query"
-        )
-        print(f"   Speedup:  {speedup:.2f}x faster")
-        print("   Note: Async overhead ~1ms per query due to simulated I/O")
+        standard / jit
 
     asyncio.run(run_async())
-
-    print("\n" + "=" * 70)
-    print("💡 KEY INSIGHTS")
-    print("-" * 40)
-    print("• JIT compilation provides 2-4x speedup for synchronous queries")
-    print("• Performance gain increases with query complexity")
-    print("• Async queries benefit from reduced GraphQL overhead")
-    print("• Most benefit comes from eliminating field resolution overhead")
-    print("• Simple queries see less improvement due to lower baseline overhead")
-
-    print("\n" + "=" * 70)
-    print("🔮 FUTURE OPTIMIZATIONS")
-    print("-" * 40)
-    print("• Parallel async field execution with asyncio.gather()")
-    print("• Compile-time async detection to avoid runtime checks")
-    print("• Batch resolver optimization")
-    print("• Query result caching")
-    print("• Type-specialized code generation")
 
 
 if __name__ == "__main__":
