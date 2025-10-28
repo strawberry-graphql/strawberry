@@ -82,6 +82,7 @@ class GraphQLView(
             return Response(
                 body=e.reason,
                 status_code=e.status_code,
+                headers={"Content-Type": "text/plain"},
             )
 
 
