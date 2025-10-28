@@ -117,7 +117,7 @@ def compare_results(jit_result, standard_result):
 
     # Compare error messages and paths
     if jit_errors:
-        for jit_err, std_err in zip(jit_errors, std_errors):
+        for jit_err, std_err in zip(jit_errors, std_errors, strict=False):
             # Compare paths
             jit_path = jit_err.get("path", [])
             std_path = std_err.path or []
@@ -537,39 +537,25 @@ def test_nullable_argument_with_null():
 if __name__ == "__main__":
     # Run all tests
     test_nullable_field_returns_null()
-    print("✅ Nullable field returns null")
 
     test_nullable_field_error_returns_null()
-    print("✅ Nullable field error returns null")
 
     test_non_null_field_error_propagates_to_parent()
-    print("✅ Non-null field error propagates")
 
     test_deep_non_null_chain()
-    print("✅ Deep non-null chain")
 
     test_non_null_list_with_error()
-    print("✅ Non-null list with error")
 
     test_nullable_list_with_non_null_items()
-    print("✅ Nullable list with non-null items")
 
     test_non_null_list_with_nullable_items()
-    print("✅ Non-null list with nullable items")
 
     test_root_level_non_null_field_error()
-    print("✅ Root level non-null error")
 
     test_multiple_errors_in_query()
-    print("✅ Multiple errors collected")
 
     test_non_null_argument_with_value()
-    print("✅ Non-null argument with value")
 
     test_non_null_argument_with_variable()
-    print("✅ Non-null argument with variable")
 
     test_nullable_argument_with_null()
-    print("✅ Nullable argument with null")
-
-    print("\n✅ All non-null tests passed!")

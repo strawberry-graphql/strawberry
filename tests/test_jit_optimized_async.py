@@ -245,19 +245,17 @@ async def test_optimized_async_performance():
     # Standard execution
     start = time.perf_counter()
     for _ in range(5):
-        result = await schema.execute(query, root_value=root)
+        await schema.execute(query, root_value=root)
     standard_time = time.perf_counter() - start
 
     # Optimized JIT execution
     compiled_fn = compile_query(schema, query)
     start = time.perf_counter()
     for _ in range(5):
-        result = await compiled_fn(root)
+        await compiled_fn(root)
     jit_time = time.perf_counter() - start
 
     # JIT should be faster even with async
-    print(f"Standard: {standard_time:.3f}s, JIT: {jit_time:.3f}s")
-    print(f"Speedup: {standard_time / jit_time:.2f}x")
 
     # Assert we get some speedup (at least 1.2x faster)
     assert jit_time < standard_time * 0.9  # Allow some variance
@@ -367,4 +365,3 @@ if __name__ == "__main__":
     asyncio.run(test_optimized_async_performance())
     asyncio.run(test_optimized_parallel_async_execution())
     asyncio.run(test_optimized_async_with_arguments())
-    print("All tests passed!")

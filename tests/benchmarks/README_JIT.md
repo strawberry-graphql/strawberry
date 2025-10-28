@@ -6,14 +6,16 @@ This directory contains performance benchmarks for the Strawberry JIT compiler u
 
 The benchmark suite compares JIT-compiled query execution against standard GraphQL execution across various scenarios:
 
+<!-- alex ignore simple -->
 1. **Stadium Benchmark** - Large nested datasets (45k-90k objects)
-2. **Simple Queries** - Baseline overhead measurements
+2. **Basic Queries** - Baseline overhead measurements
 3. **Async Parallel** - Concurrent field execution
 4. **Compilation** - Cold vs warm cache performance
 
 ## Running Benchmarks
 
 ### Run All JIT Benchmarks
+<!-- alex ignore simple -->
 ```bash
 pytest tests/benchmarks/test_jit_performance.py --benchmark-only
 ```
@@ -91,10 +93,11 @@ query StadiumQuery {
 - JIT: ~1ms (parallel)
 - **5x speedup** from parallelization
 
-### 3. Simple Query (Baseline)
+### 3. Basic Query (Baseline)
 
 **Test:** `test_jit_simple_query`
 **Baseline:** `test_standard_simple_query`
+<!-- alex ignore simple -->
 
 ```graphql
 {
@@ -152,9 +155,10 @@ These benchmarks integrate with CodSpeed for continuous performance monitoring:
 
 ### Good Performance Indicators
 
+<!-- alex ignore simple -->
 ✅ **JIT Stadium:** 5-8x faster than baseline
 ✅ **JIT Async:** ~5x speedup (parallel execution)
-✅ **JIT Simple:** 2-4x faster than baseline
+✅ **JIT Basic:** 2-4x faster than baseline
 ✅ **Compilation:** <5ms cold, <0.1ms warm
 
 ### Warning Signs
@@ -171,7 +175,7 @@ These benchmarks integrate with CodSpeed for continuous performance monitoring:
 | Stadium (250 seats/row) | ✓ | ✓ | 5-8x | Large nested data |
 | Stadium (500 seats/row) | ✓ | - | - | Scaling |
 | Parallel Async (5 fields) | ✓ | ✓ | 5x | Concurrent execution |
-| Simple Query | ✓ | ✓ | 2-4x | Baseline overhead |
+| Basic Query | ✓ | ✓ | 2-4x | Baseline overhead |
 | Compilation (cold) | ✓ | - | - | First request |
 | Compilation (warm) | ✓ | - | - | Cache performance |
 
@@ -212,6 +216,7 @@ def test_standard_my_feature(benchmark: BenchmarkFixture):
 
 ## Best Practices
 
+<!-- alex ignore simple -->
 ### DO ✅
 - Pre-compile queries before benchmarking (exclude compilation time)
 - Use realistic data sizes

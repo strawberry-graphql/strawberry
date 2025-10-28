@@ -136,7 +136,7 @@ The following are current limitations of the JIT compiler:
 
 3. **Field Extensions Performance**
    - Field extensions work correctly through wrapped resolvers
-   - Future optimization may inline simple extensions for better performance
+   - Future optimization may inline basic extensions for better performance
    - Current overhead is minimal (1-3 function calls per field)
 
 4. **Compilation Time**

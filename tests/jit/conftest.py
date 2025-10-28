@@ -532,22 +532,20 @@ def sample_authors():
 @pytest.fixture
 def sample_posts(sample_authors):
     """Get sample posts for testing."""
-    posts = []
-    for i in range(5):
-        posts.append(
-            Post(
-                id=f"p{i}",
-                title=f"Post {i}",
-                content=f"Content for post {i}",
-                author=sample_authors[i % len(sample_authors)],
-                published=i % 2 == 0,
-                status=PostStatus.PUBLISHED if i % 2 == 0 else PostStatus.DRAFT,
-                priority=Priority.HIGH if i == 0 else Priority.MEDIUM,
-                views=i * 100,
-                tags=[f"tag{j}" for j in range(i % 3)],
-            )
+    return [
+        Post(
+            id=f"p{i}",
+            title=f"Post {i}",
+            content=f"Content for post {i}",
+            author=sample_authors[i % len(sample_authors)],
+            published=i % 2 == 0,
+            status=PostStatus.PUBLISHED if i % 2 == 0 else PostStatus.DRAFT,
+            priority=Priority.HIGH if i == 0 else Priority.MEDIUM,
+            views=i * 100,
+            tags=[f"tag{j}" for j in range(i % 3)],
         )
-    return posts
+        for i in range(5)
+    ]
 
 
 def assert_jit_results_match(jit_result, standard_result):

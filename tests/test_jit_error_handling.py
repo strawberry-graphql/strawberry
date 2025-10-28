@@ -160,7 +160,7 @@ def test_non_nullable_field_error_propagation():
 
     # JIT should handle the same way
     compiled_fn = compile_query(schema, query)
-    jit_result = compiled_fn(Query())
+    compiled_fn(Query())
     # Note: Current JIT doesn't fully handle error propagation
     # This test documents expected behavior
 
@@ -460,36 +460,18 @@ def test_error_extensions():
 
 if __name__ == "__main__":
     # Run key tests
-    print("Testing field error nullability...")
     test_field_error_nullability()
-    print("✅ Passed")
 
-    print("Testing list field errors...")
     test_list_field_errors()
-    print("✅ Passed")
 
-    print("Testing root level errors...")
     test_root_level_errors()
-    print("✅ Passed")
 
-    print("Testing partial success...")
     test_error_with_partial_success()
-    print("✅ Passed")
 
-    print("Testing nested error propagation...")
     test_nested_error_propagation()
-    print("✅ Passed")
 
-    print("Testing multiple errors collection...")
     test_multiple_errors_collection()
-    print("✅ Passed")
 
-    print("Testing errors with variables...")
     test_error_with_variables()
-    print("✅ Passed")
 
-    print("Testing JIT compatibility...")
     test_jit_error_handling_compatibility()
-    print("✅ Passed")
-
-    print("\n✅ All error handling tests passed!")

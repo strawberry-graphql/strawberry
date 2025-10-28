@@ -41,18 +41,13 @@ def test_basic_error_handling():
     """
 
     # Standard execution handles errors
-    result = execute_sync(schema._schema, parse(query), root_value=Query())
-    print("Standard result:", result.data)
-    print("Standard errors:", result.errors)
+    execute_sync(schema._schema, parse(query), root_value=Query())
 
-    # JIT should handle errors too
-    try:
-        compiled_fn = compile_query(schema, query)
-        jit_result = compiled_fn(Query())
-        print("JIT result:", jit_result)
-    except Exception as e:
-        print("JIT error:", e)
-        print("JIT should handle errors internally, not raise them!")
+    # JIT should handle errors too - they should be in the result, not raised
+    compiled_fn = compile_query(schema, query)
+    jit_result = compiled_fn(Query())
+    # Errors should be in the result
+    assert jit_result.get("errors") is not None
 
 
 if __name__ == "__main__":

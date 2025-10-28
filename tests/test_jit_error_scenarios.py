@@ -62,10 +62,6 @@ def test_list_errors():
     compiled_fn = compile_query(schema, query)
     result = compiled_fn(Query())
 
-    print("List field errors test:")
-    print("Data:", result.get("data"))
-    print("Errors count:", len(result.get("errors", [])))
-
     # Check that we have data for non-erroring fields
     items = result["data"]["container"]["items"]
     assert len(items) == 3
@@ -76,7 +72,6 @@ def test_list_errors():
 
     # Check that we have 3 errors (one per item)
     assert len(result["errors"]) == 3
-    print("✅ List errors handled correctly\n")
 
 
 def test_nested_errors():
@@ -102,10 +97,6 @@ def test_nested_errors():
     compiled_fn = compile_query(schema, query)
     result = compiled_fn(Query())
 
-    print("Nested errors test:")
-    print("Data:", result.get("data"))
-    print("Errors count:", len(result.get("errors", [])))
-
     # Non-nullable error field should still allow other fields
     single_item = result["data"]["container"]["singleItem"]
     assert single_item["id"] == 99
@@ -113,7 +104,6 @@ def test_nested_errors():
 
     # We should have errors for errorField and all nullableError fields
     assert len(result["errors"]) >= 4  # 1 for errorField + 3 for nullableError
-    print("✅ Nested errors handled correctly\n")
 
 
 def test_error_paths():
@@ -134,7 +124,6 @@ def test_error_paths():
     compiled_fn = compile_query(schema, query)
     result = compiled_fn(Query())
 
-    print("Error paths test:")
     errors = result.get("errors", [])
 
     # Check error paths
@@ -144,11 +133,8 @@ def test_error_paths():
             f"Expected {expected_path}, got {error['path']}"
         )
 
-    print("✅ Error paths are correct\n")
-
 
 if __name__ == "__main__":
     test_list_errors()
     test_nested_errors()
     test_error_paths()
-    print("✅ All error scenario tests passed!")
