@@ -4,7 +4,6 @@ Test and benchmark parallel async execution improvements.
 
 import asyncio
 import time
-from typing import List
 
 from graphql import execute, parse
 
@@ -51,7 +50,7 @@ class SlowAsyncType:
 @strawberry.type
 class Query:
     @strawberry.field
-    async def slow_items(self, count: int = 3) -> List[SlowAsyncType]:
+    async def slow_items(self, count: int = 3) -> list[SlowAsyncType]:
         await asyncio.sleep(0.01)
         return [SlowAsyncType(id=f"item{i}") for i in range(count)]
 

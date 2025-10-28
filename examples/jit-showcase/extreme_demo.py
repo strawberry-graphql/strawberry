@@ -12,7 +12,6 @@ sys.path.insert(
 
 import statistics
 import time
-from typing import List
 
 from graphql import execute_sync, parse
 
@@ -88,7 +87,7 @@ class Level4:
     value5: int = 500
 
     @strawberry.field
-    def children(self) -> List[Level5]:
+    def children(self) -> list[Level5]:
         return [Level5(id=f"{self.id}-5-{i}") for i in range(5)]
 
     @strawberry.field
@@ -112,7 +111,7 @@ class Level3:
         return f"[{self.name}]"
 
     @strawberry.field
-    def children(self) -> List[Level4]:
+    def children(self) -> list[Level4]:
         return [Level4(id=f"{self.id}-4-{i}") for i in range(5)]
 
     @strawberry.field
@@ -132,7 +131,7 @@ class Level2:
         return f"{self.category}:{self.id}"
 
     @strawberry.field
-    def children(self) -> List[Level3]:
+    def children(self) -> list[Level3]:
         return [Level3(id=f"{self.id}-3-{i}", name=f"L3-{i}") for i in range(5)]
 
     @strawberry.field
@@ -152,7 +151,7 @@ class Level1:
         return f"Item {self.title}"
 
     @strawberry.field
-    def children(self) -> List[Level2]:
+    def children(self) -> list[Level2]:
         return [Level2(id=f"{self.id}-2-{i}", category=f"Cat{i}") for i in range(5)]
 
     @strawberry.field
@@ -163,12 +162,12 @@ class Level1:
 @strawberry.type
 class Query:
     @strawberry.field
-    def extreme_nesting(self, count: int = 10) -> List[Level1]:
+    def extreme_nesting(self, count: int = 10) -> list[Level1]:
         """Generate extremely nested data."""
         return [Level1(id=f"L1-{i}", title=f"Title{i}") for i in range(count)]
 
     @strawberry.field
-    def ultra_wide(self, width: int = 100) -> List[Level5]:
+    def ultra_wide(self, width: int = 100) -> list[Level5]:
         """Generate very wide flat data."""
         return [Level5(id=f"Wide-{i}") for i in range(width)]
 

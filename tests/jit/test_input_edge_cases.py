@@ -1,7 +1,7 @@
 """Test edge cases for input type support in JIT compiler."""
 
 from enum import Enum
-from typing import List, Optional
+from typing import Optional
 
 import strawberry
 from strawberry.jit import compile_query
@@ -27,7 +27,7 @@ class MetadataInput:
 class TagInput:
     name: str
     color: Optional[str] = None
-    metadata: Optional[List[MetadataInput]] = None
+    metadata: Optional[list[MetadataInput]] = None
 
 
 @strawberry.input
@@ -35,16 +35,16 @@ class TaskInput:
     title: str
     description: Optional[str] = None
     priority: Priority = Priority.MEDIUM
-    tags: Optional[List[TagInput]] = None
-    assignee_ids: Optional[List[str]] = None
-    metadata: Optional[List[MetadataInput]] = None
+    tags: Optional[list[TagInput]] = None
+    assignee_ids: Optional[list[str]] = None
+    metadata: Optional[list[MetadataInput]] = None
     is_active: bool = True
     estimated_hours: Optional[float] = None
 
 
 @strawberry.input
 class BulkTaskInput:
-    tasks: List[TaskInput]
+    tasks: list[TaskInput]
     default_priority: Optional[Priority] = None
     auto_assign: bool = False
 
@@ -61,7 +61,7 @@ class Tag:
     id: str
     name: str
     color: Optional[str]
-    metadata: List[Metadata]
+    metadata: list[Metadata]
 
 
 @strawberry.type
@@ -70,16 +70,16 @@ class Task:
     title: str
     description: Optional[str]
     priority: Priority
-    tags: List[Tag]
-    assignee_ids: List[str]
-    metadata: List[Metadata]
+    tags: list[Tag]
+    assignee_ids: list[str]
+    metadata: list[Metadata]
     is_active: bool
     estimated_hours: Optional[float]
 
 
 @strawberry.type
 class BulkTaskResult:
-    created_tasks: List[Task]
+    created_tasks: list[Task]
     total_count: int
     success: bool
 

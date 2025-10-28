@@ -5,7 +5,6 @@ and generate optimized code without runtime checks.
 """
 
 import inspect
-from typing import Dict, Set
 
 from graphql import GraphQLObjectType, GraphQLSchema, parse
 
@@ -13,7 +12,7 @@ import strawberry
 from strawberry.jit import JITCompiler
 
 
-def analyze_schema_async_fields(schema: GraphQLSchema) -> Dict[str, Set[str]]:
+def analyze_schema_async_fields(schema: GraphQLSchema) -> dict[str, set[str]]:
     """
     Analyze a GraphQL schema to determine which fields are async.
     Returns a mapping of type_name -> set of async field names.

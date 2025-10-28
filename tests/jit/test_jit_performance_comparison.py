@@ -5,7 +5,6 @@ Shows the performance characteristics of different query types.
 
 import asyncio
 import time
-from typing import List
 
 from graphql import execute, execute_sync, parse
 
@@ -34,7 +33,7 @@ class Post:
     title: str
     content: str
     author: Author
-    comments: List[Comment]
+    comments: list[Comment]
     view_count: int = 100
     published: bool = True
 
@@ -42,7 +41,7 @@ class Post:
 @strawberry.type
 class Query:
     @strawberry.field
-    def posts(self, limit: int = 10) -> List[Post]:
+    def posts(self, limit: int = 10) -> list[Post]:
         """Sync resolver for posts."""
         authors = [
             Author(id=f"a{i}", name=f"Author {i}", email=f"author{i}@example.com")
@@ -72,7 +71,7 @@ class Query:
         return posts
 
     @strawberry.field
-    async def async_posts(self, limit: int = 10) -> List[Post]:
+    async def async_posts(self, limit: int = 10) -> list[Post]:
         """Async resolver for posts - simulates database query."""
         await asyncio.sleep(0.001)  # Simulate 1ms database latency
         return self.posts(limit)

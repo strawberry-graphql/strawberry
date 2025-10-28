@@ -5,7 +5,6 @@ Test to verify performance improvement from compile-time async detection.
 import asyncio
 import inspect
 import time
-from typing import List
 
 import strawberry
 from strawberry.jit import JITCompiler
@@ -35,7 +34,7 @@ class Item:
 @strawberry.type
 class Query:
     @strawberry.field
-    def items(self, limit: int = 100) -> List[Item]:
+    def items(self, limit: int = 100) -> list[Item]:
         return [Item(id=f"i{i}") for i in range(limit)]
 
 

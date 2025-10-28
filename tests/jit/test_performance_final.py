@@ -4,7 +4,6 @@ Final performance benchmark showing JIT compiler improvements.
 
 import asyncio
 import time
-from typing import List
 
 from graphql import execute, execute_sync, parse
 
@@ -55,7 +54,7 @@ class Post:
 @strawberry.type
 class Query:
     @strawberry.field
-    def posts(self, limit: int = 10) -> List[Post]:
+    def posts(self, limit: int = 10) -> list[Post]:
         return [
             Post(
                 id=f"p{i}",
@@ -66,7 +65,7 @@ class Query:
         ]
 
     @strawberry.field
-    async def async_posts(self, limit: int = 10) -> List[Post]:
+    async def async_posts(self, limit: int = 10) -> list[Post]:
         await asyncio.sleep(0.001)  # Simulate DB call
         return [
             Post(

@@ -14,7 +14,6 @@ sys.path.insert(
 import math
 import statistics
 import time
-from typing import List
 
 from graphql import execute_sync, parse
 
@@ -241,7 +240,7 @@ class Dataset:
     size: int
 
     @strawberry.field
-    def points(self) -> List[DataPoint]:
+    def points(self) -> list[DataPoint]:
         """Generate data points."""
         points = []
         for i in range(self.size):
@@ -310,7 +309,7 @@ class Dataset:
 @strawberry.type
 class Query:
     @strawberry.field
-    def datasets(self, count: int = 5, points_per_dataset: int = 100) -> List[Dataset]:
+    def datasets(self, count: int = 5, points_per_dataset: int = 100) -> list[Dataset]:
         """Generate multiple datasets."""
         return [
             Dataset(name=f"Dataset-{i}", size=points_per_dataset) for i in range(count)

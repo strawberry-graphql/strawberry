@@ -11,7 +11,6 @@ sys.path.insert(
 )
 
 import time
-from typing import List
 
 from graphql import execute_sync, parse
 
@@ -42,7 +41,7 @@ class User:
 @strawberry.type
 class Query:
     @strawberry.field
-    def users(self) -> List[User]:
+    def users(self) -> list[User]:
         return [
             User(id=i, name=f"User {i}", email=f"user{i}@example.com")
             for i in range(100)

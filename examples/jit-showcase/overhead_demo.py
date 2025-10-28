@@ -12,7 +12,6 @@ sys.path.insert(
 
 import statistics
 import time
-from typing import List
 
 from graphql import execute_sync, parse
 
@@ -147,7 +146,7 @@ class SimpleData:
 @strawberry.type
 class Query:
     @strawberry.field
-    def many_items(self, count: int = 500) -> List[SimpleData]:
+    def many_items(self, count: int = 500) -> list[SimpleData]:
         """Return many items with lots of fields."""
         return [SimpleData(id=f"item-{i}") for i in range(count)]
 

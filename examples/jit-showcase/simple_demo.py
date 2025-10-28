@@ -4,7 +4,6 @@ This example uses synchronous resolvers where JIT really shines.
 
 import statistics
 import time
-from typing import List
 
 from graphql import execute_sync, parse
 
@@ -62,7 +61,7 @@ class Category:
     description: str
 
     @strawberry.field
-    def products(self) -> List[Product]:
+    def products(self) -> list[Product]:
         """Get products in this category."""
         # Simulate some data processing
         products = []
@@ -91,7 +90,7 @@ class Category:
 @strawberry.type
 class Query:
     @strawberry.field
-    def categories(self, limit: int = 5) -> List[Category]:
+    def categories(self, limit: int = 5) -> list[Category]:
         """Get product categories."""
         categories = []
         for i in range(limit):
@@ -105,7 +104,7 @@ class Query:
         return categories
 
     @strawberry.field
-    def products(self, limit: int = 20) -> List[Product]:
+    def products(self, limit: int = 20) -> list[Product]:
         """Get all products."""
         products = []
         for i in range(limit):

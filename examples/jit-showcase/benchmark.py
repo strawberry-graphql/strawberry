@@ -1,5 +1,4 @@
-"""Benchmark tool to compare standard GraphQL vs JIT compiled execution.
-"""
+"""Benchmark tool to compare standard GraphQL vs JIT compiled execution."""
 
 import asyncio
 import os

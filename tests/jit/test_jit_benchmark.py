@@ -4,7 +4,6 @@ Benchmark tests for the GraphQL JIT compiler with large datasets.
 
 import random
 import time
-from typing import List
 
 from graphql import execute, parse
 
@@ -45,7 +44,7 @@ class Post:
     content: str
     views: int
     author: Author
-    comments: List[Comment]
+    comments: list[Comment]
 
     @strawberry.field
     def engagement_rate(self) -> float:
@@ -99,17 +98,17 @@ def generate_large_dataset(num_posts: int, comments_per_post: int):
 
 @strawberry.type
 class Query:
-    posts_data: List[Post]
+    posts_data: list[Post]
 
     def __init__(self, posts_data):
         self.posts_data = posts_data
 
     @strawberry.field
-    def posts(self) -> List[Post]:
+    def posts(self) -> list[Post]:
         return self.posts_data
 
     @strawberry.field
-    def trending_posts(self) -> List[Post]:
+    def trending_posts(self) -> list[Post]:
         # This would normally query a database
         return sorted(self.posts_data, key=lambda p: p.trending_score(), reverse=True)[
             :10

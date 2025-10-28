@@ -12,7 +12,7 @@ These tests ensure the JIT compiler correctly handles:
 5. Root-level non-null fields
 """
 
-from typing import List, Optional
+from typing import Optional
 
 from graphql import execute_sync, parse
 
@@ -296,7 +296,7 @@ def test_non_null_list_with_error():
     @strawberry.type
     class ListQuery:
         @strawberry.field
-        def items(self) -> List[Item]:  # Non-null list
+        def items(self) -> list[Item]:  # Non-null list
             return [Item(id=1), Item(id=2), Item(id=3)]
 
     schema = strawberry.Schema(ListQuery)
@@ -337,7 +337,7 @@ def test_nullable_list_with_non_null_items():
     @strawberry.type
     class ListQuery:
         @strawberry.field
-        def items(self) -> Optional[List[Item]]:  # Nullable list, non-null items
+        def items(self) -> Optional[list[Item]]:  # Nullable list, non-null items
             return [Item(), Item()]
 
     schema = strawberry.Schema(ListQuery)
@@ -379,7 +379,7 @@ def test_non_null_list_with_nullable_items():
     @strawberry.type
     class ListQuery:
         @strawberry.field
-        def items(self) -> List[Item]:  # Non-null list
+        def items(self) -> list[Item]:  # Non-null list
             return [Item(id=1), Item(id=2), Item(id=3)]
 
     schema = strawberry.Schema(ListQuery)

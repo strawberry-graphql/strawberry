@@ -1,6 +1,6 @@
 """Test input type support in JIT compiler."""
 
-from typing import List, Optional
+from typing import Optional
 
 from graphql import execute_sync, parse
 
@@ -23,7 +23,7 @@ class PersonInput:
     age: int
     email: Optional[str] = None
     address: Optional[AddressInput] = None
-    tags: Optional[List[str]] = None
+    tags: Optional[list[str]] = None
 
 
 @strawberry.input
@@ -31,7 +31,7 @@ class SearchInput:
     query: str
     limit: int = 10
     offset: int = 0
-    filters: Optional[List[str]] = None
+    filters: Optional[list[str]] = None
 
 
 @strawberry.input
@@ -59,12 +59,12 @@ class Person:
     age: int
     email: Optional[str]
     address: Optional[Address]
-    tags: List[str]
+    tags: list[str]
 
 
 @strawberry.type
 class SearchResult:
-    items: List[Person]
+    items: list[Person]
     total: int
     has_more: bool
 

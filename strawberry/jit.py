@@ -14,7 +14,8 @@ import hashlib
 import inspect
 import time
 import warnings
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from collections.abc import Callable
+from typing import Any
 
 from graphql import (
     DirectiveNode,
@@ -113,10 +114,10 @@ class JITCompiler:
             # Return a wrapper that calls standard GraphQL executor
             def fallback_executor(
                 root_value: Any = None,
-                variables: Optional[Dict[str, Any]] = None,
+                variables: dict[str, Any] | None = None,
                 context_value: Any = None,
-                operation_name: Optional[str] = None,
-            ) -> Dict[str, Any]:
+                operation_name: str | None = None,
+            ) -> dict[str, Any]:
                 """Fallback to standard GraphQL executor for @defer/@stream."""
                 result = execute_sync(
                     self.schema,
@@ -209,9 +210,7 @@ class JITCompiler:
         self.async_resolver_ids = set()
         self.nested_counter = 0
 
-    def _get_operation(
-        self, document: DocumentNode
-    ) -> Optional[OperationDefinitionNode]:
+    def _get_operation(self, document: DocumentNode) -> OperationDefinitionNode | None:
         for definition in document.definitions:
             if isinstance(definition, OperationDefinitionNode):
                 return definition
@@ -1902,7 +1901,7 @@ class JITCompiler:
                 self.indent_level -= 1
 
     def _generate_skip_include_checks(
-        self, directives: List[DirectiveNode], info_var: str
+        self, directives: list[DirectiveNode], info_var: str
     ) -> str:
         """Generate directive conditions."""
         conditions = []
@@ -1999,13 +1998,13 @@ class JITCompiler:
             True if @defer or @stream directives are found
         """
 
-        def check_directives(directives: Optional[List[DirectiveNode]]) -> bool:
+        def check_directives(directives: list[DirectiveNode] | None) -> bool:
             """Check if any directive is defer or stream."""
             if not directives:
                 return False
             return any(d.name.value in ("defer", "stream") for d in directives)
 
-        def check_selection_set(selection_set: Optional[SelectionSetNode]) -> bool:
+        def check_selection_set(selection_set: SelectionSetNode | None) -> bool:
             """Recursively check selection set for defer/stream directives."""
             if not selection_set:
                 return False
@@ -2064,7 +2063,7 @@ class CachedJITCompiler:
         self,
         schema: strawberry.Schema,
         cache_size: int = 1000,
-        ttl_seconds: Optional[float] = None,
+        ttl_seconds: float | None = None,
     ):
         """Initialize cached JIT compiler.
 
@@ -2075,10 +2074,10 @@ class CachedJITCompiler:
         """
         self.schema = schema
         self.compiler = JITCompiler(schema)
-        self.cache: Dict[str, Tuple[Callable, float]] = {}
+        self.cache: dict[str, tuple[Callable, float]] = {}
         self.cache_size = cache_size
         self.ttl_seconds = ttl_seconds
-        self.access_order: List[str] = []
+        self.access_order: list[str] = []
 
     def compile_query(self, query: str) -> Callable:
         """Compile query with caching."""
@@ -2120,7 +2119,7 @@ class CachedJITCompiler:
         self.cache.clear()
         self.access_order.clear()
 
-    def get_cache_stats(self) -> Dict[str, Any]:
+    def get_cache_stats(self) -> dict[str, Any]:
         """Get cache statistics."""
         return {
             "size": len(self.cache),
@@ -2150,7 +2149,7 @@ def compile_query(schema: strawberry.Schema, query: str) -> Callable:
 def create_cached_compiler(
     schema: strawberry.Schema,
     cache_size: int = 1000,
-    ttl_seconds: Optional[float] = None,
+    ttl_seconds: float | None = None,
 ) -> CachedJITCompiler:
     """Create a cached JIT compiler for production use.
 

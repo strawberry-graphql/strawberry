@@ -3,7 +3,7 @@ Test JIT compilation with field arguments support.
 """
 
 import time
-from typing import List, Optional
+from typing import Optional
 
 from graphql import execute, parse
 
@@ -30,7 +30,7 @@ class User:
     @strawberry.field
     def posts(
         self, published: Optional[bool] = None, limit: int = 10, offset: int = 0
-    ) -> List[Post]:
+    ) -> list[Post]:
         """Get user's posts with filtering and pagination."""
         all_posts = [
             Post(
@@ -53,7 +53,7 @@ class User:
         return filtered[offset : offset + limit]
 
     @strawberry.field
-    def recent_posts(self, days: int = 7, min_views: int = 0) -> List[Post]:
+    def recent_posts(self, days: int = 7, min_views: int = 0) -> list[Post]:
         """Get recent posts with view threshold."""
         # Simulate filtering by date and views
         return [
@@ -70,7 +70,7 @@ class User:
 
 @strawberry.type
 class SearchResult:
-    posts: List[Post]
+    posts: list[Post]
     total_count: int
 
 
@@ -117,7 +117,7 @@ class Query:
         return SearchResult(posts=posts, total_count=len(posts))
 
     @strawberry.field
-    def posts_by_ids(self, ids: List[str]) -> List[Post]:
+    def posts_by_ids(self, ids: list[str]) -> list[Post]:
         """Get posts by IDs."""
         return [
             Post(

@@ -13,7 +13,7 @@ These tests ensure the JIT compiler correctly handles:
 6. Nested lists
 """
 
-from typing import List, Optional
+from typing import Optional
 
 from graphql import execute, execute_sync, parse
 
@@ -71,7 +71,7 @@ def test_nullable_list_of_nullable_items():
     @strawberry.type
     class Query:
         @strawberry.field
-        def items(self) -> Optional[List[Optional[Item]]]:
+        def items(self) -> Optional[list[Optional[Item]]]:
             return [
                 Item(id=1, name="One"),
                 None,  # Null item is allowed
@@ -79,7 +79,7 @@ def test_nullable_list_of_nullable_items():
             ]
 
         @strawberry.field
-        def null_list(self) -> Optional[List[Optional[Item]]]:
+        def null_list(self) -> Optional[list[Optional[Item]]]:
             return None
 
     schema = strawberry.Schema(Query)
@@ -126,11 +126,11 @@ def test_nullable_list_of_non_null_items():
     @strawberry.type
     class Query:
         @strawberry.field
-        def items(self) -> Optional[List[Item]]:  # Items are non-null
+        def items(self) -> Optional[list[Item]]:  # Items are non-null
             return [Item(id=1, name="One"), Item(id=2, name="Two")]
 
         @strawberry.field
-        def items_with_error(self) -> Optional[List[Item]]:
+        def items_with_error(self) -> Optional[list[Item]]:
             # One item will error - should null the entire list
             return [Item(id=1, name="One"), Item(id=2, name="Two")]
 
@@ -181,7 +181,7 @@ def test_non_null_list_of_nullable_items():
     @strawberry.type
     class Query:
         @strawberry.field
-        def items(self) -> List[Optional[Item]]:  # List is non-null
+        def items(self) -> list[Optional[Item]]:  # List is non-null
             return [
                 Item(id=1, name="One"),
                 None,  # Null item is OK
@@ -189,7 +189,7 @@ def test_non_null_list_of_nullable_items():
             ]
 
         @strawberry.field
-        def items_with_error(self) -> List[Optional[Item]]:
+        def items_with_error(self) -> list[Optional[Item]]:
             return [Item(id=1, name="One"), Item(id=2, name="Two")]
 
     schema = strawberry.Schema(Query)
@@ -245,11 +245,11 @@ def test_non_null_list_of_non_null_items():
     @strawberry.type
     class Query:
         @strawberry.field
-        def items(self) -> List[Item]:  # Both non-null
+        def items(self) -> list[Item]:  # Both non-null
             return [Item(id=1, name="One"), Item(id=2, name="Two")]
 
         @strawberry.field
-        def items_with_error(self) -> List[Item]:
+        def items_with_error(self) -> list[Item]:
             return [Item(id=1, name="One"), Item(id=2, name="Two")]
 
     schema = strawberry.Schema(Query)
@@ -306,11 +306,11 @@ def test_empty_list():
     @strawberry.type
     class Query:
         @strawberry.field
-        def empty_nullable(self) -> Optional[List[Item]]:
+        def empty_nullable(self) -> Optional[list[Item]]:
             return []
 
         @strawberry.field
-        def empty_non_null(self) -> List[Item]:
+        def empty_non_null(self) -> list[Item]:
             return []
 
     schema = strawberry.Schema(Query)
@@ -340,7 +340,7 @@ def test_single_item_list():
     @strawberry.type
     class Query:
         @strawberry.field
-        def single(self) -> List[Item]:
+        def single(self) -> list[Item]:
             return [Item(id=1, name="Only")]
 
     schema = strawberry.Schema(Query)
@@ -371,7 +371,7 @@ def test_error_in_list_item_field():
     @strawberry.type
     class Query:
         @strawberry.field
-        def items(self) -> List[Item]:
+        def items(self) -> list[Item]:
             return [
                 Item(id=1, name="One"),
                 Item(id=2, name="Two"),
@@ -410,7 +410,7 @@ def test_multiple_errors_in_list():
     @strawberry.type
     class Query:
         @strawberry.field
-        def items(self) -> List[Optional[Item]]:  # Items are nullable
+        def items(self) -> list[Optional[Item]]:  # Items are nullable
             return [
                 Item(id=1, name="One"),
                 Item(id=2, name="Two"),
@@ -447,13 +447,13 @@ def test_nested_lists():
     @strawberry.type
     class Container:
         @strawberry.field
-        def items(self) -> List[Item]:
+        def items(self) -> list[Item]:
             return [Item(id=1, name="One"), Item(id=2, name="Two")]
 
     @strawberry.type
     class Query:
         @strawberry.field
-        def containers(self) -> List[Container]:
+        def containers(self) -> list[Container]:
             return [Container(), Container()]
 
     schema = strawberry.Schema(Query)
@@ -492,7 +492,7 @@ async def test_async_list_field():
     @strawberry.type
     class Query:
         @strawberry.field
-        async def async_items(self) -> List[Item]:
+        async def async_items(self) -> list[Item]:
             # Simulate async operation
             return [Item(id=1, name="Async1"), Item(id=2, name="Async2")]
 
@@ -528,7 +528,7 @@ def test_large_list():
     @strawberry.type
     class Query:
         @strawberry.field
-        def many_items(self) -> List[Item]:
+        def many_items(self) -> list[Item]:
             return [Item(id=i, name=f"Item{i}") for i in range(1000)]
 
     schema = strawberry.Schema(Query)

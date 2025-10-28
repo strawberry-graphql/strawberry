@@ -16,7 +16,6 @@ sys.path.insert(
     0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 )
 
-from typing import List, Optional
 
 from graphql import execute_sync, parse
 
@@ -41,7 +40,7 @@ class Product:
         return self.id * 10.99
 
     @strawberry.field
-    def description(self) -> Optional[str]:
+    def description(self) -> str | None:
         """Nullable field that might error."""
         if self.id == 13:
             raise ValueError(f"Product {self.id} is unlucky - no description!")
@@ -58,7 +57,7 @@ class Category:
     name: str
 
     @strawberry.field
-    def products(self) -> List[Product]:
+    def products(self) -> list[Product]:
         """Return products, some might cause errors."""
         products = []
         if self.name == "Normal":
@@ -99,7 +98,7 @@ class Store:
         return Product(id=100, name="Featured Item")
 
     @strawberry.field
-    def announcement(self) -> Optional[str]:
+    def announcement(self) -> str | None:
         """Nullable field that might error."""
         if self.name == "Silent Store":
             raise Exception("No announcements available")
@@ -109,7 +108,7 @@ class Store:
 @strawberry.type
 class Query:
     @strawberry.field
-    def store(self, name: str = "Normal Store") -> Optional[Store]:
+    def store(self, name: str = "Normal Store") -> Store | None:
         """Root field is nullable."""
         return Store(name=name)
 

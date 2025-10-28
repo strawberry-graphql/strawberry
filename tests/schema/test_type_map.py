@@ -1,6 +1,6 @@
 """Test the native Strawberry type map for fast lookups."""
 
-from typing import List, Optional
+from typing import Optional
 
 import strawberry
 
@@ -29,7 +29,7 @@ def test_type_map_basic_functionality():
     @strawberry.type
     class Query:
         @strawberry.field
-        def get_posts(self, author_id: Optional[str] = None) -> List[Post]:
+        def get_posts(self, author_id: Optional[str] = None) -> list[Post]:
             """Get posts, optionally filtered by author."""
             return []
 
@@ -132,7 +132,7 @@ def test_type_map_field_arguments():
             query: str,
             limit: int = 10,
             offset: Optional[int] = None,
-        ) -> List[str]:
+        ) -> list[str]:
             return []
 
     schema = strawberry.Schema(Query)

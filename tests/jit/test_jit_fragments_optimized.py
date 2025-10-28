@@ -2,8 +2,6 @@
 Test optimized JIT compilation with GraphQL fragments support.
 """
 
-from typing import List
-
 from graphql import execute, parse
 
 import strawberry
@@ -31,14 +29,14 @@ class Post:
     title: str
     content: str
     author: Author
-    comments: List[Comment]
+    comments: list[Comment]
     published: bool
 
 
 @strawberry.type
 class Query:
     @strawberry.field
-    def posts(self) -> List[Post]:
+    def posts(self) -> list[Post]:
         """Get all posts."""
         author1 = Author(id="a1", name="Alice", email="alice@example.com")
         author2 = Author(id="a2", name="Bob", email="bob@example.com")

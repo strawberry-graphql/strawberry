@@ -14,7 +14,7 @@ These tests ensure the JIT compiler correctly handles:
 7. Error handling during variable coercion
 """
 
-from typing import List, Optional
+from typing import Optional
 
 from graphql import execute_sync, parse
 
@@ -40,7 +40,7 @@ class ComplexInput:
     required_int: int
     optional_int: Optional[int] = None
     nested: Optional[NestedInput] = None
-    list_of_strings: Optional[List[str]] = None
+    list_of_strings: Optional[list[str]] = None
 
 
 @strawberry.input
@@ -370,7 +370,7 @@ def test_list_variable_with_nullable_items():
     @strawberry.type
     class Query:
         @strawberry.field
-        def process_list(self, items: List[Optional[str]]) -> str:
+        def process_list(self, items: list[Optional[str]]) -> str:
             return f"items={','.join(str(i) for i in items)}"
 
     schema = strawberry.Schema(Query)
@@ -397,7 +397,7 @@ def test_list_variable_with_non_null_items():
     @strawberry.type
     class Query:
         @strawberry.field
-        def process_list(self, items: List[str]) -> str:
+        def process_list(self, items: list[str]) -> str:
             return f"count={len(items)}"
 
     schema = strawberry.Schema(Query)
@@ -425,7 +425,7 @@ def test_empty_list_variable():
     @strawberry.type
     class Query:
         @strawberry.field
-        def process_list(self, items: List[str]) -> str:
+        def process_list(self, items: list[str]) -> str:
             return f"count={len(items)}"
 
     schema = strawberry.Schema(Query)
@@ -452,12 +452,12 @@ def test_nested_list_variables():
     @strawberry.input
     class ItemInput:
         name: str
-        tags: List[str]
+        tags: list[str]
 
     @strawberry.type
     class Query:
         @strawberry.field
-        def process_items(self, items: List[ItemInput]) -> str:
+        def process_items(self, items: list[ItemInput]) -> str:
             result = []
             for item in items:
                 result.append(f"{item.name}:[{','.join(item.tags)}]")
@@ -523,7 +523,7 @@ def test_string_list_coercion():
     @strawberry.type
     class Query:
         @strawberry.field
-        def echo_list(self, values: List[str]) -> str:
+        def echo_list(self, values: list[str]) -> str:
             return f"count={len(values)}, first={values[0] if values else 'none'}"
 
     schema = strawberry.Schema(Query)

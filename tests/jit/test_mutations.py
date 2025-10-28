@@ -2,7 +2,7 @@
 
 import asyncio
 import time
-from typing import List, Optional
+from typing import Optional
 
 from graphql import execute_sync, parse
 
@@ -296,7 +296,7 @@ class Query:
         return database["posts"].get(id)
 
     @strawberry.field
-    def users(self) -> List[User]:
+    def users(self) -> list[User]:
         return list(database["users"].values())
 
 

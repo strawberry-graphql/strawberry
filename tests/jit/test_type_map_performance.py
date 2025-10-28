@@ -3,7 +3,7 @@ Test performance improvements from using the native Strawberry type map.
 """
 
 import time
-from typing import List, Optional
+from typing import Optional
 
 import strawberry
 from strawberry.jit import JITCompiler
@@ -18,7 +18,7 @@ class Author:
     total_posts_count: int  # -> totalPostsCount in GraphQL
 
     @strawberry.field
-    def recent_posts_by_category(self, category_name: str) -> List[str]:
+    def recent_posts_by_category(self, category_name: str) -> list[str]:
         """Field with snake_case name and argument."""
         return []
 
@@ -42,7 +42,7 @@ class Query:
         author_id: str,
         include_drafts: bool = False,
         max_results: int = 10,
-    ) -> List[Post]:
+    ) -> list[Post]:
         """Get posts with multiple snake_case arguments."""
         return []
 
@@ -55,11 +55,11 @@ class Query:
     def search_posts_with_filters(
         self,
         search_query: str,
-        author_ids: Optional[List[str]] = None,
+        author_ids: Optional[list[str]] = None,
         is_published: Optional[bool] = None,
         min_view_count: Optional[int] = None,
         max_view_count: Optional[int] = None,
-    ) -> List[Post]:
+    ) -> list[Post]:
         """Complex search with many snake_case parameters."""
         return []
 

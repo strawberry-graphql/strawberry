@@ -9,7 +9,7 @@ This module provides a type registry that:
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Dict, Optional
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from graphql import GraphQLSchema
@@ -23,11 +23,11 @@ class FieldMap:
     """Bidirectional field mapping for fast lookups by either GraphQL or Python name."""
 
     def __init__(self):
-        self.by_graphql_name: Dict[str, StrawberryField] = {}
-        self.by_python_name: Dict[str, StrawberryField] = {}
+        self.by_graphql_name: dict[str, StrawberryField] = {}
+        self.by_python_name: dict[str, StrawberryField] = {}
         # Store the name mappings for quick access
-        self.graphql_to_python: Dict[str, str] = {}
-        self.python_to_graphql: Dict[str, str] = {}
+        self.graphql_to_python: dict[str, str] = {}
+        self.python_to_graphql: dict[str, str] = {}
 
     def add_field(self, graphql_name: str, python_name: str, field: StrawberryField):
         """Add a field with both its GraphQL and Python names."""
@@ -40,19 +40,19 @@ class FieldMap:
         field.graphql_name = graphql_name
         field.python_name = python_name
 
-    def get_by_graphql_name(self, name: str) -> Optional[StrawberryField]:
+    def get_by_graphql_name(self, name: str) -> StrawberryField | None:
         """Get field by its GraphQL name (e.g., 'authorName')."""
         return self.by_graphql_name.get(name)
 
-    def get_by_python_name(self, name: str) -> Optional[StrawberryField]:
+    def get_by_python_name(self, name: str) -> StrawberryField | None:
         """Get field by its Python name (e.g., 'author_name')."""
         return self.by_python_name.get(name)
 
-    def get_python_name(self, graphql_name: str) -> Optional[str]:
+    def get_python_name(self, graphql_name: str) -> str | None:
         """Convert GraphQL name to Python name."""
         return self.graphql_to_python.get(graphql_name)
 
-    def get_graphql_name(self, python_name: str) -> Optional[str]:
+    def get_graphql_name(self, python_name: str) -> str | None:
         """Convert Python name to GraphQL name."""
         return self.python_to_graphql.get(python_name)
 
@@ -66,13 +66,13 @@ class StrawberryTypeMap:
 
     def __init__(self, config: StrawberryConfig):
         self.config = config
-        self.types: Dict[str, StrawberryObjectDefinition] = {}
-        self.field_maps: Dict[str, FieldMap] = {}
+        self.types: dict[str, StrawberryObjectDefinition] = {}
+        self.field_maps: dict[str, FieldMap] = {}
 
         # Store root types for quick access
-        self.query_type: Optional[StrawberryObjectDefinition] = None
-        self.mutation_type: Optional[StrawberryObjectDefinition] = None
-        self.subscription_type: Optional[StrawberryObjectDefinition] = None
+        self.query_type: StrawberryObjectDefinition | None = None
+        self.mutation_type: StrawberryObjectDefinition | None = None
+        self.subscription_type: StrawberryObjectDefinition | None = None
 
     def build_from_schema(self, graphql_schema: GraphQLSchema):
         """Build the type map from a GraphQL schema.
@@ -141,11 +141,11 @@ class StrawberryTypeMap:
                 graphql_schema.subscription_type.name
             )
 
-    def get_type(self, graphql_name: str) -> Optional[StrawberryObjectDefinition]:
+    def get_type(self, graphql_name: str) -> StrawberryObjectDefinition | None:
         """Get a type by its GraphQL name."""
         return self.types.get(graphql_name)
 
-    def get_field(self, type_name: str, field_name: str) -> Optional[StrawberryField]:
+    def get_field(self, type_name: str, field_name: str) -> StrawberryField | None:
         """Get a field by type name and field name (both GraphQL names)."""
         field_map = self.field_maps.get(type_name)
         if field_map:
@@ -154,16 +154,14 @@ class StrawberryTypeMap:
 
     def get_field_by_python_name(
         self, type_name: str, python_field_name: str
-    ) -> Optional[StrawberryField]:
+    ) -> StrawberryField | None:
         """Get a field by type name (GraphQL) and Python field name."""
         field_map = self.field_maps.get(type_name)
         if field_map:
             return field_map.get_by_python_name(python_field_name)
         return None
 
-    def convert_field_name(
-        self, type_name: str, graphql_field_name: str
-    ) -> Optional[str]:
+    def convert_field_name(self, type_name: str, graphql_field_name: str) -> str | None:
         """Convert a GraphQL field name to Python name for a given type."""
         field_map = self.field_maps.get(type_name)
         if field_map:

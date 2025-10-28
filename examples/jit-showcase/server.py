@@ -1,5 +1,4 @@
-"""FastAPI server with Strawberry GraphQL and JIT compiler enabled.
-"""
+"""FastAPI server with Strawberry GraphQL and JIT compiler enabled."""
 
 import os
 
@@ -9,6 +8,7 @@ import time
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
+
 from schema import schema
 from strawberry.fastapi import GraphQLRouter
 

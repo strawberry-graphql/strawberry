@@ -5,7 +5,6 @@ Demonstrates async resolvers and complex nested queries.
 import asyncio
 import random
 from datetime import datetime
-from typing import List, Optional
 
 import strawberry
 
@@ -15,7 +14,7 @@ class Database:
     """Simulated async database with realistic delays."""
 
     @staticmethod
-    async def fetch_posts(limit: int = 10) -> List[dict]:
+    async def fetch_posts(limit: int = 10) -> list[dict]:
         """Simulate fetching posts from database."""
         await asyncio.sleep(0.01)  # 10ms database latency
         return [
@@ -46,7 +45,7 @@ class Database:
         }
 
     @staticmethod
-    async def fetch_comments(post_id: str, limit: int = 5) -> List[dict]:
+    async def fetch_comments(post_id: str, limit: int = 5) -> list[dict]:
         """Simulate fetching comments from database."""
         await asyncio.sleep(0.008)  # 8ms database latency
         return [
@@ -148,7 +147,7 @@ class Post:
         return Author(**{k: v for k, v in data.items() if k != "posts_count"})
 
     @strawberry.field
-    async def comments(self, limit: int = 5) -> List[Comment]:
+    async def comments(self, limit: int = 5) -> list[Comment]:
         """Async resolver to fetch post comments."""
         comments_data = await Database.fetch_comments(self.id, limit)
         return [
@@ -173,7 +172,7 @@ class Post:
         return len(self.content.split())
 
     @strawberry.field
-    async def related_posts(self, limit: int = 3) -> List["Post"]:
+    async def related_posts(self, limit: int = 3) -> list["Post"]:
         """Fetch related posts."""
         await asyncio.sleep(0.01)
         posts_data = await Database.fetch_posts(limit)
@@ -193,7 +192,7 @@ class Post:
 @strawberry.type
 class Query:
     @strawberry.field
-    async def posts(self, limit: int = 10, offset: int = 0) -> List[Post]:
+    async def posts(self, limit: int = 10, offset: int = 0) -> list[Post]:
         """Fetch blog posts with pagination."""
         posts_data = await Database.fetch_posts(limit)
         return [
@@ -209,7 +208,7 @@ class Query:
         ]
 
     @strawberry.field
-    async def post(self, id: str) -> Optional[Post]:
+    async def post(self, id: str) -> Post | None:
         """Fetch a single post by ID."""
         posts_data = await Database.fetch_posts(1)
         if posts_data:
@@ -239,7 +238,7 @@ class Query:
         )
 
     @strawberry.field
-    async def top_authors(self, limit: int = 5) -> List[Author]:
+    async def top_authors(self, limit: int = 5) -> list[Author]:
         """Get top authors by post count."""
         await asyncio.sleep(0.01)
         authors = []
@@ -251,7 +250,7 @@ class Query:
         return authors
 
     @strawberry.field
-    async def search_posts(self, query: str, limit: int = 10) -> List[Post]:
+    async def search_posts(self, query: str, limit: int = 10) -> list[Post]:
         """Search posts by title or content."""
         await asyncio.sleep(0.02)  # Simulate search
         posts_data = await Database.fetch_posts(limit)

@@ -4,7 +4,6 @@ Benchmark async JIT compilation performance vs standard GraphQL execution.
 
 import asyncio
 import time
-from typing import List
 
 from graphql import execute, parse
 
@@ -74,7 +73,7 @@ class Post:
         )
 
     @strawberry.field
-    async def comments(self, limit: int = 10) -> List[Comment]:
+    async def comments(self, limit: int = 10) -> list[Comment]:
         """Simulate async database query for comments."""
         await asyncio.sleep(0.002)  # Simulate 2ms database latency
         return [
@@ -83,7 +82,7 @@ class Post:
         ]
 
     @strawberry.field
-    def sync_comments(self, limit: int = 10) -> List[Comment]:
+    def sync_comments(self, limit: int = 10) -> list[Comment]:
         """Sync version for comparison."""
         return [
             Comment(id=f"c{i}", text=f"Comment {i}", author_id=f"a{i}")
@@ -105,7 +104,7 @@ class Post:
 @strawberry.type
 class Query:
     @strawberry.field
-    async def posts(self, limit: int = 10) -> List[Post]:
+    async def posts(self, limit: int = 10) -> list[Post]:
         """Simulate async database query for posts."""
         await asyncio.sleep(0.003)  # Simulate 3ms database latency
         return [
@@ -119,7 +118,7 @@ class Query:
         ]
 
     @strawberry.field
-    def sync_posts(self, limit: int = 10) -> List[Post]:
+    def sync_posts(self, limit: int = 10) -> list[Post]:
         """Sync version for comparison."""
         # Simulate some processing time
         time.sleep(0.003)  # Same as async version

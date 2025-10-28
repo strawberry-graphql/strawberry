@@ -14,7 +14,6 @@ import hashlib
 import statistics
 import time
 from datetime import datetime, timedelta
-from typing import List
 
 from graphql import execute_sync, parse
 
@@ -368,7 +367,7 @@ class Order:
         return delivery.isoformat()
 
     @strawberry.field
-    def items(self) -> List[OrderItem]:
+    def items(self) -> list[OrderItem]:
         """Order items with calculations."""
         if not self._items:
             # Use order ID to generate consistent items
@@ -542,7 +541,7 @@ class Analytics:
         return 3.74
 
     @strawberry.field
-    def top_products(self) -> List[str]:
+    def top_products(self) -> list[str]:
         """Top selling products."""
         return [f"Product {i}" for i in range(1, 51)]
 
@@ -575,7 +574,7 @@ class Analytics:
 @strawberry.type
 class Query:
     @strawberry.field
-    def orders(self, limit: int = 100, offset: int = 0) -> List[Order]:
+    def orders(self, limit: int = 100, offset: int = 0) -> list[Order]:
         """Get orders with full details."""
         orders = []
         statuses = ["pending", "processing", "shipped", "delivered", "cancelled"]
@@ -596,7 +595,7 @@ class Query:
         return orders
 
     @strawberry.field
-    def customers(self, limit: int = 100) -> List[Customer]:
+    def customers(self, limit: int = 100) -> list[Customer]:
         """Get customer list."""
         customers = []
         for i in range(limit):

@@ -13,7 +13,6 @@ sys.path.insert(
 import statistics
 import time
 from dataclasses import dataclass
-from typing import List
 
 from graphql import execute_sync, parse
 
@@ -59,7 +58,7 @@ def run_quickstart_benchmark() -> BenchmarkResult:
     @strawberry.type
     class Query:
         @strawberry.field
-        def users(self) -> List[User]:
+        def users(self) -> list[User]:
             return [
                 User(id=i, name=f"User {i}", email=f"user{i}@example.com")
                 for i in range(100)
@@ -235,7 +234,7 @@ def run_overhead_elimination_benchmark() -> BenchmarkResult:
     @strawberry.type
     class Query:
         @strawberry.field
-        def many_items(self, count: int = 500) -> List[SimpleData]:
+        def many_items(self, count: int = 500) -> list[SimpleData]:
             return [SimpleData(id=f"item-{i}") for i in range(count)]
 
     schema = strawberry.Schema(Query)
@@ -304,7 +303,7 @@ def run_overhead_elimination_benchmark() -> BenchmarkResult:
     )
 
 
-def print_benchmark_summary(results: List[BenchmarkResult]):
+def print_benchmark_summary(results: list[BenchmarkResult]):
     """Print a comprehensive benchmark summary."""
     print("\n" + "=" * 80)
     print("📊 STRAWBERRY JIT COMPILER - COMPREHENSIVE BENCHMARK SUMMARY")
