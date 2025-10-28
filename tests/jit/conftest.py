@@ -5,7 +5,7 @@ Shared schema and fixtures for JIT compiler tests.
 import asyncio
 import time
 from enum import Enum
-from typing import Annotated, List, Optional, Union
+from typing import Annotated, Optional, Union
 
 import pytest
 
@@ -79,8 +79,8 @@ class Post:
     status: PostStatus = PostStatus.DRAFT
     priority: Optional[Priority] = None
     views: int = 0
-    tags: List[str] = strawberry.field(default_factory=list)
-    comments: List[Comment] = strawberry.field(default_factory=list)
+    tags: list[str] = strawberry.field(default_factory=list)
+    comments: list[Comment] = strawberry.field(default_factory=list)
 
     @strawberry.field
     async def view_count(self) -> int:
@@ -94,7 +94,7 @@ class Post:
         return self.author
 
     @strawberry.field
-    async def async_comments(self, limit: int = 10) -> List[Comment]:
+    async def async_comments(self, limit: int = 10) -> list[Comment]:
         """Async field returning comments."""
         await asyncio.sleep(0.001)
         return self.comments[:limit]
@@ -110,7 +110,7 @@ class User:
     created_at: float = strawberry.field(default_factory=time.time)
 
     @strawberry.field
-    def posts(self, limit: int = 10) -> List[Post]:
+    def posts(self, limit: int = 10) -> list[Post]:
         """Get user's posts."""
         author = Author(id=self.id, name=self.username, email=self.email)
         return [
@@ -333,7 +333,7 @@ class Query:
         limit: int = 10,
         published: Optional[bool] = None,
         priority: Optional[Priority] = None,
-    ) -> List[Post]:
+    ) -> list[Post]:
         """Get posts with optional filtering."""
         authors = [
             Author(id="a1", name="Alice", email="alice@example.com", verified=True),
@@ -373,13 +373,13 @@ class Query:
         return posts
 
     @strawberry.field
-    async def async_posts(self, limit: int = 10) -> List[Post]:
+    async def async_posts(self, limit: int = 10) -> list[Post]:
         """Async version of posts query."""
         await asyncio.sleep(0.001)
         return self.posts(limit=limit)
 
     @strawberry.field
-    def users(self, limit: int = 10) -> List[User]:
+    def users(self, limit: int = 10) -> list[User]:
         """Get users."""
         return [
             User(
@@ -392,10 +392,24 @@ class Query:
         ]
 
     @strawberry.field
-    async def async_users(self, limit: int = 10) -> List[User]:
+    async def async_users(self, limit: int = 10) -> list[User]:
         """Async version of users query."""
         await asyncio.sleep(0.001)
         return self.users(limit=limit)
+
+    @strawberry.field
+    async def async_comments(self, limit: int = 10) -> list[Comment]:
+        """Async comments query for parallel execution testing."""
+        await asyncio.sleep(0.001)
+        alice = Author(id="a1", name="Alice", email="alice@example.com")
+        return [
+            Comment(
+                id=f"c{i}",
+                text=f"Comment {i}",
+                author=alice,
+            )
+            for i in range(limit)
+        ]
 
     @strawberry.field
     def post(self, id: str) -> Optional[Post]:
@@ -413,9 +427,9 @@ class Query:
         )
 
     @strawberry.field
-    def search(self, query: str, limit: int = 10) -> List[SearchResult]:
+    def search(self, query: str, limit: int = 10) -> list[SearchResult]:
         """Search for content across different types."""
-        results: List[SearchResult] = []
+        results: list[SearchResult] = []
         author = Author(id="a1", name="Alice", email="alice@example.com")
 
         for i in range(limit):

@@ -190,6 +190,61 @@ async def test_async_query_snapshot(snapshot, jit_schema, query_type):
     snapshot.assert_match(generated_code, "async_query_source.py")
 
 
+async def test_parallel_async_query_snapshot(snapshot, jit_schema, query_type):
+    """Test snapshot showing parallel async execution with multiple async fields.
+
+    This test demonstrates the key optimization where multiple independent async
+    fields at the same level are executed in parallel using asyncio.gather().
+    """
+    schema = jit_schema
+
+    # Query with MULTIPLE async fields at the same level - triggers parallel execution!
+    query = """
+    query ParallelAsyncFields {
+        asyncPosts(limit: 1) {
+            id
+        }
+        asyncUsers(limit: 1) {
+            id
+        }
+        asyncComments(limit: 1) {
+            id
+        }
+    }
+    """
+
+    compiled_fn = compile_query(schema, query)
+
+    # The function should be async
+    assert inspect.iscoroutinefunction(compiled_fn)
+
+    # Execute
+    result = await compiled_fn(query_type)
+
+    # Verify all fields returned data
+    assert "asyncPosts" in result["data"]
+    assert "asyncUsers" in result["data"]
+    assert "asyncComments" in result["data"]
+
+    # Snapshot the generated source code
+    generated_code = get_jit_source(compiled_fn)
+
+    # Verify the code contains parallel execution markers
+    assert "async_tasks" in generated_code, (
+        "Should use async_tasks for parallel execution"
+    )
+    assert "asyncio.gather" in generated_code, (
+        "Should use asyncio.gather() for parallel execution"
+    )
+    assert "task_asyncPosts" in generated_code, "Should create task for asyncPosts"
+    assert "task_asyncUsers" in generated_code, "Should create task for asyncUsers"
+    assert "task_asyncComments" in generated_code, (
+        "Should create task for asyncComments"
+    )
+
+    snapshot.assert_match(generated_code, "parallel_async_query_source.py")
+
+
 # Helper function to manually inspect generated code (for debugging)
 def inspect_jit_function(query_string: str, schema=None):
     """
