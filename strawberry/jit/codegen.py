@@ -85,7 +85,17 @@ class CodeGenerator:
             self.compiler.indent_level += 1
             self.compiler._emit("for error in coerced:")
             self.compiler.indent_level += 1
-            self.compiler._emit("errors.append({'message': str(error), 'path': []})")
+            # Variable coercion errors - include location if available from error
+            self.compiler._emit(
+                "error_dict = {'message': str(error), 'path': [], 'locations': []}"
+            )
+            self.compiler._emit("if hasattr(error, 'locations') and error.locations:")
+            self.compiler.indent_level += 1
+            self.compiler._emit(
+                "error_dict['locations'] = [{'line': loc.line, 'column': loc.column} for loc in error.locations]"
+            )
+            self.compiler.indent_level -= 1
+            self.compiler._emit("errors.append(error_dict)")
             self.compiler.indent_level -= 1
             self.compiler._emit('return {"data": None, "errors": errors}')
             self.compiler.indent_level -= 1
@@ -292,7 +302,9 @@ class CodeGenerator:
                 "# Execute async fields in parallel (inline coroutines)"
             )
             self.compiler._emit(f"{tasks_var} = []")
-            self.compiler._emit(f"{tasks_var}_data = []")  # Store field metadata
+            self.compiler._emit(
+                f"{tasks_var}_data = []"
+            )  # Store field metadata (alias, location)
 
             for selection, _resolver_id in async_fields:
                 field_name = self.compiler._sanitize_identifier(selection.name.value)
@@ -301,6 +313,14 @@ class CodeGenerator:
                     if selection.alias
                     else field_name
                 )
+
+                # Extract location for error reporting
+                if selection.loc:
+                    line = selection.loc.start_token.line
+                    column = selection.loc.start_token.column
+                    location_tuple = f"({line}, {column})"
+                else:
+                    location_tuple = "None"
 
                 # Generate inline coroutine without function wrapper
                 # Use an async lambda-like pattern with immediately-executed async expression
@@ -316,7 +336,9 @@ class CodeGenerator:
                 self.compiler._emit(f"return temp_result.get('{alias}')")
                 self.compiler.indent_level -= 1
                 self.compiler._emit(f"{tasks_var}.append({coro_var}())")
-                self.compiler._emit(f"{tasks_var}_data.append('{alias}')")
+                self.compiler._emit(
+                    f"{tasks_var}_data.append(('{alias}', {location_tuple}))"
+                )
 
             self.compiler._emit("")
             self.compiler._emit("# Gather results")
@@ -329,15 +351,24 @@ class CodeGenerator:
             self.compiler.indent_level += 1
             self.compiler._emit(f"if isinstance({result_item_var}, Exception):")
             self.compiler.indent_level += 1
+            # Extract field alias and location from metadata tuple
+            self.compiler._emit(f"field_alias, field_loc = {tasks_var}_data[_idx]")
+            self.compiler._emit("error_locations = []")
+            self.compiler._emit("if field_loc is not None:")
+            self.compiler.indent_level += 1
+            self.compiler._emit(
+                "error_locations = [{'line': field_loc[0], 'column': field_loc[1]}]"
+            )
+            self.compiler.indent_level -= 1
             self.compiler._emit(
                 f"errors.append({{'message': str({result_item_var}), 'path': "
                 + path
-                + "})"
+                + ", 'locations': error_locations})"
             )
             self.compiler.indent_level -= 1
             self.compiler._emit("else:")
             self.compiler.indent_level += 1
-            self.compiler._emit(f"field_alias = {tasks_var}_data[_idx]")
+            self.compiler._emit(f"field_alias, _field_loc = {tasks_var}_data[_idx]")
             self.compiler._emit(f"{result_var}[field_alias] = {result_item_var}")
             self.compiler.indent_level -= 1
             self.compiler.indent_level -= 1
@@ -868,11 +899,19 @@ class CodeGenerator:
         self.compiler.indent_level += 1
         # Include field name and type in error for better debugging
         field_type_str = str(field_def.type)
+
+        # Extract location information from AST node for GraphQL spec compliance
+        locations_list = "[]"
+        if field.loc:
+            line = field.loc.start_token.line
+            column = field.loc.start_token.column
+            locations_list = f"[{{'line': {line}, 'column': {column}}}]"
+
         error_dict = (
             "{"
             f"'message': str(e), "
             f"'path': {field_path}, "
-            f"'locations': [], "
+            f"'locations': {locations_list}, "
             f"'extensions': {{'fieldName': '{field_name}', 'fieldType': '{field_type_str}', 'alias': '{alias}'}}"
             "}"
         )
