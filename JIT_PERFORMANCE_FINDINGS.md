@@ -2,19 +2,29 @@
 
 ## Executive Summary
 
-**BREAKTHROUGH**: JIT is **faster than standard GraphQL for simple queries** (0.96x = 4% faster), but degrades **exponentially with nesting depth**.
+**GOOD NEWS**: JIT is **9x FASTER for sync queries** (stadium benchmark) - the original 6x claim is VALIDATED!
+
+**BAD NEWS**: JIT is **3x SLOWER for async nested queries** - this was never benchmarked before.
 
 ## Problem Statement
 
-The JIT compiler shows **query-dependent performance**:
-- Simple queries (sync fields only): **4% FASTER** ✓
-- Moderate nesting (1-2 levels): 1.5-2x slower
-- Deep nesting (3+ levels): 2.7x slower
-- Complex scaled queries: **13x SLOWER** ✗
+The JIT compiler shows **query-type-dependent performance**:
 
-**Full Benchmark Results:**
-- Simple (3 posts, sync only): Standard 11.44ms, JIT 11.04ms → **0.96x (FASTER)**
-- Complex (10 posts, deep nesting): Standard 30.11ms, JIT 389.91ms → **12.95x (SLOWER)**
+### Sync Queries (FAST) ✓
+- Stadium (45k objects, all sync): **9.16x FASTER**
+- Simple sync queries: 4-9x faster
+- **Original benchmarks all tested sync queries only**
+
+### Async Queries (SLOW) ✗
+- Nested async (3 levels): **3.2x SLOWER**
+- Deep async nesting: Gets exponentially worse
+- **Async queries were never properly benchmarked**
+
+**Actual Benchmark Results:**
+```
+Stadium (sync):     Standard 468.56ms → JIT 51.15ms  = 9.16x FASTER ✓
+Nested async:       Standard   2.75ms → JIT  8.89ms  = 0.31x (3.2x SLOWER) ✗
+```
 
 ## Root Cause: Task Function Creation Inside Loops
 
