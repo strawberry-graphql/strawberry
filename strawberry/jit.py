@@ -845,7 +845,17 @@ class JITCompiler:
         # This prevents duplicate errors when non-null fields propagate
         self._emit("if not any(err.get('message') == str(e) for err in errors):")
         self.indent_level += 1
-        self._emit(f"errors.append({{'message': str(e), 'path': {field_path}}})")
+        # Include field name and type in error for better debugging
+        field_type_str = str(field_def.type)
+        error_dict = (
+            "{"
+            f"'message': str(e), "
+            f"'path': {field_path}, "
+            f"'locations': [], "
+            f"'extensions': {{'fieldName': '{field_name}', 'fieldType': '{field_type_str}', 'alias': '{alias}'}}"
+            "}"
+        )
+        self._emit(f"errors.append({error_dict})")
         self.indent_level -= 1
 
         if is_nullable:

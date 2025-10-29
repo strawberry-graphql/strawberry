@@ -37,14 +37,14 @@ async def execute_query(root, context=None, variables=None):
                             item_result_0["id"] = field_id_value
                         except Exception as e:
                             if not any(err.get('message') == str(e) for err in errors):
-                                errors.append({'message': str(e), 'path': [] + ['asyncPosts'] + [idx] + ['id']})
+                                errors.append({'message': str(e), 'path': [] + ['asyncPosts'] + [idx] + ['id'], 'locations': [], 'extensions': {'fieldName': 'id', 'fieldType': 'String!', 'alias': 'id'}})
                             raise  # Propagate non-nullable error
                         temp_result["asyncPosts"].append(item_result_0)
                 else:
                     temp_result["asyncPosts"] = None
             except Exception as e:
                 if not any(err.get('message') == str(e) for err in errors):
-                    errors.append({'message': str(e), 'path': [] + ['asyncPosts']})
+                    errors.append({'message': str(e), 'path': [] + ['asyncPosts'], 'locations': [], 'extensions': {'fieldName': 'asyncPosts', 'fieldType': '[Post!]!', 'alias': 'asyncPosts'}})
                 raise  # Propagate non-nullable error
             return ('asyncPosts', temp_result.get('asyncPosts'))
         async_tasks.append(task_asyncPosts())
@@ -66,14 +66,14 @@ async def execute_query(root, context=None, variables=None):
                             item_result_1["id"] = field_id_value
                         except Exception as e:
                             if not any(err.get('message') == str(e) for err in errors):
-                                errors.append({'message': str(e), 'path': [] + ['asyncUsers'] + [idx] + ['id']})
+                                errors.append({'message': str(e), 'path': [] + ['asyncUsers'] + [idx] + ['id'], 'locations': [], 'extensions': {'fieldName': 'id', 'fieldType': 'String!', 'alias': 'id'}})
                             raise  # Propagate non-nullable error
                         temp_result["asyncUsers"].append(item_result_1)
                 else:
                     temp_result["asyncUsers"] = None
             except Exception as e:
                 if not any(err.get('message') == str(e) for err in errors):
-                    errors.append({'message': str(e), 'path': [] + ['asyncUsers']})
+                    errors.append({'message': str(e), 'path': [] + ['asyncUsers'], 'locations': [], 'extensions': {'fieldName': 'asyncUsers', 'fieldType': '[User!]!', 'alias': 'asyncUsers'}})
                 raise  # Propagate non-nullable error
             return ('asyncUsers', temp_result.get('asyncUsers'))
         async_tasks.append(task_asyncUsers())
@@ -95,14 +95,14 @@ async def execute_query(root, context=None, variables=None):
                             item_result_2["id"] = field_id_value
                         except Exception as e:
                             if not any(err.get('message') == str(e) for err in errors):
-                                errors.append({'message': str(e), 'path': [] + ['asyncComments'] + [idx] + ['id']})
+                                errors.append({'message': str(e), 'path': [] + ['asyncComments'] + [idx] + ['id'], 'locations': [], 'extensions': {'fieldName': 'id', 'fieldType': 'String!', 'alias': 'id'}})
                             raise  # Propagate non-nullable error
                         temp_result["asyncComments"].append(item_result_2)
                 else:
                     temp_result["asyncComments"] = None
             except Exception as e:
                 if not any(err.get('message') == str(e) for err in errors):
-                    errors.append({'message': str(e), 'path': [] + ['asyncComments']})
+                    errors.append({'message': str(e), 'path': [] + ['asyncComments'], 'locations': [], 'extensions': {'fieldName': 'asyncComments', 'fieldType': '[Comment!]!', 'alias': 'asyncComments'}})
                 raise  # Propagate non-nullable error
             return ('asyncComments', temp_result.get('asyncComments'))
         async_tasks.append(task_asyncComments())

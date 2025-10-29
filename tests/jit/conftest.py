@@ -99,6 +99,21 @@ class Post:
         await asyncio.sleep(0.001)
         return self.comments[:limit]
 
+    @strawberry.field
+    def error_field(self) -> Optional[str]:
+        """Nullable field that always errors - for testing error handling."""
+        raise ValueError("This field always errors")
+
+    @strawberry.field
+    def non_null_error_field(self) -> str:
+        """Non-nullable field that always errors - tests error propagation."""
+        raise ValueError("This non-nullable field always errors")
+
+    @strawberry.field
+    def another_error_field(self) -> Optional[str]:
+        """Another nullable field that always errors - for testing multiple errors."""
+        raise ValueError("This field also errors")
+
 
 @strawberry.type
 class User:

@@ -34,13 +34,21 @@ def execute_query(root, context=None, variables=None):
                             errors.append({'message': str(e), 'path': [] + ['posts'] + [idx] + ['id'], 'locations': [], 'extensions': {'fieldName': 'id', 'fieldType': 'String!', 'alias': 'id'}})
                         raise  # Propagate non-nullable error
                     try:
-                        info.field_name = "title"
-                        field_title_value = _resolvers['resolver_2'](item_0, info)
-                        item_result_0["title"] = field_title_value
+                        info.field_name = "errorField"
+                        field_errorField_value = _resolvers['resolver_2'](item_0, info)
+                        item_result_0["errorField"] = field_errorField_value
                     except Exception as e:
                         if not any(err.get('message') == str(e) for err in errors):
-                            errors.append({'message': str(e), 'path': [] + ['posts'] + [idx] + ['title'], 'locations': [], 'extensions': {'fieldName': 'title', 'fieldType': 'String!', 'alias': 'title'}})
-                        raise  # Propagate non-nullable error
+                            errors.append({'message': str(e), 'path': [] + ['posts'] + [idx] + ['errorField'], 'locations': [], 'extensions': {'fieldName': 'errorField', 'fieldType': 'String', 'alias': 'errorField'}})
+                        item_result_0["errorField"] = None
+                    try:
+                        info.field_name = "anotherErrorField"
+                        field_anotherErrorField_value = _resolvers['resolver_3'](item_0, info)
+                        item_result_0["anotherErrorField"] = field_anotherErrorField_value
+                    except Exception as e:
+                        if not any(err.get('message') == str(e) for err in errors):
+                            errors.append({'message': str(e), 'path': [] + ['posts'] + [idx] + ['anotherErrorField'], 'locations': [], 'extensions': {'fieldName': 'anotherErrorField', 'fieldType': 'String', 'alias': 'anotherErrorField'}})
+                        item_result_0["anotherErrorField"] = None
                     result["posts"].append(item_result_0)
             else:
                 result["posts"] = None

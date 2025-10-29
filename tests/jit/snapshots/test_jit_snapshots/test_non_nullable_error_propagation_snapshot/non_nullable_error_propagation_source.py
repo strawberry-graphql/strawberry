@@ -19,7 +19,7 @@ def execute_query(root, context=None, variables=None):
             kwargs['limit'] = 10
             kwargs['published'] = None
             kwargs['priority'] = None
-            kwargs['limit'] = 2
+            kwargs['limit'] = 1
             field_posts_value = _resolvers['resolver_0'](root, info, **kwargs)
             if field_posts_value is not None:
                 result["posts"] = []
@@ -34,8 +34,16 @@ def execute_query(root, context=None, variables=None):
                             errors.append({'message': str(e), 'path': [] + ['posts'] + [idx] + ['id'], 'locations': [], 'extensions': {'fieldName': 'id', 'fieldType': 'String!', 'alias': 'id'}})
                         raise  # Propagate non-nullable error
                     try:
+                        info.field_name = "nonNullErrorField"
+                        field_nonNullErrorField_value = _resolvers['resolver_2'](item_0, info)
+                        item_result_0["nonNullErrorField"] = field_nonNullErrorField_value
+                    except Exception as e:
+                        if not any(err.get('message') == str(e) for err in errors):
+                            errors.append({'message': str(e), 'path': [] + ['posts'] + [idx] + ['nonNullErrorField'], 'locations': [], 'extensions': {'fieldName': 'nonNullErrorField', 'fieldType': 'String!', 'alias': 'nonNullErrorField'}})
+                        raise  # Propagate non-nullable error
+                    try:
                         info.field_name = "title"
-                        field_title_value = _resolvers['resolver_2'](item_0, info)
+                        field_title_value = _resolvers['resolver_3'](item_0, info)
                         item_result_0["title"] = field_title_value
                     except Exception as e:
                         if not any(err.get('message') == str(e) for err in errors):

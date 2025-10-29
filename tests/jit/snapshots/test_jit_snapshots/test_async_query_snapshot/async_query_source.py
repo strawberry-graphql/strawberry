@@ -33,7 +33,7 @@ async def execute_query(root, context=None, variables=None):
                         item_result_0["id"] = field_id_value
                     except Exception as e:
                         if not any(err.get('message') == str(e) for err in errors):
-                            errors.append({'message': str(e), 'path': [] + ['asyncPosts'] + [idx] + ['id']})
+                            errors.append({'message': str(e), 'path': [] + ['asyncPosts'] + [idx] + ['id'], 'locations': [], 'extensions': {'fieldName': 'id', 'fieldType': 'String!', 'alias': 'id'}})
                         raise  # Propagate non-nullable error
                     try:
                         info.field_name = "title"
@@ -41,7 +41,7 @@ async def execute_query(root, context=None, variables=None):
                         item_result_0["title"] = field_title_value
                     except Exception as e:
                         if not any(err.get('message') == str(e) for err in errors):
-                            errors.append({'message': str(e), 'path': [] + ['asyncPosts'] + [idx] + ['title']})
+                            errors.append({'message': str(e), 'path': [] + ['asyncPosts'] + [idx] + ['title'], 'locations': [], 'extensions': {'fieldName': 'title', 'fieldType': 'String!', 'alias': 'title'}})
                         raise  # Propagate non-nullable error
                     try:
                         info.field_name = "author"
@@ -54,21 +54,21 @@ async def execute_query(root, context=None, variables=None):
                                 nested_result_1["name"] = field_name_value
                             except Exception as e:
                                 if not any(err.get('message') == str(e) for err in errors):
-                                    errors.append({'message': str(e), 'path': [] + ['asyncPosts'] + [idx] + ['author'] + ['name']})
+                                    errors.append({'message': str(e), 'path': [] + ['asyncPosts'] + [idx] + ['author'] + ['name'], 'locations': [], 'extensions': {'fieldName': 'name', 'fieldType': 'String!', 'alias': 'name'}})
                                 raise  # Propagate non-nullable error
                             item_result_0["author"] = nested_result_1
                         else:
                             item_result_0["author"] = None
                     except Exception as e:
                         if not any(err.get('message') == str(e) for err in errors):
-                            errors.append({'message': str(e), 'path': [] + ['asyncPosts'] + [idx] + ['author']})
+                            errors.append({'message': str(e), 'path': [] + ['asyncPosts'] + [idx] + ['author'], 'locations': [], 'extensions': {'fieldName': 'author', 'fieldType': 'Author!', 'alias': 'author'}})
                         raise  # Propagate non-nullable error
                     result["asyncPosts"].append(item_result_0)
             else:
                 result["asyncPosts"] = None
         except Exception as e:
             if not any(err.get('message') == str(e) for err in errors):
-                errors.append({'message': str(e), 'path': [] + ['asyncPosts']})
+                errors.append({'message': str(e), 'path': [] + ['asyncPosts'], 'locations': [], 'extensions': {'fieldName': 'asyncPosts', 'fieldType': '[Post!]!', 'alias': 'asyncPosts'}})
             raise  # Propagate non-nullable error
     except Exception as root_error:
         result = None

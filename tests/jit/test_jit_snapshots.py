@@ -243,3 +243,120 @@ async def test_parallel_async_query_snapshot(snapshot, jit_schema, query_type):
     )
 
     snapshot.assert_match(generated_code, "parallel_async_query_source.py")
+
+
+def test_nullable_field_error_snapshot(snapshot, jit_schema, query_type):
+    """Test snapshot of error handling in nullable field.
+
+    When a nullable field errors, it should return null for that field
+    and continue processing other fields.
+    """
+    schema = jit_schema
+
+    query = """
+    query GetPostWithError {
+        posts(limit: 1) {
+            id
+            title
+            errorField
+        }
+    }
+    """
+
+    compiled_fn = compile_query(schema, query)
+
+    # Execute and verify error handling
+    result = compiled_fn(query_type)
+    assert result["data"]["posts"][0]["id"] == "p0"
+    assert result["data"]["posts"][0]["title"] == "Post 0"
+    assert result["data"]["posts"][0]["errorField"] is None
+    assert "errors" in result
+    assert len(result["errors"]) > 0
+
+    # Snapshot the generated source code
+    generated_code = get_jit_source(compiled_fn)
+
+    # Verify error handling code is present
+    assert "try:" in generated_code, "Should have try/except for error handling"
+    assert "except Exception" in generated_code, "Should catch exceptions"
+    assert "errors.append" in generated_code, "Should collect errors"
+
+    snapshot.assert_match(generated_code, "nullable_field_error_source.py")
+
+
+def test_non_nullable_error_propagation_snapshot(snapshot, jit_schema, query_type):
+    """Test snapshot of error propagation in non-nullable field.
+
+    When a non-nullable field errors, the error should propagate up
+    the tree until it reaches a nullable boundary.
+    """
+    schema = jit_schema
+
+    query = """
+    query GetPostWithNonNullError {
+        posts(limit: 1) {
+            id
+            nonNullErrorField
+            title
+        }
+    }
+    """
+
+    compiled_fn = compile_query(schema, query)
+
+    # Execute and verify error propagation
+    result = compiled_fn(query_type)
+    # The error propagates all the way to the root - entire data becomes null
+    assert result["data"] is None
+    assert "errors" in result
+    assert len(result["errors"]) > 0
+
+    # Snapshot the generated source code
+    generated_code = get_jit_source(compiled_fn)
+
+    # Verify error handling code is present
+    assert "try:" in generated_code, "Should have try/except for error handling"
+    assert "except Exception" in generated_code, "Should catch exceptions"
+    assert "errors.append" in generated_code, "Should collect errors"
+
+    snapshot.assert_match(generated_code, "non_nullable_error_propagation_source.py")
+
+
+async def test_multiple_errors_snapshot(snapshot, jit_schema, query_type):
+    """Test snapshot of multiple fields erroring simultaneously.
+
+    When multiple fields error, all errors should be collected and
+    each field should handle its error independently.
+    """
+    schema = jit_schema
+
+    query = """
+    query GetMultipleErrors {
+        posts(limit: 2) {
+            id
+            errorField
+            anotherErrorField
+        }
+    }
+    """
+
+    compiled_fn = compile_query(schema, query)
+
+    # Execute and verify multiple error handling
+    result = compiled_fn(query_type)
+    assert result["data"]["posts"][0]["id"] == "p0"
+    assert result["data"]["posts"][0]["errorField"] is None
+    assert result["data"]["posts"][0]["anotherErrorField"] is None
+    assert "errors" in result
+    # Should have errors from both fields for the first post (limit: 2)
+    assert len(result["errors"]) >= 2
+
+    # Snapshot the generated source code
+    generated_code = get_jit_source(compiled_fn)
+
+    # Verify error handling code is present
+    assert "try:" in generated_code, "Should have try/except for error handling"
+    assert "except Exception" in generated_code, "Should catch exceptions"
+    assert "errors.append" in generated_code, "Should collect errors"
+
+    snapshot.assert_match(generated_code, "multiple_errors_source.py")
