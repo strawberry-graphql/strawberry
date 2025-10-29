@@ -10,8 +10,7 @@ This module provides the production-ready JIT compiler that combines:
 from __future__ import annotations
 
 import warnings
-from collections.abc import Callable
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from graphql import (
     DirectiveNode,
@@ -19,8 +18,10 @@ from graphql import (
     FieldNode,
     FragmentDefinitionNode,
     FragmentSpreadNode,
+    GraphQLField,
     GraphQLInterfaceType,
     GraphQLObjectType,
+    GraphQLType,
     GraphQLUnionType,
     InlineFragmentNode,
     SelectionSetNode,
@@ -29,9 +30,14 @@ from graphql import (
     parse,
     validate,
 )
-from graphql.language import OperationDefinitionNode
+from graphql.language import OperationDefinitionNode, ValueNode
 
-import strawberry
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    import strawberry
+else:
+    import strawberry  # noqa: TC001
 
 from .codegen import CodeGenerator
 from .directives import (
@@ -54,7 +60,7 @@ class JITCompiler:
     - Built-in caching with configurable TTL and size limits
     """
 
-    def __init__(self, schema: strawberry.Schema):
+    def __init__(self, schema: strawberry.Schema) -> None:
         """Initialize JIT compiler with a Strawberry schema.
 
         Args:
@@ -101,7 +107,7 @@ class JITCompiler:
         """
         return sanitize_identifier(name)
 
-    def _serialize_value(self, value) -> str:
+    def _serialize_value(self, value: Any) -> str:
         """Serialize Python value for code generation."""
         return serialize_value(value)
 
@@ -202,7 +208,7 @@ class JITCompiler:
                 local_vars["_scalar_parsers"][type_name] = type_def.parse_value
 
         compiled_code = compile(function_code, "<jit_compiled>", "exec")
-        exec(compiled_code, local_vars)
+        exec(compiled_code, local_vars)  # noqa: S102
 
         # Store the source code on the function for debugging/inspection
         execute_fn = local_vars["execute_query"]
@@ -210,7 +216,7 @@ class JITCompiler:
 
         return execute_fn
 
-    def _reset_state(self):
+    def _reset_state(self) -> None:
         """Reset compiler state for new compilation."""
         self.generated_code = []
         self.indent_level = 0
@@ -226,27 +232,27 @@ class JITCompiler:
                 return definition
         return None
 
-    def _extract_fragments(self, document: DocumentNode):
+    def _extract_fragments(self, document: DocumentNode) -> None:
         """Extract fragment definitions from document."""
         self.fragments = {}
         for definition in document.definitions:
             if isinstance(definition, FragmentDefinitionNode):
                 self.fragments[definition.name.value] = definition
 
-    def _is_field_async(self, field_def) -> bool:
+    def _is_field_async(self, field_def: GraphQLField) -> bool:
         """Wrapper to check if a field is async - delegates to CodeGenerator."""
         code_generator = CodeGenerator(self)
         return code_generator.is_field_async(field_def)
 
     def _generate_parallel_selection_set(
         self,
-        selection_set,
-        parent_type,
+        selection_set: SelectionSetNode,
+        parent_type: GraphQLObjectType,
         parent_var: str,
         result_var: str,
         info_var: str,
         path: str,
-    ):
+    ) -> None:
         """Delegate to CodeGenerator."""
         code_generator = CodeGenerator(self)
         return code_generator.generate_parallel_selection_set(
@@ -255,13 +261,13 @@ class JITCompiler:
 
     def _generate_selection_set(
         self,
-        selection_set,
-        parent_type,
+        selection_set: SelectionSetNode,
+        parent_type: GraphQLObjectType,
         parent_var: str,
         result_var: str,
         info_var: str,
         path: str,
-    ):
+    ) -> None:
         """Delegate to CodeGenerator."""
         code_generator = CodeGenerator(self)
         return code_generator.generate_selection_set(
@@ -270,38 +276,42 @@ class JITCompiler:
 
     def _generate_field(
         self,
-        field,
-        parent_type,
+        field: FieldNode,
+        parent_type: GraphQLObjectType,
         parent_var: str,
         result_var: str,
         info_var: str,
         path: str,
-    ):
+    ) -> None:
         """Delegate to CodeGenerator."""
         code_generator = CodeGenerator(self)
         return code_generator.generate_field(
             field, parent_type, parent_var, result_var, info_var, path
         )
 
-    def _generate_arguments(self, field, field_def, info_var: str):
+    def _generate_arguments(
+        self, field: FieldNode, field_def: GraphQLField, info_var: str
+    ) -> None:
         """Delegate to CodeGenerator."""
         code_generator = CodeGenerator(self)
         return code_generator.generate_arguments(field, field_def, info_var)
 
-    def _generate_argument_value(self, value_node, info_var: str, arg_type=None) -> str:
+    def _generate_argument_value(
+        self, value_node: ValueNode, info_var: str, arg_type: GraphQLType | None = None
+    ) -> str:
         """Delegate to CodeGenerator."""
         code_generator = CodeGenerator(self)
         return code_generator.generate_argument_value(value_node, info_var, arg_type)
 
     def _generate_fragment_spread(
         self,
-        fragment_spread,
-        parent_type,
+        fragment_spread: FragmentSpreadNode,
+        parent_type: GraphQLObjectType,
         parent_var: str,
         result_var: str,
         info_var: str,
         path: str,
-    ):
+    ) -> None:
         """Delegate to CodeGenerator."""
         code_generator = CodeGenerator(self)
         return code_generator.generate_fragment_spread(
@@ -310,13 +320,13 @@ class JITCompiler:
 
     def _generate_inline_fragment(
         self,
-        inline_fragment,
-        parent_type,
+        inline_fragment: InlineFragmentNode,
+        parent_type: GraphQLObjectType,
         parent_var: str,
         result_var: str,
         info_var: str,
         path: str,
-    ):
+    ) -> None:
         """Delegate to CodeGenerator."""
         code_generator = CodeGenerator(self)
         return code_generator.generate_inline_fragment(
@@ -331,7 +341,7 @@ class JITCompiler:
         result_var: str,
         info_var: str,
         path: str,
-    ):
+    ) -> None:
         """Generate selection for introspection types (__Schema, __Type, etc)."""
         return generate_introspection_selection(
             self,
@@ -351,7 +361,7 @@ class JITCompiler:
         result_var: str,
         info_var: str,
         path: str,
-    ):
+    ) -> None:
         """Generate selection for union or interface types with runtime type resolution."""
         return generate_abstract_type_selection(
             self, selection_set, abstract_type, parent_var, result_var, info_var, path
@@ -369,14 +379,14 @@ class JITCompiler:
         """Get directive argument value."""
         return get_directive_argument(self, directive, arg_name, info_var)
 
-    def _is_field_async(self, field_def) -> bool:
+    def _is_field_async(self, field_def: GraphQLField) -> bool:
         """Check if field is async - delegate to CodeGenerator."""
         code_generator = CodeGenerator(self)
         return code_generator.is_field_async(field_def)
 
     def _detect_async_resolvers(
         self, selection_set: SelectionSetNode, parent_type: GraphQLObjectType
-    ):
+    ) -> None:
         """Pre-scan for async resolvers."""
         has_async = detect_async_resolvers(
             selection_set,
@@ -388,7 +398,7 @@ class JITCompiler:
         if has_async:
             self.has_async_resolvers = True
 
-    def _emit(self, line: str):
+    def _emit(self, line: str) -> None:
         """Emit line of code with proper indentation."""
         indent = "    " * self.indent_level
         self.generated_code.append(f"{indent}{line}")

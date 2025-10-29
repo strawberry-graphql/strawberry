@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
-from graphql import GraphQLSchema
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from graphql import GraphQLSchema
 
 
 class MockInfo:
@@ -12,7 +15,7 @@ class MockInfo:
     the GraphQLResolveInfo interface used by resolvers.
     """
 
-    def __init__(self, schema: GraphQLSchema):
+    def __init__(self, schema: GraphQLSchema) -> None:
         self.schema = schema
         self.field_name = None
         self.parent_type = None

@@ -7,24 +7,27 @@ from typing import TYPE_CHECKING
 from graphql import (
     FieldNode,
     FragmentSpreadNode,
+    GraphQLField,
     GraphQLInterfaceType,
     GraphQLNonNull,
     GraphQLObjectType,
+    GraphQLType,
     GraphQLUnionType,
     InlineFragmentNode,
     SelectionSetNode,
     Undefined,
 )
-from graphql.language import OperationDefinitionNode
 
 if TYPE_CHECKING:
+    from graphql.language import OperationDefinitionNode, ValueNode
+
     from .compiler import JITCompiler
 
 
 class CodeGenerator:
     """Generates optimized Python code from GraphQL AST."""
 
-    def __init__(self, compiler: JITCompiler):
+    def __init__(self, compiler: JITCompiler) -> None:
         self.compiler = compiler
 
     def generate_optimized_function(
@@ -142,7 +145,7 @@ class CodeGenerator:
 
         return "\n".join(self.compiler.generated_code)
 
-    def is_field_async(self, field_def) -> bool:
+    def is_field_async(self, field_def: GraphQLField) -> bool:
         """Check if a field is async using StrawberryField metadata.
 
         This uses compile-time information from Strawberry's field decoration
@@ -170,7 +173,7 @@ class CodeGenerator:
         result_var: str,
         info_var: str,
         path: str,
-    ):
+    ) -> None:
         """Generate selection set with parallel async execution."""
         # Group selections by type
         sync_fields = []
@@ -213,7 +216,7 @@ class CodeGenerator:
             self.compiler._emit("# Execute async fields in parallel")
             self.compiler._emit("async_tasks = []")
 
-            for selection, resolver_id in async_fields:
+            for selection, _resolver_id in async_fields:
                 field_name = self.compiler._sanitize_identifier(selection.name.value)
                 alias = (
                     self.compiler._sanitize_identifier(selection.alias.value)
@@ -279,7 +282,7 @@ class CodeGenerator:
         result_var: str,
         info_var: str,
         path: str,
-    ):
+    ) -> None:
         """Generate standard selection set."""
         for selection in selection_set.selections:
             if isinstance(selection, FieldNode):
@@ -303,7 +306,7 @@ class CodeGenerator:
         result_var: str,
         info_var: str,
         path: str,
-    ):
+    ) -> None:
         """Generate optimized field resolution with error handling."""
         field_name = self.compiler._sanitize_identifier(field.name.value)
         alias = (
@@ -669,7 +672,9 @@ class CodeGenerator:
         if field.directives and skip_code:
             self.compiler.indent_level -= 1
 
-    def generate_arguments(self, field: FieldNode, field_def, info_var: str):
+    def generate_arguments(
+        self, field: FieldNode, field_def: GraphQLField, info_var: str
+    ) -> None:
         """Generate field arguments handling."""
         self.compiler._emit("kwargs = {}")
 
@@ -696,7 +701,9 @@ class CodeGenerator:
                 arg_code = self.generate_argument_value(arg.value, info_var, arg_type)
                 self.compiler._emit(f"kwargs['{arg_name}'] = {arg_code}")
 
-    def generate_argument_value(self, value_node, info_var: str, arg_type=None) -> str:
+    def generate_argument_value(
+        self, value_node: ValueNode, info_var: str, arg_type: GraphQLType | None = None
+    ) -> str:
         """Generate code for argument value with custom scalar support."""
         from graphql.language import (
             BooleanValueNode,
@@ -857,7 +864,7 @@ class CodeGenerator:
         result_var: str,
         info_var: str,
         path: str,
-    ):
+    ) -> None:
         """Generate fragment spread."""
         fragment_name = fragment_spread.name.value
         if fragment_name not in self.compiler.fragments:
@@ -901,7 +908,7 @@ class CodeGenerator:
         result_var: str,
         info_var: str,
         path: str,
-    ):
+    ) -> None:
         """Generate inline fragment."""
         if inline_fragment.type_condition:
             type_name = inline_fragment.type_condition.name.value

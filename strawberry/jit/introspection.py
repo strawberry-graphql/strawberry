@@ -29,68 +29,6 @@ def generate_introspection_selection(
     path: str,
 ) -> None:
     """Generate selection for introspection types (__Schema, __Type, etc)."""
-    # Map introspection type names to their field resolvers
-    introspection_resolvers = {
-        "__Schema": {
-            "queryType": lambda schema: schema.query_type,
-            "mutationType": lambda schema: schema.mutation_type,
-            "subscriptionType": lambda schema: schema.subscription_type,
-            "types": lambda schema: list(schema.type_map.values()),
-            "directives": lambda schema: schema.directives,
-        },
-        "__Type": {
-            "kind": lambda t: compiler._get_type_kind(t),
-            "name": lambda t: t.name if hasattr(t, "name") else None,
-            "description": lambda t: t.description
-            if hasattr(t, "description")
-            else None,
-            "fields": lambda t: list(t.fields.values())
-            if hasattr(t, "fields")
-            else None,
-            "interfaces": lambda t: list(t.interfaces)
-            if hasattr(t, "interfaces")
-            else None,
-            "possibleTypes": lambda t: list(t.types) if hasattr(t, "types") else None,
-            "enumValues": lambda t: list(t.values.values())
-            if hasattr(t, "values")
-            else None,
-            "inputFields": lambda t: list(t.fields.values())
-            if hasattr(t, "fields")
-            else None,
-            "ofType": lambda t: t.of_type if hasattr(t, "of_type") else None,
-        },
-        "__Field": {
-            "name": lambda f: f.name,
-            "description": lambda f: f.description,
-            "args": lambda f: list(f.args.values()) if f.args else [],
-            "type": lambda f: f.type,
-            "isDeprecated": lambda f: f.deprecation_reason is not None,
-            "deprecationReason": lambda f: f.deprecation_reason,
-        },
-        "__InputValue": {
-            "name": lambda i: i.name if hasattr(i, "name") else None,
-            "description": lambda i: i.description
-            if hasattr(i, "description")
-            else None,
-            "type": lambda i: i.type if hasattr(i, "type") else None,
-            "defaultValue": lambda i: str(i.default_value)
-            if hasattr(i, "default_value") and i.default_value is not None
-            else None,
-        },
-        "__EnumValue": {
-            "name": lambda e: e.value,
-            "description": lambda e: e.description,
-            "isDeprecated": lambda e: e.deprecation_reason is not None,
-            "deprecationReason": lambda e: e.deprecation_reason,
-        },
-        "__Directive": {
-            "name": lambda d: d.name,
-            "description": lambda d: d.description,
-            "locations": lambda d: d.locations,
-            "args": lambda d: list(d.args.values()) if d.args else [],
-        },
-    }
-
     for selection in selection_set.selections:
         # Handle fragment spreads in introspection
         if isinstance(selection, FragmentSpreadNode):

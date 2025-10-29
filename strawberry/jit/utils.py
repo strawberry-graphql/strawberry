@@ -8,11 +8,13 @@ from graphql import (
     FieldNode,
     FragmentSpreadNode,
     GraphQLObjectType,
+    GraphQLSchema,
     InlineFragmentNode,
     SelectionSetNode,
 )
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
     from typing import Any
 
 
@@ -83,7 +85,7 @@ def serialize_value(value: Any) -> str:
 class CodeEmitter:
     """Helper class for emitting indented code."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.generated_code: list[str] = []
         self.indent_level = 0
 
@@ -101,8 +103,8 @@ def detect_async_resolvers(
     selection_set: SelectionSetNode,
     parent_type: GraphQLObjectType,
     fragments: dict,
-    schema,
-    is_field_async_func,
+    schema: GraphQLSchema,
+    is_field_async_func: Callable,
 ) -> bool:
     """Pre-scan for async resolvers in selection set.
 
@@ -134,44 +136,47 @@ def detect_async_resolvers(
                     field_type = field_def.type
                     while hasattr(field_type, "of_type"):
                         field_type = field_type.of_type
-                    if isinstance(field_type, GraphQLObjectType):
-                        if detect_async_resolvers(
-                            selection.selection_set,
-                            field_type,
-                            fragments,
-                            schema,
-                            is_field_async_func,
-                        ):
-                            has_async = True
-
-        elif isinstance(selection, FragmentSpreadNode):
-            fragment_name = selection.name.value
-            if fragment_name in fragments:
-                fragment_def = fragments[fragment_name]
-                if fragment_def.selection_set:
-                    if detect_async_resolvers(
-                        fragment_def.selection_set,
-                        parent_type,
+                    if isinstance(
+                        field_type, GraphQLObjectType
+                    ) and detect_async_resolvers(
+                        selection.selection_set,
+                        field_type,
                         fragments,
                         schema,
                         is_field_async_func,
                     ):
                         has_async = True
 
+        elif isinstance(selection, FragmentSpreadNode):
+            fragment_name = selection.name.value
+            if fragment_name in fragments:
+                fragment_def = fragments[fragment_name]
+                if fragment_def.selection_set and detect_async_resolvers(
+                    fragment_def.selection_set,
+                    parent_type,
+                    fragments,
+                    schema,
+                    is_field_async_func,
+                ):
+                    has_async = True
+
         elif isinstance(selection, InlineFragmentNode):
             if selection.selection_set:
                 if selection.type_condition:
                     type_name = selection.type_condition.name.value
                     fragment_type = schema.type_map.get(type_name)
-                    if fragment_type and isinstance(fragment_type, GraphQLObjectType):
-                        if detect_async_resolvers(
+                    if (
+                        fragment_type
+                        and isinstance(fragment_type, GraphQLObjectType)
+                        and detect_async_resolvers(
                             selection.selection_set,
                             fragment_type,
                             fragments,
                             schema,
                             is_field_async_func,
-                        ):
-                            has_async = True
+                        )
+                    ):
+                        has_async = True
                 elif detect_async_resolvers(
                     selection.selection_set,
                     parent_type,

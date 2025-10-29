@@ -91,10 +91,12 @@ def generate_abstract_type_selection(
         possible_types = list(abstract_type.types)
     elif isinstance(abstract_type, GraphQLInterfaceType):
         # For interfaces, we need to get implementing types from schema
-        for type_name, gql_type in compiler.schema.type_map.items():
-            if isinstance(gql_type, GraphQLObjectType):
-                if abstract_type in gql_type.interfaces:
-                    possible_types.append(gql_type)
+        for gql_type in compiler.schema.type_map.values():
+            if (
+                isinstance(gql_type, GraphQLObjectType)
+                and abstract_type in gql_type.interfaces
+            ):
+                possible_types.append(gql_type)
 
     # Generate type-specific selections
     if type_selections or common_selections:
