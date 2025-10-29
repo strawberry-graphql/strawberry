@@ -117,6 +117,10 @@ class Query:
 
 def test_jit_with_small_dataset():
     """Test JIT performance with a small dataset."""
+    import time
+
+    from graphql import execute_sync, parse
+
     posts_data = generate_large_dataset(num_posts=10, comments_per_post=5)
     schema = strawberry.Schema(Query)
 
@@ -138,10 +142,21 @@ def test_jit_with_small_dataset():
     }
     """
 
-    # Compile and execute
-    compiled_fn = compile_query(schema, query)
     root = Query(posts_data)
-    result = compiled_fn(root)
+
+    # Benchmark standard execution
+    iterations = 20
+    start = time.perf_counter()
+    for _ in range(iterations):
+        execute_sync(schema._schema, parse(query), root_value=root)
+    standard_time = time.perf_counter() - start
+
+    # Benchmark JIT execution
+    compiled_fn = compile_query(schema, query)
+    start = time.perf_counter()
+    for _ in range(iterations):
+        result = compiled_fn(root)
+    jit_time = time.perf_counter() - start
 
     # Verify we got results
     assert "data" in result
@@ -149,6 +164,10 @@ def test_jit_with_small_dataset():
     assert len(result["data"]["posts"]) == 10
     assert "engagementRate" in result["data"]["posts"][0]
     assert "reputationScore" in result["data"]["posts"][0]["author"]
+
+    # Assert performance improvement
+    speedup = standard_time / jit_time
+    assert speedup > 1.0, f"Expected JIT to be faster, got {speedup:.2f}x"
 
 
 def test_jit_with_large_dataset():
