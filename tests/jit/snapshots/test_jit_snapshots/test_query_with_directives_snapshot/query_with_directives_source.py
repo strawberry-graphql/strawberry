@@ -34,7 +34,7 @@ def execute_query(root, context=None, variables=None):
                     item_result_0 = {}
                     try:
                         info.field_name = "id"
-                        field_id_value = _resolvers['resolver_1'](item_0, info)
+                        field_id_value = getattr(item_0, 'id', None)
                         item_result_0["id"] = field_id_value
                     except Exception as e:
                         if not any(err.get('message') == str(e) for err in errors):
@@ -42,7 +42,7 @@ def execute_query(root, context=None, variables=None):
                         raise  # Propagate non-nullable error
                     try:
                         info.field_name = "title"
-                        field_title_value = _resolvers['resolver_2'](item_0, info)
+                        field_title_value = getattr(item_0, 'title', None)
                         item_result_0["title"] = field_title_value
                     except Exception as e:
                         if not any(err.get('message') == str(e) for err in errors):
@@ -51,7 +51,7 @@ def execute_query(root, context=None, variables=None):
                     if info.variable_values.get('includeContent'):
                         try:
                             info.field_name = "content"
-                            field_content_value = _resolvers['resolver_3'](item_0, info)
+                            field_content_value = getattr(item_0, 'content', None)
                             item_result_0["content"] = field_content_value
                         except Exception as e:
                             if not any(err.get('message') == str(e) for err in errors):
@@ -60,7 +60,7 @@ def execute_query(root, context=None, variables=None):
                     if not (False):
                         try:
                             info.field_name = "published"
-                            field_published_value = _resolvers['resolver_4'](item_0, info)
+                            field_published_value = getattr(item_0, 'published', None)
                             item_result_0["published"] = field_published_value
                         except Exception as e:
                             if not any(err.get('message') == str(e) for err in errors):

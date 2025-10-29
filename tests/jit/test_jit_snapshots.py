@@ -236,10 +236,14 @@ async def test_parallel_async_query_snapshot(snapshot, jit_schema, query_type):
     assert "asyncio.gather" in generated_code, (
         "Should use asyncio.gather() for parallel execution"
     )
-    assert "task_asyncPosts" in generated_code, "Should create task for asyncPosts"
-    assert "task_asyncUsers" in generated_code, "Should create task for asyncUsers"
-    assert "task_asyncComments" in generated_code, (
-        "Should create task for asyncComments"
+    assert "_coro_asyncPosts" in generated_code, (
+        "Should create coroutine for asyncPosts"
+    )
+    assert "_coro_asyncUsers" in generated_code, (
+        "Should create coroutine for asyncUsers"
+    )
+    assert "_coro_asyncComments" in generated_code, (
+        "Should create coroutine for asyncComments"
     )
 
     snapshot.assert_match(generated_code, "parallel_async_query_source.py")

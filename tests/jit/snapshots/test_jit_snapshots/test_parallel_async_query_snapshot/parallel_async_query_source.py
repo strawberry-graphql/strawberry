@@ -17,9 +17,10 @@ async def execute_query(root, context=None, variables=None):
     # Execute query with error handling
     try:
         # Parallel execution for query fields
-        # Execute async fields in parallel
-        async_tasks = []
-        async def task_asyncPosts():
+        # Execute async fields in parallel (inline coroutines)
+        async_tasks_0 = []
+        async_tasks_0_data = []
+        async def _coro_asyncPosts_0():
             temp_result = {}
             try:
                 info.field_name = "asyncPosts"
@@ -29,92 +30,95 @@ async def execute_query(root, context=None, variables=None):
                 field_asyncPosts_value = await _resolvers['resolver_3'](root, info, **kwargs)
                 if field_asyncPosts_value is not None:
                     temp_result["asyncPosts"] = []
-                    for idx, item_0 in enumerate(field_asyncPosts_value):
-                        item_result_0 = {}
+                    for idx, item_1 in enumerate(field_asyncPosts_value):
+                        item_result_1 = {}
                         try:
                             info.field_name = "id"
-                            field_id_value = _resolvers['resolver_4'](item_0, info)
-                            item_result_0["id"] = field_id_value
+                            field_id_value = getattr(item_1, 'id', None)
+                            item_result_1["id"] = field_id_value
                         except Exception as e:
                             if not any(err.get('message') == str(e) for err in errors):
                                 errors.append({'message': str(e), 'path': [] + ['asyncPosts'] + [idx] + ['id'], 'locations': [], 'extensions': {'fieldName': 'id', 'fieldType': 'String!', 'alias': 'id'}})
                             raise  # Propagate non-nullable error
-                        temp_result["asyncPosts"].append(item_result_0)
+                        temp_result["asyncPosts"].append(item_result_1)
                 else:
                     temp_result["asyncPosts"] = None
             except Exception as e:
                 if not any(err.get('message') == str(e) for err in errors):
                     errors.append({'message': str(e), 'path': [] + ['asyncPosts'], 'locations': [], 'extensions': {'fieldName': 'asyncPosts', 'fieldType': '[Post!]!', 'alias': 'asyncPosts'}})
                 raise  # Propagate non-nullable error
-            return ('asyncPosts', temp_result.get('asyncPosts'))
-        async_tasks.append(task_asyncPosts())
-        async def task_asyncUsers():
+            return temp_result.get('asyncPosts')
+        async_tasks_0.append(_coro_asyncPosts_0())
+        async_tasks_0_data.append('asyncPosts')
+        async def _coro_asyncUsers_0():
             temp_result = {}
             try:
                 info.field_name = "asyncUsers"
                 kwargs = {}
                 kwargs['limit'] = 10
                 kwargs['limit'] = 1
-                field_asyncUsers_value = await _resolvers['resolver_5'](root, info, **kwargs)
+                field_asyncUsers_value = await _resolvers['resolver_4'](root, info, **kwargs)
                 if field_asyncUsers_value is not None:
                     temp_result["asyncUsers"] = []
-                    for idx, item_1 in enumerate(field_asyncUsers_value):
-                        item_result_1 = {}
+                    for idx, item_2 in enumerate(field_asyncUsers_value):
+                        item_result_2 = {}
                         try:
                             info.field_name = "id"
-                            field_id_value = _resolvers['resolver_6'](item_1, info)
-                            item_result_1["id"] = field_id_value
+                            field_id_value = getattr(item_2, 'id', None)
+                            item_result_2["id"] = field_id_value
                         except Exception as e:
                             if not any(err.get('message') == str(e) for err in errors):
                                 errors.append({'message': str(e), 'path': [] + ['asyncUsers'] + [idx] + ['id'], 'locations': [], 'extensions': {'fieldName': 'id', 'fieldType': 'String!', 'alias': 'id'}})
                             raise  # Propagate non-nullable error
-                        temp_result["asyncUsers"].append(item_result_1)
+                        temp_result["asyncUsers"].append(item_result_2)
                 else:
                     temp_result["asyncUsers"] = None
             except Exception as e:
                 if not any(err.get('message') == str(e) for err in errors):
                     errors.append({'message': str(e), 'path': [] + ['asyncUsers'], 'locations': [], 'extensions': {'fieldName': 'asyncUsers', 'fieldType': '[User!]!', 'alias': 'asyncUsers'}})
                 raise  # Propagate non-nullable error
-            return ('asyncUsers', temp_result.get('asyncUsers'))
-        async_tasks.append(task_asyncUsers())
-        async def task_asyncComments():
+            return temp_result.get('asyncUsers')
+        async_tasks_0.append(_coro_asyncUsers_0())
+        async_tasks_0_data.append('asyncUsers')
+        async def _coro_asyncComments_0():
             temp_result = {}
             try:
                 info.field_name = "asyncComments"
                 kwargs = {}
                 kwargs['limit'] = 10
                 kwargs['limit'] = 1
-                field_asyncComments_value = await _resolvers['resolver_7'](root, info, **kwargs)
+                field_asyncComments_value = await _resolvers['resolver_5'](root, info, **kwargs)
                 if field_asyncComments_value is not None:
                     temp_result["asyncComments"] = []
-                    for idx, item_2 in enumerate(field_asyncComments_value):
-                        item_result_2 = {}
+                    for idx, item_3 in enumerate(field_asyncComments_value):
+                        item_result_3 = {}
                         try:
                             info.field_name = "id"
-                            field_id_value = _resolvers['resolver_8'](item_2, info)
-                            item_result_2["id"] = field_id_value
+                            field_id_value = getattr(item_3, 'id', None)
+                            item_result_3["id"] = field_id_value
                         except Exception as e:
                             if not any(err.get('message') == str(e) for err in errors):
                                 errors.append({'message': str(e), 'path': [] + ['asyncComments'] + [idx] + ['id'], 'locations': [], 'extensions': {'fieldName': 'id', 'fieldType': 'String!', 'alias': 'id'}})
                             raise  # Propagate non-nullable error
-                        temp_result["asyncComments"].append(item_result_2)
+                        temp_result["asyncComments"].append(item_result_3)
                 else:
                     temp_result["asyncComments"] = None
             except Exception as e:
                 if not any(err.get('message') == str(e) for err in errors):
                     errors.append({'message': str(e), 'path': [] + ['asyncComments'], 'locations': [], 'extensions': {'fieldName': 'asyncComments', 'fieldType': '[Comment!]!', 'alias': 'asyncComments'}})
                 raise  # Propagate non-nullable error
-            return ('asyncComments', temp_result.get('asyncComments'))
-        async_tasks.append(task_asyncComments())
+            return temp_result.get('asyncComments')
+        async_tasks_0.append(_coro_asyncComments_0())
+        async_tasks_0_data.append('asyncComments')
         
         # Gather results
-        async_results = await asyncio.gather(*async_tasks, return_exceptions=True)
-        for async_result in async_results:
-            if isinstance(async_result, Exception):
-                errors.append({'message': str(async_result), 'path': []})
-            elif isinstance(async_result, tuple):
-                field_alias, field_value = async_result
-                result[field_alias] = field_value
+        async_results_0 = await asyncio.gather(*async_tasks_0, return_exceptions=True)
+        for _idx, async_result_0 in enumerate(async_results_0):
+            if isinstance(async_result_0, Exception):
+                errors.append({'message': str(async_result_0), 'path': []})
+            else:
+                field_alias = async_tasks_0_data[_idx]
+                result[field_alias] = async_result_0
     except Exception as root_error:
         result = None
     

@@ -85,7 +85,7 @@ class JITCompiler:
         self.nested_counter = 0  # Counter for unique nested result variables
         self.parallel_depth = 0  # Track parallelization depth
         self.max_parallel_depth = (
-            3  # Limit parallel nesting to avoid deep exponential overhead
+            10  # Allow deep parallelization with optimized task generation
         )
 
         # Optimization flags

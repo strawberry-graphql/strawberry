@@ -29,7 +29,7 @@ async def execute_query(root, context=None, variables=None):
                     item_result_0 = {}
                     try:
                         info.field_name = "id"
-                        field_id_value = _resolvers['resolver_2'](item_0, info)
+                        field_id_value = getattr(item_0, 'id', None)
                         item_result_0["id"] = field_id_value
                     except Exception as e:
                         if not any(err.get('message') == str(e) for err in errors):
@@ -37,7 +37,7 @@ async def execute_query(root, context=None, variables=None):
                         raise  # Propagate non-nullable error
                     try:
                         info.field_name = "title"
-                        field_title_value = _resolvers['resolver_3'](item_0, info)
+                        field_title_value = getattr(item_0, 'title', None)
                         item_result_0["title"] = field_title_value
                     except Exception as e:
                         if not any(err.get('message') == str(e) for err in errors):
@@ -45,12 +45,12 @@ async def execute_query(root, context=None, variables=None):
                         raise  # Propagate non-nullable error
                     try:
                         info.field_name = "author"
-                        field_author_value = _resolvers['resolver_4'](item_0, info)
+                        field_author_value = getattr(item_0, 'author', None)
                         if field_author_value is not None:
                             nested_result_1 = {}
                             try:
                                 info.field_name = "name"
-                                field_name_value = _resolvers['resolver_5'](field_author_value, info)
+                                field_name_value = getattr(field_author_value, 'name', None)
                                 nested_result_1["name"] = field_name_value
                             except Exception as e:
                                 if not any(err.get('message') == str(e) for err in errors):

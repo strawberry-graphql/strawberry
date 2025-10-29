@@ -27,7 +27,7 @@ def execute_query(root, context=None, variables=None):
                     item_result_0 = {}
                     try:
                         info.field_name = "id"
-                        field_id_value = _resolvers['resolver_1'](item_0, info)
+                        field_id_value = getattr(item_0, 'id', None)
                         item_result_0["id"] = field_id_value
                     except Exception as e:
                         if not any(err.get('message') == str(e) for err in errors):
@@ -35,7 +35,7 @@ def execute_query(root, context=None, variables=None):
                         raise  # Propagate non-nullable error
                     try:
                         info.field_name = "errorField"
-                        field_errorField_value = _resolvers['resolver_2'](item_0, info)
+                        field_errorField_value = _resolvers['resolver_1'](item_0, info)
                         item_result_0["errorField"] = field_errorField_value
                     except Exception as e:
                         if not any(err.get('message') == str(e) for err in errors):
@@ -43,7 +43,7 @@ def execute_query(root, context=None, variables=None):
                         item_result_0["errorField"] = None
                     try:
                         info.field_name = "anotherErrorField"
-                        field_anotherErrorField_value = _resolvers['resolver_3'](item_0, info)
+                        field_anotherErrorField_value = _resolvers['resolver_2'](item_0, info)
                         item_result_0["anotherErrorField"] = field_anotherErrorField_value
                     except Exception as e:
                         if not any(err.get('message') == str(e) for err in errors):

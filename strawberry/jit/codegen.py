@@ -165,6 +165,60 @@ class CodeGenerator:
             return inspect.iscoroutinefunction(field_def.resolve)
         return False
 
+    def _selection_set_has_async(
+        self, selection_set: SelectionSetNode, parent_type: GraphQLObjectType
+    ) -> bool:
+        """Check if a selection set contains any async fields."""
+        if not selection_set:
+            return False
+
+        for selection in selection_set.selections:
+            if isinstance(selection, FieldNode):
+                field_name = selection.name.value
+                if field_name.startswith("__"):
+                    # Skip introspection fields
+                    continue
+
+                field_def = parent_type.fields.get(field_name)
+                if field_def and self.is_field_async(field_def):
+                    return True
+
+                # Recursively check nested selections
+                if selection.selection_set and field_def:
+                    field_type = field_def.type
+                    while hasattr(field_type, "of_type"):
+                        field_type = field_type.of_type
+
+                    if isinstance(field_type, GraphQLObjectType):
+                        if self._selection_set_has_async(
+                            selection.selection_set, field_type
+                        ):
+                            return True
+
+            elif isinstance(selection, InlineFragmentNode):
+                if selection.type_condition:
+                    type_name = selection.type_condition.name.value
+                    fragment_type = self.compiler.schema.type_map.get(type_name)
+                    if isinstance(fragment_type, GraphQLObjectType):
+                        if self._selection_set_has_async(
+                            selection.selection_set, fragment_type
+                        ):
+                            return True
+
+            elif isinstance(selection, FragmentSpreadNode):
+                fragment_name = selection.name.value
+                fragment = self.compiler.fragments.get(fragment_name)
+                if fragment and fragment.type_condition:
+                    type_name = fragment.type_condition.name.value
+                    fragment_type = self.compiler.schema.type_map.get(type_name)
+                    if isinstance(fragment_type, GraphQLObjectType):
+                        if self._selection_set_has_async(
+                            fragment.selection_set, fragment_type
+                        ):
+                            return True
+
+        return False
+
     def generate_parallel_selection_set(
         self,
         selection_set: SelectionSetNode,
@@ -175,15 +229,13 @@ class CodeGenerator:
         path: str,
     ) -> None:
         """Generate selection set with parallel async execution."""
-        # Check if we should use parallel execution based on depth
-        # Deep nesting with parallel execution creates exponential overhead
         use_parallel = (
             self.compiler.enable_parallel
             and self.compiler.parallel_depth < self.compiler.max_parallel_depth
         )
 
         if not use_parallel:
-            # Fall back to sequential execution at deep nesting levels
+            # Fall back to sequential execution at deep nesting
             return self.generate_selection_set(
                 selection_set, parent_type, parent_var, result_var, info_var, path
             )
@@ -236,8 +288,11 @@ class CodeGenerator:
             results_var = f"async_results_{gather_id}"
             result_item_var = f"async_result_{gather_id}"
 
-            self.compiler._emit("# Execute async fields in parallel")
+            self.compiler._emit(
+                "# Execute async fields in parallel (inline coroutines)"
+            )
             self.compiler._emit(f"{tasks_var} = []")
+            self.compiler._emit(f"{tasks_var}_data = []")  # Store field metadata
 
             for selection, _resolver_id in async_fields:
                 field_name = self.compiler._sanitize_identifier(selection.name.value)
@@ -247,24 +302,30 @@ class CodeGenerator:
                     else field_name
                 )
 
-                # Generate async task with unique name
-                task_name = f"task_{field_name}_{gather_id}"
-                self.compiler._emit(f"async def {task_name}():")
+                # Generate inline coroutine without function wrapper
+                # Use an async lambda-like pattern with immediately-executed async expression
+                coro_var = f"_coro_{field_name}_{gather_id}"
+
+                # Create an async context manager wrapper
+                self.compiler._emit(f"async def {coro_var}():")
                 self.compiler.indent_level += 1
                 self.compiler._emit("temp_result = {}")
                 self.generate_field(
                     selection, parent_type, parent_var, "temp_result", info_var, path
                 )
-                self.compiler._emit(f"return ('{alias}', temp_result.get('{alias}'))")
+                self.compiler._emit(f"return temp_result.get('{alias}')")
                 self.compiler.indent_level -= 1
-                self.compiler._emit(f"{tasks_var}.append({task_name}())")
+                self.compiler._emit(f"{tasks_var}.append({coro_var}())")
+                self.compiler._emit(f"{tasks_var}_data.append('{alias}')")
 
             self.compiler._emit("")
             self.compiler._emit("# Gather results")
             self.compiler._emit(
                 f"{results_var} = await asyncio.gather(*{tasks_var}, return_exceptions=True)"
             )
-            self.compiler._emit(f"for {result_item_var} in {results_var}:")
+            self.compiler._emit(
+                f"for _idx, {result_item_var} in enumerate({results_var}):"
+            )
             self.compiler.indent_level += 1
             self.compiler._emit(f"if isinstance({result_item_var}, Exception):")
             self.compiler.indent_level += 1
@@ -274,10 +335,10 @@ class CodeGenerator:
                 + "})"
             )
             self.compiler.indent_level -= 1
-            self.compiler._emit(f"elif isinstance({result_item_var}, tuple):")
+            self.compiler._emit("else:")
             self.compiler.indent_level += 1
-            self.compiler._emit(f"field_alias, field_value = {result_item_var}")
-            self.compiler._emit(f"{result_var}[field_alias] = field_value")
+            self.compiler._emit(f"field_alias = {tasks_var}_data[_idx]")
+            self.compiler._emit(f"{result_var}[field_alias] = {result_item_var}")
             self.compiler.indent_level -= 1
             self.compiler.indent_level -= 1
 
@@ -430,7 +491,30 @@ class CodeGenerator:
         # Generate optimized resolver call
         temp_var = f"field_{field_name}_value"
 
-        if field_def.resolve:
+        # Check if this is a trivial field (just attribute access, no custom resolver)
+        is_trivial_field = False
+        python_name = field_name  # Default to GraphQL name
+        if field_def.resolve and hasattr(field_def, "extensions"):
+            strawberry_field = field_def.extensions.get("strawberry-definition")
+            if strawberry_field:
+                # Trivial fields have no custom resolver and no arguments
+                is_trivial_field = (
+                    strawberry_field.base_resolver is None
+                    and not field.arguments
+                    and self.compiler.inline_trivial_resolvers
+                )
+                # Use Python attribute name (handles snake_case ↔ camelCase conversion)
+                if strawberry_field.python_name:
+                    python_name = strawberry_field.python_name
+
+        if is_trivial_field:
+            # Inline attribute access for trivial fields (major optimization!)
+            # Bypasses _get_basic_result → field.get_result → getattr chain
+            # Use python_name to handle snake_case ↔ camelCase conversion
+            self.compiler._emit(
+                f"{temp_var} = getattr({parent_var}, '{python_name}', None)"
+            )
+        elif field_def.resolve:
             resolver_id = f"resolver_{self.compiler.field_counter}"
             self.compiler.field_counter += 1
             self.compiler.resolver_map[resolver_id] = field_def.resolve
@@ -456,7 +540,7 @@ class CodeGenerator:
                 self.compiler._emit(
                     f"{temp_var} = _resolvers['{resolver_id}']({parent_var}, info)"
                 )
-        # Inline trivial field access for performance
+        # Inline trivial field access for performance (fallback for non-Strawberry fields)
         elif self.compiler.inline_trivial_resolvers and not field.arguments:
             self.compiler._emit(
                 f"{temp_var} = getattr({parent_var}, '{field_name}', None)"
@@ -486,18 +570,12 @@ class CodeGenerator:
 
                 # Check for list type
                 if str(field_def.type).startswith("["):
-                    self.compiler._emit(f'{result_var}["{alias}"] = []')
                     # Use unique variable names for nested lists
                     list_counter = self.compiler.nested_counter
                     self.compiler.nested_counter += 1
                     item_var = f"item_{list_counter}"
                     item_result_var = f"item_result_{list_counter}"
-
-                    self.compiler._emit(
-                        f"for idx, {item_var} in enumerate({temp_var}):"
-                    )
-                    self.compiler.indent_level += 1
-                    item_path = f"{field_path} + [idx]"
+                    task_fn_name = f"process_list_item_{list_counter}"
 
                     # Check if list items can be nullable
                     from graphql import is_non_null_type
@@ -512,58 +590,142 @@ class CodeGenerator:
                     )
                     items_nullable = item_type and not is_non_null_type(item_type)
 
-                    if items_nullable:
-                        # Add null check for nullable list items
-                        self.compiler._emit(f"if {item_var} is None:")
-                        self.compiler.indent_level += 1
-                        self.compiler._emit(f'{result_var}["{alias}"].append(None)')
-                        self.compiler.indent_level -= 1
-                        self.compiler._emit("else:")
-                        self.compiler.indent_level += 1
-
-                    # Wrap item processing in try-except for nullable items
-                    if items_nullable:
-                        self.compiler._emit("try:")
-                        self.compiler.indent_level += 1
-
-                    self.compiler._emit(f"{item_result_var} = {{}}")
-
-                    # For unions/interfaces, we need runtime type resolution
-                    if isinstance(field_type, (GraphQLUnionType, GraphQLInterfaceType)):
-                        self.compiler._generate_abstract_type_selection(
-                            field.selection_set,
-                            field_type,
-                            item_var,
-                            item_result_var,
-                            info_var,
-                            item_path,
-                        )
-                    else:
-                        # Use parallel execution for list items to match standard GraphQL
-                        self.generate_parallel_selection_set(
-                            field.selection_set,
-                            field_type,
-                            item_var,
-                            item_result_var,
-                            info_var,
-                            item_path,
-                        )
-                    self.compiler._emit(
-                        f'{result_var}["{alias}"].append({item_result_var})'
+                    # Check if selection set has async fields
+                    has_async_fields = self._selection_set_has_async(
+                        field.selection_set, field_type
                     )
 
-                    # Add error handling for nullable items
-                    if items_nullable:
-                        self.compiler.indent_level -= 1
-                        self.compiler._emit("except Exception as item_error:")
+                    if has_async_fields:
+                        # Generate parameterized task function ONCE (outside loop)
+                        item_path_param = f"{field_path} + [_idx]"
+                        self.compiler._emit(
+                            f"async def {task_fn_name}({item_var}, _idx):"
+                        )
                         self.compiler.indent_level += 1
-                        # Error already added by field-level handler, just append None
-                        self.compiler._emit(f'{result_var}["{alias}"].append(None)')
+
+                        if items_nullable:
+                            self.compiler._emit(f"if {item_var} is None:")
+                            self.compiler.indent_level += 1
+                            self.compiler._emit("return None")
+                            self.compiler.indent_level -= 1
+
+                        # Wrap item processing in try-except for nullable items
+                        if items_nullable:
+                            self.compiler._emit("try:")
+                            self.compiler.indent_level += 1
+
+                        self.compiler._emit(f"{item_result_var} = {{}}")
+
+                        # For unions/interfaces, we need runtime type resolution
+                        if isinstance(
+                            field_type, (GraphQLUnionType, GraphQLInterfaceType)
+                        ):
+                            self.compiler._generate_abstract_type_selection(
+                                field.selection_set,
+                                field_type,
+                                item_var,
+                                item_result_var,
+                                info_var,
+                                item_path_param,
+                            )
+                        else:
+                            # Generate field resolution code
+                            self.generate_selection_set(
+                                field.selection_set,
+                                field_type,
+                                item_var,
+                                item_result_var,
+                                info_var,
+                                item_path_param,
+                            )
+
+                        self.compiler._emit(f"return {item_result_var}")
+
+                        # Add error handling for nullable items
+                        if items_nullable:
+                            self.compiler.indent_level -= 1
+                            self.compiler._emit("except Exception:")
+                            self.compiler.indent_level += 1
+                            # Error already added by field-level handler, return None for this item
+                            self.compiler._emit("return None")
+                            self.compiler.indent_level -= 1
+
                         self.compiler.indent_level -= 1
 
-                    if items_nullable:
-                        self.compiler.indent_level -= 1  # Close the else block
-                    self.compiler.indent_level -= 1
+                        # Use list comprehension to create tasks and gather
+                        self.compiler._emit(
+                            f'{result_var}["{alias}"] = await asyncio.gather(*['
+                        )
+                        self.compiler.indent_level += 1
+                        self.compiler._emit(
+                            f"{task_fn_name}(item, idx) for idx, item in enumerate({temp_var})"
+                        )
+                        self.compiler.indent_level -= 1
+                        self.compiler._emit("])")
+                    else:
+                        # No async fields, use simple sequential loop
+                        self.compiler._emit(f'{result_var}["{alias}"] = []')
+                        self.compiler._emit(
+                            f"for idx, {item_var} in enumerate({temp_var}):"
+                        )
+                        self.compiler.indent_level += 1
+                        item_path = f"{field_path} + [idx]"
+
+                        if items_nullable:
+                            # Add null check for nullable list items
+                            self.compiler._emit(f"if {item_var} is None:")
+                            self.compiler.indent_level += 1
+                            self.compiler._emit(f'{result_var}["{alias}"].append(None)')
+                            self.compiler.indent_level -= 1
+                            self.compiler._emit("else:")
+                            self.compiler.indent_level += 1
+
+                        # Wrap item processing in try-except for nullable items
+                        if items_nullable:
+                            self.compiler._emit("try:")
+                            self.compiler.indent_level += 1
+
+                        self.compiler._emit(f"{item_result_var} = {{}}")
+
+                        # For unions/interfaces, we need runtime type resolution
+                        if isinstance(
+                            field_type, (GraphQLUnionType, GraphQLInterfaceType)
+                        ):
+                            self.compiler._generate_abstract_type_selection(
+                                field.selection_set,
+                                field_type,
+                                item_var,
+                                item_result_var,
+                                info_var,
+                                item_path,
+                            )
+                        else:
+                            # Generate field resolution code
+                            self.generate_selection_set(
+                                field.selection_set,
+                                field_type,
+                                item_var,
+                                item_result_var,
+                                info_var,
+                                item_path,
+                            )
+
+                        self.compiler._emit(
+                            f'{result_var}["{alias}"].append({item_result_var})'
+                        )
+
+                        # Add error handling for nullable items
+                        if items_nullable:
+                            self.compiler.indent_level -= 1
+                            self.compiler._emit("except Exception as item_error:")
+                            self.compiler.indent_level += 1
+                            # Error already added by field-level handler, just append None
+                            self.compiler._emit(f'{result_var}["{alias}"].append(None)')
+                            self.compiler.indent_level -= 1
+
+                        if items_nullable:
+                            self.compiler.indent_level -= 1  # Close the else block
+                        self.compiler.indent_level -= 1  # Close the for loop
                 else:
                     # Use a unique variable name for nested results
                     nested_var = f"nested_result_{self.compiler.nested_counter}"
