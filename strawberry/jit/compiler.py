@@ -93,6 +93,11 @@ class JITCompiler:
         self.inline_trivial_resolvers = True
         self.eliminate_redundant_checks = True
 
+        # Performance tuning: Only parallelize lists when beneficial
+        # Lists smaller than this threshold will use sequential execution
+        # even if they contain async fields (avoids task creation overhead)
+        self.min_parallel_list_size = 20
+
     def _sanitize_identifier(self, name: str) -> str:
         """Sanitize identifier for safe code generation (defense-in-depth).
 

@@ -596,6 +596,11 @@ class CodeGenerator:
                     )
 
                     if has_async_fields:
+                        # Performance optimization: Only use parallel execution for lists
+                        # large enough to benefit from it. For small lists, the overhead
+                        # of creating async tasks exceeds the benefit of parallelization.
+                        # Use runtime check to decide between parallel and sequential.
+
                         # Generate parameterized task function ONCE (outside loop)
                         item_path_param = f"{field_path} + [_idx]"
                         self.compiler._emit(
@@ -652,7 +657,13 @@ class CodeGenerator:
 
                         self.compiler.indent_level -= 1
 
-                        # Use list comprehension to create tasks and gather
+                        # Runtime decision: Use parallel execution only if list is large enough
+                        # For small lists, the task creation overhead exceeds the benefit
+                        min_size = self.compiler.min_parallel_list_size
+                        self.compiler._emit(f"if len({temp_var}) >= {min_size}:")
+                        self.compiler.indent_level += 1
+
+                        # Parallel path: Use asyncio.gather for large lists
                         self.compiler._emit(
                             f'{result_var}["{alias}"] = await asyncio.gather(*['
                         )
@@ -662,6 +673,23 @@ class CodeGenerator:
                         )
                         self.compiler.indent_level -= 1
                         self.compiler._emit("])")
+
+                        self.compiler.indent_level -= 1
+                        self.compiler._emit("else:")
+                        self.compiler.indent_level += 1
+
+                        # Sequential path: Use simple await loop for small lists
+                        self.compiler._emit(f'{result_var}["{alias}"] = []')
+                        self.compiler._emit(
+                            f"for _idx, {item_var} in enumerate({temp_var}):"
+                        )
+                        self.compiler.indent_level += 1
+                        self.compiler._emit(
+                            f'{result_var}["{alias}"].append(await {task_fn_name}({item_var}, _idx))'
+                        )
+                        self.compiler.indent_level -= 1
+
+                        self.compiler.indent_level -= 1
                     else:
                         # No async fields, use simple sequential loop
                         self.compiler._emit(f'{result_var}["{alias}"] = []')
