@@ -93,6 +93,45 @@ class JITCompiler:
         self.inline_trivial_resolvers = True
         self.eliminate_redundant_checks = True
 
+    def _sanitize_identifier(self, name: str) -> str:
+        """Sanitize identifier for safe code generation (defense-in-depth).
+
+        While GraphQL parser validates identifiers, this provides an additional
+        security layer to prevent any potential code injection through names
+        embedded in generated code.
+
+        Args:
+            name: Identifier to sanitize (field name, alias, variable name, etc.)
+
+        Returns:
+            The validated identifier
+
+        Raises:
+            ValueError: If identifier is invalid
+        """
+        if not name:
+            raise ValueError("Identifier cannot be empty")
+
+        # Must start with letter or underscore
+        if not (name[0].isalpha() or name[0] == "_"):
+            raise ValueError(
+                f"Invalid identifier '{name}': must start with letter or underscore"
+            )
+
+        # Rest must be alphanumeric or underscore
+        if not all(c.isalnum() or c == "_" for c in name):
+            raise ValueError(
+                f"Invalid identifier '{name}': contains invalid characters"
+            )
+
+        # Reject Python keywords for extra safety
+        import keyword
+
+        if keyword.iskeyword(name):
+            raise ValueError(f"Invalid identifier '{name}': Python keyword")
+
+        return name
+
     def compile_query(self, query: str) -> Callable:
         """Compile a GraphQL query into optimized Python code."""
         document = parse(query)
@@ -393,8 +432,12 @@ class JITCompiler:
             self._emit("async_tasks = []")
 
             for selection, resolver_id in async_fields:
-                field_name = selection.name.value
-                alias = selection.alias.value if selection.alias else field_name
+                field_name = self._sanitize_identifier(selection.name.value)
+                alias = (
+                    self._sanitize_identifier(selection.alias.value)
+                    if selection.alias
+                    else field_name
+                )
 
                 # Generate async task
                 task_name = f"task_{field_name}"
@@ -480,13 +523,16 @@ class JITCompiler:
         path: str,
     ):
         """Generate optimized field resolution with error handling."""
-        field_name = field.name.value
-        alias = field.alias.value if field.alias else field_name
+        field_name = self._sanitize_identifier(field.name.value)
+        alias = (
+            self._sanitize_identifier(field.alias.value) if field.alias else field_name
+        )
         field_path = f"{path} + ['{alias}']"
 
         # Handle __typename
         if field_name == "__typename":
-            self._emit(f'{result_var}["{alias}"] = "{parent_type.name}"')
+            safe_type_name = self._sanitize_identifier(parent_type.name)
+            self._emit(f'{result_var}["{alias}"] = "{safe_type_name}"')
             return
 
         # Handle introspection fields
@@ -774,12 +820,13 @@ class JITCompiler:
                     self.indent_level -= 1
                 else:
                     # Single scalar
+                    safe_field_type_name = self._sanitize_identifier(field_type.name)
                     self._emit(
-                        f"if {temp_var} is not None and '{field_type.name}' in _scalar_serializers:"
+                        f"if {temp_var} is not None and '{safe_field_type_name}' in _scalar_serializers:"
                     )
                     self.indent_level += 1
                     self._emit(
-                        f'{result_var}["{alias}"] = _scalar_serializers["{field_type.name}"]({temp_var})'
+                        f'{result_var}["{alias}"] = _scalar_serializers["{safe_field_type_name}"]({temp_var})'
                     )
                     self.indent_level -= 1
                     self._emit("else:")
@@ -856,7 +903,7 @@ class JITCompiler:
         )
 
         if isinstance(value_node, VariableNode):
-            var_name = value_node.name.value
+            var_name = self._sanitize_identifier(value_node.name.value)
             var_code = f"{info_var}.variable_values.get('{var_name}')"
 
             # Check if the argument type is a custom scalar that needs parsing
@@ -878,8 +925,9 @@ class JITCompiler:
                     # Check if item type is a custom scalar
                     if hasattr(item_type, "name") and hasattr(item_type, "parse_value"):
                         # Apply parse_value to each element in the list, preserving None
+                        safe_type_name = self._sanitize_identifier(item_type.name)
                         parser_func = (
-                            f"_scalar_parsers.get('{item_type.name}', lambda x: x)"
+                            f"_scalar_parsers.get('{safe_type_name}', lambda x: x)"
                         )
                         return f"([{parser_func}(item) if item is not None else None for item in {var_code}] if {var_code} is not None else None)"
                 else:
@@ -892,7 +940,8 @@ class JITCompiler:
                         scalar_type, "parse_value"
                     ):
                         # This is a custom scalar - wrap with parse_value
-                        return f"(_scalar_parsers.get('{scalar_type.name}', lambda x: x)({var_code}) if {var_code} is not None else None)"
+                        safe_type_name = self._sanitize_identifier(scalar_type.name)
+                        return f"(_scalar_parsers.get('{safe_type_name}', lambda x: x)({var_code}) if {var_code} is not None else None)"
 
             return var_code
         if isinstance(value_node, (IntValueNode, FloatValueNode)):
@@ -908,7 +957,8 @@ class JITCompiler:
                     scalar_type, "parse_literal"
                 ):
                     # Custom scalar with parse_literal
-                    return f"_scalar_parsers.get('{scalar_type.name}', lambda x: x)({value_node.value!r})"
+                    safe_type_name = self._sanitize_identifier(scalar_type.name)
+                    return f"_scalar_parsers.get('{safe_type_name}', lambda x: x)({value_node.value!r})"
 
             return repr(value_node.value)
         if isinstance(value_node, BooleanValueNode):
@@ -931,7 +981,9 @@ class JITCompiler:
                     if enum_value_name in enum_type.values:
                         # The enum_type.values[name].value contains the actual Python enum instance
                         # We need to generate code that accesses this at runtime
-                        return f"_schema.type_map['{enum_type.name}'].values['{enum_value_name}'].value"
+                        safe_type_name = self._sanitize_identifier(enum_type.name)
+                        safe_enum_value = self._sanitize_identifier(enum_value_name)
+                        return f"_schema.type_map['{safe_type_name}'].values['{safe_enum_value}'].value"
 
             # Fallback to string representation
             return repr(value_node.value)
@@ -1212,8 +1264,12 @@ class JITCompiler:
                     )
                 continue
             if isinstance(selection, FieldNode):
-                field_name = selection.name.value
-                alias = selection.alias.value if selection.alias else field_name
+                field_name = self._sanitize_identifier(selection.name.value)
+                alias = (
+                    self._sanitize_identifier(selection.alias.value)
+                    if selection.alias
+                    else field_name
+                )
 
                 if field_name == "__typename":
                     self._emit(f'{result_var}["{alias}"] = "{introspection_type}"')
@@ -1799,7 +1855,11 @@ class JITCompiler:
                 isinstance(selection, FieldNode)
                 and selection.name.value == "__typename"
             ):
-                alias = selection.alias.value if selection.alias else "__typename"
+                alias = (
+                    self._sanitize_identifier(selection.alias.value)
+                    if selection.alias
+                    else "__typename"
+                )
                 self._emit(f'{result_var}["{alias}"] = actual_typename')
                 break
 
@@ -1889,8 +1949,12 @@ class JITCompiler:
                 # Try to resolve common fields
                 for selection in common_selections:
                     if isinstance(selection, FieldNode):
-                        field_name = selection.name.value
-                        alias = selection.alias.value if selection.alias else field_name
+                        field_name = self._sanitize_identifier(selection.name.value)
+                        alias = (
+                            self._sanitize_identifier(selection.alias.value)
+                            if selection.alias
+                            else field_name
+                        )
                         self._emit(
                             f'{result_var}["{alias}"] = getattr({parent_var}, "{field_name}", None)'
                         )
