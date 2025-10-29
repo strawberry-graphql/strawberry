@@ -175,6 +175,22 @@ class CodeGenerator:
         path: str,
     ) -> None:
         """Generate selection set with parallel async execution."""
+        # Check if we should use parallel execution based on depth
+        # Deep nesting with parallel execution creates exponential overhead
+        use_parallel = (
+            self.compiler.enable_parallel
+            and self.compiler.parallel_depth < self.compiler.max_parallel_depth
+        )
+
+        if not use_parallel:
+            # Fall back to sequential execution at deep nesting levels
+            return self.generate_selection_set(
+                selection_set, parent_type, parent_var, result_var, info_var, path
+            )
+
+        # Track depth for nested calls
+        self.compiler.parallel_depth += 1
+
         # Group selections by type
         sync_fields = []
         async_fields = []
@@ -213,8 +229,15 @@ class CodeGenerator:
 
         # Execute async fields in parallel if multiple
         if len(async_fields) > 1:
+            # Use unique variable names to avoid shadowing in nested contexts
+            gather_id = self.compiler.nested_counter
+            self.compiler.nested_counter += 1
+            tasks_var = f"async_tasks_{gather_id}"
+            results_var = f"async_results_{gather_id}"
+            result_item_var = f"async_result_{gather_id}"
+
             self.compiler._emit("# Execute async fields in parallel")
-            self.compiler._emit("async_tasks = []")
+            self.compiler._emit(f"{tasks_var} = []")
 
             for selection, _resolver_id in async_fields:
                 field_name = self.compiler._sanitize_identifier(selection.name.value)
@@ -224,8 +247,8 @@ class CodeGenerator:
                     else field_name
                 )
 
-                # Generate async task
-                task_name = f"task_{field_name}"
+                # Generate async task with unique name
+                task_name = f"task_{field_name}_{gather_id}"
                 self.compiler._emit(f"async def {task_name}():")
                 self.compiler.indent_level += 1
                 self.compiler._emit("temp_result = {}")
@@ -234,30 +257,32 @@ class CodeGenerator:
                 )
                 self.compiler._emit(f"return ('{alias}', temp_result.get('{alias}'))")
                 self.compiler.indent_level -= 1
-                self.compiler._emit(f"async_tasks.append({task_name}())")
+                self.compiler._emit(f"{tasks_var}.append({task_name}())")
 
             self.compiler._emit("")
             self.compiler._emit("# Gather results")
             self.compiler._emit(
-                "async_results = await asyncio.gather(*async_tasks, return_exceptions=True)"
+                f"{results_var} = await asyncio.gather(*{tasks_var}, return_exceptions=True)"
             )
-            self.compiler._emit("for async_result in async_results:")
+            self.compiler._emit(f"for {result_item_var} in {results_var}:")
             self.compiler.indent_level += 1
-            self.compiler._emit("if isinstance(async_result, Exception):")
+            self.compiler._emit(f"if isinstance({result_item_var}, Exception):")
             self.compiler.indent_level += 1
             self.compiler._emit(
-                "errors.append({'message': str(async_result), 'path': " + path + "})"
+                f"errors.append({{'message': str({result_item_var}), 'path': "
+                + path
+                + "})"
             )
             self.compiler.indent_level -= 1
-            self.compiler._emit("elif isinstance(async_result, tuple):")
+            self.compiler._emit(f"elif isinstance({result_item_var}, tuple):")
             self.compiler.indent_level += 1
-            self.compiler._emit("field_alias, field_value = async_result")
+            self.compiler._emit(f"field_alias, field_value = {result_item_var}")
             self.compiler._emit(f"{result_var}[field_alias] = field_value")
             self.compiler.indent_level -= 1
             self.compiler.indent_level -= 1
 
         elif async_fields:
-            # Single async field
+            # Single async field - await directly without gather overhead
             for selection, _ in async_fields:
                 self.generate_field(
                     selection, parent_type, parent_var, result_var, info_var, path
@@ -273,6 +298,9 @@ class CodeGenerator:
                 self.generate_inline_fragment(
                     selection, parent_type, parent_var, result_var, info_var, path
                 )
+
+        # Restore depth after processing
+        self.compiler.parallel_depth -= 1
 
     def generate_selection_set(
         self,
@@ -511,7 +539,8 @@ class CodeGenerator:
                             item_path,
                         )
                     else:
-                        self.generate_selection_set(
+                        # Use parallel execution for list items to match standard GraphQL
+                        self.generate_parallel_selection_set(
                             field.selection_set,
                             field_type,
                             item_var,
@@ -552,6 +581,7 @@ class CodeGenerator:
                             field_path,
                         )
                     else:
+                        # Use sequential execution for nested selections to minimize event loop overhead
                         self.generate_selection_set(
                             field.selection_set,
                             field_type,

@@ -83,6 +83,10 @@ class JITCompiler:
         self.has_async_resolvers = False
         self.async_resolver_ids = set()
         self.nested_counter = 0  # Counter for unique nested result variables
+        self.parallel_depth = 0  # Track parallelization depth
+        self.max_parallel_depth = (
+            3  # Limit parallel nesting to avoid deep exponential overhead
+        )
 
         # Optimization flags
         self.enable_parallel = True
@@ -225,6 +229,7 @@ class JITCompiler:
         self.has_async_resolvers = False
         self.async_resolver_ids = set()
         self.nested_counter = 0
+        self.parallel_depth = 0
 
     def _get_operation(self, document: DocumentNode) -> OperationDefinitionNode | None:
         for definition in document.definitions:
