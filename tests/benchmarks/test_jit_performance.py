@@ -16,7 +16,7 @@ import pytest
 from pytest_codspeed.plugin import BenchmarkFixture
 
 import strawberry
-from strawberry.jit import compile_query, create_cached_compiler
+from strawberry.jit import compile_query
 
 # Import stadium types from existing benchmark
 from .test_stadium import (
@@ -253,19 +253,26 @@ def test_jit_compilation_time(benchmark: BenchmarkFixture):
 
 @pytest.mark.benchmark
 def test_jit_cached_compilation(benchmark: BenchmarkFixture):
-    """Benchmark cached compilation (warm cache).
+    """Benchmark cached compilation (with manual cache).
 
-    This tests the LRU cache hit performance - should be near-instant.
+    This demonstrates how users can implement their own cache.
     """
     schema = strawberry.Schema(query=StadiumQuery)
-    compiler = create_cached_compiler(schema, cache_size=100)
+
+    # Simple manual cache
+    query_cache = {}
+
+    def get_compiled(query: str):
+        if query not in query_cache:
+            query_cache[query] = compile_query(schema, query)
+        return query_cache[query]
 
     # Prime the cache
-    compiler.compile_query(stadium_query)
+    get_compiled(stadium_query)
 
     def run():
         # This should hit the cache
-        return compiler.compile_query(stadium_query)
+        return get_compiled(stadium_query)
 
     compiled_fn = benchmark(run)
 

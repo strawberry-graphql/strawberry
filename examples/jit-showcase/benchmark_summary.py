@@ -16,7 +16,7 @@ from graphql import execute_sync, parse
 
 # Import all demos
 import strawberry
-from strawberry.jit import compile_query, create_cached_compiler
+from strawberry.jit import compile_query
 
 
 @dataclass
@@ -88,7 +88,19 @@ def run_quickstart_benchmark() -> BenchmarkResult:
     jit_time = statistics.mean(times) * 1000
 
     # Cached
-    compiler = create_cached_compiler(schema._schema)
+    # Simple query cache for demo
+
+    query_cache = {}
+
+    compiler = type(
+        "QueryCache",
+        (),
+        {
+            "compile_query": lambda self, q: query_cache.setdefault(
+                q, compile_query(schema, q)
+            )
+        },
+    )()
     times = []
     for _ in range(iterations):
         start = time.perf_counter()
@@ -272,7 +284,19 @@ def run_overhead_elimination_benchmark() -> BenchmarkResult:
     jit_time = statistics.mean(times) * 1000
 
     # Cached
-    compiler = create_cached_compiler(schema._schema)
+    # Simple query cache for demo
+
+    query_cache = {}
+
+    compiler = type(
+        "QueryCache",
+        (),
+        {
+            "compile_query": lambda self, q: query_cache.setdefault(
+                q, compile_query(schema, q)
+            )
+        },
+    )()
     times = []
     for _ in range(20):
         start = time.perf_counter()
@@ -295,23 +319,57 @@ def run_overhead_elimination_benchmark() -> BenchmarkResult:
 
 def print_benchmark_summary(results: list[BenchmarkResult]) -> None:
     """Print a comprehensive benchmark summary."""
+    print("\n" + "=" * 70)
+    print("BENCHMARK SUMMARY - JIT PERFORMANCE ANALYSIS")
+    print("=" * 70)
+
     for r in results:
-        pass
+        print(f"\nTest: {r.name}")
+        print(f"Description: {r.description}")
+        print(f"Total fields resolved: {r.field_count:,}")
+        print("-" * 70)
+        print(f"Standard:  {r.standard_time:8.2f}ms")
+        print(f"JIT:       {r.jit_time:8.2f}ms")
+        print(f"Cached:    {r.cached_time:8.2f}ms")
+        print("-" * 70)
+        print(f"Speedup (JIT):    {r.speedup_jit:.2f}x faster")
+        print(f"Speedup (Cached): {r.speedup_cached:.2f}x faster")
 
     # Calculate averages
-    statistics.mean(r.speedup_jit for r in results)
-    statistics.mean(r.speedup_cached for r in results)
-    max(r.speedup_jit for r in results)
-    max(r.speedup_cached for r in results)
+    avg_speedup_jit = statistics.mean(r.speedup_jit for r in results)
+    avg_speedup_cached = statistics.mean(r.speedup_cached for r in results)
+    max_speedup_jit = max(r.speedup_jit for r in results)
+    max_speedup_cached = max(r.speedup_cached for r in results)
+
+    print("\n" + "=" * 70)
+    print("AGGREGATE METRICS")
+    print("=" * 70)
+    print(f"Average JIT Speedup:    {avg_speedup_jit:.2f}x")
+    print(f"Average Cached Speedup: {avg_speedup_cached:.2f}x")
+    print(f"Max JIT Speedup:        {max_speedup_jit:.2f}x")
+    print(f"Max Cached Speedup:     {max_speedup_cached:.2f}x")
 
     # Throughput improvements
+    print("\n" + "=" * 70)
+    print("THROUGHPUT ANALYSIS (requests/second)")
+    print("=" * 70)
     for r in results:
-        1000 / r.standard_time
-        1000 / r.cached_time
+        standard_rps = 1000 / r.standard_time
+        cached_rps = 1000 / r.cached_time
+        print(f"{r.name}:")
+        print(f"  Standard:  {standard_rps:8.0f} req/s")
+        print(f"  Cached:    {cached_rps:8.0f} req/s")
+        print(f"  Improvement: {(cached_rps / standard_rps - 1) * 100:.1f}%")
 
     # Cost savings
+    print("\n" + "=" * 70)
+    print("COST SAVINGS (with caching)")
+    print("=" * 70)
     for r in results:
-        (1 - 1 / r.speedup_cached) * 100
+        savings = (1 - 1 / r.speedup_cached) * 100
+        print(f"{r.name}: {savings:.1f}% reduction in compute costs")
+
+    print("\n" + "=" * 70)
 
 
 def main() -> None:

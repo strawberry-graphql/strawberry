@@ -57,7 +57,7 @@ This will open GraphiQL where you can test the API.
 
 ### JIT Compiler (Beta) ⚡
 
-Strawberry includes a Just-In-Time (JIT) compiler that provides **~6x faster** query execution by compiling GraphQL queries ahead-of-time:
+Strawberry includes a Just-In-Time (JIT) compiler that provides **5-6x faster** query execution by compiling GraphQL queries ahead-of-time:
 
 ```python
 import strawberry
@@ -79,9 +79,8 @@ result = compiled(root_value=None)
 ```
 
 **Performance Results:**
-- ~6x faster than standard GraphQL execution
+- 5-6x faster than standard GraphQL execution
 - Automatic parallel execution of async fields
-- Built-in query caching
 - Zero configuration required
 
 See the [JIT Compiler documentation](docs/features/jit-compiler.md) for details.

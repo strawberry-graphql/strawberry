@@ -4,7 +4,7 @@ title: JIT Compiler
 
 # JIT Compiler (Beta)
 
-The Strawberry JIT (Just-In-Time) Compiler provides **up to 6x faster** GraphQL
+The Strawberry JIT (Just-In-Time) Compiler provides **5-6x faster** GraphQL
 query execution by compiling queries ahead-of-time into optimized Python code.
 
 ## Overview
@@ -15,9 +15,8 @@ interpretation cost of standard GraphQL execution.
 
 ### Key Benefits
 
-- **~6x Performance Improvement**: Queries execute significantly faster
+- **5-6x Performance Improvement**: Queries execute significantly faster
 - **Parallel Async Execution**: Independent async fields run concurrently
-- **Built-in Caching**: Compiled queries are cached automatically
 - **Zero Configuration**: Drop-in replacement for standard execution
 - **100% GraphQL Spec Compliant**: Supports all GraphQL features
 
@@ -46,26 +45,6 @@ compiled_query = compile_query(schema, query)
 # Execute many times (fast!)
 result = compiled_query(root_value=None)
 print(result)  # {"data": {"hello": "Hello, World!"}}
-```
-
-### With Caching
-
-For production use, use the cached compiler to automatically cache compiled
-queries:
-
-```python
-from strawberry.jit import create_cached_compiler
-
-# Create a cached compiler
-compiler = create_cached_compiler(
-    schema,
-    cache_size=1000,  # Max cached queries
-    ttl_seconds=3600,  # Cache TTL (1 hour)
-)
-
-# Compile queries (automatically cached)
-compiled = compiler.compile_query(query)
-result = compiled(root_value=None)
 ```
 
 ## Performance
@@ -192,14 +171,10 @@ result = compiled_query(None)
 ### With FastAPI
 
 ```python
-from fastapi import FastAPI
-from strawberry.fastapi import GraphQLRouter
-from strawberry.jit import create_cached_compiler
+from fastapi import FastAPI, Request
+from strawberry.jit import compile_query
 
 app = FastAPI()
-
-# Create cached compiler
-jit_compiler = create_cached_compiler(schema)
 
 
 # Use in your route
@@ -209,7 +184,7 @@ async def graphql_endpoint(request: Request):
     query = data.get("query")
 
     # Compile and execute
-    compiled = jit_compiler.compile_query(query)
+    compiled = compile_query(schema, query)
     result = compiled(
         root_value=None,
         variables=data.get("variables"),
@@ -218,22 +193,8 @@ async def graphql_endpoint(request: Request):
     return result
 ```
 
-### With Django
-
-```python
-from strawberry.django.views import GraphQLView as BaseGraphQLView
-from strawberry.jit import create_cached_compiler
-
-
-class JITGraphQLView(BaseGraphQLView):
-    def __init__(self, schema, **kwargs):
-        super().__init__(schema, **kwargs)
-        self.jit_compiler = create_cached_compiler(schema)
-
-    def execute_query(self, query, variables=None):
-        compiled = self.jit_compiler.compile_query(query)
-        return compiled(root_value=None, variables=variables)
-```
+Note: For production use, you should implement your own caching layer to avoid
+recompiling the same query multiple times.
 
 ## Advanced Usage
 
@@ -300,59 +261,45 @@ else:
 
 ### Thread Safety
 
-The JIT compiler is thread-safe for concurrent query execution:
+The compiled query functions are thread-safe and can be executed concurrently:
 
 ```python
 # Safe for concurrent requests ✅
-compiler = create_cached_compiler(schema)
+compiled = compile_query(schema, query)
 
 
-# Multiple threads/workers can safely use the same compiler
-def handle_request(query):
-    compiled = compiler.compile_query(query)
+# Multiple threads/workers can safely execute the same compiled query
+def handle_request():
     return compiled(root_value=None)
 ```
 
-**Note:** Cache operations use standard Python dictionaries, which are
-thread-safe for most operations in CPython due to the GIL. For extreme
-high-concurrency scenarios, consider using process-based parallelism (e.g.,
-Gunicorn with multiple workers).
+**Note:** For production use with repeated queries, implement your own caching
+layer to avoid recompiling the same query multiple times.
 
 ### Memory Considerations
 
-- Each cached query stores compiled Python code (~5-50KB per query)
-- Default cache size of 1000 queries ≈ 5-50MB memory
-- Set `cache_size` based on your expected unique query count
-- Use `ttl_seconds` to expire old queries and prevent unbounded growth
-
-```python
-# For high-traffic APIs with varied queries
-compiler = create_cached_compiler(
-    schema,
-    cache_size=5000,  # Support many unique queries
-    ttl_seconds=3600,  # Expire after 1 hour
-)
-
-# For APIs with repetitive queries
-compiler = create_cached_compiler(
-    schema,
-    cache_size=100,  # Small cache is sufficient
-    ttl_seconds=None,  # Never expire
-)
-```
+- Each compiled query stores Python code (~5-50KB per query)
+- Compiled queries can be cached in your application as needed
+- Consider implementing an LRU cache or similar mechanism for production use
 
 ## Best Practices
 
-### 1. Use Caching in Production
+### 1. Cache Compiled Queries
 
-Always use `create_cached_compiler()` in production to avoid recompiling
-queries:
+In production, implement caching to avoid recompiling the same query:
 
 ```python
-# Good ✅
-compiler = create_cached_compiler(schema, cache_size=1000)
+# Good ✅ - Cache the compiled query
+query_cache = {}
 
-# Avoid ❌ (recompiles every time)
+
+def get_compiled_query(query_string):
+    if query_string not in query_cache:
+        query_cache[query_string] = compile_query(schema, query_string)
+    return query_cache[query_string]
+
+
+# Avoid ❌ - Recompiling every time
 compile_query(schema, query)
 ```
 
@@ -372,27 +319,7 @@ for data in dataset:
     result = compiled(data)
 ```
 
-### 3. Monitor Cache Hit Rate
-
-In production, monitor your cache hit rate:
-
-```python
-compiler = create_cached_compiler(schema, cache_size=1000)
-
-# Track hits/misses
-cache_hits = 0
-cache_misses = 0
-
-
-def get_compiled(query):
-    if query_hash in compiler.cache:
-        cache_hits += 1
-    else:
-        cache_misses += 1
-    return compiler.compile_query(query)
-```
-
-### 4. Handle Fallback Warnings
+### 3. Handle Fallback Warnings
 
 Some queries may fall back to standard execution (e.g., with `@defer`):
 
@@ -456,8 +383,8 @@ supported.
 **Q: Can I use JIT with my existing schema?** A: Yes! JIT is a drop-in
 replacement for standard execution. No schema changes needed.
 
-**Q: What's the compilation overhead?** A: First compilation takes ~1-5ms. With
-caching, subsequent runs are ~6x faster.
+**Q: What's the compilation overhead?** A: First compilation takes ~1-5ms.
+Execution is 5-6x faster than standard GraphQL execution.
 
 **Q: Does JIT work with custom scalars?** A: Yes, all custom scalars are fully
 supported with their serialize/parse_value functions.

@@ -18,7 +18,7 @@ from datetime import datetime, timedelta
 from graphql import execute_sync, parse
 
 import strawberry
-from strawberry.jit import CachedJITCompiler, compile_query
+from strawberry.jit import compile_query
 
 
 # Schema with lots of computed fields and data
@@ -176,7 +176,7 @@ class Customer:
     @strawberry.field
     def display_name(self) -> str:
         """Display name with VIP badge."""
-        vip = " ⭐ VIP" if self.vip_status else ""
+        vip = " [VIP]" if self.vip_status else ""
         return f"{self.full_name()}{vip}"
 
     @strawberry.field
@@ -325,15 +325,15 @@ class Order:
 
     @strawberry.field
     def status_emoji(self) -> str:
-        """Status with emoji."""
-        emojis = {
-            "pending": "⏳",
-            "processing": "🔄",
-            "shipped": "📦",
-            "delivered": "✅",
-            "cancelled": "❌",
+        """Status with indicator."""
+        indicators = {
+            "pending": "[PENDING]",
+            "processing": "[PROCESSING]",
+            "shipped": "[SHIPPED]",
+            "delivered": "[DELIVERED]",
+            "cancelled": "[CANCELLED]",
         }
-        return f"{emojis.get(self.status, '❓')} {self.status.upper()}"
+        return f"{indicators.get(self.status, '[UNKNOWN]')} {self.status.upper()}"
 
     @strawberry.field
     def days_since_order(self) -> int:
@@ -716,6 +716,10 @@ def run_large_dataset_benchmark() -> None:
 
     root = Query()
 
+    print("\n" + "=" * 80)
+    print("LARGE DATASET BENCHMARK - Comprehensive Performance Analysis")
+    print("=" * 80)
+
     # Warm up
     for _ in range(3):
         execute_sync(schema._schema, parse(query), root_value=root)
@@ -730,8 +734,8 @@ def run_large_dataset_benchmark() -> None:
         times.append(elapsed)
 
     standard_avg = statistics.mean(times) * 1000
-    min(times) * 1000
-    max(times) * 1000
+    standard_min = min(times) * 1000
+    standard_max = max(times) * 1000
 
     # Count approximate field resolutions
     orders_fields = 1000 * 17  # 17 fields per order
@@ -750,9 +754,11 @@ def run_large_dataset_benchmark() -> None:
     )
 
     # 2. JIT Compiled
+    print("\nCompiling JIT query...")
     start_compile = time.perf_counter()
     compiled_fn = compile_query(schema, query)
-    (time.perf_counter() - start_compile) * 1000
+    compile_time = (time.perf_counter() - start_compile) * 1000
+    print(f"Compilation time: {compile_time:.2f}ms")
 
     times = []
     for i in range(iterations):
@@ -762,11 +768,23 @@ def run_large_dataset_benchmark() -> None:
         times.append(elapsed)
 
     jit_avg = statistics.mean(times) * 1000
-    min(times) * 1000
-    max(times) * 1000
+    jit_min = min(times) * 1000
+    jit_max = max(times) * 1000
 
     # 3. Production simulation with cache
-    compiler = CachedJITCompiler(schema)
+    # Simple query cache for demo
+
+    query_cache = {}
+
+    compiler = type(
+        "QueryCache",
+        (),
+        {
+            "compile_query": lambda self, q: query_cache.setdefault(
+                q, compile_query(schema, q)
+            )
+        },
+    )()
 
     times = []
     for i in range(20):
@@ -776,22 +794,50 @@ def run_large_dataset_benchmark() -> None:
         elapsed = time.perf_counter() - start
         times.append(elapsed)
         if i == 0:
-            pass
+            first_cached = elapsed * 1000
 
-    statistics.mean(times) * 1000
+    all_cached = statistics.mean(times) * 1000
     avg_cached = statistics.mean(times[1:]) * 1000  # Exclude first
 
-    compiler.get_cache_stats()
-
     # Summary
+    print("\n" + "=" * 80)
+    print("EXECUTION TIME ANALYSIS")
+    print("=" * 80)
+    print("\nStandard GraphQL:")
+    print(f"  Average:  {standard_avg:8.2f}ms")
+    print(f"  Min:      {standard_min:8.2f}ms")
+    print(f"  Max:      {standard_max:8.2f}ms")
+    print("\nJIT Compiled:")
+    print(f"  Average:  {jit_avg:8.2f}ms")
+    print(f"  Min:      {jit_min:8.2f}ms")
+    print(f"  Max:      {jit_max:8.2f}ms")
+    print("\nCached (warm):")
+    print(f"  First:    {first_cached:8.2f}ms (includes compilation)")
+    print(f"  Average:  {avg_cached:8.2f}ms (cached)")
 
-    standard_avg / jit_avg
-    standard_avg / avg_cached
+    print("\n" + "=" * 80)
+    print("PERFORMANCE IMPROVEMENTS")
+    print("=" * 80)
+    jit_speedup = standard_avg / jit_avg
+    cached_speedup = standard_avg / avg_cached
+    print(f"JIT Speedup:    {jit_speedup:.2f}x faster")
+    print(f"Cached Speedup: {cached_speedup:.2f}x faster")
 
-    (1_000_000 / total_fields) * standard_avg / 1000
-    (1_000_000 / total_fields) * jit_avg / 1000
-    (1_000_000 / total_fields) * avg_cached / 1000
+    print("\n" + "=" * 80)
+    print("FIELD RESOLUTION METRICS")
+    print("=" * 80)
+    print(f"Total fields resolved: {total_fields:,}")
+    print("Per-field timing (microseconds):")
+    standard_per_field = (1_000_000 / total_fields) * standard_avg / 1000
+    jit_per_field = (1_000_000 / total_fields) * jit_avg / 1000
+    cached_per_field = (1_000_000 / total_fields) * avg_cached / 1000
+    print(f"  Standard:  {standard_per_field:.3f}µs per field")
+    print(f"  JIT:       {jit_per_field:.3f}µs per field")
+    print(f"  Cached:    {cached_per_field:.3f}µs per field")
 
+    print("\n" + "=" * 80)
+    print("COST ANALYSIS (1M requests at $0.001/second)")
+    print("=" * 80)
     requests = 1_000_000
     cost_per_second = 0.001  # $0.001 per CPU second
 
@@ -799,9 +845,18 @@ def run_large_dataset_benchmark() -> None:
     total_time_jit = (requests * jit_avg) / 1000
     total_time_cached = (requests * avg_cached) / 1000
 
-    total_time_standard * cost_per_second
-    total_time_jit * cost_per_second
-    total_time_cached * cost_per_second
+    cost_standard = total_time_standard * cost_per_second
+    cost_jit = total_time_jit * cost_per_second
+    cost_cached = total_time_cached * cost_per_second
+
+    print(
+        f"Standard execution: ${cost_standard:8.2f} ({total_time_standard:8.0f}s CPU)"
+    )
+    print(f"JIT execution:      ${cost_jit:8.2f} ({total_time_jit:8.0f}s CPU)")
+    print(f"Cached execution:   ${cost_cached:8.2f} ({total_time_cached:8.0f}s CPU)")
+    print(f"\nSavings with JIT:    ${cost_standard - cost_jit:8.2f}")
+    print(f"Savings with cache:  ${cost_standard - cost_cached:8.2f}")
+    print("=" * 80)
 
 
 if __name__ == "__main__":

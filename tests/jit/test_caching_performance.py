@@ -1,12 +1,54 @@
 """
 Comprehensive performance test showing the impact of query caching.
+Demonstrates how to implement a simple cache for compiled queries.
 """
 
 import asyncio
 import time
 
 import strawberry
-from strawberry.jit import CachedJITCompiler, compile_query
+from strawberry.jit import compile_query
+
+
+# Simple cache implementation for demonstration
+class SimpleQueryCache:
+    """Basic query cache for JIT-compiled queries."""
+
+    def __init__(self, schema, cache_size=100):
+        self.schema = schema
+        self.cache = {}
+        self.cache_size = cache_size
+        self.access_order = []
+
+    def compile_query(self, query: str):
+        """Compile query with caching."""
+        if query in self.cache:
+            # Move to end (LRU)
+            if query in self.access_order:
+                self.access_order.remove(query)
+            self.access_order.append(query)
+            return self.cache[query]
+
+        # Compile new query
+        compiled = compile_query(self.schema, query)
+        self.cache[query] = compiled
+        self.access_order.append(query)
+
+        # Enforce cache size limit
+        while len(self.cache) > self.cache_size:
+            oldest = self.access_order.pop(0)
+            if oldest in self.cache:
+                del self.cache[oldest]
+
+        return compiled
+
+    def get_cache_stats(self):
+        """Get cache statistics."""
+        return {
+            "size": len(self.cache),
+            "max_size": self.cache_size,
+            "keys": list(self.cache.keys()),
+        }
 
 
 @strawberry.type
@@ -143,7 +185,7 @@ def benchmark_cache_effectiveness():
     no_cache_time = time.perf_counter() - start
 
     # With cache
-    compiler = CachedJITCompiler(schema._schema, cache_size=100)
+    compiler = SimpleQueryCache(schema, cache_size=100)
     start = time.perf_counter()
     for query in query_stream:
         compiled_fn = compiler.compile_query(query)
@@ -185,21 +227,11 @@ async def benchmark_cached_async_queries():
     sum(times)
 
     # With cache
-    compiler = CachedJITCompiler(schema._schema, enable_parallel=False)
+    compiler = SimpleQueryCache(schema)
     times = []
     for _ in range(iterations):
         start = time.perf_counter()
         compiled_fn = compiler.compile_query(query)
-        await compiled_fn(root)
-        times.append(time.perf_counter() - start)
-    sum(times)
-
-    # With cache + parallel
-    compiler_parallel = CachedJITCompiler(schema._schema, enable_parallel=True)
-    times = []
-    for _ in range(iterations):
-        start = time.perf_counter()
-        compiled_fn = compiler_parallel.compile_query(query)
         await compiled_fn(root)
         times.append(time.perf_counter() - start)
     sum(times)

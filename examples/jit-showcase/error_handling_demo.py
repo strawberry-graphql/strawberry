@@ -22,7 +22,7 @@ from graphql import execute_sync, parse
 import strawberry
 
 # Import JIT compilers
-from strawberry.jit import CachedJITCompiler, compile_query
+from strawberry.jit import compile_query
 
 # Define schema with various error scenarios
 
@@ -142,18 +142,26 @@ def demo_nullable_field_errors() -> None:
     }
     """
 
+    print("\n" + "=" * 70)
+    print("ERROR HANDLING - Nullable Field Errors")
+    print("=" * 70)
+
     # Standard execution
     result = execute_sync(schema._schema, parse(query), root_value=Query())
     if result.errors:
-        pass
+        print(f"Standard execution errors: {len(result.errors)} error(s) found")
+        for error in result.errors[:2]:
+            print(f"  - {str(error)[:60]}...")
 
     # JIT execution
     compiled_fn = compile_query(schema, query)
     jit_result = compiled_fn(Query())
     if "data" in jit_result:
-        pass
+        print(f"JIT returned data: {jit_result['data'] is not None}")
     if "errors" in jit_result:
-        pass
+        print(f"JIT execution errors: {len(jit_result['errors'])} error(s) found")
+        for error in jit_result["errors"][:2]:
+            print(f"  - {str(error)[:60]}...")
 
 
 def demo_non_nullable_field_errors() -> None:
@@ -177,16 +185,24 @@ def demo_non_nullable_field_errors() -> None:
     }
     """
 
+    print("\n" + "=" * 70)
+    print("ERROR HANDLING - Non-Nullable Field Error Propagation")
+    print("=" * 70)
+
     # Standard execution
     result = execute_sync(schema._schema, parse(query), root_value=Query())
     if result.errors:
-        pass
+        print(f"Standard execution errors: {len(result.errors)} error(s) found")
+        for error in result.errors[:2]:
+            print(f"  - {str(error)[:60]}...")
 
     # JIT execution
     compiled_fn = compile_query(schema, query)
     jit_result = compiled_fn(Query())
     if jit_result.get("errors"):
-        pass
+        print(f"JIT execution errors: {len(jit_result['errors'])} error(s) found")
+        for error in jit_result["errors"][:2]:
+            print(f"  - {str(error)[:60]}...")
 
 
 def demo_partial_success() -> None:
@@ -226,20 +242,39 @@ def demo_partial_success() -> None:
     }
     """
 
+    print("\n" + "=" * 70)
+    print("ERROR HANDLING - Partial Query Success (Mixed Errors)")
+    print("=" * 70)
+
     # JIT execution with caching
-    cache_compiler = CachedJITCompiler(schema)
+    # Simple query cache for demo
+
+    query_cache = {}
+
+    cache_compiler = type(
+        "QueryCache",
+        (),
+        {
+            "compile_query": lambda self, q: query_cache.setdefault(
+                q, compile_query(schema, q)
+            )
+        },
+    )()
     cached_fn = cache_compiler.compile_query(query)
     result = cached_fn(Query())
 
     if "data" in result:
         normal = result["data"].get("normalStore", {})
-        result["data"].get("silentStore", {})
+        silent = result["data"].get("silentStore", {})
+        print(f"Normal store returned: {normal is not None}")
+        print(f"Silent store returned: {silent is not None}")
         if normal.get("category", {}).get("products"):
-            pass
+            print(f"Normal store products: {len(normal['category']['products'])} items")
 
     if "errors" in result:
-        for _i, _error in enumerate(result["errors"][:3], 1):
-            pass
+        print(f"Partial errors in response: {len(result['errors'])} error(s)")
+        for i, error in enumerate(result["errors"][:3], 1):
+            print(f"  Error {i}: {str(error)[:50]}...")
 
 
 def demo_root_level_errors() -> None:
@@ -256,14 +291,23 @@ def demo_root_level_errors() -> None:
     }
     """
 
+    print("\n" + "=" * 70)
+    print("ERROR HANDLING - Root-Level Errors")
+    print("=" * 70)
+
     # Standard execution
-    execute_sync(schema._schema, parse(query), root_value=Query())
+    result = execute_sync(schema._schema, parse(query), root_value=Query())
+    print(f"Standard execution - errors: {len(result.errors) if result.errors else 0}")
+    if result.errors:
+        print(f"  {str(result.errors[0])[:60]}...")
 
     # JIT execution
     compiled_fn = compile_query(schema, query)
     jit_result = compiled_fn(Query())
     if "errors" in jit_result:
-        pass
+        print(f"JIT execution - errors: {len(jit_result['errors'])}")
+        for error in jit_result["errors"][:1]:
+            print(f"  {str(error)[:60]}...")
 
 
 def demo_performance_with_errors() -> None:
@@ -290,27 +334,50 @@ def demo_performance_with_errors() -> None:
     }
     """
 
+    print("\n" + "=" * 70)
+    print("PERFORMANCE - Error Handling Performance Comparison")
+    print("=" * 70)
+
     # Standard execution
     iterations = 100
     start = time.perf_counter()
     for _ in range(iterations):
         execute_sync(schema._schema, parse(query), root_value=Query())
-    (time.perf_counter() - start) * 1000 / iterations
+    standard_time = (time.perf_counter() - start) * 1000 / iterations
 
     # JIT execution
     compiled_fn = compile_query(schema, query)
     start = time.perf_counter()
     for _ in range(iterations):
         compiled_fn(Query())
-    (time.perf_counter() - start) * 1000 / iterations
+    jit_time = (time.perf_counter() - start) * 1000 / iterations
 
     # Cached JIT
-    cache_compiler = CachedJITCompiler(schema)
+    # Simple query cache for demo
+
+    query_cache = {}
+
+    cache_compiler = type(
+        "QueryCache",
+        (),
+        {
+            "compile_query": lambda self, q: query_cache.setdefault(
+                q, compile_query(schema, q)
+            )
+        },
+    )()
     cached_fn = cache_compiler.compile_query(query)
     start = time.perf_counter()
     for _ in range(iterations):
         cached_fn(Query())
-    (time.perf_counter() - start) * 1000 / iterations
+    cached_time = (time.perf_counter() - start) * 1000 / iterations
+
+    print(f"Standard: {standard_time:.2f}ms per execution")
+    print(f"JIT:      {jit_time:.2f}ms per execution")
+    print(f"Cached:   {cached_time:.2f}ms per execution")
+    print("-" * 70)
+    print(f"JIT Speedup:    {standard_time / jit_time:.2f}x faster")
+    print(f"Cached Speedup: {standard_time / cached_time:.2f}x faster")
 
 
 def main() -> None:

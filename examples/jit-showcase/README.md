@@ -1,12 +1,11 @@
 # Strawberry JIT Compiler Showcase 🚀
 
-This example demonstrates the powerful JIT (Just-In-Time) compiler for Strawberry GraphQL, showing performance improvements of up to **60x** for complex queries!
+This example demonstrates the powerful JIT (Just-In-Time) compiler for Strawberry GraphQL, showing performance improvements of **5-6x** for complex queries!
 
 ## Features Demonstrated
 
-- ⚡ **JIT Compilation** - 3-6x faster query execution
-- 🔄 **Parallel Async Execution** - 3.7x faster for async fields
-- 💾 **Query Caching** - 10x faster for repeated queries
+- ⚡ **JIT Compilation** - 5-6x faster query execution
+- 🔄 **Parallel Async Execution** - Additional speedup for async fields when combined with JIT
 - 🎯 **Real-world Example** - Blog API with posts, authors, and comments
 
 ## Quick Start
@@ -31,12 +30,7 @@ python benchmark.py
 
 ## Performance Results
 
-```
-Standard GraphQL: 245.32ms
-JIT Compiled:     41.23ms (5.95x faster)
-JIT + Parallel:   12.45ms (19.71x faster)
-JIT + Cached:     4.12ms (59.54x faster!)
-```
+Run `python benchmark.py` to see real-time performance comparisons between standard GraphQL execution and JIT-compiled execution. Typical improvements range from 5-6x faster for complex queries with multiple resolvers.
 
 ## Live Demo
 

@@ -4,15 +4,12 @@ This module provides the production-ready JIT compiler that combines:
 - Aggressive compile-time optimizations
 - Parallel async execution with asyncio.gather()
 - GraphQL spec-compliant error handling
-- Built-in query caching with LRU eviction
 - Support for fragments, directives, and arguments
 """
 
 from __future__ import annotations
 
-import hashlib
 import inspect
-import time
 import warnings
 from collections.abc import Callable
 from typing import Any
@@ -2049,86 +2046,6 @@ class JITCompiler:
         return False
 
 
-class CachedJITCompiler:
-    """JIT compiler with built-in caching for production use.
-
-    Features:
-    - LRU cache with configurable size
-    - TTL support for cache entries
-    - Thread-safe caching
-    - Automatic cache invalidation
-    """
-
-    def __init__(
-        self,
-        schema: strawberry.Schema,
-        cache_size: int = 1000,
-        ttl_seconds: float | None = None,
-    ):
-        """Initialize cached JIT compiler.
-
-        Args:
-            schema: A Strawberry schema instance
-            cache_size: Maximum number of cached queries
-            ttl_seconds: TTL for cache entries in seconds
-        """
-        self.schema = schema
-        self.compiler = JITCompiler(schema)
-        self.cache: dict[str, tuple[Callable, float]] = {}
-        self.cache_size = cache_size
-        self.ttl_seconds = ttl_seconds
-        self.access_order: list[str] = []
-
-    def compile_query(self, query: str) -> Callable:
-        """Compile query with caching."""
-        # Generate cache key
-        cache_key = hashlib.md5(query.encode()).hexdigest()
-
-        # Check cache
-        if cache_key in self.cache:
-            compiled_fn, timestamp = self.cache[cache_key]
-
-            # Check TTL
-            if self.ttl_seconds is None or (time.time() - timestamp) < self.ttl_seconds:
-                # Update access order for LRU
-                if cache_key in self.access_order:
-                    self.access_order.remove(cache_key)
-                self.access_order.append(cache_key)
-                return compiled_fn
-            # Expired, remove from cache
-            del self.cache[cache_key]
-            self.access_order.remove(cache_key)
-
-        # Compile query
-        compiled_fn = self.compiler.compile_query(query)
-
-        # Add to cache
-        self.cache[cache_key] = (compiled_fn, time.time())
-        self.access_order.append(cache_key)
-
-        # Enforce cache size limit (LRU eviction)
-        while len(self.cache) > self.cache_size:
-            oldest_key = self.access_order.pop(0)
-            if oldest_key in self.cache:
-                del self.cache[oldest_key]
-
-        return compiled_fn
-
-    def clear_cache(self):
-        """Clear the cache."""
-        self.cache.clear()
-        self.access_order.clear()
-
-    def get_cache_stats(self) -> dict[str, Any]:
-        """Get cache statistics."""
-        return {
-            "size": len(self.cache),
-            "max_size": self.cache_size,
-            "ttl_seconds": self.ttl_seconds,
-            "keys": list(self.cache.keys()),
-        }
-
-
 # Public API
 def compile_query(schema: strawberry.Schema, query: str) -> Callable:
     """Compile a GraphQL query into optimized Python code.
@@ -2146,27 +2063,7 @@ def compile_query(schema: strawberry.Schema, query: str) -> Callable:
     return compiler.compile_query(query)
 
 
-def create_cached_compiler(
-    schema: strawberry.Schema,
-    cache_size: int = 1000,
-    ttl_seconds: float | None = None,
-) -> CachedJITCompiler:
-    """Create a cached JIT compiler for production use.
-
-    Args:
-        schema: A Strawberry schema instance
-        cache_size: Maximum number of cached queries (default: 1000)
-        ttl_seconds: TTL for cache entries in seconds (default: None = no expiry)
-
-    Returns:
-        A CachedJITCompiler instance
-    """
-    return CachedJITCompiler(schema, cache_size, ttl_seconds)
-
-
 __all__ = [
-    "CachedJITCompiler",
     "JITCompiler",
     "compile_query",
-    "create_cached_compiler",
 ]

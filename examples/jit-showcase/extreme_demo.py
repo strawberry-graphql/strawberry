@@ -16,7 +16,7 @@ import time
 from graphql import execute_sync, parse
 
 import strawberry
-from strawberry.jit import CachedJITCompiler, compile_query
+from strawberry.jit import compile_query
 
 
 # Schema with EXTREME nesting and field count
@@ -278,6 +278,9 @@ def run_extreme_benchmark() -> None:
     for _ in range(2):
         execute_sync(schema._schema, parse(query), root_value=root)
 
+    print("\n📊 Extreme Performance Benchmark")
+    print("=" * 70)
+
     # 1. Standard GraphQL
     iterations = 10
     times = []
@@ -288,21 +291,35 @@ def run_extreme_benchmark() -> None:
         times.append(elapsed)
 
     standard_avg = statistics.mean(times) * 1000
-    min(times) * 1000
-    max(times) * 1000
-    statistics.stdev(times) * 1000 if len(times) > 1 else 0
+    standard_min = min(times) * 1000
+    standard_max = max(times) * 1000
+    standard_stdev = statistics.stdev(times) * 1000 if len(times) > 1 else 0
 
     # Count fields
     # Nested: 10 * (3 + 5 * (3 + 5 * (3 + 5 * (7 + 5 * 25) + 12) + 4) + 3)
     # Wide: 200 * 25
     nested_fields = 10 * (3 + 5 * (3 + 5 * (3 + 5 * (7 + 5 * 25) + 12) + 4) + 3)
     wide_fields = 200 * 25
-    nested_fields + wide_fields
+    total_fields = nested_fields + wide_fields
+
+    print(f"\n⏱️  Standard GraphQL ({iterations} iterations)")
+    print("-" * 70)
+    print(f"Average: {standard_avg:.2f}ms")
+    print(f"Min:     {standard_min:.2f}ms")
+    print(f"Max:     {standard_max:.2f}ms")
+    print(f"StdDev:  {standard_stdev:.2f}ms")
+    print(f"\nTotal fields processed: {total_fields:,}")
+    print(f"  Nested: {nested_fields:,}")
+    print(f"  Wide:   {wide_fields:,}")
 
     # 2. JIT Compiled
     start_compile = time.perf_counter()
     compiled_fn = compile_query(schema, query)
-    (time.perf_counter() - start_compile) * 1000
+    compile_time = (time.perf_counter() - start_compile) * 1000
+
+    print("\n⚡ JIT Compiled Execution")
+    print("-" * 70)
+    print(f"Compilation time: {compile_time:.2f}ms")
 
     times = []
     for _i in range(iterations):
@@ -312,20 +329,44 @@ def run_extreme_benchmark() -> None:
         times.append(elapsed)
 
     jit_avg = statistics.mean(times) * 1000
-    min(times) * 1000
-    max(times) * 1000
-    statistics.stdev(times) * 1000 if len(times) > 1 else 0
+    jit_min = min(times) * 1000
+    jit_max = max(times) * 1000
+    jit_stdev = statistics.stdev(times) * 1000 if len(times) > 1 else 0
 
     speedup = standard_avg / jit_avg
+    improvement = ((standard_avg - jit_avg) / standard_avg) * 100
+
+    print(f"Average: {jit_avg:.2f}ms")
+    print(f"Min:     {jit_min:.2f}ms")
+    print(f"Max:     {jit_max:.2f}ms")
+    print(f"StdDev:  {jit_stdev:.2f}ms")
 
     # 3. Show the dramatic difference
+    standard_throughput = 1000 / standard_avg
+    jit_throughput = 1000 / jit_avg
 
-    1000 / standard_avg
-    1000 / jit_avg
+    print("\n🎯 Throughput Comparison")
+    print("-" * 70)
+    print(f"Standard: {standard_throughput:.0f} q/s")
+    print(f"JIT:      {jit_throughput:.0f} q/s")
 
     # 4. Cache simulation
     if speedup > 3:
-        compiler = CachedJITCompiler(schema)
+        print("\n💾 JIT with Query Cache (50 requests)")
+        print("-" * 70)
+        # Simple query cache for demo
+
+        query_cache = {}
+
+        compiler = type(
+            "QueryCache",
+            (),
+            {
+                "compile_query": lambda self, q: query_cache.setdefault(
+                    q, compile_query(schema, q)
+                )
+            },
+        )()
 
         # Simulate production traffic
         times = []
@@ -336,10 +377,28 @@ def run_extreme_benchmark() -> None:
             elapsed = time.perf_counter() - start
             times.append(elapsed)
 
+        first_request = times[0] * 1000
         cached_avg = statistics.mean(times[1:]) * 1000  # Exclude first
-        standard_avg / cached_avg
+        cached_speedup = standard_avg / cached_avg
+        cached_improvement = ((standard_avg - cached_avg) / standard_avg) * 100
 
-        compiler.get_cache_stats()
+        print(f"First request (cold): {first_request:.2f}ms")
+        print(f"Cached avg:           {cached_avg:.2f}ms")
+        print(f"Cached throughput:    {1000 / cached_avg:.0f} q/s")
+        print(
+            f"Speedup:              {cached_speedup:.2f}x faster ({cached_improvement:.1f}%)"
+        )
+
+    print("\n⭐ Results Summary")
+    print("=" * 70)
+    print(f"Standard GraphQL: {standard_avg:.2f}ms")
+    print(f"JIT Compiled:     {jit_avg:.2f}ms")
+    print(f"Speedup:          {speedup:.2f}x faster ({improvement:.1f}%)")
+
+    if speedup >= 5:
+        print(
+            f"\n🚀 EXTREME SPEEDUP ACHIEVED! {speedup:.2f}x faster - This is the power of JIT compilation!"
+        )
 
 
 if __name__ == "__main__":

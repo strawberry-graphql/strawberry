@@ -18,7 +18,7 @@ import time
 from graphql import execute_sync, parse
 
 import strawberry
-from strawberry.jit import CachedJITCompiler, compile_query
+from strawberry.jit import compile_query
 
 
 # Schema with LOTS of pure computed fields
@@ -397,6 +397,9 @@ def run_pure_computation_benchmark() -> None:
     for _ in range(2):
         execute_sync(schema._schema, parse(query), root_value=root)
 
+    print("\n📊 Pure Computation Benchmark")
+    print("=" * 70)
+
     # 1. Standard GraphQL
     iterations = 5
     times = []
@@ -407,8 +410,8 @@ def run_pure_computation_benchmark() -> None:
         times.append(elapsed)
 
     standard_avg = statistics.mean(times) * 1000
-    min(times) * 1000
-    max(times) * 1000
+    standard_min = min(times) * 1000
+    standard_max = max(times) * 1000
 
     # Approximate computation count
     datasets = 10
@@ -420,10 +423,25 @@ def run_pure_computation_benchmark() -> None:
         total_points * (fields_per_point + metrics_fields) + datasets * 6
     )
 
+    print(f"\n⏱️  Standard GraphQL ({iterations} iterations)")
+    print("-" * 70)
+    print(f"Average: {standard_avg:.2f}ms")
+    print(f"Min:     {standard_min:.2f}ms")
+    print(f"Max:     {standard_max:.2f}ms")
+    print("\nQuery Complexity:")
+    print(f"  Datasets:        {datasets}")
+    print(f"  Points/dataset:  {points_per_dataset}")
+    print(f"  Total points:    {total_points}")
+    print(f"  Total computations: {total_computations:,}")
+
     # 2. JIT Compiled
     start_compile = time.perf_counter()
     compiled_fn = compile_query(schema, query)
-    (time.perf_counter() - start_compile) * 1000
+    compile_time = (time.perf_counter() - start_compile) * 1000
+
+    print("\n⚡ JIT Compiled Execution")
+    print("-" * 70)
+    print(f"Compilation time: {compile_time:.2f}ms")
 
     times = []
     for i in range(iterations):
@@ -433,11 +451,32 @@ def run_pure_computation_benchmark() -> None:
         times.append(elapsed)
 
     jit_avg = statistics.mean(times) * 1000
-    min(times) * 1000
-    max(times) * 1000
+    jit_min = min(times) * 1000
+    jit_max = max(times) * 1000
+
+    speedup = standard_avg / jit_avg
+    improvement = ((standard_avg - jit_avg) / standard_avg) * 100
+
+    print(f"Average: {jit_avg:.2f}ms")
+    print(f"Min:     {jit_min:.2f}ms")
+    print(f"Max:     {jit_max:.2f}ms")
 
     # 3. Production simulation with cache
-    compiler = CachedJITCompiler(schema)
+    print("\n💾 JIT with Query Cache (20 requests)")
+    print("-" * 70)
+    # Simple query cache for demo
+
+    query_cache = {}
+
+    compiler = type(
+        "QueryCache",
+        (),
+        {
+            "compile_query": lambda self, q: query_cache.setdefault(
+                q, compile_query(schema, q)
+            )
+        },
+    )()
 
     times = []
     for i in range(20):
@@ -446,22 +485,45 @@ def run_pure_computation_benchmark() -> None:
         fn(root)
         elapsed = time.perf_counter() - start
         times.append(elapsed)
-        if i == 0:
-            pass
 
-    statistics.mean(times) * 1000
+    first_request = times[0] * 1000
+    cached_mean = statistics.mean(times) * 1000
     avg_cached = statistics.mean(times[1:]) * 1000  # Exclude first
+    cached_speedup = standard_avg / avg_cached
+    cached_improvement = ((standard_avg - avg_cached) / standard_avg) * 100
 
-    compiler.get_cache_stats()
+    print(f"First request (cold): {first_request:.2f}ms")
+    print(f"Subsequent avg:       {avg_cached:.2f}ms")
+    print(f"Overall avg:          {cached_mean:.2f}ms")
 
     # Summary
+    print("\n🎯 Results Summary")
+    print("=" * 70)
+    print(f"Standard GraphQL: {standard_avg:.2f}ms")
+    print(f"JIT Compiled:     {jit_avg:.2f}ms")
+    print(f"JIT Cached:       {avg_cached:.2f}ms")
 
-    standard_avg / jit_avg
-    standard_avg / avg_cached
+    print("\nPerformance Improvements:")
+    print(f"  JIT:    {speedup:.2f}x faster ({improvement:.1f}%)")
+    print(f"  Cached: {cached_speedup:.2f}x faster ({cached_improvement:.1f}%)")
 
-    (1_000_000 / total_computations) * standard_avg / 1000
-    (1_000_000 / total_computations) * jit_avg / 1000
-    (1_000_000 / total_computations) * avg_cached / 1000
+    print("\nComputation Efficiency (ns per computation):")
+    standard_ns_per_comp = (1_000_000 / total_computations) * standard_avg / 1000
+    jit_ns_per_comp = (1_000_000 / total_computations) * jit_avg / 1000
+    cached_ns_per_comp = (1_000_000 / total_computations) * avg_cached / 1000
+    print(f"  Standard: {standard_ns_per_comp:.2f} ns/comp")
+    print(f"  JIT:      {jit_ns_per_comp:.2f} ns/comp")
+    print(f"  Cached:   {cached_ns_per_comp:.2f} ns/comp")
+
+    print("\nThroughput (queries/second):")
+    print(f"  Standard: {1000 / standard_avg:.1f} q/s")
+    print(f"  JIT:      {1000 / jit_avg:.1f} q/s")
+    print(f"  Cached:   {1000 / avg_cached:.1f} q/s")
+
+    if speedup > 10:
+        print(
+            f"\n🚀 DRAMATIC PERFORMANCE GAIN! {speedup:.2f}x faster with JIT compilation on pure computation!"
+        )
 
 
 if __name__ == "__main__":

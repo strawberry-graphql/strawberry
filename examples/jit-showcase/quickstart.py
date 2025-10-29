@@ -15,7 +15,7 @@ import time
 from graphql import execute_sync, parse
 
 import strawberry
-from strawberry.jit import CachedJITCompiler, compile_query
+from strawberry.jit import compile_query
 
 
 # Simple schema
@@ -56,44 +56,50 @@ def main() -> None:
 
     root = Query()
 
+    print("\n📊 Performance Comparison")
+    print("=" * 60)
+
     # Standard execution
+    print("\n⏱️  Standard GraphQL Execution (100 iterations)...")
     start = time.perf_counter()
     for _ in range(100):
         execute_sync(schema._schema, parse(query), root_value=root)
     standard_time = time.perf_counter() - start
+    print(f"   Total time: {standard_time * 1000:.2f}ms")
+    print(f"   Per query: {standard_time * 10:.2f}ms")
 
     # JIT compiled execution
+    print("\n⚡ JIT Compiled Execution")
 
     # Compile once
+    print("   Compiling query...")
     start = time.perf_counter()
     compiled_fn = compile_query(schema, query)
-    time.perf_counter() - start
+    compile_time = time.perf_counter() - start
+    print(f"   Compilation time: {compile_time * 1000:.2f}ms")
 
     # Execute 100 times
+    print("   Executing 100 times...")
     start = time.perf_counter()
     for _ in range(100):
         compiled_fn(root)
     jit_time = time.perf_counter() - start
+    print(f"   Total time: {jit_time * 1000:.2f}ms")
+    print(f"   Per query: {jit_time * 10:.2f}ms")
 
     # Results
-    standard_time / jit_time
+    speedup = standard_time / jit_time
+    print("\n🎯 Results")
+    print("=" * 60)
+    print(f"Standard: {standard_time * 1000:.2f}ms")
+    print(f"JIT:      {jit_time * 1000:.2f}ms")
+    print(f"Speedup:  {speedup:.2f}x faster")
 
-    # 3. JIT with Cache
-    compiler = CachedJITCompiler(schema)
+    improvement = ((standard_time - jit_time) / standard_time) * 100
+    print(f"Improvement: {improvement:.1f}% faster")
 
-    # Simulate production usage
-    cache_times = []
-    for _i in range(100):
-        start = time.perf_counter()
-        fn = compiler.compile_query(query)
-        fn(root)
-        cache_times.append(time.perf_counter() - start)
-
-    cache_times[0] * 1000
-    cached_avg = sum(cache_times[1:]) * 1000 / 99  # Average of cached requests
-    (standard_time * 10) / cached_avg
-
-    compiler.get_cache_stats()
+    print("\n✅ JIT compilation provides significant performance improvements!")
+    print("   For production use, implement caching to avoid recompiling queries.")
 
 
 if __name__ == "__main__":

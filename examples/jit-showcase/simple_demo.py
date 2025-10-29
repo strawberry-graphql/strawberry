@@ -14,7 +14,7 @@ sys.path.insert(
 from graphql import execute_sync, parse
 
 import strawberry
-from strawberry.jit import CachedJITCompiler, compile_query
+from strawberry.jit import compile_query
 
 
 # Simple schema with SYNC resolvers (where JIT excels)
@@ -158,13 +158,22 @@ def run_simple_benchmark() -> None:
         times.append(time.perf_counter() - start)
 
     standard_avg = statistics.mean(times) * 1000
-    min(times) * 1000
-    max(times) * 1000
+    standard_min = min(times) * 1000
+    standard_max = max(times) * 1000
+
+    print("\n📊 JIT Compiler Performance Comparison")
+    print("=" * 70)
+    print(f"\n⏱️  Standard GraphQL Execution ({iterations} iterations)")
+    print(f"   Average: {standard_avg:.2f}ms")
+    print(f"   Min:     {standard_min:.2f}ms")
+    print(f"   Max:     {standard_max:.2f}ms")
 
     # 2. JIT Compiled (first time - includes compilation)
+    print("\n⚡ JIT Compiled Execution")
     start_compile = time.perf_counter()
     compiled_fn = compile_query(schema, query)
-    (time.perf_counter() - start_compile) * 1000
+    compile_time = (time.perf_counter() - start_compile) * 1000
+    print(f"   Compilation time: {compile_time:.2f}ms")
 
     # Run compiled version
     times = []
@@ -174,36 +183,68 @@ def run_simple_benchmark() -> None:
         times.append(time.perf_counter() - start)
 
     jit_avg = statistics.mean(times) * 1000
-    min(times) * 1000
-    max(times) * 1000
+    jit_min = min(times) * 1000
+    jit_max = max(times) * 1000
 
-    # 3. JIT with Cache (simulating production)
-    compiler = CachedJITCompiler(schema)
+    print(f"   Average: {jit_avg:.2f}ms")
+    print(f"   Min:     {jit_min:.2f}ms")
+    print(f"   Max:     {jit_max:.2f}ms")
+
+    # 3. JIT with Manual Cache (simulating production)
+    print("\n💾 JIT with Manual Cache (100 requests)")
+
+    # Simple query cache
+    query_cache = {}
+
+    def get_compiled_query(q):
+        if q not in query_cache:
+            query_cache[q] = compile_query(schema, q)
+        return query_cache[q]
 
     # Simulate 100 requests of the same query
     times = []
     for _i in range(100):
         start = time.perf_counter()
-        fn = compiler.compile_query(query)
+        fn = get_compiled_query(query)
         fn(root)
         times.append(time.perf_counter() - start)
 
-    statistics.mean(times) * 1000
-    times[0] * 1000  # First request (compilation)
+    cached_avg = statistics.mean(times) * 1000
+    first_request = times[0] * 1000  # First request (compilation)
     cached_rest_avg = statistics.mean(times[1:]) * 1000  # Subsequent (cached)
 
-    compiler.get_cache_stats()
+    print(f"   First request (cold): {first_request:.2f}ms")
+    print(f"   Avg cached requests:  {cached_rest_avg:.2f}ms")
+    print(f"   Cache entries: {len(query_cache)}")
 
     # Summary
+    print("\n🎯 Results Summary")
+    print("=" * 70)
 
-    standard_avg / jit_avg
-    standard_avg / cached_rest_avg
+    speedup_jit = standard_avg / jit_avg
+    speedup_cached = standard_avg / cached_rest_avg
 
-    # Show the actual difference in execution
+    print(f"Standard GraphQL:     {standard_avg:.2f}ms")
+    print(f"JIT Compiled:         {jit_avg:.2f}ms  ({speedup_jit:.2f}x faster)")
+    print(
+        f"JIT Cached:           {cached_rest_avg:.2f}ms  ({speedup_cached:.2f}x faster)"
+    )
 
-    1000 / standard_avg
-    1000 / jit_avg
-    1000 / cached_rest_avg
+    improvement_jit = ((standard_avg - jit_avg) / standard_avg) * 100
+    improvement_cached = ((standard_avg - cached_rest_avg) / standard_avg) * 100
+
+    print("\nPerformance Improvements:")
+    print(f"  JIT:    {improvement_jit:.1f}% faster")
+    print(f"  Cached: {improvement_cached:.1f}% faster")
+
+    # Throughput
+    print("\nThroughput (queries/second):")
+    print(f"  Standard: {1000 / standard_avg:.0f} q/s")
+    print(f"  JIT:      {1000 / jit_avg:.0f} q/s")
+    print(f"  Cached:   {1000 / cached_rest_avg:.0f} q/s")
+
+    print("\n✅ JIT compilation provides significant performance improvements!")
+    print("   For production, implement a query cache as shown above.")
 
 
 if __name__ == "__main__":

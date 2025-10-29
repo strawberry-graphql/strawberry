@@ -9,8 +9,8 @@ from graphql import execute_sync, parse
 
 import strawberry
 
-# Import all JIT compilers
-from strawberry.jit import CachedJITCompiler, compile_query
+# Import JIT compiler
+from strawberry.jit import compile_query
 
 
 class CustomError(Exception):
@@ -409,22 +409,15 @@ def test_jit_error_handling_compatibility():
     opt_fn = compile_query(schema, query)
     opt_result = opt_fn(root)
 
-    # Cached JIT
-    cache_compiler = CachedJITCompiler(schema)
-    cached_fn = cache_compiler.compile_query(query)
-    cached_result = cached_fn(root)
-
     # All should have same data structure for successful fields
     assert standard_result.data["workingField"] == "working"
     assert jit_result["data"]["workingField"] == "working"
     assert opt_result["data"]["workingField"] == "working"
-    assert cached_result["data"]["workingField"] == "working"
 
     # Parent ID should be accessible in all
     assert standard_result.data["parent"]["id"] == 1
     assert jit_result["data"]["parent"]["id"] == 1
     assert opt_result["data"]["parent"]["id"] == 1
-    assert cached_result["data"]["parent"]["id"] == 1
 
     # Standard has proper error handling
     assert standard_result.data["nullableRoot"] is None

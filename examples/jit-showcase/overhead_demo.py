@@ -16,7 +16,7 @@ import time
 from graphql import execute_sync, parse
 
 import strawberry
-from strawberry.jit import CachedJITCompiler, compile_query
+from strawberry.jit import compile_query
 
 
 # Schema with many simple fields to maximize overhead impact
@@ -177,6 +177,9 @@ def run_overhead_benchmark() -> None:
     for _ in range(3):
         execute_sync(schema._schema, parse(query), root_value=root)
 
+    print("\n📊 Overhead Elimination Benchmark")
+    print("=" * 70)
+
     # 1. Standard GraphQL
     iterations = 10
     times = []
@@ -187,16 +190,28 @@ def run_overhead_benchmark() -> None:
         times.append(elapsed)
 
     standard_avg = statistics.mean(times) * 1000
-    min(times) * 1000
-    max(times) * 1000
+    standard_min = min(times) * 1000
+    standard_max = max(times) * 1000
 
     total_fields = 500 * 101  # 500 items * 101 fields each
     overhead_per_field = standard_avg / total_fields
 
+    print(f"\n⏱️  Standard GraphQL ({iterations} iterations)")
+    print("-" * 70)
+    print(f"Average: {standard_avg:.2f}ms")
+    print(f"Min:     {standard_min:.2f}ms")
+    print(f"Max:     {standard_max:.2f}ms")
+    print(f"Total fields processed: {total_fields:,}")
+    print(f"Overhead per field: {overhead_per_field:.4f}ms")
+
     # 2. JIT Compiled
     start_compile = time.perf_counter()
     compiled_fn = compile_query(schema, query)
-    (time.perf_counter() - start_compile) * 1000
+    compile_time = (time.perf_counter() - start_compile) * 1000
+
+    print("\n⚡ JIT Compiled Execution")
+    print("-" * 70)
+    print(f"Compilation time: {compile_time:.2f}ms")
 
     times = []
     for _i in range(iterations):
@@ -206,16 +221,37 @@ def run_overhead_benchmark() -> None:
         times.append(elapsed)
 
     jit_avg = statistics.mean(times) * 1000
-    min(times) * 1000
-    max(times) * 1000
+    jit_min = min(times) * 1000
+    jit_max = max(times) * 1000
 
     speedup = standard_avg / jit_avg
+    improvement = ((standard_avg - jit_avg) / standard_avg) * 100
 
     jit_per_field = jit_avg / total_fields
-    overhead_per_field - jit_per_field
+    overhead_reduction = overhead_per_field - jit_per_field
+
+    print(f"Average: {jit_avg:.2f}ms")
+    print(f"Min:     {jit_min:.2f}ms")
+    print(f"Max:     {jit_max:.2f}ms")
+    print(f"Overhead per field: {jit_per_field:.4f}ms")
+    print(
+        f"\nOverhead reduction: {overhead_reduction:.4f}ms per field ({(overhead_reduction / overhead_per_field) * 100:.1f}%)"
+    )
 
     # 3. Production with Cache
-    compiler = CachedJITCompiler(schema)
+    # Simple query cache for demo
+
+    query_cache = {}
+
+    compiler = type(
+        "QueryCache",
+        (),
+        {
+            "compile_query": lambda self, q: query_cache.setdefault(
+                q, compile_query(schema, q)
+            )
+        },
+    )()
 
     times = []
     for _i in range(100):
@@ -225,20 +261,31 @@ def run_overhead_benchmark() -> None:
         elapsed = time.perf_counter() - start
         times.append(elapsed)
 
-    times[0] * 1000
+    first_request = times[0] * 1000
     cached_avg = statistics.mean(times[1:]) * 1000
-    standard_avg / cached_avg
+    cached_speedup = standard_avg / cached_avg
 
-    compiler.get_cache_stats()
+    print("\n💾 JIT with Query Cache (100 requests)")
+    print("-" * 70)
+    print(f"First request (cold):  {first_request:.2f}ms")
+    print(f"Cached avg:            {cached_avg:.2f}ms")
+    print(f"Speedup:               {cached_speedup:.2f}x faster")
 
     # Summary
+    print("\n🎯 Results Summary")
+    print("=" * 70)
+    print(f"Standard GraphQL throughput: {1000 / standard_avg:.0f} q/s")
+    print(f"JIT compiled throughput:     {1000 / jit_avg:.0f} q/s")
+    print(f"JIT cached throughput:       {1000 / cached_avg:.0f} q/s")
 
-    1000 / standard_avg
-    1000 / jit_avg
-    1000 / cached_avg
+    print("\nPerformance improvements:")
+    print(f"  JIT:    {speedup:.2f}x faster ({improvement:.1f}%)")
+    print(
+        f"  Cached: {cached_speedup:.2f}x faster ({((standard_avg - cached_avg) / standard_avg) * 100:.1f}%)"
+    )
 
     if speedup >= 3:
-        pass
+        print(f"\n✅ Excellent overhead elimination! {speedup:.2f}x speedup achieved!")
 
 
 if __name__ == "__main__":
