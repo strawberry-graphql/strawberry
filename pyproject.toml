@@ -225,6 +225,8 @@ src = ["strawberry", "tests"]
 [tool.ruff.lint]
 select = ["ALL"]
 ignore = [
+  # × this should be fine to use :)
+  "RUF002",
   # we use asserts in tests and to hint mypy
   "S101",
 
