@@ -36,9 +36,11 @@ if TYPE_CHECKING:
     from collections.abc import Callable
 
     import strawberry
+    from .cache import QueryCache
 else:
     import strawberry  # noqa: TC001
 
+from .cache import QueryCache
 from .codegen import CodeGenerator
 from .directives import (
     generate_abstract_type_selection,
@@ -60,11 +62,17 @@ class JITCompiler:
     - Built-in caching with configurable TTL and size limits
     """
 
-    def __init__(self, schema: strawberry.Schema) -> None:
+    def __init__(
+        self,
+        schema: strawberry.Schema,
+        cache: QueryCache | None = None,
+    ) -> None:
         """Initialize JIT compiler with a Strawberry schema.
 
         Args:
             schema: A Strawberry schema instance
+            cache: Query cache implementation (default: LRUCache with 128 entries).
+                   Pass None to disable caching, or provide a custom QueryCache.
         """
         if not hasattr(schema, "_schema"):
             raise TypeError(
@@ -98,6 +106,13 @@ class JITCompiler:
         # even if they contain async fields (avoids task creation overhead)
         self.min_parallel_list_size = 20
 
+        # Query caching - pluggable cache implementation
+        if cache is None:
+            from .cache import default_cache
+
+            cache = default_cache()
+        self.cache = cache
+
     def _sanitize_identifier(self, name: str) -> str:
         """Sanitize identifier for safe code generation (defense-in-depth).
 
@@ -121,7 +136,25 @@ class JITCompiler:
         return serialize_value(value)
 
     def compile_query(self, query: str) -> Callable:
-        """Compile a GraphQL query into optimized Python code."""
+        """Compile a GraphQL query into optimized Python code.
+
+        Results are automatically cached based on the query string.
+        Subsequent calls with the same query return the cached function.
+
+        Args:
+            query: GraphQL query string to compile
+
+        Returns:
+            Compiled query function that can be executed with:
+            result = compiled_fn(root_value, variables=None, context=None)
+        """
+        # Check cache first
+        cache_key = str(hash(query))
+        cached = self.cache.get(cache_key)
+        if cached is not None:
+            return cached
+
+        # Cache miss - compile the query
         document = parse(query)
 
         # Check for @defer/@stream directives BEFORE validation
@@ -222,6 +255,9 @@ class JITCompiler:
         # Store the source code on the function for debugging/inspection
         execute_fn = local_vars["execute_query"]
         execute_fn._jit_source = function_code
+
+        # Cache the compiled function
+        self.cache.set(cache_key, execute_fn)
 
         return execute_fn
 

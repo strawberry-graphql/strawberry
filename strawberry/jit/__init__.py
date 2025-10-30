@@ -19,9 +19,14 @@ Example:
 
 from __future__ import annotations
 
+from .cache import LRUCache, NoOpCache, QueryCache, SimpleCache
 from .compiler import JITCompiler, compile_query
 
 __all__ = [
     "JITCompiler",
     "compile_query",
+    "QueryCache",
+    "LRUCache",
+    "SimpleCache",
+    "NoOpCache",
 ]
