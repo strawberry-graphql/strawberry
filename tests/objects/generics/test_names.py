@@ -4,7 +4,7 @@ from typing import Annotated, Generic, NewType, TypeVar
 import pytest
 
 import strawberry
-from strawberry.schema.config import StrawberryConfig
+from strawberry.schema.name_converter import NameConverter
 from strawberry.types.base import StrawberryList, StrawberryOptional
 from strawberry.types.enum import EnumDefinition
 from strawberry.types.lazy_type import LazyType
@@ -17,6 +17,8 @@ V = TypeVar("V")
 
 Enum = EnumDefinition(None, name="Enum", values=[], description=None)  # type: ignore
 CustomInt = strawberry.scalar(NewType("CustomInt", int))
+
+name_converter = NameConverter()
 
 
 @strawberry.type
@@ -57,20 +59,16 @@ class TypeB:
     ],
 )
 def test_name_generation(types, expected_name):
-    config = StrawberryConfig()
-
     @strawberry.type
     class Example(Generic[T]):
         a: T
 
     type_definition = Example.__strawberry_definition__  # type: ignore
 
-    assert config.name_converter.from_generic(type_definition, types) == expected_name
+    assert name_converter.from_generic(type_definition, types) == expected_name
 
 
 def test_nested_generics():
-    config = StrawberryConfig()
-
     @strawberry.type
     class Edge(Generic[T]):
         node: T
@@ -82,13 +80,7 @@ def test_nested_generics():
     type_definition = Connection.__strawberry_definition__  # type: ignore
 
     assert (
-        config.name_converter.from_generic(
-            type_definition,
-            [
-                Edge[int],
-            ],
-        )
-        == "IntEdgeConnection"
+        name_converter.from_generic(type_definition, [Edge[int]]) == "IntEdgeConnection"
     )
 
 
@@ -96,7 +88,6 @@ def test_nested_generics_aliases_with_schema():
     """This tests is similar to the previous test, but it also tests against
     the schema, since the resolution of the type name might be different.
     """
-    config = StrawberryConfig()
 
     @strawberry.type
     class Value(Generic[T]):
@@ -110,11 +101,9 @@ def test_nested_generics_aliases_with_schema():
     type_definition = Value.__strawberry_definition__  # type: ignore
 
     assert (
-        config.name_converter.from_generic(
+        name_converter.from_generic(
             type_definition,
-            [
-                StrawberryList(DictItem[int, str]),
-            ],
+            [StrawberryList(DictItem[int, str])],
         )
         == "IntStrDictItemListValue"
     )

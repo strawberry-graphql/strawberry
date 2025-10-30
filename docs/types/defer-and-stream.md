@@ -31,7 +31,6 @@ incremental execution in your schema configuration:
 
 ```python
 import strawberry
-from strawberry.schema.config import StrawberryConfig
 
 
 @strawberry.type
@@ -41,7 +40,7 @@ class Query:
 
 
 schema = strawberry.Schema(
-    query=Query, config=StrawberryConfig(enable_experimental_incremental_execution=True)
+    query=Query, config={"enable_experimental_incremental_execution": True}
 )
 ```
 

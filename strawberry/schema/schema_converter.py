@@ -262,7 +262,9 @@ class GraphQLCoreConverter:
     ) -> Mapping[object, ScalarWrapper | ScalarDefinition]:
         scalar_registry = {**DEFAULT_SCALAR_REGISTRY}
 
-        global_id_name = "GlobalID" if self.config.relay_use_legacy_global_id else "ID"
+        global_id_name = (
+            "GlobalID" if self.config["relay_use_legacy_global_id"] else "ID"
+        )
 
         scalar_registry[GlobalID] = _get_scalar_definition(
             scalar(
@@ -301,7 +303,7 @@ class GraphQLCoreConverter:
         )
 
     def from_enum(self, enum: EnumDefinition) -> CustomGraphQLEnumType:
-        enum_name = self.config.name_converter.from_type(enum)
+        enum_name = self.config["name_converter"].from_type(enum)
 
         assert enum_name is not None
 
@@ -317,7 +319,7 @@ class GraphQLCoreConverter:
             enum=enum,
             name=enum_name,
             values={
-                self.config.name_converter.from_enum_value(
+                self.config["name_converter"].from_enum_value(
                     enum, item
                 ): self.from_enum_value(item)
                 for item in enum.values
@@ -348,10 +350,10 @@ class GraphQLCoreConverter:
         graphql_arguments = {}
 
         for argument in directive.arguments:
-            argument_name = self.config.name_converter.from_argument(argument)
+            argument_name = self.config["name_converter"].from_argument(argument)
             graphql_arguments[argument_name] = self.from_argument(argument)
 
-        directive_name = self.config.name_converter.from_type(directive)
+        directive_name = self.config["name_converter"].from_type(directive)
 
         return GraphQLDirective(
             name=directive_name,
@@ -376,7 +378,7 @@ class GraphQLCoreConverter:
             if default == dataclasses.MISSING:
                 default = UNSET
 
-            name = self.config.name_converter.get_graphql_name(field)
+            name = self.config["name_converter"].get_graphql_name(field)
             args[name] = self.from_argument(
                 StrawberryArgument(
                     python_name=field.python_name or field.name,
@@ -390,7 +392,7 @@ class GraphQLCoreConverter:
             )
 
         return GraphQLDirective(
-            name=self.config.name_converter.from_directive(strawberry_directive),
+            name=self.config["name_converter"].from_directive(strawberry_directive),
             locations=[
                 DirectiveLocation(loc.value) for loc in strawberry_directive.locations
             ],
@@ -425,7 +427,7 @@ class GraphQLCoreConverter:
 
         graphql_arguments = {}
         for argument in field.arguments:
-            argument_name = self.config.name_converter.from_argument(argument)
+            argument_name = self.config["name_converter"].from_argument(argument)
             graphql_arguments[argument_name] = self.from_argument(argument)
 
         return GraphQLField(
@@ -475,7 +477,7 @@ class GraphQLCoreConverter:
     ) -> dict[str, GraphQLField]:
         return _get_thunk_mapping(
             type_definition=type_definition,
-            name_converter=self.config.name_converter.from_field,
+            name_converter=self.config["name_converter"].from_field,
             field_converter=self.from_field,
             get_fields=self.get_fields,
         )
@@ -485,7 +487,7 @@ class GraphQLCoreConverter:
     ) -> dict[str, GraphQLInputField]:
         return _get_thunk_mapping(
             type_definition=type_definition,
-            name_converter=self.config.name_converter.from_field,
+            name_converter=self.config["name_converter"].from_field,
             field_converter=self.from_input_field,
             get_fields=self.get_fields,
         )
@@ -493,7 +495,7 @@ class GraphQLCoreConverter:
     def from_input_object(self, object_type: type) -> GraphQLInputObjectType:
         type_definition = object_type.__strawberry_definition__  # type: ignore
 
-        type_name = self.config.name_converter.from_type(type_definition)
+        type_name = self.config["name_converter"].from_type(type_definition)
 
         # Don't reevaluate known types
         cached_type = self.type_map.get(type_name, None)
@@ -543,7 +545,7 @@ class GraphQLCoreConverter:
     def from_interface(
         self, interface: StrawberryObjectDefinition
     ) -> GraphQLInterfaceType:
-        interface_name = self.config.name_converter.from_type(interface)
+        interface_name = self.config["name_converter"].from_type(interface)
 
         # Don't re-evaluate known types
         cached_type = self.type_map.get(interface_name, None)
@@ -626,7 +628,7 @@ class GraphQLCoreConverter:
 
     def from_object(self, object_type: StrawberryObjectDefinition) -> GraphQLObjectType:
         # TODO: Use StrawberryObjectType when it's implemented in another PR
-        object_type_name = self.config.name_converter.from_type(object_type)
+        object_type_name = self.config["name_converter"].from_type(object_type)
 
         # Don't reevaluate known types
         cached_type = self.type_map.get(object_type_name, None)
@@ -687,7 +689,7 @@ class GraphQLCoreConverter:
     def from_resolver(
         self, field: StrawberryField
     ) -> Callable:  # TODO: Take StrawberryResolver
-        field.default_resolver = self.config.default_resolver
+        field.default_resolver = self.config["default_resolver"]
 
         if field.is_basic_field:
 
@@ -701,7 +703,7 @@ class GraphQLCoreConverter:
             return _get_basic_result
 
         def _strawberry_info_from_graphql(info: GraphQLResolveInfo) -> Info:
-            return self.config.info_class(
+            return self.config["info_class"](
                 _raw_info=info,
                 _field=field,
             )
@@ -801,7 +803,7 @@ class GraphQLCoreConverter:
     def from_scalar(self, scalar: type) -> GraphQLScalarType:
         from strawberry.relay.types import GlobalID
 
-        if not self.config.relay_use_legacy_global_id and scalar is GlobalID:
+        if not self.config["relay_use_legacy_global_id"] and scalar is GlobalID:
             from strawberry import ID
 
             return self.from_scalar(ID)
@@ -818,7 +820,7 @@ class GraphQLCoreConverter:
         else:
             scalar_definition = scalar._scalar_definition  # type: ignore[attr-defined]
 
-        scalar_name = self.config.name_converter.from_type(scalar_definition)
+        scalar_name = self.config["name_converter"].from_type(scalar_definition)
 
         if scalar_name not in self.type_map:
             implementation = (
@@ -904,7 +906,7 @@ class GraphQLCoreConverter:
         raise TypeError(f"Unexpected type '{type_}'")
 
     def from_union(self, union: StrawberryUnion) -> GraphQLUnionType:
-        union_name = self.config.name_converter.from_type(union)
+        union_name = self.config["name_converter"].from_type(union)
 
         for type_ in union.types:
             # This check also occurs in the Annotation resolving, but because of
@@ -985,7 +987,7 @@ class GraphQLCoreConverter:
     ) -> None:
         # Skip validation if _unsafe_disable_same_type_validation is True
         if (
-            self.config._unsafe_disable_same_type_validation
+            self.config["_unsafe_disable_same_type_validation"]
             or cached_type.definition == type_definition
         ):
             return

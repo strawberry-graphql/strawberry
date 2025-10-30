@@ -7,13 +7,13 @@ from strawberry.types.info import Info
 def test_config_post_init_auto_camel_case():
     config = StrawberryConfig(auto_camel_case=True)
 
-    assert config.name_converter.auto_camel_case is True
+    assert config["name_converter"].auto_camel_case is True
 
 
 def test_config_post_init_no_auto_camel_case():
     config = StrawberryConfig(auto_camel_case=False)
 
-    assert config.name_converter.auto_camel_case is False
+    assert config["name_converter"].auto_camel_case is False
 
 
 def test_config_post_init_info_class():

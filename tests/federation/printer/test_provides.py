@@ -3,7 +3,6 @@
 import textwrap
 
 import strawberry
-from strawberry.schema.config import StrawberryConfig
 
 
 def test_field_provides_are_printed_correctly_camel_case_on():
@@ -33,7 +32,7 @@ def test_field_provides_are_printed_correctly_camel_case_on():
 
     schema = strawberry.federation.Schema(
         query=Query,
-        config=StrawberryConfig(auto_camel_case=True),
+        config={"auto_camel_case": True},
         enable_federation_2=True,
     )
 
@@ -105,7 +104,7 @@ def test_field_provides_are_printed_correctly_camel_case_off():
 
     schema = strawberry.federation.Schema(
         query=Query,
-        config=StrawberryConfig(auto_camel_case=False),
+        config={"auto_camel_case": False},
         enable_federation_2=True,
     )
 

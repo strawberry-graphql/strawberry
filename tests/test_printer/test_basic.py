@@ -4,7 +4,6 @@ from uuid import UUID
 import strawberry
 from strawberry.printer import print_schema
 from strawberry.scalars import JSON
-from strawberry.schema.config import StrawberryConfig
 from strawberry.types.unset import UNSET
 from tests.conftest import skip_if_gql_32
 
@@ -48,9 +47,7 @@ def test_printer_with_camel_case_on():
     }
     """
 
-    schema = strawberry.Schema(
-        query=Query, config=StrawberryConfig(auto_camel_case=True)
-    )
+    schema = strawberry.Schema(query=Query, config={"auto_camel_case": True})
 
     assert print_schema(schema) == textwrap.dedent(expected_type).strip()
 
@@ -66,9 +63,7 @@ def test_printer_with_camel_case_off():
     }
     """
 
-    schema = strawberry.Schema(
-        query=Query, config=StrawberryConfig(auto_camel_case=False)
-    )
+    schema = strawberry.Schema(query=Query, config={"auto_camel_case": False})
 
     assert print_schema(schema) == textwrap.dedent(expected_type).strip()
 
