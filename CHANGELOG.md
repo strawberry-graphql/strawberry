@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.284.2 - 2025-11-05
+--------------------
+
+Update typing of `variables` in the test clients to match the actual flexibility of this field.
+
+Contributed by [Ben XO](https://github.com/ben-xo) via [PR #4044](https://github.com/strawberry-graphql/strawberry/pull/4044/)
+
+
 0.284.1 - 2025-10-18
 --------------------
 
