@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Any, Literal
 from typing_extensions import TypedDict
 
 if TYPE_CHECKING:
-    from collections.abc import Coroutine, Mapping
+    from collections.abc import Coroutine
 
     from graphql import GraphQLFormattedError
 
@@ -82,7 +82,7 @@ class BaseGraphQLTestClient(ABC):
     def _build_body(
         self,
         query: str,
-        variables: dict[str, Mapping] | None = None,
+        variables: dict[str, Any] | None = None,
         files: dict[str, object] | None = None,
     ) -> dict[str, object]:
         body: dict[str, object] = {"query": query}
@@ -105,7 +105,7 @@ class BaseGraphQLTestClient(ABC):
 
     @staticmethod
     def _build_multipart_file_map(
-        variables: dict[str, Mapping], files: dict[str, object]
+        variables: dict[str, Any], files: dict[str, object]
     ) -> dict[str, list[str]]:
         """Creates the file mapping between the variables and the files objects passed as key arguments.
 
