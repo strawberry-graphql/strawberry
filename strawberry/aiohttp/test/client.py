@@ -1,22 +1,16 @@
 from __future__ import annotations
 
 import warnings
-from typing import (
-    TYPE_CHECKING,
-    Any,
-)
+from typing import Any
 
 from strawberry.test.client import BaseGraphQLTestClient, Response
-
-if TYPE_CHECKING:
-    from collections.abc import Mapping
 
 
 class GraphQLTestClient(BaseGraphQLTestClient):
     async def query(
         self,
         query: str,
-        variables: dict[str, Mapping] | None = None,
+        variables: dict[str, Any] | None = None,
         headers: dict[str, object] | None = None,
         asserts_errors: bool | None = None,
         files: dict[str, object] | None = None,
