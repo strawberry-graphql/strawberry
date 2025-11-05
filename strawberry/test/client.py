@@ -37,7 +37,7 @@ class BaseGraphQLTestClient(ABC):
     def query(
         self,
         query: str,
-        variables: dict[str, Mapping] | None = None,
+        variables: dict[str, object] | None = None,
         headers: dict[str, object] | None = None,
         asserts_errors: bool | None = None,
         files: dict[str, object] | None = None,
