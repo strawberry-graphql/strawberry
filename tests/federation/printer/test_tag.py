@@ -24,7 +24,7 @@ def test_field_tag_printed_correctly():
         ) -> list[Product]:  # pragma: no cover
             return []
 
-    schema = strawberry.federation.Schema(query=Query, enable_federation_2=True)
+    schema = strawberry.federation.Schema(query=Query)
 
     expected = """
         schema @link(url: "https://specs.apollo.dev/federation/v2.7", import: ["@external", "@tag"]) {
@@ -64,7 +64,7 @@ def test_field_tag_printed_correctly_on_scalar():
     class Query:
         hello: SomeScalar
 
-    schema = strawberry.federation.Schema(query=Query, enable_federation_2=True)
+    schema = strawberry.federation.Schema(query=Query)
 
     expected = """
         schema @link(url: "https://specs.apollo.dev/federation/v2.7", import: ["@tag"]) {
@@ -97,7 +97,7 @@ def test_field_tag_printed_correctly_on_enum():
     class Query:
         hello: SomeEnum
 
-    schema = strawberry.federation.Schema(query=Query, enable_federation_2=True)
+    schema = strawberry.federation.Schema(query=Query)
 
     expected = """
         schema @link(url: "https://specs.apollo.dev/federation/v2.7", import: ["@tag"]) {
@@ -132,7 +132,7 @@ def test_field_tag_printed_correctly_on_enum_value():
     class Query:
         hello: SomeEnum
 
-    schema = strawberry.federation.Schema(query=Query, enable_federation_2=True)
+    schema = strawberry.federation.Schema(query=Query)
 
     expected = """
         schema @link(url: "https://specs.apollo.dev/federation/v2.7", import: ["@tag"]) {
@@ -175,7 +175,7 @@ def test_field_tag_printed_correctly_on_union():
     class Query:
         hello: MyUnion
 
-    schema = strawberry.federation.Schema(query=Query, enable_federation_2=True)
+    schema = strawberry.federation.Schema(query=Query)
 
     expected = """
         schema @link(url: "https://specs.apollo.dev/federation/v2.7", import: ["@tag"]) {
@@ -216,9 +216,7 @@ def test_tag_printed_correctly_on_inputs():
     class Query:
         hello: str
 
-    schema = strawberry.federation.Schema(
-        query=Query, types=[Input], enable_federation_2=True
-    )
+    schema = strawberry.federation.Schema(query=Query, types=[Input])
 
     expected = """
         schema @link(url: "https://specs.apollo.dev/federation/v2.7", import: ["@tag"]) {

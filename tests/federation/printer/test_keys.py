@@ -30,10 +30,10 @@ def test_keys_federation_1():
         def top_products(self, first: int) -> list[Product]:  # pragma: no cover
             return []
 
-    schema = strawberry.federation.Schema(query=Query, enable_federation_2=False)
+    schema = strawberry.federation.Schema(query=Query)
 
     expected = """
-        extend type Product @key(fields: "upc") {
+        extend type Product @key(fields: "upc", resolvable: true) {
           upc: String! @external
           reviews: [Review!]!
         }
@@ -92,7 +92,7 @@ def test_keys_federation_2():
         def top_products(self, first: int) -> list[Product]:  # pragma: no cover
             return []
 
-    schema = strawberry.federation.Schema(query=Query, enable_federation_2=True)
+    schema = strawberry.federation.Schema(query=Query)
 
     expected = """
         schema @link(url: "https://specs.apollo.dev/federation/v2.7", import: ["@external", "@key"]) {

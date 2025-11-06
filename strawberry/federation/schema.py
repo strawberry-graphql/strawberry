@@ -5,6 +5,7 @@ from itertools import chain
 from typing import (
     TYPE_CHECKING,
     Any,
+    Literal,
     NewType,
     Optional,
     Union,
@@ -26,6 +27,7 @@ from strawberry.types.union import StrawberryUnion
 from strawberry.utils.inspect import get_func_args
 
 from .schema_directive import StrawberryFederationSchemaDirective
+from .versions import format_version, parse_version
 
 if TYPE_CHECKING:
     from graphql import ExecutionContext as GraphQLExecutionContext
@@ -56,8 +58,24 @@ class Schema(BaseSchema):
         scalar_overrides: dict[object, Union[type, "ScalarWrapper", "ScalarDefinition"]]
         | None = None,
         schema_directives: Iterable[object] = (),
-        enable_federation_2: bool = False,
+        federation_version: Literal[
+            "2.0",
+            "2.1",
+            "2.2",
+            "2.3",
+            "2.4",
+            "2.5",
+            "2.6",
+            "2.7",
+            "2.8",
+            "2.9",
+            "2.10",
+            "2.11",
+        ] = "2.11",
     ) -> None:
+        # Convert version string (e.g., "2.5") to version tuple (e.g., (2, 5))
+        self.federation_version = parse_version(federation_version)
+
         query = self._get_federation_query_type(query, mutation, subscription, types)
         types = [*types, FederationAny]
 
@@ -76,11 +94,12 @@ class Schema(BaseSchema):
 
         self.schema_directives = list(schema_directives)
 
-        if enable_federation_2:
-            composed_directives = self._add_compose_directives()
-            self._add_link_directives(composed_directives)  # type: ignore
-        else:
-            self._remove_resolvable_field()
+        # Validate directive compatibility with federation version
+        self._validate_directive_compatibility()
+
+        # All supported versions are Federation 2.x
+        composed_directives = self._add_compose_directives()
+        self._add_link_directives(composed_directives)  # type: ignore
 
     def _get_federation_query_type(
         self,
@@ -193,17 +212,6 @@ class Schema(BaseSchema):
 
         return results
 
-    def _remove_resolvable_field(self) -> None:
-        # this might be removed when we remove support for federation 1
-        # or when we improve how we print the directives
-        from strawberry.types.unset import UNSET
-
-        from .schema_directives import Key
-
-        for directive in self.schema_directives_in_use:
-            if isinstance(directive, Key):
-                directive.resolvable = UNSET
-
     @cached_property
     def schema_directives_in_use(self) -> list[object]:
         all_graphql_types = self._schema.type_map.values()
@@ -248,10 +256,25 @@ class Schema(BaseSchema):
 
         directive_by_url[import_url].add(f"@{name}")
 
+    def _add_link_for_federation_directive(
+        self,
+        directive: object,
+        directive_by_url: Mapping[str, set[str]],
+    ) -> None:
+        from .schema_directives import FederationDirective
+
+        if not isinstance(directive, FederationDirective):
+            return
+
+        # Use the schema's federation version to construct the URL
+        url = f"https://specs.apollo.dev/federation/{format_version(self.federation_version)}"
+        name = directive.imported_from.name
+        directive_by_url[url].add(f"@{name}")
+
     def _add_link_directives(
         self, additional_directives: list[object] | None = None
     ) -> None:
-        from .schema_directives import FederationDirective, Link
+        from .schema_directives import Link
 
         directive_by_url: defaultdict[str, set[str]] = defaultdict(set)
 
@@ -261,11 +284,7 @@ class Schema(BaseSchema):
             definition = directive.__strawberry_directive__  # type: ignore
 
             self._add_link_for_composed_directive(definition, directive_by_url)
-
-            if isinstance(directive, FederationDirective):
-                directive_by_url[directive.imported_from.url].add(
-                    f"@{directive.imported_from.name}"
-                )
+            self._add_link_for_federation_directive(directive, directive_by_url)
 
         link_directives: list[object] = [
             Link(
@@ -301,6 +320,23 @@ class Schema(BaseSchema):
         self.schema_directives = self.schema_directives + compose_directives
 
         return compose_directives
+
+    def _validate_directive_compatibility(self) -> None:
+        """Validate that all federation directives are compatible with the schema's federation version."""
+        from .schema_directives import FederationDirective
+        from .versions import format_version
+
+        for directive in self.schema_directives_in_use:
+            if isinstance(directive, FederationDirective) and hasattr(
+                directive.__class__, "minimum_version"
+            ):
+                min_version = directive.__class__.minimum_version
+                if self.federation_version < min_version:
+                    raise ValueError(
+                        f"Directive @{directive.imported_from.name} requires "
+                        f"federation version {format_version(min_version)} or higher, "
+                        f"but schema uses version {format_version(self.federation_version)}"
+                    )
 
     def _warn_for_federation_directives(self) -> None:
         # this is used in the main schema to raise if there's a directive

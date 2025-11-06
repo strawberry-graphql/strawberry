@@ -70,13 +70,14 @@ class Query:
     all_books: List[Book] = strawberry.field(resolver=get_all_books)
 
 
-schema = strawberry.federation.Schema(query=Query, enable_federation_2=True)
+schema = strawberry.federation.Schema(query=Query)
+# Or specify a specific federation version:
+schema = strawberry.federation.Schema(query=Query, federation_version="2.5")
 ```
 
 <Note>
 
-`enable_federation_2=True` is used to enable Apollo Federation 2 and currently
-defaults to `False`. This will change in a future version of Strawberry.
+Apollo Federation 2 is now the default and only supported version.
 
 </Note>
 
@@ -142,9 +143,8 @@ class Query:
     _hi: str = strawberry.field(resolver=lambda: "Hello World!")
 
 
-schema = strawberry.federation.Schema(
-    query=Query, types=[Book, Review], enable_federation_2=True
-)
+schema = strawberry.federation.Schema(query=Query, types=[Book, Review])
+# federation_version="2.5"  # Optional: specify federation version
 ```
 
 Now things are looking more interesting; the `Review` type is a GraphQL type

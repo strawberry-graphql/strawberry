@@ -19,7 +19,7 @@ def test_fetch_entities():
         def top_products(self, first: int) -> list[Product]:  # pragma: no cover
             return []
 
-    schema = strawberry.federation.Schema(query=Query, enable_federation_2=True)
+    schema = strawberry.federation.Schema(query=Query)
 
     query = """
         query ($representations: [_Any!]!) {
@@ -59,7 +59,7 @@ def test_info_param_in_resolve_reference():
         def top_products(self, first: int) -> list[Product]:  # pragma: no cover
             return []
 
-    schema = strawberry.federation.Schema(query=Query, enable_federation_2=True)
+    schema = strawberry.federation.Schema(query=Query)
 
     query = """
         query ($representations: [_Any!]!) {
@@ -103,7 +103,7 @@ def test_does_not_need_custom_resolve_reference_for_basic_things():
         def top_products(self, first: int) -> list[Product]:  # pragma: no cover
             return []
 
-    schema = strawberry.federation.Schema(query=Query, enable_federation_2=True)
+    schema = strawberry.federation.Schema(query=Query)
 
     query = """
         query ($representations: [_Any!]!) {
@@ -143,7 +143,7 @@ def test_does_not_need_custom_resolve_reference_nested():
         def top_products(self, first: int) -> list[Product]:  # pragma: no cover
             return []
 
-    schema = strawberry.federation.Schema(query=Query, enable_federation_2=True)
+    schema = strawberry.federation.Schema(query=Query)
 
     query = """
         query ($representations: [_Any!]!) {
@@ -190,7 +190,7 @@ def test_fails_properly_when_wrong_key_is_passed():
         def top_products(self, first: int) -> list[Product]:  # pragma: no cover
             return []
 
-    schema = strawberry.federation.Schema(query=Query, enable_federation_2=True)
+    schema = strawberry.federation.Schema(query=Query)
 
     query = """
         query ($representations: [_Any!]!) {
@@ -233,7 +233,7 @@ def test_fails_properly_when_wrong_data_is_passed():
         def top_products(self, first: int) -> list[Product]:  # pragma: no cover
             return []
 
-    schema = strawberry.federation.Schema(query=Query, enable_federation_2=True)
+    schema = strawberry.federation.Schema(query=Query)
 
     query = """
         query ($representations: [_Any!]!) {
@@ -281,7 +281,7 @@ def test_propagates_original_error_message_with_auto_graphql_error_metadata():
         def mock(self) -> Product | None:
             return None
 
-    schema = strawberry.federation.Schema(query=Query, enable_federation_2=True)
+    schema = strawberry.federation.Schema(query=Query)
 
     query = """
         query ($representations: [_Any!]!) {
@@ -331,7 +331,7 @@ def test_propagates_custom_type_error_message_with_auto_graphql_error_metadata()
         def mock(self) -> Product | None:
             return None
 
-    schema = strawberry.federation.Schema(query=Query, enable_federation_2=True)
+    schema = strawberry.federation.Schema(query=Query)
 
     query = """
         query ($representations: [_Any!]!) {
@@ -384,7 +384,7 @@ def test_propagates_original_error_message_and_graphql_error_metadata():
         def mock(self) -> Product | None:
             return None
 
-    schema = strawberry.federation.Schema(query=Query, enable_federation_2=True)
+    schema = strawberry.federation.Schema(query=Query)
 
     query = """
         query ($representations: [_Any!]!) {
@@ -431,7 +431,7 @@ async def test_can_use_async_resolve_reference():
         def top_products(self, first: int) -> list[Product]:  # pragma: no cover
             return []
 
-    schema = strawberry.federation.Schema(query=Query, enable_federation_2=True)
+    schema = strawberry.federation.Schema(query=Query)
 
     query = """
         query ($representations: [_Any!]!) {
@@ -470,7 +470,7 @@ async def test_can_use_async_resolve_reference_multiple_representations():
         def top_products(self, first: int) -> list[Product]:  # pragma: no cover
             return []
 
-    schema = strawberry.federation.Schema(query=Query, enable_federation_2=True)
+    schema = strawberry.federation.Schema(query=Query)
 
     query = """
         query ($representations: [_Any!]!) {

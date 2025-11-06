@@ -13,9 +13,7 @@ def test_prints_one_of_directive():
     class Query:
         hello: str
 
-    schema = strawberry.federation.Schema(
-        query=Query, types=[Input], enable_federation_2=True
-    )
+    schema = strawberry.federation.Schema(query=Query, types=[Input])
 
     expected = """
         directive @oneOf on INPUT_OBJECT

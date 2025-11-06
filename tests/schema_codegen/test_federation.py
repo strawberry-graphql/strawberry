@@ -116,7 +116,7 @@ def test_uses_federation_schema():
         class Query:
             me: str
 
-        schema = strawberry.federation.Schema(query=Query, enable_federation_2=True)
+        schema = strawberry.federation.Schema(query=Query)
         """
     ).strip()
 

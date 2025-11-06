@@ -62,7 +62,6 @@ def test_schema_directives_and_compose_schema():
 
     schema = strawberry.federation.Schema(
         query=Query,
-        enable_federation_2=True,
     )
 
     assert schema.as_str() == textwrap.dedent(expected_type).strip()
@@ -127,7 +126,6 @@ def test_schema_directives_and_compose_schema_custom_import_url():
 
     schema = strawberry.federation.Schema(
         query=Query,
-        enable_federation_2=True,
     )
 
     assert schema.as_str() == textwrap.dedent(expected_type).strip()
