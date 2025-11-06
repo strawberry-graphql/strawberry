@@ -1,15 +1,34 @@
 Release type: minor
 
-This release updates the default Apollo Federation version from None to 2.11 (the latest supported version) and improves the federation version handling API.
+This release removes support for Apollo Federation v1 and improves Federation v2 support with explicit version control and new directives.
 
-## Changes
+## Breaking Changes
 
-- **Default federation version**: Federation schemas now default to version 2.11 instead of requiring manual version specification
-- **Simplified API**: The `federation_version` parameter is no longer optional, removing the need for conditional logic
-- **Improved version parsing**: Version parsing is now a dictionary lookup for better performance and validation
-- **Cleaner codebase**: Removed redundant code and improved type annotations
+- **Removed support for Apollo Federation v1**: All schemas now use Federation v2
+- **Removed `enable_federation_2` parameter**: Replaced with `federation_version` parameter
+- Federation v2 is now always enabled with version 2.11 as the default
 
-All existing federation schemas will continue to work without changes, but will now use v2.11 by default. If you need a specific version, you can still specify it:
+## Migration
+
+### If you were using `enable_federation_2=True`
+
+Remove the parameter:
+
+```python
+# Before
+schema = strawberry.federation.Schema(query=Query, enable_federation_2=True)
+
+# After
+schema = strawberry.federation.Schema(query=Query)
+```
+
+### If you were using Federation v1
+
+You must migrate to Federation v2. See the [breaking changes documentation](https://strawberry.rocks/docs/breaking-changes/0.285.0) for detailed migration instructions.
+
+## New Features
+
+- **Version control**: Specify Federation v2 versions (2.0 - 2.11):
 
 ```python
 schema = strawberry.federation.Schema(
@@ -17,4 +36,6 @@ schema = strawberry.federation.Schema(
 )
 ```
 
-Supported versions: 2.0 - 2.11
+- **New directives**: Added support for `@context`, `@fromContext`, `@cost`, and `@listSize` directives (v2.7+)
+- **Automatic validation**: Ensures directives are compatible with your chosen federation version
+- **Improved performance**: Faster version parsing using dictionary lookups
