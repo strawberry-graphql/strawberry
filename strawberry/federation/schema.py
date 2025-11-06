@@ -97,7 +97,6 @@ class Schema(BaseSchema):
         # Validate directive compatibility with federation version
         self._validate_directive_compatibility()
 
-        # All supported versions are Federation 2.x
         composed_directives = self._add_compose_directives()
         self._add_link_directives(composed_directives)  # type: ignore
 
