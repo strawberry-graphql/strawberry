@@ -125,7 +125,7 @@ def test_uses_federation_schema():
 
 def test_supports_authenticated_directive():
     schema = """
-    extend schema @link(url: "https://specs.apollo.dev/federation/v2.7", import: ["@authenticated"])
+    extend schema @link(url: "https://specs.apollo.dev/federation/v2.11", import: ["@authenticated"])
 
     type User @authenticated {
         name: String! @authenticated
@@ -147,7 +147,7 @@ def test_supports_authenticated_directive():
 
 def test_requires_scope():
     schema = """
-    extend schema @link(url: "https://specs.apollo.dev/federation/v2.7", import: ["@requiresScope"])
+    extend schema @link(url: "https://specs.apollo.dev/federation/v2.11", import: ["@requiresScope"])
 
     type User @requiresScopes(scopes: [["client", "poweruser"], ["admin"], ["productowner"]]){
         name: String!
@@ -169,7 +169,7 @@ def test_requires_scope():
 
 def test_policy_directive():
     schema = """
-    extend schema @link(url: "https://specs.apollo.dev/federation/v2.7", import: ["@policy"])
+    extend schema @link(url: "https://specs.apollo.dev/federation/v2.11", import: ["@policy"])
 
     type User @policy(policies: ["userPolicy", [["client", "poweruser"], ["admin"], ["productowner"]]]){
         name: String!

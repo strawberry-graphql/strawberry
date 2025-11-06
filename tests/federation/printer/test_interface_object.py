@@ -11,7 +11,7 @@ def test_interface_object():
     schema = strawberry.federation.Schema(types=[SomeInterface])
 
     expected = """
-        schema @link(url: "https://specs.apollo.dev/federation/v2.7", import: ["@interfaceObject", "@key"]) {
+        schema @link(url: "https://specs.apollo.dev/federation/v2.11", import: ["@interfaceObject", "@key"]) {
           query: Query
         }
 

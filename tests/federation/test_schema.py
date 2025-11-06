@@ -80,7 +80,7 @@ def test_entities_type():
     schema = strawberry.federation.Schema(query=Query)
 
     expected_sdl = textwrap.dedent("""
-        schema @link(url: "https://specs.apollo.dev/federation/v2.7", import: ["@key"]) {
+        schema @link(url: "https://specs.apollo.dev/federation/v2.11", import: ["@key"]) {
           query: Query
         }
 

@@ -22,7 +22,7 @@ def test_directive_version_validation_policy():
     schema = strawberry.federation.Schema(query=Query, federation_version="2.6")
     assert schema is not None
 
-    # Should work with v2.7
+    # Should work with v2.11
     schema = strawberry.federation.Schema(query=Query, federation_version="2.7")
     assert schema is not None
 
@@ -54,7 +54,7 @@ def test_directive_version_validation_context():
     schema = strawberry.federation.Schema(query=Query, federation_version="2.9")
     assert schema is not None
 
-    # Should fail with v2.7 (context requires v2.8+)
+    # Should fail with v2.11 (context requires v2.8+)
     with pytest.raises(
         ValueError,
         match=r"Directive @context requires federation version v2\.8 or higher",
@@ -139,7 +139,7 @@ def test_directive_version_validation_multiple_directives():
     ):
         strawberry.federation.Schema(query=Query, federation_version="2.8")
 
-    # Should fail with v2.7 (context requires v2.8)
+    # Should fail with v2.11 (context requires v2.8)
     with pytest.raises(
         ValueError,
         match=r"Directive @context requires federation version v2\.8 or higher",

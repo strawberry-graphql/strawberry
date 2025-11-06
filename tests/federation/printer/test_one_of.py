@@ -18,7 +18,7 @@ def test_prints_one_of_directive():
     expected = """
         directive @oneOf on INPUT_OBJECT
 
-        schema @link(url: "https://specs.apollo.dev/federation/v2.7", import: ["@tag"]) {
+        schema @link(url: "https://specs.apollo.dev/federation/v2.11", import: ["@tag"]) {
           query: Query
         }
 

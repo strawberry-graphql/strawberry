@@ -23,7 +23,7 @@ def test_field_shareable_printed_correctly():
     schema = strawberry.federation.Schema(query=Query)
 
     expected = """
-        schema @link(url: "https://specs.apollo.dev/federation/v2.7", import: ["@external", "@key", "@shareable"]) {
+        schema @link(url: "https://specs.apollo.dev/federation/v2.11", import: ["@external", "@key", "@shareable"]) {
           query: Query
         }
 

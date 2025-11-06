@@ -71,13 +71,21 @@ class Query:
 
 
 schema = strawberry.federation.Schema(query=Query)
-# Or specify a specific federation version:
-schema = strawberry.federation.Schema(query=Query, federation_version="2.5")
 ```
 
 <Note>
 
-Apollo Federation 2 is now the default and only supported version.
+Strawberry supports Apollo Federation 2 only. By default, schemas use Federation
+version 2.11 (the latest supported version). You can specify a different version
+if needed:
+
+```python
+schema = strawberry.federation.Schema(
+    query=Query, federation_version="2.5"  # Specify a specific version if needed
+)
+```
+
+Supported versions: 2.0, 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7, 2.8, 2.9, 2.10, 2.11
 
 </Note>
 
@@ -144,7 +152,6 @@ class Query:
 
 
 schema = strawberry.federation.Schema(query=Query, types=[Book, Review])
-# federation_version="2.5"  # Optional: specify federation version
 ```
 
 Now things are looking more interesting; the `Review` type is a GraphQL type
@@ -327,7 +334,7 @@ Strawberry and Federation. The repo is available here:
 
 Strawberry provides implementations for
 [Apollo federation-specific GraphQL directives](https://www.apollographql.com/docs/federation/federated-types/federated-directives/)
-up to federation spec v2.7.
+up to federation spec v2.11.
 
 Some of these directives may not be necessary to directly include in your code,
 and are accessed through other means.
@@ -376,7 +383,7 @@ Will result in the following GraphQL schema:
 ```graphql
 schema
   @link(
-    url: "https://specs.apollo.dev/federation/v2.7"
+    url: "https://specs.apollo.dev/federation/v2.11"
     import: ["@key", "@inaccessible", "@shareable", "@tag"]
   ) {
   query: Query
