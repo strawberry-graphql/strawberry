@@ -281,7 +281,7 @@ def test_adds_directive_link_for_federation():
           user: User!
         }
 
-        type User @key(fields: "id", resolvable: true) {
+        type User @key(fields: "id") {
           id: ID!
         }
 
