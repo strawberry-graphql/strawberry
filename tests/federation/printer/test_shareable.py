@@ -20,10 +20,10 @@ def test_field_shareable_printed_correctly():
         def top_products(self, first: int) -> list[Product]:  # pragma: no cover
             return []
 
-    schema = strawberry.federation.Schema(query=Query, enable_federation_2=True)
+    schema = strawberry.federation.Schema(query=Query)
 
     expected = """
-        schema @link(url: "https://specs.apollo.dev/federation/v2.7", import: ["@external", "@key", "@shareable"]) {
+        schema @link(url: "https://specs.apollo.dev/federation/v2.11", import: ["@external", "@key", "@shareable"]) {
           query: Query
         }
 

@@ -309,5 +309,5 @@ class Query:
 
 
 schema = strawberry.federation.Schema(
-    query=Query, enable_federation_2=True, types=[Inventory]
+    query=Query, types=[Inventory], federation_version="2.7"
 )
