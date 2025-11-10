@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.284.4 - 2025-11-10
+--------------------
+
+Bumped minimum Typer version to fix strawberry CLI commands.
+
+Contributed by [Val Liu](https://github.com/valliu) via [PR #4049](https://github.com/strawberry-graphql/strawberry/pull/4049/)
+
+
 0.284.3 - 2025-11-10
 --------------------
 
