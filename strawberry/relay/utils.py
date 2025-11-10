@@ -131,7 +131,7 @@ class SliceMetadata:
         max_results = (
             max_results
             if max_results is not None
-            else info.schema.config.relay_max_results
+            else info.schema.config["relay_max_results"]
         )
         start = 0
         end: int | None = None

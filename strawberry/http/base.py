@@ -88,7 +88,7 @@ class BaseView(Generic[Request]):
     def _validate_batch_request(
         self, request_data: list[GraphQLRequestData], protocol: str
     ) -> None:
-        if self.schema.config.batching_config is None:
+        if self.schema.config["batching_config"] is None:
             raise HTTPException(400, "Batching is not enabled")
 
         if protocol == "multipart-subscription":
@@ -96,7 +96,7 @@ class BaseView(Generic[Request]):
                 400, "Batching is not supported for multipart subscriptions"
             )
 
-        if len(request_data) > self.schema.config.batching_config["max_operations"]:
+        if len(request_data) > self.schema.config["batching_config"]["max_operations"]:
             raise HTTPException(400, "Too many operations")
 
 

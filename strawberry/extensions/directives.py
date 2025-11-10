@@ -86,7 +86,7 @@ def process_directive(
             field_name=info.field_name,
             type_name=info.parent_type.name,
         )
-        arguments[info_parameter.name] = schema.config.info_class(
+        arguments[info_parameter.name] = schema.config["info_class"](
             _raw_info=info, _field=field
         )
     if value_parameter:

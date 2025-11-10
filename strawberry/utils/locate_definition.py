@@ -30,7 +30,7 @@ def locate_definition(schema_symbol: Schema, symbol: str) -> str | None:
         location = finder.find_class_attribute_from_object(
             schema_type.origin,  # type: ignore
             to_snake_case(field)
-            if schema_symbol.config.name_converter.auto_camel_case
+            if schema_symbol.config["name_converter"].auto_camel_case
             else field,
         )
     elif isinstance(schema_type, StrawberryUnion):

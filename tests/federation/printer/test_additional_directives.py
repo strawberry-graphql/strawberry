@@ -3,7 +3,6 @@
 import textwrap
 
 import strawberry
-from strawberry.schema.config import StrawberryConfig
 from strawberry.schema_directive import Location
 
 
@@ -45,7 +44,7 @@ def test_additional_schema_directives_printed_correctly_object():
     """
 
     schema = strawberry.federation.Schema(
-        query=Query, config=StrawberryConfig(auto_camel_case=False)
+        query=Query, config={"auto_camel_case": False}
     )
     assert schema.as_str() == textwrap.dedent(expected_type).strip()
 
@@ -97,6 +96,6 @@ def test_additional_schema_directives_printed_in_order_object():
     """
 
     schema = strawberry.federation.Schema(
-        query=Query, config=StrawberryConfig(auto_camel_case=False)
+        query=Query, config={"auto_camel_case": False}
     )
     assert schema.as_str() == textwrap.dedent(expected_type).strip()

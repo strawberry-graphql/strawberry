@@ -3,7 +3,6 @@ from __future__ import annotations
 import textwrap
 
 import strawberry
-from strawberry.schema.config import StrawberryConfig
 from tests.conftest import skip_if_gql_32
 
 pytestmark = skip_if_gql_32("GraphQL 3.3.0 is required for incremental execution")
@@ -17,7 +16,7 @@ class Query:
 def test_does_not_print_defer_and_stream_directives_when_experimental_execution_is_disabled():
     schema = strawberry.Schema(
         query=Query,
-        config=StrawberryConfig(enable_experimental_incremental_execution=False),
+        config={"enable_experimental_incremental_execution": False},
     )
 
     expected_type = """
@@ -32,7 +31,7 @@ def test_does_not_print_defer_and_stream_directives_when_experimental_execution_
 def test_prints_defer_and_stream_directives_when_experimental_execution_is_enabled():
     schema = strawberry.Schema(
         query=Query,
-        config=StrawberryConfig(enable_experimental_incremental_execution=True),
+        config={"enable_experimental_incremental_execution": True},
     )
 
     expected_type = """

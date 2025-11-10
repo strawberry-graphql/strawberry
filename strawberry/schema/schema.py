@@ -75,7 +75,7 @@ from ._graphql_core import (
     subscribe,
 )
 from .base import BaseSchema
-from .config import StrawberryConfig
+from .config import StrawberryConfigType, _complete_config
 from .exceptions import CannotGetOperationTypeError, InvalidOperationTypeError
 
 if TYPE_CHECKING:
@@ -214,7 +214,7 @@ class Schema(BaseSchema):
         types: Iterable[type | StrawberryType] = (),
         extensions: Iterable[type[SchemaExtension] | SchemaExtension] = (),
         execution_context_class: type[GraphQLExecutionContext] | None = None,
-        config: StrawberryConfig | None = None,
+        config: StrawberryConfigType | None = None,
         scalar_overrides: (
             Mapping[object, type | ScalarWrapper | ScalarDefinition] | None
         ) = None,
@@ -252,7 +252,7 @@ class Schema(BaseSchema):
             name: str = "Patrick"
 
 
-        schema = strawberry.Schema(query=Query)
+        schema = strawberry.Schema(query=Query, config={"auto_camel_case": True})
         ```
         """
         self.query = query
@@ -264,7 +264,9 @@ class Schema(BaseSchema):
         self.execution_context_class = (
             execution_context_class or StrawberryGraphQLCoreExecutionContext
         )
-        self.config = config or StrawberryConfig()
+
+        # Normalize and complete config dict with defaults
+        self.config = _complete_config(config)
 
         self.schema_converter = GraphQLCoreConverter(
             self.config,
@@ -325,7 +327,7 @@ class Schema(BaseSchema):
         try:
             directives = specified_directives + tuple(graphql_directives)  # type: ignore
 
-            if self.config.enable_experimental_incremental_execution:
+            if self.config["enable_experimental_incremental_execution"]:
                 directives = tuple(directives) + tuple(incremental_execution_directives)
 
             self._schema = GraphQLSchema(
@@ -462,7 +464,7 @@ class Schema(BaseSchema):
             (
                 field
                 for field in type_.fields
-                if self.config.name_converter.get_graphql_name(field) == field_name
+                if self.config["name_converter"].get_graphql_name(field) == field_name
             ),
             None,
         )
@@ -473,7 +475,8 @@ class Schema(BaseSchema):
             (
                 directive
                 for directive in self.directives
-                if self.config.name_converter.from_directive(directive) == graphql_name
+                if self.config["name_converter"].from_directive(directive)
+                == graphql_name
             ),
             None,
         )
@@ -578,7 +581,7 @@ class Schema(BaseSchema):
 
         execute_function = execute
 
-        if self.config.enable_experimental_incremental_execution:
+        if self.config["enable_experimental_incremental_execution"]:
             execute_function = experimental_execute_incrementally
 
             if execute_function is None:
@@ -684,7 +687,7 @@ class Schema(BaseSchema):
 
         execute_function = execute
 
-        if self.config.enable_experimental_incremental_execution:
+        if self.config["enable_experimental_incremental_execution"]:
             execute_function = experimental_execute_incrementally
 
             if execute_function is None:

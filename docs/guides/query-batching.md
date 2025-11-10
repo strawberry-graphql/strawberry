@@ -16,17 +16,14 @@ and how to integrate it into your application with an example using FastAPI.
 
 ## Enabling Query Batching
 
-To enable query batching in Strawberry, you need to configure the
-`StrawberryConfig` when defining your GraphQL schema. The batching configuration
-is provided as a typed dictionary. Batching is disabled by default, if no
-configuration is provided.
+To enable query batching in Strawberry, you need to configure the schema config
+when defining your GraphQL schema. The batching configuration is provided as a
+dictionary. Batching is disabled by default, if no configuration is provided.
 
 ### Basic Configuration
 
 ```python
-from strawberry.schema.config import StrawberryConfig
-
-config = StrawberryConfig(batching_config={"max_operations": 10})
+config = {"batching_config": {"max_operations": 10}}
 ```
 
 ### Configuring Maximum Operations
@@ -35,9 +32,7 @@ To set a limit on the number of operations in a batch request, use the
 `max_operations` key:
 
 ```python
-from strawberry.schema.config import StrawberryConfig
-
-config = StrawberryConfig(batching_config={"max_operations": 5})
+config = {"batching_config": {"max_operations": 5}}
 ```
 
 When batching is enabled, the server can handle a list of operations
@@ -52,7 +47,6 @@ Below is an example of how to enable query batching in a FastAPI application:
 import strawberry
 from fastapi import FastAPI
 from strawberry.fastapi import GraphQLRouter
-from strawberry.schema.config import StrawberryConfig
 
 
 @strawberry.type
@@ -64,7 +58,7 @@ class Query:
 
 schema = strawberry.Schema(
     Query,
-    config=StrawberryConfig(batching_config={"max_operations": 5}),
+    config={"batching_config": {"max_operations": 5}},
 )
 
 graphql_app = GraphQLRouter(schema)

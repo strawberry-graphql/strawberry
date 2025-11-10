@@ -6,7 +6,6 @@ import strawberry
 from strawberry import BasePermission, Info
 from strawberry.permission import PermissionExtension
 from strawberry.printer import print_schema
-from strawberry.schema.config import StrawberryConfig
 from strawberry.schema_directive import Location
 from strawberry.types.unset import UNSET
 from tests.conftest import skip_if_gql_32
@@ -193,9 +192,7 @@ def test_respects_schema_config_for_names():
     }
     """
 
-    schema = strawberry.Schema(
-        query=Query, config=StrawberryConfig(auto_camel_case=False)
-    )
+    schema = strawberry.Schema(query=Query, config={"auto_camel_case": False})
 
     assert print_schema(schema) == textwrap.dedent(expected_output).strip()
 
@@ -217,9 +214,7 @@ def test_respects_schema_parameter_types_for_arguments_int():
     }
     """
 
-    schema = strawberry.Schema(
-        query=Query, config=StrawberryConfig(auto_camel_case=False)
-    )
+    schema = strawberry.Schema(query=Query, config={"auto_camel_case": False})
 
     assert print_schema(schema) == textwrap.dedent(expected_output).strip()
 
@@ -241,9 +236,7 @@ def test_respects_schema_parameter_types_for_arguments_list_of_ints():
     }
     """
 
-    schema = strawberry.Schema(
-        query=Query, config=StrawberryConfig(auto_camel_case=False)
-    )
+    schema = strawberry.Schema(query=Query, config={"auto_camel_case": False})
 
     assert print_schema(schema) == textwrap.dedent(expected_output).strip()
 
@@ -265,9 +258,7 @@ def test_respects_schema_parameter_types_for_arguments_list_of_strings():
     }
     """
 
-    schema = strawberry.Schema(
-        query=Query, config=StrawberryConfig(auto_camel_case=False)
-    )
+    schema = strawberry.Schema(query=Query, config={"auto_camel_case": False})
 
     assert print_schema(schema) == textwrap.dedent(expected_output).strip()
 

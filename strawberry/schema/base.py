@@ -27,11 +27,11 @@ if TYPE_CHECKING:
     from strawberry.types.scalar import ScalarDefinition
     from strawberry.types.union import StrawberryUnion
 
-    from .config import StrawberryConfig
+    from .config import StrawberryConfigDict
 
 
 class BaseSchema(Protocol):
-    config: StrawberryConfig
+    config: StrawberryConfigDict
     schema_converter: GraphQLCoreConverter
     query: type[WithStrawberryObjectDefinition]
     mutation: type[WithStrawberryObjectDefinition] | None
@@ -109,7 +109,7 @@ class BaseSchema(Protocol):
         errors: list[GraphQLError],
         execution_context: ExecutionContext | None = None,
     ) -> None:
-        if self.config.disable_field_suggestions:
+        if self.config["disable_field_suggestions"]:
             for error in errors:
                 self.remove_field_suggestion(error)
 

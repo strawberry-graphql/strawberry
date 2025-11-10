@@ -238,7 +238,7 @@ class Schema(BaseSchema):
             return
 
         import_url = directive.compose_options.import_url
-        name = self.config.name_converter.from_directive(directive)
+        name = self.config["name_converter"].from_directive(directive)
 
         # import url is required by Apollo Federation, this might change in
         # future to be optional, so for now, when it is not passed we
@@ -290,7 +290,7 @@ class Schema(BaseSchema):
             )
 
             if is_federation_schema_directive and definition.compose_options:
-                name = self.config.name_converter.from_directive(definition)
+                name = self.config["name_converter"].from_directive(definition)
 
                 compose_directives.append(
                     ComposeDirective(

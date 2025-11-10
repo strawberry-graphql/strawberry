@@ -131,7 +131,7 @@ def print_schema_directive_params(
             ast = ast_from_value(
                 _serialize_dataclasses(
                     value,
-                    name_converter=schema.config.name_converter.apply_naming_config,
+                    name_converter=schema.config["name_converter"].apply_naming_config,
                 ),
                 arg.type,
             )
@@ -157,7 +157,7 @@ def print_schema_directive(
     params = print_schema_directive_params(
         gql_directive,
         {
-            schema.config.name_converter.get_graphql_name(f): getattr(
+            schema.config["name_converter"].get_graphql_name(f): getattr(
                 directive, f.python_name or f.name, UNSET
             )
             for f in strawberry_directive.fields
@@ -616,7 +616,7 @@ def print_schema(schema: BaseSchema) -> str:
         if (printed_directive := print_directive(directive, schema=schema)) is not None
     ]
 
-    if schema.config.enable_experimental_incremental_execution:
+    if schema.config["enable_experimental_incremental_execution"]:
         directives.append(
             "directive @defer(if: Boolean, label: String) on FRAGMENT_SPREAD | INLINE_FRAGMENT"
         )

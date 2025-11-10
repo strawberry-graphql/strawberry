@@ -2,7 +2,6 @@ import pytest
 from inline_snapshot import snapshot
 
 import strawberry
-from strawberry.schema.config import StrawberryConfig
 from tests.conftest import skip_if_gql_32
 from tests.schema.extensions.schema_extensions.conftest import (
     ExampleExtension,
@@ -34,7 +33,7 @@ async def test_basic_extension_with_defer(
     schema = strawberry.Schema(
         query=Query,
         extensions=[extension],
-        config=StrawberryConfig(enable_experimental_incremental_execution=True),
+        config={"enable_experimental_incremental_execution": True},
     )
 
     result = await schema.execute(
