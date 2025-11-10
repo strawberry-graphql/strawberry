@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.284.3 - 2025-11-10
+--------------------
+
+Removed `Transfer-Encoding: chunked` header from multipart streaming responses. This fixes HTTP 405 errors on Vercel and other serverless platforms. The server/gateway will handle chunked encoding automatically when needed.
+
+Contributed by [Louis Amon](https://github.com/LouisAmon) via [PR #4047](https://github.com/strawberry-graphql/strawberry/pull/4047/)
+
+
 0.284.2 - 2025-11-05
 --------------------
 
