@@ -7,7 +7,7 @@ from typing import Annotated, Optional, TypeVar
 import pytest
 
 import strawberry
-from strawberry.types.base import get_object_definition
+from strawberry.types.base import get_object_definition, has_object_definition
 from strawberry.types.field import StrawberryField
 
 
@@ -194,3 +194,42 @@ def test_object_preserves_annotations():
         "c": bool,
         "d": Annotated[str, "something"],
     }
+
+
+def test_has_object_definition_returns_true_for_object_type():
+    @strawberry.type
+    class Palette:
+        name: str
+
+    assert has_object_definition(Palette) is True
+
+
+def test_has_object_definition_returns_false_for_enum():
+    @strawberry.enum
+    class Color(Enum):
+        RED = "red"
+        GREEN = "green"
+
+    assert has_object_definition(Color) is False
+
+
+def test_has_object_definition_returns_true_for_interface():
+    @strawberry.interface
+    class Node:
+        id: str
+
+    assert has_object_definition(Node) is True
+
+
+def test_has_object_definition_returns_true_for_input():
+    @strawberry.input
+    class CreateUserInput:
+        name: str
+
+    assert has_object_definition(CreateUserInput) is True
+
+
+def test_has_object_definition_returns_false_for_scalar():
+    from strawberry.scalars import JSON
+
+    assert has_object_definition(JSON) is False
