@@ -34,7 +34,7 @@ if TYPE_CHECKING:
     from strawberry.federation.schema_directives import ComposeDirective
     from strawberry.schema.config import StrawberryConfig
     from strawberry.schema_directive import StrawberrySchemaDirective
-    from strawberry.types.enum import StrawberryEnum
+    from strawberry.types.enum import StrawberryEnumDefinition
     from strawberry.types.scalar import ScalarDefinition, ScalarWrapper
 
 
@@ -372,7 +372,7 @@ def _has_federation_keys(
     definition: Union[
         StrawberryObjectDefinition,
         "ScalarDefinition",
-        "StrawberryEnum",
+        "StrawberryEnumDefinition",
         "StrawberryUnion",
     ],
 ) -> bool:

@@ -144,11 +144,11 @@ class TestConvertConstantCommand(CodemodTest):
 
     def test_update_import_enum(self) -> None:
         before = """
-            from strawberry.enum import StrawberryEnum
+            from strawberry.enum import StrawberryEnumDefinition
         """
 
         after = """
-            from strawberry.types.enum import StrawberryEnum
+            from strawberry.types.enum import StrawberryEnumDefinition
         """
 
         self.assertCodemod(before, after)

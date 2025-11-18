@@ -5,7 +5,7 @@ import pytest
 import strawberry
 from strawberry.exceptions import ObjectIsNotAnEnumError
 from strawberry.types.base import get_object_definition
-from strawberry.types.enum import StrawberryEnum
+from strawberry.types.enum import StrawberryEnumDefinition
 
 
 def test_basic_enum():
@@ -58,7 +58,7 @@ def test_can_use_enum_as_arguments():
 
     field = Query.__strawberry_definition__.fields[0]
 
-    assert isinstance(field.arguments[0].type, StrawberryEnum)
+    assert isinstance(field.arguments[0].type, StrawberryEnumDefinition)
 
 
 @pytest.mark.raises_strawberry_exception(

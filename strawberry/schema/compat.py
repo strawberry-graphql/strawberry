@@ -3,8 +3,10 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from strawberry.scalars import is_scalar as is_strawberry_scalar
-from strawberry.types.base import StrawberryType, has_object_definition
-from strawberry.types.enum import StrawberryEnum
+from strawberry.types.base import (
+    StrawberryType,
+    has_object_definition,
+)
 
 # TypeGuard is only available in typing_extensions => 3.10, we don't want
 # to force updates to the typing_extensions package so we only use it when
@@ -36,13 +38,6 @@ def is_scalar(
     return is_strawberry_scalar(type_, scalar_registry)
 
 
-def is_enum(type_: StrawberryType | type) -> TypeGuard[type]:
-    if hasattr(type_, "__strawberry_definition__"):
-        return isinstance(type_.__strawberry_definition__, StrawberryEnum)
-
-    return False
-
-
 def is_schema_directive(type_: StrawberryType | type) -> TypeGuard[type]:
     return hasattr(type_, "__strawberry_directive__")
 
@@ -59,7 +54,6 @@ def is_graphql_generic(type_: StrawberryType | type) -> bool:
 
 
 __all__ = [
-    "is_enum",
     "is_graphql_generic",
     "is_input_type",
     "is_interface_type",

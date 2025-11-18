@@ -46,7 +46,7 @@ def test_enum_get_warns():
 
 
 def test_can_import_enum_definition():
-    from strawberry.types.enum import EnumDefinition, StrawberryEnum
+    from strawberry.types.enum import EnumDefinition, StrawberryEnumDefinition
 
     assert EnumDefinition
-    assert EnumDefinition is StrawberryEnum
+    assert EnumDefinition is StrawberryEnumDefinition

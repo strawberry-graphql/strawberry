@@ -21,7 +21,7 @@ def test_enum():
         return True
 
     argument = set_locale.arguments[0]
-    # TODO: Remove reference to .__strawberry_definition__ with StrawberryEnum
+    # TODO: Remove reference to .__strawberry_definition__ with StrawberryEnumDefinition
     assert argument.type is Locale.__strawberry_definition__
 
 

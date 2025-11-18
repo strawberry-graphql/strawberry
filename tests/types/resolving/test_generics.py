@@ -13,7 +13,7 @@ from strawberry.types.base import (
     get_object_definition,
     has_object_definition,
 )
-from strawberry.types.enum import StrawberryEnum
+from strawberry.types.enum import StrawberryEnumDefinition
 from strawberry.types.field import StrawberryField
 from strawberry.types.union import StrawberryUnion
 
@@ -114,7 +114,7 @@ def test_generic_with_enums():
     assert isinstance(resolved.__strawberry_definition__, StrawberryObjectDefinition)
 
     generic_slot_field: StrawberryField = resolved.__strawberry_definition__.fields[0]
-    assert isinstance(generic_slot_field.type, StrawberryEnum)
+    assert isinstance(generic_slot_field.type, StrawberryEnumDefinition)
     assert generic_slot_field.type is VehicleMake.__strawberry_definition__
 
 
