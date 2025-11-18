@@ -1,8 +1,21 @@
 Release type: minor
 
-## Deprecation Alert
-- **Deprecated**: Replaced `_enum_definition` with `__strawberry_definition__`. The former will continue to work but will raise a deprecation warning.
+This release changes `_enum_definition` to `__strawberry_definition__`, this is a follow up to previous
+internal changes. If you were relying on `_enum_definition` you should update your code to use `__strawberry_definition__`.
 
-### Other Changes
-- **Renamed**: Changed `EnumDefinition` to `StrawberryEnumDefinition` to standardize internal naming patterns.
-- These updates improve naming consistency and address previously identified TODOs.
+We also expose `has_enum_definition` to check if a type is a strawberry enum definition.
+
+```python
+from enum import Enum
+import strawberry
+from strawberry.types.enum import StrawberryEnumDefinition, has_enum_definition
+
+
+@strawberry.enum
+class ExampleEnum(Enum):
+    pass
+
+
+has_enum_definition(ExampleEnum)  # True
+# Now you can use ExampleEnum.__strawberry_definition__ to access the enum definition
+```
