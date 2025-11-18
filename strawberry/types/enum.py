@@ -1,10 +1,14 @@
 import dataclasses
 from collections.abc import Callable, Iterable, Mapping
 from enum import EnumMeta
-from typing import TYPE_CHECKING, Any, TypeVar, overload
+from typing import TYPE_CHECKING, Any, TypeGuard, TypeVar, overload
 
 from strawberry.exceptions import ObjectIsNotAnEnumError
-from strawberry.types.base import StrawberryType
+from strawberry.types.base import (
+    StrawberryType,
+    WithStrawberryDefinition,
+    has_strawberry_definition,
+)
 from strawberry.utils.deprecations import DEPRECATION_MESSAGES, DeprecatedDescriptor
 
 
@@ -248,6 +252,15 @@ if TYPE_CHECKING:
 
 else:
     EnumDefinition = StrawberryEnumDefinition
+
+WithStrawberryEnumDefinition = WithStrawberryDefinition["StrawberryEnumDefinition"]
+
+
+def has_enum_definition(obj: Any) -> TypeGuard[type[WithStrawberryEnumDefinition]]:
+    if has_strawberry_definition(obj):
+        return isinstance(obj.__strawberry_definition__, StrawberryEnumDefinition)
+
+    return False
 
 
 __all__ = [

@@ -19,8 +19,6 @@ from strawberry.utils.inspect import get_specialized_type_var_map
 from strawberry.utils.typing import is_concrete_generic
 from strawberry.utils.typing import is_generic as is_type_generic
 
-from .enum import StrawberryEnumDefinition
-
 if TYPE_CHECKING:
     from collections.abc import Callable, Mapping, Sequence
 
@@ -206,8 +204,6 @@ class WithStrawberryDefinition(Protocol, Generic[StrawberryDefinitionType]):
 
 WithStrawberryObjectDefinition = WithStrawberryDefinition["StrawberryObjectDefinition"]
 
-WithStrawberryEnumDefinition = WithStrawberryDefinition["StrawberryEnumDefinition"]
-
 
 def has_strawberry_definition(
     obj: Any,
@@ -230,13 +226,6 @@ def has_strawberry_definition(
 def has_object_definition(obj: Any) -> TypeGuard[type[WithStrawberryObjectDefinition]]:
     if has_strawberry_definition(obj):
         return isinstance(obj.__strawberry_definition__, StrawberryObjectDefinition)
-
-    return False
-
-
-def has_enum_definition(obj: Any) -> TypeGuard[type[WithStrawberryObjectDefinition]]:
-    if has_strawberry_definition(obj):
-        return isinstance(obj.__strawberry_definition__, StrawberryEnumDefinition)
 
     return False
 
@@ -446,6 +435,10 @@ class StrawberryObjectDefinition(StrawberryType):
                 continue
 
             # Check if the expected type matches the type found on the type_map
+            from strawberry.types.enum import (
+                StrawberryEnumDefinition,
+                has_enum_definition,
+            )
 
             real_concrete_type: type | StrawberryEnumDefinition = type(value)
 

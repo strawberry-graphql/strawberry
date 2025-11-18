@@ -18,10 +18,9 @@ from strawberry.types.base import (
     StrawberryList,
     StrawberryMaybe,
     StrawberryOptional,
-    has_enum_definition,
     has_object_definition,
 )
-from strawberry.types.enum import StrawberryEnumDefinition
+from strawberry.types.enum import StrawberryEnumDefinition, has_enum_definition
 from strawberry.types.lazy_type import LazyType, StrawberryLazyReference
 from strawberry.types.maybe import Some
 from strawberry.types.unset import UNSET as _deprecated_UNSET  # noqa: N811

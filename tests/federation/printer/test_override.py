@@ -21,10 +21,10 @@ def test_field_override_printed_correctly():
         def top_products(self, first: int) -> list[Product]:  # pragma: no cover
             return []
 
-    schema = strawberry.federation.Schema(query=Query, enable_federation_2=True)
+    schema = strawberry.federation.Schema(query=Query)
 
     expected = """
-        schema @link(url: "https://specs.apollo.dev/federation/v2.7", import: ["@external", "@key", "@override"]) {
+        schema @link(url: "https://specs.apollo.dev/federation/v2.11", import: ["@external", "@key", "@override"]) {
           query: Query
         }
 
@@ -73,10 +73,10 @@ def test_field_override_label_printed_correctly():
         def top_products(self, first: int) -> list[Product]:  # pragma: no cover
             return []
 
-    schema = strawberry.federation.Schema(query=Query, enable_federation_2=True)
+    schema = strawberry.federation.Schema(query=Query)
 
     expected = """
-        schema @link(url: "https://specs.apollo.dev/federation/v2.7", import: ["@external", "@key", "@override"]) {
+        schema @link(url: "https://specs.apollo.dev/federation/v2.11", import: ["@external", "@key", "@override"]) {
           query: Query
         }
 

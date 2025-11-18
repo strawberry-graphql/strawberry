@@ -39,11 +39,10 @@ def test_field_inaccessible_printed_correctly():
     schema = strawberry.federation.Schema(
         query=Query,
         types=[AnInterface, AnInput, AnInaccessibleType],
-        enable_federation_2=True,
     )
 
     expected = """
-        schema @link(url: "https://specs.apollo.dev/federation/v2.7", import: ["@external", "@inaccessible", "@key"]) {
+        schema @link(url: "https://specs.apollo.dev/federation/v2.11", import: ["@external", "@inaccessible", "@key"]) {
           query: Query
         }
 
@@ -102,11 +101,10 @@ def test_inaccessible_on_mutation():
     schema = strawberry.federation.Schema(
         query=Query,
         mutation=Mutation,
-        enable_federation_2=True,
     )
 
     expected = """
-        schema @link(url: "https://specs.apollo.dev/federation/v2.7", import: ["@inaccessible"]) {
+        schema @link(url: "https://specs.apollo.dev/federation/v2.11", import: ["@inaccessible"]) {
           query: Query
           mutation: Mutation
         }
@@ -139,11 +137,10 @@ def test_inaccessible_on_scalar():
 
     schema = strawberry.federation.Schema(
         query=Query,
-        enable_federation_2=True,
     )
 
     expected = """
-        schema @link(url: "https://specs.apollo.dev/federation/v2.7", import: ["@inaccessible"]) {
+        schema @link(url: "https://specs.apollo.dev/federation/v2.11", import: ["@inaccessible"]) {
           query: Query
         }
 
@@ -175,11 +172,10 @@ def test_inaccessible_on_enum():
 
     schema = strawberry.federation.Schema(
         query=Query,
-        enable_federation_2=True,
     )
 
     expected = """
-        schema @link(url: "https://specs.apollo.dev/federation/v2.7", import: ["@inaccessible"]) {
+        schema @link(url: "https://specs.apollo.dev/federation/v2.11", import: ["@inaccessible"]) {
           query: Query
         }
 
@@ -213,11 +209,10 @@ def test_inaccessible_on_enum_value():
 
     schema = strawberry.federation.Schema(
         query=Query,
-        enable_federation_2=True,
     )
 
     expected = """
-        schema @link(url: "https://specs.apollo.dev/federation/v2.7", import: ["@inaccessible"]) {
+        schema @link(url: "https://specs.apollo.dev/federation/v2.11", import: ["@inaccessible"]) {
           query: Query
         }
 
@@ -255,10 +250,10 @@ def test_field_tag_printed_correctly_on_union():
     class Query:
         hello: MyUnion
 
-    schema = strawberry.federation.Schema(query=Query, enable_federation_2=True)
+    schema = strawberry.federation.Schema(query=Query)
 
     expected = """
-        schema @link(url: "https://specs.apollo.dev/federation/v2.7", import: ["@inaccessible"]) {
+        schema @link(url: "https://specs.apollo.dev/federation/v2.11", import: ["@inaccessible"]) {
           query: Query
         }
 

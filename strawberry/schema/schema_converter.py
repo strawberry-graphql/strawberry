@@ -63,11 +63,10 @@ from strawberry.types.base import (
     StrawberryOptional,
     StrawberryType,
     get_object_definition,
-    has_enum_definition,
     has_object_definition,
 )
 from strawberry.types.cast import get_strawberry_type_cast
-from strawberry.types.enum import StrawberryEnumDefinition
+from strawberry.types.enum import StrawberryEnumDefinition, has_enum_definition
 from strawberry.types.field import UNRESOLVED
 from strawberry.types.lazy_type import LazyType
 from strawberry.types.private import is_private

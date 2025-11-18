@@ -1,6 +1,6 @@
 [project]
 name = "strawberry-graphql"
-version = "0.284.1"
+version = "0.285.0"
 description = "A library for creating GraphQL APIs"
 authors = [{ name = "Patrick Arminio", email = "patrick.arminio@gmail.com" }]
 license = { text = "MIT" }
@@ -45,7 +45,7 @@ debug-server = [
   "uvicorn>=0.11.6",
   "websockets>=15.0.1,<16",
   "python-multipart>=0.0.7",
-  "typer>=0.7.0",
+  "typer>=0.12.4",
   "pygments~=2.3",
   "rich>=12.0.0",
   "libcst",
@@ -60,7 +60,7 @@ sanic = ["sanic>=20.12.2"]
 fastapi = ["fastapi>=0.65.2", "python-multipart>=0.0.7"]
 chalice = ["chalice~=1.22"]
 cli = [
-  "typer>=0.7.0",
+  "typer>=0.12.4",
   "pygments~=2.3",
   "rich>=12.0.0",
   "libcst",
@@ -97,7 +97,7 @@ dev = [
   "python-multipart (>=0.0.7)",
   "rich (>=12.5.1)",
   "sanic-testing (>=22.9,<24.0)",
-  "typer (>=0.7.0)",
+  "typer (>=0.12.4)",
   "types-aiofiles (>=24.1.0.20250326,<25.0.0.0)",
   "types-certifi (>=2021.10.8,<2022.0.0)",
   "types-chardet (>=5.0.4,<6.0.0)",
@@ -225,6 +225,8 @@ src = ["strawberry", "tests"]
 [tool.ruff.lint]
 select = ["ALL"]
 ignore = [
+  # × this should be fine to use :)
+  "RUF002",
   # we use asserts in tests and to hint mypy
   "S101",
 
