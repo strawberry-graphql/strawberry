@@ -9,7 +9,7 @@ from strawberry.types.base import (
     StrawberryOptional,
     has_object_definition,
 )
-from strawberry.types.enum import EnumDefinition
+from strawberry.types.enum import StrawberryEnumDefinition
 from strawberry.types.union import StrawberryUnion
 
 if TYPE_CHECKING:
@@ -40,7 +40,7 @@ def _convert_from_pydantic_to_strawberry_type(
                 return _convert_from_pydantic_to_strawberry_type(
                     option_type, data_from_model=data, extra=extra
                 )
-    if isinstance(type_, EnumDefinition):
+    if isinstance(type_, StrawberryEnumDefinition):
         return data
     if isinstance(type_, StrawberryList):
         items = []

@@ -9,7 +9,7 @@ from strawberry.schema.name_converter import NameConverter
 from strawberry.schema_directive import Location, StrawberrySchemaDirective
 from strawberry.types.arguments import StrawberryArgument
 from strawberry.types.base import StrawberryObjectDefinition, StrawberryType
-from strawberry.types.enum import EnumDefinition, EnumValue
+from strawberry.types.enum import EnumValue, StrawberryEnumDefinition
 from strawberry.types.field import StrawberryField
 from strawberry.types.scalar import ScalarDefinition
 from strawberry.types.union import StrawberryUnion
@@ -53,10 +53,12 @@ class AppendsNameConverter(NameConverter):
     def from_object(self, object_type: StrawberryObjectDefinition) -> str:
         return super().from_object(object_type) + self.suffix
 
-    def from_enum(self, enum: EnumDefinition) -> str:
+    def from_enum(self, enum: StrawberryEnumDefinition) -> str:
         return super().from_enum(enum) + self.suffix
 
-    def from_enum_value(self, enum: EnumDefinition, enum_value: EnumValue) -> str:
+    def from_enum_value(
+        self, enum: StrawberryEnumDefinition, enum_value: EnumValue
+    ) -> str:
         return super().from_enum_value(enum, enum_value) + self.suffix
 
 

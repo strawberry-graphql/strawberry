@@ -66,7 +66,7 @@ from strawberry.types.base import (
     has_object_definition,
 )
 from strawberry.types.cast import get_strawberry_type_cast
-from strawberry.types.enum import EnumDefinition
+from strawberry.types.enum import StrawberryEnumDefinition, has_enum_definition
 from strawberry.types.field import UNRESOLVED
 from strawberry.types.lazy_type import LazyType
 from strawberry.types.private import is_private
@@ -156,7 +156,7 @@ def _get_thunk_mapping(
 class CustomGraphQLEnumType(GraphQLEnumType):
     def __init__(
         self,
-        enum: EnumDefinition,
+        enum: StrawberryEnumDefinition,
         *args: Any,
         **kwargs: Any,
     ) -> None:
@@ -300,7 +300,7 @@ class GraphQLCoreConverter:
             },
         )
 
-    def from_enum(self, enum: EnumDefinition) -> CustomGraphQLEnumType:
+    def from_enum(self, enum: StrawberryEnumDefinition) -> CustomGraphQLEnumType:
         enum_name = self.config.name_converter.from_type(enum)
 
         assert enum_name is not None
@@ -874,7 +874,7 @@ class GraphQLCoreConverter:
             if len(args) >= 2 and isinstance(args[1], StrawberryUnion):
                 type_ = args[1]
 
-        if isinstance(type_, EnumDefinition):  # TODO: Replace with StrawberryEnum
+        if isinstance(type_, StrawberryEnumDefinition):
             return self.from_enum(type_)
         if compat.is_input_type(type_):  # TODO: Replace with StrawberryInputObject
             return self.from_input_object(type_)
@@ -887,8 +887,8 @@ class GraphQLCoreConverter:
             return self.from_interface(type_definition)
         if has_object_definition(type_):
             return self.from_object(type_.__strawberry_definition__)
-        if compat.is_enum(type_):  # TODO: Replace with StrawberryEnum
-            enum_definition: EnumDefinition = type_._enum_definition  # type: ignore
+        if has_enum_definition(type_):
+            enum_definition: StrawberryEnumDefinition = type_.__strawberry_definition__
             return self.from_enum(enum_definition)
         if isinstance(type_, StrawberryObjectDefinition):
             return self.from_object(type_)
@@ -1023,14 +1023,14 @@ class GraphQLCoreConverter:
 
         if isinstance(second_type_definition, StrawberryObjectDefinition):
             first_origin = second_type_definition.origin
-        elif isinstance(second_type_definition, EnumDefinition):
+        elif isinstance(second_type_definition, StrawberryEnumDefinition):
             first_origin = second_type_definition.wrapped_cls
         else:
             first_origin = None
 
         if isinstance(first_type_definition, StrawberryObjectDefinition):
             second_origin = first_type_definition.origin
-        elif isinstance(first_type_definition, EnumDefinition):
+        elif isinstance(first_type_definition, StrawberryEnumDefinition):
             second_origin = first_type_definition.wrapped_cls
         else:
             second_origin = None
