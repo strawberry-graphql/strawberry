@@ -145,6 +145,7 @@ class GraphQLView(
             return Response(
                 response=e.reason,
                 status=e.status_code,
+                content_type="text/plain",
             )
 
     async def create_streaming_response(

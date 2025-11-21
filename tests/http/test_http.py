@@ -24,9 +24,17 @@ async def test_the_http_handler_uses_the_views_decode_json_method(
 
     response = await http_client.query(query="{ hello }")
     assert response.status_code == 200
+    assert response.headers["content-type"].split(";")[0] == "application/json"
 
     data = response.json["data"]
     assert isinstance(data, dict)
     assert data["hello"] == "Hello world"
 
     assert spy.call_count == 1
+
+
+async def test_exception(http_client: HttpClient, mocker):
+    response = await http_client.query(query="{ hello }", operation_name="wrong")
+    assert response.status_code == 400
+    assert response.headers["content-type"].split(";")[0] == "text/plain"
+    assert response.data == b'Unknown operation named "wrong".'
