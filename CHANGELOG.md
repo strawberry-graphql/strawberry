@@ -1,6 +1,15 @@
 CHANGELOG
 =========
 
+0.286.1 - 2025-11-21
+--------------------
+
+Set Content-Type to `text/plain` for exceptions so that these are displayed
+correctly.
+
+Contributed by [Michael Gorven](https://github.com/mgorven) via [PR #4037](https://github.com/strawberry-graphql/strawberry/pull/4037/)
+
+
 0.286.0 - 2025-11-18
 --------------------
 
