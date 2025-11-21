@@ -49,7 +49,7 @@ def test_link_directive_imports():
         query=Query,
         schema_directives=[
             Link(
-                url="https://specs.apollo.dev/federation/v2.7",
+                url="https://specs.apollo.dev/federation/v2.11",
                 import_=[
                     "@key",
                     "@requires",
@@ -66,7 +66,7 @@ def test_link_directive_imports():
     )
 
     expected = """
-    schema @link(url: "https://specs.apollo.dev/federation/v2.7", import: [
+    schema @link(url: "https://specs.apollo.dev/federation/v2.11", import: [
       "@key"
       "@requires"
       "@provides"
@@ -104,10 +104,10 @@ def test_adds_link_directive_automatically():
     class Query:
         user: User
 
-    schema = strawberry.federation.Schema(query=Query, enable_federation_2=True)
+    schema = strawberry.federation.Schema(query=Query)
 
     expected = """
-        schema @link(url: "https://specs.apollo.dev/federation/v2.7", import: ["@key"]) {
+        schema @link(url: "https://specs.apollo.dev/federation/v2.11", import: ["@key"]) {
           query: Query
         }
 
@@ -146,12 +146,10 @@ def test_adds_link_directive_from_interface():
     class Query:
         user: User
 
-    schema = strawberry.federation.Schema(
-        query=Query, types=[SomeInterface], enable_federation_2=True
-    )
+    schema = strawberry.federation.Schema(query=Query, types=[SomeInterface])
 
     expected = """
-        schema @link(url: "https://specs.apollo.dev/federation/v2.7", import: ["@key"]) {
+        schema @link(url: "https://specs.apollo.dev/federation/v2.11", import: ["@key"]) {
           query: Query
         }
 
@@ -191,12 +189,10 @@ def test_adds_link_directive_from_input_types():
     class Query:
         user: User
 
-    schema = strawberry.federation.Schema(
-        query=Query, types=[SomeInput], enable_federation_2=True
-    )
+    schema = strawberry.federation.Schema(query=Query, types=[SomeInput])
 
     expected = """
-        schema @link(url: "https://specs.apollo.dev/federation/v2.7", import: ["@inaccessible"]) {
+        schema @link(url: "https://specs.apollo.dev/federation/v2.11", import: ["@inaccessible"]) {
           query: Query
         }
 
@@ -233,10 +229,10 @@ def test_adds_link_directive_automatically_from_field():
     class Query:
         user: User
 
-    schema = strawberry.federation.Schema(query=Query, enable_federation_2=True)
+    schema = strawberry.federation.Schema(query=Query)
 
     expected = """
-        schema @link(url: "https://specs.apollo.dev/federation/v2.7", import: ["@key", "@tag"]) {
+        schema @link(url: "https://specs.apollo.dev/federation/v2.11", import: ["@key", "@tag"]) {
           query: Query
         }
 
@@ -263,7 +259,7 @@ def test_adds_link_directive_automatically_from_field():
     assert schema.as_str() == textwrap.dedent(expected).strip()
 
 
-def test_does_not_add_directive_link_if_federation_two_is_not_enabled():
+def test_adds_directive_link_for_federation():
     @strawberry.federation.type(keys=["id"])
     class User:
         id: strawberry.ID
@@ -272,9 +268,13 @@ def test_does_not_add_directive_link_if_federation_two_is_not_enabled():
     class Query:
         user: User
 
-    schema = strawberry.federation.Schema(query=Query, enable_federation_2=False)
+    schema = strawberry.federation.Schema(query=Query)
 
     expected = """
+        schema @link(url: "https://specs.apollo.dev/federation/v2.11", import: ["@key"]) {
+          query: Query
+        }
+
         type Query {
           _entities(representations: [_Any!]!): [_Entity]!
           _service: _Service!
@@ -312,10 +312,10 @@ def test_adds_link_directive_automatically_from_scalar():
     class Query:
         user: User
 
-    schema = strawberry.federation.Schema(query=Query, enable_federation_2=True)
+    schema = strawberry.federation.Schema(query=Query)
 
     expected = """
-        schema @link(url: "https://specs.apollo.dev/federation/v2.7", import: ["@key"]) {
+        schema @link(url: "https://specs.apollo.dev/federation/v2.11", import: ["@key"]) {
           query: Query
         }
 

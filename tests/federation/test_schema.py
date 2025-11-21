@@ -21,7 +21,7 @@ def test_entities_type_when_no_type_has_keys():
         def top_products(self, first: int) -> list[Product]:  # pragma: no cover
             return []
 
-    schema = strawberry.federation.Schema(query=Query, enable_federation_2=True)
+    schema = strawberry.federation.Schema(query=Query)
 
     expected_sdl = textwrap.dedent("""
         type Product {
@@ -77,10 +77,10 @@ def test_entities_type():
         def top_products(self, first: int) -> list[Product]:  # pragma: no cover
             return []
 
-    schema = strawberry.federation.Schema(query=Query, enable_federation_2=True)
+    schema = strawberry.federation.Schema(query=Query)
 
     expected_sdl = textwrap.dedent("""
-        schema @link(url: "https://specs.apollo.dev/federation/v2.7", import: ["@key"]) {
+        schema @link(url: "https://specs.apollo.dev/federation/v2.11", import: ["@key"]) {
           query: Query
         }
 
@@ -139,7 +139,7 @@ def test_additional_scalars():
         def top_products(self, first: int) -> list[Example]:  # pragma: no cover
             return []
 
-    schema = strawberry.federation.Schema(query=Query, enable_federation_2=True)
+    schema = strawberry.federation.Schema(query=Query)
 
     query = """
         query {
@@ -167,7 +167,7 @@ def test_service():
         def top_products(self, first: int) -> list[Product]:  # pragma: no cover
             return []
 
-    schema = strawberry.federation.Schema(query=Query, enable_federation_2=True)
+    schema = strawberry.federation.Schema(query=Query)
 
     query = """
         query {
@@ -220,7 +220,7 @@ def test_using_generics():
         ) -> ListOfProducts[Product]:  # pragma: no cover
             return ListOfProducts(products=[])
 
-    schema = strawberry.federation.Schema(query=Query, enable_federation_2=True)
+    schema = strawberry.federation.Schema(query=Query)
 
     query = """
         query {
@@ -269,7 +269,7 @@ def test_input_types():
         def top_products(self, example: ExampleInput) -> list[str]:  # pragma: no cover
             return []
 
-    schema = strawberry.federation.Schema(query=Query, enable_federation_2=True)
+    schema = strawberry.federation.Schema(query=Query)
 
     query = """
         query {
@@ -294,7 +294,7 @@ def test_can_create_schema_without_query():
         price: int | None
         weight: int | None
 
-    schema = strawberry.federation.Schema(types=[Product], enable_federation_2=True)
+    schema = strawberry.federation.Schema(types=[Product])
 
     assert (
         str(schema)
@@ -364,7 +364,6 @@ def test_does_not_warn_when_using_federation_schema():
 
         strawberry.federation.Schema(
             query=Query,
-            enable_federation_2=True,
         )
 
     assert len(w) == 0

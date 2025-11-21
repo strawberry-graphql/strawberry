@@ -13,7 +13,7 @@ from strawberry.types.base import (
     StrawberryObjectDefinition,
     StrawberryOptional,
 )
-from strawberry.types.enum import EnumDefinition
+from strawberry.types.enum import StrawberryEnumDefinition
 from strawberry.types.union import StrawberryUnion
 
 
@@ -575,7 +575,7 @@ def test_enum():
     assert field1.type is int
 
     assert field2.python_name == "kind"
-    assert isinstance(field2.type, EnumDefinition)
+    assert isinstance(field2.type, StrawberryEnumDefinition)
     assert field2.type.wrapped_cls is UserKind
 
 

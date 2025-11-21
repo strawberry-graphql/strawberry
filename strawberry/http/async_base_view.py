@@ -370,7 +370,6 @@ class AsyncBaseHTTPView(
                 stream,
                 sub_response,
                 headers={
-                    "Transfer-Encoding": "chunked",
                     "Content-Type": "multipart/mixed;boundary=graphql;subscriptionSpec=1.0,application/json",
                 },
             )
@@ -439,7 +438,6 @@ class AsyncBaseHTTPView(
                 stream,
                 sub_response,
                 headers={
-                    "Transfer-Encoding": "chunked",
                     "Content-Type": 'multipart/mixed; boundary="-"',
                 },
             )

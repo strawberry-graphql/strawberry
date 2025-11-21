@@ -37,7 +37,7 @@ def test_schema_directives_and_compose_schema():
 
     directive @sensitive(reason: String!) on OBJECT
 
-    schema @composeDirective(name: "@cacheControl") @link(url: "https://directives.strawberry.rocks/cacheControl/v0.1", import: ["@cacheControl"]) @link(url: "https://specs.apollo.dev/federation/v2.7", import: ["@composeDirective", "@key", "@shareable"]) {
+    schema @composeDirective(name: "@cacheControl") @link(url: "https://directives.strawberry.rocks/cacheControl/v0.1", import: ["@cacheControl"]) @link(url: "https://specs.apollo.dev/federation/v2.11", import: ["@composeDirective", "@key", "@shareable"]) {
       query: Query
     }
 
@@ -62,7 +62,6 @@ def test_schema_directives_and_compose_schema():
 
     schema = strawberry.federation.Schema(
         query=Query,
-        enable_federation_2=True,
     )
 
     assert schema.as_str() == textwrap.dedent(expected_type).strip()
@@ -102,7 +101,7 @@ def test_schema_directives_and_compose_schema_custom_import_url():
 
     directive @sensitive(reason: String!) on OBJECT
 
-    schema @composeDirective(name: "@cacheControl") @link(url: "https://f.strawberry.rocks/cacheControl/v1.0", import: ["@cacheControl"]) @link(url: "https://specs.apollo.dev/federation/v2.7", import: ["@composeDirective", "@key", "@shareable"]) {
+    schema @composeDirective(name: "@cacheControl") @link(url: "https://f.strawberry.rocks/cacheControl/v1.0", import: ["@cacheControl"]) @link(url: "https://specs.apollo.dev/federation/v2.11", import: ["@composeDirective", "@key", "@shareable"]) {
       query: Query
     }
 
@@ -127,7 +126,6 @@ def test_schema_directives_and_compose_schema_custom_import_url():
 
     schema = strawberry.federation.Schema(
         query=Query,
-        enable_federation_2=True,
     )
 
     assert schema.as_str() == textwrap.dedent(expected_type).strip()

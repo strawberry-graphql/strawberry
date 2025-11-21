@@ -28,10 +28,10 @@ def test_field_policy_printed_correctly():
         ) -> list[Product]:  # pragma: no cover
             return []
 
-    schema = strawberry.federation.Schema(query=Query, enable_federation_2=True)
+    schema = strawberry.federation.Schema(query=Query)
 
     expected = """
-        schema @link(url: "https://specs.apollo.dev/federation/v2.7", import: ["@policy"]) {
+        schema @link(url: "https://specs.apollo.dev/federation/v2.11", import: ["@policy"]) {
           query: Query
         }
 
@@ -70,10 +70,10 @@ def test_field_policy_printed_correctly_on_scalar():
     class Query:
         hello: SomeScalar
 
-    schema = strawberry.federation.Schema(query=Query, enable_federation_2=True)
+    schema = strawberry.federation.Schema(query=Query)
 
     expected = """
-        schema @link(url: "https://specs.apollo.dev/federation/v2.7", import: ["@policy"]) {
+        schema @link(url: "https://specs.apollo.dev/federation/v2.11", import: ["@policy"]) {
           query: Query
         }
 
@@ -105,10 +105,10 @@ def test_field_policy_printed_correctly_on_enum():
     class Query:
         hello: SomeEnum
 
-    schema = strawberry.federation.Schema(query=Query, enable_federation_2=True)
+    schema = strawberry.federation.Schema(query=Query)
 
     expected = """
-        schema @link(url: "https://specs.apollo.dev/federation/v2.7", import: ["@policy"]) {
+        schema @link(url: "https://specs.apollo.dev/federation/v2.11", import: ["@policy"]) {
           query: Query
         }
 

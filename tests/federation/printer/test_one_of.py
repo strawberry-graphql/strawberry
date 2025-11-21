@@ -13,14 +13,12 @@ def test_prints_one_of_directive():
     class Query:
         hello: str
 
-    schema = strawberry.federation.Schema(
-        query=Query, types=[Input], enable_federation_2=True
-    )
+    schema = strawberry.federation.Schema(query=Query, types=[Input])
 
     expected = """
         directive @oneOf on INPUT_OBJECT
 
-        schema @link(url: "https://specs.apollo.dev/federation/v2.7", import: ["@tag"]) {
+        schema @link(url: "https://specs.apollo.dev/federation/v2.11", import: ["@tag"]) {
           query: Query
         }
 
