@@ -129,7 +129,7 @@ class BaseView:
             },
         )
 
-    def encode_json(self, data: object) -> str:
+    def encode_json(self, data: object) -> str | bytes:
         return json.dumps(data, cls=DjangoJSONEncoder)
 
 

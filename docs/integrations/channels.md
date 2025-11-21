@@ -536,7 +536,7 @@ following methods:
 - `async def get_root_value(self, request: ChannelsRequest) -> Optional[RootValue]`
 - `async def process_result(self, request: Request, result: ExecutionResult) -> GraphQLHTTPResponse`
 - `def decode_json(self, data: Union[str, bytes]) -> object`
-- `def encode_json(self, data: object) -> str`
+- `def encode_json(self, data: object) -> str | bytes`
 - `async def render_graphql_ide(self, request: ChannelsRequest) -> ChannelsResponse`
 
 #### Context
@@ -591,7 +591,7 @@ following methods:
 - `async def get_context(self, request: GraphQLWSConsumer, response: GraphQLWSConsumer) -> Context`
 - `async def get_root_value(self, request: GraphQLWSConsumer) -> Optional[RootValue]`
 - `def decode_json(self, data: Union[str, bytes]) -> object`
-- `def encode_json(self, data: object) -> str`
+- `def encode_json(self, data: object) -> str | bytes`
 - `async def on_ws_connect(self, context: Context) -> Union[UnsetType, None, Dict[str, object]]`
 
 ### on_ws_connect

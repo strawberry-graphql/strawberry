@@ -62,6 +62,7 @@ class QuartWebSocketAdapter(AsyncWebSocketAdapter):
             # Raises asyncio.CancelledError when the connection is closed.
             # https://quart.palletsprojects.com/en/latest/how_to_guides/websockets.html#detecting-disconnection
             await self.ws.send(self.view.encode_json(message))
+            # quart is misusing AnyStr, leading to type errors for unions
         except asyncio.CancelledError as exc:
             raise WebSocketDisconnected from exc
 
