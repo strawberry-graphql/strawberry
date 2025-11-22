@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.287.0 - 2025-11-22
+--------------------
+
+Change `strawberry.http.base.BaseView.encode_json()` type hint to `str | bytes` and adjust dependent code appropriately.
+
+Contributed by [David](https://github.com/Brandieee) via [PR #4054](https://github.com/strawberry-graphql/strawberry/pull/4054/)
+
+
 0.286.1 - 2025-11-21
 --------------------
 
