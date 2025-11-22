@@ -1,3 +1,4 @@
+import json
 from typing import Literal
 
 import pytest
@@ -31,6 +32,25 @@ async def test_the_http_handler_uses_the_views_decode_json_method(
     assert data["hello"] == "Hello world"
 
     assert spy.call_count == 1
+
+
+async def test_the_http_handler_supports_bytes_encoded_json(
+    http_client: HttpClient, mocker
+):
+    """Check that http handlers correctly deal with byte return type from `encode_json`"""
+
+    def patched_encode_json(self, data: object) -> bytes:
+        return json.dumps(data).encode()
+
+    mocker.patch("strawberry.http.base.BaseView.encode_json", patched_encode_json)
+
+    response = await http_client.query(query="{ hello }")
+    assert response.status_code == 200
+    assert response.headers["content-type"].split(";")[0] == "application/json"
+
+    data = response.json["data"]
+    assert isinstance(data, dict)
+    assert data["hello"] == "Hello world"
 
 
 async def test_exception(http_client: HttpClient, mocker):

@@ -66,8 +66,13 @@ class GraphQLView(
         if sub_response.status_code != 200:
             status_code = sub_response.status_code
 
+        encoded_data = self.encode_json(response_data)
+        if isinstance(encoded_data, bytes):
+            encoded_data = encoded_data.decode()
+        # Chalice expects str or objects for body unless the content type has been added to the chalice app
+        # list of binary content types
         return Response(
-            body=self.encode_json(response_data),
+            body=encoded_data,
             status_code=status_code,
             headers={
                 "Content-Type": "application/json",
