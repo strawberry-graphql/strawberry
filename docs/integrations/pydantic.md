@@ -235,10 +235,14 @@ class Query:
 
 ### Validation
 
-Pydantic validation is automatically applied to input types:
+Pydantic validation is automatically applied to input types. Strawberry supports
+all Pydantic v2 validation features including field validators, model
+validators, and functional validators.
+
+#### Field Validators
 
 ```python
-from pydantic import validator
+from pydantic import field_validator
 
 
 @strawberry.pydantic.input
@@ -246,11 +250,124 @@ class CreateUserInput(BaseModel):
     name: str
     age: int
 
-    @validator("age")
-    def validate_age(cls, v):
+    @field_validator("age")
+    @classmethod
+    def validate_age(cls, v: int) -> int:
         if v < 0:
             raise ValueError("Age must be non-negative")
         return v
+```
+
+#### Model Validators
+
+Cross-field validation using `@model_validator`:
+
+```python
+from pydantic import model_validator
+
+
+@strawberry.pydantic.input
+class DateRangeInput(BaseModel):
+    start_date: date
+    end_date: date
+
+    @model_validator(mode="after")
+    def check_dates(self) -> "DateRangeInput":
+        if self.start_date > self.end_date:
+            raise ValueError("start_date must be before end_date")
+        return self
+```
+
+#### Functional Validators
+
+Reusable validation with `Annotated` types:
+
+```python
+from typing import Annotated
+from pydantic import AfterValidator
+
+
+def validate_email(v: str) -> str:
+    if "@" not in v:
+        raise ValueError("Invalid email")
+    return v.lower()
+
+
+Email = Annotated[str, AfterValidator(validate_email)]
+
+
+@strawberry.pydantic.input
+class UserInput(BaseModel):
+    email: Email  # Validator runs during GraphQL input processing
+```
+
+#### Validation Context
+
+Strawberry automatically passes GraphQL context to Pydantic validators, allowing
+access to request information, user authentication, database sessions, etc:
+
+```python
+from pydantic import field_validator, ValidationInfo
+
+
+@strawberry.pydantic.input
+class CreatePostInput(BaseModel):
+    title: str
+
+    @field_validator("title")
+    @classmethod
+    def check_permissions(cls, v: str, info: ValidationInfo) -> str:
+        # Access GraphQL context passed during validation
+        strawberry_info = info.context.get("info") if info.context else None
+        if strawberry_info:
+            user = strawberry_info.context.get("user")
+            if user and not user.can_create_posts:
+                raise ValueError("User cannot create posts")
+        return v
+```
+
+### Model Config
+
+Pydantic's `model_config` settings are respected during validation:
+
+```python
+from pydantic import ConfigDict
+
+
+@strawberry.pydantic.input
+class StrictUserInput(BaseModel):
+    model_config = ConfigDict(strict=True, extra="forbid")
+
+    age: int  # Will NOT accept "25" as string
+    name: str
+```
+
+#### Per-Field Strict Mode
+
+You can also enable strict mode on individual fields:
+
+```python
+from pydantic import Field
+
+
+@strawberry.pydantic.input
+class UserInput(BaseModel):
+    age: int = Field(strict=True)  # Must be int, not "25"
+    name: str  # Normal coercion allowed
+```
+
+### Aliases
+
+Pydantic field aliases are supported for both input and output types:
+
+```python
+from pydantic import Field
+
+
+@strawberry.pydantic.type
+class User(BaseModel):
+    user_id: int = Field(alias="userId")
+    full_name: str = Field(validation_alias="fullName")
 ```
 
 ### Field Directives and Customization
@@ -340,23 +457,70 @@ class CreateUserInput(BaseModel):
     ]
 ```
 
-## Conversion Methods
+### Discriminated Unions
 
-Decorated models automatically get conversion methods:
+Pydantic discriminated unions using `Literal` types work seamlessly with
+Strawberry's union type resolution:
 
 ```python
+from typing import Literal, Union
+from pydantic import Field
+
+
 @strawberry.pydantic.type
-class User(BaseModel):
-    name: str
-    age: int
+class Cat(BaseModel):
+    pet_type: Literal["cat"]
+    meow_volume: int
 
 
-# Create from existing Pydantic instance
-pydantic_user = User(name="John", age=30)
-strawberry_user = User.from_pydantic(pydantic_user)
+@strawberry.pydantic.type
+class Dog(BaseModel):
+    pet_type: Literal["dog"]
+    bark_volume: int
 
-# Convert back to Pydantic
-converted_back = strawberry_user.to_pydantic()
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def pet(self) -> Cat | Dog:
+        return Cat(pet_type="cat", meow_volume=10)
+```
+
+The `Literal` fields are converted to the appropriate GraphQL scalar type
+(String, Int, Boolean) and work as discriminators for union type resolution.
+
+### TypeAdapter and RootModel
+
+Pydantic's `TypeAdapter` and `RootModel` can be used in resolvers for additional
+validation:
+
+```python
+from pydantic import TypeAdapter, RootModel, Field
+from typing import Annotated
+
+# Using TypeAdapter for scalar validation
+PositiveInt = Annotated[int, Field(gt=0)]
+positive_adapter = TypeAdapter(PositiveInt)
+
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def validate_positive(self, value: int) -> int:
+        return positive_adapter.validate_python(value)
+
+
+# Using RootModel for list validation
+class BoundedList(RootModel[Annotated[list[int], Field(min_length=1, max_length=5)]]):
+    pass
+
+
+@strawberry.type
+class Mutation:
+    @strawberry.mutation
+    def process_items(self, items: list[int]) -> int:
+        validated = BoundedList.model_validate(items)
+        return sum(validated.root)
 ```
 
 ## Migration from Experimental
@@ -391,7 +555,7 @@ class User(BaseModel):
 ## Complete Example
 
 ```python
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 from typing import List, Optional
 import strawberry
 
@@ -413,8 +577,9 @@ class CreateUserInput(BaseModel):
     age: int
     tags: Optional[List[str]] = None
 
-    @validator("age")
-    def validate_age(cls, v):
+    @field_validator("age")
+    @classmethod
+    def validate_age(cls, v: int) -> int:
         if v < 0:
             raise ValueError("Age must be non-negative")
         return v
@@ -435,7 +600,7 @@ class Query:
 
 @strawberry.type
 class Mutation:
-    @strawberry.field
+    @strawberry.mutation
     def create_user(self, input: CreateUserInput) -> User:
         return User(
             id=1,

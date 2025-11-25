@@ -6,22 +6,20 @@ into GraphQL types, inputs, and interfaces without requiring a separate wrapper 
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Callable, Optional, Union, overload
+from typing import TYPE_CHECKING, Any, overload
 
 if TYPE_CHECKING:
     import builtins
-    from collections.abc import Sequence
+    from collections.abc import Callable, Sequence
+
+    from graphql import GraphQLResolveInfo
+    from pydantic import BaseModel
 
 from strawberry.types.base import StrawberryObjectDefinition
 from strawberry.types.cast import get_strawberry_type_cast
 from strawberry.utils.str_converters import to_camel_case
 
 from .fields import _get_pydantic_fields
-
-if TYPE_CHECKING:
-    from graphql import GraphQLResolveInfo
-
-    from pydantic import BaseModel
 
 
 def _get_interfaces(cls: builtins.type[Any]) -> list[StrawberryObjectDefinition]:
@@ -38,15 +36,15 @@ def _get_interfaces(cls: builtins.type[Any]) -> list[StrawberryObjectDefinition]
 
 
 def _process_pydantic_type(
-    cls: type[BaseModel],
+    cls: builtins.type[BaseModel],
     *,
-    name: Optional[str] = None,
+    name: str | None = None,
     is_input: bool = False,
     is_interface: bool = False,
-    description: Optional[str] = None,
-    directives: Optional[Sequence[object]] = (),
+    description: str | None = None,
+    directives: Sequence[object] | None = (),
     include_computed: bool = False,
-) -> type[BaseModel]:
+) -> builtins.type[BaseModel]:
     """Process a Pydantic BaseModel class and add GraphQL metadata.
 
     Args:
@@ -105,33 +103,36 @@ def _process_pydantic_type(
 
 @overload
 def type(
-    cls: type[BaseModel],
+    cls: builtins.type[BaseModel],
     *,
-    name: Optional[str] = None,
-    description: Optional[str] = None,
-    directives: Optional[Sequence[object]] = (),
+    name: str | None = None,
+    description: str | None = None,
+    directives: Sequence[object] | None = (),
     include_computed: bool = False,
-) -> type[BaseModel]: ...
+) -> builtins.type[BaseModel]: ...
 
 
 @overload
 def type(
     *,
-    name: Optional[str] = None,
-    description: Optional[str] = None,
-    directives: Optional[Sequence[object]] = (),
+    name: str | None = None,
+    description: str | None = None,
+    directives: Sequence[object] | None = (),
     include_computed: bool = False,
-) -> Callable[[type[BaseModel]], type[BaseModel]]: ...
+) -> Callable[[builtins.type[BaseModel]], builtins.type[BaseModel]]: ...
 
 
 def type(
-    cls: Optional[type[BaseModel]] = None,
+    cls: builtins.type[BaseModel] | None = None,
     *,
-    name: Optional[str] = None,
-    description: Optional[str] = None,
-    directives: Optional[Sequence[object]] = (),
+    name: str | None = None,
+    description: str | None = None,
+    directives: Sequence[object] | None = (),
     include_computed: bool = False,
-) -> Union[type[BaseModel], Callable[[type[BaseModel]], type[BaseModel]]]:
+) -> (
+    builtins.type[BaseModel]
+    | Callable[[builtins.type[BaseModel]], builtins.type[BaseModel]]
+):
     """Decorator to convert a Pydantic BaseModel directly into a GraphQL type.
 
     This decorator allows you to use Pydantic models directly as GraphQL types
@@ -162,7 +163,7 @@ def type(
             age: int = strawberry.field(directives=[SomeDirective()])
     """
 
-    def wrap(cls: type[BaseModel]) -> type[BaseModel]:
+    def wrap(cls: builtins.type[BaseModel]) -> builtins.type[BaseModel]:
         return _process_pydantic_type(
             cls,
             name=name,
@@ -181,30 +182,33 @@ def type(
 
 @overload
 def input(
-    cls: type[BaseModel],
+    cls: builtins.type[BaseModel],
     *,
-    name: Optional[str] = None,
-    description: Optional[str] = None,
-    directives: Optional[Sequence[object]] = (),
-) -> type[BaseModel]: ...
+    name: str | None = None,
+    description: str | None = None,
+    directives: Sequence[object] | None = (),
+) -> builtins.type[BaseModel]: ...
 
 
 @overload
 def input(
     *,
-    name: Optional[str] = None,
-    description: Optional[str] = None,
-    directives: Optional[Sequence[object]] = (),
-) -> Callable[[type[BaseModel]], type[BaseModel]]: ...
+    name: str | None = None,
+    description: str | None = None,
+    directives: Sequence[object] | None = (),
+) -> Callable[[builtins.type[BaseModel]], builtins.type[BaseModel]]: ...
 
 
 def input(
-    cls: Optional[type[BaseModel]] = None,
+    cls: builtins.type[BaseModel] | None = None,
     *,
-    name: Optional[str] = None,
-    description: Optional[str] = None,
-    directives: Optional[Sequence[object]] = (),
-) -> Union[type[BaseModel], Callable[[type[BaseModel]], type[BaseModel]]]:
+    name: str | None = None,
+    description: str | None = None,
+    directives: Sequence[object] | None = (),
+) -> (
+    builtins.type[BaseModel]
+    | Callable[[builtins.type[BaseModel]], builtins.type[BaseModel]]
+):
     """Decorator to convert a Pydantic BaseModel directly into a GraphQL input type.
 
     This decorator allows you to use Pydantic models directly as GraphQL input types
@@ -228,7 +232,7 @@ def input(
         # All fields from the Pydantic model will be included in the GraphQL input type
     """
 
-    def wrap(cls: type[BaseModel]) -> type[BaseModel]:
+    def wrap(cls: builtins.type[BaseModel]) -> builtins.type[BaseModel]:
         return _process_pydantic_type(
             cls,
             name=name,
@@ -247,33 +251,36 @@ def input(
 
 @overload
 def interface(
-    cls: type[BaseModel],
+    cls: builtins.type[BaseModel],
     *,
-    name: Optional[str] = None,
-    description: Optional[str] = None,
-    directives: Optional[Sequence[object]] = (),
+    name: str | None = None,
+    description: str | None = None,
+    directives: Sequence[object] | None = (),
     include_computed: bool = False,
-) -> type[BaseModel]: ...
+) -> builtins.type[BaseModel]: ...
 
 
 @overload
 def interface(
     *,
-    name: Optional[str] = None,
-    description: Optional[str] = None,
-    directives: Optional[Sequence[object]] = (),
+    name: str | None = None,
+    description: str | None = None,
+    directives: Sequence[object] | None = (),
     include_computed: bool = False,
-) -> Callable[[type[BaseModel]], type[BaseModel]]: ...
+) -> Callable[[builtins.type[BaseModel]], builtins.type[BaseModel]]: ...
 
 
 def interface(
-    cls: Optional[type[BaseModel]] = None,
+    cls: builtins.type[BaseModel] | None = None,
     *,
-    name: Optional[str] = None,
-    description: Optional[str] = None,
-    directives: Optional[Sequence[object]] = (),
+    name: str | None = None,
+    description: str | None = None,
+    directives: Sequence[object] | None = (),
     include_computed: bool = False,
-) -> Union[type[BaseModel], Callable[[type[BaseModel]], type[BaseModel]]]:
+) -> (
+    builtins.type[BaseModel]
+    | Callable[[builtins.type[BaseModel]], builtins.type[BaseModel]]
+):
     """Decorator to convert a Pydantic BaseModel directly into a GraphQL interface.
 
     This decorator allows you to use Pydantic models directly as GraphQL interfaces
@@ -295,7 +302,7 @@ def interface(
             id: str
     """
 
-    def wrap(cls: type[BaseModel]) -> type[BaseModel]:
+    def wrap(cls: builtins.type[BaseModel]) -> builtins.type[BaseModel]:
         return _process_pydantic_type(
             cls,
             name=name,

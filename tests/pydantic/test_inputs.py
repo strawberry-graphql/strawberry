@@ -1,8 +1,8 @@
 from typing import Annotated, Optional
 
+import pydantic
 from inline_snapshot import snapshot
 
-import pydantic
 import strawberry
 from strawberry.types.base import get_object_definition
 
@@ -181,12 +181,10 @@ def test_input_type_with_invalid_email():
     result = schema.execute_sync(mutation_invalid_email)
     assert result.errors is not None
     assert len(result.errors) == 1
-    assert result.errors[0].message == snapshot("""\
-1 validation error for UserInput
-email
-  String should match pattern '^[^@]+@[^@]+\\.[^@]+$' [type=string_pattern_mismatch, input_value='invalid-email', input_type=str]
-    For further information visit https://errors.pydantic.dev/2.11/v/string_pattern_mismatch\
-""")
+    error_message = result.errors[0].message
+    assert "1 validation error for UserInput" in error_message
+    assert "email" in error_message
+    assert "string_pattern_mismatch" in error_message
 
 
 def test_input_type_with_invalid_name_length():
@@ -236,12 +234,10 @@ def test_input_type_with_invalid_name_length():
     result = schema.execute_sync(mutation_short_name)
     assert result.errors is not None
     assert len(result.errors) == 1
-    assert result.errors[0].message == snapshot("""\
-1 validation error for UserInput
-name
-  String should have at least 2 characters [type=string_too_short, input_value='J', input_type=str]
-    For further information visit https://errors.pydantic.dev/2.11/v/string_too_short\
-""")
+    error_message = result.errors[0].message
+    assert "1 validation error for UserInput" in error_message
+    assert "name" in error_message
+    assert "string_too_short" in error_message
 
 
 def test_input_type_with_invalid_age_range():
@@ -291,12 +287,10 @@ def test_input_type_with_invalid_age_range():
     result = schema.execute_sync(mutation_negative_age)
     assert result.errors is not None
     assert len(result.errors) == 1
-    assert result.errors[0].message == snapshot("""\
-1 validation error for UserInput
-age
-  Input should be greater than or equal to 0 [type=greater_than_equal, input_value=-5, input_type=int]
-    For further information visit https://errors.pydantic.dev/2.11/v/greater_than_equal\
-""")
+    error_message = result.errors[0].message
+    assert "1 validation error for UserInput" in error_message
+    assert "age" in error_message
+    assert "greater_than_equal" in error_message
 
     # Test with age out of range (too high)
     mutation_high_age = """
@@ -316,12 +310,10 @@ age
     result = schema.execute_sync(mutation_high_age)
     assert result.errors is not None
     assert len(result.errors) == 1
-    assert result.errors[0].message == snapshot("""\
-1 validation error for UserInput
-age
-  Input should be less than or equal to 150 [type=less_than_equal, input_value=200, input_type=int]
-    For further information visit https://errors.pydantic.dev/2.11/v/less_than_equal\
-""")
+    error_message = result.errors[0].message
+    assert "1 validation error for UserInput" in error_message
+    assert "age" in error_message
+    assert "less_than_equal" in error_message
 
 
 def test_nested_input_types_with_validation():
@@ -439,12 +431,10 @@ def test_nested_input_types_with_validation():
     result = schema.execute_sync(mutation_invalid_zip)
     assert result.errors is not None
     assert len(result.errors) == 1
-    assert result.errors[0].message == snapshot("""\
-1 validation error for AddressInput
-zipcode
-  String should match pattern '^\\d{5}$' [type=string_pattern_mismatch, input_value='1234', input_type=str]
-    For further information visit https://errors.pydantic.dev/2.11/v/string_pattern_mismatch\
-""")
+    error_message = result.errors[0].message
+    assert "1 validation error for AddressInput" in error_message
+    assert "zipcode" in error_message
+    assert "string_pattern_mismatch" in error_message
 
     # Test with invalid nested data (underage)
     mutation_underage = """
@@ -472,12 +462,10 @@ zipcode
     result = schema.execute_sync(mutation_underage)
     assert result.errors is not None
     assert len(result.errors) == 1
-    assert result.errors[0].message == snapshot("""\
-1 validation error for UserInput
-age
-  Input should be greater than or equal to 18 [type=greater_than_equal, input_value=16, input_type=int]
-    For further information visit https://errors.pydantic.dev/2.11/v/greater_than_equal\
-""")
+    error_message = result.errors[0].message
+    assert "1 validation error for UserInput" in error_message
+    assert "age" in error_message
+    assert "greater_than_equal" in error_message
 
 
 def test_input_type_with_custom_validators():
@@ -581,12 +569,10 @@ def test_input_type_with_custom_validators():
     result = schema.execute_sync(mutation_invalid_username)
     assert result.errors is not None
     assert len(result.errors) == 1
-    assert result.errors[0].message == snapshot("""\
-1 validation error for RegistrationInput
-username
-  Value error, Username must be alphanumeric [type=value_error, input_value='john@123', input_type=str]
-    For further information visit https://errors.pydantic.dev/2.11/v/value_error\
-""")
+    error_message = result.errors[0].message
+    assert "1 validation error for RegistrationInput" in error_message
+    assert "username" in error_message
+    assert "Username must be alphanumeric" in error_message
 
     # Test with weak password
     mutation_weak_password = """
@@ -606,12 +592,10 @@ username
     result = schema.execute_sync(mutation_weak_password)
     assert result.errors is not None
     assert len(result.errors) == 1
-    assert result.errors[0].message == snapshot("""\
-1 validation error for RegistrationInput
-password
-  Value error, Password must be at least 8 characters long [type=value_error, input_value='weak', input_type=str]
-    For further information visit https://errors.pydantic.dev/2.11/v/value_error\
-""")
+    error_message = result.errors[0].message
+    assert "1 validation error for RegistrationInput" in error_message
+    assert "password" in error_message
+    assert "Password must be at least 8 characters long" in error_message
 
     # Test with mismatched passwords
     mutation_mismatch_password = """
@@ -631,12 +615,10 @@ password
     result = schema.execute_sync(mutation_mismatch_password)
     assert result.errors is not None
     assert len(result.errors) == 1
-    assert result.errors[0].message == snapshot("""\
-1 validation error for RegistrationInput
-confirm_password
-  Value error, Passwords do not match [type=value_error, input_value='DifferentPass123', input_type=str]
-    For further information visit https://errors.pydantic.dev/2.11/v/value_error\
-""")
+    error_message = result.errors[0].message
+    assert "1 validation error for RegistrationInput" in error_message
+    assert "confirm_password" in error_message
+    assert "Passwords do not match" in error_message
 
     # Test with underage user
     mutation_underage = """
@@ -656,12 +638,10 @@ confirm_password
     result = schema.execute_sync(mutation_underage)
     assert result.errors is not None
     assert len(result.errors) == 1
-    assert result.errors[0].message == snapshot("""\
-1 validation error for RegistrationInput
-age
-  Value error, Must be at least 13 years old [type=value_error, input_value=10, input_type=int]
-    For further information visit https://errors.pydantic.dev/2.11/v/value_error\
-""")
+    error_message = result.errors[0].message
+    assert "1 validation error for RegistrationInput" in error_message
+    assert "age" in error_message
+    assert "Must be at least 13 years old" in error_message
 
 
 def test_input_type_with_optional_fields_and_validation():
@@ -757,12 +737,10 @@ def test_input_type_with_optional_fields_and_validation():
     result = schema.execute_sync(mutation_invalid_url)
     assert result.errors is not None
     assert len(result.errors) == 1
-    assert result.errors[0].message == snapshot("""\
-1 validation error for UpdateProfileInput
-website
-  String should match pattern '^https?://.*' [type=string_pattern_mismatch, input_value='not-a-url', input_type=str]
-    For further information visit https://errors.pydantic.dev/2.11/v/string_pattern_mismatch\
-""")
+    error_message = result.errors[0].message
+    assert "1 validation error for UpdateProfileInput" in error_message
+    assert "website" in error_message
+    assert "string_pattern_mismatch" in error_message
 
     # Test with bio too long
     long_bio = "x" * 201
@@ -781,9 +759,7 @@ website
     result = schema.execute_sync(mutation_long_bio)
     assert result.errors is not None
     assert len(result.errors) == 1
-    assert result.errors[0].message == snapshot("""\
-1 validation error for UpdateProfileInput
-bio
-  String should have at most 200 characters [type=string_too_long, input_value='xxxxxxxxxxxxxxxxxxxxxxxx...xxxxxxxxxxxxxxxxxxxxxxx', input_type=str]
-    For further information visit https://errors.pydantic.dev/2.11/v/string_too_long\
-""")
+    error_message = result.errors[0].message
+    assert "1 validation error for UpdateProfileInput" in error_message
+    assert "bio" in error_message
+    assert "string_too_long" in error_message

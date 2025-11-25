@@ -6,23 +6,24 @@ classes, converting them to StrawberryField instances that can be used in GraphQ
 
 from __future__ import annotations
 
+import functools
+import operator
 import sys
 from typing import TYPE_CHECKING, Any, get_args, get_origin
-from typing import Union as TypingUnion
-from typing import _GenericAlias as TypingGenericAlias
 
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.experimental.pydantic._compat import PydanticCompat
 from strawberry.experimental.pydantic.utils import get_default_factory_for_field
 from strawberry.types.field import StrawberryField
 from strawberry.types.private import is_private
-from strawberry.utils.typing import is_union
+from strawberry.utils.typing import is_generic_alias, is_union
 
 from .exceptions import UnregisteredTypeException
 
 if TYPE_CHECKING:
     from pydantic import BaseModel
-    from pydantic.fields import FieldInfo
+
+    from strawberry.experimental.pydantic._compat import CompatModelField
 
 from strawberry.experimental.pydantic._compat import lenient_issubclass
 
@@ -82,16 +83,20 @@ def replace_types_recursively(
     )
 
     # Handle special cases for typing generics
-    if isinstance(replaced_type, TypingGenericAlias):
-        return TypingGenericAlias(origin, converted)
+    if is_generic_alias(replaced_type):
+        # Use origin[converted] to reconstruct the generic type
+        return origin[converted]
     if is_union(replaced_type):
-        return TypingUnion[converted]
+        # Use functools.reduce with operator.or_ to create X | Y | Z union type
+        return functools.reduce(operator.or_, converted)
 
     # Fallback to origin[converted] for standard generic types
     return origin[converted]
 
 
-def get_type_for_field(field: FieldInfo, is_input: bool, compat: PydanticCompat) -> Any:
+def get_type_for_field(
+    field: CompatModelField, is_input: bool, compat: PydanticCompat
+) -> Any:
     """Get the GraphQL type for a Pydantic field."""
     return replace_types_recursively(field.outer_type_, is_input, compat=compat)
 
