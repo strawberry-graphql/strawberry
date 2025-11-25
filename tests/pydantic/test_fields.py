@@ -1,9 +1,9 @@
 from typing import Annotated
 
+import pydantic
 import pytest
 from inline_snapshot import snapshot
 
-import pydantic
 import strawberry
 from strawberry.pydantic.exceptions import UnregisteredTypeException
 from strawberry.schema_directive import Location

@@ -2,9 +2,9 @@
 
 from typing import Union
 
+import pydantic
 from inline_snapshot import snapshot
 
-import pydantic
 import strawberry
 from strawberry.pydantic import Error
 

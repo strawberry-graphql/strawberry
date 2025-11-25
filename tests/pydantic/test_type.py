@@ -1,8 +1,8 @@
 from typing import Optional
 
+import pydantic
 from inline_snapshot import snapshot
 
-import pydantic
 import strawberry
 from strawberry.types.base import (
     StrawberryOptional,

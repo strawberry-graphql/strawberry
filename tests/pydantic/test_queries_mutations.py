@@ -6,9 +6,9 @@ These tests verify that Pydantic models work correctly in GraphQL queries and mu
 
 from typing import Optional
 
+import pydantic
 from inline_snapshot import snapshot
 
-import pydantic
 import strawberry
 
 

@@ -1,8 +1,8 @@
 from typing import Annotated, Optional
 
+import pydantic
 import pytest
 
-import pydantic
 import strawberry
 
 

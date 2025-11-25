@@ -1,6 +1,6 @@
+import pydantic
 from inline_snapshot import snapshot
 
-import pydantic
 import strawberry
 from strawberry.types.base import get_object_definition
 

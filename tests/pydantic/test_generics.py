@@ -1,10 +1,10 @@
 import sys
 from typing import Generic, TypeVar
 
+import pydantic
 import pytest
 from inline_snapshot import snapshot
 
-import pydantic
 import strawberry
 from strawberry.types.base import (
     StrawberryList,
