@@ -1,13 +1,15 @@
 import dataclasses
+from collections.abc import Callable
 from dataclasses import dataclass
 from decimal import Decimal
 from functools import cached_property
-from typing import TYPE_CHECKING, Any, Callable, Optional
+from typing import TYPE_CHECKING, Any, Optional
 from uuid import UUID
 
 import pydantic
 from pydantic import BaseModel
 from pydantic.version import VERSION as PYDANTIC_VERSION
+
 from strawberry.experimental.pydantic.exceptions import UnsupportedTypeError
 
 if TYPE_CHECKING:
@@ -23,12 +25,12 @@ class CompatModelField:
     type_: Any
     outer_type_: Any
     default: Any
-    default_factory: Optional[Callable[[], Any]]
+    default_factory: Callable[[], Any] | None
     required: bool
-    alias: Optional[str]
+    alias: str | None
     allow_none: bool
     has_alias: bool
-    description: Optional[str]
+    description: str | None
     _missing_type: Any
     is_v1: bool
 
@@ -42,8 +44,8 @@ class CompatModelField:
 
 
 ATTR_TO_TYPE_MAP = {
-    "NoneStr": Optional[str],
-    "NoneBytes": Optional[bytes],
+    "NoneStr": Optional[str],  # noqa: UP045
+    "NoneBytes": Optional[bytes],  # noqa: UP045
     "StrBytes": None,
     "NoneStrBytes": None,
     "StrictStr": str,
@@ -295,7 +297,7 @@ class PydanticCompat:
 
 
 if IS_PYDANTIC_V2:
-    from typing_extensions import get_args, get_origin
+    from typing import get_args, get_origin
 
     from pydantic.v1.typing import is_new_type
     from pydantic.v1.utils import lenient_issubclass, smart_deepcopy

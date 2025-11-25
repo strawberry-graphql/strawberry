@@ -5,12 +5,11 @@ import json as json_module
 from collections.abc import AsyncGenerator, Mapping, Sequence
 from datetime import timedelta
 from io import BytesIO
-from typing import Any, Optional
-from typing_extensions import Literal
-
-from urllib3 import encode_multipart_formdata
+from typing import Any, Literal
 
 from channels.testing import HttpCommunicator, WebsocketCommunicator
+from urllib3 import encode_multipart_formdata
+
 from strawberry.channels import (
     GraphQLHTTPConsumer,
     GraphQLWSConsumer,
@@ -45,8 +44,8 @@ from .base import (
 def generate_get_path(
     path: str,
     query: str,
-    variables: Optional[dict[str, Any]] = None,
-    extensions: Optional[dict[str, Any]] = None,
+    variables: dict[str, Any] | None = None,
+    extensions: dict[str, Any] | None = None,
 ) -> str:
     body: dict[str, Any] = {"query": query}
     if variables is not None:
@@ -149,12 +148,11 @@ class ChannelsHttpClient(HttpClient):
     def __init__(
         self,
         schema: Schema,
-        graphiql: Optional[bool] = None,
-        graphql_ide: Optional[GraphQL_IDE] = "graphiql",
+        graphiql: bool | None = None,
+        graphql_ide: GraphQL_IDE | None = "graphiql",
         allow_queries_via_get: bool = True,
         keep_alive: bool = False,
         keep_alive_interval: float = 1,
-        debug: bool = False,
         subscription_protocols: Sequence[str] = (
             GRAPHQL_TRANSPORT_WS_PROTOCOL,
             GRAPHQL_WS_PROTOCOL,
@@ -167,7 +165,6 @@ class ChannelsHttpClient(HttpClient):
             schema=schema,
             keep_alive=keep_alive,
             keep_alive_interval=keep_alive_interval,
-            debug=debug,
             subscription_protocols=subscription_protocols,
             connection_init_wait_timeout=connection_init_wait_timeout,
         )
@@ -184,12 +181,12 @@ class ChannelsHttpClient(HttpClient):
     async def _graphql_request(
         self,
         method: Literal["get", "post"],
-        query: Optional[str] = None,
-        operation_name: Optional[str] = None,
-        variables: Optional[dict[str, object]] = None,
-        files: Optional[dict[str, BytesIO]] = None,
-        headers: Optional[dict[str, str]] = None,
-        extensions: Optional[dict[str, Any]] = None,
+        query: str | None = None,
+        operation_name: str | None = None,
+        variables: dict[str, object] | None = None,
+        files: dict[str, BytesIO] | None = None,
+        headers: dict[str, str] | None = None,
+        extensions: dict[str, Any] | None = None,
         **kwargs: Any,
     ) -> Response:
         body = self._build_body(
@@ -222,7 +219,7 @@ class ChannelsHttpClient(HttpClient):
         self,
         url: str,
         method: Literal["head", "get", "post", "patch", "put", "delete"],
-        headers: Optional[dict[str, str]] = None,
+        headers: dict[str, str] | None = None,
         body: bytes = b"",
     ) -> Response:
         # HttpCommunicator expects tuples of bytestrings
@@ -248,16 +245,16 @@ class ChannelsHttpClient(HttpClient):
     async def get(
         self,
         url: str,
-        headers: Optional[dict[str, str]] = None,
+        headers: dict[str, str] | None = None,
     ) -> Response:
         return await self.request(url, "get", headers=headers)
 
     async def post(
         self,
         url: str,
-        data: Optional[bytes] = None,
-        json: Optional[JSON] = None,
-        headers: Optional[dict[str, str]] = None,
+        data: bytes | None = None,
+        json: JSON | None = None,
+        headers: dict[str, str] | None = None,
     ) -> Response:
         body = b""
         if data is not None:
@@ -290,8 +287,8 @@ class SyncChannelsHttpClient(ChannelsHttpClient):
     def __init__(
         self,
         schema: Schema,
-        graphiql: Optional[bool] = None,
-        graphql_ide: Optional[GraphQL_IDE] = "graphiql",
+        graphiql: bool | None = None,
+        graphql_ide: GraphQL_IDE | None = "graphiql",
         allow_queries_via_get: bool = True,
         result_override: ResultOverrideFunction = None,
         multipart_uploads_enabled: bool = False,
@@ -307,13 +304,11 @@ class SyncChannelsHttpClient(ChannelsHttpClient):
 
 
 class ChannelsWebSocketClient(WebSocketClient):
-    def __init__(
-        self, client: WebsocketCommunicator, accepted_subprotocol: Optional[str]
-    ):
+    def __init__(self, client: WebsocketCommunicator, accepted_subprotocol: str | None):
         self.ws = client
         self._closed: bool = False
-        self._close_code: Optional[int] = None
-        self._close_reason: Optional[str] = None
+        self._close_code: int | None = None
+        self._close_reason: str | None = None
         self._accepted_subprotocol = accepted_subprotocol
 
     def name(self) -> str:
@@ -328,7 +323,7 @@ class ChannelsWebSocketClient(WebSocketClient):
     async def send_bytes(self, payload: bytes) -> None:
         await self.ws.send_to(bytes_data=payload)
 
-    async def receive(self, timeout: Optional[float] = None) -> Message:
+    async def receive(self, timeout: float | None = None) -> Message:
         m = await self.ws.receive_output(timeout=timeout)  # type: ignore
         if m["type"] == "websocket.close":
             self._closed = True
@@ -339,7 +334,7 @@ class ChannelsWebSocketClient(WebSocketClient):
             return Message(type=m["type"], data=m["text"])
         return Message(type=m["type"], data=m["data"], extra=m["extra"])
 
-    async def receive_json(self, timeout: Optional[float] = None) -> Any:
+    async def receive_json(self, timeout: float | None = None) -> Any:
         m = await self.ws.receive_output(timeout=timeout)  # type: ignore
         assert m["type"] == "websocket.send"
         assert "text" in m
@@ -350,7 +345,7 @@ class ChannelsWebSocketClient(WebSocketClient):
         self._closed = True
 
     @property
-    def accepted_subprotocol(self) -> Optional[str]:
+    def accepted_subprotocol(self) -> str | None:
         return self._accepted_subprotocol
 
     @property
@@ -363,5 +358,5 @@ class ChannelsWebSocketClient(WebSocketClient):
         return self._close_code
 
     @property
-    def close_reason(self) -> Optional[str]:
+    def close_reason(self) -> str | None:
         return self._close_reason

@@ -1,12 +1,12 @@
 from collections.abc import Mapping
-from typing import Any, Optional
-from typing_extensions import Literal, TypedDict
+from typing import Any, Literal
+from typing_extensions import TypedDict
 
 HTTPMethod = Literal[
     "GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS", "TRACE"
 ]
 
-QueryParams = Mapping[str, Optional[str]]
+QueryParams = Mapping[str, str | None]
 
 
 class FormData(TypedDict):

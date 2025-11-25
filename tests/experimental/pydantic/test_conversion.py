@@ -1,14 +1,13 @@
 import base64
 import dataclasses
 import re
-import sys
 from enum import Enum
-from typing import Any, NewType, Optional, TypeVar, Union
+from typing import Any, NewType, TypeVar
 
 import pytest
+from pydantic import BaseModel, Field, ValidationError
 
 import strawberry
-from pydantic import BaseModel, Field, ValidationError
 from strawberry.experimental.pydantic._compat import (
     IS_PYDANTIC_V2,
     CompatModelField,
@@ -33,7 +32,7 @@ if IS_PYDANTIC_V2:
 def test_can_use_type_standalone():
     class User(BaseModel):
         age: int
-        password: Optional[str]
+        password: str | None
 
     @strawberry.experimental.pydantic.type(User)
     class UserType:
@@ -49,7 +48,7 @@ def test_can_use_type_standalone():
 def test_can_convert_pydantic_type_to_strawberry():
     class User(BaseModel):
         age: int
-        password: Optional[str]
+        password: str | None
 
     @strawberry.experimental.pydantic.type(User)
     class UserType:
@@ -128,7 +127,7 @@ def test_can_convert_pydantic_type_to_strawberry_property():
 def test_can_convert_alias_pydantic_field_to_strawberry():
     class UserModel(BaseModel):
         age_: int = Field(..., alias="age")
-        password: Optional[str]
+        password: str | None
 
     @strawberry.experimental.pydantic.type(UserModel)
     class User:
@@ -145,7 +144,7 @@ def test_can_convert_alias_pydantic_field_to_strawberry():
 def test_convert_alias_name():
     class UserModel(BaseModel):
         age_: int = Field(..., alias="age")
-        password: Optional[str]
+        password: str | None
 
     @strawberry.experimental.pydantic.type(
         UserModel, all_fields=True, use_pydantic_alias=True
@@ -163,7 +162,7 @@ def test_convert_alias_name():
 def test_do_not_convert_alias_name():
     class UserModel(BaseModel):
         age_: int = Field(..., alias="age")
-        password: Optional[str]
+        password: str | None
 
     @strawberry.experimental.pydantic.type(
         UserModel, all_fields=True, use_pydantic_alias=False
@@ -181,7 +180,7 @@ def test_do_not_convert_alias_name():
 def test_can_pass_pydantic_field_description_to_strawberry():
     class UserModel(BaseModel):
         age: int
-        password: Optional[str] = Field(..., description="NOT 'password'.")
+        password: str | None = Field(..., description="NOT 'password'.")
 
     @strawberry.experimental.pydantic.type(UserModel)
     class User:
@@ -383,7 +382,7 @@ def test_can_convert_pydantic_type_to_strawberry_with_union():
 
     class User(BaseModel):
         age: int
-        union_field: Union[BranchA, BranchB]
+        union_field: BranchA | BranchB
 
     @strawberry.experimental.pydantic.type(BranchA)
     class BranchAType:
@@ -424,7 +423,7 @@ def test_can_convert_pydantic_type_to_strawberry_with_union_of_strawberry_types(
 
     class User(BaseModel):
         age: int
-        union_field: Union[BranchA, BranchB]
+        union_field: BranchA | BranchB
 
     @strawberry.experimental.pydantic.type(User)
     class UserType:
@@ -455,7 +454,7 @@ def test_can_convert_pydantic_type_to_strawberry_with_union_nullable():
 
     class User(BaseModel):
         age: int
-        union_field: Union[None, BranchA, BranchB]
+        union_field: None | BranchA | BranchB
 
     @strawberry.experimental.pydantic.type(BranchA)
     class BranchAType:
@@ -561,7 +560,7 @@ def test_can_convert_pydantic_type_to_strawberry_with_interface():
 
 def test_can_convert_pydantic_type_to_strawberry_with_additional_fields():
     class UserModel(BaseModel):
-        password: Optional[str]
+        password: str | None
 
     @strawberry.experimental.pydantic.type(UserModel)
     class User:
@@ -581,7 +580,7 @@ def test_can_convert_pydantic_type_to_strawberry_with_additional_nested_fields()
         name: str
 
     class UserModel(BaseModel):
-        password: Optional[str]
+        password: str | None
 
     @strawberry.experimental.pydantic.type(UserModel)
     class User:
@@ -601,7 +600,7 @@ def test_can_convert_pydantic_type_to_strawberry_with_additional_list_nested_fie
         name: str
 
     class UserModel(BaseModel):
-        password: Optional[str]
+        password: str | None
 
     @strawberry.experimental.pydantic.type(UserModel)
     class User:
@@ -668,7 +667,7 @@ def test_can_convert_pydantic_type_to_strawberry_with_missing_index_data_nested_
         name: strawberry.auto
 
     class UserModel(BaseModel):
-        work: list[Optional[WorkModel]]
+        work: list[WorkModel | None]
 
     @strawberry.experimental.pydantic.type(UserModel)
     class User:
@@ -708,7 +707,7 @@ def test_can_convert_pydantic_type_to_strawberry_with_optional_list():
         year: int
 
     class UserModel(BaseModel):
-        work: Optional[WorkModel]
+        work: WorkModel | None
 
     @strawberry.experimental.pydantic.type(UserModel)
     class User:
@@ -725,7 +724,7 @@ def test_can_convert_pydantic_type_to_strawberry_with_optional_list():
 
 def test_can_convert_pydantic_type_to_strawberry_with_optional_nested_value():
     class UserModel(BaseModel):
-        names: Optional[list[str]]
+        names: list[str] | None
 
     @strawberry.experimental.pydantic.type(UserModel)
     class User:
@@ -743,7 +742,7 @@ def test_can_convert_pydantic_type_to_strawberry_with_optional_nested_value():
 def test_can_convert_input_types_to_pydantic():
     class User(BaseModel):
         age: int
-        password: Optional[str]
+        password: str | None
 
     @strawberry.experimental.pydantic.input(User)
     class UserInput:
@@ -760,7 +759,7 @@ def test_can_convert_input_types_to_pydantic():
 def test_can_convert_input_types_to_pydantic_default_values():
     class User(BaseModel):
         age: int
-        password: Optional[str] = None
+        password: str | None = None
 
     @strawberry.experimental.pydantic.input(User)
     class UserInput:
@@ -777,7 +776,7 @@ def test_can_convert_input_types_to_pydantic_default_values():
 def test_can_convert_input_types_to_pydantic_default_values_defaults_declared_first():
     # test that we can declare a field with a default. before a field without a default
     class User(BaseModel):
-        password: Optional[str] = None
+        password: str | None = None
         age: int
 
     @strawberry.experimental.pydantic.input(User)
@@ -812,7 +811,7 @@ def test_can_convert_pydantic_type_to_strawberry_newtype():
 
     class User(BaseModel):
         age: int
-        password: Optional[Password]
+        password: Password | None
 
     @strawberry.experimental.pydantic.type(User)
     class UserType:
@@ -897,7 +896,7 @@ def test_get_default_factory_for_field():
 
     with pytest.raises(
         BothDefaultAndDefaultFactoryDefinedError,
-        match=("Not allowed to specify both default and default_factory."),
+        match=r"Not allowed to specify both default and default_factory.",
     ):
         get_default_factory_for_field(field, compat)
 
@@ -912,9 +911,7 @@ def test_convert_input_types_to_pydantic_default_and_default_factory():
         ):
 
             class User(BaseModel):
-                password: Optional[str] = Field(
-                    default=None, default_factory=lambda: None
-                )
+                password: str | None = Field(default=None, default_factory=lambda: None)
 
     else:
         with pytest.raises(
@@ -923,9 +920,7 @@ def test_convert_input_types_to_pydantic_default_and_default_factory():
         ):
 
             class User(BaseModel):
-                password: Optional[str] = Field(
-                    default=None, default_factory=lambda: None
-                )
+                password: str | None = Field(default=None, default_factory=lambda: None)
 
 
 def test_can_convert_pydantic_type_to_strawberry_with_additional_field_resolvers():
@@ -933,7 +928,7 @@ def test_can_convert_pydantic_type_to_strawberry_with_additional_field_resolvers
         return 84
 
     class UserModel(BaseModel):
-        password: Optional[str]
+        password: str | None
         new_age: int
 
     @strawberry.experimental.pydantic.type(UserModel)
@@ -960,7 +955,7 @@ def test_can_convert_both_output_and_input_type():
 
     class User(BaseModel):
         name: str
-        work: Optional[Work]
+        work: Work | None
 
     class Group(BaseModel):
         users: list[User]
@@ -1010,7 +1005,7 @@ def test_can_convert_both_output_and_input_type():
 def test_custom_conversion_functions():
     class User(BaseModel):
         age: int
-        password: Optional[str]
+        password: str | None
 
     @strawberry.experimental.pydantic.type(User)
     class UserType:
@@ -1019,7 +1014,7 @@ def test_custom_conversion_functions():
 
         @staticmethod
         def from_pydantic(
-            instance: User, extra: Optional[dict[str, Any]] = None
+            instance: User, extra: dict[str, Any] | None = None
         ) -> "UserType":
             return UserType(
                 age=str(instance.age),
@@ -1049,7 +1044,7 @@ def test_custom_conversion_functions():
 def test_nested_custom_conversion_functions():
     class User(BaseModel):
         age: int
-        password: Optional[str]
+        password: str | None
 
     class Parent(BaseModel):
         user: User
@@ -1061,7 +1056,7 @@ def test_nested_custom_conversion_functions():
 
         @staticmethod
         def from_pydantic(
-            instance: User, extra: Optional[dict[str, Any]] = None
+            instance: User, extra: dict[str, Any] | None = None
         ) -> "UserType":
             return UserType(
                 age=str(instance.age),
@@ -1100,7 +1095,7 @@ def test_can_convert_input_types_to_pydantic_with_non_pydantic_dataclass():
 
     class User(BaseModel):
         age: int
-        password: Optional[str]
+        password: str | None
         work: Work
 
     @strawberry.experimental.pydantic.input(User)
@@ -1123,7 +1118,7 @@ def test_can_convert_input_types_to_pydantic_with_dict():
 
     class User(BaseModel):
         age: int
-        password: Optional[str]
+        password: str | None
         work: dict[str, Work]
 
     @strawberry.experimental.pydantic.input(Work)
@@ -1202,10 +1197,6 @@ def test_can_convert_generic_alias_fields_to_strawberry():
     assert test.list_2d == [[1, 2], [3]]
 
 
-@pytest.mark.skipif(
-    sys.version_info < (3, 10),
-    reason="union type expressions were added in python 3.10",
-)
 def test_can_convert_optional_union_type_expression_fields_to_strawberry():
     class TestModel(BaseModel):
         optional_list: list[int] | None

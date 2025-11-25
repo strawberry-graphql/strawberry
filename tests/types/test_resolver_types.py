@@ -18,8 +18,8 @@ def test_enum():
         return Language.ENGLISH
 
     resolver = StrawberryResolver(get_spoken_language)
-    # TODO: Remove reference to ._enum_definition with StrawberryEnum
-    assert resolver.type is Language._enum_definition
+    # TODO: Remove reference to .__strawberry_definition__ with StrawberryEnumDefinition
+    assert resolver.type is Language.__strawberry_definition__
 
 
 def test_forward_references():
@@ -68,7 +68,7 @@ def test_object():
 
 
 def test_optional():
-    def stock_market_tool() -> Optional[str]: ...
+    def stock_market_tool() -> str | None: ...
 
     resolver = StrawberryResolver(stock_market_tool)
     assert resolver.type == Optional[str]
@@ -92,7 +92,7 @@ def test_union():
     class Diagram:
         bar: float
 
-    def get_overlap() -> Union[Venn, Diagram]: ...
+    def get_overlap() -> Venn | Diagram: ...
 
     resolver = StrawberryResolver(get_overlap)
     assert resolver.type == Union[Venn, Diagram]

@@ -44,6 +44,6 @@ def test_get_object_definition_strict():
 
     with pytest.raises(
         TypeError,
-        match=".* does not have a StrawberryObjectDefinition",
+        match=r".* does not have a StrawberryObjectDefinition",
     ):
         get_object_definition(OtherFruit, strict=True)

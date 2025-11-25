@@ -1,7 +1,7 @@
 import contextlib
 import json
 import warnings
-from typing import Any, Optional
+from typing import Any
 from unittest.mock import patch
 
 import pytest
@@ -982,7 +982,7 @@ def test_execution_cache_example(mock_original_execute):
     @strawberry.type
     class Query:
         @strawberry.field
-        def ping(self, return_value: Optional[str] = None) -> str:
+        def ping(self, return_value: str | None = None) -> str:
             if return_value is not None:
                 return return_value
             return "pong"

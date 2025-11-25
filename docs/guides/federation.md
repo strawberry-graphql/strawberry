@@ -70,13 +70,22 @@ class Query:
     all_books: List[Book] = strawberry.field(resolver=get_all_books)
 
 
-schema = strawberry.federation.Schema(query=Query, enable_federation_2=True)
+schema = strawberry.federation.Schema(query=Query)
 ```
 
 <Note>
 
-`enable_federation_2=True` is used to enable Apollo Federation 2 and currently
-defaults to `False`. This will change in a future version of Strawberry.
+Strawberry supports Apollo Federation 2 only. By default, schemas use Federation
+version 2.11 (the latest supported version). You can specify a different version
+if needed:
+
+```python
+schema = strawberry.federation.Schema(
+    query=Query, federation_version="2.5"  # Specify a specific version if needed
+)
+```
+
+Supported versions: 2.0 - 2.11
 
 </Note>
 
@@ -142,9 +151,7 @@ class Query:
     _hi: str = strawberry.field(resolver=lambda: "Hello World!")
 
 
-schema = strawberry.federation.Schema(
-    query=Query, types=[Book, Review], enable_federation_2=True
-)
+schema = strawberry.federation.Schema(query=Query, types=[Book, Review])
 ```
 
 Now things are looking more interesting; the `Review` type is a GraphQL type
@@ -220,12 +227,12 @@ In two terminal windows, run the following commands:
 
 ```shell
 cd books
-strawberry server --port 3500 app
+strawberry dev --port 3500 app
 ```
 
 ```shell
 cd reviews
-strawberry server --port 3000 app
+strawberry dev --port 3000 app
 ```
 
 ## Apollo Router
@@ -327,7 +334,7 @@ Strawberry and Federation. The repo is available here:
 
 Strawberry provides implementations for
 [Apollo federation-specific GraphQL directives](https://www.apollographql.com/docs/federation/federated-types/federated-directives/)
-up to federation spec v2.7.
+up to federation spec v2.11.
 
 Some of these directives may not be necessary to directly include in your code,
 and are accessed through other means.
@@ -376,7 +383,7 @@ Will result in the following GraphQL schema:
 ```graphql
 schema
   @link(
-    url: "https://specs.apollo.dev/federation/v2.7"
+    url: "https://specs.apollo.dev/federation/v2.11"
     import: ["@key", "@inaccessible", "@shareable", "@tag"]
   ) {
   query: Query

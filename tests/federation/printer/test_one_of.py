@@ -1,5 +1,4 @@
 import textwrap
-from typing import Optional
 
 import strawberry
 
@@ -7,21 +6,19 @@ import strawberry
 def test_prints_one_of_directive():
     @strawberry.federation.input(one_of=True, tags=["myTag", "anotherTag"])
     class Input:
-        a: Optional[str] = strawberry.UNSET
-        b: Optional[int] = strawberry.UNSET
+        a: str | None = strawberry.UNSET
+        b: int | None = strawberry.UNSET
 
     @strawberry.federation.type
     class Query:
         hello: str
 
-    schema = strawberry.federation.Schema(
-        query=Query, types=[Input], enable_federation_2=True
-    )
+    schema = strawberry.federation.Schema(query=Query, types=[Input])
 
     expected = """
         directive @oneOf on INPUT_OBJECT
 
-        schema @link(url: "https://specs.apollo.dev/federation/v2.7", import: ["@tag"]) {
+        schema @link(url: "https://specs.apollo.dev/federation/v2.11", import: ["@tag"]) {
           query: Query
         }
 

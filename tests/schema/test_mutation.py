@@ -1,5 +1,4 @@
 import dataclasses
-import typing
 from textwrap import dedent
 
 import strawberry
@@ -91,12 +90,12 @@ def test_unset_types():
     @strawberry.input
     class InputExample:
         name: str
-        age: typing.Optional[int] = UNSET
+        age: int | None = UNSET
 
     @strawberry.type
     class Mutation:
         @strawberry.mutation
-        def say(self, name: typing.Optional[str] = UNSET) -> str:  # type: ignore
+        def say(self, name: str | None = UNSET) -> str:  # type: ignore
             if name is UNSET:
                 return "Name is unset"
 
@@ -127,12 +126,12 @@ def test_unset_types_name_with_underscore():
     @strawberry.input
     class InputExample:
         first_name: str
-        age: typing.Optional[str] = UNSET
+        age: str | None = UNSET
 
     @strawberry.type
     class Mutation:
         @strawberry.mutation
-        def say(self, first_name: typing.Optional[str] = UNSET) -> str:  # type: ignore
+        def say(self, first_name: str | None = UNSET) -> str:  # type: ignore
             if first_name is UNSET:
                 return "Name is unset"
 
@@ -178,7 +177,7 @@ def test_unset_types_stringify_empty():
     @strawberry.type
     class Mutation:
         @strawberry.mutation
-        def say(self, first_name: typing.Optional[str] = UNSET) -> str:  # type: ignore
+        def say(self, first_name: str | None = UNSET) -> str:  # type: ignore
             return f"Hello {first_name}!"
 
     schema = strawberry.Schema(query=Query, mutation=Mutation)
@@ -209,7 +208,7 @@ def test_converting_to_dict_with_unset():
 
     @strawberry.input
     class Input:
-        name: typing.Optional[str] = UNSET
+        name: str | None = UNSET
 
     @strawberry.type
     class Mutation:

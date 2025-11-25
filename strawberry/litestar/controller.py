@@ -8,17 +8,13 @@ from datetime import timedelta
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
     ClassVar,
-    Optional,
+    TypeAlias,
     TypedDict,
-    Union,
-    cast,
+    TypeGuard,
 )
-from typing_extensions import TypeGuard
 
-from msgspec import Struct
-
+from lia import HTTPException, LitestarRequestAdapter
 from litestar import (
     Controller,
     MediaType,
@@ -38,35 +34,41 @@ from litestar.exceptions import (
 )
 from litestar.response.streaming import Stream
 from litestar.status_codes import HTTP_200_OK
+from msgspec import Struct
+
 from strawberry.exceptions import InvalidCustomContext
 from strawberry.http.async_base_view import (
     AsyncBaseHTTPView,
-    AsyncHTTPRequestAdapter,
     AsyncWebSocketAdapter,
 )
 from strawberry.http.exceptions import (
-    HTTPException,
     NonJsonMessageReceived,
     NonTextMessageReceived,
     WebSocketDisconnected,
 )
-from strawberry.http.types import FormData, HTTPMethod, QueryParams
 from strawberry.http.typevars import Context, RootValue
 from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
 
 if TYPE_CHECKING:
-    from collections.abc import AsyncGenerator, AsyncIterator, Mapping, Sequence
+    from collections.abc import (
+        AsyncGenerator,
+        AsyncIterator,
+        Callable,
+        Mapping,
+        Sequence,
+    )
 
     from litestar.types import AnyCallable, Dependencies
+
     from strawberry.http import GraphQLHTTPResponse
     from strawberry.http.ides import GraphQL_IDE
     from strawberry.schema import BaseSchema
 
 
 class BaseContext(Struct, kw_only=True):
-    request: Optional[Request] = None
-    websocket: Optional[WebSocket] = None
-    response: Optional[Response] = None
+    request: Request | None = None
+    websocket: WebSocket | None = None
+    response: Response | None = None
 
 
 class HTTPContextType:
@@ -91,9 +93,9 @@ class WebSocketContextDict(TypedDict):
     socket: WebSocket
 
 
-MergedContext = Union[
-    BaseContext, WebSocketContextDict, HTTPContextDict, dict[str, Any]
-]
+MergedContext: TypeAlias = (
+    BaseContext | WebSocketContextDict | HTTPContextDict | dict[str, Any]
+)
 
 
 async def _none_custom_context_getter() -> None:
@@ -105,7 +107,7 @@ async def _none_root_value_getter() -> None:
 
 
 async def _context_getter_ws(
-    custom_context: Optional[Any], socket: WebSocket
+    custom_context: Any | None, socket: WebSocket
 ) -> MergedContext:
     if isinstance(custom_context, BaseContext):
         custom_context.websocket = socket
@@ -127,7 +129,7 @@ def _response_getter() -> Response:
 
 
 async def _context_getter_http(
-    custom_context: Optional[Any],
+    custom_context: Any | None,
     response: Response,
     request: Request[Any, Any, Any],
 ) -> MergedContext:
@@ -148,44 +150,9 @@ async def _context_getter_http(
 
 
 class GraphQLResource(Struct):
-    data: Optional[dict[str, object]]
-    errors: Optional[list[object]]
-    extensions: Optional[dict[str, object]]
-
-
-class LitestarRequestAdapter(AsyncHTTPRequestAdapter):
-    def __init__(self, request: Request[Any, Any, Any]) -> None:
-        self.request = request
-
-    @property
-    def query_params(self) -> QueryParams:
-        return self.request.query_params
-
-    @property
-    def method(self) -> HTTPMethod:
-        return cast("HTTPMethod", self.request.method.upper())
-
-    @property
-    def headers(self) -> Mapping[str, str]:
-        return self.request.headers
-
-    @property
-    def content_type(self) -> Optional[str]:
-        content_type, params = self.request.content_type
-
-        # combine content type and params
-        if params:
-            content_type += "; " + "; ".join(f"{k}={v}" for k, v in params.items())
-
-        return content_type
-
-    async def get_body(self) -> bytes:
-        return await self.request.body()
-
-    async def get_form_data(self) -> FormData:
-        multipart_data = await self.request.form()
-
-        return FormData(form=multipart_data, files=multipart_data)
+    data: dict[str, object] | None
+    errors: list[object] | None
+    extensions: dict[str, object] | None
 
 
 class LitestarWebSocketAdapter(AsyncWebSocketAdapter):
@@ -246,12 +213,11 @@ class GraphQLController(
     }
 
     request_adapter_class = LitestarRequestAdapter
-    websocket_adapter_class = LitestarWebSocketAdapter
+    websocket_adapter_class = LitestarWebSocketAdapter  # type: ignore
 
     allow_queries_via_get: bool = True
     graphiql_allowed_accept: frozenset[str] = frozenset({"text/html", "*/*"})
-    graphql_ide: Optional[GraphQL_IDE] = "graphiql"
-    debug: bool = False
+    graphql_ide: GraphQL_IDE | None = "graphiql"
     connection_init_wait_timeout: timedelta = timedelta(minutes=1)
     protocols: Sequence[str] = (
         GRAPHQL_TRANSPORT_WS_PROTOCOL,
@@ -261,18 +227,18 @@ class GraphQLController(
     keep_alive_interval: float = 1
 
     def is_websocket_request(
-        self, request: Union[Request, WebSocket]
+        self, request: Request | WebSocket
     ) -> TypeGuard[WebSocket]:
         return isinstance(request, WebSocket)
 
-    async def pick_websocket_subprotocol(self, request: WebSocket) -> Optional[str]:
+    async def pick_websocket_subprotocol(self, request: WebSocket) -> str | None:
         subprotocols = request.scope["subprotocols"]
         intersection = set(subprotocols) & set(self.protocols)
         sorted_intersection = sorted(intersection, key=subprotocols.index)
         return next(iter(sorted_intersection), None)
 
     async def create_websocket_response(
-        self, request: WebSocket, subprotocol: Optional[str]
+        self, request: WebSocket, subprotocol: str | None
     ) -> WebSocket:
         await request.accept(subprotocols=subprotocol)
         return request
@@ -282,7 +248,7 @@ class GraphQLController(
         request: Request[Any, Any, Any],
         context: Any,
         root_value: Any,
-    ) -> Response[Union[GraphQLResource, str]]:
+    ) -> Response[GraphQLResource | str]:
         try:
             return await self.run(
                 request,
@@ -303,11 +269,14 @@ class GraphQLController(
 
     def create_response(
         self,
-        response_data: Union[GraphQLHTTPResponse, list[GraphQLHTTPResponse]],
+        response_data: GraphQLHTTPResponse | list[GraphQLHTTPResponse],
         sub_response: Response[bytes],
     ) -> Response[bytes]:
+        encoded_data = self.encode_json(response_data)
+        if isinstance(encoded_data, str):
+            encoded_data = encoded_data.encode()
         response = Response(
-            self.encode_json(response_data).encode(),
+            encoded_data,
             status_code=HTTP_200_OK,
             media_type=MediaType.JSON,
         )
@@ -344,7 +313,7 @@ class GraphQLController(
         context: Any,
         root_value: Any,
         response: Response,
-    ) -> Response[Union[GraphQLResource, str]]:
+    ) -> Response[GraphQLResource | str]:
         self.temporal_response = response
 
         return await self.execute_request(
@@ -360,7 +329,7 @@ class GraphQLController(
         context: Any,
         root_value: Any,
         response: Response,
-    ) -> Response[Union[GraphQLResource, str]]:
+    ) -> Response[GraphQLResource | str]:
         self.temporal_response = response
 
         return await self.execute_request(
@@ -384,14 +353,14 @@ class GraphQLController(
 
     async def get_context(
         self,
-        request: Union[Request[Any, Any, Any], WebSocket],
-        response: Union[Response, WebSocket],
+        request: Request[Any, Any, Any] | WebSocket,
+        response: Response | WebSocket,
     ) -> Context:  # pragma: no cover
         msg = "`get_context` is not used by Litestar's controller"
         raise ValueError(msg)
 
     async def get_root_value(
-        self, request: Union[Request[Any, Any, Any], WebSocket]
+        self, request: Request[Any, Any, Any] | WebSocket
     ) -> RootValue | None:  # pragma: no cover
         msg = "`get_root_value` is not used by Litestar's controller"
         raise ValueError(msg)
@@ -403,16 +372,15 @@ class GraphQLController(
 def make_graphql_controller(
     schema: BaseSchema,
     path: str = "",
-    graphiql: Optional[bool] = None,
-    graphql_ide: Optional[GraphQL_IDE] = "graphiql",
+    graphiql: bool | None = None,
+    graphql_ide: GraphQL_IDE | None = "graphiql",
     allow_queries_via_get: bool = True,
     keep_alive: bool = False,
     keep_alive_interval: float = 1,
-    debug: bool = False,
     # TODO: root typevar
-    root_value_getter: Optional[AnyCallable] = None,
+    root_value_getter: AnyCallable | None = None,
     # TODO: context typevar
-    context_getter: Optional[AnyCallable] = None,
+    context_getter: AnyCallable | None = None,
     subscription_protocols: Sequence[str] = (
         GRAPHQL_TRANSPORT_WS_PROTOCOL,
         GRAPHQL_WS_PROTOCOL,
@@ -432,7 +400,7 @@ def make_graphql_controller(
 
     schema_: BaseSchema = schema
     allow_queries_via_get_: bool = allow_queries_via_get
-    graphql_ide_: Optional[GraphQL_IDE]
+    graphql_ide_: GraphQL_IDE | None
 
     if graphiql is not None:
         warnings.warn(
@@ -458,7 +426,6 @@ def make_graphql_controller(
 
     _GraphQLController.keep_alive = keep_alive
     _GraphQLController.keep_alive_interval = keep_alive_interval
-    _GraphQLController.debug = debug
     _GraphQLController.protocols = subscription_protocols
     _GraphQLController.connection_init_wait_timeout = connection_init_wait_timeout
     _GraphQLController.graphiql_allowed_accept = frozenset({"text/html", "*/*"})

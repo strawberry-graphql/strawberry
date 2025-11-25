@@ -1,12 +1,15 @@
 from __future__ import annotations
 
 import warnings
-from typing import Any, Optional
+from typing import Any
 
 
 class DEPRECATION_MESSAGES:  # noqa: N801
     _TYPE_DEFINITION = (
         "_type_definition is deprecated, use __strawberry_definition__ instead"
+    )
+    _ENUM_DEFINITION = (
+        "_enum_definition is deprecated, use __strawberry_definition__ instead"
     )
 
 
@@ -19,7 +22,7 @@ class DeprecatedDescriptor:
     def warn(self) -> None:
         warnings.warn(self.msg, stacklevel=2)
 
-    def __get__(self, obj: Optional[object], type: Optional[type] = None) -> Any:
+    def __get__(self, obj: object | None, type: type | None = None) -> Any:
         self.warn()
         return self.alias
 

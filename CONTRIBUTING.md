@@ -117,7 +117,7 @@ Now, you will need to install the required dependencies for Strawberry and be su
 that the current tests are passing on your machine:
 
 ```shell
-$ poetry install --with integrations
+$ poetry install
 $ poetry run pytest
 $ poetry run mypy
 ```

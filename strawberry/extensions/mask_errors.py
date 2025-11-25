@@ -1,10 +1,11 @@
-from collections.abc import Iterator
-from typing import Any, Callable
+from collections.abc import Callable, Iterator
+from typing import Any
 
 from graphql.error import GraphQLError
-from graphql.execution import ExecutionResult
+from graphql.execution.execute import ExecutionResult as GraphQLExecutionResult
 
 from strawberry.extensions.base_extension import SchemaExtension
+from strawberry.types.execution import ExecutionResult as StrawberryExecutionResult
 
 
 def default_should_mask_error(_: GraphQLError) -> bool:
@@ -54,10 +55,7 @@ class MaskErrors(SchemaExtension):
 
         result = self.execution_context.result
 
-        if isinstance(result, ExecutionResult):
+        if isinstance(result, (GraphQLExecutionResult, StrawberryExecutionResult)):
             self._process_result(result)
         elif result:
             self._process_result(result.initial_result)
-
-
-__all__ = ["MaskErrors"]

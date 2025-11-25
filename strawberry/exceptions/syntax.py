@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from pygments.lexers import PythonLexer
 from rich.segment import Segment
@@ -15,9 +15,9 @@ class Syntax(RichSyntax):
         self,
         code: str,
         line_range: tuple[int, int],
-        highlight_lines: Optional[set[int]] = None,
+        highlight_lines: set[int] | None = None,
         line_offset: int = 0,
-        line_annotations: Optional[dict[int, str]] = None,
+        line_annotations: dict[int, str] | None = None,
     ) -> None:
         self.line_offset = line_offset
         self.line_annotations = line_annotations or {}

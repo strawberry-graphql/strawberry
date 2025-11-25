@@ -1,12 +1,15 @@
 import sys
-from collections.abc import AsyncGenerator, AsyncIterable, AsyncIterator, Awaitable
+from collections.abc import (
+    AsyncGenerator,
+    AsyncIterable,
+    AsyncIterator,
+    Awaitable,
+    Callable,
+)
 from contextlib import asynccontextmanager, suppress
 from typing import (
     Any,
-    Callable,
-    Optional,
     TypeVar,
-    Union,
     cast,
 )
 
@@ -30,7 +33,7 @@ async def aclosing(thing: _T) -> AsyncGenerator[_T, None]:
 
 
 async def aenumerate(
-    iterable: Union[AsyncIterator[_T], AsyncIterable[_T]],
+    iterable: AsyncIterator[_T] | AsyncIterable[_T],
 ) -> AsyncIterator[tuple[int, _T]]:
     """Async version of enumerate."""
     i = 0
@@ -40,10 +43,10 @@ async def aenumerate(
 
 
 async def aislice(
-    aiterable: Union[AsyncIterator[_T], AsyncIterable[_T]],
-    start: Optional[int] = None,
-    stop: Optional[int] = None,
-    step: Optional[int] = None,
+    aiterable: AsyncIterator[_T] | AsyncIterable[_T],
+    start: int | None = None,
+    stop: int | None = None,
+    step: int | None = None,
 ) -> AsyncIterator[_T]:
     """Async version of itertools.islice."""
     # This is based on

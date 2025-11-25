@@ -58,7 +58,7 @@ def test():
             ),
             Result(
                 type="note",
-                message='Revealed type is "Union[mypy_test.User, mypy_test.Error]"',
+                message='Revealed type is "mypy_test.User | mypy_test.Error"',
                 line=23,
                 column=13,
             ),

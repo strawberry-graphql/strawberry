@@ -2,12 +2,12 @@
 import dataclasses
 import re
 from enum import Enum
-from typing import Annotated, Optional, TypeVar, Union
+from typing import Annotated, Optional, TypeVar
 
 import pytest
 
 import strawberry
-from strawberry.types.base import get_object_definition
+from strawberry.types.base import get_object_definition, has_object_definition
 from strawberry.types.field import StrawberryField
 
 
@@ -23,8 +23,8 @@ def test_enum():
 
     field: StrawberryField = get_object_definition(Animal).fields[0]
 
-    # TODO: Remove reference to ._enum_definition with StrawberryEnum
-    assert field.type is Count._enum_definition
+    # TODO: Remove reference to .__strawberry_definition__ with StrawberryEnumDefinition
+    assert field.type is Count.__strawberry_definition__
 
 
 def test_forward_reference():
@@ -82,7 +82,7 @@ def test_object():
 def test_optional():
     @strawberry.type
     class HasChoices:
-        decision: Optional[bool]
+        decision: bool | None
 
     field: StrawberryField = get_object_definition(HasChoices).fields[0]
 
@@ -110,7 +110,7 @@ def test_union():
     class UK:
         name: str
 
-    EU = Annotated[Union[Europe, UK], strawberry.union("EU")]
+    EU = Annotated[Europe | UK, strawberry.union("EU")]
 
     @strawberry.type
     class WishfulThinking:
@@ -140,11 +140,11 @@ def test_fields_with_defaults_inheritance():
     @strawberry.interface
     class A:
         text: str
-        delay: Optional[int] = None
+        delay: int | None = None
 
     @strawberry.type
     class B(A):
-        attachments: Optional[list[A]] = None
+        attachments: list[A] | None = None
 
     @strawberry.type
     class C(A):
@@ -194,3 +194,42 @@ def test_object_preserves_annotations():
         "c": bool,
         "d": Annotated[str, "something"],
     }
+
+
+def test_has_object_definition_returns_true_for_object_type():
+    @strawberry.type
+    class Palette:
+        name: str
+
+    assert has_object_definition(Palette) is True
+
+
+def test_has_object_definition_returns_false_for_enum():
+    @strawberry.enum
+    class Color(Enum):
+        RED = "red"
+        GREEN = "green"
+
+    assert has_object_definition(Color) is False
+
+
+def test_has_object_definition_returns_true_for_interface():
+    @strawberry.interface
+    class Node:
+        id: str
+
+    assert has_object_definition(Node) is True
+
+
+def test_has_object_definition_returns_true_for_input():
+    @strawberry.input
+    class CreateUserInput:
+        name: str
+
+    assert has_object_definition(CreateUserInput) is True
+
+
+def test_has_object_definition_returns_false_for_scalar():
+    from strawberry.scalars import JSON
+
+    assert has_object_definition(JSON) is False

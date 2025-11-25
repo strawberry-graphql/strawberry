@@ -10,6 +10,7 @@ from libcst.codemod import CodemodContext
 
 from strawberry.cli.app import app
 from strawberry.codemods.annotated_unions import ConvertUnionToAnnotatedUnion
+from strawberry.codemods.maybe_optional import ConvertMaybeToOptional
 from strawberry.codemods.update_imports import UpdateImportsCodemod
 
 from ._run_codemod import run_codemod
@@ -17,6 +18,7 @@ from ._run_codemod import run_codemod
 codemods = {
     "annotated-union": ConvertUnionToAnnotatedUnion,
     "update-imports": UpdateImportsCodemod,
+    "maybe-optional": ConvertMaybeToOptional,
 }
 
 
@@ -45,8 +47,6 @@ def upgrade(
 
         raise typer.Exit(2)
 
-    python_target_version = tuple(int(x) for x in python_target.split("."))
-
     transformer: ConvertUnionToAnnotatedUnion | UpdateImportsCodemod
 
     if codemod == "update-imports":
@@ -55,7 +55,7 @@ def upgrade(
     else:
         transformer = ConvertUnionToAnnotatedUnion(
             CodemodContext(),
-            use_pipe_syntax=python_target_version >= (3, 10),
+            use_pipe_syntax=True,
             use_typing_extensions=use_typing_extensions,
         )
 

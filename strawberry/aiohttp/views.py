@@ -3,32 +3,24 @@ from __future__ import annotations
 import asyncio
 import warnings
 from datetime import timedelta
-from io import BytesIO
 from json.decoder import JSONDecodeError
 from typing import (
     TYPE_CHECKING,
-    Any,
-    Callable,
-    Optional,
-    Union,
-    cast,
+    TypeGuard,
 )
-from typing_extensions import TypeGuard
 
 from aiohttp import ClientConnectionResetError, http, web
-from aiohttp.multipart import BodyPartReader
+from lia import AiohttpHTTPRequestAdapter, HTTPException
+
 from strawberry.http.async_base_view import (
     AsyncBaseHTTPView,
-    AsyncHTTPRequestAdapter,
     AsyncWebSocketAdapter,
 )
 from strawberry.http.exceptions import (
-    HTTPException,
     NonJsonMessageReceived,
     NonTextMessageReceived,
     WebSocketDisconnected,
 )
-from strawberry.http.types import FormData, HTTPMethod, QueryParams
 from strawberry.http.typevars import (
     Context,
     RootValue,
@@ -36,52 +28,11 @@ from strawberry.http.typevars import (
 from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
 
 if TYPE_CHECKING:
-    from collections.abc import AsyncGenerator, Mapping, Sequence
+    from collections.abc import AsyncGenerator, Callable, Mapping, Sequence
 
     from strawberry.http import GraphQLHTTPResponse
     from strawberry.http.ides import GraphQL_IDE
     from strawberry.schema import BaseSchema
-
-
-class AiohttpHTTPRequestAdapter(AsyncHTTPRequestAdapter):
-    def __init__(self, request: web.Request) -> None:
-        self.request = request
-
-    @property
-    def query_params(self) -> QueryParams:
-        return self.request.query.copy()  # type: ignore[attr-defined]
-
-    async def get_body(self) -> str:
-        return (await self.request.content.read()).decode()
-
-    @property
-    def method(self) -> HTTPMethod:
-        return cast("HTTPMethod", self.request.method.upper())
-
-    @property
-    def headers(self) -> Mapping[str, str]:
-        return self.request.headers
-
-    async def get_form_data(self) -> FormData:
-        reader = await self.request.multipart()
-
-        data: dict[str, Any] = {}
-        files: dict[str, Any] = {}
-
-        while field := await reader.next():
-            assert isinstance(field, BodyPartReader)
-            assert field.name
-
-            if field.filename:
-                files[field.name] = BytesIO(await field.read(decode=False))
-            else:
-                data[field.name] = await field.text()
-
-        return FormData(files=files, form=data)
-
-    @property
-    def content_type(self) -> Optional[str]:
-        return self.headers.get("content-type")
 
 
 class AiohttpWebSocketAdapter(AsyncWebSocketAdapter):
@@ -108,7 +59,11 @@ class AiohttpWebSocketAdapter(AsyncWebSocketAdapter):
 
     async def send_json(self, message: Mapping[str, object]) -> None:
         try:
-            await self.ws.send_str(self.view.encode_json(message))
+            encoded_data = self.view.encode_json(message)
+            if isinstance(encoded_data, bytes):
+                await self.ws.send_bytes(encoded_data)
+            else:
+                await self.ws.send_str(encoded_data)
         except (RuntimeError, ClientConnectionResetError) as exc:
             raise WebSocketDisconnected from exc
 
@@ -119,7 +74,7 @@ class AiohttpWebSocketAdapter(AsyncWebSocketAdapter):
 class GraphQLView(
     AsyncBaseHTTPView[
         web.Request,
-        Union[web.Response, web.StreamResponse],
+        web.Response | web.StreamResponse,
         web.Response,
         web.Request,
         web.WebSocketResponse,
@@ -133,17 +88,16 @@ class GraphQLView(
 
     allow_queries_via_get = True
     request_adapter_class = AiohttpHTTPRequestAdapter
-    websocket_adapter_class = AiohttpWebSocketAdapter
+    websocket_adapter_class = AiohttpWebSocketAdapter  # type: ignore
 
     def __init__(
         self,
         schema: BaseSchema,
-        graphiql: Optional[bool] = None,
-        graphql_ide: Optional[GraphQL_IDE] = "graphiql",
+        graphiql: bool | None = None,
+        graphql_ide: GraphQL_IDE | None = "graphiql",
         allow_queries_via_get: bool = True,
         keep_alive: bool = True,
         keep_alive_interval: float = 1,
-        debug: bool = False,
         subscription_protocols: Sequence[str] = (
             GRAPHQL_TRANSPORT_WS_PROTOCOL,
             GRAPHQL_WS_PROTOCOL,
@@ -155,7 +109,6 @@ class GraphQLView(
         self.allow_queries_via_get = allow_queries_via_get
         self.keep_alive = keep_alive
         self.keep_alive_interval = keep_alive_interval
-        self.debug = debug
         self.subscription_protocols = subscription_protocols
         self.connection_init_wait_timeout = connection_init_wait_timeout
         self.multipart_uploads_enabled = multipart_uploads_enabled
@@ -180,12 +133,12 @@ class GraphQLView(
         ws = web.WebSocketResponse(protocols=self.subscription_protocols)
         return ws.can_prepare(request).ok
 
-    async def pick_websocket_subprotocol(self, request: web.Request) -> Optional[str]:
+    async def pick_websocket_subprotocol(self, request: web.Request) -> str | None:
         ws = web.WebSocketResponse(protocols=self.subscription_protocols)
         return ws.can_prepare(request).protocol
 
     async def create_websocket_response(
-        self, request: web.Request, subprotocol: Optional[str]
+        self, request: web.Request, subprotocol: str | None
     ) -> web.WebSocketResponse:
         protocols = [subprotocol] if subprotocol else []
         ws = web.WebSocketResponse(protocols=protocols)
@@ -201,20 +154,23 @@ class GraphQLView(
                 status=e.status_code,
             )
 
-    async def get_root_value(self, request: web.Request) -> Optional[RootValue]:
+    async def get_root_value(self, request: web.Request) -> RootValue | None:
         return None
 
     async def get_context(
-        self, request: web.Request, response: Union[web.Response, web.WebSocketResponse]
+        self, request: web.Request, response: web.Response | web.WebSocketResponse
     ) -> Context:
         return {"request": request, "response": response}  # type: ignore
 
     def create_response(
         self,
-        response_data: Union[GraphQLHTTPResponse, list[GraphQLHTTPResponse]],
+        response_data: GraphQLHTTPResponse | list[GraphQLHTTPResponse],
         sub_response: web.Response,
     ) -> web.Response:
-        sub_response.text = self.encode_json(response_data)
+        encoded_data = self.encode_json(response_data)
+        if isinstance(encoded_data, bytes):
+            encoded_data = encoded_data.decode()
+        sub_response.text = encoded_data
         sub_response.content_type = "application/json"
 
         return sub_response

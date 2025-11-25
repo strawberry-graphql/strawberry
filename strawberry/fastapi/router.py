@@ -6,13 +6,15 @@ from inspect import signature
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
-    Optional,
-    Union,
+    TypeGuard,
     cast,
 )
-from typing_extensions import TypeGuard
 
+from fastapi import APIRouter, Depends, params
+from fastapi.datastructures import Default
+from fastapi.routing import APIRoute
+from fastapi.utils import generate_unique_id
+from lia import HTTPException, StarletteRequestAdapter
 from starlette import status
 from starlette.background import BackgroundTasks  # noqa: TC002
 from starlette.requests import HTTPConnection, Request
@@ -25,20 +27,20 @@ from starlette.responses import (
 )
 from starlette.websockets import WebSocket
 
-from fastapi import APIRouter, Depends, params
-from fastapi.datastructures import Default
-from fastapi.routing import APIRoute
-from fastapi.utils import generate_unique_id
-from strawberry.asgi import ASGIRequestAdapter, ASGIWebSocketAdapter
+from strawberry.asgi import ASGIWebSocketAdapter
 from strawberry.exceptions import InvalidCustomContext
 from strawberry.fastapi.context import BaseContext, CustomContext
 from strawberry.http.async_base_view import AsyncBaseHTTPView
-from strawberry.http.exceptions import HTTPException
 from strawberry.http.typevars import Context, RootValue
 from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
 
 if TYPE_CHECKING:
-    from collections.abc import AsyncIterator, Awaitable, Sequence
+    from collections.abc import (
+        AsyncIterator,
+        Awaitable,
+        Callable,
+        Sequence,
+    )
     from enum import Enum
 
     from starlette.routing import BaseRoute
@@ -57,8 +59,8 @@ class GraphQLRouter(
     APIRouter,
 ):
     allow_queries_via_get = True
-    request_adapter_class = ASGIRequestAdapter
-    websocket_adapter_class = ASGIWebSocketAdapter
+    request_adapter_class = StarletteRequestAdapter
+    websocket_adapter_class = ASGIWebSocketAdapter  # type: ignore
 
     @staticmethod
     async def __get_root_value() -> None:
@@ -67,16 +69,16 @@ class GraphQLRouter(
     @staticmethod
     def __get_context_getter(
         custom_getter: Callable[
-            ..., Union[Optional[CustomContext], Awaitable[Optional[CustomContext]]]
+            ..., CustomContext | None | Awaitable[CustomContext | None]
         ],
     ) -> Callable[..., Awaitable[CustomContext]]:
         async def dependency(
-            custom_context: Optional[CustomContext],
+            custom_context: CustomContext | None,
             background_tasks: BackgroundTasks,
             connection: HTTPConnection,
             response: Response = None,  # type: ignore
         ) -> MergedContext:
-            request = cast("Union[Request, WebSocket]", connection)
+            request = cast("Request | WebSocket", connection)
             if isinstance(custom_context, BaseContext):
                 custom_context.request = request
                 custom_context.background_tasks = background_tasks
@@ -118,36 +120,34 @@ class GraphQLRouter(
         self,
         schema: BaseSchema,
         path: str = "",
-        graphiql: Optional[bool] = None,
-        graphql_ide: Optional[GraphQL_IDE] = "graphiql",
+        graphiql: bool | None = None,
+        graphql_ide: GraphQL_IDE | None = "graphiql",
         allow_queries_via_get: bool = True,
         keep_alive: bool = False,
         keep_alive_interval: float = 1,
-        debug: bool = False,
-        root_value_getter: Optional[Callable[[], RootValue]] = None,
-        context_getter: Optional[
-            Callable[..., Union[Optional[Context], Awaitable[Optional[Context]]]]
-        ] = None,
+        root_value_getter: Callable[[], RootValue] | None = None,
+        context_getter: Callable[..., Context | None | Awaitable[Context | None]]
+        | None = None,
         subscription_protocols: Sequence[str] = (
             GRAPHQL_TRANSPORT_WS_PROTOCOL,
             GRAPHQL_WS_PROTOCOL,
         ),
         connection_init_wait_timeout: timedelta = timedelta(minutes=1),
         prefix: str = "",
-        tags: Optional[list[Union[str, Enum]]] = None,
-        dependencies: Optional[Sequence[params.Depends]] = None,
+        tags: list[str | Enum] | None = None,
+        dependencies: Sequence[params.Depends] | None = None,
         default_response_class: type[Response] = Default(JSONResponse),
-        responses: Optional[dict[Union[int, str], dict[str, Any]]] = None,
-        callbacks: Optional[list[BaseRoute]] = None,
-        routes: Optional[list[BaseRoute]] = None,
+        responses: dict[int | str, dict[str, Any]] | None = None,
+        callbacks: list[BaseRoute] | None = None,
+        routes: list[BaseRoute] | None = None,
         redirect_slashes: bool = True,
-        default: Optional[ASGIApp] = None,
-        dependency_overrides_provider: Optional[Any] = None,
+        default: ASGIApp | None = None,
+        dependency_overrides_provider: Any | None = None,
         route_class: type[APIRoute] = APIRoute,
-        on_startup: Optional[Sequence[Callable[[], Any]]] = None,
-        on_shutdown: Optional[Sequence[Callable[[], Any]]] = None,
-        lifespan: Optional[Lifespan[Any]] = None,
-        deprecated: Optional[bool] = None,
+        on_startup: Sequence[Callable[[], Any]] | None = None,
+        on_shutdown: Sequence[Callable[[], Any]] | None = None,
+        lifespan: Lifespan[Any] | None = None,
+        deprecated: bool | None = None,
         include_in_schema: bool = True,
         generate_unique_id_function: Callable[[APIRoute], str] = Default(
             generate_unique_id
@@ -179,7 +179,6 @@ class GraphQLRouter(
         self.allow_queries_via_get = allow_queries_via_get
         self.keep_alive = keep_alive
         self.keep_alive_interval = keep_alive_interval
-        self.debug = debug
         self.root_value_getter = root_value_getter or self.__get_root_value
         # TODO: clean this type up
         self.context_getter = self.__get_context_getter(
@@ -263,13 +262,13 @@ class GraphQLRouter(
         return HTMLResponse(self.graphql_ide_html)
 
     async def get_context(
-        self, request: Union[Request, WebSocket], response: Union[Response, WebSocket]
+        self, request: Request | WebSocket, response: Response | WebSocket
     ) -> Context:  # pragma: no cover
         raise ValueError("`get_context` is not used by FastAPI GraphQL Router")
 
     async def get_root_value(
-        self, request: Union[Request, WebSocket]
-    ) -> Optional[RootValue]:  # pragma: no cover
+        self, request: Request | WebSocket
+    ) -> RootValue | None:  # pragma: no cover
         raise ValueError("`get_root_value` is not used by FastAPI GraphQL Router")
 
     async def get_sub_response(self, request: Request) -> Response:
@@ -277,7 +276,7 @@ class GraphQLRouter(
 
     def create_response(
         self,
-        response_data: Union[GraphQLHTTPResponse, list[GraphQLHTTPResponse]],
+        response_data: GraphQLHTTPResponse | list[GraphQLHTTPResponse],
         sub_response: Response,
     ) -> Response:
         response = Response(
@@ -307,18 +306,18 @@ class GraphQLRouter(
         )
 
     def is_websocket_request(
-        self, request: Union[Request, WebSocket]
+        self, request: Request | WebSocket
     ) -> TypeGuard[WebSocket]:
         return request.scope["type"] == "websocket"
 
-    async def pick_websocket_subprotocol(self, request: WebSocket) -> Optional[str]:
+    async def pick_websocket_subprotocol(self, request: WebSocket) -> str | None:
         protocols = request["subprotocols"]
         intersection = set(protocols) & set(self.protocols)
         sorted_intersection = sorted(intersection, key=protocols.index)
         return next(iter(sorted_intersection), None)
 
     async def create_websocket_response(
-        self, request: WebSocket, subprotocol: Optional[str]
+        self, request: WebSocket, subprotocol: str | None
     ) -> WebSocket:
         await request.accept(subprotocol=subprotocol)
         return request

@@ -1,7 +1,6 @@
 import re
 import textwrap
 import typing
-from typing import Optional
 
 import pytest
 
@@ -420,7 +419,7 @@ def test_silent_permissions_optional():
         @strawberry.field(
             extensions=[PermissionExtension([IsAuthorized()], fail_silently=True)]
         )
-        def name(self) -> Optional[str]:  # pragma: no cover
+        def name(self) -> str | None:  # pragma: no cover
             return "ABC"
 
     schema = strawberry.Schema(query=Query)
@@ -443,7 +442,7 @@ def test_silent_permissions_optional_list():
         @strawberry.field(
             extensions=[PermissionExtension([IsAuthorized()], fail_silently=True)]
         )
-        def names(self) -> Optional[list[str]]:  # pragma: no cover
+        def names(self) -> list[str] | None:  # pragma: no cover
             return ["ABC"]
 
     schema = strawberry.Schema(query=Query)

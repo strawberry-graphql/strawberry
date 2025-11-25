@@ -1,4 +1,4 @@
-from typing import Any, Union
+from typing import Any
 
 import pytest
 
@@ -8,14 +8,14 @@ from strawberry.schema_directives import OneOf
 
 @strawberry.input(one_of=True)
 class ExampleInputTagged:
-    a: strawberry.Maybe[str]
-    b: strawberry.Maybe[int]
+    a: strawberry.Maybe[str | None]
+    b: strawberry.Maybe[int | None]
 
 
 @strawberry.type
 class ExampleResult:
-    a: Union[str, None]
-    b: Union[int, None]
+    a: str | None
+    b: int | None
 
 
 @strawberry.type
@@ -210,13 +210,13 @@ def test_works_with_camelcasing():
 
     @strawberry.input(directives=[OneOf()])
     class ExampleWithLongerNames:
-        a_field: strawberry.Maybe[str]
-        b_field: strawberry.Maybe[int]
+        a_field: strawberry.Maybe[str | None]
+        b_field: strawberry.Maybe[int | None]
 
     @strawberry.type
     class Result:
-        a_field: Union[str, None]
-        b_field: Union[int, None]
+        a_field: str | None
+        b_field: int | None
 
     @strawberry.type
     class Query:

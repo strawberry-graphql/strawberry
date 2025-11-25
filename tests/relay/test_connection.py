@@ -1,4 +1,3 @@
-import sys
 from collections.abc import Iterable
 from typing import Annotated, Any, Optional
 from typing_extensions import Self
@@ -32,13 +31,13 @@ class EmptyUserConnection(Connection[User]):
         nodes: Iterable[User],
         *,
         info: Any,
-        after: Optional[str] = None,
-        before: Optional[str] = None,
-        first: Optional[int] = None,
-        last: Optional[int] = None,
-        max_results: Optional[int] = None,
+        after: str | None = None,
+        before: str | None = None,
+        first: int | None = None,
+        last: int | None = None,
+        max_results: int | None = None,
         **kwargs: Any,
-    ) -> Optional[Self]:
+    ) -> Self | None:
         return None
 
 
@@ -50,13 +49,13 @@ class UserConnection(Connection[User]):
         nodes: Iterable[User],
         *,
         info: Any,
-        after: Optional[str] = None,
-        before: Optional[str] = None,
-        first: Optional[int] = None,
-        last: Optional[int] = None,
-        max_results: Optional[int] = None,
+        after: str | None = None,
+        before: str | None = None,
+        first: int | None = None,
+        last: int | None = None,
+        max_results: int | None = None,
         **kwargs: Any,
-    ) -> Optional[Self]:
+    ) -> Self | None:
         user_node_id = to_base64(User, "1")
         return cls(
             page_info=PageInfo(
@@ -80,7 +79,7 @@ def test_nullable_connection_with_optional():
     @strawberry.type
     class Query:
         @strawberry.relay.connection(Optional[EmptyUserConnection])
-        def users(self) -> Optional[list[User]]:
+        def users(self) -> list[User] | None:
             return None
 
     schema = strawberry.Schema(query=Query)
@@ -111,7 +110,7 @@ def test_lazy_connection():
                 ]
             ]
         )
-        def users(self) -> Optional[list[User]]:
+        def users(self) -> list[User] | None:
             return None
 
     schema = strawberry.Schema(query=Query)
@@ -143,7 +142,7 @@ def test_lazy_optional_connection():
                 ]
             ]
         )
-        def users(self) -> Optional[list[User]]:
+        def users(self) -> list[User] | None:
             return None
 
     schema = strawberry.Schema(query=Query)
@@ -164,10 +163,6 @@ def test_lazy_optional_connection():
     assert not result.errors
 
 
-@pytest.mark.skipif(
-    sys.version_info < (3, 10),
-    reason="pipe syntax for union is only available on python 3.10+",
-)
 def test_nullable_connection_with_pipe():
     @strawberry.type
     class Query:
@@ -199,7 +194,7 @@ def test_nullable_connection_with_permission():
         @strawberry.relay.connection(
             Optional[EmptyUserConnection], permission_classes=[TestPermission]
         )
-        def users(self) -> Optional[list[User]]:  # pragma: no cover
+        def users(self) -> list[User] | None:  # pragma: no cover
             pytest.fail("Should not have been called...")
 
     schema = strawberry.Schema(query=Query)
@@ -234,7 +229,7 @@ def test_nullable_connection_with_permission():
     ],
 )
 def test_max_results(
-    field_max_results: Optional[int],
+    field_max_results: int | None,
     schema_max_results: int,
     results: int,
     expected: int,

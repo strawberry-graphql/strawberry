@@ -4,9 +4,9 @@ import strawberry
 
 
 def test_include_router_prefix():
+    from fastapi import FastAPI
     from starlette.testclient import TestClient
 
-    from fastapi import FastAPI
     from strawberry.fastapi import GraphQLRouter
 
     @strawberry.type
@@ -28,9 +28,9 @@ def test_include_router_prefix():
 
 
 def test_graphql_router_path():
+    from fastapi import FastAPI
     from starlette.testclient import TestClient
 
-    from fastapi import FastAPI
     from strawberry.fastapi import GraphQLRouter
 
     @strawberry.type
@@ -53,6 +53,7 @@ def test_graphql_router_path():
 
 def test_missing_path_and_prefix():
     from fastapi import FastAPI
+
     from strawberry.fastapi import GraphQLRouter
 
     @strawberry.type

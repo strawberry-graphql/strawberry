@@ -1,5 +1,6 @@
 import dataclasses
-from typing import Callable, Optional, TypeVar
+from collections.abc import Callable
+from typing import TypeVar
 from typing_extensions import dataclass_transform
 
 from strawberry.directive import directive_field
@@ -11,12 +12,12 @@ from strawberry.types.type_resolver import _get_fields
 
 @dataclasses.dataclass
 class ComposeOptions:
-    import_url: Optional[str]
+    import_url: str | None
 
 
 @dataclasses.dataclass
 class StrawberryFederationSchemaDirective(StrawberrySchemaDirective):
-    compose_options: Optional[ComposeOptions] = None
+    compose_options: ComposeOptions | None = None
 
 
 T = TypeVar("T", bound=type)
@@ -30,12 +31,12 @@ T = TypeVar("T", bound=type)
 def schema_directive(
     *,
     locations: list[Location],
-    description: Optional[str] = None,
-    name: Optional[str] = None,
+    description: str | None = None,
+    name: str | None = None,
     repeatable: bool = False,
     print_definition: bool = True,
     compose: bool = False,
-    import_url: Optional[str] = None,
+    import_url: str | None = None,
 ) -> Callable[[T], T]:
     def _wrap(cls: T) -> T:
         cls = _wrap_dataclass(cls)  # type: ignore

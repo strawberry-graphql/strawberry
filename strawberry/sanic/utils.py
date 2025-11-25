@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, cast
 
 if TYPE_CHECKING:
     from sanic.request import File, Request
@@ -21,12 +21,12 @@ def convert_request_to_files_dict(request: Request) -> dict[str, Any]:
 
     Note that the dictionary entries are lists.
     """
-    request_files = cast("Optional[dict[str, list[File]]]", request.files)
+    request_files = cast("dict[str, list[File]] | None", request.files)
 
     if not request_files:
         return {}
 
-    files_dict: dict[str, Union[File, list[File]]] = {}
+    files_dict: dict[str, File | list[File]] = {}
 
     for field_name, file_list in request_files.items():
         assert len(file_list) == 1

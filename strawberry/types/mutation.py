@@ -4,12 +4,9 @@ import dataclasses
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
-    Optional,
-    Union,
+    Literal,
     overload,
 )
-from typing_extensions import Literal
 
 from strawberry.types.field import (
     _RESOLVER_TYPE,
@@ -21,8 +18,8 @@ from strawberry.types.field import (
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Mapping, Sequence
-    from typing_extensions import Literal
+    from collections.abc import Callable, Mapping, Sequence
+    from typing import Literal
 
     from strawberry.extensions.field_extension import FieldExtension
     from strawberry.permission import BasePermission
@@ -35,17 +32,17 @@ if TYPE_CHECKING:
 def mutation(
     *,
     resolver: _RESOLVER_TYPE_ASYNC[T],
-    name: Optional[str] = None,
-    description: Optional[str] = None,
+    name: str | None = None,
+    description: str | None = None,
     init: Literal[False] = False,
-    permission_classes: Optional[list[type[BasePermission]]] = None,
-    deprecation_reason: Optional[str] = None,
+    permission_classes: list[type[BasePermission]] | None = None,
+    deprecation_reason: str | None = None,
     default: Any = dataclasses.MISSING,
-    default_factory: Union[Callable[..., object], object] = dataclasses.MISSING,
-    metadata: Optional[Mapping[Any, Any]] = None,
-    directives: Optional[Sequence[object]] = (),
-    extensions: Optional[list[FieldExtension]] = None,
-    graphql_type: Optional[Any] = None,
+    default_factory: Callable[..., object] | object = dataclasses.MISSING,
+    metadata: Mapping[Any, Any] | None = None,
+    directives: Sequence[object] | None = (),
+    extensions: list[FieldExtension] | None = None,
+    graphql_type: Any | None = None,
 ) -> T: ...
 
 
@@ -53,34 +50,34 @@ def mutation(
 def mutation(
     *,
     resolver: _RESOLVER_TYPE_SYNC[T],
-    name: Optional[str] = None,
-    description: Optional[str] = None,
+    name: str | None = None,
+    description: str | None = None,
     init: Literal[False] = False,
-    permission_classes: Optional[list[type[BasePermission]]] = None,
-    deprecation_reason: Optional[str] = None,
+    permission_classes: list[type[BasePermission]] | None = None,
+    deprecation_reason: str | None = None,
     default: Any = dataclasses.MISSING,
-    default_factory: Union[Callable[..., object], object] = dataclasses.MISSING,
-    metadata: Optional[Mapping[Any, Any]] = None,
-    directives: Optional[Sequence[object]] = (),
-    extensions: Optional[list[FieldExtension]] = None,
-    graphql_type: Optional[Any] = None,
+    default_factory: Callable[..., object] | object = dataclasses.MISSING,
+    metadata: Mapping[Any, Any] | None = None,
+    directives: Sequence[object] | None = (),
+    extensions: list[FieldExtension] | None = None,
+    graphql_type: Any | None = None,
 ) -> T: ...
 
 
 @overload
 def mutation(
     *,
-    name: Optional[str] = None,
-    description: Optional[str] = None,
+    name: str | None = None,
+    description: str | None = None,
     init: Literal[True] = True,
-    permission_classes: Optional[list[type[BasePermission]]] = None,
-    deprecation_reason: Optional[str] = None,
+    permission_classes: list[type[BasePermission]] | None = None,
+    deprecation_reason: str | None = None,
     default: Any = dataclasses.MISSING,
-    default_factory: Union[Callable[..., object], object] = dataclasses.MISSING,
-    metadata: Optional[Mapping[Any, Any]] = None,
-    directives: Optional[Sequence[object]] = (),
-    extensions: Optional[list[FieldExtension]] = None,
-    graphql_type: Optional[Any] = None,
+    default_factory: Callable[..., object] | object = dataclasses.MISSING,
+    metadata: Mapping[Any, Any] | None = None,
+    directives: Sequence[object] | None = (),
+    extensions: list[FieldExtension] | None = None,
+    graphql_type: Any | None = None,
 ) -> Any: ...
 
 
@@ -88,16 +85,16 @@ def mutation(
 def mutation(
     resolver: _RESOLVER_TYPE_ASYNC[T],
     *,
-    name: Optional[str] = None,
-    description: Optional[str] = None,
-    permission_classes: Optional[list[type[BasePermission]]] = None,
-    deprecation_reason: Optional[str] = None,
+    name: str | None = None,
+    description: str | None = None,
+    permission_classes: list[type[BasePermission]] | None = None,
+    deprecation_reason: str | None = None,
     default: Any = dataclasses.MISSING,
-    default_factory: Union[Callable[..., object], object] = dataclasses.MISSING,
-    metadata: Optional[Mapping[Any, Any]] = None,
-    directives: Optional[Sequence[object]] = (),
-    extensions: Optional[list[FieldExtension]] = None,
-    graphql_type: Optional[Any] = None,
+    default_factory: Callable[..., object] | object = dataclasses.MISSING,
+    metadata: Mapping[Any, Any] | None = None,
+    directives: Sequence[object] | None = (),
+    extensions: list[FieldExtension] | None = None,
+    graphql_type: Any | None = None,
 ) -> StrawberryField: ...
 
 
@@ -105,36 +102,36 @@ def mutation(
 def mutation(
     resolver: _RESOLVER_TYPE_SYNC[T],
     *,
-    name: Optional[str] = None,
-    description: Optional[str] = None,
-    permission_classes: Optional[list[type[BasePermission]]] = None,
-    deprecation_reason: Optional[str] = None,
+    name: str | None = None,
+    description: str | None = None,
+    permission_classes: list[type[BasePermission]] | None = None,
+    deprecation_reason: str | None = None,
     default: Any = dataclasses.MISSING,
-    default_factory: Union[Callable[..., object], object] = dataclasses.MISSING,
-    metadata: Optional[Mapping[Any, Any]] = None,
-    directives: Optional[Sequence[object]] = (),
-    extensions: Optional[list[FieldExtension]] = None,
-    graphql_type: Optional[Any] = None,
+    default_factory: Callable[..., object] | object = dataclasses.MISSING,
+    metadata: Mapping[Any, Any] | None = None,
+    directives: Sequence[object] | None = (),
+    extensions: list[FieldExtension] | None = None,
+    graphql_type: Any | None = None,
 ) -> StrawberryField: ...
 
 
 def mutation(
-    resolver: Optional[_RESOLVER_TYPE[Any]] = None,
+    resolver: _RESOLVER_TYPE[Any] | None = None,
     *,
-    name: Optional[str] = None,
-    description: Optional[str] = None,
-    permission_classes: Optional[list[type[BasePermission]]] = None,
-    deprecation_reason: Optional[str] = None,
+    name: str | None = None,
+    description: str | None = None,
+    permission_classes: list[type[BasePermission]] | None = None,
+    deprecation_reason: str | None = None,
     default: Any = dataclasses.MISSING,
-    default_factory: Union[Callable[..., object], object] = dataclasses.MISSING,
-    metadata: Optional[Mapping[Any, Any]] = None,
-    directives: Optional[Sequence[object]] = (),
-    extensions: Optional[list[FieldExtension]] = None,
-    graphql_type: Optional[Any] = None,
+    default_factory: Callable[..., object] | object = dataclasses.MISSING,
+    metadata: Mapping[Any, Any] | None = None,
+    directives: Sequence[object] | None = (),
+    extensions: list[FieldExtension] | None = None,
+    graphql_type: Any | None = None,
     # This init parameter is used by PyRight to determine whether this field
     # is added in the constructor or not. It is not used to change
     # any behavior at the moment.
-    init: Literal[True, False, None] = None,
+    init: Literal[True, False] | None = None,
 ) -> Any:
     """Annotates a method or property as a GraphQL mutation.
 
@@ -195,17 +192,17 @@ def mutation(
 def subscription(
     *,
     resolver: _RESOLVER_TYPE_ASYNC[T],
-    name: Optional[str] = None,
-    description: Optional[str] = None,
+    name: str | None = None,
+    description: str | None = None,
     init: Literal[False] = False,
-    permission_classes: Optional[list[type[BasePermission]]] = None,
-    deprecation_reason: Optional[str] = None,
+    permission_classes: list[type[BasePermission]] | None = None,
+    deprecation_reason: str | None = None,
     default: Any = dataclasses.MISSING,
-    default_factory: Union[Callable[..., object], object] = dataclasses.MISSING,
-    metadata: Optional[Mapping[Any, Any]] = None,
-    directives: Optional[Sequence[object]] = (),
-    extensions: Optional[list[FieldExtension]] = None,
-    graphql_type: Optional[Any] = None,
+    default_factory: Callable[..., object] | object = dataclasses.MISSING,
+    metadata: Mapping[Any, Any] | None = None,
+    directives: Sequence[object] | None = (),
+    extensions: list[FieldExtension] | None = None,
+    graphql_type: Any | None = None,
 ) -> T: ...
 
 
@@ -213,34 +210,34 @@ def subscription(
 def subscription(
     *,
     resolver: _RESOLVER_TYPE_SYNC[T],
-    name: Optional[str] = None,
-    description: Optional[str] = None,
+    name: str | None = None,
+    description: str | None = None,
     init: Literal[False] = False,
-    permission_classes: Optional[list[type[BasePermission]]] = None,
-    deprecation_reason: Optional[str] = None,
+    permission_classes: list[type[BasePermission]] | None = None,
+    deprecation_reason: str | None = None,
     default: Any = dataclasses.MISSING,
-    default_factory: Union[Callable[..., object], object] = dataclasses.MISSING,
-    metadata: Optional[Mapping[Any, Any]] = None,
-    directives: Optional[Sequence[object]] = (),
-    extensions: Optional[list[FieldExtension]] = None,
-    graphql_type: Optional[Any] = None,
+    default_factory: Callable[..., object] | object = dataclasses.MISSING,
+    metadata: Mapping[Any, Any] | None = None,
+    directives: Sequence[object] | None = (),
+    extensions: list[FieldExtension] | None = None,
+    graphql_type: Any | None = None,
 ) -> T: ...
 
 
 @overload
 def subscription(
     *,
-    name: Optional[str] = None,
-    description: Optional[str] = None,
+    name: str | None = None,
+    description: str | None = None,
     init: Literal[True] = True,
-    permission_classes: Optional[list[type[BasePermission]]] = None,
-    deprecation_reason: Optional[str] = None,
+    permission_classes: list[type[BasePermission]] | None = None,
+    deprecation_reason: str | None = None,
     default: Any = dataclasses.MISSING,
-    default_factory: Union[Callable[..., object], object] = dataclasses.MISSING,
-    metadata: Optional[Mapping[Any, Any]] = None,
-    directives: Optional[Sequence[object]] = (),
-    extensions: Optional[list[FieldExtension]] = None,
-    graphql_type: Optional[Any] = None,
+    default_factory: Callable[..., object] | object = dataclasses.MISSING,
+    metadata: Mapping[Any, Any] | None = None,
+    directives: Sequence[object] | None = (),
+    extensions: list[FieldExtension] | None = None,
+    graphql_type: Any | None = None,
 ) -> Any: ...
 
 
@@ -248,16 +245,16 @@ def subscription(
 def subscription(
     resolver: _RESOLVER_TYPE_ASYNC[T],
     *,
-    name: Optional[str] = None,
-    description: Optional[str] = None,
-    permission_classes: Optional[list[type[BasePermission]]] = None,
-    deprecation_reason: Optional[str] = None,
+    name: str | None = None,
+    description: str | None = None,
+    permission_classes: list[type[BasePermission]] | None = None,
+    deprecation_reason: str | None = None,
     default: Any = dataclasses.MISSING,
-    default_factory: Union[Callable[..., object], object] = dataclasses.MISSING,
-    metadata: Optional[Mapping[Any, Any]] = None,
-    directives: Optional[Sequence[object]] = (),
-    extensions: Optional[list[FieldExtension]] = None,
-    graphql_type: Optional[Any] = None,
+    default_factory: Callable[..., object] | object = dataclasses.MISSING,
+    metadata: Mapping[Any, Any] | None = None,
+    directives: Sequence[object] | None = (),
+    extensions: list[FieldExtension] | None = None,
+    graphql_type: Any | None = None,
 ) -> StrawberryField: ...
 
 
@@ -265,33 +262,33 @@ def subscription(
 def subscription(
     resolver: _RESOLVER_TYPE_SYNC[T],
     *,
-    name: Optional[str] = None,
-    description: Optional[str] = None,
-    permission_classes: Optional[list[type[BasePermission]]] = None,
-    deprecation_reason: Optional[str] = None,
+    name: str | None = None,
+    description: str | None = None,
+    permission_classes: list[type[BasePermission]] | None = None,
+    deprecation_reason: str | None = None,
     default: Any = dataclasses.MISSING,
-    default_factory: Union[Callable[..., object], object] = dataclasses.MISSING,
-    metadata: Optional[Mapping[Any, Any]] = None,
-    directives: Optional[Sequence[object]] = (),
-    extensions: Optional[list[FieldExtension]] = None,
-    graphql_type: Optional[Any] = None,
+    default_factory: Callable[..., object] | object = dataclasses.MISSING,
+    metadata: Mapping[Any, Any] | None = None,
+    directives: Sequence[object] | None = (),
+    extensions: list[FieldExtension] | None = None,
+    graphql_type: Any | None = None,
 ) -> StrawberryField: ...
 
 
 def subscription(
-    resolver: Optional[_RESOLVER_TYPE[Any]] = None,
+    resolver: _RESOLVER_TYPE[Any] | None = None,
     *,
-    name: Optional[str] = None,
-    description: Optional[str] = None,
-    permission_classes: Optional[list[type[BasePermission]]] = None,
-    deprecation_reason: Optional[str] = None,
+    name: str | None = None,
+    description: str | None = None,
+    permission_classes: list[type[BasePermission]] | None = None,
+    deprecation_reason: str | None = None,
     default: Any = dataclasses.MISSING,
-    default_factory: Union[Callable[..., object], object] = dataclasses.MISSING,
-    metadata: Optional[Mapping[Any, Any]] = None,
-    directives: Optional[Sequence[object]] = (),
-    extensions: Optional[list[FieldExtension]] = None,
-    graphql_type: Optional[Any] = None,
-    init: Literal[True, False, None] = None,
+    default_factory: Callable[..., object] | object = dataclasses.MISSING,
+    metadata: Mapping[Any, Any] | None = None,
+    directives: Sequence[object] | None = (),
+    extensions: list[FieldExtension] | None = None,
+    graphql_type: Any | None = None,
+    init: Literal[True, False] | None = None,
 ) -> Any:
     """Annotates a method or property as a GraphQL subscription.
 

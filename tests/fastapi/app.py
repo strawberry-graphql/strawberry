@@ -1,6 +1,7 @@
-from typing import Any, Union
+from typing import Any
 
 from fastapi import BackgroundTasks, Depends, FastAPI, Request, WebSocket
+
 from strawberry.fastapi import GraphQLRouter
 from tests.views.schema import schema
 
@@ -24,7 +25,7 @@ async def get_context(
 
 async def get_root_value(
     request: Request = None, ws: WebSocket = None
-) -> Union[Request, WebSocket]:
+) -> Request | WebSocket:
     return request or ws
 
 

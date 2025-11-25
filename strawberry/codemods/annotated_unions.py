@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 import libcst as cst
 import libcst.matchers as m
@@ -50,7 +50,7 @@ class ConvertUnionToAnnotatedUnion(VisitorBasedCodemodCommand):
 
         super().__init__(context)
 
-    def visit_Module(self, node: cst.Module) -> Optional[bool]:  # noqa: N802
+    def visit_Module(self, node: cst.Module) -> bool | None:  # noqa: N802
         self._is_using_named_import = False
 
         return super().visit_Module(node)

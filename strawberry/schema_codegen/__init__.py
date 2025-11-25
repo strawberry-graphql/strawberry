@@ -4,8 +4,8 @@ import dataclasses
 import keyword
 from collections import defaultdict
 from graphlib import TopologicalSorter
-from typing import TYPE_CHECKING, Union
-from typing_extensions import Protocol, TypeAlias
+from typing import TYPE_CHECKING, TypeAlias
+from typing_extensions import Protocol
 
 import libcst as cst
 from graphql import (
@@ -256,7 +256,7 @@ def _get_field(
     )
 
 
-ArgumentValue: TypeAlias = Union[str, bool, list["ArgumentValue"]]
+ArgumentValue: TypeAlias = str | bool | list["ArgumentValue"]
 
 
 def _get_argument_value(argument_value: ConstValueNode) -> ArgumentValue:
@@ -519,24 +519,8 @@ def _get_schema_definition(
     if root_subscription_name:
         args.append(_get_arg("subscription", root_subscription_name))
 
-    schema_call = cst.Call(
-        func=cst.Attribute(
-            value=cst.Name("strawberry"),
-            attr=cst.Name("Schema"),
-        ),
-        args=args,
-    )
-
+    # Federation 2 is now always enabled for federation schemas
     if is_apollo_federation:
-        args.append(
-            cst.Arg(
-                keyword=cst.Name("enable_federation_2"),
-                value=cst.Name("True"),
-                equal=cst.AssignEqual(
-                    cst.SimpleWhitespace(""), cst.SimpleWhitespace("")
-                ),
-            )
-        )
         schema_call = cst.Call(
             func=cst.Attribute(
                 value=cst.Attribute(
@@ -544,6 +528,14 @@ def _get_schema_definition(
                     attr=cst.Name(value="federation"),
                 ),
                 attr=cst.Name(value="Schema"),
+            ),
+            args=args,
+        )
+    else:
+        schema_call = cst.Call(
+            func=cst.Attribute(
+                value=cst.Name("strawberry"),
+                attr=cst.Name("Schema"),
             ),
             args=args,
         )

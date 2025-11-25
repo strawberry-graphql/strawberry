@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 import pytest
 
@@ -19,7 +19,7 @@ def test_client() -> TestClient:
     @strawberry.type
     class Query:
         @strawberry.field
-        async def hello(self, name: Optional[str] = None) -> str:
+        async def hello(self, name: str | None = None) -> str:
             return f"Hello {name or 'world'}"
 
     async_schema = strawberry.Schema(Query)

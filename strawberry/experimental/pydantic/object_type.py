@@ -6,7 +6,6 @@ import warnings
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
     Optional,
     cast,
 )
@@ -36,7 +35,7 @@ from strawberry.types.type_resolver import _get_fields
 
 if TYPE_CHECKING:
     import builtins
-    from collections.abc import Sequence
+    from collections.abc import Callable, Sequence
 
     from graphql import GraphQLResolveInfo
 
@@ -50,7 +49,7 @@ def get_type_for_field(field: CompatModelField, is_input: bool, compat: Pydantic
         # only pydantic v1 has this Optional logic
         should_add_optional: bool = field.allow_none
         if should_add_optional:
-            return Optional[replaced_type]
+            return Optional[replaced_type]  # noqa: UP045
 
     return replaced_type
 
@@ -119,12 +118,12 @@ if TYPE_CHECKING:
 def type(
     model: builtins.type[PydanticModel],
     *,
-    fields: Optional[list[str]] = None,
-    name: Optional[str] = None,
+    fields: list[str] | None = None,
+    name: str | None = None,
     is_input: bool = False,
     is_interface: bool = False,
-    description: Optional[str] = None,
-    directives: Optional[Sequence[object]] = (),
+    description: str | None = None,
+    directives: Sequence[object] | None = (),
     all_fields: bool = False,
     include_computed: bool = False,
     use_pydantic_alias: bool = True,
@@ -247,8 +246,6 @@ def type(
         # https://github.com/python/cpython/issues/89961
         if sys.version_info >= (3, 10, 1):
             kwargs["kw_only"] = dataclasses.MISSING
-        else:
-            kwargs["init"] = False
 
         cls = dataclasses.make_dataclass(
             cls.__name__,
@@ -257,11 +254,6 @@ def type(
             namespace=namespace,
             **kwargs,  # type: ignore
         )
-
-        if sys.version_info < (3, 10, 1):
-            from strawberry.utils.dataclasses import add_custom_init_fn
-
-            add_custom_init_fn(cls)
 
         _process_type(
             cls,
@@ -279,7 +271,7 @@ def type(
         cls._pydantic_type = model
 
         def from_pydantic_default(
-            instance: PydanticModel, extra: Optional[dict[str, Any]] = None
+            instance: PydanticModel, extra: dict[str, Any] | None = None
         ) -> StrawberryTypeFromPydantic[PydanticModel]:
             ret = convert_pydantic_model_to_strawberry_class(
                 cls=cls, model_instance=instance, extra=extra
@@ -310,11 +302,11 @@ def type(
 def input(
     model: builtins.type[PydanticModel],
     *,
-    fields: Optional[list[str]] = None,
-    name: Optional[str] = None,
+    fields: list[str] | None = None,
+    name: str | None = None,
     is_interface: bool = False,
-    description: Optional[str] = None,
-    directives: Optional[Sequence[object]] = (),
+    description: str | None = None,
+    directives: Sequence[object] | None = (),
     all_fields: bool = False,
     use_pydantic_alias: bool = True,
 ) -> Callable[..., builtins.type[StrawberryTypeFromPydantic[PydanticModel]]]:
@@ -340,11 +332,11 @@ def input(
 def interface(
     model: builtins.type[PydanticModel],
     *,
-    fields: Optional[list[str]] = None,
-    name: Optional[str] = None,
+    fields: list[str] | None = None,
+    name: str | None = None,
     is_input: bool = False,
-    description: Optional[str] = None,
-    directives: Optional[Sequence[object]] = (),
+    description: str | None = None,
+    directives: Sequence[object] | None = (),
     all_fields: bool = False,
     use_pydantic_alias: bool = True,
 ) -> Callable[..., builtins.type[StrawberryTypeFromPydantic[PydanticModel]]]:

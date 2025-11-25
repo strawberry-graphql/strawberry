@@ -5,13 +5,10 @@ from datetime import timedelta
 from json import JSONDecodeError
 from typing import (
     TYPE_CHECKING,
-    Callable,
-    Optional,
-    Union,
-    cast,
+    TypeGuard,
 )
-from typing_extensions import TypeGuard
 
+from lia import HTTPException, StarletteRequestAdapter
 from starlette import status
 from starlette.requests import Request
 from starlette.responses import (
@@ -24,16 +21,13 @@ from starlette.websockets import WebSocket, WebSocketDisconnect, WebSocketState
 
 from strawberry.http.async_base_view import (
     AsyncBaseHTTPView,
-    AsyncHTTPRequestAdapter,
     AsyncWebSocketAdapter,
 )
 from strawberry.http.exceptions import (
-    HTTPException,
     NonJsonMessageReceived,
     NonTextMessageReceived,
     WebSocketDisconnected,
 )
-from strawberry.http.types import FormData, HTTPMethod, QueryParams
 from strawberry.http.typevars import (
     Context,
     RootValue,
@@ -41,45 +35,19 @@ from strawberry.http.typevars import (
 from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
 
 if TYPE_CHECKING:
-    from collections.abc import AsyncGenerator, AsyncIterator, Mapping, Sequence
+    from collections.abc import (
+        AsyncGenerator,
+        AsyncIterator,
+        Callable,
+        Mapping,
+        Sequence,
+    )
 
     from starlette.types import Receive, Scope, Send
 
     from strawberry.http import GraphQLHTTPResponse
     from strawberry.http.ides import GraphQL_IDE
     from strawberry.schema import BaseSchema
-
-
-class ASGIRequestAdapter(AsyncHTTPRequestAdapter):
-    def __init__(self, request: Request) -> None:
-        self.request = request
-
-    @property
-    def query_params(self) -> QueryParams:
-        return self.request.query_params
-
-    @property
-    def method(self) -> HTTPMethod:
-        return cast("HTTPMethod", self.request.method.upper())
-
-    @property
-    def headers(self) -> Mapping[str, str]:
-        return self.request.headers
-
-    @property
-    def content_type(self) -> Optional[str]:
-        return self.request.headers.get("content-type")
-
-    async def get_body(self) -> bytes:
-        return await self.request.body()
-
-    async def get_form_data(self) -> FormData:
-        multipart_data = await self.request.form()
-
-        return FormData(
-            files=multipart_data,
-            form=multipart_data,
-        )
 
 
 class ASGIWebSocketAdapter(AsyncWebSocketAdapter):
@@ -107,7 +75,11 @@ class ASGIWebSocketAdapter(AsyncWebSocketAdapter):
 
     async def send_json(self, message: Mapping[str, object]) -> None:
         try:
-            await self.ws.send_text(self.view.encode_json(message))
+            encoded_data = self.view.encode_json(message)
+            if isinstance(encoded_data, bytes):
+                await self.ws.send_bytes(encoded_data)
+            else:
+                await self.ws.send_text(encoded_data)
         except WebSocketDisconnect as exc:
             raise WebSocketDisconnected from exc
 
@@ -127,18 +99,17 @@ class GraphQL(
     ]
 ):
     allow_queries_via_get = True
-    request_adapter_class = ASGIRequestAdapter
-    websocket_adapter_class = ASGIWebSocketAdapter
+    request_adapter_class = StarletteRequestAdapter
+    websocket_adapter_class = ASGIWebSocketAdapter  # type: ignore
 
     def __init__(
         self,
         schema: BaseSchema,
-        graphiql: Optional[bool] = None,
-        graphql_ide: Optional[GraphQL_IDE] = "graphiql",
+        graphiql: bool | None = None,
+        graphql_ide: GraphQL_IDE | None = "graphiql",
         allow_queries_via_get: bool = True,
         keep_alive: bool = False,
         keep_alive_interval: float = 1,
-        debug: bool = False,
         subscription_protocols: Sequence[str] = (
             GRAPHQL_TRANSPORT_WS_PROTOCOL,
             GRAPHQL_WS_PROTOCOL,
@@ -150,7 +121,6 @@ class GraphQL(
         self.allow_queries_via_get = allow_queries_via_get
         self.keep_alive = keep_alive
         self.keep_alive_interval = keep_alive_interval
-        self.debug = debug
         self.protocols = subscription_protocols
         self.connection_init_wait_timeout = connection_init_wait_timeout
         self.multipart_uploads_enabled = multipart_uploads_enabled
@@ -181,19 +151,17 @@ class GraphQL(
         else:  # pragma: no cover
             raise ValueError("Unknown scope type: {!r}".format(scope["type"]))
 
-    async def get_root_value(
-        self, request: Union[Request, WebSocket]
-    ) -> Optional[RootValue]:
+    async def get_root_value(self, request: Request | WebSocket) -> RootValue | None:
         return None
 
     async def get_context(
-        self, request: Union[Request, WebSocket], response: Union[Response, WebSocket]
+        self, request: Request | WebSocket, response: Response | WebSocket
     ) -> Context:
         return {"request": request, "response": response}  # type: ignore
 
     async def get_sub_response(
         self,
-        request: Union[Request, WebSocket],
+        request: Request | WebSocket,
     ) -> Response:
         sub_response = Response()
         sub_response.status_code = None  # type: ignore
@@ -206,7 +174,7 @@ class GraphQL(
 
     def create_response(
         self,
-        response_data: Union[GraphQLHTTPResponse, list[GraphQLHTTPResponse]],
+        response_data: GraphQLHTTPResponse | list[GraphQLHTTPResponse],
         sub_response: Response,
     ) -> Response:
         response = Response(
@@ -242,18 +210,18 @@ class GraphQL(
         )
 
     def is_websocket_request(
-        self, request: Union[Request, WebSocket]
+        self, request: Request | WebSocket
     ) -> TypeGuard[WebSocket]:
         return request.scope["type"] == "websocket"
 
-    async def pick_websocket_subprotocol(self, request: WebSocket) -> Optional[str]:
+    async def pick_websocket_subprotocol(self, request: WebSocket) -> str | None:
         protocols = request["subprotocols"]
         intersection = set(protocols) & set(self.protocols)
         sorted_intersection = sorted(intersection, key=protocols.index)
         return next(iter(sorted_intersection), None)
 
     async def create_websocket_response(
-        self, request: WebSocket, subprotocol: Optional[str]
+        self, request: WebSocket, subprotocol: str | None
     ) -> WebSocket:
         await request.accept(subprotocol=subprotocol)
         return request

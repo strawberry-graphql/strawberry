@@ -1,6 +1,5 @@
 import re
 import textwrap
-from typing import Optional
 
 import pytest
 
@@ -13,7 +12,7 @@ from tests.conftest import skip_if_gql_32
 def test_renaming_input_fields():
     @strawberry.input
     class FilterInput:
-        in_: Optional[str] = strawberry.field(name="in", default=strawberry.UNSET)
+        in_: str | None = strawberry.field(name="in", default=strawberry.UNSET)
 
     @strawberry.type
     class Query:
@@ -41,7 +40,7 @@ def test_input_with_nonscalar_field_default():
     @strawberry.input
     class NonScalarField:
         id: int = 10
-        nullable_field: Optional[int] = None
+        nullable_field: int | None = None
 
     @strawberry.input
     class Input:
@@ -54,7 +53,7 @@ def test_input_with_nonscalar_field_default():
     class ExampleOutput:
         input_id: int
         non_scalar_id: int
-        non_scalar_nullable_field: Optional[int]
+        non_scalar_nullable_field: int | None
 
     @strawberry.type
     class Query:

@@ -1,5 +1,5 @@
-from typing import TypedDict, Union
-from typing_extensions import Literal, NotRequired
+from typing import Literal, TypeAlias, TypedDict
+from typing_extensions import NotRequired
 
 from graphql import GraphQLFormattedError
 
@@ -69,18 +69,18 @@ class ConnectionKeepAliveMessage(TypedDict):
     type: Literal["ka"]
 
 
-OperationMessage = Union[
-    ConnectionInitMessage,
-    StartMessage,
-    StopMessage,
-    ConnectionTerminateMessage,
-    ConnectionErrorMessage,
-    ConnectionAckMessage,
-    DataMessage,
-    ErrorMessage,
-    CompleteMessage,
-    ConnectionKeepAliveMessage,
-]
+OperationMessage: TypeAlias = (
+    ConnectionInitMessage
+    | StartMessage
+    | StopMessage
+    | ConnectionTerminateMessage
+    | ConnectionErrorMessage
+    | ConnectionAckMessage
+    | DataMessage
+    | ErrorMessage
+    | CompleteMessage
+    | ConnectionKeepAliveMessage
+)
 
 
 __all__ = [

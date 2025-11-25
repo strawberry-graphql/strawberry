@@ -2,21 +2,19 @@ import abc
 import asyncio
 import contextlib
 import json
-from collections.abc import AsyncGenerator, Mapping
+from collections.abc import AsyncGenerator, Callable, Mapping
 from datetime import timedelta
 from typing import (
     Any,
-    Callable,
     Generic,
     Literal,
-    Optional,
-    Union,
+    TypeGuard,
     cast,
     overload,
 )
-from typing_extensions import TypeGuard
 
 from graphql import GraphQLError
+from lia import AsyncHTTPRequestAdapter, HTTPException
 
 from strawberry.exceptions import MissingQueryError
 from strawberry.file_uploads.utils import replace_placeholders_with_files
@@ -44,9 +42,7 @@ from strawberry.types.graphql import OperationType
 from strawberry.types.unset import UNSET, UnsetType
 
 from .base import BaseView
-from .exceptions import HTTPException
 from .parse_content_type import parse_content_type
-from .types import FormData, HTTPMethod, QueryParams
 from .typevars import (
     Context,
     Request,
@@ -56,30 +52,6 @@ from .typevars import (
     WebSocketRequest,
     WebSocketResponse,
 )
-
-
-class AsyncHTTPRequestAdapter(abc.ABC):
-    @property
-    @abc.abstractmethod
-    def query_params(self) -> QueryParams: ...
-
-    @property
-    @abc.abstractmethod
-    def method(self) -> HTTPMethod: ...
-
-    @property
-    @abc.abstractmethod
-    def headers(self) -> Mapping[str, str]: ...
-
-    @property
-    @abc.abstractmethod
-    def content_type(self) -> Optional[str]: ...
-
-    @abc.abstractmethod
-    async def get_body(self) -> Union[str, bytes]: ...
-
-    @abc.abstractmethod
-    async def get_form_data(self) -> FormData: ...
 
 
 class AsyncWebSocketAdapter(abc.ABC):
@@ -112,10 +84,9 @@ class AsyncBaseHTTPView(
     ],
 ):
     schema: BaseSchema
-    graphql_ide: Optional[GraphQL_IDE]
-    debug: bool
+    graphql_ide: GraphQL_IDE | None
     keep_alive = False
-    keep_alive_interval: Optional[float] = None
+    keep_alive_interval: float | None = None
     connection_init_wait_timeout: timedelta = timedelta(minutes=1)
     request_adapter_class: Callable[[Request], AsyncHTTPRequestAdapter]
     websocket_adapter_class: Callable[
@@ -143,19 +114,19 @@ class AsyncBaseHTTPView(
     @abc.abstractmethod
     async def get_context(
         self,
-        request: Union[Request, WebSocketRequest],
-        response: Union[SubResponse, WebSocketResponse],
+        request: Request | WebSocketRequest,
+        response: SubResponse | WebSocketResponse,
     ) -> Context: ...
 
     @abc.abstractmethod
     async def get_root_value(
-        self, request: Union[Request, WebSocketRequest]
-    ) -> Optional[RootValue]: ...
+        self, request: Request | WebSocketRequest
+    ) -> RootValue | None: ...
 
     @abc.abstractmethod
     def create_response(
         self,
-        response_data: Union[GraphQLHTTPResponse, list[GraphQLHTTPResponse]],
+        response_data: GraphQLHTTPResponse | list[GraphQLHTTPResponse],
         sub_response: SubResponse,
     ) -> Response: ...
 
@@ -173,26 +144,26 @@ class AsyncBaseHTTPView(
 
     @abc.abstractmethod
     def is_websocket_request(
-        self, request: Union[Request, WebSocketRequest]
+        self, request: Request | WebSocketRequest
     ) -> TypeGuard[WebSocketRequest]: ...
 
     @abc.abstractmethod
     async def pick_websocket_subprotocol(
         self, request: WebSocketRequest
-    ) -> Optional[str]: ...
+    ) -> str | None: ...
 
     @abc.abstractmethod
     async def create_websocket_response(
-        self, request: WebSocketRequest, subprotocol: Optional[str]
+        self, request: WebSocketRequest, subprotocol: str | None
     ) -> WebSocketResponse: ...
 
     async def execute_operation(
         self,
         request: Request,
         context: Context,
-        root_value: Optional[RootValue],
+        root_value: RootValue | None,
         sub_response: SubResponse,
-    ) -> Union[ExecutionResult, list[ExecutionResult], SubscriptionExecutionResult]:
+    ) -> ExecutionResult | list[ExecutionResult] | SubscriptionExecutionResult:
         request_adapter = self.request_adapter_class(request)
 
         try:
@@ -249,7 +220,7 @@ class AsyncBaseHTTPView(
         request_adapter: AsyncHTTPRequestAdapter,
         sub_response: SubResponse,
         context: Context,
-        root_value: Optional[RootValue],
+        root_value: RootValue | None,
         request_data: GraphQLRequestData,
     ) -> ExecutionResult:
         allowed_operation_types = OperationType.from_http(request_adapter.method)
@@ -284,8 +255,9 @@ class AsyncBaseHTTPView(
         except ValueError as e:
             raise HTTPException(400, "Unable to parse the multipart body") from e
 
-        operations = form_data["form"].get("operations", "{}")
-        files_map = form_data["form"].get("map", "{}")
+        operations = form_data.form.get("operations", "{}")
+        files_map = form_data.form.get("map", "{}")
+        files = form_data.files
 
         if isinstance(operations, (bytes, str)):
             operations = self.parse_json(operations)
@@ -294,9 +266,7 @@ class AsyncBaseHTTPView(
             files_map = self.parse_json(files_map)
 
         try:
-            return replace_placeholders_with_files(
-                operations, files_map, form_data["files"]
-            )
+            return replace_placeholders_with_files(operations, files_map, files)
         except KeyError as e:
             raise HTTPException(400, "File(s) missing in form data") from e
 
@@ -310,7 +280,7 @@ class AsyncBaseHTTPView(
         self,
         request: Request,
         context: Context = UNSET,
-        root_value: Optional[RootValue] = UNSET,
+        root_value: RootValue | None = UNSET,
     ) -> Response: ...
 
     @overload
@@ -318,15 +288,15 @@ class AsyncBaseHTTPView(
         self,
         request: WebSocketRequest,
         context: Context = UNSET,
-        root_value: Optional[RootValue] = UNSET,
+        root_value: RootValue | None = UNSET,
     ) -> WebSocketResponse: ...
 
     async def run(
         self,
-        request: Union[Request, WebSocketRequest],
+        request: Request | WebSocketRequest,
         context: Context = UNSET,
-        root_value: Optional[RootValue] = UNSET,
-    ) -> Union[Response, WebSocketResponse]:
+        root_value: RootValue | None = UNSET,
+    ) -> Response | WebSocketResponse:
         root_value = (
             await self.get_root_value(request) if root_value is UNSET else root_value
         )
@@ -351,7 +321,6 @@ class AsyncBaseHTTPView(
                     context=context,
                     root_value=root_value,
                     schema=self.schema,
-                    debug=self.debug,
                     connection_init_wait_timeout=self.connection_init_wait_timeout,
                 ).handle()
             elif websocket_subprotocol == GRAPHQL_WS_PROTOCOL:
@@ -361,7 +330,6 @@ class AsyncBaseHTTPView(
                     context=context,
                     root_value=root_value,
                     schema=self.schema,
-                    debug=self.debug,
                     keep_alive=self.keep_alive,
                     keep_alive_interval=self.keep_alive_interval,
                 ).handle()
@@ -402,7 +370,6 @@ class AsyncBaseHTTPView(
                 stream,
                 sub_response,
                 headers={
-                    "Transfer-Encoding": "chunked",
                     "Content-Type": "multipart/mixed;boundary=graphql;subscriptionSpec=1.0,application/json",
                 },
             )
@@ -471,12 +438,11 @@ class AsyncBaseHTTPView(
                 stream,
                 sub_response,
                 headers={
-                    "Transfer-Encoding": "chunked",
                     "Content-Type": 'multipart/mixed; boundary="-"',
                 },
             )
 
-        response_data: Union[GraphQLHTTPResponse, list[GraphQLHTTPResponse]]
+        response_data: GraphQLHTTPResponse | list[GraphQLHTTPResponse]
 
         if isinstance(result, list):
             response_data = []
@@ -499,7 +465,8 @@ class AsyncBaseHTTPView(
 
     def encode_multipart_data(self, data: Any, separator: str) -> str:
         encoded_data = self.encode_json(data)
-
+        if isinstance(encoded_data, bytes):
+            encoded_data = encoded_data.decode()
         return "".join(
             [
                 "\r\n",
@@ -647,7 +614,7 @@ class AsyncBaseHTTPView(
 
     async def parse_http_body(
         self, request: AsyncHTTPRequestAdapter
-    ) -> Union[GraphQLRequestData, list[GraphQLRequestData]]:
+    ) -> GraphQLRequestData | list[GraphQLRequestData]:
         headers = {key.lower(): value for key, value in request.headers.items()}
         content_type, _ = parse_content_type(request.content_type or "")
         accept = headers.get("accept", "")
@@ -716,7 +683,7 @@ class AsyncBaseHTTPView(
 
     async def on_ws_connect(
         self, context: Context
-    ) -> Union[UnsetType, None, dict[str, object]]:
+    ) -> UnsetType | None | dict[str, object]:
         return UNSET
 
 

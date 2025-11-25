@@ -1,4 +1,4 @@
-from typing_extensions import Literal
+from typing import Literal
 
 import pytest
 from graphql import GraphQLError
@@ -7,11 +7,6 @@ from pytest_mock import MockFixture
 from tests.conftest import skip_if_gql_32
 
 from .clients.base import HttpClient
-
-try:
-    from .clients.chalice import ChaliceHttpClient
-except ImportError:
-    ChaliceHttpClient = type(None)
 
 
 @pytest.mark.parametrize("method", ["get", "post"])
@@ -117,18 +112,10 @@ async def test_requests_with_invalid_variables_parameter_are_rejected(
     )
 
     assert response.status_code == 400
-    message = (
-        "The GraphQL operation's `variables` must be an object or null, if provided."
+    assert (
+        response.data
+        == b"The GraphQL operation's `variables` must be an object or null, if provided."
     )
-
-    if isinstance(http_client, ChaliceHttpClient):
-        # Our Chalice integration purposely wraps error messages with a JSON object
-        assert response.json == {
-            "Code": "BadRequestError",
-            "Message": message,
-        }
-    else:
-        assert response.data == message.encode()
 
 
 @pytest.mark.parametrize("method", ["get", "post"])
@@ -253,16 +240,10 @@ async def test_requests_with_invalid_query_parameter_are_rejected(
     )
 
     assert response.status_code == 400
-    message = "The GraphQL operation's `query` must be a string or null, if provided."
-
-    if isinstance(http_client, ChaliceHttpClient):
-        # Our Chalice integration purposely wraps errors messages with a JSON object
-        assert response.json == {
-            "Code": "BadRequestError",
-            "Message": message,
-        }
-    else:
-        assert response.data == message.encode()
+    assert (
+        response.data
+        == b"The GraphQL operation's `query` must be a string or null, if provided."
+    )
 
 
 @pytest.mark.parametrize("method", ["get", "post"])
@@ -308,18 +289,10 @@ async def test_requests_with_invalid_extension_parameter_are_rejected(
     )
 
     assert response.status_code == 400
-    message = (
-        "The GraphQL operation's `extensions` must be an object or null, if provided."
+    assert (
+        response.data
+        == b"The GraphQL operation's `extensions` must be an object or null, if provided."
     )
-
-    if isinstance(http_client, ChaliceHttpClient):
-        # Our Chalice integration purposely wraps error messages with a JSON object
-        assert response.json == {
-            "Code": "BadRequestError",
-            "Message": message,
-        }
-    else:
-        assert response.data == message.encode()
 
 
 @pytest.mark.parametrize("method", ["get", "post"])
@@ -388,15 +361,7 @@ async def test_invalid_operation_selection(http_client: HttpClient, operation_na
     )
 
     assert response.status_code == 400
-
-    if isinstance(http_client, ChaliceHttpClient):
-        # Our Chalice integration purposely wraps errors messages with a JSON object
-        assert response.json == {
-            "Code": "BadRequestError",
-            "Message": f'Unknown operation named "{operation_name}".',
-        }
-    else:
-        assert response.data == f'Unknown operation named "{operation_name}".'.encode()
+    assert response.data == f'Unknown operation named "{operation_name}".'.encode()
 
 
 async def test_operation_selection_without_operations(http_client: HttpClient):
@@ -407,12 +372,4 @@ async def test_operation_selection_without_operations(http_client: HttpClient):
     )
 
     assert response.status_code == 400
-
-    if isinstance(http_client, ChaliceHttpClient):
-        # Our Chalice integration purposely wraps errors messages with a JSON object
-        assert response.json == {
-            "Code": "BadRequestError",
-            "Message": "Can't get GraphQL operation type",
-        }
-    else:
-        assert response.data == b"Can't get GraphQL operation type"
+    assert response.data == b"Can't get GraphQL operation type"

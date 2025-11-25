@@ -4,25 +4,25 @@ import json
 import warnings
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Optional, Union
-from typing_extensions import Literal, TypedDict
+from typing import TYPE_CHECKING, Any, Literal
+from typing_extensions import TypedDict
 
 if TYPE_CHECKING:
-    from collections.abc import Coroutine, Mapping
+    from collections.abc import Coroutine
 
     from graphql import GraphQLFormattedError
 
 
 @dataclass
 class Response:
-    errors: Optional[list[GraphQLFormattedError]]
-    data: Optional[dict[str, object]]
-    extensions: Optional[dict[str, object]]
+    errors: list[GraphQLFormattedError] | None
+    data: dict[str, object] | None
+    extensions: dict[str, object] | None
 
 
 class Body(TypedDict, total=False):
     query: str
-    variables: Optional[dict[str, object]]
+    variables: dict[str, object] | None
 
 
 class BaseGraphQLTestClient(ABC):
@@ -37,12 +37,12 @@ class BaseGraphQLTestClient(ABC):
     def query(
         self,
         query: str,
-        variables: Optional[dict[str, Mapping]] = None,
-        headers: Optional[dict[str, object]] = None,
-        asserts_errors: Optional[bool] = None,
-        files: Optional[dict[str, object]] = None,
-        assert_no_errors: Optional[bool] = True,
-    ) -> Union[Coroutine[Any, Any, Response], Response]:
+        variables: dict[str, Any] | None = None,
+        headers: dict[str, object] | None = None,
+        asserts_errors: bool | None = None,
+        files: dict[str, object] | None = None,
+        assert_no_errors: bool | None = True,
+    ) -> Coroutine[Any, Any, Response] | Response:
         body = self._build_body(query, variables, files)
 
         resp = self.request(body, headers, files)
@@ -74,16 +74,16 @@ class BaseGraphQLTestClient(ABC):
     def request(
         self,
         body: dict[str, object],
-        headers: Optional[dict[str, object]] = None,
-        files: Optional[dict[str, object]] = None,
+        headers: dict[str, object] | None = None,
+        files: dict[str, object] | None = None,
     ) -> Any:
         raise NotImplementedError
 
     def _build_body(
         self,
         query: str,
-        variables: Optional[dict[str, Mapping]] = None,
-        files: Optional[dict[str, object]] = None,
+        variables: dict[str, Any] | None = None,
+        files: dict[str, object] | None = None,
     ) -> dict[str, object]:
         body: dict[str, object] = {"query": query}
 
@@ -105,7 +105,7 @@ class BaseGraphQLTestClient(ABC):
 
     @staticmethod
     def _build_multipart_file_map(
-        variables: dict[str, Mapping], files: dict[str, object]
+        variables: dict[str, Any], files: dict[str, object]
     ) -> dict[str, list[str]]:
         """Creates the file mapping between the variables and the files objects passed as key arguments.
 

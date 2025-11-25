@@ -1,8 +1,8 @@
 import textwrap
 from enum import Enum
-from typing import Optional, Union
 
 import pydantic
+
 import strawberry
 from tests.experimental.pydantic.utils import needs_pydantic_v1
 
@@ -10,7 +10,7 @@ from tests.experimental.pydantic.utils import needs_pydantic_v1
 def test_basic_type_field_list():
     class UserModel(pydantic.BaseModel):
         age: int
-        password: Optional[str]
+        password: str | None
 
     @strawberry.experimental.pydantic.type(UserModel)
     class User:
@@ -49,7 +49,7 @@ def test_basic_type_field_list():
 def test_all_fields():
     class UserModel(pydantic.BaseModel):
         age: int
-        password: Optional[str]
+        password: str | None
 
     @strawberry.experimental.pydantic.type(UserModel, all_fields=True)
     class User:
@@ -87,7 +87,7 @@ def test_all_fields():
 def test_auto_fields():
     class UserModel(pydantic.BaseModel):
         age: int
-        password: Optional[str]
+        password: str | None
         other: float
 
     @strawberry.experimental.pydantic.type(UserModel)
@@ -127,7 +127,7 @@ def test_auto_fields():
 def test_basic_alias_type():
     class UserModel(pydantic.BaseModel):
         age_: int = pydantic.Field(..., alias="age")
-        password: Optional[str]
+        password: str | None
 
     @strawberry.experimental.pydantic.type(UserModel)
     class User:
@@ -327,7 +327,7 @@ def test_basic_type_with_union():
         field_b: int
 
     class User(pydantic.BaseModel):
-        union_field: Union[BranchA, BranchB]
+        union_field: BranchA | BranchB
 
     @strawberry.experimental.pydantic.type(BranchA)
     class BranchAType:
@@ -365,7 +365,7 @@ def test_basic_type_with_union_pydantic_types():
         field_b: int
 
     class User(pydantic.BaseModel):
-        union_field: Union[BranchA, BranchB]
+        union_field: BranchA | BranchB
 
     @strawberry.experimental.pydantic.type(BranchA)
     class BranchAType:
@@ -476,7 +476,7 @@ def test_basic_type_with_interface():
 def test_basic_type_with_optional_and_default():
     class UserModel(pydantic.BaseModel):
         age: int
-        password: Optional[str] = pydantic.Field(default="ABC")
+        password: str | None = pydantic.Field(default="ABC")
 
     @strawberry.experimental.pydantic.type(UserModel, all_fields=True)
     class User:

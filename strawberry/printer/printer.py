@@ -5,10 +5,7 @@ from itertools import chain
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
-    Optional,
     TypeVar,
-    Union,
     cast,
     overload,
 )
@@ -39,13 +36,15 @@ from strawberry.types.base import (
     StrawberryObjectDefinition,
     has_object_definition,
 )
-from strawberry.types.enum import EnumDefinition
+from strawberry.types.enum import StrawberryEnumDefinition
 from strawberry.types.scalar import ScalarWrapper
 from strawberry.types.unset import UNSET
 
 from .ast_from_value import ast_from_value
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from graphql import (
         GraphQLArgument,
         GraphQLEnumType,
@@ -78,7 +77,7 @@ def _serialize_dataclasses(
 
 @overload
 def _serialize_dataclasses(
-    value: Union[list[object], tuple[object]],
+    value: list[object] | tuple[object],
     *,
     name_converter: Callable[[str], str] | None = None,
 ) -> list[object]: ...
@@ -183,14 +182,14 @@ def print_schema_directive(
             if hasattr(f_type, "_scalar_definition"):
                 extras.types.add(cast("type", f_type))
 
-            if isinstance(f_type, EnumDefinition):
+            if isinstance(f_type, StrawberryEnumDefinition):
                 extras.types.add(cast("type", f_type))
 
     return f" @{gql_directive.name}{params}"
 
 
 def print_field_directives(
-    field: Optional[StrawberryField], schema: BaseSchema, *, extras: PrintExtras
+    field: StrawberryField | None, schema: BaseSchema, *, extras: PrintExtras
 ) -> str:
     if not field:
         return ""
@@ -363,7 +362,7 @@ def print_extends(type_: GraphQLObjectType, schema: BaseSchema) -> str:
     from strawberry.schema.schema_converter import GraphQLCoreConverter
 
     strawberry_type = cast(
-        "Optional[StrawberryObjectDefinition]",
+        "StrawberryObjectDefinition | None",
         type_.extensions
         and type_.extensions.get(GraphQLCoreConverter.DEFINITION_BACKREF),
     )
@@ -380,7 +379,7 @@ def print_type_directives(
     from strawberry.schema.schema_converter import GraphQLCoreConverter
 
     strawberry_type = cast(
-        "Optional[StrawberryObjectDefinition]",
+        "StrawberryObjectDefinition | None",
         type_.extensions
         and type_.extensions.get(GraphQLCoreConverter.DEFINITION_BACKREF),
     )
@@ -534,9 +533,7 @@ def _all_root_names_are_common_names(schema: BaseSchema) -> bool:
     )
 
 
-def print_schema_definition(
-    schema: BaseSchema, *, extras: PrintExtras
-) -> Optional[str]:
+def print_schema_definition(schema: BaseSchema, *, extras: PrintExtras) -> str | None:
     # TODO: add support for description
 
     if _all_root_names_are_common_names(schema) and not schema.schema_directives:
@@ -558,9 +555,7 @@ def print_schema_definition(
     return f"schema{directives} {{\n" + "\n".join(operation_types) + "\n}"
 
 
-def print_directive(
-    directive: GraphQLDirective, *, schema: BaseSchema
-) -> Optional[str]:
+def print_directive(directive: GraphQLDirective, *, schema: BaseSchema) -> str | None:
     strawberry_directive = directive.extensions.get("strawberry-definition")
 
     if strawberry_directive is None or (

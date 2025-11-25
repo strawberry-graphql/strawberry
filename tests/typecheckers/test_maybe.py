@@ -31,13 +31,13 @@ def test_maybe() -> None:
         [
             Result(
                 type="information",
-                message='Type of "obj.foobar" is "Some[str | None] | None"',
+                message='Type of "obj.foobar" is "Some[str] | None"',
                 line=12,
                 column=13,
             ),
             Result(
                 type="information",
-                message='Type of "obj.foobar" is "Some[str | None]"',
+                message='Type of "obj.foobar" is "Some[str]"',
                 line=15,
                 column=17,
             ),
@@ -48,13 +48,13 @@ def test_maybe() -> None:
         [
             Result(
                 type="note",
-                message='Revealed type is "Union[strawberry.types.maybe.Some[Union[builtins.str, None]], None]"',
+                message='Revealed type is "strawberry.types.maybe.Some[builtins.str] | None"',
                 line=12,
                 column=13,
             ),
             Result(
                 type="note",
-                message='Revealed type is "strawberry.types.maybe.Some[Union[builtins.str, None]]"',
+                message='Revealed type is "strawberry.types.maybe.Some[builtins.str]"',
                 line=15,
                 column=17,
             ),

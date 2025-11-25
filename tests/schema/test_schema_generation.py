@@ -53,5 +53,5 @@ def test_schema_fails_on_an_invalid_schema():
     @strawberry.type
     class Query: ...  # Type must have at least one field
 
-    with pytest.raises(ValueError, match="Invalid Schema. Errors.*"):
+    with pytest.raises(ValueError, match=r"Invalid Schema. Errors.*"):
         strawberry.Schema(query=Query)

@@ -1,5 +1,5 @@
 from enum import Enum, auto
-from typing import Annotated, Union, cast
+from typing import Annotated, cast
 
 from graphql import (
     DirectiveLocation,
@@ -85,15 +85,16 @@ def test_enum():
 
     graphql_thing_type = cast("GraphQLEnumType", graphql_schema.get_type("ThingType"))
     assert (
-        graphql_thing_type.extensions[DEFINITION_BACKREF] is ThingType._enum_definition
+        graphql_thing_type.extensions[DEFINITION_BACKREF]
+        is ThingType.__strawberry_definition__
     )
     assert (
         graphql_thing_type.values["JSON"].extensions[DEFINITION_BACKREF]
-        is ThingType._enum_definition.values[0]
+        is ThingType.__strawberry_definition__.values[0]
     )
     assert (
         graphql_thing_type.values["STR"].extensions[DEFINITION_BACKREF]
-        is ThingType._enum_definition.values[1]
+        is ThingType.__strawberry_definition__.values[1]
     )
 
 
@@ -139,7 +140,7 @@ def test_union():
     class StrThing:
         value: str
 
-    SomeThing = Annotated[Union[JsonThing, StrThing], strawberry.union("SomeThing")]
+    SomeThing = Annotated[JsonThing | StrThing, strawberry.union("SomeThing")]
 
     @strawberry.type()
     class Query:

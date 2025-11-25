@@ -1,4 +1,3 @@
-import sys
 from typing import Annotated, Generic, TypeVar, Union
 
 import pytest
@@ -32,10 +31,6 @@ def test_python_union():
     assert resolved == Union[User, Error]
 
 
-@pytest.mark.skipif(
-    sys.version_info < (3, 10),
-    reason="short syntax for union is only available on python 3.10+",
-)
 def test_python_union_short_syntax():
     @strawberry.type
     class User:
@@ -67,7 +62,7 @@ def test_strawberry_union():
     class Error:
         name: str
 
-    cool_union = Annotated[Union[User, Error], union(name="CoolUnion")]
+    cool_union = Annotated[User | Error, union(name="CoolUnion")]
     annotation = StrawberryAnnotation(cool_union)
     resolved = annotation.resolve()
 
@@ -91,7 +86,7 @@ def test_union_with_generic():
     class Edge(Generic[T]):
         node: T
 
-    Result = Annotated[Union[Error, Edge[str]], strawberry.union("Result")]
+    Result = Annotated[Error | Edge[str], strawberry.union("Result")]
 
     strawberry_union = StrawberryAnnotation(Result).resolve()
 
@@ -110,12 +105,7 @@ def test_union_with_generic():
 )
 def test_error_with_scalar_types():
     Something = Annotated[
-        Union[
-            int,
-            str,
-            float,
-            bool,
-        ],
+        int | str | float | bool,
         strawberry.union("Something"),
     ]
 
@@ -128,10 +118,6 @@ def test_error_with_scalar_types():
 
 @pytest.mark.raises_strawberry_exception(
     InvalidUnionTypeError, match="Type `int` cannot be used in a GraphQL Union"
-)
-@pytest.mark.skipif(
-    sys.version_info < (3, 10),
-    reason="short syntax for union is only available on python 3.10+",
 )
 def test_error_with_scalar_types_pipe():
     # TODO: using Something as the name of the union makes the source finder

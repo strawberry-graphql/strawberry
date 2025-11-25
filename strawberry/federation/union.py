@@ -1,5 +1,5 @@
 from collections.abc import Collection, Iterable
-from typing import Any, Optional
+from typing import Any
 
 from strawberry.types.union import StrawberryUnion
 from strawberry.types.union import union as base_union
@@ -7,12 +7,12 @@ from strawberry.types.union import union as base_union
 
 def union(
     name: str,
-    types: Optional[Collection[type[Any]]] = None,
+    types: Collection[type[Any]] | None = None,
     *,
-    description: Optional[str] = None,
+    description: str | None = None,
     directives: Iterable[object] = (),
     inaccessible: bool = False,
-    tags: Optional[Iterable[str]] = (),
+    tags: Iterable[str] | None = (),
 ) -> StrawberryUnion:
     """Creates a new named Union type.
 

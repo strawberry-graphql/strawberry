@@ -1,5 +1,4 @@
 from enum import Enum
-from typing import Optional
 
 import strawberry
 from strawberry import asdict
@@ -52,7 +51,7 @@ def test_convert_input_to_dictionary():
     class QnaInput:
         title: str
         description: str
-        tags: Optional[list[str]] = strawberry.field(default=None)
+        tags: list[str] | None = strawberry.field(default=None)
 
     title = "Where is the capital of United Kingdom?"
     description = "London is the capital of United Kingdom."

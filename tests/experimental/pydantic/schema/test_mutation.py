@@ -1,6 +1,5 @@
-from typing import Union
-
 import pydantic
+
 import strawberry
 from strawberry.experimental.pydantic._compat import IS_PYDANTIC_V2
 from strawberry.pydantic import Error
@@ -173,7 +172,7 @@ def test_mutation_with_validation_and_error_type():
     @strawberry.type
     class Mutation:
         @strawberry.mutation
-        def create_user(self, input: CreateUserInput) -> Union[UserType, Error]:
+        def create_user(self, input: CreateUserInput) -> UserType | Error:
             # If we get here, validation passed
             # Convert to UserType with valid data
             return UserType(name=input.name)

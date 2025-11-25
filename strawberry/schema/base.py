@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from abc import abstractmethod
-from typing import TYPE_CHECKING, Any, Optional, Union
+from typing import TYPE_CHECKING, Any
 from typing_extensions import Protocol
 
 from strawberry.utils.logging import StrawberryLogger
@@ -22,7 +22,7 @@ if TYPE_CHECKING:
         StrawberryObjectDefinition,
         WithStrawberryObjectDefinition,
     )
-    from strawberry.types.enum import EnumDefinition
+    from strawberry.types.enum import StrawberryEnumDefinition
     from strawberry.types.graphql import OperationType
     from strawberry.types.scalar import ScalarDefinition
     from strawberry.types.union import StrawberryUnion
@@ -34,33 +34,33 @@ class BaseSchema(Protocol):
     config: StrawberryConfig
     schema_converter: GraphQLCoreConverter
     query: type[WithStrawberryObjectDefinition]
-    mutation: Optional[type[WithStrawberryObjectDefinition]]
-    subscription: Optional[type[WithStrawberryObjectDefinition]]
+    mutation: type[WithStrawberryObjectDefinition] | None
+    subscription: type[WithStrawberryObjectDefinition] | None
     schema_directives: list[object]
 
     @abstractmethod
     async def execute(
         self,
-        query: Optional[str],
-        variable_values: Optional[dict[str, Any]] = None,
-        context_value: Optional[Any] = None,
-        root_value: Optional[Any] = None,
-        operation_name: Optional[str] = None,
-        allowed_operation_types: Optional[Iterable[OperationType]] = None,
-        operation_extensions: Optional[dict[str, Any]] = None,
+        query: str | None,
+        variable_values: dict[str, Any] | None = None,
+        context_value: Any | None = None,
+        root_value: Any | None = None,
+        operation_name: str | None = None,
+        allowed_operation_types: Iterable[OperationType] | None = None,
+        operation_extensions: dict[str, Any] | None = None,
     ) -> ExecutionResult:
         raise NotImplementedError
 
     @abstractmethod
     def execute_sync(
         self,
-        query: Optional[str],
-        variable_values: Optional[dict[str, Any]] = None,
-        context_value: Optional[Any] = None,
-        root_value: Optional[Any] = None,
-        operation_name: Optional[str] = None,
-        allowed_operation_types: Optional[Iterable[OperationType]] = None,
-        operation_extensions: Optional[dict[str, Any]] = None,
+        query: str | None,
+        variable_values: dict[str, Any] | None = None,
+        context_value: Any | None = None,
+        root_value: Any | None = None,
+        operation_name: str | None = None,
+        allowed_operation_types: Iterable[OperationType] | None = None,
+        operation_extensions: dict[str, Any] | None = None,
     ) -> ExecutionResult:
         raise NotImplementedError
 
@@ -68,29 +68,28 @@ class BaseSchema(Protocol):
     async def subscribe(
         self,
         query: str,
-        variable_values: Optional[dict[str, Any]] = None,
-        context_value: Optional[Any] = None,
-        root_value: Optional[Any] = None,
-        operation_name: Optional[str] = None,
-        operation_extensions: Optional[dict[str, Any]] = None,
+        variable_values: dict[str, Any] | None = None,
+        context_value: Any | None = None,
+        root_value: Any | None = None,
+        operation_name: str | None = None,
+        operation_extensions: dict[str, Any] | None = None,
     ) -> SubscriptionResult:
         raise NotImplementedError
 
     @abstractmethod
     def get_type_by_name(
         self, name: str
-    ) -> Optional[
-        Union[
-            StrawberryObjectDefinition,
-            ScalarDefinition,
-            EnumDefinition,
-            StrawberryUnion,
-        ]
-    ]:
+    ) -> (
+        StrawberryObjectDefinition
+        | ScalarDefinition
+        | StrawberryEnumDefinition
+        | StrawberryUnion
+        | None
+    ):
         raise NotImplementedError
 
     @abstractmethod
-    def get_directive_by_name(self, graphql_name: str) -> Optional[StrawberryDirective]:
+    def get_directive_by_name(self, graphql_name: str) -> StrawberryDirective | None:
         raise NotImplementedError
 
     @abstractmethod
@@ -108,7 +107,7 @@ class BaseSchema(Protocol):
     def _process_errors(
         self,
         errors: list[GraphQLError],
-        execution_context: Optional[ExecutionContext] = None,
+        execution_context: ExecutionContext | None = None,
     ) -> None:
         if self.config.disable_field_suggestions:
             for error in errors:
@@ -119,7 +118,7 @@ class BaseSchema(Protocol):
     def process_errors(
         self,
         errors: list[GraphQLError],
-        execution_context: Optional[ExecutionContext] = None,
+        execution_context: ExecutionContext | None = None,
     ) -> None:
         for error in errors:
             StrawberryLogger.error(error, execution_context)

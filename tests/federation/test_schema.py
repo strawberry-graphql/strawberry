@@ -1,6 +1,6 @@
 import textwrap
 import warnings
-from typing import Generic, Optional, TypeVar
+from typing import Generic, TypeVar
 
 import pytest
 
@@ -11,9 +11,9 @@ def test_entities_type_when_no_type_has_keys():
     @strawberry.federation.type()
     class Product:
         upc: str
-        name: Optional[str]
-        price: Optional[int]
-        weight: Optional[int]
+        name: str | None
+        price: int | None
+        weight: int | None
 
     @strawberry.federation.type(extend=True)
     class Query:
@@ -21,7 +21,7 @@ def test_entities_type_when_no_type_has_keys():
         def top_products(self, first: int) -> list[Product]:  # pragma: no cover
             return []
 
-    schema = strawberry.federation.Schema(query=Query, enable_federation_2=True)
+    schema = strawberry.federation.Schema(query=Query)
 
     expected_sdl = textwrap.dedent("""
         type Product {
@@ -67,9 +67,9 @@ def test_entities_type():
     @strawberry.federation.type(keys=["upc"])
     class Product:
         upc: str
-        name: Optional[str]
-        price: Optional[int]
-        weight: Optional[int]
+        name: str | None
+        price: int | None
+        weight: int | None
 
     @strawberry.federation.type(extend=True)
     class Query:
@@ -77,10 +77,10 @@ def test_entities_type():
         def top_products(self, first: int) -> list[Product]:  # pragma: no cover
             return []
 
-    schema = strawberry.federation.Schema(query=Query, enable_federation_2=True)
+    schema = strawberry.federation.Schema(query=Query)
 
     expected_sdl = textwrap.dedent("""
-        schema @link(url: "https://specs.apollo.dev/federation/v2.7", import: ["@key"]) {
+        schema @link(url: "https://specs.apollo.dev/federation/v2.11", import: ["@key"]) {
           query: Query
         }
 
@@ -139,7 +139,7 @@ def test_additional_scalars():
         def top_products(self, first: int) -> list[Example]:  # pragma: no cover
             return []
 
-    schema = strawberry.federation.Schema(query=Query, enable_federation_2=True)
+    schema = strawberry.federation.Schema(query=Query)
 
     query = """
         query {
@@ -167,7 +167,7 @@ def test_service():
         def top_products(self, first: int) -> list[Product]:  # pragma: no cover
             return []
 
-    schema = strawberry.federation.Schema(query=Query, enable_federation_2=True)
+    schema = strawberry.federation.Schema(query=Query)
 
     query = """
         query {
@@ -220,7 +220,7 @@ def test_using_generics():
         ) -> ListOfProducts[Product]:  # pragma: no cover
             return ListOfProducts(products=[])
 
-    schema = strawberry.federation.Schema(query=Query, enable_federation_2=True)
+    schema = strawberry.federation.Schema(query=Query)
 
     query = """
         query {
@@ -269,7 +269,7 @@ def test_input_types():
         def top_products(self, example: ExampleInput) -> list[str]:  # pragma: no cover
             return []
 
-    schema = strawberry.federation.Schema(query=Query, enable_federation_2=True)
+    schema = strawberry.federation.Schema(query=Query)
 
     query = """
         query {
@@ -290,11 +290,11 @@ def test_can_create_schema_without_query():
     @strawberry.federation.type()
     class Product:
         upc: str
-        name: Optional[str]
-        price: Optional[int]
-        weight: Optional[int]
+        name: str | None
+        price: int | None
+        weight: int | None
 
-    schema = strawberry.federation.Schema(types=[Product], enable_federation_2=True)
+    schema = strawberry.federation.Schema(types=[Product])
 
     assert (
         str(schema)
@@ -325,9 +325,9 @@ def test_federation_schema_warning():
     @strawberry.federation.type(keys=["upc"])
     class ProductFed:
         upc: str
-        name: Optional[str]
-        price: Optional[int]
-        weight: Optional[int]
+        name: str | None
+        price: int | None
+        weight: int | None
 
     with pytest.warns(UserWarning) as record:  # noqa: PT030
         strawberry.Schema(
@@ -345,9 +345,9 @@ def test_does_not_warn_when_using_federation_schema():
     @strawberry.federation.type(keys=["upc"])
     class ProductFed:
         upc: str
-        name: Optional[str]
-        price: Optional[int]
-        weight: Optional[int]
+        name: str | None
+        price: int | None
+        weight: int | None
 
     @strawberry.type
     class Query:
@@ -364,7 +364,6 @@ def test_does_not_warn_when_using_federation_schema():
 
         strawberry.federation.Schema(
             query=Query,
-            enable_federation_2=True,
         )
 
     assert len(w) == 0

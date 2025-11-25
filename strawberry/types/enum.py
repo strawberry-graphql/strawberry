@@ -1,34 +1,32 @@
 import dataclasses
-from collections.abc import Iterable, Mapping
+from collections.abc import Callable, Iterable, Mapping
 from enum import EnumMeta
-from typing import (
-    Any,
-    Callable,
-    Optional,
-    TypeVar,
-    Union,
-    overload,
-)
+from typing import TYPE_CHECKING, Any, TypeGuard, TypeVar, overload
 
 from strawberry.exceptions import ObjectIsNotAnEnumError
-from strawberry.types.base import StrawberryType
+from strawberry.types.base import (
+    StrawberryType,
+    WithStrawberryDefinition,
+    has_strawberry_definition,
+)
+from strawberry.utils.deprecations import DEPRECATION_MESSAGES, DeprecatedDescriptor
 
 
 @dataclasses.dataclass
 class EnumValue:
     name: str
     value: Any
-    deprecation_reason: Optional[str] = None
+    deprecation_reason: str | None = None
     directives: Iterable[object] = ()
-    description: Optional[str] = None
+    description: str | None = None
 
 
 @dataclasses.dataclass
-class EnumDefinition(StrawberryType):
+class StrawberryEnumDefinition(StrawberryType):
     wrapped_cls: EnumMeta
     name: str
     values: list[EnumValue]
-    description: Optional[str]
+    description: str | None
     directives: Iterable[object] = ()
 
     def __hash__(self) -> int:
@@ -36,8 +34,8 @@ class EnumDefinition(StrawberryType):
         return hash(self.name)
 
     def copy_with(
-        self, type_var_map: Mapping[str, Union[StrawberryType, type]]
-    ) -> Union[StrawberryType, type]:
+        self, type_var_map: Mapping[str, StrawberryType | type]
+    ) -> StrawberryType | type:
         # enum don't support type parameters, so we can safely return self
         return self
 
@@ -54,10 +52,10 @@ class EnumDefinition(StrawberryType):
 @dataclasses.dataclass
 class EnumValueDefinition:
     value: Any
-    graphql_name: Optional[str] = None
-    deprecation_reason: Optional[str] = None
+    graphql_name: str | None = None
+    deprecation_reason: str | None = None
     directives: Iterable[object] = ()
-    description: Optional[str] = None
+    description: str | None = None
 
     def __int__(self) -> int:
         return self.value
@@ -65,10 +63,10 @@ class EnumValueDefinition:
 
 def enum_value(
     value: Any,
-    name: Optional[str] = None,
-    deprecation_reason: Optional[str] = None,
+    name: str | None = None,
+    deprecation_reason: str | None = None,
     directives: Iterable[object] = (),
-    description: Optional[str] = None,
+    description: str | None = None,
 ) -> EnumValueDefinition:
     """Function to customise an enum value, for example to add a description or deprecation reason.
 
@@ -109,8 +107,8 @@ EnumType = TypeVar("EnumType", bound=EnumMeta)
 
 def _process_enum(
     cls: EnumType,
-    name: Optional[str] = None,
-    description: Optional[str] = None,
+    name: str | None = None,
+    description: str | None = None,
     directives: Iterable[object] = (),
 ) -> EnumType:
     if not isinstance(cls, EnumMeta):
@@ -151,13 +149,20 @@ def _process_enum(
         )
         values.append(value)
 
-    cls._enum_definition = EnumDefinition(  # type: ignore
+    cls.__strawberry_definition__ = StrawberryEnumDefinition(  # type: ignore
         wrapped_cls=cls,
         name=name,
         values=values,
         description=description,
         directives=directives,
     )
+
+    # TODO: remove when deprecating _enum_definition
+    DeprecatedDescriptor(
+        DEPRECATION_MESSAGES._ENUM_DEFINITION,
+        cls.__strawberry_definition__,  # type: ignore[attr-defined]
+        "_enum_definition",
+    ).inject(cls)
 
     return cls
 
@@ -166,8 +171,8 @@ def _process_enum(
 def enum(
     cls: EnumType,
     *,
-    name: Optional[str] = None,
-    description: Optional[str] = None,
+    name: str | None = None,
+    description: str | None = None,
     directives: Iterable[object] = (),
 ) -> EnumType: ...
 
@@ -176,19 +181,19 @@ def enum(
 def enum(
     cls: None = None,
     *,
-    name: Optional[str] = None,
-    description: Optional[str] = None,
+    name: str | None = None,
+    description: str | None = None,
     directives: Iterable[object] = (),
 ) -> Callable[[EnumType], EnumType]: ...
 
 
 def enum(
-    cls: Optional[EnumType] = None,
+    cls: EnumType | None = None,
     *,
-    name: Optional[str] = None,
-    description: Optional[str] = None,
+    name: str | None = None,
+    description: str | None = None,
     directives: Iterable[object] = (),
-) -> Union[EnumType, Callable[[EnumType], EnumType]]:
+) -> EnumType | Callable[[EnumType], EnumType]:
     """Annotates an Enum class a GraphQL enum.
 
     GraphQL enums only have names, while Python enums have names and values,
@@ -238,4 +243,31 @@ def enum(
     return wrap(cls)
 
 
-__all__ = ["EnumDefinition", "EnumValue", "EnumValueDefinition", "enum", "enum_value"]
+# TODO: remove when deprecating _enum_definition
+if TYPE_CHECKING:
+    from typing_extensions import deprecated
+
+    @deprecated("Use StrawberryEnumDefinition instead")
+    class EnumDefinition(StrawberryEnumDefinition): ...
+
+else:
+    EnumDefinition = StrawberryEnumDefinition
+
+WithStrawberryEnumDefinition = WithStrawberryDefinition["StrawberryEnumDefinition"]
+
+
+def has_enum_definition(obj: Any) -> TypeGuard[type[WithStrawberryEnumDefinition]]:
+    if has_strawberry_definition(obj):
+        return isinstance(obj.__strawberry_definition__, StrawberryEnumDefinition)
+
+    return False
+
+
+__all__ = [
+    "EnumDefinition",
+    "EnumValue",
+    "EnumValueDefinition",
+    "StrawberryEnumDefinition",
+    "enum",
+    "enum_value",
+]
