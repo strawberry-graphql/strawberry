@@ -236,10 +236,7 @@ def test_input_use_pydantic_default_false_field_types():
         name: str
         interests: list[str] | None = pydantic.Field(default_factory=list)
 
-    @strawberry.experimental.pydantic.input(
-        UserModel,
-        use_pydantic_default=False
-    )
+    @strawberry.experimental.pydantic.input(UserModel, use_pydantic_default=False)
     class UpdateUserInput:
         name: strawberry.auto
         interests: strawberry.auto

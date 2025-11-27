@@ -1337,34 +1337,47 @@ def test_can_convert_pydantic_type_to_strawberry_computed_field():
     "use_default, provided_interests, expected_raw, expected_pydantic",
     [
         # use_pydantic_default=False: omitted results in UNSET, no pydantic default
-        (False, strawberry.UNSET,
-         {"name": "John", "interests": strawberry.UNSET},
-         {"name": "John", "interests": []}),
-
+        (
+            False,
+            strawberry.UNSET,
+            {"name": "John", "interests": strawberry.UNSET},
+            {"name": "John", "interests": []},
+        ),
         # use_pydantic_default=False: provided list passed through
-        (False, ["games"],
-         {"name": "John", "interests": ["games"]},
-         {"name": "John", "interests": ["games"]}),
-
+        (
+            False,
+            ["games"],
+            {"name": "John", "interests": ["games"]},
+            {"name": "John", "interests": ["games"]},
+        ),
         # use_pydantic_default=False: provided None passed as None
-        (False, None,
-         {"name": "John", "interests": None},
-         {"name": "John", "interests": None}),
-
+        (
+            False,
+            None,
+            {"name": "John", "interests": None},
+            {"name": "John", "interests": None},
+        ),
         # use_pydantic_default=True: omitted, default_factory=list is applied (not UNSET)
-        (True, strawberry.UNSET,
-         {"name": "John", "interests": []},
-         {"name": "John", "interests": []}),
-
+        (
+            True,
+            strawberry.UNSET,
+            {"name": "John", "interests": []},
+            {"name": "John", "interests": []},
+        ),
         # use_pydantic_default=True: provided list unchanged
-        (True, ["games"],
-         {"name": "John", "interests": ["games"]},
-         {"name": "John", "interests": ["games"]}),
-
+        (
+            True,
+            ["games"],
+            {"name": "John", "interests": ["games"]},
+            {"name": "John", "interests": ["games"]},
+        ),
         # use_pydantic_default=True: provided None unchanged
-        (True, None,
-         {"name": "John", "interests": None},
-         {"name": "John", "interests": None}),
+        (
+            True,
+            None,
+            {"name": "John", "interests": None},
+            {"name": "John", "interests": None},
+        ),
     ],
 )
 def test_input_use_pydantic_default_parameterized(
