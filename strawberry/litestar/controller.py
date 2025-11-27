@@ -272,8 +272,11 @@ class GraphQLController(
         response_data: GraphQLHTTPResponse | list[GraphQLHTTPResponse],
         sub_response: Response[bytes],
     ) -> Response[bytes]:
+        encoded_data = self.encode_json(response_data)
+        if isinstance(encoded_data, str):
+            encoded_data = encoded_data.encode()
         response = Response(
-            self.encode_json(response_data).encode(),
+            encoded_data,
             status_code=HTTP_200_OK,
             media_type=MediaType.JSON,
         )

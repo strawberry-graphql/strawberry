@@ -465,7 +465,8 @@ class AsyncBaseHTTPView(
 
     def encode_multipart_data(self, data: Any, separator: str) -> str:
         encoded_data = self.encode_json(data)
-
+        if isinstance(encoded_data, bytes):
+            encoded_data = encoded_data.decode()
         return "".join(
             [
                 "\r\n",

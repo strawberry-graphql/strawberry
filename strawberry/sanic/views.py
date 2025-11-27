@@ -138,7 +138,9 @@ class GraphQLView(
         try:
             return await self.run(request)
         except HTTPException as e:
-            return HTTPResponse(e.reason, status=e.status_code)
+            return HTTPResponse(
+                e.reason, status=e.status_code, content_type="text/plain"
+            )
 
     async def get(self, request: Request) -> HTTPResponse:
         self.request = request
@@ -146,7 +148,9 @@ class GraphQLView(
         try:
             return await self.run(request)
         except HTTPException as e:
-            return HTTPResponse(e.reason, status=e.status_code)
+            return HTTPResponse(
+                e.reason, status=e.status_code, content_type="text/plain"
+            )
 
     async def create_streaming_response(
         self,

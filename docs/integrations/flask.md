@@ -56,7 +56,7 @@ methods:
 - `def get_root_value(self, request: Request) -> Optional[RootValue]`
 - `def process_result(self, request: Request, result: ExecutionResult) -> GraphQLHTTPResponse`
 - `def decode_json(self, data: Union[str, bytes]) -> object`
-- `def encode_json(self, data: object) -> str`
+- `def encode_json(self, data: object) -> str | bytes`
 - `def render_graphql_ide(self, request: Request) -> Response`
 
 <Note>
@@ -184,7 +184,7 @@ from strawberry.flask.views import GraphQLView
 
 
 class MyGraphQLView(GraphQLView):
-    def encode_json(self, data: object) -> str:
+    def encode_json(self, data: object) -> str | bytes:
         return json.dumps(data, indent=2)
 ```
 

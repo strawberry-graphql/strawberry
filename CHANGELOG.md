@@ -1,6 +1,49 @@
 CHANGELOG
 =========
 
+0.287.0 - 2025-11-22
+--------------------
+
+Change `strawberry.http.base.BaseView.encode_json()` type hint to `str | bytes` and adjust dependent code appropriately.
+
+Contributed by [David](https://github.com/Brandieee) via [PR #4054](https://github.com/strawberry-graphql/strawberry/pull/4054/)
+
+
+0.286.1 - 2025-11-21
+--------------------
+
+Set Content-Type to `text/plain` for exceptions so that these are displayed
+correctly.
+
+Contributed by [Michael Gorven](https://github.com/mgorven) via [PR #4037](https://github.com/strawberry-graphql/strawberry/pull/4037/)
+
+
+0.286.0 - 2025-11-18
+--------------------
+
+This release changes `_enum_definition` to `__strawberry_definition__`, this is a follow up to previous
+internal changes. If you were relying on `_enum_definition` you should update your code to use `__strawberry_definition__`.
+
+We also expose `has_enum_definition` to check if a type is a strawberry enum definition.
+
+```python
+from enum import Enum
+import strawberry
+from strawberry.types.enum import StrawberryEnumDefinition, has_enum_definition
+
+
+@strawberry.enum
+class ExampleEnum(Enum):
+    pass
+
+
+has_enum_definition(ExampleEnum)  # True
+# Now you can use ExampleEnum.__strawberry_definition__ to access the enum definition
+```
+
+Contributed by [Luis Gustavo](https://github.com/Ckk3) via [PR #3999](https://github.com/strawberry-graphql/strawberry/pull/3999/)
+
+
 0.285.0 - 2025-11-10
 --------------------
 

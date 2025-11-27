@@ -21,8 +21,8 @@ def test_enum():
         return True
 
     argument = set_locale.arguments[0]
-    # TODO: Remove reference to ._enum_definition with StrawberryEnum
-    assert argument.type is Locale._enum_definition
+    # TODO: Remove reference to .__strawberry_definition__ with StrawberryEnumDefinition
+    assert argument.type is Locale.__strawberry_definition__
 
 
 def test_forward_reference():
