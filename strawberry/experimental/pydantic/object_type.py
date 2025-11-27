@@ -86,13 +86,9 @@ def _build_dataclass_creation_fields(
         elif field.has_alias and use_pydantic_alias:
             graphql_name = field.alias
 
-        # local helper to satisfy E731 (no lambda assignment)
-        def _default_unset() -> object:
-            return UNSET
-
         # for inputs with use_pydantic_default, default_factory should be used
         if is_input and not use_pydantic_default:
-            default_factory = _default_unset
+            default_factory = UNSET
         else:
             default_factory = get_default_factory_for_field(field, compat=compat)
 
