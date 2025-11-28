@@ -374,6 +374,7 @@ class StrawberryField(dataclasses.Field):
                 override_type = type_.copy_with(type_var_map)
         elif isinstance(type_, StrawberryType):
             override_type = type_.copy_with(type_var_map)
+        # TODO: add support for predefined fields in generic (or field factory in generic)
 
         if override_type is not None:
             new_field.type_annotation = StrawberryAnnotation(

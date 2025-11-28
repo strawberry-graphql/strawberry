@@ -178,8 +178,10 @@ class PydanticV2Compat:
             new_fields |= self.get_model_computed_fields(model)
         return new_fields
 
-    def get_model_json_schema(self, model: type[BaseModel]) -> dict[str, Any]:
-        return model.model_json_schema()
+    def get_model_json_schema(
+        self, model: type[BaseModel], by_alias: bool
+    ) -> dict[str, Any]:
+        return model.model_json_schema(by_alias=by_alias)
 
     @cached_property
     def fields_map(self) -> dict[Any, Any]:
@@ -276,8 +278,10 @@ class PydanticV1Compat:
 
         return type_
 
-    def get_model_json_schema(self, model: type[BaseModel]) -> dict[str, Any]:
-        return model.schema()
+    def get_model_json_schema(
+        self, model: type[BaseModel], by_alias: bool
+    ) -> dict[str, Any]:
+        return model.schema(by_alias=by_alias)
 
     def model_dump(self, model_instance: BaseModel) -> dict[Any, Any]:
         return model_instance.dict()

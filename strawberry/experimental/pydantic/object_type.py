@@ -228,7 +228,7 @@ def type(
 
         extra_fields_dict = {field.name: field for field in extra_strawberry_fields}
         fields_json_schema = (
-            compat.get_model_json_schema(model).get("properties", {})
+            compat.get_model_json_schema(model, by_alias=False).get("properties", {})
             if json_schema_directive
             else {}
         )
