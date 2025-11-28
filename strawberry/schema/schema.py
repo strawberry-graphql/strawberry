@@ -84,7 +84,6 @@ if TYPE_CHECKING:
 
     from graphql.language import DocumentNode
     from graphql.pyutils import Path
-    from graphql.type import GraphQLResolveInfo
     from graphql.validation import ASTValidationRule
 
     from strawberry.directive import StrawberryDirective
@@ -167,6 +166,11 @@ class _OperationContextAwareGraphQLResolveInfo(NamedTuple):  # pyright: ignore
     is_awaitable: Callable[[Any], bool]
     operation_extensions: dict[str, Any]
 
+    @property
+    def _raw_info(self) -> _OperationContextAwareGraphQLResolveInfo:
+        """Return self to be duck-type compatible with strawberry.Info."""
+        return self
+
 
 class StrawberryGraphQLCoreExecutionContext(GraphQLExecutionContext):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
@@ -176,30 +180,32 @@ class StrawberryGraphQLCoreExecutionContext(GraphQLExecutionContext):
 
         self.operation_extensions = operation_extensions
 
-    if IS_GQL_33:
+    def build_resolve_info(
+        self,
+        field_def: GraphQLField,
+        field_nodes: list[FieldNode],
+        parent_type: GraphQLObjectType,
+        path: Path,
+    ) -> _OperationContextAwareGraphQLResolveInfo:
+        # In GQL 3.3+, is_awaitable is an instance property
+        # In GQL 3.2, it's a staticmethod on the class
+        is_awaitable = self.is_awaitable if IS_GQL_33 else self.__class__.is_awaitable
 
-        def build_resolve_info(
-            self,
-            field_def: GraphQLField,
-            field_nodes: list[FieldNode],
-            parent_type: GraphQLObjectType,
-            path: Path,
-        ) -> GraphQLResolveInfo:
-            return _OperationContextAwareGraphQLResolveInfo(  # type: ignore
-                field_nodes[0].name.value,
-                field_nodes,
-                field_def.type,
-                parent_type,
-                path,
-                self.schema,
-                self.fragments,
-                self.root_value,
-                self.operation,
-                self.variable_values,
-                self.context_value,
-                self.is_awaitable,
-                self.operation_extensions,
-            )
+        return _OperationContextAwareGraphQLResolveInfo(
+            field_nodes[0].name.value,
+            field_nodes,
+            field_def.type,
+            parent_type,
+            path,
+            self.schema,
+            self.fragments,
+            self.root_value,
+            self.operation,
+            self.variable_values,
+            self.context_value,
+            is_awaitable,
+            self.operation_extensions,
+        )
 
 
 class Schema(BaseSchema):

@@ -21,9 +21,8 @@ else:
 if TYPE_CHECKING:
     from collections.abc import Callable, Generator, Iterator
 
-    from graphql import GraphQLResolveInfo
-
     from strawberry.types.execution import ExecutionContext
+    from strawberry.types.info import Info
 
 
 class DatadogTracingExtension(SchemaExtension):
@@ -130,7 +129,7 @@ class DatadogTracingExtension(SchemaExtension):
         self,
         _next: Callable,
         root: Any,
-        info: GraphQLResolveInfo,
+        info: Info,
         *args: str,
         **kwargs: Any,
     ) -> Any:
@@ -166,7 +165,7 @@ class DatadogTracingExtensionSync(DatadogTracingExtension):
         self,
         _next: Callable,
         root: Any,
-        info: GraphQLResolveInfo,
+        info: Info,
         *args: str,
         **kwargs: Any,
     ) -> Any:
