@@ -61,7 +61,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             visitor.visit(tree)
             violations.extend(f"- {filename}{error}" for error in visitor.errors)
 
-    if len(violations) == 0:
+    if not violations:
         return 0
 
     msg = "\n".join(
