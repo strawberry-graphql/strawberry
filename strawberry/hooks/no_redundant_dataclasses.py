@@ -20,17 +20,19 @@ class Visitor(ast.NodeVisitor):
         is_raw_dataclass = False
 
         for decorator in node.decorator_list:
+        for decorator in node.decorator_list:
+            # Check for strawberry decorators: type, input, interface
             if (
                 isinstance(decorator, ast.Attribute)
                 and isinstance(decorator.value, ast.Name)
                 and decorator.value.id == "strawberry"
-                and decorator.attr == "type"
+                and decorator.attr in ("type", "input", "interface")
             ) or (
                 isinstance(decorator, ast.Call)
                 and isinstance(decorator.func, ast.Attribute)
                 and isinstance(decorator.func.value, ast.Name)
                 and decorator.func.value.id == "strawberry"
-                and decorator.func.attr == "type"
+                and decorator.func.attr in ("type", "input", "interface")
             ):
                 is_strawberry_class = True
 
