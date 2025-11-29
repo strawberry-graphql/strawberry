@@ -12,10 +12,9 @@ if TYPE_CHECKING:
 
 
 def should_skip_tracing(resolver: Callable[..., Any], info: Info) -> bool:
-    raw_info = info._raw_info
-    if info.field_name not in raw_info.parent_type.fields:
+    if info.field_name not in info.parent_type.fields:
         return True
-    resolver = raw_info.parent_type.fields[info.field_name].resolve
+    resolver = info.parent_type.fields[info.field_name].resolve
     return (
         is_introspection_field(info)
         or is_default_resolver(resolver)
