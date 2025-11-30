@@ -40,6 +40,7 @@ from mypy.types import (
     CallableType,
     Instance,
     NoneType,
+    Type,
     TypeOfAny,
     TypeVarType,
     UnionType,
@@ -156,21 +157,31 @@ def _get_type_for_expr(expr: Expression, api: SemanticAnalyzerPluginInterface) -
     raise ValueError(f"Unsupported expression {type(expr)}")
 
 
-def create_type_hook(ctx: DynamicClassDefContext) -> None:
-    # returning classes/type aliases is not supported yet by mypy
-    # see https://github.com/python/mypy/issues/5865
+def create_type_alias(
+    target: Type, ctx: DynamicClassDefContext, plugin_generated: bool
+) -> None:
+    init_kwargs = {
+        "target": target,
+        "fullname": ctx.api.qualified_name(ctx.name),
+        "line": ctx.call.line,
+        "column": ctx.call.column,
+    }
 
-    type_alias = TypeAlias(
-        AnyType(TypeOfAny.from_error),
-        fullname=ctx.api.qualified_name(ctx.name),
-        line=ctx.call.line,
-        column=ctx.call.column,
-    )
+    if Decimal("1.19") <= MypyVersion.VERSION:
+        init_kwargs["module"] = ctx.api.cur_mod_id
+
+    type_alias = TypeAlias(**init_kwargs)
 
     ctx.api.add_symbol_table_node(
         ctx.name,
-        SymbolTableNode(GDEF, type_alias, plugin_generated=True),
+        SymbolTableNode(GDEF, type_alias, plugin_generated=plugin_generated),
     )
+
+
+def create_type_hook(ctx: DynamicClassDefContext) -> None:
+    # returning classes/type aliases is not supported yet by mypy
+    # see https://github.com/python/mypy/issues/5865
+    create_type_alias(AnyType(TypeOfAny.from_error), ctx, plugin_generated=True)
 
 
 def union_hook(ctx: DynamicClassDefContext) -> None:
@@ -187,30 +198,12 @@ def union_hook(ctx: DynamicClassDefContext) -> None:
                 tuple(_get_type_for_expr(x, ctx.api) for x in types.items)
             )
         except InvalidNodeTypeException:
-            type_alias = TypeAlias(
-                AnyType(TypeOfAny.from_error),
-                fullname=ctx.api.qualified_name(ctx.name),
-                line=ctx.call.line,
-                column=ctx.call.column,
+            create_type_alias(
+                AnyType(TypeOfAny.from_error), ctx, plugin_generated=False
             )
-
-            ctx.api.add_symbol_table_node(
-                ctx.name,
-                SymbolTableNode(GDEF, type_alias, plugin_generated=False),
-            )
-
             return
 
-        type_alias = TypeAlias(
-            type_,
-            fullname=ctx.api.qualified_name(ctx.name),
-            line=ctx.call.line,
-            column=ctx.call.column,
-        )
-
-        ctx.api.add_symbol_table_node(
-            ctx.name, SymbolTableNode(GDEF, type_alias, plugin_generated=False)
-        )
+        create_type_alias(type_, ctx, plugin_generated=False)
 
 
 def enum_hook(ctx: DynamicClassDefContext) -> None:
@@ -227,16 +220,7 @@ def enum_hook(ctx: DynamicClassDefContext) -> None:
                 TypeOfAny.implementation_artifact
             )
 
-            type_alias = TypeAlias(
-                var_type,
-                fullname=ctx.api.qualified_name(ctx.name),
-                line=ctx.call.line,
-                column=ctx.call.column,
-            )
-
-            ctx.api.add_symbol_table_node(
-                ctx.name, SymbolTableNode(GDEF, type_alias, plugin_generated=False)
-            )
+            create_type_alias(var_type, ctx, plugin_generated=False)
             return
 
     enum_type: Type | None
@@ -249,16 +233,7 @@ def enum_hook(ctx: DynamicClassDefContext) -> None:
     if not enum_type:
         enum_type = AnyType(TypeOfAny.from_error)
 
-    type_alias = TypeAlias(
-        enum_type,
-        fullname=ctx.api.qualified_name(ctx.name),
-        line=ctx.call.line,
-        column=ctx.call.column,
-    )
-
-    ctx.api.add_symbol_table_node(
-        ctx.name, SymbolTableNode(GDEF, type_alias, plugin_generated=False)
-    )
+    create_type_alias(enum_type, ctx, plugin_generated=False)
 
 
 def scalar_hook(ctx: DynamicClassDefContext) -> None:
@@ -275,16 +250,7 @@ def scalar_hook(ctx: DynamicClassDefContext) -> None:
                 TypeOfAny.implementation_artifact
             )
 
-            type_alias = TypeAlias(
-                var_type,
-                fullname=ctx.api.qualified_name(ctx.name),
-                line=ctx.call.line,
-                column=ctx.call.column,
-            )
-
-            ctx.api.add_symbol_table_node(
-                ctx.name, SymbolTableNode(GDEF, type_alias, plugin_generated=False)
-            )
+            create_type_alias(var_type, ctx, plugin_generated=False)
             return
 
     scalar_type: Type | None
@@ -299,16 +265,7 @@ def scalar_hook(ctx: DynamicClassDefContext) -> None:
     if not scalar_type:
         scalar_type = AnyType(TypeOfAny.from_error)
 
-    type_alias = TypeAlias(
-        scalar_type,
-        fullname=ctx.api.qualified_name(ctx.name),
-        line=ctx.call.line,
-        column=ctx.call.column,
-    )
-
-    ctx.api.add_symbol_table_node(
-        ctx.name, SymbolTableNode(GDEF, type_alias, plugin_generated=False)
-    )
+    create_type_alias(scalar_type, ctx, plugin_generated=False)
 
 
 def add_static_method_to_class(
