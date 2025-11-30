@@ -5,7 +5,7 @@ import pytest
 import strawberry
 from strawberry.exceptions import ObjectIsNotAnEnumError
 from strawberry.types.base import get_object_definition
-from strawberry.types.enum import EnumDefinition
+from strawberry.types.enum import StrawberryEnumDefinition
 
 
 def test_basic_enum():
@@ -15,7 +15,7 @@ def test_basic_enum():
         STRAWBERRY = "strawberry"
         CHOCOLATE = "chocolate"
 
-    definition = IceCreamFlavour._enum_definition
+    definition = IceCreamFlavour.__strawberry_definition__
 
     assert definition.name == "IceCreamFlavour"
     assert definition.description is None
@@ -37,7 +37,7 @@ def test_can_pass_name_and_description():
         STRAWBERRY = "strawberry"
         CHOCOLATE = "chocolate"
 
-    definition = IceCreamFlavour._enum_definition
+    definition = IceCreamFlavour.__strawberry_definition__
 
     assert definition.name == "Flavour"
     assert definition.description == "example"
@@ -58,7 +58,7 @@ def test_can_use_enum_as_arguments():
 
     field = Query.__strawberry_definition__.fields[0]
 
-    assert isinstance(field.arguments[0].type, EnumDefinition)
+    assert isinstance(field.arguments[0].type, StrawberryEnumDefinition)
 
 
 @pytest.mark.raises_strawberry_exception(
@@ -80,7 +80,7 @@ def test_can_deprecate_enum_values():
         )
         CHOCOLATE = "chocolate"
 
-    definition = IceCreamFlavour._enum_definition
+    definition = IceCreamFlavour.__strawberry_definition__
 
     assert definition.values[0].name == "VANILLA"
     assert definition.values[0].value == "vanilla"
@@ -105,7 +105,7 @@ def test_can_describe_enum_values():
         )
         CHOCOLATE = "chocolate"
 
-    definition = IceCreamFlavour._enum_definition
+    definition = IceCreamFlavour.__strawberry_definition__
 
     assert definition.values[0].name == "VANILLA"
     assert definition.values[0].value == "vanilla"

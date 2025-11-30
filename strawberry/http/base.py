@@ -51,7 +51,7 @@ class BaseView(Generic[Request]):
     def decode_json(self, data: str | bytes) -> object:
         return json.loads(data)
 
-    def encode_json(self, data: object) -> str:
+    def encode_json(self, data: object) -> str | bytes:
         return json.dumps(data)
 
     def parse_query_params(self, params: QueryParams) -> dict[str, Any]:

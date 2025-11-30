@@ -61,7 +61,8 @@ class QuartWebSocketAdapter(AsyncWebSocketAdapter):
         try:
             # Raises asyncio.CancelledError when the connection is closed.
             # https://quart.palletsprojects.com/en/latest/how_to_guides/websockets.html#detecting-disconnection
-            await self.ws.send(self.view.encode_json(message))
+            await self.ws.send(self.view.encode_json(message))  # type:ignore
+            # quart is misusing AnyStr, leading to type errors for unions, see https://github.com/pallets/quart/issues/451
         except asyncio.CancelledError as exc:
             raise WebSocketDisconnected from exc
 
@@ -145,6 +146,7 @@ class GraphQLView(
             return Response(
                 response=e.reason,
                 status=e.status_code,
+                content_type="text/plain",
             )
 
     async def create_streaming_response(

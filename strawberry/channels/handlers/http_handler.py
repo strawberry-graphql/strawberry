@@ -240,7 +240,11 @@ class BaseGraphQLHTTPConsumer(ChannelsConsumer, AsyncHttpConsumer):
             else:
                 assert_never(response)
         except HTTPException as e:
-            await self.send_response(e.status_code, e.reason.encode())
+            await self.send_response(
+                e.status_code,
+                e.reason.encode(),
+                headers=[(b"Content-Type", b"text/plain")],
+            )
 
 
 class GraphQLHTTPConsumer(

@@ -75,7 +75,11 @@ class ASGIWebSocketAdapter(AsyncWebSocketAdapter):
 
     async def send_json(self, message: Mapping[str, object]) -> None:
         try:
-            await self.ws.send_text(self.view.encode_json(message))
+            encoded_data = self.view.encode_json(message)
+            if isinstance(encoded_data, bytes):
+                await self.ws.send_bytes(encoded_data)
+            else:
+                await self.ws.send_text(encoded_data)
         except WebSocketDisconnect as exc:
             raise WebSocketDisconnected from exc
 

@@ -1,14 +1,15 @@
 import dataclasses
 from collections.abc import Callable, Iterable, Mapping
 from enum import EnumMeta
-from typing import (
-    Any,
-    TypeVar,
-    overload,
-)
+from typing import TYPE_CHECKING, Any, TypeGuard, TypeVar, overload
 
 from strawberry.exceptions import ObjectIsNotAnEnumError
-from strawberry.types.base import StrawberryType
+from strawberry.types.base import (
+    StrawberryType,
+    WithStrawberryDefinition,
+    has_strawberry_definition,
+)
+from strawberry.utils.deprecations import DEPRECATION_MESSAGES, DeprecatedDescriptor
 
 
 @dataclasses.dataclass
@@ -21,7 +22,7 @@ class EnumValue:
 
 
 @dataclasses.dataclass
-class EnumDefinition(StrawberryType):
+class StrawberryEnumDefinition(StrawberryType):
     wrapped_cls: EnumMeta
     name: str
     values: list[EnumValue]
@@ -148,13 +149,20 @@ def _process_enum(
         )
         values.append(value)
 
-    cls._enum_definition = EnumDefinition(  # type: ignore
+    cls.__strawberry_definition__ = StrawberryEnumDefinition(  # type: ignore
         wrapped_cls=cls,
         name=name,
         values=values,
         description=description,
         directives=directives,
     )
+
+    # TODO: remove when deprecating _enum_definition
+    DeprecatedDescriptor(
+        DEPRECATION_MESSAGES._ENUM_DEFINITION,
+        cls.__strawberry_definition__,  # type: ignore[attr-defined]
+        "_enum_definition",
+    ).inject(cls)
 
     return cls
 
@@ -235,4 +243,31 @@ def enum(
     return wrap(cls)
 
 
-__all__ = ["EnumDefinition", "EnumValue", "EnumValueDefinition", "enum", "enum_value"]
+# TODO: remove when deprecating _enum_definition
+if TYPE_CHECKING:
+    from typing_extensions import deprecated
+
+    @deprecated("Use StrawberryEnumDefinition instead")
+    class EnumDefinition(StrawberryEnumDefinition): ...
+
+else:
+    EnumDefinition = StrawberryEnumDefinition
+
+WithStrawberryEnumDefinition = WithStrawberryDefinition["StrawberryEnumDefinition"]
+
+
+def has_enum_definition(obj: Any) -> TypeGuard[type[WithStrawberryEnumDefinition]]:
+    if has_strawberry_definition(obj):
+        return isinstance(obj.__strawberry_definition__, StrawberryEnumDefinition)
+
+    return False
+
+
+__all__ = [
+    "EnumDefinition",
+    "EnumValue",
+    "EnumValueDefinition",
+    "StrawberryEnumDefinition",
+    "enum",
+    "enum_value",
+]

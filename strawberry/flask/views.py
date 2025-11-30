@@ -84,6 +84,7 @@ class GraphQLView(
             return Response(
                 response=e.reason,
                 status=e.status_code,
+                content_type="text/plain",
             )
 
     def render_graphql_ide(self, request: Request) -> Response:
@@ -117,6 +118,7 @@ class AsyncGraphQLView(
             return Response(
                 response=e.reason,
                 status=e.status_code,
+                content_type="text/plain",
             )
 
     async def render_graphql_ide(self, request: Request) -> Response:

@@ -129,7 +129,7 @@ class BaseView:
             },
         )
 
-    def encode_json(self, data: object) -> str:
+    def encode_json(self, data: object) -> str | bytes:
         return json.dumps(data, cls=DjangoJSONEncoder)
 
 
@@ -164,6 +164,7 @@ class GraphQLView(
             return HttpResponse(
                 content=e.reason,
                 status=e.status_code,
+                content_type="text/plain",
             )
 
     def render_graphql_ide(self, request: HttpRequest) -> HttpResponse:
@@ -224,6 +225,7 @@ class AsyncGraphQLView(
             return HttpResponse(
                 content=e.reason,
                 status=e.status_code,
+                content_type="text/plain",
             )
 
     async def render_graphql_ide(self, request: HttpRequest) -> HttpResponse:

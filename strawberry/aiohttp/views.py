@@ -59,7 +59,11 @@ class AiohttpWebSocketAdapter(AsyncWebSocketAdapter):
 
     async def send_json(self, message: Mapping[str, object]) -> None:
         try:
-            await self.ws.send_str(self.view.encode_json(message))
+            encoded_data = self.view.encode_json(message)
+            if isinstance(encoded_data, bytes):
+                await self.ws.send_bytes(encoded_data)
+            else:
+                await self.ws.send_str(encoded_data)
         except (RuntimeError, ClientConnectionResetError) as exc:
             raise WebSocketDisconnected from exc
 
@@ -163,7 +167,10 @@ class GraphQLView(
         response_data: GraphQLHTTPResponse | list[GraphQLHTTPResponse],
         sub_response: web.Response,
     ) -> web.Response:
-        sub_response.text = self.encode_json(response_data)
+        encoded_data = self.encode_json(response_data)
+        if isinstance(encoded_data, bytes):
+            encoded_data = encoded_data.decode()
+        sub_response.text = encoded_data
         sub_response.content_type = "application/json"
 
         return sub_response
