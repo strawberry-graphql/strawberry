@@ -1,0 +1,6 @@
+query RelayList {
+  users {
+    id
+    name
+  }
+}

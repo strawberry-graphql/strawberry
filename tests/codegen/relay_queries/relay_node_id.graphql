@@ -1,5 +1,5 @@
 query GetNodeWithID {
-  node {
+  node(id: "1") {
     id
     ... on User {
       name
