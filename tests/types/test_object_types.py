@@ -426,3 +426,28 @@ def test_annotated_field_with_input():
 
     assert fields["name"].description == "User's name"
     assert fields["email"].description == "User's email"
+
+
+def test_annotated_field_with_input_default_in_schema():
+    """Test that Annotated fields with defaults show up correctly in schema."""
+
+    @strawberry.input
+    class CreateUserInput:
+        name: Annotated[str, strawberry.field(description="User's name")] = "Anonymous"
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def create_user(self, input: CreateUserInput) -> str:
+            return input.name
+
+    schema = strawberry.Schema(query=Query)
+    schema_str = str(schema)
+
+    # The default value should appear in the GraphQL schema
+    assert '= "Anonymous"' in schema_str
+    assert "User's name" in schema_str
+
+    # Instance should use the default
+    instance = CreateUserInput()
+    assert instance.name == "Anonymous"

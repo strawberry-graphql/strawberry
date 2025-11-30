@@ -6,8 +6,8 @@ title: Multiple Strawberry Fields Error
 
 ## Description
 
-This error is thrown when using multiple `strawberry.field()` annotations inside
-an `Annotated` type. For example, the following code will throw this error:
+This error is raised when using multiple `strawberry.field()` annotations inside
+an `Annotated` type. For example, the following code will raise this error:
 
 ```python
 from typing import Annotated

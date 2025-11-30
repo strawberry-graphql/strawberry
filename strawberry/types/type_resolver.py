@@ -169,7 +169,10 @@ def _get_fields(
                         )
                     )
                     strawberry_field_from_annotated.origin = origin
-                    # Note: default is already set on the StrawberryField from field()
+                    # Transfer default from dataclass field if not set in strawberry.field()
+                    if strawberry_field_from_annotated.default is dataclasses.MISSING:
+                        strawberry_field_from_annotated.default = field.default
+                        strawberry_field_from_annotated.default_value = field.default
                     field = strawberry_field_from_annotated  # noqa: PLW2901
                 else:
                     # No StrawberryField in Annotated, create a basic one
