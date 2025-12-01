@@ -30,17 +30,17 @@ class Query:
     @strawberry.field
     def node(self, id: strawberry.ID) -> User:
         """Single node query with variable support."""
-        return User(id="user-1", name="John Doe")
+        return User(id="user-1", name="John Doe")  # pragma: no cover
 
     @strawberry.field
     def users(self) -> list[User]:
         """List of nodes."""
-        return []
+        return []  # pragma: no cover
 
     @strawberry.field
     def post(self) -> Post:
         """Nested node types."""
-        return Post(
+        return Post(  # pragma: no cover
             id="post-1", title="Hello", author=User(id="user-1", name="John Doe")
         )
 
