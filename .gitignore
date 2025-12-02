@@ -194,3 +194,4 @@ $RECYCLE.BIN/
 .vscode/
 .idea/
 node_modules/
+.codspeed/
