@@ -9,6 +9,9 @@ from strawberry.codegen.plugins.python import PythonPlugin
 from strawberry.codegen.plugins.typescript import TypeScriptPlugin
 from strawberry.relay import Node, NodeID
 
+HERE = Path(__file__).parent
+RELAY_QUERIES = list((HERE / "relay_queries").glob("*.graphql"))
+
 
 # Create Node types with NodeID
 @strawberry.type
@@ -50,10 +53,6 @@ def relay_schema() -> strawberry.Schema:
     return strawberry.Schema(query=Query)
 
 
-HERE = Path(__file__).parent
-RELAY_QUERIES = list((HERE / "relay_queries").glob("*.graphql"))
-
-
 @pytest.mark.parametrize(
     ("plugin_class", "plugin_name", "extension"),
     [
@@ -62,7 +61,11 @@ RELAY_QUERIES = list((HERE / "relay_queries").glob("*.graphql"))
     ],
     ids=["python", "typescript"],
 )
-@pytest.mark.parametrize("query", RELAY_QUERIES, ids=[x.name for x in RELAY_QUERIES])
+@pytest.mark.parametrize(
+    "query",
+    RELAY_QUERIES,
+    ids=[x.name for x in (HERE / "relay_queries").glob("*.graphql")],
+)
 def test_relay_codegen(
     query: Path,
     plugin_class: type[QueryCodegenPlugin],
