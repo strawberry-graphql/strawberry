@@ -1,6 +1,15 @@
 CHANGELOG
 =========
 
+0.287.1 - 2025-12-03
+--------------------
+
+Fix mypy plugin issues related to new version of mypy.
+The TypeAlias class has one more required argument "module" in the mypy version >= 1.19.
+
+Contributed by [Anton Zelenov](https://github.com/Ansud) via [PR #4060](https://github.com/strawberry-graphql/strawberry/pull/4060/)
+
+
 0.287.0 - 2025-11-22
 --------------------
 

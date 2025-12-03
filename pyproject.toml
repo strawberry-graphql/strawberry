@@ -1,6 +1,6 @@
 [project]
 name = "strawberry-graphql"
-version = "0.287.0"
+version = "0.287.1"
 description = "A library for creating GraphQL APIs"
 authors = [{ name = "Patrick Arminio", email = "patrick.arminio@gmail.com" }]
 license = { text = "MIT" }
@@ -88,7 +88,7 @@ dev = [
   "pyinstrument (>=4.0.0)",
   "pytest (>=7.2,<8.0)",
   "pytest-asyncio (>=0.20.3)",
-  "pytest-codspeed (>=3.0.0)",
+  "pytest-codspeed (>=4.2.0)",
   "pytest-cov (>=4.0.0,<5.0.0)",
   "pytest-emoji (>=0.2.0,<0.3.0)",
   "pytest-mock (>=3.10,<4.0)",
