@@ -1,0 +1,6 @@
+query RelayAlias {
+  node(id: "1") {
+    nodeId: id
+    userName: name
+  }
+}

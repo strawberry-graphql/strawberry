@@ -1,0 +1,10 @@
+query RelayNestedNodes {
+  post {
+    id
+    title
+    author {
+      id
+      name
+    }
+  }
+}

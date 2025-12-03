@@ -94,6 +94,7 @@ if TYPE_CHECKING:
     )
 
     from strawberry.schema import Schema
+    from strawberry.types.field import StrawberryField
 
     from .types import GraphQLArgumentValue, GraphQLSelection, GraphQLType
 
@@ -120,6 +121,15 @@ class CodegenResult:
 
 class HasSelectionSet(Protocol):
     selection_set: SelectionSetNode | None
+
+
+def _get_field_name(field: StrawberryField) -> str:
+    """Get the field name for codegen.
+
+    Uses the explicit graphql_name if set (e.g., for Relay Node's `id` field),
+    otherwise falls back to the Python name.
+    """
+    return field.graphql_name if field.graphql_name is not None else field.name
 
 
 class QueryCodegenPlugin:
@@ -578,7 +588,9 @@ class QueryCodegen:
                 if field.default is not MISSING:
                     default = _py_to_graphql_value(field.default)
                 type_.fields.append(
-                    GraphQLField(field.name, None, field_type, default_value=default)
+                    GraphQLField(
+                        _get_field_name(field), None, field_type, default_value=default
+                    )
                 )
 
             self._collect_type(type_)
@@ -625,7 +637,9 @@ class QueryCodegen:
         field_type = self._get_field_type(field.type)
 
         return GraphQLField(
-            field.name, selection.alias.value if selection.alias else None, field_type
+            _get_field_name(field),
+            selection.alias.value if selection.alias else None,
+            field_type,
         )
 
     def _unwrap_type(
@@ -707,7 +721,7 @@ class QueryCodegen:
             field_type = wrapper(field_type)
 
         return GraphQLField(
-            selected_field.name,
+            _get_field_name(selected_field),
             selection.alias.value if selection.alias else None,
             field_type,
         )

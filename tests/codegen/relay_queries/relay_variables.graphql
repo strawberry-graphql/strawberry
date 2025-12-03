@@ -1,0 +1,6 @@
+query RelayVariables($nodeId: ID!) {
+  node(id: $nodeId) {
+    id
+    name
+  }
+}
