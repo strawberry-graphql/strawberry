@@ -4200,24 +4200,28 @@ testing = ["coverage (>=6.2)", "hypothesis (>=5.7.1)"]
 
 [[package]]
 name = "pytest-codspeed"
-version = "4.1.0"
+version = "4.2.0"
 description = "Pytest plugin to create CodSpeed benchmarks"
 optional = false
 python-versions = ">=3.9"
 groups = ["dev"]
 files = [
-    {file = "pytest_codspeed-4.1.0-cp310-cp310-manylinux_2_17_aarch64.manylinux2014_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:f269eb3b215f41196fd5abcf0b4151598c13b91db7a1db0a01b1fc8292664e4e"},
-    {file = "pytest_codspeed-4.1.0-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:ab2ee8aae973c1ae5214e6e0bbb0ed2939901561e87175bbf1c29d084b7a1d71"},
-    {file = "pytest_codspeed-4.1.0-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:481f006620e771325d56a6c98daa51b8b47be405d31ddd70268b23f57ec1c064"},
-    {file = "pytest_codspeed-4.1.0-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:175eabef05cc13ecf6cfefc8c9045526a7a3df2242e00587803e4a7d7a3c4572"},
-    {file = "pytest_codspeed-4.1.0-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:e41f65af8da69bad3eac96bb1b64220b183661bf7f8618a9bb96b3f85952459f"},
-    {file = "pytest_codspeed-4.1.0-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:41417ce934f94eee791e0d1982bcb73787369317d1918befcdb0d4cdb0b5ebf8"},
-    {file = "pytest_codspeed-4.1.0-cp313-cp313-manylinux_2_17_aarch64.manylinux2014_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:79cca787f59d1bfb56a976bc287db670c75f76ff90a8727eaeb313369791a76b"},
-    {file = "pytest_codspeed-4.1.0-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:1fec5d44bfa008d3ebd97290478d27db7e4208c3012d093dea7bcc3a83e150ae"},
-    {file = "pytest_codspeed-4.1.0-cp39-cp39-manylinux_2_17_aarch64.manylinux2014_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:98d6a656ecf00c5770377955b3bfdf2879078c9fb089e5d5e069eeb76ea9cae4"},
-    {file = "pytest_codspeed-4.1.0-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:c86bc7cd4911aea26abc6c7dac8e5e5cf8c2c7399949ce0c19449f0031acb6b8"},
-    {file = "pytest_codspeed-4.1.0-py3-none-any.whl", hash = "sha256:91c8b348c29522344e83c5b707ff4152836c10f3e8d673379ed93cee442d6c7d"},
-    {file = "pytest_codspeed-4.1.0.tar.gz", hash = "sha256:86728c7fe12af2ee6ca78673f15091d76ab7346e2f49b11f672e74fc3e5c6cea"},
+    {file = "pytest_codspeed-4.2.0-cp310-cp310-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:609828b03972966b75b9b7416fa2570c4a0f6124f67e02d35cd3658e64312a7b"},
+    {file = "pytest_codspeed-4.2.0-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:23a0c0fbf8bb4de93a3454fd9e5efcdca164c778aaef0a9da4f233d85cb7f5b8"},
+    {file = "pytest_codspeed-4.2.0-cp311-cp311-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:2de87bde9fbc6fd53f0fd21dcf2599c89e0b8948d49f9bad224edce51c47e26b"},
+    {file = "pytest_codspeed-4.2.0-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:95aeb2479ca383f6b18e2cc9ebcd3b03ab184980a59a232aea6f370bbf59a1e3"},
+    {file = "pytest_codspeed-4.2.0-cp312-cp312-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:7d4fefbd4ae401e2c60f6be920a0be50eef0c3e4a1f0a1c83962efd45be38b39"},
+    {file = "pytest_codspeed-4.2.0-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:309b4227f57fcbb9df21e889ea1ae191d0d1cd8b903b698fdb9ea0461dbf1dfe"},
+    {file = "pytest_codspeed-4.2.0-cp313-cp313-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:72aab8278452a6d020798b9e4f82780966adb00f80d27a25d1274272c54630d5"},
+    {file = "pytest_codspeed-4.2.0-cp313-cp313-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:684fcd9491d810ded653a8d38de4835daa2d001645f4a23942862950664273f8"},
+    {file = "pytest_codspeed-4.2.0-cp314-cp314-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:50794dabea6ec90d4288904452051e2febace93e7edf4ca9f2bce8019dd8cd37"},
+    {file = "pytest_codspeed-4.2.0-cp314-cp314-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:a0ebd87f2a99467a1cfd8e83492c4712976e43d353ee0b5f71cbb057f1393aca"},
+    {file = "pytest_codspeed-4.2.0-cp314-cp314t-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:dbbb2d61b85bef8fc7e2193f723f9ac2db388a48259d981bbce96319043e9830"},
+    {file = "pytest_codspeed-4.2.0-cp314-cp314t-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:748411c832147bfc85f805af78a1ab1684f52d08e14aabe22932bbe46c079a5f"},
+    {file = "pytest_codspeed-4.2.0-cp39-cp39-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:238e17abe8f08d8747fa6c7acff34fefd3c40f17a56a7847ca13dc8d6e8c6009"},
+    {file = "pytest_codspeed-4.2.0-cp39-cp39-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:0881a736285f33b9a8894da8fe8e1775aa1a4310226abe5d1f0329228efb680c"},
+    {file = "pytest_codspeed-4.2.0-py3-none-any.whl", hash = "sha256:e81bbb45c130874ef99aca97929d72682733527a49f84239ba575b5cb843bab0"},
+    {file = "pytest_codspeed-4.2.0.tar.gz", hash = "sha256:04b5d0bc5a1851ba1504d46bf9d7dbb355222a69f2cd440d54295db721b331f7"},
 ]
 
 [package.dependencies]

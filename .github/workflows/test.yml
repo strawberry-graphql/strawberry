@@ -90,6 +90,10 @@ jobs:
     # Using this version because CodSpeed doesn't support Ubuntu 24.04 LTS yet
     runs-on: ubuntu-22.04
 
+    permissions:
+      contents: read
+      id-token: write
+
     steps:
       - uses: actions/checkout@v4
       - run: pipx install poetry
@@ -105,10 +109,9 @@ jobs:
         if: steps.setup-python.outputs.cache-hit != 'true'
 
       - name: Run benchmarks
-        uses: CodSpeedHQ/action@v4.1.1
+        uses: CodSpeedHQ/action@v4
         with:
-          token: ${{ secrets.CODSPEED_TOKEN }}
-          mode: instrumentation
+          mode: simulation
           run: poetry run pytest tests/benchmarks --codspeed -p no:codeflash-benchmark
 
   lint:
