@@ -1,4 +1,5 @@
 from collections.abc import Iterable
+from typing import Any
 
 from strawberry.types.arguments import StrawberryArgumentAnnotation
 
@@ -10,6 +11,7 @@ def argument(
     directives: Iterable[object] = (),
     inaccessible: bool = False,
     tags: Iterable[str] | None = (),
+    graphql_type: Any | None = None,
 ) -> StrawberryArgumentAnnotation:
     from strawberry.federation.schema_directives import Inaccessible, Tag
 
@@ -26,6 +28,7 @@ def argument(
         name=name,
         deprecation_reason=deprecation_reason,
         directives=directives,
+        graphql_type=graphql_type,
     )
 
 
