@@ -131,7 +131,7 @@ annotations.
 
 ```python
 BigInt = strawberry.scalar(
-    int, name="BigInt", serialize=lambda v: int(v), parse_value=lambda v: str(v)
+    int, name="BigInt", serialize=lambda v: str(v), parse_value=lambda v: int(v)
 )
 
 

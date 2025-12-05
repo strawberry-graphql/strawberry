@@ -8,15 +8,17 @@ For example:
 
 ```python
 BigInt = strawberry.scalar(
-    int, name="BigInt", serialize=lambda v: int(v), parse_value=lambda v: str(v)
+    int, name="BigInt", serialize=lambda v: str(v), parse_value=lambda v: int(v)
 )
 
 
 @strawberry.type
 class Query:
     @strawberry.field()
-    def a(self, a: int = strawberry.argument(graphql_type=BigInt)) -> str:
-        return "3.4"
+    def username(
+        self, user_id: Annotated[int, strawberry.argument(graphql_type=BigInt)]
+    ) -> str:
+        return "foobar"
 
 
 schema = strawberry.Schema(Query)
@@ -27,7 +29,7 @@ str(
 scalar BigInt
 
 type Query {
-  name(arg: BigInt!): String!
+  username(userId: BigInt!): String!
 }
 """
 ```
