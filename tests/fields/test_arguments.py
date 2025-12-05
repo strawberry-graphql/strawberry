@@ -366,8 +366,8 @@ def test_annotated_argument_with_graphql_type_override():
         def name(
             self,
             arg: Annotated[
-                int,
-                strawberry.argument(graphql_type=BigInt),
+                list[int],
+                strawberry.argument(graphql_type=list[BigInt]),
             ],
         ) -> str:  # pragma: no cover
             return "Name"
@@ -379,7 +379,8 @@ def test_annotated_argument_with_graphql_type_override():
     [argument] = definition.fields[0].arguments
 
     assert argument.python_name == "arg"
-    assert argument.type is BigInt
+    assert isinstance(argument.type, StrawberryList)
+    assert argument.type.of_type is BigInt
 
 
 @pytest.mark.xfail(reason="Can't get field name from argument")
