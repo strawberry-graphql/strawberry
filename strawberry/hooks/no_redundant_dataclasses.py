@@ -20,7 +20,6 @@ class Visitor(ast.NodeVisitor):
         is_raw_dataclass = False
 
         for decorator in node.decorator_list:
-        for decorator in node.decorator_list:
             # Check for strawberry decorators: type, input, interface
             if (
                 isinstance(decorator, ast.Attribute)
