@@ -1,6 +1,21 @@
 CHANGELOG
 =========
 
+0.287.3 - 2025-12-12
+--------------------
+
+Fix compatibility with Python 3.14 when using the Pydantic integration with Pydantic V2.
+
+Previously, importing `strawberry.experimental.pydantic` on Python 3.14 would trigger:
+```
+UserWarning: Core Pydantic V1 functionality isn't compatible with Python 3.14 or greater.
+```
+
+This is now fixed by avoiding `pydantic.v1` imports on Python 3.14+.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #4072](https://github.com/strawberry-graphql/strawberry/pull/4072/)
+
+
 0.287.2 - 2025-12-03
 --------------------
 
