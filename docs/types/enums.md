@@ -135,7 +135,7 @@ Here is result of executed query:
 <Note>
 
 GraphQL types are not a map of name: value, like in python enums. Strawberry
-default to using the name of the members of the enum to create the GraphQL type.
+defaults to using the name of the members of the enum to create the GraphQL type.
 You can use their values instead with `@strawberry.enum(use_enum_values=True)`
 
 </Note>
