@@ -1,4 +1,5 @@
 from enum import Enum, IntEnum
+from typing import List
 
 import pytest
 
@@ -184,19 +185,42 @@ def test_default_enum_reuse() -> None:
     assert definition.fields[1].type is definition.fields[1].type
 
 
-def test_default_enum_with_enum_value() -> None:
+def test_default_enum_with_enum_name_and_value() -> None:
     class Foo(Enum):
-        BAR = "bar"
-        BAZ = strawberry.enum_value("baz")
+        FOO = "foo"
+        BAR = strawberry.enum_value("bar")
+        BAZ = strawberry.enum_value("baz", name="Baz")
 
     @strawberry.type
     class Query:
         @strawberry.field
-        def foo(self, foo: Foo) -> str:
-            return foo.value
+        def foo(self, enums: List[Foo]) -> List[Foo]:
+            assert enums == [Foo.FOO, Foo.BAR, Foo.BAZ]
+            return enums
 
     schema = strawberry.Schema(Query)
-    res = schema.execute_sync("{ foo(foo: BAZ) }")
+    res = schema.execute_sync("{ foo(enums: [FOO, BAR, Baz]) }")
     assert not res.errors
     assert res.data
-    assert res.data["foo"] == "baz"
+    assert res.data["foo"] == ["FOO", "BAR", "Baz"]
+
+
+def test_use_enum_values() -> None:
+    @strawberry.enum(use_enum_values=True)
+    class Foo(Enum):
+        FOO = "foo"
+        BAR = strawberry.enum_value("bar")
+        BAZ = strawberry.enum_value("baz", name="Baz")
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def foo(self, enums: List[Foo]) -> List[Foo]:
+            assert enums == [Foo.FOO, Foo.BAR, Foo.BAZ]
+            return enums
+
+    schema = strawberry.Schema(Query)
+    res = schema.execute_sync("{ foo(enums: [foo, bar, Baz]) }")
+    assert not res.errors
+    assert res.data
+    assert res.data["foo"] == ["foo", "bar", "Baz"]

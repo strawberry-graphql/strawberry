@@ -110,6 +110,7 @@ def _process_enum(
     name: str | None = None,
     description: str | None = None,
     directives: Iterable[object] = (),
+    use_enum_values: bool = False,
 ) -> EnumType:
     if not isinstance(cls, EnumMeta):
         raise ObjectIsNotAnEnumError(cls)
@@ -119,6 +120,7 @@ def _process_enum(
 
     values = []
     for item in cls:  # type: ignore
+        graphql_name = None
         item_value = item.value
         item_name = item.name
         deprecation_reason = None
@@ -135,13 +137,14 @@ def _process_enum(
             cls._value2member_map_[item_value.value] = item
             cls._member_map_[item_name]._value_ = item_value.value
 
-            if item_value.graphql_name:
-                item_name = item_value.graphql_name
-
+            graphql_name = item_value.graphql_name
             item_value = item_value.value
 
+        if not graphql_name:
+            graphql_name = item_value if use_enum_values else item_name
+
         value = EnumValue(
-            item_name,
+            graphql_name,
             item_value,
             deprecation_reason=deprecation_reason,
             directives=item_directives,
@@ -174,6 +177,7 @@ def enum(
     name: str | None = None,
     description: str | None = None,
     directives: Iterable[object] = (),
+    use_enum_values: bool = False,
 ) -> EnumType: ...
 
 
@@ -184,6 +188,7 @@ def enum(
     name: str | None = None,
     description: str | None = None,
     directives: Iterable[object] = (),
+    use_enum_values: bool = False,
 ) -> Callable[[EnumType], EnumType]: ...
 
 
@@ -193,18 +198,20 @@ def enum(
     name: str | None = None,
     description: str | None = None,
     directives: Iterable[object] = (),
+    use_enum_values: bool = False,
 ) -> EnumType | Callable[[EnumType], EnumType]:
     """Annotates an Enum class a GraphQL enum.
 
     GraphQL enums only have names, while Python enums have names and values,
-    Strawberry will use the names of the Python enum as the names of the
-    GraphQL enum values.
+    Strawberry will by default use the names of the Python enum as the names of the
+    GraphQL enum values. You can use the values instead by using use_enum_values=True.
 
     Args:
         cls: The Enum class to be annotated.
         name: The name of the GraphQL enum.
         description: The description of the GraphQL enum.
         directives: The directives to attach to the GraphQL enum.
+        use_enum_values: Whether to use the values of the Python enum instead of the names.
 
     Returns:
         The decorated Enum class.
@@ -235,7 +242,7 @@ def enum(
     """
 
     def wrap(cls: EnumType) -> EnumType:
-        return _process_enum(cls, name, description, directives=directives)
+        return _process_enum(cls, name, description, directives=directives, use_enum_values=use_enum_values)
 
     if not cls:
         return wrap
