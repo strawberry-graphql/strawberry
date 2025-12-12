@@ -242,7 +242,13 @@ def enum(
     """
 
     def wrap(cls: EnumType) -> EnumType:
-        return _process_enum(cls, name, description, directives=directives, use_enum_values=use_enum_values)
+        return _process_enum(
+            cls,
+            name,
+            description,
+            directives=directives,
+            use_enum_values=use_enum_values,
+        )
 
     if not cls:
         return wrap

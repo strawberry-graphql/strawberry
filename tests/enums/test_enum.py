@@ -1,5 +1,4 @@
 from enum import Enum, IntEnum
-from typing import List
 
 import pytest
 
@@ -194,7 +193,7 @@ def test_default_enum_with_enum_name_and_value() -> None:
     @strawberry.type
     class Query:
         @strawberry.field
-        def foo(self, enums: List[Foo]) -> List[Foo]:
+        def foo(self, enums: list[Foo]) -> list[Foo]:
             assert enums == [Foo.FOO, Foo.BAR, Foo.BAZ]
             return enums
 
@@ -215,7 +214,7 @@ def test_use_enum_values() -> None:
     @strawberry.type
     class Query:
         @strawberry.field
-        def foo(self, enums: List[Foo]) -> List[Foo]:
+        def foo(self, enums: list[Foo]) -> list[Foo]:
             assert enums == [Foo.FOO, Foo.BAR, Foo.BAZ]
             return enums
 
