@@ -205,7 +205,7 @@ def test_default_enum_with_enum_name_and_value() -> None:
 
 
 def test_use_enum_values() -> None:
-    @strawberry.enum(use_enum_values=True)
+    @strawberry.enum(mode="value")
     class Foo(Enum):
         FOO = "foo"
         BAR = strawberry.enum_value("bar")
@@ -223,3 +223,16 @@ def test_use_enum_values() -> None:
     assert not res.errors
     assert res.data
     assert res.data["foo"] == ["foo", "bar", "Baz"]
+
+
+def test_invalid_enum_value() -> None:
+    @strawberry.enum(mode="value")
+    class Foo(Enum):
+        FOO = 5  # Should be an string
+
+    @strawberry.type
+    class Query:
+        foo: Foo
+
+    with pytest.raises(TypeError, match=r"Expected name to be a string."):
+        strawberry.Schema(Query)

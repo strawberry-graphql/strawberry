@@ -1,7 +1,7 @@
 import dataclasses
 from collections.abc import Callable, Iterable, Mapping
 from enum import EnumMeta
-from typing import TYPE_CHECKING, Any, TypeGuard, TypeVar, overload
+from typing import TYPE_CHECKING, Any, Literal, TypeGuard, TypeVar, overload
 
 from strawberry.exceptions import ObjectIsNotAnEnumError
 from strawberry.types.base import (
@@ -103,6 +103,7 @@ def enum_value(
 
 
 EnumType = TypeVar("EnumType", bound=EnumMeta)
+EnumMode = Literal["key", "value"]
 
 
 def _process_enum(
@@ -110,7 +111,7 @@ def _process_enum(
     name: str | None = None,
     description: str | None = None,
     directives: Iterable[object] = (),
-    use_enum_values: bool = False,
+    mode: EnumMode = "key",
 ) -> EnumType:
     if not isinstance(cls, EnumMeta):
         raise ObjectIsNotAnEnumError(cls)
@@ -141,7 +142,12 @@ def _process_enum(
             item_value = item_value.value
 
         if not graphql_name:
-            graphql_name = item_value if use_enum_values else item_name
+            if mode == "key":
+                graphql_name = item_name
+            elif mode == "value":
+                graphql_name = item_value
+            else:
+                raise ValueError(f"Invalid mode: {mode}")
 
         value = EnumValue(
             graphql_name,
@@ -177,7 +183,7 @@ def enum(
     name: str | None = None,
     description: str | None = None,
     directives: Iterable[object] = (),
-    use_enum_values: bool = False,
+    mode: EnumMode = "key",
 ) -> EnumType: ...
 
 
@@ -188,7 +194,7 @@ def enum(
     name: str | None = None,
     description: str | None = None,
     directives: Iterable[object] = (),
-    use_enum_values: bool = False,
+    mode: EnumMode = "key",
 ) -> Callable[[EnumType], EnumType]: ...
 
 
@@ -198,20 +204,20 @@ def enum(
     name: str | None = None,
     description: str | None = None,
     directives: Iterable[object] = (),
-    use_enum_values: bool = False,
+    mode: EnumMode = "key",
 ) -> EnumType | Callable[[EnumType], EnumType]:
     """Annotates an Enum class a GraphQL enum.
 
     GraphQL enums only have names, while Python enums have names and values,
     Strawberry will by default use the names of the Python enum as the names of the
-    GraphQL enum values. You can use the values instead by using use_enum_values=True.
+    GraphQL enum values. You can use the values instead by using mode="value".
 
     Args:
         cls: The Enum class to be annotated.
         name: The name of the GraphQL enum.
         description: The description of the GraphQL enum.
         directives: The directives to attach to the GraphQL enum.
-        use_enum_values: Whether to use the values of the Python enum instead of the names.
+        mode: Whether to use the names (key) or values of the Python enums in GraphQL.
 
     Returns:
         The decorated Enum class.
@@ -247,7 +253,7 @@ def enum(
             name,
             description,
             directives=directives,
-            use_enum_values=use_enum_values,
+            mode=mode,
         )
 
     if not cls:
