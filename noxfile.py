@@ -158,7 +158,7 @@ def test_pydantic(session: Session, gql_core: str) -> None:
 def test_pydantic_v2(session: Session, gql_core: str) -> None:
     session.run_always("poetry", "install", "--without=integrations", external=True)
 
-    session._session.install("pydantic~=2.12")  # type: ignore
+    session._session.install("pydantic>=2.2")  # type: ignore
     _install_gql_core(session, gql_core)
     session.run(
         "pytest",
