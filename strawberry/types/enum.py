@@ -103,7 +103,7 @@ def enum_value(
 
 
 EnumType = TypeVar("EnumType", bound=EnumMeta)
-GraphqlEnumNameMode = Literal["key", "value"]
+GraphqlEnumNameFrom = Literal["key", "value"]
 
 
 def _process_enum(
@@ -111,7 +111,7 @@ def _process_enum(
     name: str | None = None,
     description: str | None = None,
     directives: Iterable[object] = (),
-    graphql_name_from: GraphqlEnumNameMode = "key",
+    graphql_name_from: GraphqlEnumNameFrom = "key",
 ) -> EnumType:
     if not isinstance(cls, EnumMeta):
         raise ObjectIsNotAnEnumError(cls)
@@ -183,7 +183,7 @@ def enum(
     name: str | None = None,
     description: str | None = None,
     directives: Iterable[object] = (),
-    graphql_name_from: GraphqlEnumNameMode = "key",
+    graphql_name_from: GraphqlEnumNameFrom = "key",
 ) -> EnumType: ...
 
 
@@ -194,7 +194,7 @@ def enum(
     name: str | None = None,
     description: str | None = None,
     directives: Iterable[object] = (),
-    graphql_name_from: GraphqlEnumNameMode = "key",
+    graphql_name_from: GraphqlEnumNameFrom = "key",
 ) -> Callable[[EnumType], EnumType]: ...
 
 
@@ -204,7 +204,7 @@ def enum(
     name: str | None = None,
     description: str | None = None,
     directives: Iterable[object] = (),
-    graphql_name_from: GraphqlEnumNameMode = "key",
+    graphql_name_from: GraphqlEnumNameFrom = "key",
 ) -> EnumType | Callable[[EnumType], EnumType]:
     """Annotates an Enum class a GraphQL enum.
 
