@@ -205,7 +205,7 @@ def test_default_enum_with_enum_name_and_value() -> None:
 
 
 def test_use_enum_values() -> None:
-    @strawberry.enum(mode="value")
+    @strawberry.enum(graphql_name_from="value")
     class Foo(Enum):
         FOO = "foo"
         BAR = strawberry.enum_value("bar")
@@ -226,7 +226,7 @@ def test_use_enum_values() -> None:
 
 
 def test_invalid_enum_value() -> None:
-    @strawberry.enum(mode="value")
+    @strawberry.enum(graphql_name_from="value")
     class Foo(Enum):
         FOO = 5  # Should be an string
 

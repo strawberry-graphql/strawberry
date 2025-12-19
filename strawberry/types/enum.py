@@ -103,7 +103,7 @@ def enum_value(
 
 
 EnumType = TypeVar("EnumType", bound=EnumMeta)
-EnumMode = Literal["key", "value"]
+GraphqlEnumNameMode = Literal["key", "value"]
 
 
 def _process_enum(
@@ -111,7 +111,7 @@ def _process_enum(
     name: str | None = None,
     description: str | None = None,
     directives: Iterable[object] = (),
-    mode: EnumMode = "key",
+    graphql_name_from: GraphqlEnumNameMode = "key",
 ) -> EnumType:
     if not isinstance(cls, EnumMeta):
         raise ObjectIsNotAnEnumError(cls)
@@ -142,12 +142,12 @@ def _process_enum(
             item_value = item_value.value
 
         if not graphql_name:
-            if mode == "key":
+            if graphql_name_from == "key":
                 graphql_name = item_name
-            elif mode == "value":
-                graphql_name = item_value
+            elif graphql_name_from == "value":
+                graphql_name = item_value or "empty"
             else:
-                raise ValueError(f"Invalid mode: {mode}")
+                raise ValueError(f"Invalid mode: {graphql_name_from}")
 
         value = EnumValue(
             graphql_name,
@@ -183,7 +183,7 @@ def enum(
     name: str | None = None,
     description: str | None = None,
     directives: Iterable[object] = (),
-    mode: EnumMode = "key",
+    graphql_name_from: GraphqlEnumNameMode = "key",
 ) -> EnumType: ...
 
 
@@ -194,7 +194,7 @@ def enum(
     name: str | None = None,
     description: str | None = None,
     directives: Iterable[object] = (),
-    mode: EnumMode = "key",
+    graphql_name_from: GraphqlEnumNameMode = "key",
 ) -> Callable[[EnumType], EnumType]: ...
 
 
@@ -204,7 +204,7 @@ def enum(
     name: str | None = None,
     description: str | None = None,
     directives: Iterable[object] = (),
-    mode: EnumMode = "key",
+    graphql_name_from: GraphqlEnumNameMode = "key",
 ) -> EnumType | Callable[[EnumType], EnumType]:
     """Annotates an Enum class a GraphQL enum.
 
@@ -253,7 +253,7 @@ def enum(
             name,
             description,
             directives=directives,
-            mode=mode,
+            graphql_name_from=graphql_name_from,
         )
 
     if not cls:
