@@ -1,9 +1,9 @@
 from inline_snapshot import snapshot
 
-from .utils.marks import requires_mypy, requires_pyright, skip_on_windows
+from .utils.marks import requires_mypy, requires_pyright, requires_ty, skip_on_windows
 from .utils.typecheck import Result, typecheck
 
-pytestmark = [skip_on_windows, requires_pyright, requires_mypy]
+pytestmark = [skip_on_windows, requires_pyright, requires_mypy, requires_ty]
 
 
 CODE = """
@@ -70,6 +70,34 @@ def test():
             Result(
                 type="note",
                 message='Revealed type is "def (self: mypy_test.User, *, name: builtins.str)"',
+                line=18,
+                column=13,
+            ),
+        ]
+    )
+    assert results.ty == snapshot(
+        [
+            Result(
+                type="error",
+                message="No argument provided for required parameter `name`",
+                line=15,
+                column=1,
+            ),
+            Result(
+                type="error",
+                message="Argument `n` does not match any known parameter",
+                line=15,
+                column=6,
+            ),
+            Result(
+                type="information",
+                message="Revealed type: `<class 'User'>`",
+                line=17,
+                column=13,
+            ),
+            Result(
+                type="information",
+                message="Revealed type: `(self: User, *, name: str) -> None`",
                 line=18,
                 column=13,
             ),

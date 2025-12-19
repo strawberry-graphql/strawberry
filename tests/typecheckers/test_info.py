@@ -1,9 +1,9 @@
 from inline_snapshot import snapshot
 
-from .utils.marks import requires_mypy, requires_pyright, skip_on_windows
+from .utils.marks import requires_mypy, requires_pyright, requires_ty, skip_on_windows
 from .utils.typecheck import Result, typecheck
 
-pytestmark = [skip_on_windows, requires_pyright, requires_mypy]
+pytestmark = [skip_on_windows, requires_pyright, requires_mypy, requires_ty]
 
 
 def test_with_params():
@@ -37,6 +37,22 @@ def example(info: strawberry.Info[None, None]) -> None:
         [
             Result(type="note", message='Revealed type is "None"', line=5, column=17),
             Result(type="note", message='Revealed type is "None"', line=6, column=17),
+        ]
+    )
+    assert results.ty == snapshot(
+        [
+            Result(
+                type="information",
+                message="Revealed type: `None`",
+                line=5,
+                column=17,
+            ),
+            Result(
+                type="information",
+                message="Revealed type: `None`",
+                line=6,
+                column=17,
+            ),
         ]
     )
 
@@ -74,6 +90,22 @@ def example(info: strawberry.Info[None]) -> None:
             Result(type="note", message='Revealed type is "Any"', line=6, column=17),
         ]
     )
+    assert results.ty == snapshot(
+        [
+            Result(
+                type="information",
+                message="Revealed type: `None`",
+                line=5,
+                column=17,
+            ),
+            Result(
+                type="information",
+                message="Revealed type: `Any`",
+                line=6,
+                column=17,
+            ),
+        ]
+    )
 
 
 def test_without_params():
@@ -107,5 +139,21 @@ def example(info: strawberry.Info) -> None:
         [
             Result(type="note", message='Revealed type is "Any"', line=5, column=17),
             Result(type="note", message='Revealed type is "Any"', line=6, column=17),
+        ]
+    )
+    assert results.ty == snapshot(
+        [
+            Result(
+                type="information",
+                message="Revealed type: `Any`",
+                line=5,
+                column=17,
+            ),
+            Result(
+                type="information",
+                message="Revealed type: `Any`",
+                line=6,
+                column=17,
+            ),
         ]
     )

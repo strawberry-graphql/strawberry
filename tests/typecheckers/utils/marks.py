@@ -12,6 +12,10 @@ def mypy_exists() -> bool:
     return shutil.which("mypy") is not None
 
 
+def ty_exists() -> bool:
+    return shutil.which("ty") is not None
+
+
 skip_on_windows = pytest.mark.skipif(
     sys.platform == "win32",
     reason="Do not run pyright on windows due to path issues",
@@ -25,4 +29,9 @@ requires_pyright = pytest.mark.skipif(
 requires_mypy = pytest.mark.skipif(
     not mypy_exists(),
     reason="These tests require mypy",
+)
+
+requires_ty = pytest.mark.skipif(
+    not ty_exists(),
+    reason="These tests require ty",
 )
