@@ -179,6 +179,7 @@ def tests_typecheckers(session: Session) -> None:
     session.install("pyright")
     session.install("pydantic")
     session.install("mypy")
+    session.install("ty")
 
     session.run(
         "pytest",

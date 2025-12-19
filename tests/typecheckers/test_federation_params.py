@@ -1,9 +1,9 @@
 from inline_snapshot import snapshot
 
-from .utils.marks import requires_mypy, requires_pyright, skip_on_windows
+from .utils.marks import requires_mypy, requires_pyright, requires_ty, skip_on_windows
 from .utils.typecheck import Result, typecheck
 
-pytestmark = [skip_on_windows, requires_pyright, requires_mypy]
+pytestmark = [skip_on_windows, requires_pyright, requires_mypy, requires_ty]
 
 
 CODE = """
@@ -42,5 +42,21 @@ def test():
                 line=11,
                 column=1,
             )
+        ]
+    )
+    assert results.ty == snapshot(
+        [
+            Result(
+                type="error",
+                message="No argument provided for required parameter `name`",
+                line=11,
+                column=1,
+            ),
+            Result(
+                type="error",
+                message="Argument `n` does not match any known parameter",
+                line=11,
+                column=11,
+            ),
         ]
     )

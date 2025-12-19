@@ -6,20 +6,24 @@ from dataclasses import dataclass
 from .mypy import run_mypy
 from .pyright import run_pyright
 from .result import Result
+from .ty import run_ty
 
 
 @dataclass
 class TypecheckResult:
     pyright: list[Result]
     mypy: list[Result]
+    ty: list[Result]
 
 
 def typecheck(code: str, strict: bool = True) -> TypecheckResult:
     with concurrent.futures.ThreadPoolExecutor() as executor:
         pyright_future = executor.submit(run_pyright, code, strict=strict)
         mypy_future = executor.submit(run_mypy, code, strict=strict)
+        ty_future = executor.submit(run_ty, code, strict=strict)
 
         pyright_results = pyright_future.result()
         mypy_results = mypy_future.result()
+        ty_results = ty_future.result()
 
-    return TypecheckResult(pyright=pyright_results, mypy=mypy_results)
+    return TypecheckResult(pyright=pyright_results, mypy=mypy_results, ty=ty_results)

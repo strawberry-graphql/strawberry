@@ -1,9 +1,9 @@
 from inline_snapshot import snapshot
 
-from .utils.marks import requires_mypy, requires_pyright, skip_on_windows
+from .utils.marks import requires_mypy, requires_pyright, requires_ty, skip_on_windows
 from .utils.typecheck import Result, typecheck
 
-pytestmark = [skip_on_windows, requires_pyright, requires_mypy]
+pytestmark = [skip_on_windows, requires_pyright, requires_mypy, requires_ty]
 
 
 CODE = """
@@ -89,6 +89,64 @@ def test():
             Result(type="note", message='Revealed type is "Any"', line=27, column=13),
         ]
     )
+    assert results.ty == snapshot(
+        [
+            Result(
+                type="error",
+                message="Variable of type `NewType` is not allowed in a type expression",
+                line=9,
+                column=11,
+            ),
+            Result(
+                type="error",
+                message="Variable of type `NewType` is not allowed in a type expression",
+                line=10,
+                column=13,
+            ),
+            Result(
+                type="error",
+                message="Variable of type `NewType` is not allowed in a type expression",
+                line=11,
+                column=13,
+            ),
+            Result(
+                type="error",
+                message="Variable of type `NewType` is not allowed in a type expression",
+                line=12,
+                column=13,
+            ),
+            Result(
+                type="information",
+                message="Revealed type: `ID`",
+                line=23,
+                column=13,
+            ),
+            Result(
+                type="information",
+                message="Revealed type: `Unknown`",
+                line=24,
+                column=13,
+            ),
+            Result(
+                type="information",
+                message="Revealed type: `Unknown`",
+                line=25,
+                column=13,
+            ),
+            Result(
+                type="information",
+                message="Revealed type: `Unknown`",
+                line=26,
+                column=13,
+            ),
+            Result(
+                type="information",
+                message="Revealed type: `Unknown`",
+                line=27,
+                column=13,
+            ),
+        ]
+    )
 
 
 CODE_SCHEMA_OVERRIDES = """
@@ -133,5 +191,15 @@ def test_schema_overrides():
                 line=17,
                 column=13,
             )
+        ]
+    )
+    assert results.ty == snapshot(
+        [
+            Result(
+                type="information",
+                message="Revealed type: `<class 'datetime'>`",
+                line=17,
+                column=13,
+            ),
         ]
     )

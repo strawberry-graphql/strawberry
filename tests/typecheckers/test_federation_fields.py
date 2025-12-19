@@ -1,9 +1,9 @@
 from inline_snapshot import snapshot
 
-from .utils.marks import requires_mypy, requires_pyright, skip_on_windows
+from .utils.marks import requires_mypy, requires_pyright, requires_ty, skip_on_windows
 from .utils.typecheck import Result, typecheck
 
-pytestmark = [skip_on_windows, requires_pyright, requires_mypy]
+pytestmark = [skip_on_windows, requires_pyright, requires_mypy, requires_ty]
 
 CODE = """
 import strawberry
@@ -121,6 +121,58 @@ def test():
             Result(
                 type="note",
                 message='Revealed type is "def (self: mypy_test.UserInput, *, age: builtins.int, name: builtins.str)"',
+                line=33,
+                column=13,
+            ),
+        ]
+    )
+    assert results.ty == snapshot(
+        [
+            Result(
+                type="error",
+                message="No argument provided for required parameter `name`",
+                line=24,
+                column=1,
+            ),
+            Result(
+                type="error",
+                message="Argument `n` does not match any known parameter",
+                line=24,
+                column=6,
+            ),
+            Result(
+                type="error",
+                message="No argument provided for required parameter `name`",
+                line=27,
+                column=1,
+            ),
+            Result(
+                type="error",
+                message="Argument `n` does not match any known parameter",
+                line=27,
+                column=11,
+            ),
+            Result(
+                type="information",
+                message="Revealed type: `<class 'User'>`",
+                line=29,
+                column=13,
+            ),
+            Result(
+                type="information",
+                message="Revealed type: `(self: User, *, age: int, name: str) -> None`",
+                line=30,
+                column=13,
+            ),
+            Result(
+                type="information",
+                message="Revealed type: `<class 'UserInput'>`",
+                line=32,
+                column=13,
+            ),
+            Result(
+                type="information",
+                message="Revealed type: `(self: UserInput, *, age: int, name: str) -> None`",
                 line=33,
                 column=13,
             ),

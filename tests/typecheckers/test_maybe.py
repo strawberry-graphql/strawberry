@@ -1,9 +1,9 @@
 from inline_snapshot import snapshot
 
-from .utils.marks import requires_mypy, requires_pyright, skip_on_windows
+from .utils.marks import requires_mypy, requires_pyright, requires_ty, skip_on_windows
 from .utils.typecheck import Result, typecheck
 
-pytestmark = [skip_on_windows, requires_pyright, requires_mypy]
+pytestmark = [skip_on_windows, requires_pyright, requires_mypy, requires_ty]
 
 
 CODE = """
@@ -55,6 +55,22 @@ def test_maybe() -> None:
             Result(
                 type="note",
                 message='Revealed type is "strawberry.types.maybe.Some[builtins.str]"',
+                line=15,
+                column=17,
+            ),
+        ]
+    )
+    assert result.ty == snapshot(
+        [
+            Result(
+                type="information",
+                message="Revealed type: `Some[str] | None`",
+                line=12,
+                column=13,
+            ),
+            Result(
+                type="information",
+                message="Revealed type: `Some[str] & ~AlwaysFalsy`",
                 line=15,
                 column=17,
             ),
