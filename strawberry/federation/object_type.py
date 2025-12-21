@@ -14,6 +14,7 @@ from strawberry.types.object_type import type as base_type
 from strawberry.types.unset import UNSET
 
 from .field import field
+from .types import FieldSet
 
 if TYPE_CHECKING:
     from .schema_directives import Key
@@ -56,7 +57,7 @@ def _impl_type(
     directives = list(directives)
 
     directives.extend(
-        Key(fields=key, resolvable=UNSET) if isinstance(key, str) else key
+        Key(fields=FieldSet(key), resolvable=UNSET) if isinstance(key, str) else key
         for key in keys
     )
 

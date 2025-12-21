@@ -1,11 +1,13 @@
 from enum import Enum
+from typing import NewType
 
 from strawberry.types.enum import enum
-from strawberry.types.scalar import scalar
 
-FieldSet = scalar(str, name="_FieldSet")
+FieldSet = NewType("FieldSet", str)
+"""Represents a selection set for federation @requires, @provides, @key directives."""
 
-LinkImport = scalar(object, name="link__Import")
+LinkImport = NewType("LinkImport", object)
+"""Represents an import for the @link directive."""
 
 
 @enum(name="link__Purpose")

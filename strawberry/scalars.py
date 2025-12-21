@@ -1,9 +1,6 @@
 from __future__ import annotations
 
-import base64
 from typing import TYPE_CHECKING, Any, NewType
-
-from strawberry.types.scalar import scalar
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
@@ -14,47 +11,17 @@ if TYPE_CHECKING:
 ID = NewType("ID", str)
 """Represent the GraphQL `ID` scalar type."""
 
-JSON = scalar(
-    NewType("JSON", object),  # mypy doesn't like `NewType("name", Any)`
-    description=(
-        "The `JSON` scalar type represents JSON values as specified by "
-        "[ECMA-404]"
-        "(https://ecma-international.org/wp-content/uploads/ECMA-404_2nd_edition_december_2017.pdf)."
-    ),
-    specified_by_url=(
-        "https://ecma-international.org/wp-content/uploads/ECMA-404_2nd_edition_december_2017.pdf"
-    ),
-    serialize=lambda v: v,
-    parse_value=lambda v: v,
-)
+JSON = NewType("JSON", object)
+"""Represent the GraphQL `JSON` scalar type for arbitrary JSON values."""
 
-Base16 = scalar(
-    NewType("Base16", bytes),
-    description="Represents binary data as Base16-encoded (hexadecimal) strings.",
-    specified_by_url="https://datatracker.ietf.org/doc/html/rfc4648.html#section-8",
-    serialize=lambda v: base64.b16encode(v).decode("utf-8"),
-    parse_value=lambda v: base64.b16decode(v.encode("utf-8"), casefold=True),
-)
+Base16 = NewType("Base16", bytes)
+"""Represent binary data as Base16-encoded (hexadecimal) strings."""
 
-Base32 = scalar(
-    NewType("Base32", bytes),
-    description=(
-        "Represents binary data as Base32-encoded strings, using the standard alphabet."
-    ),
-    specified_by_url=("https://datatracker.ietf.org/doc/html/rfc4648.html#section-6"),
-    serialize=lambda v: base64.b32encode(v).decode("utf-8"),
-    parse_value=lambda v: base64.b32decode(v.encode("utf-8"), casefold=True),
-)
+Base32 = NewType("Base32", bytes)
+"""Represent binary data as Base32-encoded strings."""
 
-Base64 = scalar(
-    NewType("Base64", bytes),
-    description=(
-        "Represents binary data as Base64-encoded strings, using the standard alphabet."
-    ),
-    specified_by_url="https://datatracker.ietf.org/doc/html/rfc4648.html#section-4",
-    serialize=lambda v: base64.b64encode(v).decode("utf-8"),
-    parse_value=lambda v: base64.b64decode(v.encode("utf-8")),
-)
+Base64 = NewType("Base64", bytes)
+"""Represent binary data as Base64-encoded strings."""
 
 
 def is_scalar(
@@ -67,4 +34,11 @@ def is_scalar(
     return hasattr(annotation, "_scalar_definition")
 
 
-__all__ = ["ID", "JSON", "Base16", "Base32", "Base64", "is_scalar"]
+__all__ = [
+    "ID",
+    "JSON",
+    "Base16",
+    "Base32",
+    "Base64",
+    "is_scalar",
+]
