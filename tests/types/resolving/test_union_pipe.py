@@ -1,3 +1,4 @@
+import datetime
 import typing
 from typing import Union
 
@@ -6,7 +7,6 @@ import pytest
 import strawberry
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.exceptions.invalid_union_type import InvalidUnionTypeError
-from strawberry.schema.types.base_scalars import Date, DateTime
 from strawberry.types.base import StrawberryOptional
 from strawberry.types.union import StrawberryUnion
 
@@ -100,4 +100,8 @@ def test_raises_error_when_piping_with_scalar():
     match="Type `date` cannot be used in a GraphQL Union",
 )
 def test_raises_error_when_piping_with_custom_scalar():
-    StrawberryAnnotation(Date | DateTime)
+    @strawberry.type
+    class Query:
+        field: datetime.date | datetime.datetime
+
+    strawberry.Schema(query=Query)
