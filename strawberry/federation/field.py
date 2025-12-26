@@ -11,6 +11,8 @@ from typing import (
 from strawberry.types.field import field as base_field
 from strawberry.types.unset import UNSET
 
+from .types import FieldSet
+
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Mapping, Sequence
     from typing import Literal
@@ -238,10 +240,10 @@ def field(
         directives.append(Policy(policies=policy))
 
     if provides:
-        directives.append(Provides(fields=" ".join(provides)))
+        directives.append(Provides(fields=FieldSet(" ".join(provides))))
 
     if requires:
-        directives.append(Requires(fields=" ".join(requires)))
+        directives.append(Requires(fields=FieldSet(" ".join(requires))))
 
     if requires_scopes:
         directives.append(RequiresScopes(scopes=requires_scopes))

@@ -237,7 +237,17 @@ def enum_hook(ctx: DynamicClassDefContext) -> None:
 
 
 def scalar_hook(ctx: DynamicClassDefContext) -> None:
+    # If there are no positional arguments, this is the new scalar(name="...")
+    # pattern which returns a ScalarDefinition - no mypy magic needed
+    if not ctx.call.args:
+        return
+
     first_argument = ctx.call.args[0]
+
+    # If the first argument is a string (StrExpr), this is scalar(name="...")
+    # which returns a ScalarDefinition - no mypy magic needed
+    if not isinstance(first_argument, (NameExpr, CallExpr, IndexExpr, MemberExpr)):
+        return
 
     if isinstance(first_argument, NameExpr):
         if not first_argument.node:

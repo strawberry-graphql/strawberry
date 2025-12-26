@@ -7,7 +7,7 @@ from operator import methodcaller
 import dateutil.parser
 from graphql import GraphQLError
 
-from strawberry.types.scalar import scalar
+from strawberry.types.scalar import ScalarDefinition
 
 
 def wrap_parser(parser: Callable, type_: str) -> Callable:
@@ -32,41 +32,54 @@ def parse_decimal(value: object) -> decimal.Decimal:
 isoformat = methodcaller("isoformat")
 
 
-Date = scalar(
-    datetime.date,
+DateDefinition: ScalarDefinition = ScalarDefinition(
     name="Date",
     description="Date (isoformat)",
+    specified_by_url=None,
     serialize=isoformat,
     parse_value=wrap_parser(datetime.date.fromisoformat, "Date"),
+    parse_literal=None,
+    origin=datetime.date,
 )
-DateTime = scalar(
-    datetime.datetime,
+
+DateTimeDefinition: ScalarDefinition = ScalarDefinition(
     name="DateTime",
     description="Date with time (isoformat)",
+    specified_by_url=None,
     serialize=isoformat,
     parse_value=wrap_parser(dateutil.parser.isoparse, "DateTime"),
+    parse_literal=None,
+    origin=datetime.datetime,
 )
-Time = scalar(
-    datetime.time,
+
+TimeDefinition: ScalarDefinition = ScalarDefinition(
     name="Time",
     description="Time (isoformat)",
+    specified_by_url=None,
     serialize=isoformat,
     parse_value=wrap_parser(datetime.time.fromisoformat, "Time"),
+    parse_literal=None,
+    origin=datetime.time,
 )
 
-Decimal = scalar(
-    decimal.Decimal,
+DecimalDefinition: ScalarDefinition = ScalarDefinition(
     name="Decimal",
     description="Decimal (fixed-point)",
+    specified_by_url=None,
     serialize=str,
     parse_value=parse_decimal,
+    parse_literal=None,
+    origin=decimal.Decimal,
 )
 
-UUID = scalar(
-    uuid.UUID,
+UUIDDefinition: ScalarDefinition = ScalarDefinition(
     name="UUID",
+    description=None,
+    specified_by_url=None,
     serialize=str,
     parse_value=wrap_parser(uuid.UUID, "UUID"),
+    parse_literal=None,
+    origin=uuid.UUID,
 )
 
 
@@ -75,12 +88,22 @@ def _verify_void(x: None) -> None:
         raise ValueError(f"Expected 'None', got '{x}'")
 
 
-Void = scalar(
-    type(None),
+VoidDefinition: ScalarDefinition = ScalarDefinition(
     name="Void",
+    description="Represents NULL values",
+    specified_by_url=None,
     serialize=_verify_void,
     parse_value=_verify_void,
-    description="Represents NULL values",
+    parse_literal=None,
+    origin=type(None),
 )
 
-__all__ = ["UUID", "Date", "DateTime", "Decimal", "Time", "Void"]
+
+__all__ = [
+    "DateDefinition",
+    "DateTimeDefinition",
+    "DecimalDefinition",
+    "TimeDefinition",
+    "UUIDDefinition",
+    "VoidDefinition",
+]
