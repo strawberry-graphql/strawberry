@@ -13,8 +13,8 @@ from typing import (
     overload,
 )
 
+from cross_web import AsyncHTTPRequestAdapter, HTTPException
 from graphql import GraphQLError
-from lia import AsyncHTTPRequestAdapter, HTTPException
 
 from strawberry.exceptions import MissingQueryError
 from strawberry.file_uploads.utils import replace_placeholders_with_files

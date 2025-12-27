@@ -1071,6 +1071,21 @@ files = [
 ]
 
 [[package]]
+name = "cross-web"
+version = "0.2.3"
+description = "A library for working with web frameworks"
+optional = false
+python-versions = ">=3.9"
+groups = ["main"]
+files = [
+    {file = "cross_web-0.2.3-py3-none-any.whl", hash = "sha256:6fe6cd5c3d93f1502478e0b110e4a1193beb0f0f6d2b458a45cf206a63dd1fde"},
+    {file = "cross_web-0.2.3.tar.gz", hash = "sha256:ef6e53cf40d594c97314576ce67dc70695530f22850cc5185df6458a3353229a"},
+]
+
+[package.dependencies]
+typing-extensions = ">=4.14.0"
+
+[[package]]
 name = "crosshair-tool"
 version = "0.0.97"
 description = "Analyze Python code for correctness using symbolic execution."
@@ -2353,21 +2368,6 @@ doc = ["furo", "jaraco.packaging (>=9.3)", "jaraco.tidelift (>=1.4)", "rst.linke
 enabler = ["pytest-enabler (>=2.2)"]
 test = ["pyfakefs", "pytest (>=6,!=8.1.*)"]
 type = ["pygobject-stubs", "pytest-mypy", "shtab", "types-pywin32"]
-
-[[package]]
-name = "lia-web"
-version = "0.2.3"
-description = "A library for working with web frameworks"
-optional = false
-python-versions = ">=3.9"
-groups = ["main"]
-files = [
-    {file = "lia_web-0.2.3-py3-none-any.whl", hash = "sha256:237c779c943cd4341527fc0adfcc3d8068f992ee051f4ef059b8474ee087f641"},
-    {file = "lia_web-0.2.3.tar.gz", hash = "sha256:ccc9d24cdc200806ea96a20b22fb68f4759e6becdb901bd36024df7921e848d7"},
-]
-
-[package.dependencies]
-typing-extensions = ">=4.14.0"
 
 [[package]]
 name = "libcst"
@@ -6299,4 +6299,4 @@ sanic = ["sanic"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.10,<4.0"
-content-hash = "0c455ff7369362097f1a56fd7a0ca3e7be023f2f93559bf2a761aa72deca9087"
+content-hash = "eeb966c00de53ef962ac753fc788273db8368ac7740f87c8542350d3ab0a4429"

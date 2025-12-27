@@ -10,11 +10,11 @@ from typing import (
     cast,
 )
 
+from cross_web import HTTPException, StarletteRequestAdapter
 from fastapi import APIRouter, Depends, params
 from fastapi.datastructures import Default
 from fastapi.routing import APIRoute
 from fastapi.utils import generate_unique_id
-from lia import HTTPException, StarletteRequestAdapter
 from starlette import status
 from starlette.background import BackgroundTasks  # noqa: TC002
 from starlette.requests import HTTPConnection, Request
