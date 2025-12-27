@@ -7,6 +7,7 @@ from typing import Annotated, Optional, TypeVar
 import pytest
 
 import strawberry
+from strawberry.exceptions import MultipleStrawberryFieldsError
 from strawberry.types.base import get_object_definition, has_object_definition
 from strawberry.types.field import StrawberryField
 
@@ -233,3 +234,220 @@ def test_has_object_definition_returns_false_for_scalar():
     from strawberry.scalars import JSON
 
     assert has_object_definition(JSON) is False
+
+
+def test_annotated_field_with_description():
+    @strawberry.type
+    class Query:
+        name: Annotated[str, strawberry.field(description="The name")]
+
+    definition = get_object_definition(Query)
+    field = definition.fields[0]
+
+    assert field.python_name == "name"
+    assert field.description == "The name"
+    assert field.type is str
+
+
+def test_annotated_field_with_graphql_name():
+    @strawberry.type
+    class Query:
+        name: Annotated[str, strawberry.field(name="fullName")]
+
+    definition = get_object_definition(Query)
+    field = definition.fields[0]
+
+    assert field.python_name == "name"
+    assert field.graphql_name == "fullName"
+    assert field.type is str
+
+
+def test_annotated_field_with_deprecation_reason():
+    @strawberry.type
+    class Query:
+        name: Annotated[
+            str, strawberry.field(deprecation_reason="Use fullName instead")
+        ]
+
+    definition = get_object_definition(Query)
+    field = definition.fields[0]
+
+    assert field.python_name == "name"
+    assert field.deprecation_reason == "Use fullName instead"
+    assert field.type is str
+
+
+def test_annotated_field_optional():
+    @strawberry.type
+    class Query:
+        name: Annotated[str | None, strawberry.field(description="Optional name")]
+
+    definition = get_object_definition(Query)
+    field = definition.fields[0]
+
+    assert field.python_name == "name"
+    assert field.description == "Optional name"
+    assert field.type == Optional[str]
+
+
+def test_annotated_field_with_default_value():
+    @strawberry.type
+    class Query:
+        name: Annotated[str, strawberry.field(description="The name")] = "default"
+
+    definition = get_object_definition(Query)
+    field = definition.fields[0]
+
+    assert field.python_name == "name"
+    assert field.description == "The name"
+    assert field.type is str
+
+    query = Query()
+    assert query.name == "default"
+
+
+def test_annotated_field_with_list_type():
+    @strawberry.type
+    class Query:
+        names: Annotated[list[str], strawberry.field(description="List of names")]
+
+    definition = get_object_definition(Query)
+    field = definition.fields[0]
+
+    assert field.python_name == "names"
+    assert field.description == "List of names"
+    assert field.type == list[str]
+
+
+def test_annotated_field_with_nested_type():
+    @strawberry.type
+    class Person:
+        name: str
+
+    @strawberry.type
+    class Query:
+        person: Annotated[Person, strawberry.field(description="A person")]
+
+    definition = get_object_definition(Query)
+    field = definition.fields[0]
+
+    assert field.python_name == "person"
+    assert field.description == "A person"
+    assert field.type is Person
+
+
+def test_annotated_field_with_metadata():
+    @strawberry.type
+    class Query:
+        name: Annotated[
+            str, strawberry.field(description="Name", metadata={"custom": "value"})
+        ]
+
+    definition = get_object_definition(Query)
+    field = definition.fields[0]
+
+    assert field.python_name == "name"
+    assert field.description == "Name"
+    assert field.metadata == {"custom": "value"}
+
+
+@pytest.mark.raises_strawberry_exception(
+    MultipleStrawberryFieldsError,
+    match=(
+        "Annotation for field `name` on type `Query` "
+        "cannot have multiple `strawberry.field`s"
+    ),
+)
+def test_annotated_field_multiple_raises_error():
+    @strawberry.type
+    class Query:
+        name: Annotated[
+            str,
+            strawberry.field(description="First"),
+            strawberry.field(description="Second"),
+        ]
+
+
+def test_annotated_field_with_other_annotations():
+    """Test that Annotated with non-StrawberryField annotations still works."""
+
+    @strawberry.type
+    class Query:
+        name: Annotated[str, "some metadata", 123]
+
+    definition = get_object_definition(Query)
+    field = definition.fields[0]
+
+    assert field.python_name == "name"
+    assert field.type is str
+
+
+def test_annotated_field_mixed_with_regular_field():
+    @strawberry.type
+    class Query:
+        annotated_field: Annotated[str, strawberry.field(description="Annotated")]
+        regular_field: str = strawberry.field(description="Regular")
+        plain_field: str
+
+    definition = get_object_definition(Query)
+    fields = {f.python_name: f for f in definition.fields}
+
+    assert fields["annotated_field"].description == "Annotated"
+    assert fields["regular_field"].description == "Regular"
+    assert fields["plain_field"].description is None
+
+
+def test_annotated_field_schema_generation():
+    """Test that Annotated fields work correctly in schema generation."""
+
+    @strawberry.type
+    class Query:
+        name: Annotated[str, strawberry.field(description="The name")]
+        age: Annotated[int, strawberry.field(deprecation_reason="Use birthYear")]
+
+    schema = strawberry.Schema(query=Query)
+    schema_str = str(schema)
+
+    assert '"The name"' in schema_str
+    assert "@deprecated" in schema_str
+    assert "Use birthYear" in schema_str
+
+
+def test_annotated_field_with_input():
+    """Test that Annotated fields work correctly with input types."""
+
+    @strawberry.input
+    class CreateUserInput:
+        name: Annotated[str, strawberry.field(description="User's name")]
+        email: Annotated[str, strawberry.field(description="User's email")]
+
+    definition = get_object_definition(CreateUserInput)
+    fields = {f.python_name: f for f in definition.fields}
+
+    assert fields["name"].description == "User's name"
+    assert fields["email"].description == "User's email"
+
+
+def test_annotated_field_with_input_default_in_schema():
+    """Test that Annotated fields with defaults show up correctly in schema."""
+
+    @strawberry.input
+    class CreateUserInput:
+        name: Annotated[str, strawberry.field(description="User's name")] = "Anonymous"
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def create_user(self, input: CreateUserInput) -> str:
+            return input.name
+
+    schema = strawberry.Schema(query=Query)
+    schema_str = str(schema)
+
+    # The default value should appear in the GraphQL schema
+    assert '= "Anonymous"' in schema_str
+    assert "User's name" in schema_str
+
+    # Instance should use the default
+    instance = CreateUserInput()
+    assert instance.name == "Anonymous"
