@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.287.4 - 2025-12-27
+--------------------
+
+Switch from `lia-web` to `cross-web`: `lia-web` has been renamed to `cross-web`. Update imports from `lia` to `cross_web` accordingly.
+
+Contributed by [Robin Candau](https://github.com/Antiz96) via [PR #4079](https://github.com/strawberry-graphql/strawberry/pull/4079/)
+
+
 0.287.3 - 2025-12-12
 --------------------
 
