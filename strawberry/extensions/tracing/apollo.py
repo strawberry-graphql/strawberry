@@ -14,12 +14,10 @@ from .utils import should_skip_tracing
 if TYPE_CHECKING:
     from collections.abc import Callable, Generator
 
-    from graphql import GraphQLResolveInfo
+    from strawberry.types.execution import ExecutionContext
+    from strawberry.types.info import Info
 
 DATETIME_FORMAT = "%Y-%m-%dT%H:%M:%S.%fZ"
-
-if TYPE_CHECKING:
-    from strawberry.types.execution import ExecutionContext
 
 
 @dataclasses.dataclass
@@ -130,7 +128,7 @@ class ApolloTracingExtension(SchemaExtension):
         self,
         _next: Callable,
         root: Any,
-        info: GraphQLResolveInfo,
+        info: Info,
         *args: str,
         **kwargs: Any,
     ) -> Any:
@@ -148,7 +146,7 @@ class ApolloTracingExtension(SchemaExtension):
             path=get_path_from_info(info),
             field_name=info.field_name,
             parent_type=info.parent_type,
-            return_type=info.return_type,
+            return_type=info._raw_info.return_type,
             start_offset=start_timestamp - self.start_timestamp,
         )
 
@@ -170,7 +168,7 @@ class ApolloTracingExtensionSync(ApolloTracingExtension):
         self,
         _next: Callable,
         root: Any,
-        info: GraphQLResolveInfo,
+        info: Info,
         *args: str,
         **kwargs: Any,
     ) -> Any:
@@ -183,7 +181,7 @@ class ApolloTracingExtensionSync(ApolloTracingExtension):
             path=get_path_from_info(info),
             field_name=info.field_name,
             parent_type=info.parent_type,
-            return_type=info.return_type,
+            return_type=info._raw_info.return_type,
             start_offset=start_timestamp - self.start_timestamp,
         )
 

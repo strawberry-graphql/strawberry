@@ -13,7 +13,7 @@ from typing_extensions import TypeVar
 from .nodes import convert_selections
 
 if TYPE_CHECKING:
-    from graphql import GraphQLResolveInfo, OperationDefinitionNode
+    from graphql import GraphQLObjectType, GraphQLResolveInfo, OperationDefinitionNode
     from graphql.language import FieldNode
     from graphql.pyutils.path import Path
 
@@ -145,7 +145,10 @@ class Info(Generic[ContextType, RootValueType]):
         """The path of the current field being resolved."""
         return self._raw_info.path
 
-    # TODO: parent_type as strawberry types
+    @property
+    def parent_type(self) -> GraphQLObjectType:
+        """The parent type of the current field being resolved."""
+        return self._raw_info.parent_type
 
     # Helper functions
     def get_argument_definition(self, name: str) -> StrawberryArgument | None:

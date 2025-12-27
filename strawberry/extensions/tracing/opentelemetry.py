@@ -23,10 +23,12 @@ if TYPE_CHECKING:
     from opentelemetry.trace import Span, Tracer
 
     from strawberry.types.execution import ExecutionContext
+    from strawberry.types.info import Info
 
 
 DATETIME_FORMAT = "%Y-%m-%dT%H:%M:%S.%fZ"
 
+# ArgFilter still uses GraphQLResolveInfo for backwards compatibility
 ArgFilter = Callable[[dict[str, Any], "GraphQLResolveInfo"], dict[str, Any]]
 
 
@@ -95,12 +97,11 @@ class OpenTelemetryExtension(SchemaExtension):
         yield
         self._span_holder[LifecycleStep.PARSE].end()
 
-    def filter_resolver_args(
-        self, args: dict[str, Any], info: GraphQLResolveInfo
-    ) -> dict[str, Any]:
+    def filter_resolver_args(self, args: dict[str, Any], info: Info) -> dict[str, Any]:
         if not self._arg_filter:
             return args
-        return self._arg_filter(deepcopy(args), info)
+        # Pass raw info to the filter for backwards compatibility
+        return self._arg_filter(deepcopy(args), info._raw_info)
 
     def convert_dict_to_allowed_types(self, value: dict) -> str:
         return (
@@ -135,7 +136,7 @@ class OpenTelemetryExtension(SchemaExtension):
     def convert_list_or_tuple_to_allowed_types(self, value: Iterable) -> str:
         return ", ".join(map(str, map(self.convert_to_allowed_types, value)))
 
-    def add_tags(self, span: Span, info: GraphQLResolveInfo, kwargs: Any) -> None:
+    def add_tags(self, span: Span, info: Info, kwargs: Any) -> None:
         graphql_path = ".".join(map(str, get_path_from_info(info)))
 
         span.set_attribute("component", "graphql")
@@ -153,7 +154,7 @@ class OpenTelemetryExtension(SchemaExtension):
         self,
         _next: Callable,
         root: Any,
-        info: GraphQLResolveInfo,
+        info: Info,
         *args: str,
         **kwargs: Any,
     ) -> Any:
@@ -185,7 +186,7 @@ class OpenTelemetryExtensionSync(OpenTelemetryExtension):
         self,
         _next: Callable,
         root: Any,
-        info: GraphQLResolveInfo,
+        info: Info,
         *args: str,
         **kwargs: Any,
     ) -> Any:

@@ -9,11 +9,10 @@ from strawberry.utils.await_maybe import await_maybe
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-    from graphql import DirectiveNode, GraphQLResolveInfo
+    from graphql import DirectiveNode
 
     from strawberry.directive import StrawberryDirective
-    from strawberry.schema.schema import Schema
-    from strawberry.types.field import StrawberryField
+    from strawberry.types.info import Info
     from strawberry.utils.await_maybe import AwaitableOrValue
 
 
@@ -25,13 +24,13 @@ class DirectivesExtension(SchemaExtension):
         self,
         _next: Callable,
         root: Any,
-        info: GraphQLResolveInfo,
+        info: Info,
         *args: str,
         **kwargs: Any,
     ) -> AwaitableOrValue[Any]:
         value = await await_maybe(_next(root, info, *args, **kwargs))
 
-        nodes = list(info.field_nodes)
+        nodes = list(info._raw_info.field_nodes)
 
         for directive in nodes[0].directives:
             if directive.name.value in SPECIFIED_DIRECTIVES:
@@ -47,13 +46,13 @@ class DirectivesExtensionSync(SchemaExtension):
         self,
         _next: Callable,
         root: Any,
-        info: GraphQLResolveInfo,
+        info: Info,
         *args: str,
         **kwargs: Any,
     ) -> AwaitableOrValue[Any]:
         value = _next(root, info, *args, **kwargs)
 
-        nodes = list(info.field_nodes)
+        nodes = list(info._raw_info.field_nodes)
 
         for directive in nodes[0].directives:
             if directive.name.value in SPECIFIED_DIRECTIVES:
@@ -67,30 +66,21 @@ class DirectivesExtensionSync(SchemaExtension):
 def process_directive(
     directive: DirectiveNode,
     value: Any,
-    info: GraphQLResolveInfo,
+    info: Info,
 ) -> tuple[StrawberryDirective, dict[str, Any]]:
     """Get a `StrawberryDirective` from ``directive` and prepare its arguments."""
     directive_name = directive.name.value
-    schema: Schema = info.schema._strawberry_schema  # type: ignore
 
-    strawberry_directive = schema.get_directive_by_name(directive_name)
+    strawberry_directive = info.schema.get_directive_by_name(directive_name)
     assert strawberry_directive is not None, f"Directive {directive_name} not found"
 
-    arguments = convert_arguments(info=info, nodes=directive.arguments)
+    arguments = convert_arguments(info=info._raw_info, nodes=directive.arguments)
     resolver = strawberry_directive.resolver
 
-    info_parameter = resolver.info_parameter
-    value_parameter = resolver.value_parameter
-    if info_parameter:
-        field: StrawberryField = schema.get_field_for_type(  # type: ignore
-            field_name=info.field_name,
-            type_name=info.parent_type.name,
-        )
-        arguments[info_parameter.name] = schema.config.info_class(
-            _raw_info=info, _field=field
-        )
-    if value_parameter:
-        arguments[value_parameter.name] = value
+    if resolver.info_parameter:
+        arguments[resolver.info_parameter.name] = info
+    if resolver.value_parameter:
+        arguments[resolver.value_parameter.name] = value
     return strawberry_directive, arguments
 
 
