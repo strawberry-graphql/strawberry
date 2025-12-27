@@ -9,6 +9,11 @@ from typing import (
 )
 
 from asgiref.sync import markcoroutinefunction
+from cross_web import (
+    AsyncDjangoHTTPRequestAdapter,
+    DjangoHTTPRequestAdapter,
+    HTTPException,
+)
 from django.core.serializers.json import DjangoJSONEncoder
 from django.http import (
     HttpRequest,
@@ -22,7 +27,6 @@ from django.template.exceptions import TemplateDoesNotExist
 from django.template.loader import render_to_string
 from django.utils.decorators import classonlymethod
 from django.views.generic import View
-from lia import AsyncDjangoHTTPRequestAdapter, DjangoHTTPRequestAdapter, HTTPException
 
 from strawberry.http.async_base_view import AsyncBaseHTTPView
 from strawberry.http.sync_base_view import SyncBaseHTTPView
