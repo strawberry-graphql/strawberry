@@ -130,10 +130,15 @@ input UpdateUserInput {
 ```python
 @strawberry.input
 class UpdatePostInput:
-    title: strawberry.Maybe[str]  # Can be set to new value or omitted
+    # Maybe[T] - value or absent, null is INVALID
+    # Use when the field must have a value if provided
+    title: strawberry.Maybe[str]
     content: strawberry.Maybe[str]
     published: strawberry.Maybe[bool]
-    tags: strawberry.Maybe[list[str] | None]  # Can be set, cleared, or omitted
+
+    # Maybe[T | None] - value, null, or absent
+    # Use when null is a valid value (e.g., to clear/remove the field)
+    tags: strawberry.Maybe[list[str] | None]
 
 
 @strawberry.type
@@ -143,13 +148,13 @@ class Mutation:
         post = get_post(post_id)
 
         # Only update fields that were explicitly provided
-        if input.title:
+        if input.title is not None:
             post.title = input.title.value
-        if input.content:
+        if input.content is not None:
             post.content = input.content.value
-        if input.published:
+        if input.published is not None:
             post.published = input.published.value
-        if input.tags:
+        if input.tags is not None:
             post.tags = input.tags.value  # Could be None to clear tags
 
         return post
@@ -157,7 +162,26 @@ class Mutation:
 
 ## Maybe vs Optional vs Nullable
 
-Understanding the differences between these approaches:
+The key distinction is between `Maybe[T]` and `Maybe[T | None]`:
+
+- **`Maybe[T]`**: Two states - value provided or absent. Use when the field
+  cannot be set to null (e.g., a required `title` that you either update or
+  leave unchanged).
+- **`Maybe[T | None]`**: Three states - value provided, null provided, or
+  absent. Use when null is meaningful (e.g., clearing an optional `phone`
+  number).
+
+<Note>
+
+Both `Maybe[T]` and `Maybe[T | None]` generate the same GraphQL schema (a
+nullable field). The distinction between them is enforced by Strawberry's
+internal validation, not by the GraphQL spec. When a client sends `null` to a
+`Maybe[T]` field, Strawberry returns a validation error before the resolver is
+called.
+
+</Note>
+
+Full comparison:
 
 | Type                            | Python     | GraphQL   | Absent   | Null          | Value          |
 | ------------------------------- | ---------- | --------- | -------- | ------------- | -------------- |
