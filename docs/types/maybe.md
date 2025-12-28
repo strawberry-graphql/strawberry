@@ -8,6 +8,15 @@ In GraphQL, there's an important distinction between a field that is `null` and
 a field that is completely absent from the input. Strawberry's `Maybe` type
 allows you to differentiate between these states:
 
+<Note>
+
+`Maybe` is the recommended way to handle optional input fields in Strawberry. If
+you're using `strawberry.UNSET` for this purpose, we encourage migrating to
+`Maybe` for better type safety and clearer semantics. See
+[Migrating from UNSET](#migrating-from-unset) for details.
+
+</Note>
+
 For `Maybe[str]`:
 
 1. **Field present with a value**: `Some("hello")`
@@ -21,6 +30,10 @@ For `Maybe[str | None]` (when you need to handle explicit nulls):
 
 This is particularly useful for update operations where you need to distinguish
 between "set this field to null" and "don't change this field at all".
+
+The design is inspired by Rust's
+[`Option<T>`](https://doc.rust-lang.org/std/option/) type and similar patterns
+in functional programming languages like Haskell's `Maybe` and Scala's `Option`.
 
 ## What problem does `strawberry.Maybe` solve?
 
@@ -206,6 +219,95 @@ def update_if_provided(obj, field_name: str, maybe_value):
 update_if_provided(user, "phone", input.phone)
 update_if_provided(user, "email", input.email)
 ```
+
+## Migrating from UNSET
+
+If you're currently using `strawberry.UNSET` to differentiate between absent and
+null values, we recommend migrating to `Maybe` for better type safety and
+clearer semantics.
+
+### Why Migrate?
+
+`Maybe` provides advantages over `UNSET`:
+
+1. **Type Safety**: `Maybe[T]` is a proper generic type that works correctly
+   with type checkers, whereas `UNSET` is typed as `Any` which defeats static
+   analysis
+2. **Explicit Nullability**: With `UNSET`, you write `field: str | None = UNSET`
+   where it's ambiguous whether `None` is a valid value or represents "absent".
+   With `Maybe`, `Maybe[str]` means null is invalid, while `Maybe[str | None]`
+   explicitly allows null as a value
+
+### Migration Example
+
+Before (using UNSET):
+
+```python
+import strawberry
+
+
+@strawberry.input
+class UpdateUserInput:
+    name: str | None = strawberry.UNSET
+    phone: str | None = strawberry.UNSET
+
+
+@strawberry.type
+class Mutation:
+    @strawberry.mutation
+    def update_user(self, input: UpdateUserInput) -> User:
+        if input.name is not strawberry.UNSET:
+            user.name = input.name  # Could be a string or None
+        if input.phone is not strawberry.UNSET:
+            user.phone = input.phone
+        return user
+```
+
+After (using Maybe):
+
+```python
+import strawberry
+
+
+@strawberry.input
+class UpdateUserInput:
+    name: strawberry.Maybe[str | None]
+    phone: strawberry.Maybe[str | None]
+
+
+@strawberry.type
+class Mutation:
+    @strawberry.mutation
+    def update_user(self, input: UpdateUserInput) -> User:
+        if input.name is not None:
+            user.name = input.name.value  # Access via .value
+        if input.phone is not None:
+            user.phone = input.phone.value
+        return user
+```
+
+### Key Differences
+
+| Aspect          | UNSET                       | Maybe                            |
+| --------------- | --------------------------- | -------------------------------- |
+| Check absent    | `value is strawberry.UNSET` | `value is None`                  |
+| Access value    | `value` (direct)            | `value.value` (via Some)         |
+| Type annotation | `T \| None = UNSET`         | `Maybe[T]` or `Maybe[T \| None]` |
+| Null handling   | Implicit                    | Explicit with `T \| None`        |
+
+### Codemod
+
+If you have existing `Maybe[T]` annotations that need to accept explicit null
+values, Strawberry provides a codemod to convert them to `Maybe[T | None]`:
+
+```bash
+python -m libcst.tool codemod strawberry.codemods.maybe_optional.ConvertMaybeToOptional .
+```
+
+Note: This codemod is for updating `Maybe` annotations, not for migrating from
+`UNSET` to `Maybe`. Migration from `UNSET` requires manual changes to update
+both the type annotations and the value access patterns (from `value` to
+`value.value`).
 
 ## Related Types
 
