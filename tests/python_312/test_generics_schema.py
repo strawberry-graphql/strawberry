@@ -1,6 +1,7 @@
 # ruff: noqa: F821
 
 import sys
+import warnings
 import textwrap
 from enum import Enum
 from typing import Any, Optional, Union
@@ -1220,3 +1221,22 @@ def test_generics_via_anonymous_union():
     ).strip()
 
     assert str(schema) == expected_schema
+
+
+def test_info_type_alias_syntax():
+    type MyInfo = strawberry.Info[None, None]  # type: ignore[valid-type]
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def hello(self, info: MyInfo) -> str:
+            return "Hello World"
+
+    # Should not raise DeprecationWarning about name-based matching
+    with warnings.catch_warnings():
+        warnings.filterwarnings("error", category=DeprecationWarning)
+        schema = strawberry.Schema(query=Query)
+
+    result = schema.execute_sync("query { hello }")
+    assert result.errors is None
+    assert result.data == {"hello": "Hello World"}

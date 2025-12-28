@@ -1,7 +1,7 @@
 import dataclasses
 import textwrap
 import types
-from typing import Any, ClassVar, no_type_check
+from typing import Any, ClassVar, ForwardRef, no_type_check
 
 import pytest
 
@@ -14,6 +14,7 @@ from strawberry.exceptions import (
 from strawberry.parent import Parent
 from strawberry.scalars import JSON
 from strawberry.types.fields.resolver import (
+    INFO_PARAMSPEC,
     Signature,
     StrawberryResolver,
     UncallableResolverError,
@@ -535,3 +536,75 @@ def test_annotation_using_parent_annotation_but_named_root():
             "nameFromParent": "Using 'root': Strawberry",
         }
     }
+
+
+def test_info_annotation_with_type_alias():
+    """Test that TypeAliasType for Info is properly recognized (issue #4057)."""
+    from typing_extensions import TypeAliasType
+
+    from strawberry.types.info import Info
+
+    # Simulate Python 3.12's `type MyInfo = Info[None, None]`
+    MyInfo = TypeAliasType("MyInfo", Info[None, None])
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def hello(self, info: MyInfo) -> str:
+            return "Hello World"
+
+    # Should not raise DeprecationWarning
+    schema = strawberry.Schema(query=Query)
+    result = schema.execute_sync("query { hello }")
+    assert result.errors is None
+    assert result.data == {"hello": "Hello World"}
+
+
+def test_info_forward_reference_string():
+    """Test that string forward references for Info are properly recognized.
+
+    Only qualified names (strawberry.Info or full module path) are matched
+    to avoid confusion with user-defined types.
+    """
+
+    # Test qualified string patterns that should match Info
+    assert INFO_PARAMSPEC.is_reserved_type("strawberry.Info") is True
+    assert INFO_PARAMSPEC.is_reserved_type("strawberry.Info[Context, None]") is True
+    assert INFO_PARAMSPEC.is_reserved_type("strawberry.types.info.Info") is True
+    assert (
+        INFO_PARAMSPEC.is_reserved_type("strawberry.types.info.Info[Context, None]")
+        is True
+    )
+
+    # Test patterns that should NOT match (unqualified or wrong names)
+    assert INFO_PARAMSPEC.is_reserved_type("Info") is False  # unqualified
+    assert INFO_PARAMSPEC.is_reserved_type("Info[Context, None]") is False
+    assert INFO_PARAMSPEC.is_reserved_type("str") is False
+    assert INFO_PARAMSPEC.is_reserved_type("InfoClass") is False
+    assert INFO_PARAMSPEC.is_reserved_type("MyInfo") is False
+
+
+def test_info_forward_ref_object():
+    """Test that ForwardRef objects for Info are properly recognized.
+
+    Only qualified names (strawberry.Info or full module path) are matched
+    to avoid confusion with user-defined types.
+    """
+
+    from strawberry.types.fields.resolver import INFO_PARAMSPEC
+
+    # Test ForwardRef patterns that should match Info
+    assert INFO_PARAMSPEC.is_reserved_type(ForwardRef("strawberry.Info")) is True
+    assert (
+        INFO_PARAMSPEC.is_reserved_type(ForwardRef("strawberry.Info[Context, None]"))
+        is True
+    )
+    assert (
+        INFO_PARAMSPEC.is_reserved_type(ForwardRef("strawberry.types.info.Info"))
+        is True
+    )
+
+    # Test ForwardRef patterns that should NOT match
+    assert INFO_PARAMSPEC.is_reserved_type(ForwardRef("Info")) is False  # unqualified
+    assert INFO_PARAMSPEC.is_reserved_type(ForwardRef("str")) is False
+    assert INFO_PARAMSPEC.is_reserved_type(ForwardRef("MyInfo")) is False
