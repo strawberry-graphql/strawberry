@@ -1,3 +1,4 @@
+import base64 as base64_lib
 import datetime
 import decimal
 from uuid import UUID
@@ -12,9 +13,9 @@ from graphql import (
 )
 
 from strawberry.file_uploads.scalars import Upload
-from strawberry.scalars import ID
+from strawberry.scalars import ID, JSON, Base16, Base32, Base64
 from strawberry.schema.types import base_scalars
-from strawberry.types.scalar import ScalarDefinition
+from strawberry.types.scalar import ScalarDefinition, scalar
 
 
 def _make_scalar_type(definition: ScalarDefinition) -> GraphQLScalarType:
@@ -44,30 +45,68 @@ def _make_scalar_definition(scalar_type: GraphQLScalarType) -> ScalarDefinition:
     )
 
 
-def _get_scalar_definition(scalar: type) -> ScalarDefinition:
-    return scalar._scalar_definition  # type: ignore[attr-defined]
-
-
 DEFAULT_SCALAR_REGISTRY: dict[object, ScalarDefinition] = {
-    type(None): _get_scalar_definition(base_scalars.Void),
-    None: _get_scalar_definition(base_scalars.Void),
+    type(None): base_scalars.VoidDefinition,
+    None: base_scalars.VoidDefinition,
     str: _make_scalar_definition(GraphQLString),
     int: _make_scalar_definition(GraphQLInt),
     float: _make_scalar_definition(GraphQLFloat),
     bool: _make_scalar_definition(GraphQLBoolean),
     ID: _make_scalar_definition(GraphQLID),
-    UUID: _get_scalar_definition(base_scalars.UUID),
-    Upload: _get_scalar_definition(Upload),
-    datetime.date: _get_scalar_definition(base_scalars.Date),
-    datetime.datetime: _get_scalar_definition(base_scalars.DateTime),
-    datetime.time: _get_scalar_definition(base_scalars.Time),
-    decimal.Decimal: _get_scalar_definition(base_scalars.Decimal),
+    UUID: base_scalars.UUIDDefinition,
+    Upload: scalar(
+        name="Upload",
+        description="Represents a file upload.",
+        serialize=lambda v: v,
+        parse_value=lambda v: v,
+    ),
+    datetime.date: base_scalars.DateDefinition,
+    datetime.datetime: base_scalars.DateTimeDefinition,
+    datetime.time: base_scalars.TimeDefinition,
+    decimal.Decimal: base_scalars.DecimalDefinition,
+    JSON: scalar(
+        name="JSON",
+        description=(
+            "The `JSON` scalar type represents JSON values as specified by "
+            "[ECMA-404]"
+            "(https://ecma-international.org/wp-content/uploads/ECMA-404_2nd_edition_december_2017.pdf)."
+        ),
+        specified_by_url=(
+            "https://ecma-international.org/wp-content/uploads/ECMA-404_2nd_edition_december_2017.pdf"
+        ),
+        serialize=lambda v: v,
+        parse_value=lambda v: v,
+    ),
+    Base16: scalar(
+        name="Base16",
+        description="Represents binary data as Base16-encoded (hexadecimal) strings.",
+        specified_by_url="https://datatracker.ietf.org/doc/html/rfc4648.html#section-8",
+        serialize=lambda v: base64_lib.b16encode(v).decode("utf-8"),
+        parse_value=lambda v: base64_lib.b16decode(v.encode("utf-8"), casefold=True),
+    ),
+    Base32: scalar(
+        name="Base32",
+        description=(
+            "Represents binary data as Base32-encoded strings, using the standard alphabet."
+        ),
+        specified_by_url="https://datatracker.ietf.org/doc/html/rfc4648.html#section-6",
+        serialize=lambda v: base64_lib.b32encode(v).decode("utf-8"),
+        parse_value=lambda v: base64_lib.b32decode(v.encode("utf-8"), casefold=True),
+    ),
+    Base64: scalar(
+        name="Base64",
+        description=(
+            "Represents binary data as Base64-encoded strings, using the standard alphabet."
+        ),
+        specified_by_url="https://datatracker.ietf.org/doc/html/rfc4648.html#section-4",
+        serialize=lambda v: base64_lib.b64encode(v).decode("utf-8"),
+        parse_value=lambda v: base64_lib.b64decode(v.encode("utf-8")),
+    ),
 }
 
 
 __all__ = [
     "DEFAULT_SCALAR_REGISTRY",
-    "_get_scalar_definition",
     "_make_scalar_definition",
     "_make_scalar_type",
 ]

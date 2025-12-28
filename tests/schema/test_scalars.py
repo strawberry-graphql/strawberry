@@ -9,7 +9,6 @@ import strawberry
 from strawberry import scalar
 from strawberry.exceptions import ScalarAlreadyRegisteredError
 from strawberry.scalars import JSON, Base16, Base32, Base64
-from strawberry.schema.types.base_scalars import Date
 
 
 def test_void_function():
@@ -448,7 +447,7 @@ def test_optional_scalar_with_or_operator():
 
     @strawberry.type
     class Query:
-        date: Date | None
+        date: date | None
 
     schema = strawberry.Schema(query=Query)
 
@@ -461,3 +460,192 @@ def test_optional_scalar_with_or_operator():
     result = schema.execute_sync(query, root_value=Query(date=date(2020, 1, 1)))
     assert not result.errors
     assert result.data["date"] == "2020-01-01"
+
+
+def test_scalar_map_with_newtype():
+    """Test scalar_map configuration with NewType."""
+    from typing import NewType
+
+    from strawberry.schema.config import StrawberryConfig
+
+    MyString = NewType("MyString", str)
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def my_string(self) -> MyString:
+            return MyString("hello")
+
+        @strawberry.field
+        def process_string(self, value: MyString) -> str:
+            return f"processed: {value}"
+
+    schema = strawberry.Schema(
+        query=Query,
+        config=StrawberryConfig(
+            scalar_map={
+                MyString: strawberry.scalar(
+                    name="MyString",
+                    description="A custom string scalar",
+                    serialize=lambda v: v.upper(),
+                    parse_value=lambda v: v.lower(),
+                )
+            }
+        ),
+    )
+
+    expected_schema = dedent(
+        '''
+        """A custom string scalar"""
+        scalar MyString
+
+        type Query {
+          myString: MyString!
+          processString(value: MyString!): String!
+        }
+        '''
+    ).strip()
+
+    assert str(schema) == expected_schema
+
+    result = schema.execute_sync("{ myString }")
+    assert not result.errors
+    assert result.data == {"myString": "HELLO"}
+
+    result = schema.execute_sync('{ processString(value: "WORLD") }')
+    assert not result.errors
+    assert result.data == {"processString": "processed: world"}
+
+
+def test_scalar_map_override_builtin():
+    """Test scalar_map can override built-in scalars."""
+    from strawberry.schema.config import StrawberryConfig
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def current_time(self) -> datetime:
+            return datetime(2021, 8, 11, 12, 0, tzinfo=timezone.utc)
+
+        @strawberry.field
+        def parse_time(self, value: datetime) -> str:
+            return value.isoformat()
+
+    schema = strawberry.Schema(
+        query=Query,
+        config=StrawberryConfig(
+            scalar_map={
+                datetime: strawberry.scalar(
+                    name="DateTime",
+                    serialize=lambda v: int(v.timestamp()),
+                    parse_value=lambda v: datetime.fromtimestamp(int(v), timezone.utc),
+                )
+            }
+        ),
+    )
+
+    result = schema.execute_sync("{ currentTime parseTime(value: 1628683200) }")
+    assert not result.errors
+    assert result.data["currentTime"] == 1628683200
+    assert result.data["parseTime"] == "2021-08-11T12:00:00+00:00"
+
+
+def test_scalar_map_with_specified_by_url():
+    """Test scalar_map with specified_by_url."""
+    from typing import NewType
+
+    from strawberry.schema.config import StrawberryConfig
+
+    Email = NewType("Email", str)
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def email(self) -> Email:
+            return Email("test@example.com")
+
+    schema = strawberry.Schema(
+        query=Query,
+        config=StrawberryConfig(
+            scalar_map={
+                Email: strawberry.scalar(
+                    name="Email",
+                    description="An email address",
+                    specified_by_url="https://html.spec.whatwg.org/multipage/input.html#valid-e-mail-address",
+                )
+            }
+        ),
+    )
+
+    expected = 'scalar Email @specifiedBy(url: "https://html.spec.whatwg.org/multipage/input.html#valid-e-mail-address")'
+    assert expected in str(schema)
+
+
+def test_scalar_map_combined_with_scalar_overrides():
+    """Test that scalar_map and scalar_overrides work together."""
+    import warnings
+    from typing import NewType
+
+    from strawberry.schema.config import StrawberryConfig
+
+    MyInt = NewType("MyInt", int)
+
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", category=DeprecationWarning)
+        MyFloat = strawberry.scalar(
+            float,
+            name="MyFloat",
+            serialize=lambda v: round(v, 2),
+        )
+
+    @strawberry.type
+    class Query:
+        my_int: MyInt
+        my_float: MyFloat
+
+    schema = strawberry.Schema(
+        query=Query,
+        config=StrawberryConfig(
+            scalar_map={
+                MyInt: strawberry.scalar(
+                    name="MyInt",
+                    serialize=lambda v: v * 2,
+                )
+            }
+        ),
+        scalar_overrides={
+            float: MyFloat,
+        },
+    )
+
+    result = schema.execute_sync(
+        "{ myInt myFloat }", root_value=Query(my_int=5, my_float=3.14159)
+    )
+    assert not result.errors
+    assert result.data == {"myInt": 10, "myFloat": 3.14}
+
+
+def test_scalar_definition_direct_creation():
+    """Test creating ScalarDefinition directly via scalar()."""
+    definition = strawberry.scalar(
+        name="TestScalar",
+        description="A test scalar",
+        serialize=lambda v: str(v),
+        parse_value=lambda v: int(v),
+    )
+
+    assert definition.name == "TestScalar"
+    assert definition.description == "A test scalar"
+    assert definition.serialize is not None
+    assert definition.parse_value is not None
+
+
+def test_builtin_scalars_are_newtypes():
+    """Test that built-in scalars are proper NewType instances."""
+    from strawberry.scalars import ID, JSON, Base16, Base32, Base64
+
+    assert ID.__supertype__ is str
+    assert JSON.__supertype__ is object
+    assert Base16.__supertype__ is bytes
+    assert Base32.__supertype__ is bytes
+    assert Base64.__supertype__ is bytes

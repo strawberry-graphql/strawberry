@@ -99,6 +99,8 @@ def test_enum():
 
 
 def test_scalar():
+    from strawberry.schema.types.scalar import DEFAULT_SCALAR_REGISTRY
+
     @strawberry.type()
     class Query:
         hello: JSON
@@ -109,7 +111,7 @@ def test_scalar():
 
     assert (
         graphql_schema.get_type("JSON").extensions[DEFINITION_BACKREF]
-        is JSON._scalar_definition
+        is DEFAULT_SCALAR_REGISTRY[JSON]
     )
 
 

@@ -269,6 +269,7 @@ class Schema(BaseSchema):
         self.schema_converter = GraphQLCoreConverter(
             self.config,
             scalar_overrides=scalar_overrides or {},  # type: ignore
+            scalar_map=self.config.scalar_map,
             get_fields=self.get_fields,
         )
 

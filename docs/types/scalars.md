@@ -129,12 +129,9 @@ import base64
 from typing import NewType
 
 import strawberry
+from strawberry.schema.config import StrawberryConfig
 
-Base64 = strawberry.scalar(
-    NewType("Base64", bytes),
-    serialize=lambda v: base64.b64encode(v).decode("utf-8"),
-    parse_value=lambda v: base64.b64decode(v.encode("utf-8")),
-)
+Base64 = NewType("Base64", bytes)
 
 
 @strawberry.type
@@ -144,11 +141,22 @@ class Query:
         return Base64(b"hi")
 
 
-schema = strawberry.Schema(Query)
+schema = strawberry.Schema(
+    Query,
+    config=StrawberryConfig(
+        scalar_map={
+            Base64: strawberry.scalar(
+                name="Base64",
+                serialize=lambda v: base64.b64encode(v).decode("utf-8"),
+                parse_value=lambda v: base64.b64decode(v.encode("utf-8")),
+            )
+        }
+    ),
+)
 
 result = schema.execute_sync("{ base64 }")
 
-assert results.data == {"base64": "aGk="}
+assert result.data == {"base64": "aGk="}
 ```
 
 <Note>
@@ -162,47 +170,139 @@ from strawberry.scalars import Base16, Base32, Base64
 
 </Note>
 
-## Example JSONScalar
+## Example: Custom Object Scalar
+
+Suppose we would like to use a Pillow `Image` as a scalar that serializes
+to/from base64-encoded bytes:
 
 ```python
-import json
-from typing import Any, NewType
+import base64
+from io import BytesIO
+
+from PIL import Image
 
 import strawberry
+from strawberry.schema.config import StrawberryConfig
 
-JSON = strawberry.scalar(
-    NewType("JSON", object),
-    description="The `JSON` scalar type represents JSON values as specified by ECMA-404",
-    serialize=lambda v: v,
-    parse_value=lambda v: v,
-)
-```
 
-Usage:
-
-```python
 @strawberry.type
 class Query:
     @strawberry.field
-    def data(self, info) -> JSON:
-        return {"hello": {"a": 1}, "someNumbers": [1, 2, 3]}
+    def generate_image(self) -> Image.Image:
+        # Create a simple 100x100 red image
+        return Image.new("RGB", (100, 100), color="red")
+
+
+schema = strawberry.Schema(
+    Query,
+    config=StrawberryConfig(
+        scalar_map={
+            Image.Image: strawberry.scalar(
+                name="Image",
+                description="A Pillow Image, serialized as base64-encoded PNG",
+                serialize=lambda img: base64.b64encode(img.tobytes("png")).decode(
+                    "utf-8"
+                ),
+                parse_value=lambda v: Image.open(BytesIO(base64.b64decode(v))),
+            )
+        }
+    ),
+)
+```
+
+This generates the following schema:
+
+```graphql
+"""
+A Pillow Image, serialized as base64-encoded PNG
+"""
+scalar Image
+
+type Query {
+  generateImage: Image!
+}
 ```
 
 <CodeGrid>
 
 ```graphql
-query ExampleDataQuery {
-  data
+query {
+  generateImage
 }
 ```
 
 ```json
 {
   "data": {
-    "hello": {
-      "a": 1
-    },
-    "someNumbers": [1, 2, 3]
+    "generateImage": "iVBORw0KGgoAAAANSUhEUgAAAAE..."
+  }
+}
+```
+
+</CodeGrid>
+
+## Example: NewType Scalar
+
+Suppose we would like to have a type-safe `Currency` scalar based on `Decimal`:
+
+```python
+from decimal import Decimal
+from typing import NewType
+
+import strawberry
+from strawberry.schema.config import StrawberryConfig
+
+# Define a NewType for currency - this is a proper type that type checkers understand
+Currency = NewType("Currency", Decimal)
+
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def price(self) -> Currency:
+        return Currency("19.99")
+
+
+schema = strawberry.Schema(
+    Query,
+    config=StrawberryConfig(
+        scalar_map={
+            Currency: strawberry.scalar(
+                name="Currency",
+                description="A monetary value with 2 decimal places",
+                serialize=lambda v: str(v.quantize(Decimal("0.01"))),
+                parse_value=lambda v: Currency(v).quantize(Decimal("0.01")),
+            )
+        }
+    ),
+)
+```
+
+This generates the following schema:
+
+```graphql
+"""
+A monetary value with 2 decimal places
+"""
+scalar Currency
+
+type Query {
+  price: Currency!
+}
+```
+
+<CodeGrid>
+
+```graphql
+query {
+  price
+}
+```
+
+```json
+{
+  "data": {
+    "price": "19.99"
   }
 }
 ```
@@ -211,7 +311,7 @@ query ExampleDataQuery {
 
 <Note>
 
-The `JSON` scalar type is available in `strawberry.scalars`
+The `JSON` scalar type is available in `strawberry.scalars`:
 
 ```python
 from strawberry.scalars import JSON
@@ -219,24 +319,18 @@ from strawberry.scalars import JSON
 
 </Note>
 
-## Overriding built in scalars
+## Overriding built-in scalars
 
-To override the behaviour of the built in scalars you can pass a map of
-overrides to your schema.
+To override the behaviour of the built-in scalars, you can pass a `scalar_map`
+in your schema config.
 
-Here is a full example of replacing the built in `DateTime` scalar with one that
-serializes all datetimes as unix timestamps:
+Here is a full example of replacing the built-in `DateTime` scalar with one that
+serializes all datetimes as Unix timestamps:
 
 ```python
 from datetime import datetime, timezone
 import strawberry
-
-# Define your custom scalar
-EpochDateTime = strawberry.scalar(
-    datetime,
-    serialize=lambda value: int(value.timestamp()),
-    parse_value=lambda value: datetime.fromtimestamp(int(value), timezone.utc),
-)
+from strawberry.schema.config import StrawberryConfig
 
 
 @strawberry.type
@@ -248,9 +342,17 @@ class Query:
 
 schema = strawberry.Schema(
     Query,
-    scalar_overrides={
-        datetime: EpochDateTime,
-    },
+    config=StrawberryConfig(
+        scalar_map={
+            datetime: strawberry.scalar(
+                name="DateTime",
+                serialize=lambda value: int(value.timestamp()),
+                parse_value=lambda value: datetime.fromtimestamp(
+                    int(value), timezone.utc
+                ),
+            ),
+        }
+    ),
 )
 result = schema.execute_sync("{ currentTime }")
 assert result.data == {"currentTime": 1628683200}
@@ -268,55 +370,79 @@ Since pendulum isn't typed yet, we'll have to silence mypy's errors using
 ```python
 import pendulum
 from datetime import datetime
+from typing import Union
+
+import strawberry
+from strawberry.schema.config import StrawberryConfig
 
 
-class DateTime:
-    """
-    This class is used to convert the pendulum.DateTime type to a string
-    and back to a pendulum.DateTime type
-    """
-
-    @staticmethod
-    def serialize(dt: Union[pendulum.DateTime, datetime]) -> str:  # type: ignore
-        try:
-            return dt.isoformat()
-        except ValueError:
-            return dt.to_iso8601_string()  # type: ignore
-
-    @staticmethod
-    def parse_value(value: str) -> Union[pendulum.DateTime, datetime]:  # type: ignore
-        return pendulum.parse(value)  # type: ignore
+def serialize_datetime(dt: Union[pendulum.DateTime, datetime]) -> str:  # type: ignore
+    try:
+        return dt.isoformat()
+    except ValueError:
+        return dt.to_iso8601_string()  # type: ignore
 
 
-date_time = strawberry.scalar(
-    Union[pendulum.DateTime, datetime],  # type: ignore
-    name="datetime",
-    description="A date and time",
-    serialize=DateTime.serialize,
-    parse_value=DateTime.parse_value,
+def parse_datetime(value: str) -> Union[pendulum.DateTime, datetime]:  # type: ignore
+    return pendulum.parse(value)  # type: ignore
+
+
+schema = strawberry.Schema(
+    Query,
+    config=StrawberryConfig(
+        scalar_map={
+            datetime: strawberry.scalar(
+                name="DateTime",
+                description="A date and time",
+                serialize=serialize_datetime,
+                parse_value=parse_datetime,
+            ),
+        }
+    ),
 )
 ```
 
 ## BigInt (64-bit integers)
 
-Python by default allows, integer size to be 2^64. However the graphql spec has
-capped it to 2^32.
+Python integers have arbitrary precision (no size limit). However, the GraphQL
+spec limits integers to 32-bit signed values (approximately ±2 billion).
 
 This will inevitably raise errors. Instead of using strings on the client as a
-workaround, you could use the following scalar:
+workaround, you could use the following approach:
 
 ```python
-# This is needed because GraphQL does not support 64 bit integers
-BigInt = strawberry.scalar(
-    Union[int, str],  # type: ignore
-    serialize=lambda v: int(v),
-    parse_value=lambda v: str(v),
-    description="BigInt field",
+from typing import NewType, Union
+
+import strawberry
+from strawberry.schema.config import StrawberryConfig
+
+BigInt = NewType("BigInt", int)
+
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def large_number(self) -> BigInt:
+        return BigInt(9007199254740993)
+
+
+schema = strawberry.Schema(
+    Query,
+    config=StrawberryConfig(
+        scalar_map={
+            BigInt: strawberry.scalar(
+                name="BigInt",
+                description="BigInt field",
+                serialize=lambda v: int(v),
+                parse_value=lambda v: str(v),
+            ),
+        }
+    ),
 )
 ```
 
 You can adapt your schema to automatically use this scalar for all integers by
-using the `scalar_overrides` parameter
+adding `int` to the `scalar_map`:
 
 <Tip>
   Only use this override if you expect most of your integers to be 64-bit. Since
@@ -328,10 +454,18 @@ using the `scalar_overrides` parameter
 </Tip>
 
 ```python
-user_schema = strawberry.Schema(
+schema = strawberry.Schema(
     query=Query,
     mutation=Mutation,
     subscription=Subscription,
-    scalar_overrides={datetime: date_time, int: BigInt},
+    config=StrawberryConfig(
+        scalar_map={
+            int: strawberry.scalar(
+                name="BigInt",
+                serialize=lambda v: int(v),
+                parse_value=lambda v: str(v),
+            ),
+        }
+    ),
 )
 ```
