@@ -1,5 +1,6 @@
 import dataclasses
 import textwrap
+import warnings
 from collections.abc import Iterable
 from typing_extensions import Self
 
@@ -1687,3 +1688,26 @@ def test_correct_model_returned(type_name: str, should_have_name: bool):
         assert result.data["node"]["name"] == "Strawberry"
     else:
         assert "name" not in result.data["node"]
+
+
+def test_relay_node_no_deprecation_warning():
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def hello(self) -> str:
+            return "Hello World"
+
+        node: relay.Node = relay.node()
+
+    # Should not raise DeprecationWarning about name-based matching
+    with warnings.catch_warnings():
+        warnings.filterwarnings("error", category=DeprecationWarning)
+        schema = strawberry.Schema(query=Query)
+
+    result = schema.execute_sync(
+        """
+        query { hello }
+        """
+    )
+    assert result.errors is None
+    assert result.data == {"hello": "Hello World"}

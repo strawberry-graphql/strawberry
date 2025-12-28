@@ -10,6 +10,7 @@ from typing import (
     TYPE_CHECKING,
     Annotated,
     Any,
+    ForwardRef,
     Generic,
     NamedTuple,
     TypeVar,
@@ -97,10 +98,14 @@ class ReservedType(NamedTuple):
 
     To preserve backwards-comaptibility, if an annotation was defined but does not match
     :attr:`type`, then the name is used as a fallback if available.
+
+    :attr:`alias` is the public name exposed in the `strawberry` module, if it differs
+    from the internal class name (e.g. "Parent" for StrawberryParent).
     """
 
     name: str | None
     type: type
+    alias: str | None = None
 
     def find(
         self,
@@ -114,16 +119,18 @@ class ReservedType(NamedTuple):
             annotation = resolver.strawberry_annotations[parameter]
             if isinstance(annotation, StrawberryAnnotation):
                 try:
-                    evaled_annotation = annotation.evaluate()
+                    evaled_annotation: Any = annotation.evaluate()
                 except NameError:
-                    # If this is a strawberry.Parent using ForwardRef, we will fail to
-                    # evaluate at this moment, but at least knowing that it is a reserved
-                    # type is enough for now
-                    # We might want to revisit this in the future, maybe by postponing
-                    # this check to when the schema is actually being created
-                    evaled_annotation = resolve_parent_forward_arg(
-                        annotation.annotation
-                    )
+                    # If we fail to evaluate, check if the raw annotation string
+                    # matches this reserved type. This handles cases where types
+                    # are imported under TYPE_CHECKING or use forward references
+                    # like "strawberry.Info".
+                    raw = annotation.annotation
+                    if isinstance(raw, str):
+                        evaled_annotation = raw
+                    else:
+                        # Try resolve_parent_forward_arg for Parent types
+                        evaled_annotation = resolve_parent_forward_arg(raw)
 
                 if self.is_reserved_type(evaled_annotation):
                     type_parameters.append(parameter)
@@ -151,24 +158,56 @@ class ReservedType(NamedTuple):
             return reserved_name
         return None
 
-    def is_reserved_type(self, other: builtins.type) -> bool:
+    def is_reserved_type(self, other: builtins.type | str | ForwardRef) -> bool:
+        # Handle string forward references (e.g., "strawberry.Info", "Info[Context, None]")
+        # This occurs when annotations can't be resolved at runtime, such as when
+        # the type is imported under TYPE_CHECKING or uses `from __future__ import annotations`
+        if isinstance(other, str):
+            return self._is_reserved_type_str(other)
+
+        if isinstance(other, ForwardRef):
+            return self._is_reserved_type_str(other.__forward_arg__)
+
+        # Handle TypeAliasType (Python 3.12+ `type X = ...` syntax)
+        # We need to unwrap the alias to get the actual type
+        if hasattr(other, "__value__"):
+            other = other.__value__
+
         origin = cast("type", get_origin(other)) or other
         if origin is Annotated:
             # Handle annotated arguments such as Private[str] and DirectiveValue[str]
             return type_has_annotation(other, self.type)
-        # Handle both concrete and generic types (i.e Info, and Info)
+
+        # Handle both concrete and generic types (i.e. Info, and Info[X, Y])
         return (
             issubclass(origin, self.type)
             if isinstance(origin, type)
             else origin is self.type
         )
 
+    def _is_reserved_type_str(self, annotation: str) -> bool:
+        type_name = self.type.__name__
+        module = self.type.__module__
+
+        base_annotation = annotation.split("[")[0].strip()
+        # Only match qualified names (strawberry.X or full module path)
+        valid_names = {
+            f"strawberry.{type_name}",  # e.g. "strawberry.Info"
+            f"{module}.{type_name}",  # e.g. "strawberry.types.info.Info"
+        }
+
+        # Add alias if provided (e.g. "Parent" for StrawberryParent)
+        if self.alias:
+            valid_names.add(f"strawberry.{self.alias}")
+
+        return base_annotation in valid_names
+
 
 SELF_PARAMSPEC = ReservedNameBoundParameter("self")
 CLS_PARAMSPEC = ReservedNameBoundParameter("cls")
 ROOT_PARAMSPEC = ReservedName("root")
 INFO_PARAMSPEC = ReservedType("info", Info)
-PARENT_PARAMSPEC = ReservedType(name=None, type=StrawberryParent)
+PARENT_PARAMSPEC = ReservedType(name=None, type=StrawberryParent, alias="Parent")
 
 T = TypeVar("T")
 
