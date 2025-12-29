@@ -4,240 +4,81 @@ concurrency: release
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
+
+permissions:
+  id-token: write
 
 jobs:
-  release-file-check:
-    name: Get information about release
+  check-release:
+    name: Check for release
     runs-on: ubuntu-latest
-
     outputs:
-      changelog: ${{ steps.release-check.outputs.changelog }}
-      status: ${{ steps.release-check.outputs.release_status }}
-      change_type: ${{ steps.release-check.outputs.change_type }}
+      has_release: ${{ steps.check.outputs.has_release }}
 
     steps:
       - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
 
-      - name: Release file check
-        uses: ./.github/release-check-action
-        id: release-check
+      - name: Install uv
+        uses: astral-sh/setup-uv@61cb8a9741eeb8a550a1b8544337180c0fc8476b # v7.2.0
 
-  release:
-    name: Release
-    runs-on: ubuntu-latest
-    needs: release-file-check
-    if: ${{ needs.release-file-check.outputs.status == 'OK' }}
-    outputs:
-      version: ${{ steps.get-version.outputs.version }}
-    steps:
-      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
-        with:
-          persist-credentials: false
-      - name: Set up Python
-        uses: actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548 # v4
-        with:
-          python-version: "3.10"
-      - name: Install deps
+      - name: Check for release
+        id: check
         run: |
-          python -m pip install pip --upgrade
-          pip install poetry
-          pip install githubrelease
-          pip install autopub
-          pip install httpx
-      - name: Check if we should release
-        id: check_release
-        run: |
-          set +e
-          echo ::set-output name=release::$(autopub check)
-      - name: Publish
-        if: steps.check_release.outputs.release == ''
+          if uvx --from autopub==1.0.0a55 --with pygithub autopub check; then
+            echo "has_release=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_release=false" >> "$GITHUB_OUTPUT"
+          fi
         env:
           GITHUB_TOKEN: ${{ secrets.BOT_TOKEN }}
-          POETRY_PYPI_TOKEN_PYPI: ${{ secrets.PYPI_TOKEN }}
+
+      - name: Verify .autopub directory
+        if: steps.check.outputs.has_release == 'true'
         run: |
-          git remote set-url origin https://${{ secrets.BOT_TOKEN }}@github.com/${{ github.repository }}
-          autopub prepare
-          poetry build
-          autopub commit
-          autopub githubrelease
-          poetry publish --username __token__
-      - name: Get project version
-        id: get-version
-        shell: python
-        run: |
-          import os
-          from pathlib import Path
-          from autopub.base import get_project_version
+          if [ -d ".autopub" ]; then
+            echo "Found .autopub directory"
+          else
+            echo "No .autopub directory found"
+            exit 1
+          fi
 
-          with Path(os.environ["GITHUB_OUTPUT"]).open('a') as f:
-              f.write(f"version={get_project_version()}\n")
-
-  get-contributor-info:
-    name: Get PR info
-    runs-on: ubuntu-latest
-    needs: release-file-check
-    if: ${{ needs.release-file-check.outputs.status == 'OK' }}
-
-    outputs:
-      contributor-name: ${{ steps.get-info.outputs.contributor-name }}
-      contributor-username: ${{ steps.get-info.outputs.contributor-username }}
-      contributor-twitter-username: ${{ steps.get-info.outputs.contributor-twitter-username }}
-      pr-number: ${{ steps.get-info.outputs.pr-number }}
-
-    steps:
-      - name: Get PR info
-        id: get-info
-        uses: strawberry-graphql/get-pr-info-action@a6d95647fa027e52c0d751a225d3864d5c091284 # v6
-
-  update-release-on-github:
-    name: Update release on GitHub
-    runs-on: ubuntu-latest
-    needs: [release-file-check, get-contributor-info, release]
-    if: ${{ needs.release-file-check.outputs.status == 'OK' }}
-    steps:
-      - uses: actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548 # v4
+      - name: Upload .autopub artifact
+        if: steps.check.outputs.has_release == 'true'
+        uses: actions/upload-artifact@v4
         with:
-          python-version: "3.10"
-      - name: Install dependencies
-        run: pip install httpx
-      - name: Update release on GitHub
-        shell: python
-        run: |
-          import os
+          name: autopub-data
+          path: .autopub
+          include-hidden-files: true
 
-          import httpx
-
-          tag = os.environ["TAG"]
-          contributor_username = os.environ["CONTRIBUTOR_USERNAME"]
-          pr_number = os.environ["PR_NUMBER"]
-
-          response = httpx.get(
-              url=f"https://api.github.com/repos/strawberry-graphql/strawberry/releases/tags/{tag}",
-              headers={
-                  "Accept": "application/vnd.github.v3+json",
-              },
-          )
-
-          response.raise_for_status()
-          data = response.json()
-          release_id = data["id"]
-          release_body = data["body"].strip()
-
-          release_footer = f"""
-          Releases contributed by @{contributor_username} via #{pr_number}
-          """.strip()
-
-          updated_release_body = f"{release_body}\n\n{release_footer}"
-
-          response = httpx.patch(
-              url=f"https://api.github.com/repos/strawberry-graphql/strawberry/releases/{release_id}",
-              json={"body": updated_release_body},
-              headers={
-                  "Accept": "application/vnd.github.v3+json",
-                  "Authorization": f"token {os.environ['GITHUB_TOKEN']}",
-              },
-          )
-
-          response.raise_for_status()
-
-        env:
-          GITHUB_TOKEN: ${{ secrets.BOT_TOKEN }}
-          TAG: ${{ needs.release.outputs.version }}
-          CONTRIBUTOR_USERNAME: ${{ needs.get-contributor-info.outputs.contributor-username }}
-          PR_NUMBER: ${{ needs.get-contributor-info.outputs.pr-number }}
-
-  read-tweet-md:
-    name: Read TWEET.md
-    runs-on: ubuntu-latest
-    needs: [release, get-contributor-info, release-file-check]
-    if: ${{ needs.release-file-check.outputs.status == 'OK' && needs.get-contributor-info.outputs.contributor-name }}
-
-    outputs:
-      tweet: ${{ steps.extract.outputs.tweet }}
-      has-tweet-file: ${{ steps.extract.outputs.has-tweet-file }}
-
-    steps:
-      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
-      - name: Extract tweet message and changelog
-        id: extract
-        uses: strawberry-graphql/tweet-actions/read-tweet@b8d51a501ab14ac32d79b61e3a0af5c3add4ead0 # v6
-        with:
-          changelog: ${{ needs.release-file-check.outputs.changelog }}
-          version: ${{ needs.release.outputs.version }}
-          contributor_name: ${{ needs.get-contributor-info.outputs.contributor-name }}
-          contributor_twitter_username: ${{ needs.get-contributor-info.outputs.contributor-twitter-username }}
-
-  send-tweet:
-    name: Send tweet
-    runs-on: ubuntu-latest
-    needs: [release, read-tweet-md, get-contributor-info]
-    if: ${{ needs.release-file-check.outputs.status == 'OK' }}
-
-    steps:
-      - uses: actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548 # v4
-        with:
-          python-version: "3.10"
-      - name: Install dependencies
-        run: pip install tweepy==4.14.0
-      - name: Send tweet
-        shell: python
-        run: |
-          import base64
-          import os
-
-          import tweepy
-
-          TWITTER_CONSUMER_KEY = os.environ["TWITTER_API_KEY"]
-          TWITTER_CONSUMER_SECRET = os.environ["TWITTER_API_SECRET"]
-          TWITTER_ACCESS_TOKEN = os.environ["TWITTER_ACCESS_TOKEN"]
-          TWITTER_ACCESS_TOKEN_SECRET = os.environ["TWITTER_ACCESS_TOKEN_SECRET"]
-          TWITTER_BEARER_TOKEN = os.environ["TWITTER_BEARER_TOKEN"]
-
-
-          tweepy_v2 = tweepy.Client(
-              TWITTER_BEARER_TOKEN,
-              consumer_key=TWITTER_CONSUMER_KEY,
-              consumer_secret=TWITTER_CONSUMER_SECRET,
-              access_token=TWITTER_ACCESS_TOKEN,
-              access_token_secret=TWITTER_ACCESS_TOKEN_SECRET,
-          )
-
-
-          def post_tweet() -> None:
-              text = base64.b64decode(os.environ["TWEET"]).decode("utf-8")
-              tweepy_v2.create_tweet(text=text)
-
-
-          post_tweet()
-
-        env:
-          TWEET: ${{ needs.read-tweet-md.outputs.tweet }}
-          TWITTER_API_KEY: ${{ secrets.TWITTER_API_KEY }}
-          TWITTER_API_SECRET: ${{ secrets.TWITTER_API_SECRET }}
-          TWITTER_ACCESS_TOKEN: ${{ secrets.TWITTER_ACCESS_TOKEN }}
-          TWITTER_ACCESS_TOKEN_SECRET: ${{ secrets.TWITTER_ACCESS_TOKEN_SECRET }}
-          TWITTER_BEARER_TOKEN: ${{ secrets.TWITTER_BEARER_TOKEN }}
-
-  remove-tweet-file:
-    name: Remove TWEET.md
-    if: always() && needs.read-tweet-md.outputs.has-tweet-file == 'true'
-    needs: [send-tweet, read-tweet-md]
+  publish:
+    name: Publish to PyPI
+    needs: check-release
+    if: ${{ github.ref == 'refs/heads/main' && needs.check-release.outputs.has_release == 'true' }}
     runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@61cb8a9741eeb8a550a1b8544337180c0fc8476b # v7.2.0
+
+      - name: Download .autopub artifact
+        uses: actions/download-artifact@v4
         with:
-          persist-credentials: false
-      - name: Remove TWEET.md and commit
+          name: autopub-data
+          path: .autopub
+
+      - name: Build and publish
+        run: |
+          echo "✨ Preparing..."
+          uvx --from autopub==1.0.0a55 --with pygithub autopub prepare
+          echo "✨ Building..."
+          uvx --from autopub==1.0.0a55 --with pygithub autopub build
+          echo "✨ Publishing..."
+          uvx --from autopub==1.0.0a55 --with pygithub autopub publish
         env:
           GITHUB_TOKEN: ${{ secrets.BOT_TOKEN }}
-        run: |
-          git config --global user.name 'Strawberry GraphQL Bot'
-          git config --global user.email 'bot@strawberry.rocks'
-          git remote set-url origin https://${{ secrets.BOT_TOKEN }}@github.com/${{ github.repository }}
-          git pull
-          git rm TWEET.md
-          git commit -m "Remove TWEET.md"
-          git push
+          GIT_USERNAME: botberry
+          GIT_EMAIL: bot@strawberry.rocks
+          UV_PUBLISH_TOKEN: ${{ secrets.PYPI_TOKEN }}
