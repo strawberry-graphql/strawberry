@@ -8,6 +8,15 @@ In GraphQL, there's an important distinction between a field that is `null` and
 a field that is completely absent from the input. Strawberry's `Maybe` type
 allows you to differentiate between these states:
 
+<Note>
+
+`Maybe` is the recommended way to handle optional input fields in Strawberry. If
+you're using `strawberry.UNSET` for this purpose, we encourage migrating to
+`Maybe` for better type safety and clearer semantics. See
+[Migrating from UNSET](#migrating-from-unset) for details.
+
+</Note>
+
 For `Maybe[str]`:
 
 1. **Field present with a value**: `Some("hello")`
@@ -21,6 +30,10 @@ For `Maybe[str | None]` (when you need to handle explicit nulls):
 
 This is particularly useful for update operations where you need to distinguish
 between "set this field to null" and "don't change this field at all".
+
+The design is inspired by Rust's
+[`Option<T>`](https://doc.rust-lang.org/std/option/) type and similar patterns
+in functional programming languages like Haskell's `Maybe` and Scala's `Option`.
 
 ## What problem does `strawberry.Maybe` solve?
 
@@ -117,10 +130,15 @@ input UpdateUserInput {
 ```python
 @strawberry.input
 class UpdatePostInput:
-    title: strawberry.Maybe[str]  # Can be set to new value or omitted
+    # Maybe[T] - value or absent, null is INVALID
+    # Use when the field must have a value if provided
+    title: strawberry.Maybe[str]
     content: strawberry.Maybe[str]
     published: strawberry.Maybe[bool]
-    tags: strawberry.Maybe[list[str] | None]  # Can be set, cleared, or omitted
+
+    # Maybe[T | None] - value, null, or absent
+    # Use when null is a valid value (e.g., to clear/remove the field)
+    tags: strawberry.Maybe[list[str] | None]
 
 
 @strawberry.type
@@ -130,13 +148,13 @@ class Mutation:
         post = get_post(post_id)
 
         # Only update fields that were explicitly provided
-        if input.title:
+        if input.title is not None:
             post.title = input.title.value
-        if input.content:
+        if input.content is not None:
             post.content = input.content.value
-        if input.published:
+        if input.published is not None:
             post.published = input.published.value
-        if input.tags:
+        if input.tags is not None:
             post.tags = input.tags.value  # Could be None to clear tags
 
         return post
@@ -144,7 +162,26 @@ class Mutation:
 
 ## Maybe vs Optional vs Nullable
 
-Understanding the differences between these approaches:
+The key distinction is between `Maybe[T]` and `Maybe[T | None]`:
+
+- **`Maybe[T]`**: Two states - value provided or absent. Use when the field
+  cannot be set to null (e.g., a required `title` that you either update or
+  leave unchanged).
+- **`Maybe[T | None]`**: Three states - value provided, null provided, or
+  absent. Use when null is meaningful (e.g., clearing an optional `phone`
+  number).
+
+<Note>
+
+Both `Maybe[T]` and `Maybe[T | None]` generate the same GraphQL schema (a
+nullable field). The distinction between them is enforced by Strawberry's
+internal validation, not by the GraphQL spec. When a client sends `null` to a
+`Maybe[T]` field, Strawberry returns a validation error before the resolver is
+called.
+
+</Note>
+
+Full comparison:
 
 | Type                            | Python     | GraphQL   | Absent   | Null          | Value          |
 | ------------------------------- | ---------- | --------- | -------- | ------------- | -------------- |
@@ -206,6 +243,95 @@ def update_if_provided(obj, field_name: str, maybe_value):
 update_if_provided(user, "phone", input.phone)
 update_if_provided(user, "email", input.email)
 ```
+
+## Migrating from UNSET
+
+If you're currently using `strawberry.UNSET` to differentiate between absent and
+null values, we recommend migrating to `Maybe` for better type safety and
+clearer semantics.
+
+### Why Migrate?
+
+`Maybe` provides advantages over `UNSET`:
+
+1. **Type Safety**: `Maybe[T]` is a proper generic type that works correctly
+   with type checkers, whereas `UNSET` is typed as `Any` which defeats static
+   analysis
+2. **Explicit Nullability**: With `UNSET`, you write `field: str | None = UNSET`
+   where it's ambiguous whether `None` is a valid value or represents "absent".
+   With `Maybe`, `Maybe[str]` means null is invalid, while `Maybe[str | None]`
+   explicitly allows null as a value
+
+### Migration Example
+
+Before (using UNSET):
+
+```python
+import strawberry
+
+
+@strawberry.input
+class UpdateUserInput:
+    name: str | None = strawberry.UNSET
+    phone: str | None = strawberry.UNSET
+
+
+@strawberry.type
+class Mutation:
+    @strawberry.mutation
+    def update_user(self, input: UpdateUserInput) -> User:
+        if input.name is not strawberry.UNSET:
+            user.name = input.name  # Could be a string or None
+        if input.phone is not strawberry.UNSET:
+            user.phone = input.phone
+        return user
+```
+
+After (using Maybe):
+
+```python
+import strawberry
+
+
+@strawberry.input
+class UpdateUserInput:
+    name: strawberry.Maybe[str | None]
+    phone: strawberry.Maybe[str | None]
+
+
+@strawberry.type
+class Mutation:
+    @strawberry.mutation
+    def update_user(self, input: UpdateUserInput) -> User:
+        if input.name is not None:
+            user.name = input.name.value  # Access via .value
+        if input.phone is not None:
+            user.phone = input.phone.value
+        return user
+```
+
+### Key Differences
+
+| Aspect          | UNSET                       | Maybe                            |
+| --------------- | --------------------------- | -------------------------------- |
+| Check absent    | `value is strawberry.UNSET` | `value is None`                  |
+| Access value    | `value` (direct)            | `value.value` (via Some)         |
+| Type annotation | `T \| None = UNSET`         | `Maybe[T]` or `Maybe[T \| None]` |
+| Null handling   | Implicit                    | Explicit with `T \| None`        |
+
+### Codemod
+
+If you have existing `Maybe[T]` annotations that need to accept explicit null
+values, Strawberry provides a codemod to convert them to `Maybe[T | None]`:
+
+```bash
+python -m libcst.tool codemod strawberry.codemods.maybe_optional.ConvertMaybeToOptional .
+```
+
+Note: This codemod is for updating `Maybe` annotations, not for migrating from
+`UNSET` to `Maybe`. Migration from `UNSET` requires manual changes to update
+both the type annotations and the value access patterns (from `value` to
+`value.value`).
 
 ## Related Types
 

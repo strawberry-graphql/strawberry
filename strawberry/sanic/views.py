@@ -8,7 +8,7 @@ from typing import (
     TypeGuard,
 )
 
-from lia import HTTPException, SanicHTTPRequestAdapter
+from cross_web import HTTPException, SanicHTTPRequestAdapter
 from sanic.request import Request
 from sanic.response import HTTPResponse, html
 from sanic.views import HTTPMethodView

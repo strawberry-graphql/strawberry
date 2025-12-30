@@ -254,13 +254,13 @@ class PydanticV1Compat:
             ConstrainedStr = pydantic.v1.ConstrainedStr
             ConstrainedList = pydantic.v1.ConstrainedList
 
-        if lenient_issubclass(type_, ConstrainedInt):  # type: ignore
+        if lenient_issubclass(type_, ConstrainedInt):
             return int
-        if lenient_issubclass(type_, ConstrainedFloat):  # type: ignore
+        if lenient_issubclass(type_, ConstrainedFloat):
             return float
-        if lenient_issubclass(type_, ConstrainedStr):  # type: ignore
+        if lenient_issubclass(type_, ConstrainedStr):
             return str
-        if lenient_issubclass(type_, ConstrainedList):  # type: ignore
+        if lenient_issubclass(type_, ConstrainedList):
             return list[self.get_basic_type(type_.item_type)]  # type: ignore
 
         if type_ in self.fields_map:
@@ -299,8 +299,10 @@ class PydanticCompat:
 if IS_PYDANTIC_V2:
     from typing import get_args, get_origin
 
-    from pydantic.v1.typing import is_new_type
-    from pydantic.v1.utils import lenient_issubclass, smart_deepcopy
+    from pydantic._internal._utils import lenient_issubclass, smart_deepcopy
+
+    def is_new_type(type_: Any) -> bool:
+        return callable(type_) and hasattr(type_, "__supertype__")
 
     def new_type_supertype(type_: Any) -> Any:
         return type_.__supertype__

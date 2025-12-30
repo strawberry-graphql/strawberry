@@ -1,6 +1,89 @@
 CHANGELOG
 =========
 
+0.288.1 - 2025-12-28
+--------------------
+
+Fixed a bug where using `relay.node()` or `relay.connection()` would raise a
+`DeprecationWarning` about "Argument name-based matching of 'info'", even though
+the `info` parameter was correctly annotated.
+
+This also fixes the same warning when using Python 3.12+ type alias syntax for
+`Info`, such as `type MyInfo = strawberry.Info[Context, None]`.
+
+The fix recognizes `strawberry.Info` and `strawberry.Parent` annotations (with
+or without generic parameters) when they appear as string forward references.
+Only fully qualified names are matched to avoid confusion with user-defined types.
+
+Contributed by [Thiago Bellini Ribeiro](https://github.com/bellini666) via [PR #4081](https://github.com/strawberry-graphql/strawberry/pull/4081/)
+
+
+0.288.0 - 2025-12-28
+--------------------
+
+Deprecate passing a class to `strawberry.scalar()`. Use `scalar_map` in
+`StrawberryConfig` instead for better type checking support.
+
+```python
+# Before (deprecated)
+Base64 = strawberry.scalar(
+    NewType("Base64", bytes),
+    serialize=lambda v: base64.b64encode(v).decode(),
+    parse_value=lambda v: base64.b64decode(v),
+)
+```
+
+Instead, use `scalar_map` in `StrawberryConfig`:
+
+```python
+# Recommended
+Base64 = NewType("Base64", bytes)
+
+schema = strawberry.Schema(
+    query=Query,
+    config=StrawberryConfig(
+        scalar_map={
+            Base64: strawberry.scalar(
+                name="Base64",
+                serialize=lambda v: base64.b64encode(v).decode(),
+                parse_value=lambda v: base64.b64decode(v),
+            )
+        }
+    ),
+)
+```
+
+This release also removes internal scalar wrapper exports (`Date`, `DateTime`,
+etc.) from `strawberry.schema.types.base_scalars`. Most users are likely not
+using these, but if you were, a codemod is available to help with the migration:
+`strawberry upgrade replace-scalar-wrappers .`
+
+Contributed by [Thiago Bellini Ribeiro](https://github.com/bellini666) via [PR #4076](https://github.com/strawberry-graphql/strawberry/pull/4076/)
+
+
+0.287.4 - 2025-12-27
+--------------------
+
+Switch from `lia-web` to `cross-web`: `lia-web` has been renamed to `cross-web`. Update imports from `lia` to `cross_web` accordingly.
+
+Contributed by [Robin Candau](https://github.com/Antiz96) via [PR #4079](https://github.com/strawberry-graphql/strawberry/pull/4079/)
+
+
+0.287.3 - 2025-12-12
+--------------------
+
+Fix compatibility with Python 3.14 when using the Pydantic integration with Pydantic V2.
+
+Previously, importing `strawberry.experimental.pydantic` on Python 3.14 would trigger:
+```
+UserWarning: Core Pydantic V1 functionality isn't compatible with Python 3.14 or greater.
+```
+
+This is now fixed by avoiding `pydantic.v1` imports on Python 3.14+.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #4072](https://github.com/strawberry-graphql/strawberry/pull/4072/)
+
+
 0.287.2 - 2025-12-03
 --------------------
 

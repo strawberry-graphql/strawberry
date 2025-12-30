@@ -6,8 +6,8 @@ from typing import (
     Literal,
 )
 
+from cross_web import HTTPException, SyncHTTPRequestAdapter
 from graphql import GraphQLError
-from lia import HTTPException, SyncHTTPRequestAdapter
 
 from strawberry.exceptions import MissingQueryError
 from strawberry.file_uploads.utils import replace_placeholders_with_files

@@ -3,7 +3,7 @@ from collections.abc import Mapping
 from typing import Any, Generic
 from typing_extensions import Protocol
 
-from lia import HTTPException
+from cross_web import HTTPException
 
 from strawberry.http import GraphQLRequestData
 from strawberry.http.ides import GraphQL_IDE, get_graphql_ide_html

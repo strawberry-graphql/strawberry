@@ -1,6 +1,6 @@
 [project]
 name = "strawberry-graphql"
-version = "0.287.2"
+version = "0.288.1"
 description = "A library for creating GraphQL APIs"
 authors = [{ name = "Patrick Arminio", email = "patrick.arminio@gmail.com" }]
 license = { text = "MIT" }
@@ -19,7 +19,7 @@ dependencies = [
   "typing-extensions>=4.5.0",
   "python-dateutil>=2.7",
   "packaging>=23",
-  "lia-web (>=0.2.1)",
+  "cross-web (>=0.4.0)",
 ]
 
 [project.urls]
@@ -166,6 +166,7 @@ asyncio_mode = "auto"
 filterwarnings = [
   "ignore::DeprecationWarning:strawberry.*.resolver",
   "ignore:LazyType is deprecated:DeprecationWarning",
+  "ignore:Passing a class to strawberry.scalar:DeprecationWarning",
   "ignore::DeprecationWarning:ddtrace.internal",
   "ignore::DeprecationWarning:django.utils.encoding",
   # ignoring the text instead of the whole warning because we'd

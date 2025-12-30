@@ -7,7 +7,11 @@ from typing import (
     TypeGuard,
 )
 
-from lia import AsyncFlaskHTTPRequestAdapter, FlaskHTTPRequestAdapter, HTTPException
+from cross_web import (
+    AsyncFlaskHTTPRequestAdapter,
+    FlaskHTTPRequestAdapter,
+    HTTPException,
+)
 
 from flask import Request, Response, render_template_string, request
 from flask.views import View

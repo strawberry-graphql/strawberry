@@ -1,7 +1,5 @@
 from typing import NewType
 
-from strawberry.types.scalar import scalar
-
-Upload = scalar(NewType("Upload", bytes), parse_value=lambda x: x)
+Upload = NewType("Upload", bytes)
 
 __all__ = ["Upload"]

@@ -1,9 +1,9 @@
 from inline_snapshot import snapshot
 
-from .utils.marks import requires_mypy, requires_pyright, skip_on_windows
+from .utils.marks import requires_mypy, requires_pyright, requires_ty, skip_on_windows
 from .utils.typecheck import Result, typecheck
 
-pytestmark = [skip_on_windows, requires_pyright, requires_mypy]
+pytestmark = [skip_on_windows, requires_pyright, requires_mypy, requires_ty]
 
 
 CODE = """
@@ -59,6 +59,22 @@ def test():
             Result(
                 type="note",
                 message='Revealed type is "mypy_test.User | mypy_test.Error"',
+                line=23,
+                column=13,
+            ),
+        ]
+    )
+    assert results.ty == snapshot(
+        [
+            Result(
+                type="information",
+                message="Revealed type: `<special-form 'typing.Annotated[User | Error, <metadata>]'>`",
+                line=19,
+                column=13,
+            ),
+            Result(
+                type="information",
+                message="Revealed type: `User`",
                 line=23,
                 column=13,
             ),

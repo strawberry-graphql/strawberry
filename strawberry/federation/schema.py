@@ -22,11 +22,12 @@ from strawberry.types.base import (
     get_object_definition,
 )
 from strawberry.types.info import Info
-from strawberry.types.scalar import scalar
+from strawberry.types.scalar import ScalarDefinition, ScalarWrapper, scalar
 from strawberry.types.union import StrawberryUnion
 from strawberry.utils.inspect import get_func_args
 
 from .schema_directive import StrawberryFederationSchemaDirective
+from .types import FieldSet, LinkImport
 from .versions import format_version, parse_version
 
 if TYPE_CHECKING:
@@ -37,10 +38,10 @@ if TYPE_CHECKING:
     from strawberry.schema.config import StrawberryConfig
     from strawberry.schema_directive import StrawberrySchemaDirective
     from strawberry.types.enum import StrawberryEnumDefinition
-    from strawberry.types.scalar import ScalarDefinition, ScalarWrapper
 
 
-FederationAny = scalar(NewType("_Any", object), name="_Any")  # type: ignore
+FederationAny = NewType("FederationAny", object)
+"""Represents the _Any scalar type used in federation entity resolution."""
 
 
 class Schema(BaseSchema):
@@ -77,7 +78,24 @@ class Schema(BaseSchema):
         self.federation_version = parse_version(federation_version)
 
         query = self._get_federation_query_type(query, mutation, subscription, types)
+
+        # Add FederationAny to types so it appears in the schema
         types = [*types, FederationAny]
+
+        # Add federation scalars to scalar_overrides so they can be recognized
+        federation_scalar_overrides: dict[
+            object, type | ScalarDefinition | ScalarWrapper
+        ] = {
+            FederationAny: scalar(
+                name="_Any", serialize=lambda v: v, parse_value=lambda v: v
+            ),
+            FieldSet: scalar(name="_FieldSet", serialize=lambda v: v, parse_value=str),
+            LinkImport: scalar(
+                name="link__Import", serialize=lambda v: v, parse_value=lambda v: v
+            ),
+        }
+        if scalar_overrides:
+            federation_scalar_overrides.update(scalar_overrides)
 
         super().__init__(
             query=query,
@@ -88,7 +106,7 @@ class Schema(BaseSchema):
             extensions=extensions,
             execution_context_class=execution_context_class,
             config=config,
-            scalar_overrides=scalar_overrides,
+            scalar_overrides=federation_scalar_overrides,
             schema_directives=schema_directives,
         )
 
@@ -172,7 +190,7 @@ class Schema(BaseSchema):
         results = []
 
         for representation in representations:
-            type_name = representation.pop("__typename")
+            type_name = representation.pop("__typename")  # type: ignore[attr-defined]
             type_ = self.schema_converter.type_map[type_name]
 
             definition = cast("StrawberryObjectDefinition", type_.definition)
@@ -185,7 +203,7 @@ class Schema(BaseSchema):
 
                 # TODO: use the same logic we use for other resolvers
                 if "info" in func_args:
-                    kwargs["info"] = info
+                    kwargs["info"] = info  # type: ignore[index]
 
                 try:
                     result = resolve_reference(**kwargs)

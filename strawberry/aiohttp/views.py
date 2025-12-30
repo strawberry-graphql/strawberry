@@ -10,7 +10,7 @@ from typing import (
 )
 
 from aiohttp import ClientConnectionResetError, http, web
-from lia import AiohttpHTTPRequestAdapter, HTTPException
+from cross_web import AiohttpHTTPRequestAdapter, HTTPException
 
 from strawberry.http.async_base_view import (
     AsyncBaseHTTPView,

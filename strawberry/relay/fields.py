@@ -49,8 +49,8 @@ from .types import Connection, GlobalID, Node
 if TYPE_CHECKING:
     from typing import Literal
 
+    import strawberry
     from strawberry.permission import BasePermission
-    from strawberry.types.info import Info
 
 
 class NodeExtension(FieldExtension):
@@ -65,12 +65,20 @@ class NodeExtension(FieldExtension):
         field.base_resolver = StrawberryResolver(resolver, type_override=field.type)
 
     def resolve(
-        self, next_: SyncExtensionResolver, source: Any, info: Info, **kwargs: Any
+        self,
+        next_: SyncExtensionResolver,
+        source: Any,
+        info: strawberry.Info,
+        **kwargs: Any,
     ) -> Any:
         return next_(source, info, **kwargs)
 
     async def resolve_async(
-        self, next_: SyncExtensionResolver, source: Any, info: Info, **kwargs: Any
+        self,
+        next_: SyncExtensionResolver,
+        source: Any,
+        info: strawberry.Info,
+        **kwargs: Any,
     ) -> Any:
         retval = next_(source, info, **kwargs)
         # If the resolve_nodes method is not async, retval will not actually
@@ -81,12 +89,12 @@ class NodeExtension(FieldExtension):
 
     def get_node_resolver(
         self, field: StrawberryField
-    ) -> Callable[[Info, GlobalID], Node | None | Awaitable[Node | None]]:
+    ) -> Callable[[strawberry.Info, GlobalID], Node | None | Awaitable[Node | None]]:
         type_ = field.type
         is_optional = isinstance(type_, StrawberryOptional)
 
         def resolver(
-            info: Info,
+            info: strawberry.Info,
             id: Annotated[GlobalID, argument(description="The ID of the object.")],
         ) -> Node | None | Awaitable[Node | None]:
             node_type = id.resolve_type(info)
@@ -114,13 +122,15 @@ class NodeExtension(FieldExtension):
 
     def get_node_list_resolver(
         self, field: StrawberryField
-    ) -> Callable[[Info, list[GlobalID]], list[Node] | Awaitable[list[Node]]]:
+    ) -> Callable[
+        [strawberry.Info, list[GlobalID]], list[Node] | Awaitable[list[Node]]
+    ]:
         type_ = field.type
         assert isinstance(type_, StrawberryList)
         is_optional = isinstance(type_.of_type, StrawberryOptional)
 
         def resolver(
-            info: Info,
+            info: strawberry.Info,
             ids: Annotated[
                 list[GlobalID], argument(description="The IDs of the objects.")
             ],
@@ -306,7 +316,7 @@ class ConnectionExtension(FieldExtension):
         self,
         next_: SyncExtensionResolver,
         source: Any,
-        info: Info,
+        info: strawberry.Info,
         *,
         before: str | None = None,
         after: str | None = None,
@@ -329,7 +339,7 @@ class ConnectionExtension(FieldExtension):
         self,
         next_: AsyncExtensionResolver,
         source: Any,
-        info: Info,
+        info: strawberry.Info,
         *,
         before: str | None = None,
         after: str | None = None,

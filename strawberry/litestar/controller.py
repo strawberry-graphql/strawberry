@@ -14,7 +14,7 @@ from typing import (
     TypeGuard,
 )
 
-from lia import HTTPException, LitestarRequestAdapter
+from cross_web import HTTPException, LitestarRequestAdapter
 from litestar import (
     Controller,
     MediaType,

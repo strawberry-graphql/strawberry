@@ -8,7 +8,7 @@ from typing import (
     TypeGuard,
 )
 
-from lia import HTTPException, StarletteRequestAdapter
+from cross_web import HTTPException, StarletteRequestAdapter
 from starlette import status
 from starlette.requests import Request
 from starlette.responses import (

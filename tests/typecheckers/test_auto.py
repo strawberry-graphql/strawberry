@@ -1,9 +1,9 @@
 from inline_snapshot import snapshot
 
-from .utils.marks import requires_mypy, requires_pyright, skip_on_windows
+from .utils.marks import requires_mypy, requires_pyright, requires_ty, skip_on_windows
 from .utils.typecheck import Result, typecheck
 
-pytestmark = [skip_on_windows, requires_pyright, requires_mypy]
+pytestmark = [skip_on_windows, requires_pyright, requires_mypy, requires_ty]
 
 
 CODE = """
@@ -56,5 +56,27 @@ def test_auto():
             Result(type="note", message='Revealed type is "Any"', line=14, column=13),
             Result(type="note", message='Revealed type is "Any"', line=15, column=13),
             Result(type="note", message='Revealed type is "Any"', line=16, column=13),
+        ]
+    )
+    assert result.ty == snapshot(
+        [
+            Result(
+                type="information",
+                message="Revealed type: `Any`",
+                line=14,
+                column=13,
+            ),
+            Result(
+                type="information",
+                message="Revealed type: `Any`",
+                line=15,
+                column=13,
+            ),
+            Result(
+                type="information",
+                message="Revealed type: `Any`",
+                line=16,
+                column=13,
+            ),
         ]
     )

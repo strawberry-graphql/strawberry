@@ -4,7 +4,7 @@ import warnings
 from typing import TYPE_CHECKING
 
 from chalice.app import Request, Response
-from lia import ChaliceHTTPRequestAdapter, HTTPException
+from cross_web import ChaliceHTTPRequestAdapter, HTTPException
 
 from strawberry.http.sync_base_view import SyncBaseHTTPView
 from strawberry.http.temporal_response import TemporalResponse

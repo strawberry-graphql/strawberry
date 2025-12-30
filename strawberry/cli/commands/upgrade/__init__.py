@@ -11,6 +11,7 @@ from libcst.codemod import CodemodContext
 from strawberry.cli.app import app
 from strawberry.codemods.annotated_unions import ConvertUnionToAnnotatedUnion
 from strawberry.codemods.maybe_optional import ConvertMaybeToOptional
+from strawberry.codemods.replace_scalar_wrappers import ReplaceScalarWrappers
 from strawberry.codemods.update_imports import UpdateImportsCodemod
 
 from ._run_codemod import run_codemod
@@ -19,6 +20,7 @@ codemods = {
     "annotated-union": ConvertUnionToAnnotatedUnion,
     "update-imports": UpdateImportsCodemod,
     "maybe-optional": ConvertMaybeToOptional,
+    "replace-scalar-wrappers": ReplaceScalarWrappers,
 }
 
 
@@ -47,14 +49,23 @@ def upgrade(
 
         raise typer.Exit(2)
 
-    transformer: ConvertUnionToAnnotatedUnion | UpdateImportsCodemod
+    context = CodemodContext()
+    transformer: (
+        UpdateImportsCodemod
+        | ReplaceScalarWrappers
+        | ConvertMaybeToOptional
+        | ConvertUnionToAnnotatedUnion
+    )
 
     if codemod == "update-imports":
-        transformer = UpdateImportsCodemod(context=CodemodContext())
-
+        transformer = UpdateImportsCodemod(context=context)
+    elif codemod == "replace-scalar-wrappers":
+        transformer = ReplaceScalarWrappers(context=context)
+    elif codemod == "maybe-optional":
+        transformer = ConvertMaybeToOptional(context=context)
     else:
         transformer = ConvertUnionToAnnotatedUnion(
-            CodemodContext(),
+            context,
             use_pipe_syntax=True,
             use_typing_extensions=use_typing_extensions,
         )

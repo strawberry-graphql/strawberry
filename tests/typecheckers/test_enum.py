@@ -1,9 +1,9 @@
 from inline_snapshot import snapshot
 
-from .utils.marks import requires_mypy, requires_pyright, skip_on_windows
+from .utils.marks import requires_mypy, requires_pyright, requires_ty, skip_on_windows
 from .utils.typecheck import Result, typecheck
 
-pytestmark = [skip_on_windows, requires_pyright, requires_mypy]
+pytestmark = [skip_on_windows, requires_pyright, requires_mypy, requires_ty]
 
 CODE_WITH_DECORATOR = """
 from enum import Enum
@@ -51,6 +51,22 @@ def test_enum_with_decorator():
             Result(
                 type="note",
                 message='Revealed type is "Literal[mypy_test.IceCreamFlavour.VANILLA]?"',
+                line=13,
+                column=13,
+            ),
+        ]
+    )
+    assert results.ty == snapshot(
+        [
+            Result(
+                type="information",
+                message="Revealed type: `<class 'IceCreamFlavour'>`",
+                line=12,
+                column=13,
+            ),
+            Result(
+                type="information",
+                message="Revealed type: `Literal[IceCreamFlavour.VANILLA]`",
                 line=13,
                 column=13,
             ),
@@ -109,6 +125,22 @@ def test_enum_with_decorator_and_name():
             ),
         ]
     )
+    assert results.ty == snapshot(
+        [
+            Result(
+                type="information",
+                message="Revealed type: `<class 'Flavour'>`",
+                line=12,
+                column=13,
+            ),
+            Result(
+                type="information",
+                message="Revealed type: `Literal[Flavour.VANILLA]`",
+                line=13,
+                column=13,
+            ),
+        ]
+    )
 
 
 CODE_WITH_MANUAL_DECORATOR = """
@@ -156,6 +188,22 @@ def test_enum_with_manual_decorator():
             Result(
                 type="note",
                 message='Revealed type is "Literal[mypy_test.IceCreamFlavour.VANILLA]?"',
+                line=12,
+                column=13,
+            ),
+        ]
+    )
+    assert results.ty == snapshot(
+        [
+            Result(
+                type="information",
+                message="Revealed type: `<class 'IceCreamFlavour'>`",
+                line=11,
+                column=13,
+            ),
+            Result(
+                type="information",
+                message="Revealed type: `Literal[IceCreamFlavour.VANILLA]`",
                 line=12,
                 column=13,
             ),
@@ -213,6 +261,22 @@ def test_enum_with_manual_decorator_and_name():
             ),
         ]
     )
+    assert results.ty == snapshot(
+        [
+            Result(
+                type="information",
+                message="Revealed type: `Unknown`",
+                line=11,
+                column=13,
+            ),
+            Result(
+                type="information",
+                message="Revealed type: `Unknown`",
+                line=12,
+                column=13,
+            ),
+        ]
+    )
 
 
 CODE_WITH_DEPRECATION_REASON = """
@@ -263,6 +327,22 @@ def test_enum_deprecated():
             Result(
                 type="note",
                 message='Revealed type is "Literal[mypy_test.IceCreamFlavour.STRAWBERRY]?"',
+                line=15,
+                column=13,
+            ),
+        ]
+    )
+    assert results.ty == snapshot(
+        [
+            Result(
+                type="information",
+                message="Revealed type: `<class 'IceCreamFlavour'>`",
+                line=14,
+                column=13,
+            ),
+            Result(
+                type="information",
+                message="Revealed type: `Literal[IceCreamFlavour.STRAWBERRY]`",
                 line=15,
                 column=13,
             ),

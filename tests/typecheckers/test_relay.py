@@ -1,9 +1,9 @@
 from inline_snapshot import snapshot
 
-from .utils.marks import requires_mypy, requires_pyright, skip_on_windows
+from .utils.marks import requires_mypy, requires_pyright, requires_ty, skip_on_windows
 from .utils.typecheck import Result, typecheck
 
-pytestmark = [skip_on_windows, requires_pyright, requires_mypy]
+pytestmark = [skip_on_windows, requires_pyright, requires_mypy, requires_ty]
 
 
 CODE = """
@@ -351,5 +351,147 @@ def test():
             Result(type="note", message='Revealed type is "Any"', line=141, column=13),
             Result(type="note", message='Revealed type is "Any"', line=142, column=13),
             Result(type="note", message='Revealed type is "Any"', line=143, column=13),
+        ]
+    )
+    assert results.ty == snapshot(
+        [
+            Result(
+                type="error",
+                message="Function always implicitly returns `None`, which is not assignable to return type `Self@resolve_connection`",
+                line=48,
+                column=10,
+            ),
+            Result(
+                type="error",
+                message="Function always implicitly returns `None`, which is not assignable to return type `list[Fruit]`",
+                line=56,
+                column=26,
+            ),
+            Result(
+                type="error",
+                message="Function always implicitly returns `None`, which is not assignable to return type `list[Fruit]`",
+                line=79,
+                column=10,
+            ),
+            Result(
+                type="error",
+                message="Function always implicitly returns `None`, which is not assignable to return type `Iterator[Fruit]`",
+                line=87,
+                column=10,
+            ),
+            Result(
+                type="error",
+                message="Function always implicitly returns `None`, which is not assignable to return type `Iterable[Fruit]`",
+                line=95,
+                column=10,
+            ),
+            Result(
+                type="error",
+                message="Function always implicitly returns `None`, which is not assignable to return type `Generator[Fruit, None, None]`",
+                line=103,
+                column=10,
+            ),
+            Result(
+                type="error",
+                message="Function always implicitly returns `None`, which is not assignable to return type `AsyncIterator[Fruit]`",
+                line=111,
+                column=10,
+            ),
+            Result(
+                type="error",
+                message="Function always implicitly returns `None`, which is not assignable to return type `AsyncIterable[Fruit]`",
+                line=119,
+                column=10,
+            ),
+            Result(
+                type="error",
+                message="Function always implicitly returns `None`, which is not assignable to return type `AsyncGenerator[Fruit, None]`",
+                line=127,
+                column=10,
+            ),
+            Result(
+                type="information",
+                message="Revealed type: `Node`",
+                line=130,
+                column=13,
+            ),
+            Result(
+                type="information",
+                message="Revealed type: `list[Node]`",
+                line=131,
+                column=13,
+            ),
+            Result(
+                type="information",
+                message="Revealed type: `Node | None`",
+                line=132,
+                column=13,
+            ),
+            Result(
+                type="information",
+                message="Revealed type: `list[Node | None]`",
+                line=133,
+                column=13,
+            ),
+            Result(
+                type="information",
+                message="Revealed type: `Connection[Fruit]`",
+                line=134,
+                column=13,
+            ),
+            Result(
+                type="information",
+                message="Revealed type: `Connection[Fruit]`",
+                line=135,
+                column=13,
+            ),
+            Result(
+                type="information",
+                message="Revealed type: `FruitCustomPaginationConnection`",
+                line=136,
+                column=13,
+            ),
+            Result(
+                type="information",
+                message="Revealed type: `Any`",
+                line=137,
+                column=13,
+            ),
+            Result(
+                type="information",
+                message="Revealed type: `Any`",
+                line=138,
+                column=13,
+            ),
+            Result(
+                type="information",
+                message="Revealed type: `Any`",
+                line=139,
+                column=13,
+            ),
+            Result(
+                type="information",
+                message="Revealed type: `Any`",
+                line=140,
+                column=13,
+            ),
+            Result(
+                type="information",
+                message="Revealed type: `Any`",
+                line=141,
+                column=13,
+            ),
+            Result(
+                type="information",
+                message="Revealed type: `Any`",
+                line=142,
+                column=13,
+            ),
+            Result(
+                type="information",
+                message="Revealed type: `Any`",
+                line=143,
+                column=13,
+            ),
         ]
     )
