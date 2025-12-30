@@ -217,7 +217,7 @@ def enum(
         name: The name of the GraphQL enum.
         description: The description of the GraphQL enum.
         directives: The directives to attach to the GraphQL enum.
-        mode: Whether to use the names (key) or values of the Python enums in GraphQL.
+        graphql_name_from: Whether to use the names (key) or values of the Python enums in GraphQL.
 
     Returns:
         The decorated Enum class.
