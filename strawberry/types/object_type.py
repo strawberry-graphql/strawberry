@@ -114,8 +114,8 @@ def _inject_default_for_maybe_annotations(
                 setattr(cls, name, None)
             elif (
                 isinstance(attr := getattr(cls, name), StrawberryField)
-                and isinstance(attr.default, dataclasses._MISSING_TYPE)
-                and isinstance(attr.default_factory, dataclasses._MISSING_TYPE)
+                and attr.default is dataclasses.MISSING
+                and attr.default_factory is dataclasses.MISSING
             ):
                 attr.default = None
 
