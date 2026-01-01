@@ -4,40 +4,54 @@ on:
   repository_dispatch:
     types: [pre-release-command]
 
+env:
+  AUTOPUB_CMD: uvx --from 'autopub>=1.0.0a48' --with pygithub autopub
+
 jobs:
   pre-release:
     name: Pre-release
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
           ref: ${{ github.event.client_payload.pull_request.head.sha }}
+
       - name: Install uv
         uses: astral-sh/setup-uv@v5
+
       - name: Set up Python
         run: uv python install 3.12
-      - name: Install deps
-        run: |
-          uv pip install --system githubrelease autopub httpx
+
       - name: Check if release exists
         id: check_release
-        run: echo "::set-output name=release::$(autopub check)"
+        run: |
+          if $AUTOPUB_CMD check; then
+            echo "has_release=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_release=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.BOT_TOKEN }}
+
       - name: Metadata
         id: metadata
-        if: steps.check_release.outputs.release == ''
-        run: echo "::set-output name=commit::$(git rev-parse HEAD)"
+        if: steps.check_release.outputs.has_release == 'true'
+        run: echo "commit=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
+
       - name: Find Release Comment
-        uses: peter-evans/find-comment@v1
+        uses: peter-evans/find-comment@v3
         id: find_comment
-        if: steps.check_release.outputs.release == ''
+        if: steps.check_release.outputs.has_release == 'true'
         with:
           token: ${{ secrets.BOT_TOKEN }}
           issue-number: ${{ github.event.client_payload.github.payload.issue.number }}
           comment-author: botberry
           body-includes: "# Pre-release"
+
       - name: Create or update comment
-        uses: peter-evans/create-or-update-comment@v1
-        if: steps.check_release.outputs.release == ''
+        uses: peter-evans/create-or-update-comment@v4
+        if: steps.check_release.outputs.has_release == 'true'
         with:
           token: ${{ secrets.BOT_TOKEN }}
           comment-id: ${{ steps.find_comment.outputs.comment-id }}
@@ -48,24 +62,26 @@ jobs:
 
             Releasing commit [${{ steps.metadata.outputs.commit }}] to PyPi as pre-release! :package:
           edit-mode: replace
+
       - name: Publish pre-release version
-        if: steps.check_release.outputs.release == ''
+        if: steps.check_release.outputs.has_release == 'true'
         id: release
         env:
           GITHUB_TOKEN: ${{ secrets.BOT_TOKEN }}
           UV_PUBLISH_TOKEN: ${{ secrets.PYPI_TOKEN }}
         run: |
-          autopub prepare
+          $AUTOPUB_CMD prepare
           # Get current version and append dev timestamp
           CURRENT_VERSION=$(grep -m1 'version = ' pyproject.toml | cut -d'"' -f2)
           DEV_VERSION="${CURRENT_VERSION}.dev.$(date '+%s')"
           sed -i "s/version = \"${CURRENT_VERSION}\"/version = \"${DEV_VERSION}\"/" pyproject.toml
-          uv build
+          $AUTOPUB_CMD build
           uv publish
-          echo "::set-output name=version::${DEV_VERSION}"
+          echo "version=${DEV_VERSION}" >> $GITHUB_OUTPUT
+
       - name: Create or update comment
-        uses: peter-evans/create-or-update-comment@v1
-        if: steps.check_release.outputs.release == ''
+        uses: peter-evans/create-or-update-comment@v4
+        if: steps.check_release.outputs.has_release == 'true'
         with:
           token: ${{ secrets.BOT_TOKEN }}
           comment-id: ${{ steps.find_comment.outputs.comment-id }}

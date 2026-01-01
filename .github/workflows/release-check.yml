@@ -9,6 +9,12 @@ on:
       - "strawberry/**"
       - "pyproject.toml"
 
+permissions:
+  pull-requests: write
+
+env:
+  AUTOPUB_CMD: uvx --from 'autopub>=1.0.0a48' --with pygithub autopub
+
 jobs:
   get-contributor-info:
     name: Get PR info
@@ -38,6 +44,7 @@ jobs:
         id: skip
         shell: python
         run: |
+          import os
           bots = [
              "dependabot-preview[bot]",
              "dependabot-preview",
@@ -49,9 +56,11 @@ jobs:
 
           if username in bots:
             print(f"Skipping {username} because it is a bot")
-            print("::set-output name=skip::true")
+            with open(os.environ["GITHUB_OUTPUT"], "a") as f:
+              f.write("skip=true\n")
           else:
-            print("::set-output name=skip::false")
+            with open(os.environ["GITHUB_OUTPUT"], "a") as f:
+              f.write("skip=false\n")
 
   release-file-check:
     name: Release check
@@ -63,17 +72,58 @@ jobs:
       changelog: ${{ steps.release-check.outputs.changelog }}
       status: ${{ steps.release-check.outputs.release_status }}
       change_type: ${{ steps.release-check.outputs.change_type }}
+      has_release: ${{ steps.check.outputs.has_release }}
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           ref: "refs/pull/${{ github.event.number }}/merge"
+          sparse-checkout: |
+            RELEASE.md
+            pyproject.toml
+          sparse-checkout-cone-mode: false
 
-      - name: Release file check
-        uses: strawberry-graphql/strawberry/.github/release-check-action@main
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Check with autopub
+        id: check
+        run: |
+          if $AUTOPUB_CMD check; then
+            echo "has_release=true" >> $GITHUB_OUTPUT
+            echo "release_status=OK" >> $GITHUB_OUTPUT
+          else
+            echo "has_release=false" >> $GITHUB_OUTPUT
+            echo "release_status=MISSING" >> $GITHUB_OUTPUT
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract release info
         id: release-check
-        if: github.event.pull_request.draft == false
+        if: steps.check.outputs.has_release == 'true' && github.event.pull_request.draft == false
+        run: |
+          # Read the RELEASE.md file to get changelog and change type
+          if [ -f "RELEASE.md" ]; then
+            # Extract change type from first line
+            change_type=$(head -1 RELEASE.md | grep -oE "(major|minor|patch)" | head -1)
+            echo "change_type=${change_type}" >> $GITHUB_OUTPUT
+
+            # Extract changelog (everything after first line)
+            changelog=$(tail -n +2 RELEASE.md | base64 -w 0)
+            echo "changelog=${changelog}" >> $GITHUB_OUTPUT
+            echo "release_status=OK" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Upload .autopub artifact
+        if: steps.check.outputs.has_release == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: autopub-data
+          path: .autopub
+          include-hidden-files: true
+          if-no-files-found: ignore
 
   read-tweet-md:
     name: Read TWEET.md
@@ -84,7 +134,7 @@ jobs:
       tweet: ${{ steps.extract.outputs.tweet }}
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
           ref: "refs/pull/${{ github.event.number }}/merge"
       - name: Extract tweet message and changelog
@@ -112,7 +162,7 @@ jobs:
     if: github.event.pull_request.draft == false
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: Send comment
         uses: ./.github/bot-action
         env:
