@@ -1,6 +1,16 @@
 CHANGELOG
 =========
 
+0.288.2 - 2026-01-01
+--------------------
+
+Fixed two bugs where using `strawberry.Maybe` wrapped in `Annotated` or using an explicit field definition would raise a `TypeError` about "missing 1 required keyword-only argument", even though a `Maybe` field should allow `None` in all cases.
+
+This fix addresses this via custom handling for annotations wrapped with `Annotated` and handling custom `field` with no `default` and no `default_factory` as possible to be `None`.
+
+Contributed by [Egor](https://github.com/Birdi7) via [PR #4084](https://github.com/strawberry-graphql/strawberry/pull/4084/)
+
+
 0.288.1 - 2025-12-28
 --------------------
 
