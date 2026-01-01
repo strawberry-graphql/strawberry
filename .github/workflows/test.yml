@@ -158,18 +158,13 @@ jobs:
           python-version: "3.11"
 
       - run: uv sync
-      # Since we are running all the integrations at once, we can't use
-      # pydantic v2. It is not compatible with starlette yet
-      - run: uv pip install pydantic==1.10
 
       # we use uv directly instead of nox since we want to
       # test all integrations at once on windows
-      # but we want to exclude tests/mypy since we are using an old version of pydantic
-      # --no-sync prevents uv from reverting pydantic to lockfile version
       - run: |
-          uv run --no-sync pytest --cov=. --cov-append --cov-report=xml -n auto --showlocals --ignore tests/mypy -vv
+          uv run pytest --cov=. --cov-append --cov-report=xml -n auto --showlocals -vv
       - name: coverage xml
-        run: uv run --no-sync coverage xml -i
+        run: uv run coverage xml -i
         if: ${{ always() }}
 
       - uses: codecov/codecov-action@v4
