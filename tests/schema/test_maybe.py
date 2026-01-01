@@ -1021,15 +1021,15 @@ def test_maybe_with_explicit_field_description():
     schema = strawberry.Schema(Query)
 
     assert str(schema) == dedent(
-        """\
+        '''\
         input InputData {
-          \"\"\"This strawberry.field annotation was breaking in default injection\"\"\"
+          """This strawberry.field annotation was breaking in default injection"""
           name: String
         }
 
         type Query {
           test(data: InputData!): String!
-        }"""
+        }'''
     )
 
     query1 = """
@@ -1129,15 +1129,15 @@ def test_maybe_with_annotated_and_explicit_definition():
     schema = strawberry.Schema(Query)
 
     assert str(schema) == dedent(
-        """\
+        '''\
         input InputData {
-          \"\"\"This strawberry.field annotation was breaking in default injection\"\"\"
+          """This strawberry.field annotation was breaking in default injection"""
           name: String
         }
 
         type Query {
           test(data: InputData!): String!
-        }"""
+        }'''
     )
     query1 = """
     query {

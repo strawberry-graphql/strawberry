@@ -48,11 +48,9 @@ def _annotation_is_maybe(annotation: Any) -> bool:
         return _maybe_re.match(annotation) is not None
 
     orig = typing.get_origin(annotation)
-    if orig is Maybe:
-        return True
     if orig is Annotated:
         return _annotation_is_maybe(typing.get_args(annotation)[0])
-    return False
+    return orig is Maybe
 
 
 __all__ = [
