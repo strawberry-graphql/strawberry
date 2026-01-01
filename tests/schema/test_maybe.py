@@ -1107,3 +1107,58 @@ def test_maybe_wrapped_with_annotated_typing():
     """
     result3 = schema.execute_sync(query3)
     assert not result3.errors
+
+
+def test_maybe_with_annotated_and_explicit_definition():
+    """Handle case where Maybe is wrapped with Annotated typing."""
+
+    @strawberry.input
+    class InputData:
+        name: Annotated[strawberry.Maybe[str | None], "some meta"] = strawberry.field(
+            description="This strawberry.field annotation was breaking in default injection"
+        )
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def test(self, data: InputData) -> str:
+            if data.name is None:
+                return "I am a test, and I received: None"
+            return "I am a test, and I received: " + str(data.name.value)
+
+    schema = strawberry.Schema(Query)
+
+    assert str(schema) == dedent(
+        """\
+        input InputData {
+          \"\"\"This strawberry.field annotation was breaking in default injection\"\"\"
+          name: String
+        }
+
+        type Query {
+          test(data: InputData!): String!
+        }"""
+    )
+    query1 = """
+    query {
+        test(data: { name: null })
+    }
+    """
+    result1 = schema.execute_sync(query1)
+    assert not result1.errors
+
+    query2 = """
+    query {
+        test(data: { name: "hello" })
+    }
+    """
+    result2 = schema.execute_sync(query2)
+    assert not result2.errors
+
+    query3 = """
+    query {
+        test(data: {})
+    }
+    """
+    result3 = schema.execute_sync(query3)
+    assert not result3.errors
