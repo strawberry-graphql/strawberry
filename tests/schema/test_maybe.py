@@ -1,4 +1,5 @@
 from textwrap import dedent
+from typing import Annotated
 
 import pytest
 
@@ -998,3 +999,166 @@ def test_maybe_comprehensive_behavior_comparison():
     """)
     assert not result5.errors  # No error - both fields are optional in schema
     assert result5.data == {"testComprehensive": "strict=absent, flexible=world"}
+
+
+def test_maybe_with_explicit_field_description():
+    """Handle case where strawberry.field annotation is used on a field with Maybe[T] type."""
+
+    @strawberry.input
+    class InputData:
+        name: strawberry.Maybe[str | None] = strawberry.field(
+            description="This strawberry.field annotation was breaking in default injection"
+        )
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def test(self, data: InputData) -> str:
+            if data.name is None:
+                return "I am a test, and I received: None"
+            return "I am a test, and I received: " + str(data.name.value)
+
+    schema = strawberry.Schema(Query)
+
+    assert str(schema) == dedent(
+        """\
+        input InputData {
+          \"\"\"This strawberry.field annotation was breaking in default injection\"\"\"
+          name: String
+        }
+
+        type Query {
+          test(data: InputData!): String!
+        }"""
+    )
+
+    query1 = """
+    query {
+        test(data: { name: null })
+    }
+    """
+    result1 = schema.execute_sync(query1)
+    assert not result1.errors
+
+    query2 = """
+    query {
+        test(data: { name: "hello" })
+    }
+    """
+    result2 = schema.execute_sync(query2)
+    assert not result2.errors
+
+    query3 = """
+    query {
+        test(data: {})
+    }
+    """
+    result3 = schema.execute_sync(query3)
+    assert not result3.errors
+
+
+def test_maybe_wrapped_with_annotated_typing():
+    """Handle case where Maybe is wrapped with Annotated typing."""
+
+    @strawberry.input
+    class InputData:
+        name: Annotated[strawberry.Maybe[str | None], "some meta"]
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def test(self, data: InputData) -> str:
+            if data.name is None:
+                return "I am a test, and I received: None"
+            return "I am a test, and I received: " + str(data.name.value)
+
+    schema = strawberry.Schema(Query)
+
+    assert str(schema) == dedent(
+        """\
+        input InputData {
+          name: String
+        }
+
+        type Query {
+          test(data: InputData!): String!
+        }"""
+    )
+    query1 = """
+    query {
+        test(data: { name: null })
+    }
+    """
+    result1 = schema.execute_sync(query1)
+    assert not result1.errors
+
+    query2 = """
+    query {
+        test(data: { name: "hello" })
+    }
+    """
+    result2 = schema.execute_sync(query2)
+    assert not result2.errors
+
+    query3 = """
+    query {
+        test(data: {})
+    }
+    """
+    result3 = schema.execute_sync(query3)
+    assert not result3.errors
+
+
+def test_maybe_with_annotated_and_explicit_definition():
+    """Handle case where Maybe is wrapped with Annotated typing."""
+
+    @strawberry.input
+    class InputData:
+        name: Annotated[strawberry.Maybe[str | None], "some meta"] = strawberry.field(
+            description="This strawberry.field annotation was breaking in default injection"
+        )
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def test(self, data: InputData) -> str:
+            if data.name is None:
+                return "I am a test, and I received: None"
+            return "I am a test, and I received: " + str(data.name.value)
+
+    schema = strawberry.Schema(Query)
+
+    assert str(schema) == dedent(
+        """\
+        input InputData {
+          \"\"\"This strawberry.field annotation was breaking in default injection\"\"\"
+          name: String
+        }
+
+        type Query {
+          test(data: InputData!): String!
+        }"""
+    )
+    query1 = """
+    query {
+        test(data: { name: null })
+    }
+    """
+    result1 = schema.execute_sync(query1)
+    assert not result1.errors
+
+    query2 = """
+    query {
+        test(data: { name: "hello" })
+    }
+    """
+    result2 = schema.execute_sync(query2)
+    assert not result2.errors
+
+    query3 = """
+    query {
+        test(data: {})
+    }
+    """
+    result3 = schema.execute_sync(query3)
+    assert not result3.errors
