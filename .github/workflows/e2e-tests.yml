@@ -49,7 +49,8 @@ jobs:
       - name: Start Strawberry server
         run: |
           cd e2e
-          uv run strawberry dev app:schema --port 8000 &
+          # --no-sync prevents uv from reverting graphql-core to lockfile version
+          uv run --no-sync strawberry dev app:schema --port 8000 &
           echo $! > server.pid
           sleep 5  # Wait for server to start
 
