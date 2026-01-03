@@ -17,20 +17,24 @@ from typing_extensions import Protocol
 from graphql import (
     GraphQLAbstractType,
     GraphQLArgument,
+    GraphQLBoolean,
     GraphQLDirective,
     GraphQLEnumType,
     GraphQLEnumValue,
     GraphQLError,
     GraphQLField,
+    GraphQLFloat,
     GraphQLID,
     GraphQLInputField,
     GraphQLInputObjectType,
+    GraphQLInt,
     GraphQLInterfaceType,
     GraphQLList,
     GraphQLNamedType,
     GraphQLNonNull,
     GraphQLObjectType,
     GraphQLScalarType,
+    GraphQLString,
     GraphQLType,
     GraphQLUnionType,
     Undefined,
@@ -94,6 +98,11 @@ if TYPE_CHECKING:
     from strawberry.types.field import StrawberryField
     from strawberry.types.info import Info
     from strawberry.types.scalar import ScalarDefinition
+
+
+def _is_literal_type(type_: Any) -> bool:
+    """Check if a type is a Literal type (e.g., Literal["cat"])."""
+    return typing.get_origin(type_) is typing.Literal
 
 
 FieldType = TypeVar(
@@ -212,6 +221,7 @@ def get_arguments(
         field_arguments,
         scalar_registry=scalar_registry,
         config=config,
+        info=info,
     )
 
     # the following code allows to omit info and root arguments
@@ -344,6 +354,45 @@ class GraphQLCoreConverter:
             extensions={
                 GraphQLCoreConverter.DEFINITION_BACKREF: enum_value,
             },
+        )
+
+    def from_literal(self, literal_type: type) -> GraphQLScalarType:
+        """Convert a Literal type to the appropriate GraphQL scalar type.
+
+        Literal types are commonly used in Pydantic discriminated unions to identify
+        which union member a value belongs to. For example:
+            Literal["cat"] -> String (value "cat")
+            Literal[1] -> Int
+            Literal[True] -> Boolean
+
+        We use scalar types rather than enums because:
+        1. Different union members may have different Literal values for the same field
+        2. GraphQL requires fields with the same name to have the same type in unions
+        3. Scalars allow the discriminator pattern to work naturally
+
+        Raises:
+            TypeError: If the Literal contains values that cannot be converted.
+        """
+        args = typing.get_args(literal_type)
+        if not args:
+            raise TypeError("Literal type must have at least one value")
+
+        # Get the type of the first argument to determine the scalar type
+        first_arg = args[0]
+
+        if isinstance(first_arg, str):
+            return GraphQLString
+        if isinstance(first_arg, bool):
+            # bool must come before int since bool is a subclass of int in Python
+            return GraphQLBoolean
+        if isinstance(first_arg, int):
+            return GraphQLInt
+        if isinstance(first_arg, float):
+            return GraphQLFloat
+
+        raise TypeError(
+            f"Unsupported Literal type: {args}. "
+            "Only string, int, float, and bool Literals are supported."
         )
 
     def from_directive(self, directive: StrawberryDirective) -> GraphQLDirective:
@@ -732,14 +781,22 @@ class GraphQLCoreConverter:
             ) -> Any:
                 # parse field arguments into Strawberry input types and convert
                 # field names to Python equivalents
-                field_args, field_kwargs = get_arguments(
-                    field=field,
-                    source=_source,
-                    info=info,
-                    kwargs=kwargs,
-                    config=self.config,
-                    scalar_registry=self.scalar_registry,
-                )
+                try:
+                    field_args, field_kwargs = get_arguments(
+                        field=field,
+                        source=_source,
+                        info=info,
+                        kwargs=kwargs,
+                        config=self.config,
+                        scalar_registry=self.scalar_registry,
+                    )
+                except Exception as exc:
+                    # Check if this is a Pydantic ValidationError that should be
+                    # converted to a strawberry.pydantic.Error type
+                    converted = self._maybe_convert_validation_error(exc, field)
+                    if converted is not None:
+                        return converted
+                    raise
 
                 resolver_requested_info = False
                 if "info" in field_kwargs:
@@ -799,6 +856,40 @@ class GraphQLCoreConverter:
             return _async_resolver
         _resolver._is_default = not field.base_resolver  # type: ignore
         return _resolver
+
+    def _maybe_convert_validation_error(
+        self, exc: Exception, field: StrawberryField
+    ) -> Any | None:
+        """Convert Pydantic ValidationError to strawberry.pydantic.Error if applicable.
+
+        Returns the Error instance if conversion was successful, None otherwise.
+        """
+        # Try to import Pydantic - it's an optional dependency
+        try:
+            from pydantic import ValidationError
+        except ImportError:
+            return None
+
+        # Check if the exception is a Pydantic ValidationError
+        if not isinstance(exc, ValidationError):
+            return None
+
+        # Check if the field's return type includes strawberry.pydantic.Error
+        from strawberry.types.union import StrawberryUnion
+
+        field_type = field.type
+        if not isinstance(field_type, StrawberryUnion):
+            return None
+
+        try:
+            from strawberry.pydantic import Error
+
+            if any(union_type is Error for union_type in field_type.types):
+                return Error.from_validation_error(exc)
+        except ImportError:
+            pass
+
+        return None
 
     def from_scalar(self, scalar: type) -> GraphQLScalarType:
         from strawberry.relay.types import GlobalID
@@ -902,6 +993,11 @@ class GraphQLCoreConverter:
             type_, self.scalar_registry
         ):  # TODO: Replace with StrawberryScalar
             return self.from_scalar(type_)
+
+        # Handle Literal types (e.g., Literal["cat"], Literal[1])
+        # These are commonly used in Pydantic discriminated unions
+        if _is_literal_type(type_):
+            return self.from_literal(type_)
 
         raise TypeError(f"Unexpected type '{type_}'")
 
