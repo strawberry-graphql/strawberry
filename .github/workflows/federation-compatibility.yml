@@ -22,16 +22,12 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v7
         with:
           enable-cache: true
-          cache-dependency-glob: "uv.lock"
-      - uses: actions/setup-python@v4
-        id: setup-python
-        with:
           python-version: "3.12"
       - run: uv sync
 

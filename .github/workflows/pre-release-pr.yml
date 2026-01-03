@@ -17,10 +17,10 @@ jobs:
           ref: ${{ github.event.client_payload.pull_request.head.sha }}
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v5
-
-      - name: Set up Python
-        run: uv python install 3.12
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+          python-version: "3.12"
 
       - name: Check if release exists
         id: check_release
