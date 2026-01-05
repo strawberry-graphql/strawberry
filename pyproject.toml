@@ -15,7 +15,7 @@ classifiers = [
 ]
 requires-python = ">=3.10,<4.0"
 dependencies = [
-  "graphql-core>=3.2.0,<3.4.0",
+  "graphql-core @ git+https://github.com/corydolphin/graphql-core.git@msgspec-performance",
   "typing-extensions>=4.5.0",
   "python-dateutil>=2.7",
   "packaging>=23",
