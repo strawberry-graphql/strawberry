@@ -8,7 +8,6 @@ from strawberry import Schema
 
 from .api import Query
 
-
 ROOT = Path(__file__).parent / "queries"
 large_query = (ROOT / "large_items.graphql").read_text()
 
