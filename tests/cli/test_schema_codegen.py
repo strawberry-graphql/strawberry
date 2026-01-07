@@ -5,13 +5,21 @@ from typer import Typer
 from typer.testing import CliRunner
 
 schema = """
+directive @authz(resource: String!, action: String!) on FIELD_DEFINITION
+
 type Query {
-    hello: String!
+    hello: String! @authz(resource: "greeting", action: "read")
 }
 """
 
 expected_output = """
 import strawberry
+from strawberry.schema_directive import Location
+
+@strawberry.schema_directive(locations=[Location.FIELD_DEFINITION])
+class Authz:
+    resource: str
+    action: str
 
 @strawberry.type
 class Query:
