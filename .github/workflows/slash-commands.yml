@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Slash Command Dispatch
-        uses: peter-evans/slash-command-dispatch@v2
+        uses: peter-evans/slash-command-dispatch@v5
         with:
           token: ${{ secrets.BOT_TOKEN }}
           reaction-token: ${{ secrets.BOT_TOKEN }}
