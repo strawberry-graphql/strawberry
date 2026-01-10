@@ -46,7 +46,7 @@ debug-server = [
   "websockets>=15.0.1,<16",
   "python-multipart>=0.0.7",
   "typer>=0.12.4",
-  "pygments>=2.3",
+  "pygments~=2.3",
   "rich>=12.0.0",
   "libcst",
 ]
@@ -58,10 +58,10 @@ opentelemetry = ["opentelemetry-api<2", "opentelemetry-sdk<2"]
 pydantic = ["pydantic>1.6.1"]
 sanic = ["sanic>=20.12.2"]
 fastapi = ["fastapi>=0.65.2", "python-multipart>=0.0.7"]
-chalice = ["chalice>=1.22"]
+chalice = ["chalice~=1.22"]
 cli = [
   "typer>=0.12.4",
-  "pygments>=2.3",
+  "pygments~=2.3",
   "rich>=12.0.0",
   "libcst",
   "starlette>=0.18.0",
