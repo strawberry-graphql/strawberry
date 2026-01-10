@@ -50,8 +50,8 @@ debug-server = [
   "rich>=12.0.0",
   "libcst",
 ]
-django = ["Django>=3.2", "asgiref~=3.2"]
-channels = ["channels>=3.0.5", "asgiref~=3.2"]
+django = ["Django>=3.2", "asgiref~=3.11"]
+channels = ["channels>=3.0.5", "asgiref~=3.11"]
 flask = ["flask>=1.1"]
 quart = ["quart>=0.19.3"]
 opentelemetry = ["opentelemetry-api<2", "opentelemetry-sdk<2"]
