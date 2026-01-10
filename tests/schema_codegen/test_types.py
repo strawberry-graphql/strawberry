@@ -1,5 +1,7 @@
 import textwrap
 
+import pytest
+
 from strawberry.schema_codegen import codegen
 
 
@@ -74,6 +76,22 @@ def test_supports_descriptions():
     ).strip()
 
     assert codegen(schema).strip() == expected
+
+
+def test_codegen_raises_for_unknown_definition():
+    # GraphQL operation definitions (queries) are not supported in schema codegen
+    schema = """
+    query GetUser {
+        user {
+            name
+        }
+    }
+    """
+
+    with pytest.raises(
+        NotImplementedError, match="Unknown definition OperationDefinitionNode"
+    ):
+        codegen(schema)
 
 
 def test_supports_interfaces():
