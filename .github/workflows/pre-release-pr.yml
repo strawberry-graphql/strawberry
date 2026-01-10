@@ -40,7 +40,7 @@ jobs:
           comment-author: botberry
           body-includes: "# Pre-release"
       - name: Create or update comment
-        uses: peter-evans/create-or-update-comment@v1
+        uses: peter-evans/create-or-update-comment@v5
         if: steps.check_release.outputs.release == ''
         with:
           token: ${{ secrets.BOT_TOKEN }}
@@ -65,7 +65,7 @@ jobs:
           poetry publish --username __token__
           echo "::set-output name=version::$(poetry version -s)"
       - name: Create or update comment
-        uses: peter-evans/create-or-update-comment@v1
+        uses: peter-evans/create-or-update-comment@v5
         if: steps.check_release.outputs.release == ''
         with:
           token: ${{ secrets.BOT_TOKEN }}
