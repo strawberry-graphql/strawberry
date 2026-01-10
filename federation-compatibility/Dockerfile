@@ -1,4 +1,4 @@
-FROM python:3.14-slim
+FROM python:3.13-slim
 WORKDIR /web
 
 RUN apt update && apt install -y gcc python3-dev
