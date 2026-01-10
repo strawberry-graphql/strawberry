@@ -51,6 +51,7 @@ class StrawberryArgumentAnnotation:
     deprecation_reason: str | None
     directives: Iterable[object]
     metadata: Mapping[Any, Any]
+    graphql_type: Any | None
 
     def __init__(
         self,
@@ -59,12 +60,14 @@ class StrawberryArgumentAnnotation:
         deprecation_reason: str | None = None,
         directives: Iterable[object] = (),
         metadata: Mapping[Any, Any] | None = None,
+        graphql_type: Any | None = None,
     ) -> None:
         self.description = description
         self.name = name
         self.deprecation_reason = deprecation_reason
         self.directives = directives
         self.metadata = metadata or {}
+        self.graphql_type = graphql_type
 
 
 class StrawberryArgument:
@@ -122,6 +125,10 @@ class StrawberryArgument:
                         self.deprecation_reason = arg.deprecation_reason
                         self.directives = arg.directives
                         self.metadata = arg.metadata
+                        if arg.graphql_type is not None:
+                            self.type_annotation = StrawberryAnnotation(
+                                arg.graphql_type
+                            )
 
                     if isinstance(arg, StrawberryLazyReference):
                         self.type_annotation = StrawberryAnnotation(
@@ -313,6 +320,7 @@ def argument(
     deprecation_reason: str | None = None,
     directives: Iterable[object] = (),
     metadata: Mapping[Any, Any] | None = None,
+    graphql_type: Any | None = None,
 ) -> StrawberryArgumentAnnotation:
     """Function to add metadata to an argument, like a description or deprecation reason.
 
@@ -324,6 +332,8 @@ def argument(
         directives: The directives to attach to the argument
         metadata: Metadata to attach to the argument, this can be used
             to store custom data that can be used by custom logic or plugins
+        graphql_type: The GraphQL type for the argument, useful when you want to use a
+            different type than the one in the schema.
 
     Returns:
         A StrawberryArgumentAnnotation object that can be used to customise an argument
@@ -348,6 +358,7 @@ def argument(
         deprecation_reason=deprecation_reason,
         directives=directives,
         metadata=metadata,
+        graphql_type=graphql_type,
     )
 
 

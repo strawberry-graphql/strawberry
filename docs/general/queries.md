@@ -121,3 +121,25 @@ class Query:
         ],
     ) -> str | None: ...
 ```
+
+### Argument Types
+
+As with fields, `strawberry.argument` supports specifying a `graphql_type` for
+cases when the argument type of the function does not match the GraphQL type.
+This can be useful for static typing, as custom scalars are not valid type
+annotations.
+
+```python
+BigInt = strawberry.scalar(
+    int, name="BigInt", serialize=lambda v: str(v), parse_value=lambda v: int(v)
+)
+
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def users(
+        self,
+        ids: Annotated[list[int], strawberry.argument(graphql_type=list[BigInt])],
+    ) -> list[User]: ...
+```
