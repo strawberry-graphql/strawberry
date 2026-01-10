@@ -1162,3 +1162,143 @@ def test_maybe_with_annotated_and_explicit_definition():
     """
     result3 = schema.execute_sync(query3)
     assert not result3.errors
+
+
+def test_maybe_str_rejects_null_literals():
+    """Test that Maybe[str] rejects literal null values in GraphQL queries."""
+
+    @strawberry.input
+    class UpdateInput:
+        name: strawberry.Maybe[str]
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def hello(self) -> str:
+            return "world"
+
+    @strawberry.type
+    class Mutation:
+        @strawberry.mutation
+        def update(self, input: UpdateInput) -> str:
+            if input.name is not None:
+                return f"Updated to: {input.name.value}"
+            return "No change"
+
+    schema = strawberry.Schema(query=Query, mutation=Mutation)
+
+    query = """
+    mutation {
+        update(input: { name: null })
+    }
+    """
+
+    result = schema.execute_sync(query)
+    assert result.errors
+    assert len(result.errors) == 1
+    error_message = str(result.errors[0])
+    assert "Expected value of type 'str', found null" in error_message
+    assert "name" in error_message
+    assert "cannot be explicitly set to null" in error_message
+
+    query_valid = """
+    mutation {
+        update(input: { name: "John" })
+    }
+    """
+
+    result_valid = schema.execute_sync(query_valid)
+    assert not result_valid.errors
+    assert result_valid.data == {"update": "Updated to: John"}
+
+    query_omitted = """
+    mutation {
+        update(input: {})
+    }
+    """
+
+    result_omitted = schema.execute_sync(query_omitted)
+    assert not result_omitted.errors
+    assert result_omitted.data == {"update": "No change"}
+
+
+def test_maybe_str_rejects_null_via_variables():
+    """Test that Maybe[str] rejects null values passed through variables.
+
+    This ensures JSON-based integrations (Flask, FastAPI, etc.) that pass
+    inputs as variables properly validate null values.
+    """
+
+    @strawberry.input
+    class UpdateInput:
+        name: strawberry.Maybe[str]
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def hello(self) -> str:
+            return "world"
+
+    @strawberry.type
+    class Mutation:
+        @strawberry.mutation
+        def update(self, input: UpdateInput) -> str:
+            if input.name is not None:
+                return f"Updated to: {input.name.value}"
+            return "No change"
+
+    schema = strawberry.Schema(query=Query, mutation=Mutation)
+
+    query_with_vars = """
+    mutation($input: UpdateInput!) {
+        update(input: $input)
+    }
+    """
+
+    variables = {"input": {"name": None}}
+
+    result = schema.execute_sync(query_with_vars, variable_values=variables)
+    assert result.errors
+    assert len(result.errors) == 1
+    error_message = str(result.errors[0])
+    assert "Expected value of type 'str', found null" in error_message
+    assert "cannot be explicitly set to null" in error_message
+
+    variables_valid = {"input": {"name": "John"}}
+    result_valid = schema.execute_sync(query_with_vars, variable_values=variables_valid)
+    assert not result_valid.errors
+    assert result_valid.data == {"update": "Updated to: John"}
+
+    variables_omitted = {"input": {}}
+    result_omitted = schema.execute_sync(
+        query_with_vars, variable_values=variables_omitted
+    )
+    assert not result_omitted.errors
+    assert result_omitted.data == {"update": "No change"}
+
+    @strawberry.input
+    class UpdateInputFlexible:
+        name: strawberry.Maybe[str | None]
+
+    @strawberry.type
+    class Mutation2:
+        @strawberry.mutation
+        def update_flexible(self, input: UpdateInputFlexible) -> str:
+            if input.name is not None:
+                if input.name.value is None:
+                    return "Cleared"
+                return f"Updated to: {input.name.value}"
+            return "No change"
+
+    schema2 = strawberry.Schema(query=Query, mutation=Mutation2)
+
+    query_flexible = """
+    mutation($input: UpdateInputFlexible!) {
+        updateFlexible(input: $input)
+    }
+    """
+
+    variables_null = {"input": {"name": None}}
+    result_null = schema2.execute_sync(query_flexible, variable_values=variables_null)
+    assert not result_null.errors
+    assert result_null.data == {"updateFlexible": "Cleared"}

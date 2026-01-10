@@ -195,6 +195,16 @@ def convert_argument(
 
             return Some(res)
 
+        if value is None:
+            from strawberry.exceptions import StrawberryGraphQLError
+
+            type_name = getattr(type_.of_type, "__name__", str(type_.of_type))
+            raise StrawberryGraphQLError(
+                f"Expected value of type '{type_name}', found null. "
+                f"Field of type 'Maybe[{type_name}]' cannot be explicitly set to null. "
+                f"Use 'Maybe[{type_name} | None]' if you need to allow null values."
+            )
+
         # This is Maybe[T] - validation for null values is handled by MaybeNullValidationRule
         # Convert the value and wrap in Some()
         res = convert_argument(value, type_.of_type, scalar_registry, config)
