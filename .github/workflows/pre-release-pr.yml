@@ -31,7 +31,7 @@ jobs:
         if: steps.check_release.outputs.release == ''
         run: echo "::set-output name=commit::$(git rev-parse HEAD)"
       - name: Find Release Comment
-        uses: peter-evans/find-comment@v1
+        uses: peter-evans/find-comment@v4
         id: find_comment
         if: steps.check_release.outputs.release == ''
         with:
