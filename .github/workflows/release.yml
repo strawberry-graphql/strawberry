@@ -3,82 +3,117 @@ name: 🆙 Release
 concurrency: release
 
 on:
+  pull_request:
+    branches: [main]
   push:
-    branches:
-      - main
+    branches: [main]
+
+permissions:
+  contents: write
+  id-token: write
+  issues: write
+  pull-requests: write
+
+env:
+  AUTOPUB_CMD: uvx --from autopub>=1.0.0a51 --with pygithub autopub
 
 jobs:
-  release-file-check:
-    name: Get information about release
+  check-release:
     runs-on: ubuntu-latest
-
     outputs:
-      changelog: ${{ steps.release-check.outputs.changelog }}
-      status: ${{ steps.release-check.outputs.release_status }}
-      change_type: ${{ steps.release-check.outputs.change_type }}
+      has_release: ${{ steps.check.outputs.has_release }}
+      changelog: ${{ steps.release-info.outputs.changelog }}
 
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v4
 
-      - name: Release file check
-        uses: ./.github/release-check-action
-        id: release-check
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
 
-  release:
-    name: Release
-    runs-on: ubuntu-latest
-    needs: release-file-check
-    if: ${{ needs.release-file-check.outputs.status == 'OK' }}
-    outputs:
-      version: ${{ steps.get-version.outputs.version }}
-    steps:
-      - uses: actions/checkout@v2
-        with:
-          persist-credentials: false
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: "3.10"
-      - name: Install deps
+      - name: Check
+        id: check
         run: |
-          python -m pip install pip --upgrade
-          pip install poetry
-          pip install githubrelease
-          pip install autopub
-          pip install httpx
-      - name: Check if we should release
-        id: check_release
-        run: |
-          set +e
-          echo ::set-output name=release::$(autopub check)
-      - name: Publish
-        if: steps.check_release.outputs.release == ''
+          if $AUTOPUB_CMD check; then
+            echo "has_release=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_release=false" >> "$GITHUB_OUTPUT"
+          fi
         env:
           GITHUB_TOKEN: ${{ secrets.BOT_TOKEN }}
-          POETRY_PYPI_TOKEN_PYPI: ${{ secrets.PYPI_TOKEN }}
+
+      - name: Extract release info
+        id: release-info
+        if: steps.check.outputs.has_release == 'true'
+        run: |
+          if [ -f "RELEASE.md" ]; then
+            changelog=$(tail -n +2 RELEASE.md | base64 -w 0)
+            echo "changelog=${changelog}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Upload .autopub artifact
+        if: steps.check.outputs.has_release == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: autopub-data
+          path: .autopub
+          include-hidden-files: true
+
+  publish:
+    needs: check-release
+    if: github.ref == 'refs/heads/main' && needs.check-release.outputs.has_release == 'true'
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.get-version.outputs.version }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+          python-version: "3.12"
+
+      - name: Download .autopub
+        uses: actions/download-artifact@v4
+        with:
+          name: autopub-data
+          path: .autopub
+
+      - name: Build and publish
         run: |
           git remote set-url origin https://${{ secrets.BOT_TOKEN }}@github.com/${{ github.repository }}
-          autopub prepare
-          poetry build
-          autopub commit
-          autopub githubrelease
-          poetry publish --username __token__
+          echo "✨ Preparing..."
+          $AUTOPUB_CMD prepare
+          echo "✨ Building..."
+          $AUTOPUB_CMD build
+          echo "✨ Publishing..."
+          $AUTOPUB_CMD publish
+        env:
+          GITHUB_TOKEN: ${{ secrets.BOT_TOKEN }}
+          UV_PUBLISH_TOKEN: ${{ secrets.PYPI_TOKEN }}
+
       - name: Get project version
         id: get-version
         shell: python
         run: |
           import os
+          import tomllib
           from pathlib import Path
-          from autopub.base import get_project_version
 
-          with Path(os.environ["GITHUB_OUTPUT"]).open('a') as f:
-              f.write(f"version={get_project_version()}\n")
+          data = tomllib.loads(Path("pyproject.toml").read_text())
+          version = data.get("project", {}).get("version", "unknown")
+
+          with Path(os.environ["GITHUB_OUTPUT"]).open("a") as f:
+              f.write(f"version={version}\n")
 
   get-contributor-info:
     name: Get PR info
     runs-on: ubuntu-latest
-    needs: release-file-check
-    if: ${{ needs.release-file-check.outputs.status == 'OK' }}
+    needs: check-release
+    if: github.ref == 'refs/heads/main' && needs.check-release.outputs.has_release == 'true'
 
     outputs:
       contributor-name: ${{ steps.get-info.outputs.contributor-name }}
@@ -91,96 +126,40 @@ jobs:
         id: get-info
         uses: strawberry-graphql/get-pr-info-action@v6
 
-  update-release-on-github:
-    name: Update release on GitHub
-    runs-on: ubuntu-latest
-    needs: [release-file-check, get-contributor-info, release]
-    if: ${{ needs.release-file-check.outputs.status == 'OK' }}
-    steps:
-      - uses: actions/setup-python@v4
-        with:
-          python-version: "3.10"
-      - name: Install dependencies
-        run: pip install httpx
-      - name: Update release on GitHub
-        shell: python
-        run: |
-          import os
-
-          import httpx
-
-          tag = os.environ["TAG"]
-          contributor_username = os.environ["CONTRIBUTOR_USERNAME"]
-          pr_number = os.environ["PR_NUMBER"]
-
-          response = httpx.get(
-              url=f"https://api.github.com/repos/strawberry-graphql/strawberry/releases/tags/{tag}",
-              headers={
-                  "Accept": "application/vnd.github.v3+json",
-              },
-          )
-
-          response.raise_for_status()
-          data = response.json()
-          release_id = data["id"]
-          release_body = data["body"].strip()
-
-          release_footer = f"""
-          Releases contributed by @{contributor_username} via #{pr_number}
-          """.strip()
-
-          updated_release_body = f"{release_body}\n\n{release_footer}"
-
-          response = httpx.patch(
-              url=f"https://api.github.com/repos/strawberry-graphql/strawberry/releases/{release_id}",
-              json={"body": updated_release_body},
-              headers={
-                  "Accept": "application/vnd.github.v3+json",
-                  "Authorization": f"token {os.environ['GITHUB_TOKEN']}",
-              },
-          )
-
-          response.raise_for_status()
-
-        env:
-          GITHUB_TOKEN: ${{ secrets.BOT_TOKEN }}
-          TAG: ${{ needs.release.outputs.version }}
-          CONTRIBUTOR_USERNAME: ${{ needs.get-contributor-info.outputs.contributor-username }}
-          PR_NUMBER: ${{ needs.get-contributor-info.outputs.pr-number }}
-
   read-tweet-md:
     name: Read TWEET.md
     runs-on: ubuntu-latest
-    needs: [release, get-contributor-info, release-file-check]
-    if: ${{ needs.release-file-check.outputs.status == 'OK' && needs.get-contributor-info.outputs.contributor-name }}
+    needs: [publish, get-contributor-info, check-release]
+    if: needs.get-contributor-info.outputs.contributor-name != ''
 
     outputs:
       tweet: ${{ steps.extract.outputs.tweet }}
       has-tweet-file: ${{ steps.extract.outputs.has-tweet-file }}
 
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v4
+
       - name: Extract tweet message and changelog
         id: extract
         uses: strawberry-graphql/tweet-actions/read-tweet@v6
         with:
-          changelog: ${{ needs.release-file-check.outputs.changelog }}
-          version: ${{ needs.release.outputs.version }}
+          changelog: ${{ needs.check-release.outputs.changelog }}
+          version: ${{ needs.publish.outputs.version }}
           contributor_name: ${{ needs.get-contributor-info.outputs.contributor-name }}
           contributor_twitter_username: ${{ needs.get-contributor-info.outputs.contributor-twitter-username }}
 
   send-tweet:
     name: Send tweet
     runs-on: ubuntu-latest
-    needs: [release, read-tweet-md, get-contributor-info]
-    if: ${{ needs.release-file-check.outputs.status == 'OK' }}
+    needs: [publish, read-tweet-md]
 
     steps:
-      - uses: actions/setup-python@v4
-        with:
-          python-version: "3.10"
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+
       - name: Install dependencies
-        run: pip install tweepy==4.14.0
+        run: uv pip install --system tweepy==4.14.0
+
       - name: Send tweet
         shell: python
         run: |
@@ -211,7 +190,6 @@ jobs:
 
 
           post_tweet()
-
         env:
           TWEET: ${{ needs.read-tweet-md.outputs.tweet }}
           TWITTER_API_KEY: ${{ secrets.TWITTER_API_KEY }}
@@ -227,12 +205,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v2
-        with:
-          persist-credentials: false
+      - uses: actions/checkout@v4
+
       - name: Remove TWEET.md and commit
-        env:
-          GITHUB_TOKEN: ${{ secrets.BOT_TOKEN }}
         run: |
           git config --global user.name 'Strawberry GraphQL Bot'
           git config --global user.email 'bot@strawberry.rocks'
@@ -241,3 +216,5 @@ jobs:
           git rm TWEET.md
           git commit -m "Remove TWEET.md"
           git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.BOT_TOKEN }}
