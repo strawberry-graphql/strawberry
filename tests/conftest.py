@@ -1,6 +1,5 @@
 import pathlib
 import sys
-from typing import Any
 
 import pytest
 
@@ -23,7 +22,7 @@ def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item
     rootdir = pathlib.Path(config.rootdir)  # type: ignore
 
     for item in items:
-        rel_path = pathlib.Path(item.fspath).relative_to(rootdir)
+        rel_path = pathlib.Path(item.path).relative_to(rootdir)
 
         markers = [
             "aiohttp",
@@ -45,9 +44,7 @@ def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item
 
 
 @pytest.hookimpl
-def pytest_ignore_collect(
-    collection_path: pathlib.Path, path: Any, config: pytest.Config
-):
+def pytest_ignore_collect(collection_path: pathlib.Path, config: pytest.Config):
     if sys.version_info < (3, 12) and "python_312" in collection_path.parts:
         return True
     return None
