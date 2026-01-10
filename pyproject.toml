@@ -50,18 +50,18 @@ debug-server = [
   "rich>=12.0.0",
   "libcst",
 ]
-django = ["Django>=3.2", "asgiref~=3.11"]
-channels = ["channels>=3.0.5", "asgiref~=3.11"]
+django = ["Django>=3.2", "asgiref>=3.11"]
+channels = ["channels>=3.0.5", "asgiref>=3.11"]
 flask = ["flask>=1.1"]
 quart = ["quart>=0.19.3"]
 opentelemetry = ["opentelemetry-api<2", "opentelemetry-sdk<2"]
 pydantic = ["pydantic>1.6.1"]
 sanic = ["sanic>=20.12.2"]
 fastapi = ["fastapi>=0.65.2", "python-multipart>=0.0.7"]
-chalice = ["chalice~=1.22"]
+chalice = ["chalice>=1.22"]
 cli = [
   "typer>=0.12.4",
-  "pygments~=2.3",
+  "pygments>=2.3",
   "rich>=12.0.0",
   "libcst",
   "starlette>=0.18.0",
