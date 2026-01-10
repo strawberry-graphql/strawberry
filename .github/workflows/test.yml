@@ -153,9 +153,6 @@ jobs:
 
       - run: poetry install --with integrations
         if: steps.setup-python.outputs.cache-hit != 'true'
-      # Since we are running all the integrations at once, we can't use
-      # pydantic v2. It is not compatible with starlette yet
-      - run: poetry run pip install pydantic==1.10
 
       # we use poetry directly instead of nox since we want to
       # test all integrations at once on windows
