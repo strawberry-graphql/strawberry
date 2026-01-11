@@ -22,10 +22,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
 
       - run: pipx install poetry
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@7f4fc3e22c37d6ff65e88745f38bd3157c663f7c # v4
         id: setup-python
         with:
           python-version: "3.12"
@@ -37,7 +37,7 @@ jobs:
         run: poetry run strawberry export-schema schema:schema > schema.graphql
         working-directory: federation-compatibility
 
-      - uses: apollographql/federation-subgraph-compatibility@v2
+      - uses: apollographql/federation-subgraph-compatibility@b6981fd83d24450a7cbd2d7727196e0ba57614e0 # v2
         with:
           compose: 'federation-compatibility/docker-compose.yml'
           schema: 'federation-compatibility/schema.graphql'
