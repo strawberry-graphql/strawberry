@@ -172,16 +172,16 @@
 
       function GraphiQLWithExplorer() {
         const [query, setQuery] = React.useState(
-          parameters.query || EXAMPLE_QUERY,
+          parameters.q || EXAMPLE_QUERY,
         );
         const [variables, setVariables] = React.useState(
-          parameters.variables || "",
+          parameters.variables,
         );
-        const [headers, setHeaders] = React.useState(parameters.headers || "");
+        const [headers, setHeaders] = React.useState(parameters.headers);
 
         function onEditQuery(newQuery) {
           setQuery(newQuery);
-          updateURL({ query: newQuery });
+          updateURL({ q: newQuery });
         }
 
         function onEditVariables(newVariables) {
