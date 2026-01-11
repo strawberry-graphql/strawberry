@@ -40,7 +40,7 @@
     "@vitejs/plugin-react": "^4.6.0",
     "babel-plugin-relay": "^20.1.1",
     "eslint": "^9.31.0",
-    "eslint-plugin-react-hooks": "^5.2.0",
+    "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.4.20",
     "globals": "^17.0.0",
     "relay-compiler": "^18.2.0",
