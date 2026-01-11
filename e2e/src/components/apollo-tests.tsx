@@ -1,4 +1,5 @@
-import { gql, useQuery } from "@apollo/client";
+import { gql } from "@apollo/client/core";
+import { useQuery } from "@apollo/client/react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 

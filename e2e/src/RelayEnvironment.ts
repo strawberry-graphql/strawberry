@@ -1,4 +1,3 @@
-import { serializeFetchParameter } from "@apollo/client";
 import type { RequestParameters } from "relay-runtime";
 import {
 	Environment,
@@ -8,15 +7,85 @@ import {
 	Store,
 } from "relay-runtime";
 import type { Variables } from "relay-runtime";
-import { maybe } from "@apollo/client/utilities";
-import {
-	handleError,
-	readMultipartBody,
-} from "@apollo/client/link/http/parseAndCheckHttpResponse";
 
 const uri = "http://localhost:8000/graphql";
 
-const backupFetch = maybe(() => fetch);
+/**
+ * Parse a multipart/mixed response body for GraphQL defer support.
+ * This handles the incremental delivery format used by @defer directives.
+ */
+async function readMultipartBody<T extends object>(
+	response: Response,
+	nextValue: (value: T) => void,
+): Promise<void> {
+	const contentType = response.headers.get("content-type") || "";
+	const boundaryMatch = contentType.match(/boundary=([^;]+)/i);
+	const boundary = boundaryMatch ? boundaryMatch[1].trim() : "-";
+
+	const reader = response.body?.getReader();
+	if (!reader) {
+		throw new Error("Response body is not readable");
+	}
+
+	const decoder = new TextDecoder();
+	let buffer = "";
+
+	while (true) {
+		const { done, value } = await reader.read();
+
+		if (done) {
+			break;
+		}
+
+		buffer += decoder.decode(value, { stream: true });
+
+		// Process complete parts from the buffer
+		const parts = buffer.split(`--${boundary}`);
+		// Keep the last part in the buffer (it might be incomplete)
+		buffer = parts.pop() || "";
+
+		for (const part of parts) {
+			// Skip empty parts and the closing boundary
+			if (!part.trim() || part.trim() === "--") {
+				continue;
+			}
+
+			// Find the JSON content in the part (after headers)
+			const headerBodySplit = part.indexOf("\r\n\r\n");
+			if (headerBodySplit === -1) {
+				continue;
+			}
+
+			const body = part.substring(headerBodySplit + 4).trim();
+			if (!body) {
+				continue;
+			}
+
+			try {
+				const json = JSON.parse(body) as T;
+				nextValue(json);
+			} catch {
+				// Skip invalid JSON parts
+			}
+		}
+	}
+
+	// Process any remaining content in the buffer
+	if (buffer.trim() && buffer.trim() !== "--") {
+		const headerBodySplit = buffer.indexOf("\r\n\r\n");
+		if (headerBodySplit !== -1) {
+			const body = buffer.substring(headerBodySplit + 4).trim();
+			if (body) {
+				try {
+					const json = JSON.parse(body) as T;
+					nextValue(json);
+				} catch {
+					// Skip invalid JSON
+				}
+			}
+		}
+	}
+}
 
 function fetchQuery(operation: RequestParameters, variables: Variables) {
 	const body = {
@@ -27,8 +96,7 @@ function fetchQuery(operation: RequestParameters, variables: Variables) {
 
 	const options: {
 		method: string;
-		// biome-ignore lint/suspicious/noExplicitAny: :)
-		headers: Record<string, any>;
+		headers: Record<string, string>;
 		body?: string;
 	} = {
 		method: "POST",
@@ -40,12 +108,10 @@ function fetchQuery(operation: RequestParameters, variables: Variables) {
 
 	return Observable.create((sink) => {
 		try {
-			options.body = serializeFetchParameter(body, "Payload");
+			options.body = JSON.stringify(body);
 		} catch (parseError) {
 			sink.error(parseError as Error);
 		}
-
-		const currentFetch = maybe(() => fetch) || backupFetch;
 
 		// biome-ignore lint/suspicious/noExplicitAny: :)
 		const observerNext = (data: any) => {
@@ -59,17 +125,14 @@ function fetchQuery(operation: RequestParameters, variables: Variables) {
 			}
 		};
 
-		// biome-ignore lint/style/noNonNullAssertion: :)
-		currentFetch!(uri, options)
-			.then(async (response) => {
+		fetch(uri, options)
+			.then(async (response: Response) => {
 				console.log("response", response);
 
 				const ctype = response.headers?.get("content-type");
 
 				if (ctype !== null && /^multipart\/mixed/i.test(ctype)) {
-					const result = readMultipartBody(response, observerNext);
-
-					return result;
+					return readMultipartBody(response, observerNext);
 				}
 
 				const json = await response.json();
@@ -81,8 +144,8 @@ function fetchQuery(operation: RequestParameters, variables: Variables) {
 			.then(() => {
 				sink.complete();
 			})
-			.catch((err: any) => {
-				handleError(err, sink);
+			.catch((err: Error) => {
+				sink.error(err);
 			});
 	});
 }

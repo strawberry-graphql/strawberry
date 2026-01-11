@@ -1,11 +1,12 @@
-import { ApolloClient, InMemoryCache, ApolloProvider } from "@apollo/client";
+import { ApolloClient, InMemoryCache, HttpLink } from "@apollo/client/core";
+import { ApolloProvider } from "@apollo/client/react";
 import ApolloTests from "@/components/apollo-tests";
 import { RelayEnvironmentProvider } from "react-relay";
 import RelayTests from "./components/relay-tests";
 import { RelayEnvironment } from "./RelayEnvironment";
 
 const client = new ApolloClient({
-	uri: "http://localhost:8000/graphql",
+	link: new HttpLink({ uri: "http://localhost:8000/graphql" }),
 	cache: new InMemoryCache(),
 });
 
