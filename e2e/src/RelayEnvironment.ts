@@ -13,77 +13,95 @@ const uri = "http://localhost:8000/graphql";
 /**
  * Parse a multipart/mixed response body for GraphQL defer support.
  * This handles the incremental delivery format used by @defer directives.
+ * Based on Apollo Client's implementation.
  */
 async function readMultipartBody<T extends object>(
 	response: Response,
 	nextValue: (value: T) => void,
 ): Promise<void> {
-	const contentType = response.headers.get("content-type") || "";
-	const boundaryMatch = contentType.match(/boundary=([^;]+)/i);
-	const boundary = boundaryMatch ? boundaryMatch[1].trim() : "-";
+	const decoder = new TextDecoder("utf-8");
+	const contentType = response.headers?.get("content-type") || "";
+
+	// Parse boundary value from content-type header
+	// e.g. multipart/mixed;boundary="graphql";deferSpec=20220824
+	const match = contentType.match(
+		/;\s*boundary=(?:'([^']+)'|"([^"]+)"|([^"'].+?))\s*(?:;|$)/i,
+	);
+	const boundary =
+		"\r\n--" + (match ? (match[1] ?? match[2] ?? match[3] ?? "-") : "-");
 
 	const reader = response.body?.getReader();
 	if (!reader) {
 		throw new Error("Response body is not readable");
 	}
 
-	const decoder = new TextDecoder();
 	let buffer = "";
+	let done = false;
+	let encounteredBoundary = false;
 
-	while (true) {
-		const { done, value } = await reader.read();
+	// Check if we've passed the final boundary (boundary followed by --)
+	const passedFinalBoundary = () =>
+		encounteredBoundary && buffer[0] === "-" && buffer[1] === "-";
 
-		if (done) {
-			break;
-		}
+	try {
+		while (!done) {
+			const result = await reader.read();
+			done = result.done;
+			const chunk =
+				typeof result.value === "string"
+					? result.value
+					: decoder.decode(result.value);
 
-		buffer += decoder.decode(value, { stream: true });
+			const searchFrom = buffer.length - boundary.length + 1;
+			buffer += chunk;
 
-		// Process complete parts from the buffer
-		const parts = buffer.split(`--${boundary}`);
-		// Keep the last part in the buffer (it might be incomplete)
-		buffer = parts.pop() || "";
+			let bi = buffer.indexOf(boundary, searchFrom);
 
-		for (const part of parts) {
-			// Skip empty parts and the closing boundary
-			if (!part.trim() || part.trim() === "--") {
-				continue;
-			}
+			while (bi > -1 && !passedFinalBoundary()) {
+				encounteredBoundary = true;
 
-			// Find the JSON content in the part (after headers)
-			const headerBodySplit = part.indexOf("\r\n\r\n");
-			if (headerBodySplit === -1) {
-				continue;
-			}
+				const message = buffer.slice(0, bi);
+				buffer = buffer.slice(bi + boundary.length);
 
-			const body = part.substring(headerBodySplit + 4).trim();
-			if (!body) {
-				continue;
-			}
-
-			try {
-				const json = JSON.parse(body) as T;
-				nextValue(json);
-			} catch {
-				// Skip invalid JSON parts
-			}
-		}
-	}
-
-	// Process any remaining content in the buffer
-	if (buffer.trim() && buffer.trim() !== "--") {
-		const headerBodySplit = buffer.indexOf("\r\n\r\n");
-		if (headerBodySplit !== -1) {
-			const body = buffer.substring(headerBodySplit + 4).trim();
-			if (body) {
-				try {
-					const json = JSON.parse(body) as T;
-					nextValue(json);
-				} catch {
-					// Skip invalid JSON
+				// Find the header/body separator
+				const i = message.indexOf("\r\n\r\n");
+				if (i > -1) {
+					// The body is after the headers (slice includes leading \r\n but JSON.parse handles it)
+					const body = message.slice(i);
+					if (body) {
+						try {
+							const result = JSON.parse(body) as T;
+							// Skip empty objects
+							if (Object.keys(result).length > 0) {
+								// Handle Apollo-style payload wrapper if present
+								if (
+									typeof result === "object" &&
+									result !== null &&
+									"payload" in result
+								) {
+									const payloadResult = result as { payload: T | null };
+									if (payloadResult.payload !== null) {
+										nextValue(payloadResult.payload as T);
+									}
+								} else {
+									nextValue(result);
+								}
+							}
+						} catch {
+							// Skip invalid JSON
+						}
+					}
 				}
+
+				bi = buffer.indexOf(boundary);
+			}
+
+			if (passedFinalBoundary()) {
+				return;
 			}
 		}
+	} finally {
+		reader.cancel();
 	}
 }
 
