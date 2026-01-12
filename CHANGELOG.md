@@ -1,6 +1,15 @@
 CHANGELOG
 =========
 
+0.288.4 - 2026-01-12
+--------------------
+
+Added URL sharing support for GraphiQL. Query, variables, and headers are now
+persisted in the URL, allowing users to share GraphQL queries via links.
+
+Contributed by [Mykhailo Havelia](https://github.com/Arfey) via [PR #2842](https://github.com/strawberry-graphql/strawberry/pull/2842/)
+
+
 0.288.3 - 2026-01-10
 --------------------
 
