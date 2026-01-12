@@ -43,5 +43,5 @@ jobs:
           schema: 'federation-compatibility/schema.graphql'
           port: 4001
           token: ${{ secrets.BOT_TOKEN }}
-          failOnWarning: false
+          failOnWarning: true
           failOnRequired: true
