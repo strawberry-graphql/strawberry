@@ -12,6 +12,7 @@ on:
     paths:
       - "strawberry/federation/**"
       - "strawberry/printer/**"
+      - "federation-compatibility/**"
       - "pyproject.toml"
       - "poetry.lock"
       - ".github/workflows/federation-compatibility.yml"
