@@ -14,14 +14,14 @@ RUN --mount=type=cache,target=/root/.cache/uv \
     --mount=type=bind,source=uv.lock,target=uv.lock \
     --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
     --mount=type=bind,source=README.md,target=README.md \
-    uv sync --frozen --no-install-project
+    uv sync --frozen --no-install-project --extra apollo-federation
 
 COPY pyproject.toml uv.lock README.md LICENSE ./
 COPY strawberry ./strawberry
 COPY federation-compatibility/schema.py ./
 
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --frozen
+    uv sync --frozen --extra apollo-federation
 
 EXPOSE 4001
 

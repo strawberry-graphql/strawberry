@@ -44,6 +44,7 @@ django = ["Django>=3.2", "asgiref>=3.2"]
 channels = ["channels>=3.0.5", "asgiref>=3.2"]
 flask = ["flask>=1.1"]
 quart = ["quart>=0.19.3"]
+apollo-federation = ["protobuf>=3.20"]
 opentelemetry = ["opentelemetry-api<2", "opentelemetry-sdk<2"]
 pydantic = ["pydantic>1.6.1"]
 sanic = ["sanic>=20.12.2"]
@@ -104,6 +105,7 @@ dev = [
   "pyright~=1.1.408",
   "codeflash>=0.19.1",
   "pre-commit",
+  "protobuf (>=7.34.1,<8.0.0)",
 ]
 integrations = [
   "aiohttp>=3.7.4.post0,<4.0.0",
