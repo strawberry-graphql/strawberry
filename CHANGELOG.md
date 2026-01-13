@@ -1,6 +1,41 @@
 CHANGELOG
 =========
 
+0.288.4 - 2026-01-12
+--------------------
+
+Added URL sharing support for GraphiQL. Query, variables, and headers are now
+persisted in the URL, allowing users to share GraphQL queries via links.
+
+Contributed by [Mykhailo Havelia](https://github.com/Arfey) via [PR #2842](https://github.com/strawberry-graphql/strawberry/pull/2842/)
+
+
+0.288.3 - 2026-01-10
+--------------------
+
+Fixed a bug where `strawberry.Maybe[T]` was incorrectly accepting `null` values when passed through variables
+
+Previously, `Maybe[T]` returned a validation error for literal `null` values in GraphQL queries, but allowed `null` when passed via variables, resulting in `Some(None)` reaching the resolver instead of raising a validation error.
+
+This fix ensures consistent validation behavior for `Maybe[T]` regardless of how the input is provided:
+
+- `Maybe[T]` now returns a validation error for `null` in both literal queries and variables
+- `Maybe[T | None]` continues to accept `null` values as expected
+- Error message indicates to use `Maybe[T | None]` if null values are needed
+
+Contributed by [Thiago Bellini Ribeiro](https://github.com/bellini666) via [PR #4096](https://github.com/strawberry-graphql/strawberry/pull/4096/)
+
+
+0.288.2 - 2026-01-01
+--------------------
+
+Fixed two bugs where using `strawberry.Maybe` wrapped in `Annotated` or using an explicit field definition would raise a `TypeError` about "missing 1 required keyword-only argument", even though a `Maybe` field should allow `None` in all cases.
+
+This fix addresses this via custom handling for annotations wrapped with `Annotated` and handling custom `field` with no `default` and no `default_factory` as possible to be `None`.
+
+Contributed by [Egor](https://github.com/Birdi7) via [PR #4084](https://github.com/strawberry-graphql/strawberry/pull/4084/)
+
+
 0.288.1 - 2025-12-28
 --------------------
 

@@ -18,7 +18,7 @@ jobs:
       change_type: ${{ steps.release-check.outputs.change_type }}
 
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
 
       - name: Release file check
         uses: ./.github/release-check-action
@@ -32,11 +32,11 @@ jobs:
     outputs:
       version: ${{ steps.get-version.outputs.version }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
         with:
           persist-credentials: false
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548 # v4
         with:
           python-version: "3.10"
       - name: Install deps
@@ -89,7 +89,7 @@ jobs:
     steps:
       - name: Get PR info
         id: get-info
-        uses: strawberry-graphql/get-pr-info-action@v6
+        uses: strawberry-graphql/get-pr-info-action@a6d95647fa027e52c0d751a225d3864d5c091284 # v6
 
   update-release-on-github:
     name: Update release on GitHub
@@ -97,7 +97,7 @@ jobs:
     needs: [release-file-check, get-contributor-info, release]
     if: ${{ needs.release-file-check.outputs.status == 'OK' }}
     steps:
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548 # v4
         with:
           python-version: "3.10"
       - name: Install dependencies
@@ -159,10 +159,10 @@ jobs:
       has-tweet-file: ${{ steps.extract.outputs.has-tweet-file }}
 
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
       - name: Extract tweet message and changelog
         id: extract
-        uses: strawberry-graphql/tweet-actions/read-tweet@v6
+        uses: strawberry-graphql/tweet-actions/read-tweet@b8d51a501ab14ac32d79b61e3a0af5c3add4ead0 # v6
         with:
           changelog: ${{ needs.release-file-check.outputs.changelog }}
           version: ${{ needs.release.outputs.version }}
@@ -176,7 +176,7 @@ jobs:
     if: ${{ needs.release-file-check.outputs.status == 'OK' }}
 
     steps:
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548 # v4
         with:
           python-version: "3.10"
       - name: Install dependencies
@@ -227,7 +227,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
         with:
           persist-credentials: false
       - name: Remove TWEET.md and commit

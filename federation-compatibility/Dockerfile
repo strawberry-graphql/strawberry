@@ -1,7 +1,7 @@
-FROM python:3.10-slim
+FROM python:3.14-slim
 WORKDIR /web
 
-RUN apt update && apt install -y gcc python3-dev
+RUN apt update && apt install -y gcc g++ python3-dev
 RUN pip install poetry
 
 COPY strawberry ./strawberry

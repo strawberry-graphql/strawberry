@@ -1,4 +1,3 @@
-import { serializeFetchParameter } from "@apollo/client";
 import type { RequestParameters } from "relay-runtime";
 import {
 	Environment,
@@ -8,15 +7,103 @@ import {
 	Store,
 } from "relay-runtime";
 import type { Variables } from "relay-runtime";
-import { maybe } from "@apollo/client/utilities";
-import {
-	handleError,
-	readMultipartBody,
-} from "@apollo/client/link/http/parseAndCheckHttpResponse";
 
 const uri = "http://localhost:8000/graphql";
 
-const backupFetch = maybe(() => fetch);
+/**
+ * Parse a multipart/mixed response body for GraphQL defer support.
+ * This handles the incremental delivery format used by @defer directives.
+ * Based on Apollo Client's implementation.
+ */
+async function readMultipartBody<T extends object>(
+	response: Response,
+	nextValue: (value: T) => void,
+): Promise<void> {
+	const decoder = new TextDecoder("utf-8");
+	const contentType = response.headers?.get("content-type") || "";
+
+	// Parse boundary value from content-type header
+	// e.g. multipart/mixed;boundary="graphql";deferSpec=20220824
+	const match = contentType.match(
+		/;\s*boundary=(?:'([^']+)'|"([^"]+)"|([^"'].+?))\s*(?:;|$)/i,
+	);
+	const boundary =
+		"\r\n--" + (match ? (match[1] ?? match[2] ?? match[3] ?? "-") : "-");
+
+	const reader = response.body?.getReader();
+	if (!reader) {
+		throw new Error("Response body is not readable");
+	}
+
+	let buffer = "";
+	let done = false;
+	let encounteredBoundary = false;
+
+	// Check if we've passed the final boundary (boundary followed by --)
+	const passedFinalBoundary = () =>
+		encounteredBoundary && buffer[0] === "-" && buffer[1] === "-";
+
+	try {
+		while (!done) {
+			const result = await reader.read();
+			done = result.done;
+			const chunk =
+				typeof result.value === "string"
+					? result.value
+					: decoder.decode(result.value);
+
+			const searchFrom = buffer.length - boundary.length + 1;
+			buffer += chunk;
+
+			let bi = buffer.indexOf(boundary, searchFrom);
+
+			while (bi > -1 && !passedFinalBoundary()) {
+				encounteredBoundary = true;
+
+				const message = buffer.slice(0, bi);
+				buffer = buffer.slice(bi + boundary.length);
+
+				// Find the header/body separator
+				const i = message.indexOf("\r\n\r\n");
+				if (i > -1) {
+					// The body is after the headers (slice includes leading \r\n but JSON.parse handles it)
+					const body = message.slice(i);
+					if (body) {
+						try {
+							const result = JSON.parse(body) as T;
+							// Skip empty objects
+							if (Object.keys(result).length > 0) {
+								// Handle Apollo-style payload wrapper if present
+								if (
+									typeof result === "object" &&
+									result !== null &&
+									"payload" in result
+								) {
+									const payloadResult = result as { payload: T | null };
+									if (payloadResult.payload !== null) {
+										nextValue(payloadResult.payload as T);
+									}
+								} else {
+									nextValue(result);
+								}
+							}
+						} catch {
+							// Skip invalid JSON
+						}
+					}
+				}
+
+				bi = buffer.indexOf(boundary);
+			}
+
+			if (passedFinalBoundary()) {
+				return;
+			}
+		}
+	} finally {
+		reader.cancel();
+	}
+}
 
 function fetchQuery(operation: RequestParameters, variables: Variables) {
 	const body = {
@@ -27,8 +114,7 @@ function fetchQuery(operation: RequestParameters, variables: Variables) {
 
 	const options: {
 		method: string;
-		// biome-ignore lint/suspicious/noExplicitAny: :)
-		headers: Record<string, any>;
+		headers: Record<string, string>;
 		body?: string;
 	} = {
 		method: "POST",
@@ -40,12 +126,10 @@ function fetchQuery(operation: RequestParameters, variables: Variables) {
 
 	return Observable.create((sink) => {
 		try {
-			options.body = serializeFetchParameter(body, "Payload");
+			options.body = JSON.stringify(body);
 		} catch (parseError) {
 			sink.error(parseError as Error);
 		}
-
-		const currentFetch = maybe(() => fetch) || backupFetch;
 
 		// biome-ignore lint/suspicious/noExplicitAny: :)
 		const observerNext = (data: any) => {
@@ -59,17 +143,14 @@ function fetchQuery(operation: RequestParameters, variables: Variables) {
 			}
 		};
 
-		// biome-ignore lint/style/noNonNullAssertion: :)
-		currentFetch!(uri, options)
-			.then(async (response) => {
+		fetch(uri, options)
+			.then(async (response: Response) => {
 				console.log("response", response);
 
 				const ctype = response.headers?.get("content-type");
 
 				if (ctype !== null && /^multipart\/mixed/i.test(ctype)) {
-					const result = readMultipartBody(response, observerNext);
-
-					return result;
+					return readMultipartBody(response, observerNext);
 				}
 
 				const json = await response.json();
@@ -81,8 +162,8 @@ function fetchQuery(operation: RequestParameters, variables: Variables) {
 			.then(() => {
 				sink.complete();
 			})
-			.catch((err: any) => {
-				handleError(err, sink);
+			.catch((err: Error) => {
+				sink.error(err);
 			});
 	});
 }

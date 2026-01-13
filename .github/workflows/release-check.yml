@@ -22,7 +22,7 @@ jobs:
     steps:
       - name: Get PR info
         id: get-info
-        uses: strawberry-graphql/get-pr-info-action@v6
+        uses: strawberry-graphql/get-pr-info-action@a6d95647fa027e52c0d751a225d3864d5c091284 # v6
       - run: echo "${{ steps.get-info.outputs.contributor-twitter-username }}"
 
   skip-if-bot:
@@ -66,7 +66,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
         with:
           ref: "refs/pull/${{ github.event.number }}/merge"
 
@@ -84,12 +84,12 @@ jobs:
       tweet: ${{ steps.extract.outputs.tweet }}
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
         with:
           ref: "refs/pull/${{ github.event.number }}/merge"
       - name: Extract tweet message and changelog
         id: extract
-        uses: strawberry-graphql/tweet-actions/read-tweet@v6
+        uses: strawberry-graphql/tweet-actions/read-tweet@b8d51a501ab14ac32d79b61e3a0af5c3add4ead0 # v6
         with:
           changelog: ${{ needs.release-file-check.outputs.changelog }}
           version: "(next)"
@@ -102,7 +102,7 @@ jobs:
     if: ${{ needs.read-tweet-md.outputs.tweet != '' }}
     steps:
       - name: Validate tweet
-        uses: strawberry-graphql/tweet-actions/validate-tweet@v6
+        uses: strawberry-graphql/tweet-actions/validate-tweet@b8d51a501ab14ac32d79b61e3a0af5c3add4ead0 # v6
         with:
           tweet: ${{ needs.read-tweet-md.outputs.tweet }}
 
@@ -112,7 +112,7 @@ jobs:
     if: github.event.pull_request.draft == false
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
       - name: Send comment
         uses: ./.github/bot-action
         env:

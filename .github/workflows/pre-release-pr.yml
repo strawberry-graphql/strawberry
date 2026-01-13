@@ -9,11 +9,11 @@ jobs:
     name: Pre-release
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
         with:
           ref: ${{ github.event.client_payload.pull_request.head.sha }}
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548 # v4
         with:
           python-version: "3.10"
       - name: Install deps
@@ -29,9 +29,9 @@ jobs:
       - name: Metadata
         id: metadata
         if: steps.check_release.outputs.release == ''
-        run: echo "::set-output name=commit::$(git rev-parse HEAD)"
+        run: echo "commit=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
       - name: Find Release Comment
-        uses: peter-evans/find-comment@v1
+        uses: peter-evans/find-comment@b30e6a3c0ed37e7c023ccd3f1db5c6c0b0c23aad # v4
         id: find_comment
         if: steps.check_release.outputs.release == ''
         with:
@@ -40,7 +40,7 @@ jobs:
           comment-author: botberry
           body-includes: "# Pre-release"
       - name: Create or update comment
-        uses: peter-evans/create-or-update-comment@v1
+        uses: peter-evans/create-or-update-comment@e8674b075228eee787fea43ef493e45ece1004c9 # v5
         if: steps.check_release.outputs.release == ''
         with:
           token: ${{ secrets.BOT_TOKEN }}
@@ -63,9 +63,9 @@ jobs:
           poetry version $(poetry version -s).dev.$(date '+%s')
           poetry build
           poetry publish --username __token__
-          echo "::set-output name=version::$(poetry version -s)"
+          echo "version=$(poetry version -s)" >> $GITHUB_OUTPUT
       - name: Create or update comment
-        uses: peter-evans/create-or-update-comment@v1
+        uses: peter-evans/create-or-update-comment@e8674b075228eee787fea43ef493e45ece1004c9 # v5
         if: steps.check_release.outputs.release == ''
         with:
           token: ${{ secrets.BOT_TOKEN }}
