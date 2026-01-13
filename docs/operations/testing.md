@@ -13,12 +13,10 @@ automated tests.
 
 We can use the Strawberry `schema` object we defined in the
 [Getting Started tutorial](../index.md#step-5-create-our-schema-and-run-it) to
-run our first test: `test_sample_query.py`
+run our first test:
 
 ```python
-import unittest
 import strawberry
-import typing
 
 
 @strawberry.type
@@ -27,57 +25,67 @@ class Book:
     author: str
 
 
-def get_books():
-    return [
-        Book(
-            title="The Great Gatsby",
-            author="F. Scott Fitzgerald",
-        ),
-    ]
+def get_books(title: str) -> list[Book]:
+    if title == "The Great Gatsby":
+        return [
+            Book(
+                title="The Great Gatsby",
+                author="F. Scott Fitzgerald",
+            ),
+        ]
+    return []
 
 
 @strawberry.type
 class Query:
-    books: typing.List[Book] = strawberry.field(resolver=get_books)
+    @strawberry.field
+    def books(self, title: str) -> list[Book]:
+        return get_books(title)
 
 
-class TestQuery(unittest.TestCase):
-    def setUp(self):
-        self.schema = strawberry.Schema(Query)
+schema = strawberry.Schema(Query)
 
-    def test_sample_query(self):
-        query = """
-        query TestQuery {
-            books {
+
+def test_query():
+    query = """
+        query TestQuery($title: String!) {
+            books(title: $title) {
                 title
                 author
             }
         }
-        """
-        result = self.schema.execute_sync(query)
-        assert result.errors is None
-        self.assertEqual(
-            result.data["books"],
-            [
-                {
-                    "title": "The Great Gatsby",
-                    "author": "F. Scott Fitzgerald",
-                }
-            ],
-        )
+    """
 
+    result = schema.execute_sync(
+        query,
+        variable_values={"title": "The Great Gatsby"},
+    )
 
-if __name__ == "__main__":
-    unittest.main()
+    assert result.errors is None
+    assert result.data["books"] == [
+        {
+            "title": "The Great Gatsby",
+            "author": "F. Scott Fitzgerald",
+        }
+    ]
 ```
 
 This `test_query` example:
 
-1. can be run using `python -m unittest path/to/test_sample_query.py`
-2. defines the query we will test against
-3. executes the query and assigns the result to a `result` variable
+1. defines a complete schema with a `Book` type and a `books` query that accepts
+   a `title` argument
+2. defines the query we will test against, using a GraphQL variable `$title`
+3. executes the query using `execute_sync`, passing the variable via
+   `variable_values`
 4. asserts that the result is what we are expecting: nothing in `errors` and our
    desired book in `data`
+
+As you may have noticed, we explicitly defined the query variable `title`, and
+we passed it separately with the `variable_values` argument, but we could have
+directly hardcoded the `title` in the query string instead. We did this on
+purpose because usually the query's arguments will be dynamic and, as we want to
+test our application as close to production as possible, it wouldn't make much
+sense to hardcode the variables in the query.
 
 ## Testing Async
 
