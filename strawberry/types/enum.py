@@ -1,7 +1,7 @@
 import dataclasses
 from collections.abc import Callable, Iterable, Mapping
 from enum import EnumMeta
-from typing import TYPE_CHECKING, Any, TypeGuard, TypeVar, overload
+from typing import TYPE_CHECKING, Any, Literal, TypeGuard, TypeVar, overload
 
 from strawberry.exceptions import ObjectIsNotAnEnumError
 from strawberry.types.base import (
@@ -103,6 +103,7 @@ def enum_value(
 
 
 EnumType = TypeVar("EnumType", bound=EnumMeta)
+GraphqlEnumNameFrom = Literal["key", "value"]
 
 
 def _process_enum(
@@ -110,6 +111,7 @@ def _process_enum(
     name: str | None = None,
     description: str | None = None,
     directives: Iterable[object] = (),
+    graphql_name_from: GraphqlEnumNameFrom = "key",
 ) -> EnumType:
     if not isinstance(cls, EnumMeta):
         raise ObjectIsNotAnEnumError(cls)
@@ -119,6 +121,7 @@ def _process_enum(
 
     values = []
     for item in cls:  # type: ignore
+        graphql_name = None
         item_value = item.value
         item_name = item.name
         deprecation_reason = None
@@ -135,13 +138,19 @@ def _process_enum(
             cls._value2member_map_[item_value.value] = item
             cls._member_map_[item_name]._value_ = item_value.value
 
-            if item_value.graphql_name:
-                item_name = item_value.graphql_name
-
+            graphql_name = item_value.graphql_name
             item_value = item_value.value
 
+        if not graphql_name:
+            if graphql_name_from == "key":
+                graphql_name = item_name
+            elif graphql_name_from == "value":
+                graphql_name = item_value
+            else:
+                raise ValueError(f"Invalid mode: {graphql_name_from}")
+
         value = EnumValue(
-            item_name,
+            graphql_name,
             item_value,
             deprecation_reason=deprecation_reason,
             directives=item_directives,
@@ -174,6 +183,7 @@ def enum(
     name: str | None = None,
     description: str | None = None,
     directives: Iterable[object] = (),
+    graphql_name_from: GraphqlEnumNameFrom = "key",
 ) -> EnumType: ...
 
 
@@ -184,6 +194,7 @@ def enum(
     name: str | None = None,
     description: str | None = None,
     directives: Iterable[object] = (),
+    graphql_name_from: GraphqlEnumNameFrom = "key",
 ) -> Callable[[EnumType], EnumType]: ...
 
 
@@ -193,18 +204,20 @@ def enum(
     name: str | None = None,
     description: str | None = None,
     directives: Iterable[object] = (),
+    graphql_name_from: GraphqlEnumNameFrom = "key",
 ) -> EnumType | Callable[[EnumType], EnumType]:
     """Annotates an Enum class a GraphQL enum.
 
     GraphQL enums only have names, while Python enums have names and values,
-    Strawberry will use the names of the Python enum as the names of the
-    GraphQL enum values.
+    Strawberry will by default use the names of the Python enum as the names of the
+    GraphQL enum values. You can use the values instead by using mode="value".
 
     Args:
         cls: The Enum class to be annotated.
         name: The name of the GraphQL enum.
         description: The description of the GraphQL enum.
         directives: The directives to attach to the GraphQL enum.
+        graphql_name_from: Whether to use the names (key) or values of the Python enums in GraphQL.
 
     Returns:
         The decorated Enum class.
@@ -235,7 +248,13 @@ def enum(
     """
 
     def wrap(cls: EnumType) -> EnumType:
-        return _process_enum(cls, name, description, directives=directives)
+        return _process_enum(
+            cls,
+            name,
+            description,
+            directives=directives,
+            graphql_name_from=graphql_name_from,
+        )
 
     if not cls:
         return wrap
