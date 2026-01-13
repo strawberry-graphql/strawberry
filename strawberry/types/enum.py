@@ -145,7 +145,7 @@ def _process_enum(
             if graphql_name_from == "key":
                 graphql_name = item_name
             elif graphql_name_from == "value":
-                graphql_name = item_value or "empty"
+                graphql_name = item_value
             else:
                 raise ValueError(f"Invalid mode: {graphql_name_from}")
 
