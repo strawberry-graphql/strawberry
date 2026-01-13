@@ -13,30 +13,33 @@ automated tests.
 
 We can use the Strawberry `schema` object we defined in the
 [Getting Started tutorial](../index.md#step-5-create-our-schema-and-run-it) to
-run our first test:
-`test_sample_query.py`
+run our first test: `test_sample_query.py`
 
 ```python
 import unittest
 import strawberry
 import typing
 
+
 @strawberry.type
 class Book:
     title: str
     author: str
 
+
 def get_books():
     return [
         Book(
-            title='The Great Gatsby',
-            author='F. Scott Fitzgerald',
+            title="The Great Gatsby",
+            author="F. Scott Fitzgerald",
         ),
     ]
+
 
 @strawberry.type
 class Query:
     books: typing.List[Book] = strawberry.field(resolver=get_books)
+
 
 class TestQuery(unittest.TestCase):
     def setUp(self):
@@ -53,16 +56,19 @@ class TestQuery(unittest.TestCase):
         """
         result = self.schema.execute_sync(query)
         assert result.errors is None
-        self.assertEqual(result.data["books"], [
-            {
-                "title": "The Great Gatsby",
-                "author": "F. Scott Fitzgerald",
-            }
-        ])
+        self.assertEqual(
+            result.data["books"],
+            [
+                {
+                    "title": "The Great Gatsby",
+                    "author": "F. Scott Fitzgerald",
+                }
+            ],
+        )
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     unittest.main()
-
 ```
 
 This `test_query` example:
