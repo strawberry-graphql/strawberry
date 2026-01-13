@@ -13,47 +13,71 @@ automated tests.
 
 We can use the Strawberry `schema` object we defined in the
 [Getting Started tutorial](../index.md#step-5-create-our-schema-and-run-it) to
-run our first test:
+run our first test: `test_sample_query.py`
 
 ```python
-def test_query():
-    query = """
-        query TestQuery($title: String!) {
-            books(title: $title) {
+import unittest
+import strawberry
+import typing
+
+
+@strawberry.type
+class Book:
+    title: str
+    author: str
+
+
+def get_books():
+    return [
+        Book(
+            title="The Great Gatsby",
+            author="F. Scott Fitzgerald",
+        ),
+    ]
+
+
+@strawberry.type
+class Query:
+    books: typing.List[Book] = strawberry.field(resolver=get_books)
+
+
+class TestQuery(unittest.TestCase):
+    def setUp(self):
+        self.schema = strawberry.Schema(Query)
+
+    def test_sample_query(self):
+        query = """
+        query TestQuery {
+            books {
                 title
                 author
             }
         }
-    """
+        """
+        result = self.schema.execute_sync(query)
+        assert result.errors is None
+        self.assertEqual(
+            result.data["books"],
+            [
+                {
+                    "title": "The Great Gatsby",
+                    "author": "F. Scott Fitzgerald",
+                }
+            ],
+        )
 
-    result = schema.execute_sync(
-        query,
-        variable_values={"title": "The Great Gatsby"},
-    )
 
-    assert result.errors is None
-    assert result.data["books"] == [
-        {
-            "title": "The Great Gatsby",
-            "author": "F. Scott Fitzgerald",
-        }
-    ]
+if __name__ == "__main__":
+    unittest.main()
 ```
 
 This `test_query` example:
 
-1. defines the query we will test against; it accepts one argument, `title`, as
-   input
-2. executes the query and assigns the result to a `result` variable
-3. asserts that the result is what we are expecting: nothing in `errors` and our
+1. can be run using `python -m unittest path/to/test_sample_query.py`
+2. defines the query we will test against
+3. executes the query and assigns the result to a `result` variable
+4. asserts that the result is what we are expecting: nothing in `errors` and our
    desired book in `data`
-
-As you may have noticed, we explicitly defined the query variable `title`, and
-we passed it separately with the `variable_values` argument, but we could have
-directly hardcoded the `title` in the query string instead. We did this on
-purpose because usually the query's arguments will be dynamic and, as we want to
-test our application as close to production as possible, it wouldn't make much
-sense to hardcode the variables in the query.
 
 ## Testing Async
 
