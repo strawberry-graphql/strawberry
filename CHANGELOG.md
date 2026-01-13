@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.289.0 - 2026-01-13
+--------------------
+
+Support using enum values in the GraphQL schema
+
+Contributed by [Paulo Costa](https://github.com/paulo-raca) via [PR #4071](https://github.com/strawberry-graphql/strawberry/pull/4071/)
+
+
 0.288.4 - 2026-01-12
 --------------------
 
