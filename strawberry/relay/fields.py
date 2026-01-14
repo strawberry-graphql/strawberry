@@ -375,9 +375,12 @@ if TYPE_CHECKING:
     node = field
 else:
 
-    def node(*args: Any, **kwargs: Any) -> StrawberryField:
+    def node(*args: Any, default: Any = None, **kwargs: Any) -> StrawberryField:
         kwargs["extensions"] = [*kwargs.get("extensions", []), NodeExtension()]
-        return field(*args, **kwargs)
+        # The default value is a stub for dataclasses so you can instantiate
+        # types with relay.node() fields without explicit initialization.
+        # The actual value is resolved by the NodeExtension resolver.
+        return field(*args, default=default, **kwargs)
 
 
 # we used to have `Type[Connection[NodeType]]` here, but that when we added
