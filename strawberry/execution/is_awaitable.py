@@ -7,13 +7,11 @@ large result sets containing primitive values.
 
 from __future__ import annotations
 
-import inspect
-from types import CoroutineType, GeneratorType
 from typing import Any
 
-__all__ = ["optimized_is_awaitable"]
+from graphql.pyutils.is_awaitable import is_awaitable as graphql_core_is_awaitable
 
-CO_ITERABLE_COROUTINE = inspect.CO_ITERABLE_COROUTINE
+__all__ = ["optimized_is_awaitable"]
 
 # Common synchronous types that are never awaitable
 # Using a frozenset for O(1) lookup
@@ -45,8 +43,7 @@ def optimized_is_awaitable(value: Any) -> bool:
 
     Performance characteristics:
     - Fast path for primitives: O(1) type lookup
-    - Falls back to standard checks for other types
-    - Avoids expensive isinstance and hasattr calls for common types
+    - Falls back to graphql-core's is_awaitable for other types
 
     Args:
         value: The value to check
@@ -55,22 +52,8 @@ def optimized_is_awaitable(value: Any) -> bool:
         True if the value is awaitable, False otherwise
     """
     # Fast path: check if the type is a known non-awaitable type
-    # This single check replaces 3 checks (isinstance, isinstance, hasattr)
-    # for the most common case
-    value_type = type(value)
-    if value_type in _NON_AWAITABLE_TYPES:
+    if type(value) in _NON_AWAITABLE_TYPES:
         return False
 
-    # For other types, use the standard graphql-core logic
-    # This handles coroutines, generators, and custom awaitable objects
-    return (
-        # check for coroutine objects
-        isinstance(value, CoroutineType)
-        # check for old-style generator based coroutine objects
-        or (
-            isinstance(value, GeneratorType)
-            and bool(value.gi_code.co_flags & CO_ITERABLE_COROUTINE)
-        )
-        # check for other awaitables (e.g. futures)
-        or hasattr(value, "__await__")
-    )
+    # Fallback to graphql-core's implementation for other types
+    return graphql_core_is_awaitable(value)
