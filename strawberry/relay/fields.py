@@ -41,6 +41,7 @@ from strawberry.types.cast import cast as strawberry_cast
 from strawberry.types.field import _RESOLVER_TYPE, StrawberryField, field
 from strawberry.types.fields.resolver import StrawberryResolver
 from strawberry.types.lazy_type import LazyType
+from strawberry.types.unset import UNSET
 from strawberry.utils.aio import asyncgen_to_list
 from strawberry.utils.typing import eval_type, is_generic_alias, is_optional, is_union
 
@@ -375,7 +376,7 @@ if TYPE_CHECKING:
     node = field
 else:
 
-    def node(*args: Any, default: Any = None, **kwargs: Any) -> StrawberryField:
+    def node(*args: Any, default: Any = UNSET, **kwargs: Any) -> StrawberryField:
         kwargs["extensions"] = [*kwargs.get("extensions", []), NodeExtension()]
         # The default value is a stub for dataclasses so you can instantiate
         # types with relay.node() fields without explicit initialization.
