@@ -870,12 +870,6 @@ class GraphQLCoreConverter:
         if compat.is_graphql_generic(type_):
             raise MissingTypesForGenericError(type_)
 
-        # to handle lazy unions
-        if typing.get_origin(type_) is Annotated:
-            args = typing.get_args(type_)
-            if len(args) >= 2 and isinstance(args[1], StrawberryUnion):
-                type_ = args[1]
-
         if isinstance(type_, StrawberryEnumDefinition):
             return self.from_enum(type_)
         if compat.is_input_type(type_):  # TODO: Replace with StrawberryInputObject
@@ -897,7 +891,13 @@ class GraphQLCoreConverter:
         if isinstance(type_, StrawberryUnion):
             return self.from_union(type_)
         if isinstance(type_, LazyType):
-            return self.from_type(type_.resolve_type())
+            resolved = type_.resolve_type()
+            # If the resolved type is an Annotated type (e.g., a union defined with
+            # the new syntax), run it through StrawberryAnnotation to properly
+            # resolve it. This ensures unions get their type_annotations populated.
+            if typing.get_origin(resolved) is Annotated:
+                return self.from_type(StrawberryAnnotation(resolved).resolve())
+            return self.from_type(resolved)
         if compat.is_scalar(
             type_, self.scalar_registry
         ):  # TODO: Replace with StrawberryScalar
