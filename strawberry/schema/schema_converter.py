@@ -874,7 +874,28 @@ class GraphQLCoreConverter:
         if typing.get_origin(type_) is Annotated:
             args = typing.get_args(type_)
             if len(args) >= 2 and isinstance(args[1], StrawberryUnion):
-                type_ = args[1]
+                strawberry_union = args[1]
+                # If the StrawberryUnion has no type_annotations (created via the new
+                # Annotated syntax without explicit types), we need to extract the types
+                # from the first argument (Union[A, B, ...]) and create a properly
+                # populated StrawberryUnion. This fixes the issue where lazy-loaded
+                # unions using the new syntax fail with "must define one or more
+                # member types" error.
+                if not strawberry_union.type_annotations:
+                    union_types = typing.get_args(args[0])
+                    # Handle single-type unions where Python unwraps Union[X] to X
+                    if not union_types:
+                        union_types = (args[0],)
+                    type_ = StrawberryUnion(
+                        name=strawberry_union.graphql_name,
+                        type_annotations=tuple(
+                            StrawberryAnnotation(t) for t in union_types
+                        ),
+                        description=strawberry_union.description,
+                        directives=strawberry_union.directives,
+                    )
+                else:
+                    type_ = strawberry_union
 
         if isinstance(type_, StrawberryEnumDefinition):
             return self.from_enum(type_)
