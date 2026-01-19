@@ -1711,3 +1711,37 @@ def test_relay_node_no_deprecation_warning():
     )
     assert result.errors is None
     assert result.data == {"hello": "Hello World"}
+
+
+def test_relay_node_on_nested_type():
+    """Test that relay.node() fields on nested types can be instantiated without args.
+
+    Regression test for https://github.com/strawberry-graphql/strawberry/issues/3129
+    """
+    from .schema import Fruit
+
+    @strawberry.type
+    class NestedType:
+        node: relay.Node = relay.node()
+        nodes: list[relay.Node] = relay.node()
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def nested(self) -> NestedType:
+            # This should work without passing node/nodes args
+            return NestedType()
+
+    schema = strawberry.Schema(query=Query, types=[Fruit])
+
+    result = schema.execute_sync(
+        """
+        query {
+            nested {
+                __typename
+            }
+        }
+        """
+    )
+    assert result.errors is None
+    assert result.data == {"nested": {"__typename": "NestedType"}}
