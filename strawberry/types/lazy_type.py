@@ -1,4 +1,5 @@
 import importlib
+import importlib.util
 import inspect
 import sys
 import warnings
@@ -60,12 +61,19 @@ class LazyType(Generic[TypeName, Module]):
 
     def resolve_type(self) -> type[Any]:
         module = importlib.import_module(self.module, self.package)
+
+        # Resolve full module name for __main__ comparison
+        if self.package:
+            full_module_name = importlib.util.resolve_name(self.module, self.package)
+        else:
+            full_module_name = self.module
+
         main_module = sys.modules.get("__main__", None)
         if main_module:
             # If lazy type points to the main module, use it instead of the imported
             # module. Otherwise duplication checks during schema-conversion might fail.
             # Refer to: https://github.com/strawberry-graphql/strawberry/issues/2397
-            if main_module.__spec__ and main_module.__spec__.name == self.module:
+            if main_module.__spec__ and main_module.__spec__.name == full_module_name:
                 module = main_module
             elif hasattr(main_module, "__file__") and hasattr(module, "__file__"):
                 main_file = main_module.__file__
@@ -78,6 +86,7 @@ class LazyType(Generic[TypeName, Module]):
                         # path contains `strawberry.exe`
                         is_samefile = False
                     module = main_module if is_samefile else module
+
         return module.__dict__[self.type_name]
 
     # this empty call method allows LazyTypes to be used in generic types
