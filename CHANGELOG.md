@@ -1,6 +1,16 @@
 CHANGELOG
 =========
 
+0.289.1 - 2026-01-19
+--------------------
+
+Improved execution performance by up to 10% by adding an optimized `is_awaitable` check with a fast path for common synchronous types (such as int, str, list, dict, etc.).
+
+This optimization reduces overhead when processing large result sets containing mostly basic values by avoiding expensive awaitable checks for types that are known to never be awaitable.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #4035](https://github.com/strawberry-graphql/strawberry/pull/4035/)
+
+
 0.289.0 - 2026-01-13
 --------------------
 
