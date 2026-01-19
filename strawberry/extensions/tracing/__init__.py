@@ -3,6 +3,10 @@ from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from .apollo import ApolloTracingExtension, ApolloTracingExtensionSync
+    from .apollo_federation import (
+        ApolloFederationTracingExtension,
+        ApolloFederationTracingExtensionSync,
+    )
     from .datadog import DatadogTracingExtension, DatadogTracingExtensionSync
     from .opentelemetry import (
         OpenTelemetryExtension,
@@ -10,6 +14,8 @@ if TYPE_CHECKING:
     )
 
 __all__ = [
+    "ApolloFederationTracingExtension",
+    "ApolloFederationTracingExtensionSync",
     "ApolloTracingExtension",
     "ApolloTracingExtensionSync",
     "DatadogTracingExtension",
@@ -20,6 +26,12 @@ __all__ = [
 
 
 def __getattr__(name: str) -> Any:
+    if name in {
+        "ApolloFederationTracingExtension",
+        "ApolloFederationTracingExtensionSync",
+    }:
+        return getattr(importlib.import_module(".apollo_federation", __name__), name)
+
     if name in {"DatadogTracingExtension", "DatadogTracingExtensionSync"}:
         return getattr(importlib.import_module(".datadog", __name__), name)
 

@@ -10,6 +10,7 @@ COPY poetry.lock ./
 COPY README.md ./
 
 RUN poetry install
+RUN poetry run pip install protobuf
 
 COPY federation-compatibility/schema.py ./
 
