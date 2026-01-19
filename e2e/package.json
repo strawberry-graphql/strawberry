@@ -33,7 +33,7 @@
   "devDependencies": {
     "@eslint/js": "^9.31.0",
     "@playwright/test": "^1.54.1",
-    "@types/node": "^22.16.4",
+    "@types/node": "^25.0.9",
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",
     "@types/react-relay": "^18.2.1",
