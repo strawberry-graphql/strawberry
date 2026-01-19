@@ -39,6 +39,7 @@ from graphql.validation import validate
 from strawberry import relay
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.exceptions import MissingQueryError
+from strawberry.execution import optimized_is_awaitable
 from strawberry.extensions import SchemaExtension
 from strawberry.extensions.directives import (
     DirectivesExtension,
@@ -617,6 +618,7 @@ class Schema(BaseSchema):
                                 operation_name=execution_context.operation_name,
                                 context_value=execution_context.context,
                                 execution_context_class=self.execution_context_class,
+                                is_awaitable=optimized_is_awaitable,
                                 **custom_context_kwargs,
                             )
                         )
@@ -752,6 +754,7 @@ class Schema(BaseSchema):
                             operation_name=execution_context.operation_name,
                             context_value=execution_context.context,
                             execution_context_class=self.execution_context_class,
+                            is_awaitable=optimized_is_awaitable,
                             **custom_context_kwargs,
                         )
 
