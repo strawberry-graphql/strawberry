@@ -28,7 +28,7 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@caf0cab7a618c569241d31dcd442f54681755d39 # v3
       - run: uv venv
-      - run: uv pip install poetry nox nox-poetry
+      - run: uv pip install "poetry<2.3" nox nox-poetry
       - id: set-matrix
         shell: bash
         run: |
@@ -63,7 +63,7 @@ jobs:
             3.13
             3.14
 
-      - run: pip install poetry nox nox-poetry uv
+      - run: pip install "poetry<2.3" nox nox-poetry uv
       - run: nox -r -t tests -s "${{ matrix.session.session }}"
       - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v4
         if: ${{ always() }}
