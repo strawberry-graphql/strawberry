@@ -65,25 +65,44 @@ jobs:
 
       - run: pip install "poetry<2.3" nox nox-poetry uv
       - run: nox -r -t tests -s "${{ matrix.session.session }}"
-      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v4
+      - name: Upload coverage data
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v4
         if: ${{ always() }}
         with:
-          name: coverage-${{ matrix.session.session }}
-          path: coverage.xml
+          name: coverage-data-${{ matrix.session.session }}
+          path: .coverage
+          include-hidden-files: true
+          if-no-files-found: ignore
 
-  upload-coverage:
-    name: 🆙 Upload Coverage
-    needs: [unit-tests]
+  coverage:
+    name: 📊 Combine & check coverage
+    if: always()
+    needs: [unit-tests, unit-tests-on-windows]
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v4
-      - uses: codecov/codecov-action@671740ac38dd9b0130fbe1cec585b89eea48d3de # v5
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
+      - uses: actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548 # v5
         with:
-          fail_ci_if_error: true
-          verbose: true
+          python-version: "3.12"
+
+      - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v4
+        with:
+          pattern: coverage-data-*
+          merge-multiple: true
+
+      - name: Combine coverage & generate report
+        run: |
+          python -Im pip install --upgrade coverage[toml]
+          python -Im coverage combine
+          python -Im coverage html --skip-covered --skip-empty
+          python -Im coverage report --format=markdown >> $GITHUB_STEP_SUMMARY
+
+      - name: Upload HTML report
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v4
+        with:
+          name: html-report
+          path: htmlcov
 
   benchmarks:
     name: 📈 Benchmarks
@@ -122,7 +141,6 @@ jobs:
     steps:
       - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
       - run: pipx install poetry
-      - run: pipx install coverage
       - uses: actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548 # v5
         id: setup-python
         with:
@@ -144,7 +162,6 @@ jobs:
     steps:
       - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
       - run: pipx install poetry
-      - run: pipx install coverage
       - uses: actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548 # v5
         id: setup-python
         with:
@@ -158,15 +175,13 @@ jobs:
       # test all integrations at once on windows
       # but we want to exclude tests/mypy since we are using an old version of pydantic
       - run: |
-          poetry run pytest --cov=. --cov-append --cov-report=xml -n auto --showlocals --ignore tests/mypy -vv
-      - name: coverage xml
-        run: coverage xml -i
-        if: ${{ always() }}
+          poetry run pytest --cov=. --cov-append -n auto --showlocals --ignore tests/mypy -vv
 
-      - uses: codecov/codecov-action@671740ac38dd9b0130fbe1cec585b89eea48d3de # v5
+      - name: Upload coverage data
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v4
         if: ${{ always() }}
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
-          fail_ci_if_error: true
-          verbose: true
+          name: coverage-data-windows
+          path: .coverage
+          include-hidden-files: true
+          if-no-files-found: ignore

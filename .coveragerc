@@ -37,6 +37,9 @@ ignore_errors = True
 omit =
   ./.venv/**
   noxfile.py
+  strawberry/ext/mypy_plugin.py
+  setup.py
+  strawberry/experimental/pydantic/conversion_types.py
 
 [html]
 directory = coverage_html_report
