@@ -19,7 +19,6 @@ GQL_CORE_VERSIONS = [
 COMMON_PYTEST_OPTIONS = [
     "--cov=.",
     "--cov-append",
-    "--cov-report=xml",
     "-n",
     "auto",
     "--showlocals",
@@ -145,7 +144,6 @@ def test_pydantic(session: Session, gql_core: str) -> None:
         "pytest",
         "--cov=.",
         "--cov-append",
-        "--cov-report=xml",
         "-m",
         "pydantic",
         "--ignore=tests/cli",
@@ -164,7 +162,6 @@ def test_pydantic_v2(session: Session, gql_core: str) -> None:
         "pytest",
         "--cov=.",
         "--cov-append",
-        "--cov-report=xml",
         "-m",
         "pydantic",
         "--ignore=tests/cli",
@@ -185,7 +182,6 @@ def tests_typecheckers(session: Session) -> None:
         "pytest",
         "--cov=.",
         "--cov-append",
-        "--cov-report=xml",
         "tests/typecheckers",
         "-vv",
     )
@@ -202,7 +198,6 @@ def tests_cli(session: Session) -> None:
         "pytest",
         "--cov=.",
         "--cov-append",
-        "--cov-report=xml",
         "tests/cli",
         "-vv",
     )
