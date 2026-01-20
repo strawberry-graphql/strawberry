@@ -65,12 +65,15 @@ jobs:
 
       - run: pip install "poetry<2.3" nox nox-poetry uv
       - run: nox -r -t tests -s "${{ matrix.session.session }}"
+      - name: Rename coverage data
+        if: ${{ always() }}
+        run: mv .coverage .coverage.${{ matrix.session.session }}
       - name: Upload coverage data
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v4
         if: ${{ always() }}
         with:
           name: coverage-data-${{ matrix.session.session }}
-          path: .coverage
+          path: .coverage.${{ matrix.session.session }}
           include-hidden-files: true
           if-no-files-found: ignore
 
@@ -102,7 +105,7 @@ jobs:
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v4
         with:
           name: html-report
-          path: htmlcov
+          path: coverage_html_report
 
   benchmarks:
     name: 📈 Benchmarks
@@ -177,11 +180,15 @@ jobs:
       - run: |
           poetry run pytest --cov=. --cov-append -n auto --showlocals --ignore tests/mypy -vv
 
+      - name: Rename coverage data
+        if: ${{ always() }}
+        run: mv .coverage .coverage.windows
+
       - name: Upload coverage data
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v4
         if: ${{ always() }}
         with:
           name: coverage-data-windows
-          path: .coverage
+          path: .coverage.windows
           include-hidden-files: true
           if-no-files-found: ignore
