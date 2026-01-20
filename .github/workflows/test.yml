@@ -116,9 +116,11 @@ jobs:
 
       - name: Generate diff coverage report
         if: github.event_name == 'pull_request'
+        env:
+          BASE_REF: ${{ github.base_ref }}
         run: |
           echo "## Diff Coverage" >> $GITHUB_STEP_SUMMARY
-          diff-cover coverage.xml --compare-branch=origin/${{ github.base_ref }} --markdown-report diff-cover.md --fail-under=0 || true
+          diff-cover coverage.xml --compare-branch="origin/$BASE_REF" --markdown-report diff-cover.md --fail-under=0 || true
           cat diff-cover.md >> $GITHUB_STEP_SUMMARY
 
       - name: Upload HTML report
