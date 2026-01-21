@@ -1,6 +1,28 @@
 CHANGELOG
 =========
 
+0.289.3 - 2026-01-21
+--------------------
+
+This release fixes an issue where lazy union types using the new `Annotated` syntax were not being resolved correctly.
+
+Example that now works:
+
+```python
+from typing import Annotated
+
+import strawberry
+
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def example(self) -> Annotated["SomeUnion", strawberry.lazy("module")]: ...
+```
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #4156](https://github.com/strawberry-graphql/strawberry/pull/4156/)
+
+
 0.289.2 - 2026-01-19
 --------------------
 
