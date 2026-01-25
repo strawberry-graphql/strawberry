@@ -206,6 +206,14 @@ class StrawberryUnion(StrawberryType):
             else:
                 return_type = None
 
+            # If we couldn't resolve from type matching, try using is_type_of
+            if return_type is None:
+                for inner_type in type_.types:
+                    if inner_type.is_type_of is not None and inner_type.is_type_of(
+                        root, info
+                    ):
+                        return inner_type.name
+
             # Make sure the found type is expected by the Union
             if return_type is None or return_type not in type_.types:
                 raise UnallowedReturnTypeForUnion(
