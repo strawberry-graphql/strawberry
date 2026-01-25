@@ -76,7 +76,7 @@ jobs:
             mv .coverage ".coverage.${{ matrix.session.session }}"
           fi
       - name: Upload coverage data
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         if: ${{ always() }}
         with:
           name: coverage-data-${{ matrix.session.session }}
@@ -124,7 +124,7 @@ jobs:
           cat diff-cover.md >> $GITHUB_STEP_SUMMARY
 
       - name: Upload HTML report
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: html-report
           path: coverage_html_report
@@ -217,7 +217,7 @@ jobs:
           fi
 
       - name: Upload coverage data
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         if: ${{ always() }}
         with:
           name: coverage-data-windows
