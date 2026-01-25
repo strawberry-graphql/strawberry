@@ -1,6 +1,16 @@
 CHANGELOG
 =========
 
+0.289.5 - 2026-01-25
+--------------------
+
+Fix union type resolution to fall back to `is_type_of` for generic unions when
+type matching fails. This allows returning domain/ORM objects from generic union
+fields without spurious union type errors.
+
+Contributed by [Thiago Bellini Ribeiro](https://github.com/bellini666) via [PR #4163](https://github.com/strawberry-graphql/strawberry/pull/4163/)
+
+
 0.289.4 - 2026-01-24
 --------------------
 
