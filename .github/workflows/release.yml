@@ -36,7 +36,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Set up Python
-        uses: actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548 # v4
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v4
         with:
           python-version: "3.10"
       - name: Install deps
@@ -97,7 +97,7 @@ jobs:
     needs: [release-file-check, get-contributor-info, release]
     if: ${{ needs.release-file-check.outputs.status == 'OK' }}
     steps:
-      - uses: actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548 # v4
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v4
         with:
           python-version: "3.10"
       - name: Install dependencies
@@ -176,7 +176,7 @@ jobs:
     if: ${{ needs.release-file-check.outputs.status == 'OK' }}
 
     steps:
-      - uses: actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548 # v4
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v4
         with:
           python-version: "3.10"
       - name: Install dependencies
