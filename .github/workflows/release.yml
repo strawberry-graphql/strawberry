@@ -18,7 +18,7 @@ jobs:
       change_type: ${{ steps.release-check.outputs.change_type }}
 
     steps:
-      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
       - name: Release file check
         uses: ./.github/release-check-action
@@ -32,7 +32,7 @@ jobs:
     outputs:
       version: ${{ steps.get-version.outputs.version }}
     steps:
-      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           persist-credentials: false
       - name: Set up Python
@@ -159,7 +159,7 @@ jobs:
       has-tweet-file: ${{ steps.extract.outputs.has-tweet-file }}
 
     steps:
-      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
       - name: Extract tweet message and changelog
         id: extract
         uses: strawberry-graphql/tweet-actions/read-tweet@b8d51a501ab14ac32d79b61e3a0af5c3add4ead0 # v6
@@ -227,7 +227,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           persist-credentials: false
       - name: Remove TWEET.md and commit
