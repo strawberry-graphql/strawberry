@@ -47,7 +47,7 @@ class UserGQL:
     phone: Optional[str] = strawberry.field(extensions=[perm_ext])
 ```
 
-**Simple transformation extension:**
+**Basic transformation extension:**
 
 ```python
 class UpperCaseExtension(FieldExtension):
