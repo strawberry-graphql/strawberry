@@ -8159,7 +8159,6 @@ from typing import Generic, Sequence, TypeVar
 
 import strawberry
 
-
 T = TypeVar("T")
 
 
@@ -10125,7 +10124,6 @@ from strawberry.asgi import GraphQL
 from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL
 from api.schema import schema
 
-
 app = GraphQL(schema, subscription_protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL])
 ```
 
@@ -10734,7 +10732,6 @@ against malicious queries:
 import strawberry
 from strawberry.schema import default_validation_rules
 from strawberry.tools import depth_limit_validator
-
 
 # Add the depth limit validator to the list of default validation rules
 validation_rules = default_validation_rules + [depth_limit_validator(3)]
@@ -12288,7 +12285,6 @@ from opentelemetry.sdk.trace.export import (
 
 import strawberry
 from strawberry.extensions.tracing import OpenTelemetryExtension
-
 
 trace.set_tracer_provider(TracerProvider())
 trace.get_tracer_provider().add_span_processor(

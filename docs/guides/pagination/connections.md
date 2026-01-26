@@ -89,7 +89,6 @@ from typing import Generic, TypeVar
 
 import strawberry
 
-
 GenericType = TypeVar("GenericType")
 
 
@@ -115,7 +114,6 @@ Relay specification, we can define a `PageInfo` type like this:
 from typing import Generic, TypeVar
 
 import strawberry
-
 
 GenericType = TypeVar("GenericType")
 
@@ -166,7 +164,6 @@ ObjectType.
 from typing import Generic, TypeVar
 
 import strawberry
-
 
 GenericType = TypeVar("GenericType")
 
