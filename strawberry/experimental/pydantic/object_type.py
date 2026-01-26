@@ -98,6 +98,7 @@ def _build_dataclass_creation_fields(
                 existing_field.permission_classes if existing_field else []
             ),
             directives=existing_field.directives if existing_field else (),
+            extensions=existing_field.extensions if existing_field else [],
             metadata=existing_field.metadata if existing_field else {},
         )
 

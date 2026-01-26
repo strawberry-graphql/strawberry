@@ -238,7 +238,6 @@ django_asgi_app = get_asgi_application()
 # for the schema.
 from mysite.graphql import schema
 
-
 application = GraphQLProtocolTypeRouter(
     schema,
     django_application=django_asgi_app,
@@ -272,7 +271,6 @@ django_asgi_app = get_asgi_application()
 
 from chat import routing
 from mysite.graphql import schema
-
 
 gql_http_consumer = AuthMiddlewareStack(GraphQLHTTPConsumer.as_asgi(schema=schema))
 gql_ws_consumer = GraphQLWSConsumer.as_asgi(schema=schema)
