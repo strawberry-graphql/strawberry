@@ -17,6 +17,7 @@ import strawberry
 from strawberry.experimental.pydantic import type as pyd_type
 from strawberry.extensions.field_extension import FieldExtension
 
+
 class PermissionExtension(FieldExtension):
     def resolve(self, next_, source, info, **kwargs):
         # Check permission, return None if denied
@@ -24,20 +25,23 @@ class PermissionExtension(FieldExtension):
             return None
         return next_(source, info, **kwargs)
 
+
 class UserModel(BaseModel):
     id: int
     fname: str
     email: str
     phone: str
 
+
 perm_ext = PermissionExtension()
+
 
 @pyd_type(model=UserModel)
 class UserGQL:
     # Public fields - just use auto
     id: strawberry.auto
     fname: strawberry.auto
-    
+
     # Protected fields - attach extension
     email: Optional[str] = strawberry.field(extensions=[perm_ext])
     phone: Optional[str] = strawberry.field(extensions=[perm_ext])
@@ -51,8 +55,10 @@ class UpperCaseExtension(FieldExtension):
         result = next_(source, info, **kwargs)
         return str(result).upper()
 
+
 class ProductModel(BaseModel):
     name: str
+
 
 @pyd_type(model=ProductModel)
 class Product:

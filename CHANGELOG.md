@@ -6404,7 +6404,9 @@ class Query:
 
 schema = strawberry.Schema(Query)
 
-str(schema) == """
+str(
+    schema
+) == """
   type Query {
     a: String!
     b: Int!
@@ -6811,14 +6813,18 @@ class Query:
 schema = strawberry.Schema(Query)
 
 # Before:
-str(schema) == """
+str(
+    schema
+) == """
 type Query {
   a: String!
 }
 """
 
 # After:
-str(schema) == """
+str(
+    schema
+) == """
 type Query {
   a: Float!
 }
