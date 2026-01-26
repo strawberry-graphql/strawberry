@@ -159,6 +159,76 @@ def test_allows_multiple_instance_of_same_generic():
     assert str(schema) == expected_schema
 
 
+def test_allows_multiple_levels_of_nested_generics():
+    T = TypeVar("T")
+
+    @strawberry.type
+    class Collection(Generic[T]):
+        field1: list[T] = strawberry.field(resolver=lambda: [])  # noqa: PIE807
+        field2: list[T] = strawberry.field(resolver=lambda: [])  # noqa: PIE807
+
+    @strawberry.type
+    class Container(Generic[T]):
+        items: list[T]
+
+    @strawberry.type
+    class TypeA:
+        id: str
+
+    @strawberry.type
+    class TypeB:
+        id: int
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def a(self) -> Container[Collection[TypeA]]:
+            return Container(items=[])
+
+        @strawberry.field
+        def b(self) -> Container[Collection[TypeB]]:
+            return Container(items=[])
+
+    schema = strawberry.Schema(query=Query)
+
+    expected_schema = textwrap.dedent(
+        """
+        type Query {
+          a: TypeACollectionContainer!
+          b: TypeBCollectionContainer!
+        }
+
+        type TypeA {
+          id: String!
+        }
+
+        type TypeACollection {
+          field1: [TypeA!]!
+          field2: [TypeA!]!
+        }
+
+        type TypeACollectionContainer {
+          items: [TypeACollection!]!
+        }
+
+        type TypeB {
+          id: Int!
+        }
+
+        type TypeBCollection {
+          field1: [TypeB!]!
+          field2: [TypeB!]!
+        }
+
+        type TypeBCollectionContainer {
+          items: [TypeBCollection!]!
+        }
+        """
+    ).strip()
+
+    assert str(schema) == expected_schema
+
+
 def test_allows_duplicated_types_when_validation_disabled():
     @strawberry.type(name="DuplicatedType")
     class A:

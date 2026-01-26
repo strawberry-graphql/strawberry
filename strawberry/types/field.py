@@ -258,11 +258,10 @@ class StrawberryField(dataclasses.Field):
 
     @property
     def is_graphql_generic(self) -> bool:
-        return (
-            self.base_resolver.is_graphql_generic
-            if self.base_resolver
-            else _is_generic(self.type)
-        )
+        if self.base_resolver:
+            return self.base_resolver.is_graphql_generic or _is_generic(self.type)
+
+        return _is_generic(self.type)
 
     def _python_name(self) -> str | None:
         if self.name:
