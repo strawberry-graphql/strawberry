@@ -16,6 +16,36 @@ We can use the Strawberry `schema` object we defined in the
 run our first test:
 
 ```python
+import strawberry
+
+
+@strawberry.type
+class Book:
+    title: str
+    author: str
+
+
+def get_books(title: str) -> list[Book]:
+    if title == "The Great Gatsby":
+        return [
+            Book(
+                title="The Great Gatsby",
+                author="F. Scott Fitzgerald",
+            ),
+        ]
+    return []
+
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def books(self, title: str) -> list[Book]:
+        return get_books(title)
+
+
+schema = strawberry.Schema(Query)
+
+
 def test_query():
     query = """
         query TestQuery($title: String!) {
@@ -42,10 +72,12 @@ def test_query():
 
 This `test_query` example:
 
-1. defines the query we will test against; it accepts one argument, `title`, as
-   input
-2. executes the query and assigns the result to a `result` variable
-3. asserts that the result is what we are expecting: nothing in `errors` and our
+1. defines a complete schema with a `Book` type and a `books` query that accepts
+   a `title` argument
+2. defines the query we will test against, using a GraphQL variable `$title`
+3. executes the query using `execute_sync`, passing the variable via
+   `variable_values`
+4. asserts that the result is what we are expecting: nothing in `errors` and our
    desired book in `data`
 
 As you may have noticed, we explicitly defined the query variable `title`, and

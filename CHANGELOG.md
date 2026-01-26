@@ -1,6 +1,235 @@
 CHANGELOG
 =========
 
+0.289.7 - 2026-01-26
+--------------------
+
+Fix nested generics with resolver-backed fields to avoid duplicate type names.
+
+Example (previously raised `DuplicatedTypeName`):
+
+```python
+import strawberry
+
+
+@strawberry.type
+class Collection[T]:
+    field1: list[T] = strawberry.field(resolver=lambda: [])
+
+
+@strawberry.type
+class Container[T]:
+    items: list[T]
+
+
+@strawberry.type
+class TypeA: ...
+
+
+@strawberry.type
+class TypeB: ...
+
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def a(self) -> Container[Collection[TypeA]]: ...
+
+    @strawberry.field
+    def b(self) -> Container[Collection[TypeB]]: ...
+
+
+strawberry.Schema(query=Query)
+```
+
+Contributed by [Thiago Bellini Ribeiro](https://github.com/bellini666) via [PR #4162](https://github.com/strawberry-graphql/strawberry/pull/4162/)
+
+
+0.289.6 - 2026-01-26
+--------------------
+
+This release adds support for field extensions in experimental pydantic types.
+
+Previously, when using `@strawberry.experimental.pydantic.type()` decorator, field extensions defined with `strawberry.field(extensions=[...])` were not being propagated to the generated Strawberry fields. This meant extensions like authentication, caching, or result transformation couldn't be used with pydantic-based types.
+
+This fix ensures that extensions are properly preserved when converting pydantic fields to Strawberry fields, enabling the full power of field extensions across the pydantic integration.
+
+Examples:
+
+**Permission-based field masking:**
+
+```python
+from pydantic import BaseModel
+from typing import Optional
+import strawberry
+from strawberry.experimental.pydantic import type as pyd_type
+from strawberry.extensions.field_extension import FieldExtension
+
+
+class PermissionExtension(FieldExtension):
+    def resolve(self, next_, source, info, **kwargs):
+        # Check permission, return None if denied
+        if not check_field_access(info.context.user, info.field_name, source.id):
+            return None
+        return next_(source, info, **kwargs)
+
+
+class UserModel(BaseModel):
+    id: int
+    fname: str
+    email: str
+    phone: str
+
+
+perm_ext = PermissionExtension()
+
+
+@pyd_type(model=UserModel)
+class UserGQL:
+    # Public fields - just use auto
+    id: strawberry.auto
+    fname: strawberry.auto
+
+    # Protected fields - attach extension
+    email: Optional[str] = strawberry.field(extensions=[perm_ext])
+    phone: Optional[str] = strawberry.field(extensions=[perm_ext])
+```
+
+**Basic transformation extension:**
+
+```python
+class UpperCaseExtension(FieldExtension):
+    def resolve(self, next_, source, info, **kwargs):
+        result = next_(source, info, **kwargs)
+        return str(result).upper()
+
+
+class ProductModel(BaseModel):
+    name: str
+
+
+@pyd_type(model=ProductModel)
+class Product:
+    name: str = strawberry.field(extensions=[UpperCaseExtension()])
+```
+
+Contributed by [Srikanth](https://github.com/XChikuX) via [PR #4171](https://github.com/strawberry-graphql/strawberry/pull/4171/)
+
+
+0.289.5 - 2026-01-25
+--------------------
+
+Fix union type resolution to fall back to `is_type_of` for generic unions when
+type matching fails. This allows returning domain/ORM objects from generic union
+fields without spurious union type errors.
+
+Contributed by [Thiago Bellini Ribeiro](https://github.com/bellini666) via [PR #4163](https://github.com/strawberry-graphql/strawberry/pull/4163/)
+
+
+0.289.4 - 2026-01-24
+--------------------
+
+This release fixes an issue where `relay.node()` fields on nested types required
+explicit initialization, even though the field values are resolved dynamically.
+
+Previously, this code would fail at runtime:
+
+```python
+@strawberry.type
+class Sub:
+    node: relay.Node = relay.node()
+
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def sub(self) -> Sub:
+        return Sub()  # Error: missing required argument 'node'
+```
+
+Now `relay.node()` provides a default value, allowing nested types with relay
+node fields to be instantiated without explicit initialization.
+
+Contributed by [Alexander](https://github.com/devkral) via [PR #3331](https://github.com/strawberry-graphql/strawberry/pull/3331/)
+
+
+0.289.3 - 2026-01-21
+--------------------
+
+This release fixes an issue where lazy union types using the new `Annotated` syntax were not being resolved correctly.
+
+Example that now works:
+
+```python
+from typing import Annotated
+
+import strawberry
+
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def example(self) -> Annotated["SomeUnion", strawberry.lazy("module")]: ...
+```
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #4156](https://github.com/strawberry-graphql/strawberry/pull/4156/)
+
+
+0.289.2 - 2026-01-19
+--------------------
+
+Fix lazy type resolution with relative imports
+
+This fixes an issue where lazy types using relative imports (e.g., `strawberry.lazy(".module")`) would fail to resolve correctly when comparing with the `__main__` module, potentially causing "Type X is defined multiple times in the schema" errors during test isolation.
+
+This ensures that the fully resolved module name is used when comparing with `__main__.__spec__.name`, rather than the relative import path.
+
+Contributed by [Thiago Bellini Ribeiro](https://github.com/bellini666) via [PR #4145](https://github.com/strawberry-graphql/strawberry/pull/4145/)
+
+
+0.289.1 - 2026-01-19
+--------------------
+
+Improved execution performance by up to 10% by adding an optimized `is_awaitable` check with a fast path for common synchronous types (such as int, str, list, dict, etc.).
+
+This optimization reduces overhead when processing large result sets containing mostly basic values by avoiding expensive awaitable checks for types that are known to never be awaitable.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #4035](https://github.com/strawberry-graphql/strawberry/pull/4035/)
+
+
+0.289.0 - 2026-01-13
+--------------------
+
+Support using enum values in the GraphQL schema
+
+Contributed by [Paulo Costa](https://github.com/paulo-raca) via [PR #4071](https://github.com/strawberry-graphql/strawberry/pull/4071/)
+
+
+0.288.4 - 2026-01-12
+--------------------
+
+Added URL sharing support for GraphiQL. Query, variables, and headers are now
+persisted in the URL, allowing users to share GraphQL queries via links.
+
+Contributed by [Mykhailo Havelia](https://github.com/Arfey) via [PR #2842](https://github.com/strawberry-graphql/strawberry/pull/2842/)
+
+
+0.288.3 - 2026-01-10
+--------------------
+
+Fixed a bug where `strawberry.Maybe[T]` was incorrectly accepting `null` values when passed through variables
+
+Previously, `Maybe[T]` returned a validation error for literal `null` values in GraphQL queries, but allowed `null` when passed via variables, resulting in `Some(None)` reaching the resolver instead of raising a validation error.
+
+This fix ensures consistent validation behavior for `Maybe[T]` regardless of how the input is provided:
+
+- `Maybe[T]` now returns a validation error for `null` in both literal queries and variables
+- `Maybe[T | None]` continues to accept `null` values as expected
+- Error message indicates to use `Maybe[T | None]` if null values are needed
+
+Contributed by [Thiago Bellini Ribeiro](https://github.com/bellini666) via [PR #4096](https://github.com/strawberry-graphql/strawberry/pull/4096/)
+
+
 0.288.2 - 2026-01-01
 --------------------
 
@@ -8045,7 +8274,6 @@ from typing import Generic, Sequence, TypeVar
 
 import strawberry
 
-
 T = TypeVar("T")
 
 
@@ -10011,7 +10239,6 @@ from strawberry.asgi import GraphQL
 from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL
 from api.schema import schema
 
-
 app = GraphQL(schema, subscription_protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL])
 ```
 
@@ -10620,7 +10847,6 @@ against malicious queries:
 import strawberry
 from strawberry.schema import default_validation_rules
 from strawberry.tools import depth_limit_validator
-
 
 # Add the depth limit validator to the list of default validation rules
 validation_rules = default_validation_rules + [depth_limit_validator(3)]
@@ -12174,7 +12400,6 @@ from opentelemetry.sdk.trace.export import (
 
 import strawberry
 from strawberry.extensions.tracing import OpenTelemetryExtension
-
 
 trace.set_tracer_provider(TracerProvider())
 trace.get_tracer_provider().add_span_processor(

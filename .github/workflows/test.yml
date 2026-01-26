@@ -24,11 +24,13 @@ jobs:
     outputs:
       sessions: ${{ steps.set-matrix.outputs.sessions }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
       - name: Install uv
-        uses: astral-sh/setup-uv@v3
+        uses: astral-sh/setup-uv@61cb8a9741eeb8a550a1b8544337180c0fc8476b # v3
       - run: uv venv
-      - run: uv pip install poetry nox nox-poetry
+      - run: uv pip install "poetry<2.3" nox nox-poetry
       - id: set-matrix
         shell: bash
         run: |
@@ -53,8 +55,10 @@ jobs:
         session: ${{ fromJson(needs.generate-jobs-tests.outputs.sessions) }}
 
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
           python-version: |
             3.10
@@ -63,26 +67,67 @@ jobs:
             3.13
             3.14
 
-      - run: pip install poetry nox nox-poetry uv
+      - run: pip install "poetry<2.3" nox nox-poetry uv
       - run: nox -r -t tests -s "${{ matrix.session.session }}"
-      - uses: actions/upload-artifact@v4
+      - name: Rename coverage data
+        if: ${{ always() }}
+        run: |
+          if [ -f .coverage ]; then
+            mv .coverage ".coverage.${{ matrix.session.session }}"
+          fi
+      - name: Upload coverage data
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         if: ${{ always() }}
         with:
-          name: coverage-${{ matrix.session.session }}
-          path: coverage.xml
+          name: coverage-data-${{ matrix.session.session }}
+          path: ".coverage.${{ matrix.session.session }}"
+          include-hidden-files: true
+          if-no-files-found: ignore
 
-  upload-coverage:
-    name: 🆙 Upload Coverage
-    needs: [unit-tests]
+  coverage:
+    name: 📊 Combine & check coverage
+    if: always()
+    needs: [unit-tests, unit-tests-on-windows]
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
 
     steps:
-      - uses: actions/download-artifact@v4
-      - uses: codecov/codecov-action@v4
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          fail_ci_if_error: true
-          verbose: true
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: "3.12"
+
+      - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          pattern: coverage-data-*
+          merge-multiple: true
+
+      - name: Combine coverage & generate report
+        run: |
+          python -Im pip install --upgrade coverage[toml] diff-cover
+          python -Im coverage combine
+          python -Im coverage xml
+          python -Im coverage html --skip-covered --skip-empty
+          python -Im coverage report --format=markdown >> $GITHUB_STEP_SUMMARY
+
+      - name: Generate diff coverage report
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          echo "## Diff Coverage" >> $GITHUB_STEP_SUMMARY
+          diff-cover coverage.xml --compare-branch="origin/$BASE_REF" --markdown-report diff-cover.md --fail-under=0 || true
+          cat diff-cover.md >> $GITHUB_STEP_SUMMARY
+
+      - name: Upload HTML report
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: html-report
+          path: coverage_html_report
 
   benchmarks:
     name: 📈 Benchmarks
@@ -95,9 +140,11 @@ jobs:
       id-token: write
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
       - run: pipx install poetry
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         id: setup-python
         with:
           python-version: "3.12"
@@ -109,7 +156,7 @@ jobs:
         if: steps.setup-python.outputs.cache-hit != 'true'
 
       - name: Run benchmarks
-        uses: CodSpeedHQ/action@v4
+        uses: CodSpeedHQ/action@0d7de549485db8284c0b87a0d2c0dd871097e641 # v4
         with:
           mode: simulation
           run: poetry run pytest tests/benchmarks --codspeed -p no:codeflash-benchmark
@@ -119,10 +166,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
       - run: pipx install poetry
-      - run: pipx install coverage
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         id: setup-python
         with:
           python-version: "3.12"
@@ -141,10 +189,11 @@ jobs:
     runs-on: windows-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
       - run: pipx install poetry
-      - run: pipx install coverage
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         id: setup-python
         with:
           python-version: "3.11"
@@ -152,22 +201,26 @@ jobs:
 
       - run: poetry install --with integrations
         if: steps.setup-python.outputs.cache-hit != 'true'
-      # Since we are running all the integrations at once, we can't use
-      # pydantic v2. It is not compatible with starlette yet
-      - run: poetry run pip install pydantic==1.10
 
       # we use poetry directly instead of nox since we want to
       # test all integrations at once on windows
       # but we want to exclude tests/mypy since we are using an old version of pydantic
       - run: |
-          poetry run pytest --cov=. --cov-append --cov-report=xml -n auto --showlocals --ignore tests/mypy -vv
-      - name: coverage xml
-        run: coverage xml -i
-        if: ${{ always() }}
+          poetry run pytest --cov=. --cov-append -n auto --showlocals --ignore tests/mypy -vv
 
-      - uses: codecov/codecov-action@v4
+      - name: Rename coverage data
+        if: ${{ always() }}
+        shell: bash
+        run: |
+          if [ -f .coverage ]; then
+            mv .coverage .coverage.windows
+          fi
+
+      - name: Upload coverage data
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         if: ${{ always() }}
         with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          fail_ci_if_error: true
-          verbose: true
+          name: coverage-data-windows
+          path: .coverage.windows
+          include-hidden-files: true
+          if-no-files-found: ignore

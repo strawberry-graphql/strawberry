@@ -12,7 +12,7 @@ jobs:
 
     - name: Get changed files
       #uses: lots0logs/gh-action-get-changed-files@2.1.4
-      uses: Mineflash07/gh-action-get-changed-files@feature/support-pr-target-event # Remove as soon as PR is merged
+      uses: raik0707/gh-action-get-changed-files@5819313b441087a2e632d14773a12c6e9bc72912 # feature/support-pr-target-event - Remove as soon as PR is merged to lots0logs
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
 
@@ -54,7 +54,7 @@ jobs:
       shell: python
 
     - name: Create comment
-      uses: peter-evans/create-or-update-comment@v1
+      uses: peter-evans/create-or-update-comment@e8674b075228eee787fea43ef493e45ece1004c9 # v5
       with:
         issue-number: ${{ github.event.number }}
         body: ${{ steps.get-comment-message.outputs.message }}

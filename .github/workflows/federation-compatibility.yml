@@ -12,6 +12,7 @@ on:
     paths:
       - "strawberry/federation/**"
       - "strawberry/printer/**"
+      - "federation-compatibility/**"
       - "pyproject.toml"
       - "poetry.lock"
       - ".github/workflows/federation-compatibility.yml"
@@ -22,10 +23,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
       - run: pipx install poetry
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         id: setup-python
         with:
           python-version: "3.12"
@@ -37,7 +38,7 @@ jobs:
         run: poetry run strawberry export-schema schema:schema > schema.graphql
         working-directory: federation-compatibility
 
-      - uses: apollographql/federation-subgraph-compatibility@v2
+      - uses: apollographql/federation-subgraph-compatibility@b6981fd83d24450a7cbd2d7727196e0ba57614e0 # v2
         with:
           compose: 'federation-compatibility/docker-compose.yml'
           schema: 'federation-compatibility/schema.graphql'

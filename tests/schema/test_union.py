@@ -1,7 +1,7 @@
 import textwrap
 from dataclasses import dataclass
 from textwrap import dedent
-from typing import Annotated, Generic, TypeVar, Union
+from typing import Annotated, Any, ClassVar, Generic, TypeVar, Union
 
 import pytest
 
@@ -597,6 +597,79 @@ def test_union_with_similar_nested_generic_types():
     result = schema.execute_sync(query)
 
     assert result.data["containerB"]["items"][0]["b"] == 3
+
+
+def test_union_with_generic_uses_is_type_of_for_domain_objects():
+    T = TypeVar("T")
+
+    @dataclass
+    class SQLProduct:
+        name: str
+        price: float
+
+    @strawberry.type
+    class BaseGQLType:
+        __domain_type__: ClassVar[type | None] = None
+
+        @classmethod
+        def is_type_of(cls, obj: Any, _info) -> bool:
+            if (cls == obj.__class__) or (
+                cls.__domain_type__ and isinstance(obj, cls.__domain_type__)
+            ):
+                return True
+            return (
+                super().is_type_of(obj, _info)  # type: ignore[misc]
+                if hasattr(super(), "is_type_of")
+                else False
+            )
+
+    @strawberry.type
+    class Product(BaseGQLType):
+        __domain_type__: strawberry.Private[type | None] = SQLProduct
+
+        name: str
+        price: float
+
+    @strawberry.type
+    class Error(BaseGQLType):
+        message: str
+
+    @strawberry.type
+    class Page(BaseGQLType, Generic[T]):
+        items: list[T]
+
+    def get_products() -> Page[Product] | Error:
+        return Page[Product](items=[SQLProduct(name="a", price=2.2)])
+
+    @strawberry.type
+    class Query:
+        products: Page[Product] | Error = strawberry.field(resolver=get_products)
+
+    schema = strawberry.Schema(Query)
+    query = """
+    {
+        products {
+            __typename
+            ... on ProductPage {
+                items {
+                    name
+                    price
+                }
+            }
+            ... on Error {
+                message
+            }
+        }
+    }
+    """
+
+    result = schema.execute_sync(query)
+
+    assert not result.errors
+    assert result.data["products"] == {
+        "__typename": "ProductPage",
+        "items": [{"name": "a", "price": 2.2}],
+    }
 
 
 def test_lazy_union():

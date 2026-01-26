@@ -17,9 +17,19 @@ export default defineConfig({
 			use: { ...devices["Desktop Chrome"] },
 		},
 	],
-	webServer: {
-		command: "bun run dev",
-		url: "http://localhost:5173",
-		reuseExistingServer: !process.env.CI,
-	},
+	webServer: [
+		{
+			command: "bun run dev",
+			url: "http://localhost:5173",
+			reuseExistingServer: !process.env.CI,
+		},
+		{
+			// Strawberry server with GraphiQL
+			// In CI, this is started by the workflow; locally we start it here
+			command: "poetry run strawberry dev app:schema --port 8000",
+			url: "http://localhost:8000",
+			reuseExistingServer: true,
+			cwd: "..",
+		},
+	],
 });

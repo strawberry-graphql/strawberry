@@ -1,4 +1,5 @@
 from typing import Any
+from typing_extensions import Self
 
 from rich.progress import TaskID
 
@@ -15,7 +16,7 @@ class FakeProgress:
     def add_task(self, *args: Any, **kwargs: Any) -> TaskID:
         return TaskID(0)
 
-    def __enter__(self) -> "FakeProgress":
+    def __enter__(self) -> Self:
         return self
 
     def __exit__(self, *args: object, **kwargs: Any) -> None:
