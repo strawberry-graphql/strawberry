@@ -8,7 +8,7 @@ Strawberry GraphQL
 ## Setup
 
 ```shell
-$ poetry install                    # Install dependencies
+$ poetry install --with integrations                  # Install dependencies
 poetry run pre-commit install       # Install git hooks (auto-runs checks on commit)
 ```
 
