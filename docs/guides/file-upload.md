@@ -38,20 +38,35 @@ runtime depends on the integration:
 | [Sanic](/docs/integrations/sanic)         | [`sanic.request.File`](https://sanic.readthedocs.io/en/stable/sanic/api/core.html#sanic.request.File)                                                 |
 | [Starlette](/docs/integrations/starlette) | [`starlette.datastructures.UploadFile`](https://www.starlette.io/requests/#request-files)                                                             |
 
-In order to have the correct runtime type in resolver type annotations you can
-set a scalar override based on the integrations above. For example with
-Starlette:
+In order to have the correct runtime type in resolver type annotations (which
+also gives you proper type checking with mypy/pyright), you can set a scalar
+override based on the integrations above. For example with Starlette:
 
 ```python
 import strawberry
 from starlette.datastructures import UploadFile
-from strawberry.file_uploads import Upload
+from strawberry.file_uploads import UploadDefinition
 
 schema = strawberry.Schema(
-  ...
-  scalar_overrides={UploadFile: Upload}
+    query=Query,
+    mutation=Mutation,
+    scalar_overrides={UploadFile: UploadDefinition},
 )
 ```
+
+With this configuration, you can use the framework's upload type directly in
+your resolvers:
+
+```python
+@strawberry.type
+class Mutation:
+    @strawberry.mutation
+    async def read_file(self, file: UploadFile) -> str:
+        return (await file.read()).decode("utf-8")
+```
+
+This gives you proper IDE autocomplete and type checking, since the type
+annotation matches the actual runtime type.
 
 ## ASGI / FastAPI / Starlette
 
