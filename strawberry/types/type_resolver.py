@@ -152,8 +152,11 @@ def _get_fields(
                 field_annotations = [
                     arg for arg in rest if isinstance(arg, StrawberryField)
                 ]
-                if len(field_annotationsd) > 1:
+                if len(field_annotations) > 1:
                     raise MultipleStrawberryFieldsError(field_name=field.name, cls=cls)
+
+                if field_annotations:
+                    strawberry_field_from_annotated = field_annotations[0]
 
                 # If we found a StrawberryField in Annotated, use it
                 if strawberry_field_from_annotated is not None:
