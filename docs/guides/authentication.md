@@ -46,7 +46,7 @@ class Mutation:
     @strawberry.field
     def login(self, username: str, password: str) -> LoginResult:
         # Your domain-specific authentication logic would go here
-        user = ...
+        user = your_authorization_service.login(username, password)
 
         if user is None:
             return LoginError(message="Something went wrong")
@@ -80,7 +80,8 @@ class Context(BaseContext):
             return None
 
         authorization = self.request.headers.get("Authorization", None)
-        return authorization_service.authorize(authorization)
+        # Your domain-specific authentication logic would go here
+        return your_authorization_service.authorize(authorization)
 
 
 @strawberry.type
