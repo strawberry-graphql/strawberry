@@ -32,6 +32,7 @@ from strawberry.types.cast import get_strawberry_type_cast
 from strawberry.types.field import StrawberryField
 from strawberry.types.object_type import _process_type, _wrap_dataclass
 from strawberry.types.type_resolver import _get_fields
+from strawberry.types.unset import UNSET
 
 if TYPE_CHECKING:
     import builtins
@@ -61,6 +62,8 @@ def _build_dataclass_creation_fields(
     auto_fields_set: set[str],
     use_pydantic_alias: bool,
     compat: PydanticCompat,
+    *,
+    use_pydantic_default: bool,
 ) -> DataclassCreationFields:
     field_type = (
         get_type_for_field(field, is_input, compat=compat)
@@ -83,12 +86,18 @@ def _build_dataclass_creation_fields(
         elif field.has_alias and use_pydantic_alias:
             graphql_name = field.alias
 
+        # for inputs with use_pydantic_default, default_factory should be used
+        if is_input and not use_pydantic_default:
+            default_factory = UNSET
+        else:
+            default_factory = get_default_factory_for_field(field, compat=compat)
+
         strawberry_field = StrawberryField(
             python_name=field.name,
             graphql_name=graphql_name,
             # always unset because we use default_factory instead
             default=dataclasses.MISSING,
-            default_factory=get_default_factory_for_field(field, compat=compat),
+            default_factory=default_factory,
             type_annotation=StrawberryAnnotation.from_annotation(field_type),
             description=field.description,
             deprecation_reason=(
@@ -128,6 +137,7 @@ def type(
     all_fields: bool = False,
     include_computed: bool = False,
     use_pydantic_alias: bool = True,
+    use_pydantic_default: bool = True,
 ) -> Callable[..., builtins.type[StrawberryTypeFromPydantic[PydanticModel]]]:
     def wrap(cls: Any) -> builtins.type[StrawberryTypeFromPydantic[PydanticModel]]:
         compat = PydanticCompat.from_model(model)
@@ -193,6 +203,7 @@ def type(
                 auto_fields_set,
                 use_pydantic_alias,
                 compat=compat,
+                use_pydantic_default=use_pydantic_default,
             )
             for field_name, field in model_fields.items()
             if field_name in fields_set
@@ -281,12 +292,15 @@ def type(
             return ret
 
         def to_pydantic_default(self: Any, **kwargs: Any) -> PydanticModel:
-            instance_kwargs = {
-                f.name: convert_strawberry_class_to_pydantic_model(
-                    getattr(self, f.name)
+            # when preserving omission on inputs, drop UNSET fields
+            instance_kwargs = {}
+            for f in dataclasses.fields(self):
+                value = getattr(self, f.name)
+                if is_input and value is UNSET and not use_pydantic_default:
+                    continue
+                instance_kwargs[f.name] = convert_strawberry_class_to_pydantic_model(
+                    value
                 )
-                for f in dataclasses.fields(self)
-            }
             instance_kwargs.update(kwargs)
             return model(**instance_kwargs)
 
@@ -310,12 +324,21 @@ def input(
     directives: Sequence[object] | None = (),
     all_fields: bool = False,
     use_pydantic_alias: bool = True,
+    use_pydantic_default: bool = True,
 ) -> Callable[..., builtins.type[StrawberryTypeFromPydantic[PydanticModel]]]:
     """Convenience decorator for creating an input type from a Pydantic model.
 
     Equal to `partial(type, is_input=True)`
 
     See https://github.com/strawberry-graphql/strawberry/issues/1830.
+
+    Parameters
+    ----------
+    use_pydantic_default:
+        When False, fields omitted by the GraphQL client are represented as
+        :data:`strawberry.UNSET` on the generated input class, instead of
+        materialising the Pydantic default or default_factory. This enables
+        true tri-state semantics (omitted vs. null vs. value) for inputs.
     """
     return type(
         model=model,
@@ -327,6 +350,7 @@ def input(
         directives=directives,
         all_fields=all_fields,
         use_pydantic_alias=use_pydantic_alias,
+        use_pydantic_default=use_pydantic_default,
     )
 
 
