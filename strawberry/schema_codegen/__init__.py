@@ -9,6 +9,7 @@ from typing_extensions import Protocol
 
 import libcst as cst
 from graphql import (
+    DirectiveDefinitionNode,
     EnumTypeDefinitionNode,
     EnumValueDefinitionNode,
     FieldDefinitionNode,
@@ -595,6 +596,83 @@ def _get_union_definition(definition: UnionTypeDefinitionNode) -> Definition:
     )
 
 
+def _get_directive_definition(
+    definition: DirectiveDefinitionNode, imports: set[Import]
+) -> Definition:
+    """Generate a stub for a custom directive definition."""
+    # Get the directive name (will be in camelCase)
+    directive_name = definition.name.value
+    # Class name should be PascalCase
+    class_name = directive_name[0].upper() + directive_name[1:]
+
+    # Build list of Location.X attributes (locations are required per GraphQL spec)
+    location_elements = [
+        cst.Element(
+            value=cst.Attribute(
+                value=cst.Name("Location"), attr=cst.Name(location.value)
+            )
+        )
+        for location in definition.locations
+    ]
+
+    decorator_args = [
+        cst.Arg(
+            keyword=cst.Name("locations"),
+            value=cst.List(elements=location_elements),
+            equal=cst.AssignEqual(cst.SimpleWhitespace(""), cst.SimpleWhitespace("")),
+        )
+    ]
+
+    if definition.description:
+        decorator_args.append(
+            _get_argument("description", definition.description.value)
+        )
+
+    # Build decorator
+    decorator = cst.Decorator(
+        decorator=cst.Call(
+            func=cst.Attribute(
+                value=cst.Name("strawberry"),
+                attr=cst.Name("schema_directive"),
+            ),
+            args=decorator_args,
+        )
+    )
+
+    # Build fields for the directive class
+    fields = []
+    if definition.arguments:
+        for arg in definition.arguments:
+            field_name = to_snake_case(arg.name.value)
+            field_type = _get_field_type(arg.type)
+            fields.append(
+                cst.SimpleStatementLine(
+                    body=[
+                        cst.AnnAssign(
+                            target=cst.Name(field_name),
+                            annotation=cst.Annotation(field_type),
+                        )
+                    ]
+                )
+            )
+
+    # If no fields, add pass statement
+    if not fields:
+        fields = [cst.SimpleStatementLine(body=[cst.Pass()])]
+
+    # Build class definition
+    class_def = cst.ClassDef(
+        name=cst.Name(class_name),
+        body=cst.IndentedBlock(body=fields),
+        decorators=[decorator],
+    )
+
+    # Add necessary imports
+    imports.add(Import(module="strawberry.schema_directive", imports=("Location",)))
+
+    return Definition(class_def, [], class_name)
+
+
 def _get_scalar_definition(
     definition: ScalarTypeDefinitionNode, imports: set[Import]
 ) -> Definition | None:
@@ -748,8 +826,12 @@ def codegen(schema: str) -> str:
                 _is_federation_link_directive(directive)
                 for directive in graphql_definition.directives
             )
+        elif isinstance(graphql_definition, DirectiveDefinitionNode):
+            definition = _get_directive_definition(graphql_definition, imports)
         else:
-            raise NotImplementedError(f"Unknown definition {definition}")
+            raise NotImplementedError(
+                f"Unknown definition {type(graphql_definition).__name__}"
+            )
 
         if definition is not None:
             definitions[definition.name] = definition
