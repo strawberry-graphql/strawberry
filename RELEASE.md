@@ -1,12 +1,17 @@
 Release type: patch
 
-This release fixes issues with `strawberry.Private` fields in experimental pydantic types:
+This release fixes issues with explicit field definitions in experimental pydantic types:
 
-**1. Private fields now properly override pydantic model fields**: When a field exists in both the pydantic model and is explicitly marked as `strawberry.Private` in the strawberry type, the Private annotation now correctly takes precedence. Previously, the field would still be exposed in the GraphQL schema.
+**`all_fields=True` now respects explicit field definitions**: Previously, using `all_fields=True` would override any explicitly defined fields in the strawberry type. Now, explicit definitions take precedence, allowing you to:
 
-**2. Private fields work correctly with `all_fields=True`**: Using `all_fields=True` no longer overrides explicitly defined Private fields, and no longer triggers a warning for Private fields (since this is a valid use case).
+- Mark fields as `strawberry.Private` to hide them from the GraphQL schema
+- Add field extensions (e.g., for authentication, caching, transformations)
+- Override field types
+- Add custom resolvers
 
-**3. Private fields in `from_pydantic()` are auto-populated from pydantic models**: When a Private field has the same name as a pydantic model field, `from_pydantic()` will now automatically populate it from the model (unless overridden via the `extra` dict).
+The warning "Using all_fields overrides any explicitly defined fields" has been removed since combining `all_fields=True` with explicit definitions is now a valid and useful pattern.
+
+**Private fields are auto-populated from pydantic models**: When a `strawberry.Private` field has the same name as a pydantic model field, `from_pydantic()` will automatically populate it from the model (can be overridden via the `extra` dict).
 
 Example:
 
@@ -14,24 +19,34 @@ Example:
 from pydantic import BaseModel
 import strawberry
 from strawberry.experimental.pydantic import type as pyd_type
+from strawberry.extensions.field_extension import FieldExtension
+
+
+class MaskExtension(FieldExtension):
+    def resolve(self, next_, source, info, **kwargs):
+        result = next_(source, info, **kwargs)
+        return result[:3] + "****" if result else result
 
 
 class UserModel(BaseModel):
     name: str
-    password: str  # This field exists in pydantic model
+    email: str
+    password: str
 
 
 @pyd_type(model=UserModel, all_fields=True)
 class User:
-    # Mark password as Private - it won't appear in GraphQL schema
-    # but will be auto-populated from pydantic model
+    # Add extension to mask email in responses
+    email: str = strawberry.field(extensions=[MaskExtension()])
+    # Hide password from GraphQL schema entirely
     password: strawberry.Private[str]
 
 
-# name is exposed in schema (from all_fields), password is not
-pydantic_user = UserModel(name="Alice", password="secret123")
+# name and email are exposed in schema, password is not
+# email will be masked by the extension
+pydantic_user = UserModel(name="Alice", email="alice@example.com", password="secret")
 strawberry_user = User.from_pydantic(pydantic_user)
 
-# Private field is accessible in resolvers
-print(strawberry_user.password)  # "secret123"
+# Private field is still accessible internally
+print(strawberry_user.password)  # "secret"
 ```

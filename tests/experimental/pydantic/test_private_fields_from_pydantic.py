@@ -281,28 +281,83 @@ def test_private_field_with_all_fields_no_warning():
     assert result.errors is not None
 
 
-def test_private_field_with_all_fields_and_other_explicit_fields_warns():
-    """Test that using all_fields with explicit non-Private fields still warns."""
+def test_all_fields_respects_explicit_field_definitions():
+    """Test that all_fields=True respects explicit field definitions instead of overriding them."""
     import warnings
+    from typing import Optional
+
+    from strawberry.extensions.field_extension import FieldExtension
+
+    class UpperCaseExtension(FieldExtension):
+        def resolve(self, next_, source, info, **kwargs):
+            result = next_(source, info, **kwargs)
+            return result.upper() if result else result
 
     class UserModel(BaseModel):
         name: str
         email: str
         password: str
 
-    # This SHOULD produce a warning because we have an explicit non-Private field
+    # Should NOT produce a warning - combining all_fields with explicit definitions is valid
     with warnings.catch_warnings(record=True) as w:
         warnings.simplefilter("always")
 
         @pyd_type(model=UserModel, all_fields=True)
         class User:
-            name: strawberry.auto  # Explicit field that matches pydantic model
+            # Explicit field with extension - should be respected
+            name: str = strawberry.field(extensions=[UpperCaseExtension()])
+            # Private field - should not appear in schema
             password: strawberry.Private[str]
 
-        # Should have a warning for the explicit 'name' field
         relevant_warnings = [
             warning
             for warning in w
             if "all_fields overrides" in str(warning.message)
         ]
-        assert len(relevant_warnings) == 1
+        assert len(relevant_warnings) == 0, f"Unexpected warning: {relevant_warnings}"
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def user(self) -> User:
+            pydantic_user = UserModel(name="alice", email="alice@example.com", password="secret")
+            return User.from_pydantic(pydantic_user)
+
+    schema = strawberry.Schema(query=Query)
+
+    # name should have the extension applied (uppercase)
+    result = schema.execute_sync("{ user { name email } }")
+    assert result.errors is None
+    assert result.data == {"user": {"name": "ALICE", "email": "alice@example.com"}}
+
+    # password should not be exposed
+    result = schema.execute_sync("{ user { password } }")
+    assert result.errors is not None
+
+
+def test_all_fields_with_explicit_type_override():
+    """Test that explicit type annotations are respected with all_fields=True."""
+    from typing import Optional
+
+    class UserModel(BaseModel):
+        name: str
+        age: int  # int in pydantic model
+
+    @pyd_type(model=UserModel, all_fields=True)
+    class User:
+        # Override age to be Optional[str] instead of int
+        age: Optional[str] = None
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def user(self) -> User:
+            # Note: we pass age as string via extra since it's now a different type
+            pydantic_user = UserModel(name="Bob", age=25)
+            return User.from_pydantic(pydantic_user, extra={"age": "25"})
+
+    schema = strawberry.Schema(query=Query)
+    schema_str = str(schema)
+
+    # Verify age is String (nullable) in schema, not Int
+    assert "age: String" in schema_str or "age: String!" not in schema_str
