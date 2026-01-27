@@ -254,19 +254,17 @@ def test_private_field_with_all_fields_no_warning():
 
         # Filter for the specific warning we care about
         relevant_warnings = [
-            warning
-            for warning in w
-            if "all_fields overrides" in str(warning.message)
+            warning for warning in w if "all_fields overrides" in str(warning.message)
         ]
-        assert len(relevant_warnings) == 0, (
-            f"Unexpected warning: {relevant_warnings}"
-        )
+        assert len(relevant_warnings) == 0, f"Unexpected warning: {relevant_warnings}"
 
     @strawberry.type
     class Query:
         @strawberry.field
         def user(self) -> User:
-            pydantic_user = UserModel(name="Test", email="test@example.com", password="secret")
+            pydantic_user = UserModel(
+                name="Test", email="test@example.com", password="secret"
+            )
             return User.from_pydantic(pydantic_user)
 
     schema = strawberry.Schema(query=Query)
@@ -284,7 +282,6 @@ def test_private_field_with_all_fields_no_warning():
 def test_all_fields_respects_explicit_field_definitions():
     """Test that all_fields=True respects explicit field definitions instead of overriding them."""
     import warnings
-    from typing import Optional
 
     from strawberry.extensions.field_extension import FieldExtension
 
@@ -310,9 +307,7 @@ def test_all_fields_respects_explicit_field_definitions():
             password: strawberry.Private[str]
 
         relevant_warnings = [
-            warning
-            for warning in w
-            if "all_fields overrides" in str(warning.message)
+            warning for warning in w if "all_fields overrides" in str(warning.message)
         ]
         assert len(relevant_warnings) == 0, f"Unexpected warning: {relevant_warnings}"
 
@@ -320,7 +315,9 @@ def test_all_fields_respects_explicit_field_definitions():
     class Query:
         @strawberry.field
         def user(self) -> User:
-            pydantic_user = UserModel(name="alice", email="alice@example.com", password="secret")
+            pydantic_user = UserModel(
+                name="alice", email="alice@example.com", password="secret"
+            )
             return User.from_pydantic(pydantic_user)
 
     schema = strawberry.Schema(query=Query)

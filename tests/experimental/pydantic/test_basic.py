@@ -84,9 +84,7 @@ def test_basic_type_all_fields_respects_explicit_definitions():
             age: strawberry.auto
 
         relevant_warnings = [
-            warning
-            for warning in w
-            if "all_fields overrides" in str(warning.message)
+            warning for warning in w if "all_fields overrides" in str(warning.message)
         ]
         assert len(relevant_warnings) == 0
 

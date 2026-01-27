@@ -184,7 +184,9 @@ def type(
             # - Explicitly typed fields keep their type (not auto-derived from pydantic)
             fields_set = set(model_fields.keys()) - private_field_names
             # Only auto-derive types for fields not explicitly typed
-            auto_fields_set = set(model_fields.keys()) - private_field_names - explicitly_typed_fields
+            auto_fields_set = (
+                set(model_fields.keys()) - private_field_names - explicitly_typed_fields
+            )
 
         if not fields_set:
             raise MissingFieldsListError(cls)
