@@ -31,6 +31,7 @@ from strawberry.types.auto import StrawberryAuto
 from strawberry.types.cast import get_strawberry_type_cast
 from strawberry.types.field import StrawberryField
 from strawberry.types.object_type import _process_type, _wrap_dataclass
+from strawberry.types.private import is_private
 from strawberry.types.type_resolver import _get_fields
 
 if TYPE_CHECKING:
@@ -143,10 +144,21 @@ def type(
 
         existing_fields = getattr(cls, "__annotations__", {})
 
+        # Fields explicitly marked as Private should be excluded from pydantic
+        # field processing - they should be handled as private fields instead
+        private_field_names = {
+            name for name, type_ in existing_fields.items() if is_private(type_)
+        }
+
         # these are the fields that matched a field name in the pydantic model
         # and should copy their alias from the pydantic model
+        # Private fields are excluded since they shouldn't be exposed in the schema
         fields_set = original_fields_set.union(
-            {name for name, _ in existing_fields.items() if name in model_fields}
+            {
+                name
+                for name, _ in existing_fields.items()
+                if name in model_fields and name not in private_field_names
+            }
         )
         # these are the fields that were marked with strawberry.auto and
         # should copy their type from the pydantic model
@@ -159,14 +171,18 @@ def type(
         )
 
         if all_fields:
-            if fields_set:
+            # Check if there are non-Private explicit fields that would be overridden
+            # Private fields are expected to be used with all_fields, so don't warn about them
+            non_private_explicit_fields = fields_set - private_field_names
+            if non_private_explicit_fields:
                 warnings.warn(
                     "Using all_fields overrides any explicitly defined fields "
                     "in the model, using both is likely a bug",
                     stacklevel=2,
                 )
-            fields_set = set(model_fields.keys())
-            auto_fields_set = set(model_fields.keys())
+            # Exclude Private fields from all_fields - they should remain private
+            fields_set = set(model_fields.keys()) - private_field_names
+            auto_fields_set = set(model_fields.keys()) - private_field_names
 
         if not fields_set:
             raise MissingFieldsListError(cls)

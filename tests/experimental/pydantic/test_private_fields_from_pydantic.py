@@ -191,3 +191,118 @@ def test_private_field_from_pydantic_with_nested_types():
     assert strawberry_user.address.street == "123 Main St"
     assert strawberry_user.address.city == "Springfield"
     assert strawberry_user.internal_notes == "VIP customer"
+
+
+def test_private_field_overrides_pydantic_model_field():
+    """Test that a field marked as Private is not exposed even if it exists in the pydantic model.
+
+    This tests the fix where previously if a field existed in the pydantic model,
+    the Private annotation would be ignored.
+    """
+
+    class UserModel(BaseModel):
+        name: str
+        password: str  # This field exists in pydantic model
+
+    @pyd_type(model=UserModel)
+    class User:
+        name: strawberry.auto
+        # Marking password as Private even though it's in the pydantic model
+        password: strawberry.Private[str]
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def user(self) -> User:
+            pydantic_user = UserModel(name="Alice", password="secret123")
+            return User.from_pydantic(pydantic_user)
+
+    schema = strawberry.Schema(query=Query)
+
+    # Should be able to query name
+    result = schema.execute_sync("{ user { name } }")
+    assert result.errors is None
+    assert result.data == {"user": {"name": "Alice"}}
+
+    # Password should NOT be queryable (it's Private)
+    result = schema.execute_sync("{ user { password } }")
+    assert result.errors is not None
+    assert "password" in str(result.errors[0])
+
+    # But password should still be accessible on the instance
+    pydantic_user = UserModel(name="Bob", password="mypassword")
+    strawberry_user = User.from_pydantic(pydantic_user)
+    assert strawberry_user.password == "mypassword"
+
+
+def test_private_field_with_all_fields_no_warning():
+    """Test that using Private fields with all_fields=True does not produce a warning."""
+    import warnings
+
+    class UserModel(BaseModel):
+        name: str
+        email: str
+        password: str
+
+    # This should NOT produce a warning - Private fields are expected with all_fields
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+
+        @pyd_type(model=UserModel, all_fields=True)
+        class User:
+            password: strawberry.Private[str]
+
+        # Filter for the specific warning we care about
+        relevant_warnings = [
+            warning
+            for warning in w
+            if "all_fields overrides" in str(warning.message)
+        ]
+        assert len(relevant_warnings) == 0, (
+            f"Unexpected warning: {relevant_warnings}"
+        )
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def user(self) -> User:
+            pydantic_user = UserModel(name="Test", email="test@example.com", password="secret")
+            return User.from_pydantic(pydantic_user)
+
+    schema = strawberry.Schema(query=Query)
+
+    # name and email should be exposed (from all_fields)
+    result = schema.execute_sync("{ user { name email } }")
+    assert result.errors is None
+    assert result.data == {"user": {"name": "Test", "email": "test@example.com"}}
+
+    # password should NOT be exposed (marked as Private)
+    result = schema.execute_sync("{ user { password } }")
+    assert result.errors is not None
+
+
+def test_private_field_with_all_fields_and_other_explicit_fields_warns():
+    """Test that using all_fields with explicit non-Private fields still warns."""
+    import warnings
+
+    class UserModel(BaseModel):
+        name: str
+        email: str
+        password: str
+
+    # This SHOULD produce a warning because we have an explicit non-Private field
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+
+        @pyd_type(model=UserModel, all_fields=True)
+        class User:
+            name: strawberry.auto  # Explicit field that matches pydantic model
+            password: strawberry.Private[str]
+
+        # Should have a warning for the explicit 'name' field
+        relevant_warnings = [
+            warning
+            for warning in w
+            if "all_fields overrides" in str(warning.message)
+        ]
+        assert len(relevant_warnings) == 1
