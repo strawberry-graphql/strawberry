@@ -1,0 +1,193 @@
+"""Test that Private fields work correctly with from_pydantic in experimental pydantic types."""
+
+import pytest
+from pydantic import BaseModel
+
+import strawberry
+from strawberry.experimental.pydantic import type as pyd_type
+
+
+def test_private_field_from_pydantic_with_extra():
+    """Test that Private fields can be populated via the extra dict in from_pydantic."""
+
+    class UserModel(BaseModel):
+        name: str
+        age: int
+
+    @pyd_type(model=UserModel)
+    class User:
+        name: strawberry.auto
+        age: strawberry.auto
+        password: strawberry.Private[str]
+
+    pydantic_user = UserModel(name="Alice", age=30)
+    strawberry_user = User.from_pydantic(pydantic_user, extra={"password": "secret123"})
+
+    assert strawberry_user.name == "Alice"
+    assert strawberry_user.age == 30
+    assert strawberry_user.password == "secret123"
+
+
+def test_private_field_from_pydantic_without_extra_raises_error():
+    """Test that from_pydantic raises TypeError when Private field is not provided."""
+
+    class UserModel(BaseModel):
+        name: str
+
+    @pyd_type(model=UserModel)
+    class User:
+        name: strawberry.auto
+        password: strawberry.Private[str]
+
+    pydantic_user = UserModel(name="Bob")
+
+    # Should raise TypeError because password is required but not provided
+    with pytest.raises(TypeError) as exc_info:
+        User.from_pydantic(pydantic_user)
+
+    assert "password" in str(exc_info.value)
+
+
+def test_private_field_from_pydantic_multiple_private_fields():
+    """Test that multiple Private fields can be populated via extra dict."""
+
+    class ProductModel(BaseModel):
+        name: str
+        price: float
+
+    @pyd_type(model=ProductModel)
+    class Product:
+        name: strawberry.auto
+        price: strawberry.auto
+        internal_id: strawberry.Private[int]
+        warehouse_location: strawberry.Private[str]
+
+    pydantic_product = ProductModel(name="Widget", price=9.99)
+    strawberry_product = Product.from_pydantic(
+        pydantic_product, extra={"internal_id": 12345, "warehouse_location": "A-15"}
+    )
+
+    assert strawberry_product.name == "Widget"
+    assert strawberry_product.price == 9.99
+    assert strawberry_product.internal_id == 12345
+    assert strawberry_product.warehouse_location == "A-15"
+
+
+def test_private_field_not_exposed_in_schema():
+    """Test that Private fields are not exposed in the GraphQL schema."""
+
+    class UserModel(BaseModel):
+        name: str
+
+    @pyd_type(model=UserModel)
+    class User:
+        name: strawberry.auto
+        password: strawberry.Private[str]
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def user(self) -> User:
+            return User(name="Charlie", password="hidden")
+
+    schema = strawberry.Schema(query=Query)
+
+    # Should be able to query name
+    result = schema.execute_sync("{ user { name } }")
+    assert result.errors is None
+    assert result.data == {"user": {"name": "Charlie"}}
+
+    # Should not be able to query password
+    result = schema.execute_sync("{ user { name password } }")
+    assert result.errors is not None
+
+
+def test_private_field_accessible_in_resolver():
+    """Test that Private fields are accessible within custom resolvers."""
+
+    class UserModel(BaseModel):
+        first_name: str
+        last_name: str
+
+    @pyd_type(model=UserModel)
+    class User:
+        first_name: strawberry.auto
+        last_name: strawberry.auto
+        user_id: strawberry.Private[int]
+
+        @strawberry.field
+        def display_info(self) -> str:
+            return f"{self.first_name} {self.last_name} (ID: {self.user_id})"
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def user(self) -> User:
+            pydantic_user = UserModel(first_name="John", last_name="Doe")
+            return User.from_pydantic(pydantic_user, extra={"user_id": 999})
+
+    schema = strawberry.Schema(query=Query)
+    result = schema.execute_sync("{ user { displayInfo } }")
+
+    assert result.errors is None
+    assert result.data == {"user": {"displayInfo": "John Doe (ID: 999)"}}
+
+
+def test_private_field_with_optional_private_field():
+    """Test that optional Private fields work with from_pydantic."""
+
+    class UserModel(BaseModel):
+        name: str
+
+    @pyd_type(model=UserModel)
+    class User:
+        name: strawberry.auto
+        session_token: strawberry.Private[str | None] = None
+
+    # Without providing session_token
+    pydantic_user = UserModel(name="Dave")
+    strawberry_user = User.from_pydantic(pydantic_user)
+    assert strawberry_user.name == "Dave"
+    assert strawberry_user.session_token is None
+
+    # With providing session_token via extra
+    strawberry_user = User.from_pydantic(
+        pydantic_user, extra={"session_token": "abc123"}
+    )
+    assert strawberry_user.name == "Dave"
+    assert strawberry_user.session_token == "abc123"
+
+
+def test_private_field_from_pydantic_with_nested_types():
+    """Test Private fields work with nested pydantic types."""
+
+    class AddressModel(BaseModel):
+        street: str
+        city: str
+
+    class UserModel(BaseModel):
+        name: str
+        address: AddressModel
+
+    @pyd_type(model=AddressModel)
+    class Address:
+        street: strawberry.auto
+        city: strawberry.auto
+
+    @pyd_type(model=UserModel)
+    class User:
+        name: strawberry.auto
+        address: strawberry.auto
+        internal_notes: strawberry.Private[str]
+
+    pydantic_user = UserModel(
+        name="Emma", address=AddressModel(street="123 Main St", city="Springfield")
+    )
+    strawberry_user = User.from_pydantic(
+        pydantic_user, extra={"internal_notes": "VIP customer"}
+    )
+
+    assert strawberry_user.name == "Emma"
+    assert strawberry_user.address.street == "123 Main St"
+    assert strawberry_user.address.city == "Springfield"
+    assert strawberry_user.internal_notes == "VIP customer"
