@@ -67,20 +67,31 @@ def test_basic_type_all_fields():
     assert field2.type.of_type is str
 
 
-@pytest.mark.filterwarnings("error")
-def test_basic_type_all_fields_warn():
+def test_basic_type_all_fields_respects_explicit_definitions():
+    """Test that all_fields=True respects explicit field definitions without warning."""
+    import warnings
+
     class User(pydantic.BaseModel):
         age: int
         password: str | None
 
-    with pytest.raises(
-        UserWarning,
-        match="Using all_fields overrides any explicitly defined fields",
-    ):
+    # Should NOT produce a warning - explicit definitions are now respected
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
 
         @strawberry.experimental.pydantic.type(User, all_fields=True)
         class UserType:
             age: strawberry.auto
+
+        relevant_warnings = [
+            warning for warning in w if "all_fields overrides" in str(warning.message)
+        ]
+        assert len(relevant_warnings) == 0
+
+    # Verify the type was created correctly with both fields
+    definition = UserType.__strawberry_definition__
+    field_names = {f.name for f in definition.fields}
+    assert field_names == {"age", "password"}
 
 
 def test_basic_type_auto_fields():
