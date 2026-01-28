@@ -108,13 +108,23 @@ def _is_federation_link_directive(directive: ConstDirectiveNode) -> bool:
     ).startswith("https://specs.apollo.dev/federation")
 
 
+def _is_nullable(field_type: TypeNode) -> bool:
+    """Check if a field type is nullable (not wrapped in NonNullTypeNode)."""
+    return not isinstance(field_type, NonNullTypeNode)
+
+
 def _get_field_type(
-    field_type: TypeNode, was_non_nullable: bool = False
+    field_type: TypeNode,
+    was_non_nullable: bool = False,
+    *,
+    wrap_in_maybe: bool = False,
 ) -> cst.BaseExpression:
     expr: cst.BaseExpression | None
 
     if isinstance(field_type, NonNullTypeNode):
-        return _get_field_type(field_type.type, was_non_nullable=True)
+        return _get_field_type(
+            field_type.type, was_non_nullable=True, wrap_in_maybe=wrap_in_maybe
+        )
     if isinstance(field_type, ListTypeNode):
         expr = cst.Subscript(
             value=cst.Name("list"),
@@ -138,11 +148,28 @@ def _get_field_type(
     if was_non_nullable:
         return expr
 
-    return cst.BinaryOperation(
+    # For nullable types, add | None
+    nullable_expr = cst.BinaryOperation(
         left=expr,
         operator=cst.BitOr(),
         right=cst.Name("None"),
     )
+
+    # For input fields, wrap nullable types in strawberry.Maybe[...]
+    if wrap_in_maybe:
+        return cst.Subscript(
+            value=cst.Attribute(
+                value=cst.Name("strawberry"),
+                attr=cst.Name("Maybe"),
+            ),
+            slice=[
+                cst.SubscriptElement(
+                    cst.Index(value=nullable_expr),
+                )
+            ],
+        )
+
+    return nullable_expr
 
 
 def _sanitize_argument(value: ArgumentValue) -> cst.SimpleString | cst.Name | cst.List:
@@ -230,6 +257,8 @@ def _get_field(
     field: FieldDefinitionNode | InputValueDefinitionNode,
     is_apollo_federation: bool,
     imports: set[Import],
+    *,
+    is_input_field: bool = False,
 ) -> cst.SimpleStatementLine:
     name = to_snake_case(field.name.value)
     alias: str | None = None
@@ -238,12 +267,15 @@ def _get_field(
         name = f"{name}_"
         alias = field.name.value
 
+    # For input types, wrap nullable fields in strawberry.Maybe[...]
+    wrap_in_maybe = is_input_field and _is_nullable(field.type)
+
     return cst.SimpleStatementLine(
         body=[
             cst.AnnAssign(
                 target=cst.Name(name),
                 annotation=cst.Annotation(
-                    _get_field_type(field.type),
+                    _get_field_type(field.type, wrap_in_maybe=wrap_in_maybe),
                 ),
                 value=_get_field_value(
                     field,
@@ -440,11 +472,18 @@ def _get_class_definition(
         else []
     )
 
+    is_input_type = isinstance(definition, InputObjectTypeDefinitionNode)
+
     class_definition = cst.ClassDef(
         name=cst.Name(definition.name.value),
         body=cst.IndentedBlock(
             body=[
-                _get_field(field, is_apollo_federation, imports)
+                _get_field(
+                    field,
+                    is_apollo_federation,
+                    imports,
+                    is_input_field=is_input_type,
+                )
                 for field in definition.fields
             ]
         ),
