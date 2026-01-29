@@ -1,6 +1,153 @@
 CHANGELOG
 =========
 
+0.289.8 - 2026-01-27
+--------------------
+
+This release adds `UploadDefinition` to `strawberry.file_uploads`, which can be
+used with `scalar_overrides` to map framework-specific upload types to the
+`Upload` scalar. This enables proper type checking with mypy/pyright when using
+file uploads.
+
+Example usage with Starlette/FastAPI:
+
+```python
+from starlette.datastructures import UploadFile
+from strawberry.file_uploads import UploadDefinition
+
+schema = strawberry.Schema(
+    query=Query, mutation=Mutation, scalar_overrides={UploadFile: UploadDefinition}
+)
+
+
+@strawberry.type
+class Mutation:
+    @strawberry.mutation
+    async def read_file(self, file: UploadFile) -> str:
+        return (await file.read()).decode("utf-8")
+```
+
+With this configuration, the `file` parameter is correctly typed as `UploadFile`,
+giving you proper IDE autocomplete and type checking.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #4175](https://github.com/strawberry-graphql/strawberry/pull/4175/)
+
+
+0.289.7 - 2026-01-26
+--------------------
+
+Fix nested generics with resolver-backed fields to avoid duplicate type names.
+
+Example (previously raised `DuplicatedTypeName`):
+
+```python
+import strawberry
+
+
+@strawberry.type
+class Collection[T]:
+    field1: list[T] = strawberry.field(resolver=lambda: [])
+
+
+@strawberry.type
+class Container[T]:
+    items: list[T]
+
+
+@strawberry.type
+class TypeA: ...
+
+
+@strawberry.type
+class TypeB: ...
+
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def a(self) -> Container[Collection[TypeA]]: ...
+
+    @strawberry.field
+    def b(self) -> Container[Collection[TypeB]]: ...
+
+
+strawberry.Schema(query=Query)
+```
+
+Contributed by [Thiago Bellini Ribeiro](https://github.com/bellini666) via [PR #4162](https://github.com/strawberry-graphql/strawberry/pull/4162/)
+
+
+0.289.6 - 2026-01-26
+--------------------
+
+This release adds support for field extensions in experimental pydantic types.
+
+Previously, when using `@strawberry.experimental.pydantic.type()` decorator, field extensions defined with `strawberry.field(extensions=[...])` were not being propagated to the generated Strawberry fields. This meant extensions like authentication, caching, or result transformation couldn't be used with pydantic-based types.
+
+This fix ensures that extensions are properly preserved when converting pydantic fields to Strawberry fields, enabling the full power of field extensions across the pydantic integration.
+
+Examples:
+
+**Permission-based field masking:**
+
+```python
+from pydantic import BaseModel
+from typing import Optional
+import strawberry
+from strawberry.experimental.pydantic import type as pyd_type
+from strawberry.extensions.field_extension import FieldExtension
+
+
+class PermissionExtension(FieldExtension):
+    def resolve(self, next_, source, info, **kwargs):
+        # Check permission, return None if denied
+        if not check_field_access(info.context.user, info.field_name, source.id):
+            return None
+        return next_(source, info, **kwargs)
+
+
+class UserModel(BaseModel):
+    id: int
+    fname: str
+    email: str
+    phone: str
+
+
+perm_ext = PermissionExtension()
+
+
+@pyd_type(model=UserModel)
+class UserGQL:
+    # Public fields - just use auto
+    id: strawberry.auto
+    fname: strawberry.auto
+
+    # Protected fields - attach extension
+    email: Optional[str] = strawberry.field(extensions=[perm_ext])
+    phone: Optional[str] = strawberry.field(extensions=[perm_ext])
+```
+
+**Basic transformation extension:**
+
+```python
+class UpperCaseExtension(FieldExtension):
+    def resolve(self, next_, source, info, **kwargs):
+        result = next_(source, info, **kwargs)
+        return str(result).upper()
+
+
+class ProductModel(BaseModel):
+    name: str
+
+
+@pyd_type(model=ProductModel)
+class Product:
+    name: str = strawberry.field(extensions=[UpperCaseExtension()])
+```
+
+Contributed by [Srikanth](https://github.com/XChikuX) via [PR #4171](https://github.com/strawberry-graphql/strawberry/pull/4171/)
+
+
 0.289.5 - 2026-01-25
 --------------------
 
