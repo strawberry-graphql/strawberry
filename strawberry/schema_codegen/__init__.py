@@ -32,7 +32,11 @@ from graphql import (
 from graphql.language.ast import (
     BooleanValueNode,
     ConstValueNode,
+    EnumValueNode,
+    FloatValueNode,
+    IntValueNode,
     ListValueNode,
+    NullValueNode,
 )
 
 from strawberry.utils.str_converters import to_snake_case
@@ -148,14 +152,12 @@ def _get_field_type(
     if was_non_nullable:
         return expr
 
-    # For nullable types, add | None
     nullable_expr = cst.BinaryOperation(
         left=expr,
         operator=cst.BitOr(),
         right=cst.Name("None"),
     )
 
-    # For input fields, wrap nullable types in strawberry.Maybe[...]
     if wrap_in_maybe:
         return cst.Subscript(
             value=cst.Attribute(
@@ -170,6 +172,63 @@ def _get_field_type(
         )
 
     return nullable_expr
+
+
+def _get_base_type_name(type_node: TypeNode) -> str:
+    """Extract the base named type from a possibly wrapped type node."""
+    if isinstance(type_node, (NonNullTypeNode, ListTypeNode)):
+        return _get_base_type_name(type_node.type)
+
+    if isinstance(type_node, NamedTypeNode):
+        return type_node.name.value
+
+    raise NotImplementedError(f"Unknown type node {type_node}")
+
+
+def _get_default_value_expr(
+    node: ConstValueNode,
+    *,
+    enum_type_name: str | None = None,
+) -> cst.BaseExpression:
+    """Convert a GraphQL default value AST node to a libcst expression."""
+    if isinstance(node, IntValueNode):
+        return cst.Integer(node.value)
+
+    if isinstance(node, FloatValueNode):
+        return cst.Float(node.value)
+
+    if isinstance(node, StringValueNode):
+        if '"' in node.value:
+            return cst.SimpleString(f"'{node.value}'")
+
+        return cst.SimpleString(f'"{node.value}"')
+
+    if isinstance(node, BooleanValueNode):
+        return cst.Name("True" if node.value else "False")
+
+    if isinstance(node, NullValueNode):
+        return cst.Name("None")
+
+    if isinstance(node, EnumValueNode):
+        if enum_type_name is None:
+            raise ValueError("enum_type_name is required for EnumValueNode")
+
+        return cst.Attribute(
+            value=cst.Name(enum_type_name),
+            attr=cst.Name(node.value),
+        )
+
+    if isinstance(node, ListValueNode):
+        return cst.List(
+            elements=[
+                cst.Element(
+                    value=_get_default_value_expr(v, enum_type_name=enum_type_name)
+                )
+                for v in node.values
+            ]
+        )
+
+    raise NotImplementedError(f"Unknown default value node {node}")
 
 
 def _sanitize_argument(value: ArgumentValue) -> cst.SimpleString | cst.Name | cst.List:
@@ -210,7 +269,9 @@ def _get_field_value(
     alias: str | None,
     is_apollo_federation: bool,
     imports: set[Import],
-) -> cst.Call | None:
+    *,
+    default_value: cst.BaseExpression | None = None,
+) -> cst.Call | cst.BaseExpression | None:
     description = field.description.value if field.description else None
 
     args = list(
@@ -227,7 +288,19 @@ def _get_field_value(
 
     apollo_federation_args = _get_federation_arguments(directives, imports)
 
+    default_arg = (
+        cst.Arg(
+            value=default_value,
+            keyword=cst.Name("default"),
+            equal=cst.AssignEqual(cst.SimpleWhitespace(""), cst.SimpleWhitespace("")),
+        )
+        if default_value is not None
+        else None
+    )
+
     if is_apollo_federation and apollo_federation_args:
+        if default_arg is not None:
+            args.append(default_arg)
         args.extend(apollo_federation_args)
 
         return cst.Call(
@@ -242,6 +315,8 @@ def _get_field_value(
         )
 
     if args:
+        if default_arg is not None:
+            args.append(default_arg)
         return cst.Call(
             func=cst.Attribute(
                 value=cst.Name("strawberry"),
@@ -249,6 +324,9 @@ def _get_field_value(
             ),
             args=args,
         )
+
+    if default_value is not None:
+        return default_value
 
     return None
 
@@ -270,6 +348,19 @@ def _get_field(
     # For input types, wrap nullable fields in strawberry.Maybe[...]
     wrap_in_maybe = is_input_field and _is_nullable(field.type)
 
+    # Extract default value for input fields
+    default_value: cst.BaseExpression | None = None
+    if isinstance(field, InputValueDefinitionNode) and field.default_value is not None:
+        enum_type_name = (
+            _get_base_type_name(field.type)
+            if isinstance(field.default_value, EnumValueNode)
+            else None
+        )
+
+        default_value = _get_default_value_expr(
+            field.default_value, enum_type_name=enum_type_name
+        )
+
     return cst.SimpleStatementLine(
         body=[
             cst.AnnAssign(
@@ -282,6 +373,7 @@ def _get_field(
                     alias=alias,
                     is_apollo_federation=is_apollo_federation,
                     imports=imports,
+                    default_value=default_value,
                 ),
             )
         ]
@@ -294,12 +386,16 @@ ArgumentValue: TypeAlias = str | bool | list["ArgumentValue"]
 def _get_argument_value(argument_value: ConstValueNode) -> ArgumentValue:
     if isinstance(argument_value, StringValueNode):
         return argument_value.value
+
     if isinstance(argument_value, EnumValueDefinitionNode):
         return argument_value.name.value
+
     if isinstance(argument_value, ListValueNode):
         return [_get_argument_value(arg) for arg in argument_value.values]
+
     if isinstance(argument_value, BooleanValueNode):
         return argument_value.value
+
     raise NotImplementedError(f"Unknown argument value {argument_value}")
 
 

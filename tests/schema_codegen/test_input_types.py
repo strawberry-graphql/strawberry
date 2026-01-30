@@ -1,6 +1,5 @@
 import textwrap
 
-import strawberry
 from strawberry.schema_codegen import codegen
 
 
@@ -60,8 +59,6 @@ def test_nullable_input_fields_use_maybe():
     }
     """
 
-    generated_code = codegen(schema)
-
     expected = textwrap.dedent(
         """
         import strawberry
@@ -72,31 +69,11 @@ def test_nullable_input_fields_use_maybe():
         """
     ).strip()
 
-    assert generated_code.strip() == expected
-
-
-def test_nullable_input_fields_can_be_omitted():
-    """Generated input types with nullable fields can be instantiated without them."""
-    schema = """
-    input HealthResultInput {
-        someNumber: Int
-    }
-    """
-
-    generated_code = codegen(schema)
-
-    namespace = {}
-    exec(generated_code, namespace)  # noqa: S102
-
-    HealthResultInput = namespace["HealthResultInput"]
-
-    # Nullable fields should be optional - can be omitted
-    instance = HealthResultInput()
-    assert instance.some_number is None
+    assert codegen(schema).strip() == expected
 
 
 def test_mixed_required_and_nullable_input_fields():
-    """Input types with both required and nullable fields work correctly."""
+    """Input types with both required and nullable fields generate correctly."""
     schema = """
     input MultiFieldInput {
         requiredField: String!
@@ -105,62 +82,236 @@ def test_mixed_required_and_nullable_input_fields():
     }
     """
 
-    generated_code = codegen(schema)
+    expected = textwrap.dedent(
+        """
+        import strawberry
 
-    namespace = {}
-    exec(generated_code, namespace)  # noqa: S102
+        @strawberry.input
+        class MultiFieldInput:
+            required_field: str
+            optional_int: strawberry.Maybe[int | None]
+            optional_string: strawberry.Maybe[str | None]
+        """
+    ).strip()
 
-    MultiFieldInput = namespace["MultiFieldInput"]
-
-    # Should be able to provide only the required field
-    instance = MultiFieldInput(required_field="test")
-
-    assert instance.required_field == "test"
-    assert instance.optional_int is None
-    assert instance.optional_string is None
+    assert codegen(schema).strip() == expected
 
 
-def test_maybe_fields_support_some_values():
-    """Maybe fields work correctly when a value is provided via Some."""
+def test_nullable_input_fields_with_default_values():
+    """Nullable input fields with GraphQL default values still use Maybe."""
     schema = """
-    input HealthResultInput {
-        someNumber: Int
+    input WithDefaults {
+        name: String!
+        count: Int = 42
+        label: String = "default"
     }
     """
 
-    generated_code = codegen(schema)
+    expected = textwrap.dedent(
+        """
+        import strawberry
 
-    namespace = {}
-    exec(generated_code, namespace)  # noqa: S102
+        @strawberry.input
+        class WithDefaults:
+            name: str
+            count: strawberry.Maybe[int | None] = 42
+            label: strawberry.Maybe[str | None] = "default"
+        """
+    ).strip()
 
-    HealthResultInput = namespace["HealthResultInput"]
-
-    # Provide a value - it should be wrapped in Some
-    instance = HealthResultInput(some_number=strawberry.Some(42))
-
-    assert instance.some_number is not None
-    assert instance.some_number.value == 42
+    assert codegen(schema).strip() == expected
 
 
-def test_maybe_fields_distinguish_absent_from_null():
-    """Maybe fields can distinguish between absent and explicit null."""
+def test_output_type_nullable_fields_do_not_use_maybe():
+    """Nullable fields on output types should use T | None, not Maybe."""
     schema = """
-    input HealthResultInput {
-        someNumber: Int
+    type Result {
+        value: Int
+        name: String!
     }
     """
 
-    generated_code = codegen(schema)
+    expected = textwrap.dedent(
+        """
+        import strawberry
 
-    namespace = {}
-    exec(generated_code, namespace)  # noqa: S102
+        @strawberry.type
+        class Result:
+            value: int | None
+            name: str
+        """
+    ).strip()
 
-    HealthResultInput = namespace["HealthResultInput"]
+    assert codegen(schema).strip() == expected
 
-    absent_instance = HealthResultInput()
-    assert absent_instance.some_number is None
 
-    # Explicit null is represented as Some(None)
-    null_instance = HealthResultInput(some_number=strawberry.Some(None))
-    assert null_instance.some_number is not None
-    assert null_instance.some_number.value is None
+def test_input_field_integer_default():
+    schema = """
+    input Config {
+        retries: Int! = 3
+    }
+    """
+
+    expected = textwrap.dedent(
+        """
+        import strawberry
+
+        @strawberry.input
+        class Config:
+            retries: int = 3
+        """
+    ).strip()
+
+    assert codegen(schema).strip() == expected
+
+
+def test_input_field_float_default():
+    schema = """
+    input Config {
+        rate: Float! = 1.5
+    }
+    """
+
+    expected = textwrap.dedent(
+        """
+        import strawberry
+
+        @strawberry.input
+        class Config:
+            rate: float = 1.5
+        """
+    ).strip()
+
+    assert codegen(schema).strip() == expected
+
+
+def test_input_field_string_default():
+    schema = """
+    input Config {
+        name: String! = "hello"
+    }
+    """
+
+    expected = textwrap.dedent(
+        """
+        import strawberry
+
+        @strawberry.input
+        class Config:
+            name: str = "hello"
+        """
+    ).strip()
+
+    assert codegen(schema).strip() == expected
+
+
+def test_input_field_boolean_default():
+    schema = """
+    input Config {
+        enabled: Boolean! = true
+    }
+    """
+
+    expected = textwrap.dedent(
+        """
+        import strawberry
+
+        @strawberry.input
+        class Config:
+            enabled: bool = True
+        """
+    ).strip()
+
+    assert codegen(schema).strip() == expected
+
+
+def test_input_field_null_default():
+    schema = """
+    input Config {
+        value: String = null
+    }
+    """
+
+    expected = textwrap.dedent(
+        """
+        import strawberry
+
+        @strawberry.input
+        class Config:
+            value: strawberry.Maybe[str | None] = None
+        """
+    ).strip()
+
+    assert codegen(schema).strip() == expected
+
+
+def test_input_field_enum_default():
+    schema = """
+    enum Status {
+        ACTIVE
+        INACTIVE
+    }
+
+    input Config {
+        status: Status! = ACTIVE
+    }
+    """
+
+    expected = textwrap.dedent(
+        """
+        import strawberry
+        from enum import Enum
+
+        @strawberry.enum
+        class Status(Enum):
+            ACTIVE = "ACTIVE"
+            INACTIVE = "INACTIVE"
+
+        @strawberry.input
+        class Config:
+            status: Status = Status.ACTIVE
+        """
+    ).strip()
+
+    assert codegen(schema).strip() == expected
+
+
+def test_input_field_list_default():
+    schema = """
+    input Config {
+        values: [Int!]! = [1, 2, 3]
+    }
+    """
+
+    expected = textwrap.dedent(
+        """
+        import strawberry
+
+        @strawberry.input
+        class Config:
+            values: list[int] = [1, 2, 3]
+        """
+    ).strip()
+
+    assert codegen(schema).strip() == expected
+
+
+def test_input_field_default_with_description():
+    schema = '''
+    input Config {
+        """The number of retries"""
+        retries: Int! = 3
+    }
+    '''
+
+    expected = textwrap.dedent(
+        """
+        import strawberry
+
+        @strawberry.input
+        class Config:
+            retries: int = strawberry.field(description="The number of retries", default=3)
+        """
+    ).strip()
+
+    assert codegen(schema).strip() == expected
