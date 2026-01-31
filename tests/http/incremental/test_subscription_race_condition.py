@@ -24,8 +24,8 @@ The test patches `_stream_with_heartbeat` to inject the mock wrapper around the 
 ensuring the race is simulated at the correct layer
 """
 
-import asyncio
-from typing import Any, AsyncGenerator
+from collections.abc import AsyncGenerator
+from typing import Any
 from unittest.mock import patch
 
 import pytest
@@ -33,7 +33,6 @@ import pytest
 import strawberry
 from strawberry.http.async_base_view import AsyncBaseHTTPView
 from tests.http.clients.base import HttpClient
-
 
 # Constants
 GRAPHQL_BOUNDARY_CLOSING = "--graphql--"
@@ -67,7 +66,7 @@ def subscription_schema():
 class MockRacyAsyncGenerator:
     """
     Simulates the race condition by dropping the final boundary chunk.
-    
+
     Wraps the stream() generator passed to _stream_with_heartbeat and intercepts
     the final boundary chunk. When the closing boundary is detected, raises
     StopAsyncIteration instead of yielding it. This simulates the boundary being
@@ -114,13 +113,13 @@ async def test_subscription_race_condition_missing_boundary(
 ):
     """
     Test that demonstrates the race condition where the final boundary is lost.
-    
+
     Uses MockRacyAsyncGenerator to simulate the race where the stream() generator
     completes after yielding the closing boundary, but the boundary gets stuck in
     the queue when task.done() becomes True before the final queue.get().
     """
     http_client = incremental_http_client_class(schema=subscription_schema)
-    
+
     original_stream_with_heartbeat = AsyncBaseHTTPView._stream_with_heartbeat
 
     def patched_stream_with_heartbeat(self, stream_fn, separator):
@@ -132,10 +131,12 @@ async def test_subscription_race_condition_missing_boundary(
         # Call the original _stream_with_heartbeat with our wrapped stream
         return original_stream_with_heartbeat(self, wrapped_stream_fn, separator)
 
-    with patch.object(AsyncBaseHTTPView, "_stream_with_heartbeat", patched_stream_with_heartbeat):
+    with patch.object(
+        AsyncBaseHTTPView, "_stream_with_heartbeat", patched_stream_with_heartbeat
+    ):
         response = await http_client.query(
             method=method,
-            query='subscription { quickCount(target: 2) }',
+            query="subscription { quickCount(target: 2) }",
             headers={
                 "accept": "multipart/mixed;boundary=graphql;subscriptionSpec=1.0,application/json",
                 "content-type": "application/json",
