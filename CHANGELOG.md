@@ -1,6 +1,41 @@
 CHANGELOG
 =========
 
+0.290.0 - 2026-01-31
+--------------------
+
+This release improves `schema-codegen` for input types in two ways:
+
+1. Nullable input fields now use `strawberry.Maybe[T | None]`, allowing them to
+   be omitted when constructing the input type.
+
+2. GraphQL default values on input fields are now generated as Python defaults.
+   Supported value types: integers, floats, strings, booleans, null, enums, and
+   lists. When a field also has a description (or other metadata), the default is
+   passed via `strawberry.field(description=..., default=...)`.
+
+Before:
+
+```python
+@strawberry.input
+class CreateUserInput:
+    name: str
+    role: int | None  # required – TypeError with {}
+    # default value "42" from schema was lost
+```
+
+After:
+
+```python
+@strawberry.input
+class CreateUserInput:
+    name: str
+    role: strawberry.Maybe[int | None] = 42
+```
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #4178](https://github.com/strawberry-graphql/strawberry/pull/4178/)
+
+
 0.289.8 - 2026-01-27
 --------------------
 
