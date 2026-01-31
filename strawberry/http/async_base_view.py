@@ -550,6 +550,8 @@ class AsyncBaseHTTPView(
         async def merged() -> AsyncGenerator[str, None]:
             heartbeat_task = asyncio.create_task(heartbeat())
             task = asyncio.create_task(drain())
+            closing_boundary = f"--{separator}--"
+            seen_closing_boundary = False
 
             async def cancel_tasks() -> None:
                 nonlocal cancelling
@@ -583,9 +585,18 @@ class AsyncBaseHTTPView(
                         await cancel_tasks()
                         raise data
 
+                    if closing_boundary in data:
+                        seen_closing_boundary = True
+
                     yield data
             finally:
                 await cancel_tasks()
+
+            # Check if final boundary is missing and append it
+            # This handles the race condition where the final boundary is queued
+            # but task.done() becomes True before queue.get() retrieves it.
+            if not seen_closing_boundary:
+                yield f"\r\n{closing_boundary}\r\n"
 
         return merged
 
