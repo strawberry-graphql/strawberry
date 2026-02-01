@@ -24,9 +24,6 @@ from strawberry.types.enum import StrawberryEnumDefinition, has_enum_definition
 from strawberry.types.lazy_type import LazyType, StrawberryLazyReference
 from strawberry.types.maybe import Some
 from strawberry.types.unset import UNSET as _deprecated_UNSET  # noqa: N811
-from strawberry.types.unset import (
-    _deprecated_is_unset,  # noqa: F401
-)
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Mapping
@@ -41,7 +38,6 @@ DEPRECATED_NAMES: dict[str, str] = {
         "importing `UNSET` from `strawberry.arguments` is deprecated, "
         "import instead from `strawberry` or from `strawberry.types.unset`"
     ),
-    "is_unset": "`is_unset` is deprecated use `value is UNSET` instead",
 }
 
 
@@ -375,5 +371,4 @@ __all__ = [  # noqa: F822
     "StrawberryArgument",
     "StrawberryArgumentAnnotation",
     "argument",
-    "is_unset",  # for backwards compatibility  # type: ignore
 ]
