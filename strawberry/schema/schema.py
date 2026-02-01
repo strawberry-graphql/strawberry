@@ -570,7 +570,7 @@ class Schema(BaseSchema):
             operation_name=operation_name,
             operation_extensions=operation_extensions,
         )
-        extensions = self.get_extensions()
+        extensions = self._async_extensions
         # TODO (#3571): remove this when we implement execution context as parameter.
         for extension in extensions:
             extension.execution_context = execution_context
