@@ -478,6 +478,9 @@ class AsyncBaseHTTPView(
             ]
         )
 
+    def encode_multipart_closing_boundary(self, separator: str) -> str:
+        return f"\r\n--{separator}--\r\n"
+
     def _stream_with_heartbeat(
         self, stream: Callable[[], AsyncGenerator[str, None]], separator: str
     ) -> Callable[[], AsyncGenerator[str, None]]:
@@ -550,7 +553,7 @@ class AsyncBaseHTTPView(
         async def merged() -> AsyncGenerator[str, None]:
             heartbeat_task = asyncio.create_task(heartbeat())
             task = asyncio.create_task(drain())
-            closing_boundary = f"--{separator}--"
+            closing_boundary = self.encode_multipart_closing_boundary(separator)
             seen_closing_boundary = False
 
             async def cancel_tasks() -> None:
@@ -596,7 +599,7 @@ class AsyncBaseHTTPView(
             # This handles the race condition where the final boundary is queued
             # but task.done() becomes True before queue.get() retrieves it.
             if not seen_closing_boundary:
-                yield f"\r\n{closing_boundary}\r\n"
+                yield closing_boundary
 
         return merged
 
