@@ -1,7 +1,7 @@
 import dataclasses
 from collections.abc import Callable, Iterable, Mapping
 from enum import EnumMeta
-from typing import TYPE_CHECKING, Any, Literal, TypeGuard, TypeVar, overload
+from typing import Any, Literal, TypeGuard, TypeVar, overload
 
 from strawberry.exceptions import ObjectIsNotAnEnumError
 from strawberry.types.base import (
@@ -9,7 +9,6 @@ from strawberry.types.base import (
     WithStrawberryDefinition,
     has_strawberry_definition,
 )
-from strawberry.utils.deprecations import DEPRECATION_MESSAGES, DeprecatedDescriptor
 
 
 @dataclasses.dataclass
@@ -166,13 +165,6 @@ def _process_enum(
         directives=directives,
     )
 
-    # TODO: remove when deprecating _enum_definition
-    DeprecatedDescriptor(
-        DEPRECATION_MESSAGES._ENUM_DEFINITION,
-        cls.__strawberry_definition__,  # type: ignore[attr-defined]
-        "_enum_definition",
-    ).inject(cls)
-
     return cls
 
 
@@ -262,16 +254,6 @@ def enum(
     return wrap(cls)
 
 
-# TODO: remove when deprecating _enum_definition
-if TYPE_CHECKING:
-    from typing_extensions import deprecated
-
-    @deprecated("Use StrawberryEnumDefinition instead")
-    class EnumDefinition(StrawberryEnumDefinition): ...
-
-else:
-    EnumDefinition = StrawberryEnumDefinition
-
 WithStrawberryEnumDefinition = WithStrawberryDefinition["StrawberryEnumDefinition"]
 
 
@@ -283,7 +265,6 @@ def has_enum_definition(obj: Any) -> TypeGuard[type[WithStrawberryEnumDefinition
 
 
 __all__ = [
-    "EnumDefinition",
     "EnumValue",
     "EnumValueDefinition",
     "StrawberryEnumDefinition",
