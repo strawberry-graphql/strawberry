@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import itertools
 import sys
-import warnings
 from itertools import chain
 from typing import (
     TYPE_CHECKING,
@@ -19,7 +18,6 @@ from graphql import GraphQLNamedType, GraphQLUnionType
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.exceptions import (
     InvalidTypeForUnionMergeError,
-    InvalidUnionTypeError,
     UnallowedReturnTypeForUnion,
     WrongReturnTypeForUnion,
 )
@@ -32,7 +30,7 @@ from strawberry.types.base import (
 from strawberry.types.lazy_type import LazyType
 
 if TYPE_CHECKING:
-    from collections.abc import Collection, Iterable, Mapping
+    from collections.abc import Iterable, Mapping
 
     from graphql import (
         GraphQLAbstractType,
@@ -248,7 +246,6 @@ class StrawberryUnion(StrawberryType):
 
 def union(
     name: str,
-    types: Collection[type[Any]] | None = None,
     *,
     description: str | None = None,
     directives: Iterable[object] = (),
@@ -257,9 +254,7 @@ def union(
 
     Args:
         name: The GraphQL name of the Union type.
-        types: The types that the Union can be.
-            (Deprecated, use `Annotated[U, strawberry.union("Name")]` instead)
-        description: The  GraphQL description of the Union type.
+        description: The GraphQL description of the Union type.
         directives: The directives to attach to the Union type.
 
     Example usages:
@@ -268,58 +263,35 @@ def union(
     import strawberry
     from typing import Annotated
 
+
     @strawberry.type
     class A: ...
+
 
     @strawberry.type
     class B: ...
 
+
     MyUnion = Annotated[A | B, strawberry.union("Name")]
+    ```
     """
-    if types is None:
-        union = StrawberryUnion(
-            name=name,
-            description=description,
-            directives=directives,
-        )
-
-        if should_use_rich_exceptions():
-            frame = sys._getframe(1)
-
-            union._source_file = frame.f_code.co_filename
-            union._source_line = frame.f_lineno
-
-            # TODO: here union._source_file could be "<string>"
-            # (when using future annotations)
-            # we should find a better way to handle this
-
-        return union
-
-    warnings.warn(
-        (
-            "Passing types to `strawberry.union` is deprecated. Please use "
-            f'{name} = Annotated[Union[A, B], strawberry.union("{name}")] instead'
-        ),
-        DeprecationWarning,
-        stacklevel=2,
-    )
-
-    # Validate types
-    if not types:
-        raise TypeError("No types passed to `union`")
-
-    for type_ in types:
-        # Due to TypeVars, Annotations, LazyTypes, etc., this does not perfectly detect
-        # issues. This check also occurs in the Schema conversion stage as a backup.
-        if not StrawberryUnion.is_valid_union_type(type_):
-            raise InvalidUnionTypeError(union_name=name, invalid_type=type_)
-
-    return StrawberryUnion(
+    strawberry_union = StrawberryUnion(
         name=name,
-        type_annotations=tuple(StrawberryAnnotation(type_) for type_ in types),
         description=description,
         directives=directives,
     )
+
+    if should_use_rich_exceptions():
+        frame = sys._getframe(1)
+
+        strawberry_union._source_file = frame.f_code.co_filename
+        strawberry_union._source_line = frame.f_lineno
+
+        # TODO: here strawberry_union._source_file could be "<string>"
+        # (when using future annotations)
+        # we should find a better way to handle this
+
+    return strawberry_union
 
 
 __all__ = ["StrawberryUnion", "union"]
