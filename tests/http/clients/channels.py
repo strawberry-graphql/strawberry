@@ -148,7 +148,6 @@ class ChannelsHttpClient(HttpClient):
     def __init__(
         self,
         schema: Schema,
-        graphiql: bool | None = None,
         graphql_ide: GraphQL_IDE | None = "graphiql",
         allow_queries_via_get: bool = True,
         keep_alive: bool = False,
@@ -171,7 +170,6 @@ class ChannelsHttpClient(HttpClient):
 
         self.http_app = DebuggableGraphQLHTTPConsumer.as_asgi(
             schema=schema,
-            graphiql=graphiql,
             graphql_ide=graphql_ide,
             allow_queries_via_get=allow_queries_via_get,
             result_override=result_override,
@@ -287,7 +285,6 @@ class SyncChannelsHttpClient(ChannelsHttpClient):
     def __init__(
         self,
         schema: Schema,
-        graphiql: bool | None = None,
         graphql_ide: GraphQL_IDE | None = "graphiql",
         allow_queries_via_get: bool = True,
         result_override: ResultOverrideFunction = None,
@@ -295,7 +292,6 @@ class SyncChannelsHttpClient(ChannelsHttpClient):
     ):
         self.http_app = DebuggableSyncGraphQLHTTPConsumer.as_asgi(
             schema=schema,
-            graphiql=graphiql,
             graphql_ide=graphql_ide,
             allow_queries_via_get=allow_queries_via_get,
             result_override=result_override,
