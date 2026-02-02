@@ -16,8 +16,8 @@ if TYPE_CHECKING:
 @dataclass
 class Response:
     errors: list[GraphQLFormattedError] | None
-    data: dict[str, object] | None
-    extensions: dict[str, object] | None
+    data: dict[str, Any] | None
+    extensions: dict[str, Any] | None
 
 
 class Body(TypedDict, total=False):
