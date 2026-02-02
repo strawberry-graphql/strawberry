@@ -9,7 +9,6 @@ from strawberry.exceptions import UnsupportedTypeError
 from strawberry.schema.config import StrawberryConfig
 from strawberry.schema.types.scalar import DEFAULT_SCALAR_REGISTRY
 from strawberry.types.arguments import StrawberryArgument, convert_arguments
-from strawberry.types.lazy_type import LazyType
 from strawberry.types.unset import UNSET
 
 
@@ -102,29 +101,6 @@ class LaziestType:
 
 
 def test_lazy():
-    LazierType = LazyType["LaziestType", __name__]
-
-    args = {
-        "lazyArg": {"something": True},
-    }
-
-    arguments = [
-        StrawberryArgument(
-            graphql_name="lazyArg",
-            python_name="lazy_arg",
-            type_annotation=StrawberryAnnotation(LazierType),
-        ),
-    ]
-
-    assert convert_arguments(
-        args,
-        arguments,
-        scalar_registry=DEFAULT_SCALAR_REGISTRY,
-        config=StrawberryConfig(),
-    ) == {"lazy_arg": LaziestType(something=True)}
-
-
-def test_annotated():
     LazierType = Annotated["LaziestType", strawberry.lazy(__name__)]
 
     args = {
