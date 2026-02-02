@@ -65,7 +65,6 @@ def field_type_to_type(type_: type) -> Any | list[Any] | None:
 def error_type(
     model: type[BaseModel],
     *,
-    fields: list[str] | None = None,
     name: str | None = None,
     description: str | None = None,
     directives: Sequence[object] | None = (),
@@ -74,14 +73,6 @@ def error_type(
     def wrap(cls: type) -> type:
         compat = PydanticCompat.from_model(model)
         model_fields = compat.get_model_fields(model)
-        fields_set = set(fields) if fields else set()
-
-        if fields:
-            warnings.warn(
-                "`fields` is deprecated, use `auto` type annotations instead",
-                DeprecationWarning,
-                stacklevel=2,
-            )
 
         existing_fields = getattr(cls, "__annotations__", {})
         auto_fields_set = {
@@ -89,7 +80,7 @@ def error_type(
             for name, type_ in existing_fields.items()
             if isinstance(type_, StrawberryAuto)
         }
-        fields_set |= auto_fields_set
+        fields_set = auto_fields_set.copy()
 
         if all_fields:
             if fields_set:
