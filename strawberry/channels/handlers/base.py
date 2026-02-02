@@ -1,6 +1,5 @@
 import asyncio
 import contextlib
-import warnings
 from collections import defaultdict
 from collections.abc import AsyncGenerator, Awaitable, Callable, Sequence
 from typing import (
@@ -66,7 +65,7 @@ class ChannelsConsumer(AsyncConsumer):
         # AsyncConsumer will try to get a function for message["type"] to handle
         # for both http/websocket types and also for layers communication.
         # In case the type isn't one of those, pass it to the listen queue so
-        # that it can be consumed by self.channel_listen
+        # that it can be consumed by self.listen_to_channel
         type_ = message.get("type", "")
         if type_ and not type_.startswith(("http.", "websocket.")):
             for queue in self.listen_queues[type_]:
@@ -74,64 +73,6 @@ class ChannelsConsumer(AsyncConsumer):
             return
 
         await super().dispatch(message)
-
-    async def channel_listen(
-        self,
-        type: str,
-        *,
-        timeout: float | None = None,
-        groups: Sequence[str] = (),
-    ) -> AsyncGenerator[Any, None]:
-        """Listen for messages sent to this consumer.
-
-        Utility to listen for channels messages for this consumer inside
-        a resolver (usually inside a subscription).
-
-        Args:
-            type:
-                The type of the message to wait for.
-            timeout:
-                An optional timeout to wait for each subsequent message
-            groups:
-                An optional sequence of groups to receive messages from.
-                When passing this parameter, the groups will be registered
-                using `self.channel_layer.group_add` at the beggining of the
-                execution and then discarded using `self.channel_layer.group_discard`
-                at the end of the execution.
-        """
-        warnings.warn("Use listen_to_channel instead", DeprecationWarning, stacklevel=2)
-        if self.channel_layer is None:
-            raise RuntimeError(
-                "Layers integration is required listening for channels.\n"
-                "Check https://channels.readthedocs.io/en/stable/topics/channel_layers.html "
-                "for more information"
-            )
-
-        added_groups = []
-        try:
-            # This queue will receive incoming messages for this generator instance
-            queue: asyncio.Queue = asyncio.Queue()
-            # Create a weak reference to the queue. Once we leave the current scope, it
-            # will be garbage collected
-            self.listen_queues[type].add(queue)
-
-            for group in groups:
-                await self.channel_layer.group_add(group, self.channel_name)
-                added_groups.append(group)
-
-            while True:
-                awaitable = queue.get()
-                if timeout is not None:
-                    awaitable = asyncio.wait_for(awaitable, timeout)
-                try:
-                    yield await awaitable
-                except asyncio.TimeoutError:
-                    # TODO: shall we add log here and maybe in the suppress below?
-                    return
-        finally:
-            for group in added_groups:
-                with contextlib.suppress(Exception):
-                    await self.channel_layer.group_discard(group, self.channel_name)
 
     @contextlib.asynccontextmanager
     async def listen_to_channel(
