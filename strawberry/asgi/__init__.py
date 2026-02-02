@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import warnings
 from datetime import timedelta
 from json import JSONDecodeError
 from typing import (
@@ -105,7 +104,6 @@ class GraphQL(
     def __init__(
         self,
         schema: BaseSchema,
-        graphiql: bool | None = None,
         graphql_ide: GraphQL_IDE | None = "graphiql",
         allow_queries_via_get: bool = True,
         keep_alive: bool = False,
@@ -124,16 +122,7 @@ class GraphQL(
         self.protocols = subscription_protocols
         self.connection_init_wait_timeout = connection_init_wait_timeout
         self.multipart_uploads_enabled = multipart_uploads_enabled
-
-        if graphiql is not None:
-            warnings.warn(
-                "The `graphiql` argument is deprecated in favor of `graphql_ide`",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-            self.graphql_ide = "graphiql" if graphiql else None
-        else:
-            self.graphql_ide = graphql_ide
+        self.graphql_ide = graphql_ide
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         if scope["type"] == "http":

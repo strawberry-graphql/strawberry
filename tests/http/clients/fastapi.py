@@ -78,7 +78,6 @@ class FastAPIHttpClient(HttpClient):
     def __init__(
         self,
         schema: Schema,
-        graphiql: bool | None = None,
         graphql_ide: GraphQL_IDE | None = "graphiql",
         allow_queries_via_get: bool = True,
         keep_alive: bool = False,
@@ -95,7 +94,6 @@ class FastAPIHttpClient(HttpClient):
 
         graphql_app = GraphQLRouter(
             schema,
-            graphiql=graphiql,
             graphql_ide=graphql_ide,
             allow_queries_via_get=allow_queries_via_get,
             keep_alive=keep_alive,
