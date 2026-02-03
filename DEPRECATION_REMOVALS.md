@@ -18,14 +18,14 @@ This document tracks deprecated features being removed from Strawberry GraphQL.
 | Sanic `json_encoder` parameter | Removed | |
 | Sanic `json_dumps_params` parameter | Removed | |
 | Sanic context dot notation | Removed | |
-| `graphiql` parameter (10 files) | Pending | |
+| `graphiql` parameter (10 files) | Already removed | |
 | Type definition aliases | Pending | |
-| `LazyType` class | Pending | |
-| `info.field_nodes` property | Pending | |
-| `strawberry server` CLI command | Pending | |
-| Scalar class wrapper pattern | Deferred | |
-| Argument name matching | Deferred (v1.0) | |
-| Extension hooks | Deferred | |
+| `LazyType` class | Already removed | |
+| `info.field_nodes` property | Already removed | |
+| `strawberry server` CLI command | Already removed | |
+| Scalar class wrapper pattern | Deferred (complex) | |
+| Argument name matching | Removed | |
+| Extension hooks | Deferred (complex) | |
 
 ---
 
@@ -318,8 +318,14 @@ strawberry dev app:schema
 ## Deferred Removals
 
 ### 15. Scalar Class Wrapper Pattern
-**Status:** Deferred (complex, many test updates needed)
+**Status:** Deferred (too complex - requires extensive changes)
 **File:** `strawberry/types/scalar.py`
+
+**Why deferred:**
+- `strawberry/federation/scalar.py` uses `_process_scalar` internally for federation-specific scalar handling
+- `strawberry/schema_codegen/__init__.py` generates the deprecated pattern when converting GraphQL schemas to Python code
+- 12+ test files use the deprecated pattern extensively
+- Removing this would require updating federation scalar, codegen output, and many tests
 
 **Old pattern:**
 ```python
@@ -349,10 +355,24 @@ schema = strawberry.Schema(
 ---
 
 ### 16. Argument Name Matching
-**Status:** Deferred (marked for v1.0)
+**Status:** Removed
 **File:** `strawberry/types/fields/resolver.py`
 
-Reserved argument names (`self`, `root`, `info`) are matched by name. This will be removed in v1.0.
+Reserved argument names (`self`, `root`, `info`, `value`) were previously matched by name as a fallback when type annotation wasn't found. This has been removed - arguments must now be properly annotated.
+
+**Old pattern:**
+```python
+@strawberry.field
+def my_field(self, info) -> str:  # 'info' matched by name only
+    return info.field_name
+```
+
+**New pattern:**
+```python
+@strawberry.field
+def my_field(self, info: strawberry.Info) -> str:  # proper type annotation required
+    return info.field_name
+```
 
 ---
 
