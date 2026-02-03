@@ -25,7 +25,7 @@ This document tracks deprecated features being removed from Strawberry GraphQL.
 | `strawberry server` CLI command | Already removed | |
 | Scalar class wrapper pattern | Deferred (complex) | |
 | Argument name matching | Removed | |
-| Extension hooks | Deferred (complex) | |
+| Extension legacy hooks | Removed | |
 
 ---
 
@@ -376,11 +376,42 @@ def my_field(self, info: strawberry.Info) -> str:  # proper type annotation requ
 
 ---
 
-### 17. Extension Hooks
-**Status:** Deferred (complex, involves extension lifecycle)
+### 17. Extension Legacy Hooks
+**Status:** Removed
 **File:** `strawberry/extensions/context.py`
 
-Deprecated extension hook methods.
+Legacy event-driven extension hooks have been removed. Extensions must now use generator-based hooks.
+
+**Old pattern (deprecated hooks):**
+```python
+class MyExtension(SchemaExtension):
+    def on_request_start(self): ...
+    def on_request_end(self): ...
+    def on_parsing_start(self): ...
+    def on_parsing_end(self): ...
+    def on_validation_start(self): ...
+    def on_validation_end(self): ...
+    def on_executing_start(self): ...
+    def on_executing_end(self): ...
+```
+
+**New pattern (generator-based hooks):**
+```python
+class MyExtension(SchemaExtension):
+    def on_operation(self):
+        # before (replaces on_request_start)
+        yield
+        # after (replaces on_request_end)
+
+    def on_parse(self):
+        yield
+
+    def on_validate(self):
+        yield
+
+    def on_execute(self):
+        yield
+```
 
 ---
 
