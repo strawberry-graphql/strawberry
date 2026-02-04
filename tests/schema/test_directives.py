@@ -649,7 +649,11 @@ def test_directives_with_custom_types():
 
 
 def test_directives_with_scalar():
-    DirectiveInput = strawberry.scalar(str, name="DirectiveInput")
+    from typing import NewType
+
+    from strawberry.schema.config import StrawberryConfig
+
+    DirectiveInput = NewType("DirectiveInput", str)
 
     @strawberry.type
     class Query:
@@ -663,7 +667,13 @@ def test_directives_with_scalar():
     def uppercase(value: DirectiveValue[str], input: DirectiveInput):
         return value.upper()
 
-    schema = strawberry.Schema(query=Query, directives=[uppercase])
+    schema = strawberry.Schema(
+        query=Query,
+        directives=[uppercase],
+        config=StrawberryConfig(
+            scalar_map={DirectiveInput: strawberry.scalar(name="DirectiveInput")}
+        ),
+    )
 
     expected_schema = '''
     """Make string uppercase"""

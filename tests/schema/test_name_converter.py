@@ -1,6 +1,6 @@
 import textwrap
 from enum import Enum
-from typing import Annotated, Generic, TypeVar
+from typing import Annotated, Generic, NewType, TypeVar
 
 import strawberry
 from strawberry.directive import StrawberryDirective
@@ -66,7 +66,7 @@ class AppendsNameConverter(NameConverter):
 
 T = TypeVar("T")
 
-MyScalar = strawberry.scalar(str, name="SensitiveConfiguration")
+SensitiveConfiguration = NewType("SensitiveConfiguration", str)
 
 
 @strawberry.enum
@@ -136,8 +136,13 @@ class Query:
 
 schema = strawberry.Schema(
     query=Query,
-    types=[MyScalar, Node],
-    config=StrawberryConfig(name_converter=AppendsNameConverter("X")),
+    types=[SensitiveConfiguration, Node],
+    config=StrawberryConfig(
+        name_converter=AppendsNameConverter("X"),
+        scalar_map={
+            SensitiveConfiguration: strawberry.scalar(name="SensitiveConfiguration")
+        },
+    ),
 )
 
 

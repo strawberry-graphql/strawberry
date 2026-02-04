@@ -92,7 +92,7 @@ if TYPE_CHECKING:
     from strawberry.types.base import StrawberryType
     from strawberry.types.enum import StrawberryEnumDefinition
     from strawberry.types.field import StrawberryField
-    from strawberry.types.scalar import ScalarDefinition, ScalarWrapper
+    from strawberry.types.scalar import ScalarDefinition
     from strawberry.types.union import StrawberryUnion
 
 SubscriptionResult: TypeAlias = AsyncGenerator[
@@ -216,9 +216,7 @@ class Schema(BaseSchema):
         extensions: Iterable[type[SchemaExtension] | SchemaExtension] = (),
         execution_context_class: type[GraphQLExecutionContext] | None = None,
         config: StrawberryConfig | None = None,
-        scalar_overrides: (
-            Mapping[object, type | ScalarWrapper | ScalarDefinition] | None
-        ) = None,
+        scalar_overrides: Mapping[object, type | ScalarDefinition] | None = None,
         schema_directives: Iterable[object] = (),
     ) -> None:
         """Default Schema to be used in a Strawberry application.
