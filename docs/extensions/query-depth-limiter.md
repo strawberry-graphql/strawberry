@@ -112,8 +112,7 @@ schema = strawberry.Schema(
 )
 
 # This query fails
-schema.execute(
-    """
+schema.execute("""
     query TooDeep {
         book {
             author {
@@ -123,12 +122,10 @@ schema.execute(
             }
         }
     }
-    """
-)
+    """)
 
 # This query succeeds because the `user` field is ignored
-schema.execute(
-    """
+schema.execute("""
     query NotTooDeep {
         user {
             favouriteBooks {
@@ -140,8 +137,7 @@ schema.execute(
             }
         }
     }
-    """
-)
+    """)
 ```
 
 ## Example with field_args:
@@ -190,8 +186,7 @@ schema = strawberry.Schema(
 )
 
 # This query fails
-schema.execute(
-    """
+schema.execute("""
     query TooDeep {
         book {
             author {
@@ -201,12 +196,10 @@ schema.execute(
             }
         }
     }
-    """
-)
+    """)
 
 # This query succeeds because the `user` field is ignored
-schema.execute(
-    """
+schema.execute("""
     query NotTooDeep {
         user(name:"matt") {
             favouriteBooks {
@@ -218,6 +211,5 @@ schema.execute(
             }
         }
     }
-    """
-)
+    """)
 ```
