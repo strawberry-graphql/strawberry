@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Any, NewType
 if TYPE_CHECKING:
     from collections.abc import Mapping
 
-    from strawberry.types.scalar import ScalarDefinition, ScalarWrapper
+    from strawberry.types.scalar import ScalarDefinition
 
 
 ID = NewType("ID", str)
@@ -26,7 +26,7 @@ Base64 = NewType("Base64", bytes)
 
 def is_scalar(
     annotation: Any,
-    scalar_registry: Mapping[object, ScalarWrapper | ScalarDefinition],
+    scalar_registry: Mapping[object, ScalarDefinition],
 ) -> bool:
     if annotation in scalar_registry:
         return True

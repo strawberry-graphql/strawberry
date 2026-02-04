@@ -1,7 +1,9 @@
 import textwrap
+from typing import NewType
 
 import strawberry
 from strawberry.federation.schema_directives import Link
+from strawberry.schema.config import StrawberryConfig
 from tests.conftest import skip_if_gql_32
 
 
@@ -298,10 +300,7 @@ def test_adds_directive_link_for_federation():
 
 
 def test_adds_link_directive_automatically_from_scalar():
-    # TODO: Federation scalar
-    @strawberry.scalar
-    class X:
-        pass
+    X = NewType("X", str)
 
     @strawberry.federation.type(keys=["id"])
     class User:
@@ -312,7 +311,10 @@ def test_adds_link_directive_automatically_from_scalar():
     class Query:
         user: User
 
-    schema = strawberry.federation.Schema(query=Query)
+    schema = strawberry.federation.Schema(
+        query=Query,
+        config=StrawberryConfig(scalar_map={X: strawberry.scalar(name="X")}),
+    )
 
     expected = """
         schema @link(url: "https://specs.apollo.dev/federation/v2.11", import: ["@key"]) {

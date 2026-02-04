@@ -1,14 +1,13 @@
 from collections.abc import Callable, Iterable
 from typing import (
     Any,
-    NewType,
     TypeVar,
     overload,
 )
 
-from strawberry.types.scalar import ScalarWrapper, _process_scalar
+from strawberry.types.scalar import ScalarDefinition
 
-_T = TypeVar("_T", bound=type | NewType)
+_T = TypeVar("_T", bound=type)
 
 
 def identity(x: _T) -> _T:  # pragma: no cover
@@ -18,7 +17,25 @@ def identity(x: _T) -> _T:  # pragma: no cover
 @overload
 def scalar(
     *,
-    name: str | None = None,
+    name: str,
+    description: str | None = None,
+    specified_by_url: str | None = None,
+    serialize: Callable = identity,
+    parse_value: Callable | None = None,
+    parse_literal: Callable | None = None,
+    directives: Iterable[object] = (),
+    authenticated: bool = False,
+    inaccessible: bool = False,
+    policy: list[list[str]] | None = None,
+    requires_scopes: list[list[str]] | None = None,
+    tags: Iterable[str] | None = (),
+) -> ScalarDefinition: ...
+
+
+@overload
+def scalar(
+    *,
+    name: None = None,
     description: str | None = None,
     specified_by_url: str | None = None,
     serialize: Callable = identity,
@@ -33,27 +50,7 @@ def scalar(
 ) -> Callable[[_T], _T]: ...
 
 
-@overload
 def scalar(
-    cls: _T,
-    *,
-    name: str | None = None,
-    description: str | None = None,
-    specified_by_url: str | None = None,
-    serialize: Callable = identity,
-    parse_value: Callable | None = None,
-    parse_literal: Callable | None = None,
-    directives: Iterable[object] = (),
-    authenticated: bool = False,
-    inaccessible: bool = False,
-    policy: list[list[str]] | None = None,
-    requires_scopes: list[list[str]] | None = None,
-    tags: Iterable[str] | None = (),
-) -> _T: ...
-
-
-def scalar(
-    cls: _T | None = None,
     *,
     name: str | None = None,
     description: str | None = None,
@@ -68,11 +65,10 @@ def scalar(
     requires_scopes: list[list[str]] | None = None,
     tags: Iterable[str] | None = (),
 ) -> Any:
-    """Annotates a class or type as a GraphQL custom scalar.
+    """Creates a GraphQL custom scalar definition with federation support.
 
     Args:
-        cls: The class or type to annotate
-        name: The GraphQL name of the scalar
+        name: The GraphQL name of the scalar (required for ScalarDefinition)
         description: The description of the scalar
         specified_by_url: The URL of the specification
         serialize: The function to serialize the scalar
@@ -86,31 +82,33 @@ def scalar(
         tags: The list of tags to add to the @tag directive
 
     Returns:
-        The decorated class or type
+        A ScalarDefinition when called with `name`, or a decorator function
+        when called without `name`.
 
-    Example usages:
+    Example usage:
 
     ```python
-    strawberry.federation.scalar(
-        datetime.date,
-        serialize=lambda value: value.isoformat(),
-        parse_value=datetime.parse_date,
-    )
+    from typing import NewType
+    import strawberry
+    from strawberry.schema.config import StrawberryConfig
 
-    Base64Encoded = strawberry.federation.scalar(
-        NewType("Base64Encoded", bytes),
-        serialize=base64.b64encode,
-        parse_value=base64.b64decode,
-    )
+    # Define the type
+    Base64 = NewType("Base64", bytes)
 
-
-    @strawberry.federation.scalar(
-        serialize=lambda value: ",".join(value.items),
-        parse_value=lambda value: CustomList(value.split(",")),
+    # Configure the scalar with federation directives
+    schema = strawberry.federation.Schema(
+        query=Query,
+        config=StrawberryConfig(
+            scalar_map={
+                Base64: strawberry.federation.scalar(
+                    name="Base64",
+                    serialize=lambda v: base64.b64encode(v).decode(),
+                    parse_value=lambda v: base64.b64decode(v),
+                    authenticated=True,
+                )
+            }
+        ),
     )
-    class CustomList:
-        def __init__(self, items):
-            self.items = items
     ```
     """
     from strawberry.federation.schema_directives import (
@@ -121,42 +119,40 @@ def scalar(
         Tag,
     )
 
-    if parse_value is None:
-        parse_value = cls
-
-    directives = list(directives)
+    all_directives = list(directives)
 
     if authenticated:
-        directives.append(Authenticated())
+        all_directives.append(Authenticated())
 
     if inaccessible:
-        directives.append(Inaccessible())
+        all_directives.append(Inaccessible())
 
     if policy:
-        directives.append(Policy(policies=policy))
+        all_directives.append(Policy(policies=policy))
 
     if requires_scopes:
-        directives.append(RequiresScopes(scopes=requires_scopes))
+        all_directives.append(RequiresScopes(scopes=requires_scopes))
 
     if tags:
-        directives.extend(Tag(name=tag) for tag in tags)
+        all_directives.extend(Tag(name=tag) for tag in tags)
 
-    def wrap(cls: _T) -> ScalarWrapper:
-        return _process_scalar(
-            cls,
+    if name is not None:
+        return ScalarDefinition(
             name=name,
             description=description,
             specified_by_url=specified_by_url,
             serialize=serialize,
-            parse_value=parse_value,
             parse_literal=parse_literal,
-            directives=directives,
+            parse_value=parse_value,
+            directives=tuple(all_directives),
+            origin=None,
         )
 
-    if cls is None:
-        return wrap
+    # Decorator pattern for type hinting purposes only
+    def wrap(cls: _T) -> _T:
+        return cls
 
-    return wrap(cls)
+    return wrap
 
 
 __all__ = ["scalar"]

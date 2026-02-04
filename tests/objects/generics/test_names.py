@@ -15,7 +15,7 @@ V = TypeVar("V")
 
 
 Enum = StrawberryEnumDefinition(None, name="Enum", values=[], description=None)  # type: ignore
-CustomInt = strawberry.scalar(NewType("CustomInt", int))
+CustomInt = NewType("CustomInt", int)
 
 
 @strawberry.type

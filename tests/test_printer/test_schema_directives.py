@@ -360,7 +360,9 @@ def test_prints_with_types():
 
 
 def test_prints_with_scalar():
-    SensitiveConfiguration = strawberry.scalar(str, name="SensitiveConfiguration")
+    from typing import NewType
+
+    SensitiveConfiguration = NewType("SensitiveConfiguration", str)
 
     @strawberry.schema_directive(locations=[Location.FIELD_DEFINITION])
     class Sensitive:
@@ -380,7 +382,15 @@ def test_prints_with_scalar():
     scalar SensitiveConfiguration
     """
 
-    schema = strawberry.Schema(query=Query)
+    schema = strawberry.Schema(
+        query=Query,
+        types=[SensitiveConfiguration],
+        config=StrawberryConfig(
+            scalar_map={
+                SensitiveConfiguration: strawberry.scalar(name="SensitiveConfiguration")
+            }
+        ),
+    )
 
     assert print_schema(schema) == textwrap.dedent(expected_output).strip()
 
@@ -442,13 +452,13 @@ def test_does_not_print_definition():
 
 
 def test_print_directive_on_scalar():
+    from typing import NewType
+
     @strawberry.schema_directive(locations=[Location.SCALAR])
     class Sensitive:
         reason: str
 
-    SensitiveString = strawberry.scalar(
-        str, name="SensitiveString", directives=[Sensitive(reason="example")]
-    )
+    SensitiveString = NewType("SensitiveString", str)
 
     @strawberry.type
     class Query:
@@ -464,7 +474,16 @@ def test_print_directive_on_scalar():
     scalar SensitiveString @sensitive(reason: "example")
     """
 
-    schema = strawberry.Schema(query=Query)
+    schema = strawberry.Schema(
+        query=Query,
+        config=StrawberryConfig(
+            scalar_map={
+                SensitiveString: strawberry.scalar(
+                    name="SensitiveString", directives=[Sensitive(reason="example")]
+                )
+            }
+        ),
+    )
 
     assert print_schema(schema) == textwrap.dedent(expected_output).strip()
 

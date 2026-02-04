@@ -29,7 +29,7 @@ if TYPE_CHECKING:
 
     from strawberry.schema.config import StrawberryConfig
     from strawberry.types.base import StrawberryType
-    from strawberry.types.scalar import ScalarDefinition, ScalarWrapper
+    from strawberry.types.scalar import ScalarDefinition
 
 
 class StrawberryArgumentAnnotation:
@@ -130,7 +130,7 @@ class StrawberryArgument:
 
 def _is_leaf_type(
     type_: StrawberryType | type,
-    scalar_registry: Mapping[object, ScalarWrapper | ScalarDefinition],
+    scalar_registry: Mapping[object, ScalarDefinition],
     skip_classes: tuple[type, ...] = (),
 ) -> bool:
     if type_ in skip_classes:
@@ -150,7 +150,7 @@ def _is_leaf_type(
 
 def _is_optional_leaf_type(
     type_: StrawberryType | type,
-    scalar_registry: Mapping[object, ScalarWrapper | ScalarDefinition],
+    scalar_registry: Mapping[object, ScalarDefinition],
     skip_classes: tuple[type, ...] = (),
 ) -> bool:
     if type_ in skip_classes:
@@ -165,7 +165,7 @@ def _is_optional_leaf_type(
 def convert_argument(
     value: object,
     type_: StrawberryType | type,
-    scalar_registry: Mapping[object, ScalarWrapper | ScalarDefinition],
+    scalar_registry: Mapping[object, ScalarDefinition],
     config: StrawberryConfig,
 ) -> object:
     from strawberry.relay.types import GlobalID
@@ -261,7 +261,7 @@ def convert_argument(
 def convert_arguments(
     value: dict[str, Any],
     arguments: list[StrawberryArgument],
-    scalar_registry: Mapping[object, ScalarWrapper | ScalarDefinition],
+    scalar_registry: Mapping[object, ScalarDefinition],
     config: StrawberryConfig,
 ) -> dict[str, Any]:
     """Converts a nested dictionary to a dictionary of actual types.
