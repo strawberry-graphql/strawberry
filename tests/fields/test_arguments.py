@@ -355,6 +355,34 @@ def test_annotated_argument_with_rename():
     assert argument.default == "Patrick"
 
 
+def test_annotated_argument_with_graphql_type_override():
+    BigInt = strawberry.scalar(
+        int, name="BigInt", serialize=lambda v: str(v), parse_value=lambda v: int(v)
+    )
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def name(
+            self,
+            arg: Annotated[
+                list[int],
+                strawberry.argument(graphql_type=list[BigInt]),
+            ],
+        ) -> str:  # pragma: no cover
+            return "Name"
+
+    definition = Query.__strawberry_definition__
+
+    assert definition.name == "Query"
+
+    [argument] = definition.fields[0].arguments
+
+    assert argument.python_name == "arg"
+    assert isinstance(argument.type, StrawberryList)
+    assert argument.type.of_type is BigInt
+
+
 @pytest.mark.xfail(reason="Can't get field name from argument")
 def test_multiple_annotated_arguments_exception():
     with pytest.raises(MultipleStrawberryArgumentsError) as error:

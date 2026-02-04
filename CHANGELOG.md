@@ -1,6 +1,79 @@
 CHANGELOG
 =========
 
+0.291.0 - 2026-02-01
+--------------------
+
+Adds a `graphql_type` parameter to `strawberry.argument` that allows you
+to explicitly override the GraphQL type of an argument, useful for static typing
+when the Python type differs from the desired GraphQL type.
+
+For example:
+
+```python
+BigInt = strawberry.scalar(
+    int, name="BigInt", serialize=lambda v: str(v), parse_value=lambda v: int(v)
+)
+
+
+@strawberry.type
+class Query:
+    @strawberry.field()
+    def username(
+        self, user_id: Annotated[int, strawberry.argument(graphql_type=BigInt)]
+    ) -> str:
+        return "foobar"
+
+
+schema = strawberry.Schema(Query)
+
+str(schema) == """
+scalar BigInt
+
+type Query {
+  username(userId: BigInt!): String!
+}
+"""
+```
+
+Contributed by [Elias Gabriel](https://github.com/thearchitector) via [PR #4067](https://github.com/strawberry-graphql/strawberry/pull/4067/)
+
+
+0.290.0 - 2026-01-31
+--------------------
+
+This release improves `schema-codegen` for input types in two ways:
+
+1. Nullable input fields now use `strawberry.Maybe[T | None]`, allowing them to
+   be omitted when constructing the input type.
+
+2. GraphQL default values on input fields are now generated as Python defaults.
+   Supported value types: integers, floats, strings, booleans, null, enums, and
+   lists. When a field also has a description (or other metadata), the default is
+   passed via `strawberry.field(description=..., default=...)`.
+
+Before:
+
+```python
+@strawberry.input
+class CreateUserInput:
+    name: str
+    role: int | None  # required – TypeError with {}
+    # default value "42" from schema was lost
+```
+
+After:
+
+```python
+@strawberry.input
+class CreateUserInput:
+    name: str
+    role: strawberry.Maybe[int | None] = 42
+```
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #4178](https://github.com/strawberry-graphql/strawberry/pull/4178/)
+
+
 0.289.8 - 2026-01-27
 --------------------
 
@@ -6551,9 +6624,7 @@ class Query:
 
 schema = strawberry.Schema(Query)
 
-str(
-    schema
-) == """
+str(schema) == """
   type Query {
     a: String!
     b: Int!
@@ -6960,18 +7031,14 @@ class Query:
 schema = strawberry.Schema(Query)
 
 # Before:
-str(
-    schema
-) == """
+str(schema) == """
 type Query {
   a: String!
 }
 """
 
 # After:
-str(
-    schema
-) == """
+str(schema) == """
 type Query {
   a: Float!
 }
