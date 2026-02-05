@@ -570,6 +570,16 @@ def _get_class_definition(
 
     is_input_type = isinstance(definition, InputObjectTypeDefinitionNode)
 
+    # Collect field type dependencies so implementing/referenced types are
+    # emitted before types that reference them (avoids NameError at import).
+    own_name = definition.name.value
+    field_deps = [
+        _get_base_type_name(field.type)
+        for field in definition.fields
+        if _get_base_type_name(field.type) != own_name
+    ]
+    dependencies = list(dict.fromkeys(interfaces + field_deps))
+
     class_definition = cst.ClassDef(
         name=cst.Name(definition.name.value),
         body=cst.IndentedBlock(
@@ -587,7 +597,7 @@ def _get_class_definition(
         decorators=[decorator],
     )
 
-    return Definition(class_definition, interfaces, definition.name.value)
+    return Definition(class_definition, dependencies, definition.name.value)
 
 
 def _get_enum_value(enum_value: EnumValueDefinitionNode) -> cst.SimpleStatementLine:
@@ -723,9 +733,11 @@ def _get_union_definition(definition: UnionTypeDefinitionNode) -> Definition:
             )
         ]
     )
+    # Unions must be emitted after their member types.
+    member_names = [type_.name.value for type_ in definition.types]
     return Definition(
         simple_statement,
-        [],
+        member_names,
         definition.name.value,
     )
 
@@ -908,15 +920,22 @@ def codegen(schema: str) -> str:
     )
 
     if schema_definition:
-        definitions["Schema"] = Definition(schema_definition, [], "schema")
+        # Schema must be emitted last; it depends on all other definitions.
+        definitions["Schema"] = Definition(
+            schema_definition, list(definitions.keys()), "schema"
+        )
 
     body: list[cst.CSTNode] = [
         cst.SimpleStatementLine(body=[import_.to_cst()])
         for import_ in sorted(imports, key=lambda i: (i.module or "", i.imports))
     ]
 
-    # DAG to sort definitions based on dependencies
-    graph = {name: definition.dependencies for name, definition in definitions.items()}
+    # DAG to sort definitions based on dependencies. Only include dependencies
+    # that exist in definitions (e.g. exclude built-in scalars like String, Int).
+    graph = {
+        name: [d for d in definition.dependencies if d in definitions]
+        for name, definition in definitions.items()
+    }
     ts = TopologicalSorter(graph)
 
     for definition_name in tuple(ts.static_order()):

@@ -21,8 +21,6 @@ def test_union():
         import strawberry
         from typing import Annotated
 
-        User = Annotated[Admin | Client, strawberry.union(name="User")]
-
         @strawberry.type
         class Admin:
             name: str
@@ -30,6 +28,8 @@ def test_union():
         @strawberry.type
         class Client:
             name: str
+
+        User = Annotated[Admin | Client, strawberry.union(name="User")]
         """
     ).strip()
 
