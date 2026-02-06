@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.291.2 - 2026-02-06
+--------------------
+
+Update type annotations for `Response.data` and `Response.extensions` in the test client to `Any`, instead of `JsonValue`, to allow nested subscript access in test assertions without type errors.
+
+Contributed by [Sam Millar](https://github.com/millar) via [PR #4195](https://github.com/strawberry-graphql/strawberry/pull/4195/)
+
+
 0.291.1 - 2026-02-06
 --------------------
 
