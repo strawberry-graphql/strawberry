@@ -4,7 +4,7 @@ import json
 import warnings
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any, Literal, TypeAlias
 from typing_extensions import TypedDict
 
 if TYPE_CHECKING:
@@ -13,11 +13,16 @@ if TYPE_CHECKING:
     from graphql import GraphQLFormattedError
 
 
+JsonValue: TypeAlias = (
+    str | int | float | bool | list["JsonValue"] | dict[str, "JsonValue"]
+)
+
+
 @dataclass
 class Response:
     errors: list[GraphQLFormattedError] | None
-    data: dict[str, object] | None
-    extensions: dict[str, object] | None
+    data: dict[str, JsonValue] | None
+    extensions: dict[str, JsonValue] | None
 
 
 class Body(TypedDict, total=False):
