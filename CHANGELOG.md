@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.291.1 - 2026-02-06
+--------------------
+
+This update relaxes type annotations for `Response.data` and `Response.extensions` from `dict[str, JsonValue]` to `dict[str, JsonValue]` in the test client, making assertions in tests easier to write.
+
+Contributed by [Sam Millar](https://github.com/millar) via [PR #4186](https://github.com/strawberry-graphql/strawberry/pull/4186/)
+
+
 0.291.0 - 2026-02-01
 --------------------
 
