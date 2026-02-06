@@ -1,3 +1,4 @@
+import copy
 import textwrap
 from enum import Enum
 from typing import Generic, TypeVar
@@ -261,3 +262,57 @@ def test_allows_duplicated_types_when_validation_disabled():
     ).strip()
 
     assert str(schema) == expected_schema
+
+
+def test_no_false_positive_duplicate_for_same_origin():
+    """Two different StrawberryObjectDefinition instances sharing the same origin
+    class should not raise DuplicatedTypeName. This can happen when third-party
+    decorators re-process a type, creating a new definition object.
+
+    Exercises the real schema-construction path: from_object is called twice
+    with two distinct definitions that share the same origin, triggering
+    validate_same_type_definition → is_same_type_definition."""
+
+    @strawberry.type
+    class Foo:
+        x: int
+
+    original_def = Foo.__strawberry_definition__
+    duplicate_def = copy.copy(original_def)
+
+    assert original_def is not duplicate_def
+    assert original_def.origin is duplicate_def.origin
+
+    @strawberry.type
+    class Query:
+        foo: Foo
+
+    schema = strawberry.Schema(query=Query)
+    converter = schema.schema_converter
+
+    # "Foo" is already cached from schema construction via Query.foo.
+    # Calling from_object with a *different* definition instance (same origin)
+    # must not raise DuplicatedTypeName.
+    converter.from_object(duplicate_def)
+
+
+@pytest.mark.raises_strawberry_exception(
+    DuplicatedTypeName,
+    match=r"Type (.*) is defined multiple times in the schema",
+)
+def test_different_origins_same_name_still_raises():
+    """Two genuinely different types with the same GraphQL name should still raise."""
+
+    @strawberry.type(name="Shared")
+    class A:
+        a: int
+
+    @strawberry.type(name="Shared")
+    class B:
+        b: int
+
+    @strawberry.type
+    class Query:
+        field: int
+
+    strawberry.Schema(query=Query, types=[A, B])
