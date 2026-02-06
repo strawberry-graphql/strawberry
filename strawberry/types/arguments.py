@@ -33,6 +33,7 @@ if TYPE_CHECKING:
 
     from strawberry.schema.config import StrawberryConfig
     from strawberry.types.base import StrawberryType
+    from strawberry.types.info import Info
     from strawberry.types.scalar import ScalarDefinition, ScalarWrapper
 
 
@@ -189,6 +190,7 @@ def convert_argument(
     type_: StrawberryType | type,
     scalar_registry: Mapping[object, ScalarWrapper | ScalarDefinition],
     config: StrawberryConfig,
+    info: Info | None = None,
 ) -> object:
     from strawberry.relay.types import GlobalID
 
@@ -198,7 +200,7 @@ def convert_argument(
         # Check if this is Maybe[T | None] (has StrawberryOptional as of_type)
         if isinstance(type_.of_type, StrawberryOptional):
             # This is Maybe[T | None] - allows null values
-            res = convert_argument(value, type_.of_type, scalar_registry, config)
+            res = convert_argument(value, type_.of_type, scalar_registry, config, info)
 
             return Some(res)
 
@@ -214,13 +216,13 @@ def convert_argument(
 
         # This is Maybe[T] - validation for null values is handled by MaybeNullValidationRule
         # Convert the value and wrap in Some()
-        res = convert_argument(value, type_.of_type, scalar_registry, config)
+        res = convert_argument(value, type_.of_type, scalar_registry, config, info)
 
         return Some(res)
 
     # Handle regular StrawberryOptional (not Maybe)
     if isinstance(type_, StrawberryOptional):
-        return convert_argument(value, type_.of_type, scalar_registry, config)
+        return convert_argument(value, type_.of_type, scalar_registry, config, info)
 
     if value is None:
         return None
@@ -241,7 +243,7 @@ def convert_argument(
         value_list = cast("Iterable", value)
 
         return [
-            convert_argument(x, type_.of_type, scalar_registry, config)
+            convert_argument(x, type_.of_type, scalar_registry, config, info)
             for x in value_list
         ]
 
@@ -252,11 +254,13 @@ def convert_argument(
         return value
 
     if isinstance(type_, LazyType):
-        return convert_argument(value, type_.resolve_type(), scalar_registry, config)
+        return convert_argument(
+            value, type_.resolve_type(), scalar_registry, config, info
+        )
 
     if has_enum_definition(type_):
         enum_definition: StrawberryEnumDefinition = type_.__strawberry_definition__
-        return convert_argument(value, enum_definition, scalar_registry, config)
+        return convert_argument(value, enum_definition, scalar_registry, config, info)
 
     if has_object_definition(type_):
         kwargs = {}
@@ -272,9 +276,30 @@ def convert_argument(
                     field.resolve_type(type_definition=type_definition),
                     scalar_registry,
                     config,
+                    info,
                 )
 
         type_ = cast("type", type_)
+
+        # Check if this is a Pydantic model - use model_validate to pass context
+        if hasattr(type_, "model_validate"):
+            # Build validation context with strawberry info
+            validation_context: dict[str, Any] = {}
+            if info is not None:
+                validation_context["info"] = info
+                # Also include the user's context if available
+                if hasattr(info, "context") and info.context is not None:
+                    validation_context["strawberry_context"] = info.context
+
+            # Always use by_name=True since Strawberry passes data using Python
+            # field names, not Pydantic aliases. This ensures validation_alias
+            # and alias work correctly alongside Python field names.
+            return type_.model_validate(
+                kwargs,
+                context=validation_context if validation_context else None,
+                by_name=True,
+            )
+
         return type_(**kwargs)
 
     raise UnsupportedTypeError(type_)
@@ -285,11 +310,16 @@ def convert_arguments(
     arguments: list[StrawberryArgument],
     scalar_registry: Mapping[object, ScalarWrapper | ScalarDefinition],
     config: StrawberryConfig,
+    info: Info | None = None,
 ) -> dict[str, Any]:
     """Converts a nested dictionary to a dictionary of actual types.
 
     It deals with conversion of input types to proper dataclasses and
     also uses a sentinel value for unset values.
+
+    If `info` is provided, it will be passed to Pydantic model validators
+    as part of the validation context, allowing validators to access
+    request context, user info, etc.
     """
     if not arguments:
         return {}
@@ -309,6 +339,7 @@ def convert_arguments(
                 type_=argument.type,
                 config=config,
                 scalar_registry=scalar_registry,
+                info=info,
             )
 
     return kwargs
