@@ -2,12 +2,13 @@ from __future__ import annotations
 
 import dataclasses
 import sys
-from typing import Any
+from typing import Annotated, Any, get_args, get_origin
 
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.exceptions import (
     FieldWithResolverAndDefaultFactoryError,
     FieldWithResolverAndDefaultValueError,
+    MultipleStrawberryFieldsError,
     PrivateStrawberryFieldError,
 )
 from strawberry.types.base import has_object_definition
@@ -140,17 +141,63 @@ def _get_fields(
             origin = origins.get(field.name, cls)
             module = sys.modules[origin.__module__]
 
-            # Create a StrawberryField, for fields of Types #1 and #2a
-            field = StrawberryField(  # noqa: PLW2901
-                python_name=field.name,
-                graphql_name=None,
-                type_annotation=StrawberryAnnotation(
-                    annotation=field.type,
-                    namespace=module.__dict__,
-                ),
-                origin=origin,
-                default=getattr(cls, field.name, dataclasses.MISSING),
-            )
+            # Check if the field type is Annotated and contains a StrawberryField
+            field_type = field.type
+            strawberry_field_from_annotated: StrawberryField | None = None
+
+            if get_origin(field_type) is Annotated:
+                first, *rest = get_args(field_type)
+
+                # Look for StrawberryField instances in the Annotated args
+                field_annotations = [
+                    arg for arg in rest if isinstance(arg, StrawberryField)
+                ]
+                if len(field_annotations) > 1:
+                    raise MultipleStrawberryFieldsError(field_name=field.name, cls=cls)
+
+                if field_annotations:
+                    strawberry_field_from_annotated = field_annotations[0]
+
+                # If we found a StrawberryField in Annotated, use it
+                if strawberry_field_from_annotated is not None:
+                    strawberry_field_from_annotated.python_name = field.name
+                    strawberry_field_from_annotated.type_annotation = (
+                        StrawberryAnnotation(
+                            annotation=first,
+                            namespace=module.__dict__,
+                        )
+                    )
+                    strawberry_field_from_annotated.origin = origin
+                    # Transfer default from dataclass field if not set in strawberry.field()
+                    if strawberry_field_from_annotated.default is dataclasses.MISSING:
+                        strawberry_field_from_annotated.default = field.default
+                        strawberry_field_from_annotated.default_value = field.default
+                    field = strawberry_field_from_annotated  # noqa: PLW2901
+                else:
+                    # No StrawberryField in Annotated, create a basic one
+                    # but keep the full Annotated type for other metadata
+                    field = StrawberryField(  # noqa: PLW2901
+                        python_name=field.name,
+                        graphql_name=None,
+                        type_annotation=StrawberryAnnotation(
+                            annotation=field_type,
+                            namespace=module.__dict__,
+                        ),
+                        origin=origin,
+                        default=getattr(cls, field.name, dataclasses.MISSING),
+                    )
+            else:
+                # Create a StrawberryField, for fields of Types #1 and #2a
+                field = StrawberryField(  # noqa: PLW2901
+                    python_name=field.name,
+                    graphql_name=None,
+                    type_annotation=StrawberryAnnotation(
+                        annotation=field_type,
+                        namespace=module.__dict__,
+                    ),
+                    origin=origin,
+                    default=getattr(cls, field.name, dataclasses.MISSING),
+                )
 
         field_name = field.python_name
 
