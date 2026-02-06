@@ -58,13 +58,17 @@ function ApolloQueryWrapper({
 		);
 	}
 
-	if (loading) return <p data-testid={`${testId}-loading`}>Loading...</p>;
 	if (error)
 		return <p data-testid={`${testId}-error`}>Error: {error.message}</p>;
 
-	return (
-		<pre data-testid={`${testId}-result`}>{JSON.stringify(data, null, 2)}</pre>
-	);
+	if (data)
+		return (
+			<pre data-testid={`${testId}-result`}>
+				{JSON.stringify(data, null, 2)}
+			</pre>
+		);
+
+	if (loading) return <p data-testid={`${testId}-loading`}>Loading...</p>;
 }
 
 function ApolloTests() {
