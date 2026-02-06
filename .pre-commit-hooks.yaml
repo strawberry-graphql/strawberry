@@ -1,0 +1,6 @@
+-   id: no-redundant-dataclasses
+    name: No redundant dataclasses
+    description: Prevents using raw dataclasses on Strawberry GraphQL types
+    entry: pre-commit-no-redundant-dataclasses
+    language: python
+    types: [python]
