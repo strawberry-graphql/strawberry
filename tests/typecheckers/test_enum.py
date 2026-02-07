@@ -265,13 +265,13 @@ def test_enum_with_manual_decorator_and_name():
         [
             Result(
                 type="information",
-                message="Revealed type: `Unknown`",
+                message="Revealed type: `<class 'Flavour'>`",
                 line=11,
                 column=13,
             ),
             Result(
                 type="information",
-                message="Revealed type: `Unknown`",
+                message="Revealed type: `Literal[Flavour.VANILLA]`",
                 line=12,
                 column=13,
             ),

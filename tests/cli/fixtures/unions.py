@@ -1,5 +1,3 @@
-from typing import Annotated
-
 import strawberry
 
 
@@ -23,6 +21,7 @@ class Qux:
     d: str
 
 
-# Union types using Annotated syntax
-Union1 = Annotated[Foo | Bar | Baz | Qux, strawberry.union("Union1")]
-Union2 = Annotated[Baz | Qux, strawberry.union("Union2")]
+# this is the union type
+
+Union1 = strawberry.union(name="Union1", types=(Foo, Bar, Baz, Qux))
+Union2 = strawberry.union(name="Union2", types=(Baz, Qux))
