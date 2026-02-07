@@ -1045,10 +1045,16 @@ class GraphQLCoreConverter:
         second_type_definition: StrawberryObjectDefinition | StrawberryType,
     ) -> bool:
         # TODO: maybe move this on the StrawberryType class
+        if not isinstance(
+            first_type_definition, StrawberryObjectDefinition
+        ) or not isinstance(second_type_definition, StrawberryObjectDefinition):
+            return False
+
+        if first_type_definition.origin is second_type_definition.origin:
+            return True
+
         if (
-            not isinstance(first_type_definition, StrawberryObjectDefinition)
-            or not isinstance(second_type_definition, StrawberryObjectDefinition)
-            or first_type_definition.concrete_of is None
+            first_type_definition.concrete_of is None
             or first_type_definition.concrete_of != second_type_definition.concrete_of
             or (
                 first_type_definition.type_var_map.keys()
