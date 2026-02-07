@@ -64,7 +64,7 @@ def process_federation_field_directives(
     requires: Sequence[str] | None = None,
     requires_scopes: Sequence[Sequence[str]] | None = None,
     shareable: bool = False,
-    tags: Iterable[str] | None = None,
+    tags: Sequence[str] | None = None,
 ) -> list[object]:
     """Convert federation field parameters into directive instances.
 
@@ -138,7 +138,7 @@ def process_federation_type_directives(
     authenticated: bool = False,
     policy: Sequence[Sequence[str]] | None = None,
     requires_scopes: Sequence[Sequence[str]] | None = None,
-    tags: Iterable[str] = (),
+    tags: Sequence[str] = (),
 ) -> tuple[list[object], bool]:
     """Convert federation type/interface parameters into directive instances.
 
