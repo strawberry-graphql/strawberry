@@ -51,7 +51,6 @@ class SanicHttpClient(HttpClient):
     def __init__(
         self,
         schema: Schema,
-        graphiql: bool | None = None,
         graphql_ide: GraphQL_IDE | None = "graphiql",
         allow_queries_via_get: bool = True,
         result_override: ResultOverrideFunction = None,
@@ -62,7 +61,6 @@ class SanicHttpClient(HttpClient):
         )
         view = GraphQLView.as_view(
             schema=schema,
-            graphiql=graphiql,
             graphql_ide=graphql_ide,
             allow_queries_via_get=allow_queries_via_get,
             result_override=result_override,

@@ -1,8 +1,9 @@
 import textwrap
 from enum import Enum
-from typing import Annotated
+from typing import Annotated, NewType
 
 import strawberry
+from strawberry.schema.config import StrawberryConfig
 
 
 def test_field_inaccessible_printed_correctly():
@@ -129,7 +130,7 @@ def test_inaccessible_on_mutation():
 
 
 def test_inaccessible_on_scalar():
-    SomeScalar = strawberry.federation.scalar(str, name="SomeScalar", inaccessible=True)
+    SomeScalar = NewType("SomeScalar", str)
 
     @strawberry.type
     class Query:
@@ -137,6 +138,13 @@ def test_inaccessible_on_scalar():
 
     schema = strawberry.federation.Schema(
         query=Query,
+        config=StrawberryConfig(
+            scalar_map={
+                SomeScalar: strawberry.federation.scalar(
+                    name="SomeScalar", inaccessible=True
+                )
+            }
+        ),
     )
 
     expected = """

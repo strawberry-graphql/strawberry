@@ -572,19 +572,6 @@ def test_name_first_directive_value():
     assert result.data["greeting"] == "Hi Bar"
 
 
-def test_named_based_directive_value_is_deprecated():
-    with pytest.deprecated_call(match=r"Argument name-based matching of 'value'"):
-
-        @strawberry.type
-        class Query:
-            hello: str = "hello"
-
-        @strawberry.directive(locations=[DirectiveLocation.FIELD])
-        def deprecated_value(value): ...
-
-        strawberry.Schema(query=Query, directives=[deprecated_value])
-
-
 @pytest.mark.asyncio
 async def test_directive_list_argument() -> NoReturn:
     @strawberry.type
@@ -649,7 +636,11 @@ def test_directives_with_custom_types():
 
 
 def test_directives_with_scalar():
-    DirectiveInput = strawberry.scalar(str, name="DirectiveInput")
+    from typing import NewType
+
+    from strawberry.schema.config import StrawberryConfig
+
+    DirectiveInput = NewType("DirectiveInput", str)
 
     @strawberry.type
     class Query:
@@ -663,7 +654,13 @@ def test_directives_with_scalar():
     def uppercase(value: DirectiveValue[str], input: DirectiveInput):
         return value.upper()
 
-    schema = strawberry.Schema(query=Query, directives=[uppercase])
+    schema = strawberry.Schema(
+        query=Query,
+        directives=[uppercase],
+        config=StrawberryConfig(
+            scalar_map={DirectiveInput: strawberry.scalar(name="DirectiveInput")}
+        ),
+    )
 
     expected_schema = '''
     """Make string uppercase"""

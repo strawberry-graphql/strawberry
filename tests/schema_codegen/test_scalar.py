@@ -6,14 +6,25 @@ from strawberry.schema_codegen import codegen
 def test_scalar():
     schema = """
     scalar LocalDate @specifiedBy(url: "https://scalars.graphql.org/andimarek/local-date.html")
+
+    type Query {
+        date: LocalDate
+    }
     """
 
     expected = textwrap.dedent(
         """
         import strawberry
+        from strawberry.schema.config import StrawberryConfig
         from typing import NewType
 
-        LocalDate = strawberry.scalar(NewType("LocalDate", object), specified_by_url="https://scalars.graphql.org/andimarek/local-date.html", serialize=lambda v: v, parse_value=lambda v: v)
+        LocalDate = NewType("LocalDate", object)
+
+        @strawberry.type
+        class Query:
+            date: LocalDate | None
+
+        schema = strawberry.Schema(query=Query, config=StrawberryConfig(scalar_map={LocalDate: strawberry.scalar(name="LocalDate", specified_by_url="https://scalars.graphql.org/andimarek/local-date.html", serialize=lambda v: v, parse_value=lambda v: v)}))
         """
     ).strip()
 
@@ -24,14 +35,25 @@ def test_scalar_with_description():
     schema = """
     "A date without a time-zone in the ISO-8601 calendar system, such as 2007-12-03."
     scalar LocalDate
+
+    type Query {
+        date: LocalDate
+    }
     """
 
     expected = textwrap.dedent(
         """
         import strawberry
+        from strawberry.schema.config import StrawberryConfig
         from typing import NewType
 
-        LocalDate = strawberry.scalar(NewType("LocalDate", object), description="A date without a time-zone in the ISO-8601 calendar system, such as 2007-12-03.", serialize=lambda v: v, parse_value=lambda v: v)
+        LocalDate = NewType("LocalDate", object)
+
+        @strawberry.type
+        class Query:
+            date: LocalDate | None
+
+        schema = strawberry.Schema(query=Query, config=StrawberryConfig(scalar_map={LocalDate: strawberry.scalar(name="LocalDate", description="A date without a time-zone in the ISO-8601 calendar system, such as 2007-12-03.", serialize=lambda v: v, parse_value=lambda v: v)}))
         """
     ).strip()
 
