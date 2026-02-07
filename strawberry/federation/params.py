@@ -10,25 +10,10 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 from typing_extensions import TypedDict
 
-from strawberry.types.unset import UNSET
-
-from .schema_directives import (
-    Authenticated,
-    External,
-    Inaccessible,
-    Key,
-    Override,
-    Policy,
-    Provides,
-    Requires,
-    RequiresScopes,
-    Shareable,
-    Tag,
-)
-from .types import FieldSet
-
 if TYPE_CHECKING:
     from collections.abc import Iterable, Sequence
+
+    from .schema_directives import Key, Override
 
 
 class FederationFieldParams(TypedDict, total=False):
@@ -86,6 +71,24 @@ def process_federation_field_directives(
     Returns a new list starting with *directives*, extended with any
     directive objects implied by the keyword arguments.
     """
+    from strawberry.types.unset import UNSET
+
+    from .schema_directives import (
+        Authenticated,
+        External,
+        Inaccessible,
+        Policy,
+        Provides,
+        Requires,
+        RequiresScopes,
+        Shareable,
+        Tag,
+    )
+    from .schema_directives import (
+        Override as OverrideDirective,
+    )
+    from .types import FieldSet
+
     result = list(directives or [])
 
     if authenticated:
@@ -99,7 +102,7 @@ def process_federation_field_directives(
 
     if override:
         result.append(
-            Override(override_from=override, label=UNSET)
+            OverrideDirective(override_from=override, label=UNSET)
             if isinstance(override, str)
             else override
         )
@@ -143,10 +146,27 @@ def process_federation_type_directives(
     starting with the input directives, extended with any directive objects
     implied by the keyword arguments.
     """
+    from strawberry.types.unset import UNSET
+
+    from .schema_directives import (
+        Authenticated,
+        Inaccessible,
+        Policy,
+        RequiresScopes,
+        Shareable,
+        Tag,
+    )
+    from .schema_directives import (
+        Key as KeyDirective,
+    )
+    from .types import FieldSet
+
     result = list(directives or [])
 
     result.extend(
-        Key(fields=FieldSet(key), resolvable=UNSET) if isinstance(key, str) else key
+        KeyDirective(fields=FieldSet(key), resolvable=UNSET)
+        if isinstance(key, str)
+        else key
         for key in keys
     )
 

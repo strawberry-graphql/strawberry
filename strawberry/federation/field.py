@@ -7,11 +7,14 @@ from typing import (
     TypeVar,
     overload,
 )
+from typing_extensions import Unpack
 
 from strawberry.types.field import field as base_field
 
+from .params import FederationFieldParams, process_federation_field_directives
+
 if TYPE_CHECKING:
-    from collections.abc import Callable, Iterable, Mapping, Sequence
+    from collections.abc import Callable, Mapping, Sequence
     from typing import Literal
 
     from strawberry.extensions.field_extension import FieldExtension
@@ -22,8 +25,6 @@ if TYPE_CHECKING:
         _RESOLVER_TYPE_SYNC,
         StrawberryField,
     )
-
-    from .schema_directives import Override
 
 T = TypeVar("T")
 
@@ -38,16 +39,6 @@ def field(
     name: str | None = None,
     is_subscription: bool = False,
     description: str | None = None,
-    authenticated: bool = False,
-    external: bool = False,
-    inaccessible: bool = False,
-    policy: list[list[str]] | None = None,
-    provides: list[str] | None = None,
-    override: Override | str | None = None,
-    requires: list[str] | None = None,
-    requires_scopes: list[list[str]] | None = None,
-    tags: Iterable[str] | None = (),
-    shareable: bool = False,
     init: Literal[False] = False,
     permission_classes: list[type[BasePermission]] | None = None,
     deprecation_reason: str | None = None,
@@ -57,6 +48,7 @@ def field(
     directives: Sequence[object] | None = (),
     extensions: list[FieldExtension] | None = None,
     graphql_type: Any | None = None,
+    **federation_kwargs: Unpack[FederationFieldParams],
 ) -> T: ...
 
 
@@ -67,16 +59,6 @@ def field(
     name: str | None = None,
     is_subscription: bool = False,
     description: str | None = None,
-    authenticated: bool = False,
-    external: bool = False,
-    inaccessible: bool = False,
-    policy: list[list[str]] | None = None,
-    provides: list[str] | None = None,
-    override: Override | str | None = None,
-    requires: list[str] | None = None,
-    requires_scopes: list[list[str]] | None = None,
-    tags: Iterable[str] | None = (),
-    shareable: bool = False,
     init: Literal[False] = False,
     permission_classes: list[type[BasePermission]] | None = None,
     deprecation_reason: str | None = None,
@@ -86,6 +68,7 @@ def field(
     directives: Sequence[object] | None = (),
     extensions: list[FieldExtension] | None = None,
     graphql_type: Any | None = None,
+    **federation_kwargs: Unpack[FederationFieldParams],
 ) -> T: ...
 
 
@@ -95,16 +78,6 @@ def field(
     name: str | None = None,
     is_subscription: bool = False,
     description: str | None = None,
-    authenticated: bool = False,
-    external: bool = False,
-    inaccessible: bool = False,
-    policy: list[list[str]] | None = None,
-    provides: list[str] | None = None,
-    override: Override | str | None = None,
-    requires: list[str] | None = None,
-    requires_scopes: list[list[str]] | None = None,
-    tags: Iterable[str] | None = (),
-    shareable: bool = False,
     init: Literal[True] = True,
     permission_classes: list[type[BasePermission]] | None = None,
     deprecation_reason: str | None = None,
@@ -114,6 +87,7 @@ def field(
     directives: Sequence[object] | None = (),
     extensions: list[FieldExtension] | None = None,
     graphql_type: Any | None = None,
+    **federation_kwargs: Unpack[FederationFieldParams],
 ) -> Any: ...
 
 
@@ -124,16 +98,6 @@ def field(
     name: str | None = None,
     is_subscription: bool = False,
     description: str | None = None,
-    authenticated: bool = False,
-    external: bool = False,
-    inaccessible: bool = False,
-    policy: list[list[str]] | None = None,
-    provides: list[str] | None = None,
-    override: Override | str | None = None,
-    requires: list[str] | None = None,
-    requires_scopes: list[list[str]] | None = None,
-    tags: Iterable[str] | None = (),
-    shareable: bool = False,
     permission_classes: list[type[BasePermission]] | None = None,
     deprecation_reason: str | None = None,
     default: Any = dataclasses.MISSING,
@@ -142,6 +106,7 @@ def field(
     directives: Sequence[object] | None = (),
     extensions: list[FieldExtension] | None = None,
     graphql_type: Any | None = None,
+    **federation_kwargs: Unpack[FederationFieldParams],
 ) -> StrawberryField: ...
 
 
@@ -152,16 +117,6 @@ def field(
     name: str | None = None,
     is_subscription: bool = False,
     description: str | None = None,
-    authenticated: bool = False,
-    external: bool = False,
-    inaccessible: bool = False,
-    policy: list[list[str]] | None = None,
-    provides: list[str] | None = None,
-    override: Override | str | None = None,
-    requires: list[str] | None = None,
-    requires_scopes: list[list[str]] | None = None,
-    tags: Iterable[str] | None = (),
-    shareable: bool = False,
     permission_classes: list[type[BasePermission]] | None = None,
     deprecation_reason: str | None = None,
     default: Any = dataclasses.MISSING,
@@ -170,6 +125,7 @@ def field(
     directives: Sequence[object] | None = (),
     extensions: list[FieldExtension] | None = None,
     graphql_type: Any | None = None,
+    **federation_kwargs: Unpack[FederationFieldParams],
 ) -> StrawberryField: ...
 
 
@@ -179,16 +135,6 @@ def field(
     name: str | None = None,
     is_subscription: bool = False,
     description: str | None = None,
-    authenticated: bool = False,
-    external: bool = False,
-    inaccessible: bool = False,
-    policy: list[list[str]] | None = None,
-    provides: list[str] | None = None,
-    override: Override | str | None = None,
-    requires: list[str] | None = None,
-    requires_scopes: list[list[str]] | None = None,
-    tags: Iterable[str] | None = (),
-    shareable: bool = False,
     permission_classes: list[type[BasePermission]] | None = None,
     deprecation_reason: str | None = None,
     default: Any = dataclasses.MISSING,
@@ -201,22 +147,9 @@ def field(
     # is added in the constructor or not. It is not used to change
     # any behavior at the moment.
     init: Literal[True, False] | None = None,
+    **federation_kwargs: Unpack[FederationFieldParams],
 ) -> Any:
-    from .params import process_federation_field_directives
-
-    directives = process_federation_field_directives(
-        directives,
-        authenticated=authenticated,
-        external=external,
-        inaccessible=inaccessible,
-        policy=policy,
-        provides=provides,
-        override=override,
-        requires=requires,
-        requires_scopes=requires_scopes,
-        shareable=shareable,
-        tags=tags,
-    )
+    directives = process_federation_field_directives(directives, **federation_kwargs)
 
     return base_field(  # type: ignore
         resolver=resolver,  # type: ignore
