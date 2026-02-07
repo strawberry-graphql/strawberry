@@ -280,3 +280,30 @@ def test_field_tag_printed_correctly_on_union():
     """
 
     assert schema.as_str() == textwrap.dedent(expected).strip()
+
+
+def test_inaccessible_false_does_not_add_directive():
+    """Regression: inaccessible=False must not emit @inaccessible."""
+
+    @strawberry.federation.type(inaccessible=False)
+    class SomeType:
+        id: strawberry.ID
+
+    @strawberry.federation.interface(inaccessible=False)
+    class SomeInterface:
+        id: strawberry.ID
+
+    @strawberry.federation.type
+    class Query:
+        @strawberry.field
+        def some(self) -> SomeType:  # pragma: no cover
+            return SomeType(id=strawberry.ID("1"))
+
+    schema = strawberry.federation.Schema(
+        query=Query,
+        types=[SomeInterface],
+    )
+
+    schema_str = schema.as_str()
+    assert "SomeType @inaccessible" not in schema_str
+    assert "SomeInterface @inaccessible" not in schema_str
