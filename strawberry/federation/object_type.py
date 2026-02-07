@@ -14,7 +14,6 @@ from strawberry.types.object_type import type as base_type
 from strawberry.types.unset import UNSET
 
 from .field import field
-from .types import FieldSet
 
 if TYPE_CHECKING:
     from .schema_directives import Key
@@ -42,42 +41,22 @@ def _impl_type(
     is_interface: bool = False,
     is_interface_object: bool = False,
 ) -> T:
-    from strawberry.federation.schema_directives import (
-        Authenticated,
-        Inaccessible,
-        InterfaceObject,
-        Key,
-        Policy,
-        RequiresScopes,
-        Shareable,
-        Tag,
-    )
+    from strawberry.federation.schema_directives import InterfaceObject
     from strawberry.schema_directives import OneOf
 
-    directives = list(directives)
+    from .params import process_federation_type_directives
 
-    directives.extend(
-        Key(fields=FieldSet(key), resolvable=UNSET) if isinstance(key, str) else key
-        for key in keys
+    directives, extend = process_federation_type_directives(
+        directives,
+        keys=keys,
+        extend=extend,
+        shareable=shareable,
+        inaccessible=inaccessible is True,
+        authenticated=authenticated,
+        policy=policy,
+        requires_scopes=requires_scopes,
+        tags=tags,
     )
-
-    if authenticated:
-        directives.append(Authenticated())
-
-    if inaccessible is not UNSET:
-        directives.append(Inaccessible())
-
-    if policy:
-        directives.append(Policy(policies=policy))
-
-    if requires_scopes:
-        directives.append(RequiresScopes(scopes=requires_scopes))
-
-    if shareable:
-        directives.append(Shareable())
-
-    if tags:
-        directives.extend(Tag(name=tag) for tag in tags)
 
     if is_interface_object:
         directives.append(InterfaceObject())

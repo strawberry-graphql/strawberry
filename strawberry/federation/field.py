@@ -9,9 +9,6 @@ from typing import (
 )
 
 from strawberry.types.field import field as base_field
-from strawberry.types.unset import UNSET
-
-from .types import FieldSet
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Mapping, Sequence
@@ -205,54 +202,21 @@ def field(
     # any behavior at the moment.
     init: Literal[True, False] | None = None,
 ) -> Any:
-    from .schema_directives import (
-        Authenticated,
-        External,
-        Inaccessible,
-        Override,
-        Policy,
-        Provides,
-        Requires,
-        RequiresScopes,
-        Shareable,
-        Tag,
+    from .params import process_federation_field_directives
+
+    directives = process_federation_field_directives(
+        directives,
+        authenticated=authenticated,
+        external=external,
+        inaccessible=inaccessible,
+        policy=policy,
+        provides=provides,
+        override=override,
+        requires=requires,
+        requires_scopes=requires_scopes,
+        shareable=shareable,
+        tags=tags,
     )
-
-    directives = list(directives or [])
-
-    if authenticated:
-        directives.append(Authenticated())
-
-    if external:
-        directives.append(External())
-
-    if inaccessible:
-        directives.append(Inaccessible())
-
-    if override:
-        directives.append(
-            Override(override_from=override, label=UNSET)
-            if isinstance(override, str)
-            else override
-        )
-
-    if policy:
-        directives.append(Policy(policies=policy))
-
-    if provides:
-        directives.append(Provides(fields=FieldSet(" ".join(provides))))
-
-    if requires:
-        directives.append(Requires(fields=FieldSet(" ".join(requires))))
-
-    if requires_scopes:
-        directives.append(RequiresScopes(scopes=requires_scopes))
-
-    if shareable:
-        directives.append(Shareable())
-
-    if tags:
-        directives.extend(Tag(name=tag) for tag in tags)
 
     return base_field(  # type: ignore
         resolver=resolver,  # type: ignore
