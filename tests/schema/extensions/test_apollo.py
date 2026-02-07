@@ -198,3 +198,48 @@ async def test_should_not_trace_introspection_async_queries(mocker):
             "parsing": {"startOffset": 0, "duration": 0},
         }
     }
+
+
+@pytest.mark.asyncio
+async def test_tracing_resolvers_populated_on_multiple_executions():
+    """Test that resolvers field is populated on every execution, not just the first."""
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def node(self) -> str:
+            return ""
+
+    schema = strawberry.Schema(Query, extensions=[ApolloTracingExtension])
+
+    for i in range(3):
+        result = await schema.execute("{ node }")
+        assert not result.errors
+        assert result.extensions is not None
+        resolvers = result.extensions["tracing"]["execution"]["resolvers"]
+        assert len(resolvers) == 1, (
+            f"Expected 1 resolver on execution {i}, got {len(resolvers)}"
+        )
+        assert resolvers[0]["field_name"] == "node"
+
+
+def test_tracing_resolvers_populated_on_multiple_sync_executions():
+    """Test that resolvers field is populated on every sync execution, not just the first."""
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def node(self) -> str:
+            return ""
+
+    schema = strawberry.Schema(Query, extensions=[ApolloTracingExtensionSync])
+
+    for i in range(3):
+        result = schema.execute_sync("{ node }")
+        assert not result.errors
+        assert result.extensions is not None
+        resolvers = result.extensions["tracing"]["execution"]["resolvers"]
+        assert len(resolvers) == 1, (
+            f"Expected 1 resolver on execution {i}, got {len(resolvers)}"
+        )
+        assert resolvers[0]["field_name"] == "node"

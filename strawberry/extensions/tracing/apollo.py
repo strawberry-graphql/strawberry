@@ -87,6 +87,7 @@ class ApolloTracingExtension(SchemaExtension):
         self.execution_context = execution_context
 
     def on_operation(self) -> Generator[None, None, None]:
+        self._resolver_stats = []
         self.start_timestamp = self.now()
         self.start_time = datetime.now(timezone.utc)
         yield
