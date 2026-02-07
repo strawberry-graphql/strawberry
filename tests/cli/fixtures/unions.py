@@ -1,5 +1,7 @@
 import strawberry
 
+# create a few types and then a union type
+
 
 @strawberry.type
 class Foo:
