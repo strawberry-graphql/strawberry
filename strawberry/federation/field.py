@@ -33,7 +33,7 @@ T = TypeVar("T")
 
 
 @overload
-def field(
+def field(  # type: ignore[overload-overlap]
     *,
     resolver: _RESOLVER_TYPE_ASYNC[T],
     name: str | None = None,

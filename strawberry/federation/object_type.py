@@ -118,7 +118,7 @@ def input(
     description: str | None = None,
     directives: Sequence[object] = (),
     inaccessible: bool = False,
-    tags: Iterable[str] = (),
+    tags: Sequence[str] = (),
 ) -> T: ...
 
 
@@ -135,7 +135,7 @@ def input(
     one_of: bool | None = None,
     directives: Sequence[object] = (),
     inaccessible: bool = False,
-    tags: Iterable[str] = (),
+    tags: Sequence[str] = (),
 ) -> Callable[[T], T]: ...
 
 
@@ -147,7 +147,7 @@ def input(
     description: str | None = None,
     directives: Sequence[object] = (),
     inaccessible: bool = False,
-    tags: Iterable[str] = (),
+    tags: Sequence[str] = (),
 ):
     return _impl_type(
         cls,
