@@ -1,6 +1,19 @@
 CHANGELOG
 =========
 
+0.291.3 - 2026-02-07
+--------------------
+
+This release fixes a bug where the async `execute` method was creating
+new extension instances on every request (via `get_extensions()`),
+instead of reusing cached instances like the sync `execute_sync` method
+already did. This caused extensions that accumulate state across the
+execution lifecycle (such as `ApolloTracingExtension`) to lose their
+state between requests when using async execution.
+
+Contributed by [Thiago Bellini Ribeiro](https://github.com/bellini666) via [PR #4181](https://github.com/strawberry-graphql/strawberry/pull/4181/)
+
+
 0.291.2 - 2026-02-06
 --------------------
 
