@@ -1,14 +1,11 @@
-"""Shared TypedDicts and processing functions for federation directives.
-
-Provides ``FederationFieldParams``, ``FederationInterfaceParams``, and
-``FederationTypeParams`` TypedDicts that can be consumed via
-``Unpack[...]`` to avoid duplicating federation parameter lists.
-"""
-
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
 from typing_extensions import TypedDict
+
+from strawberry.types.unset import UNSET
+
+from .types import FieldSet
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Sequence
@@ -17,8 +14,6 @@ if TYPE_CHECKING:
 
 
 class FederationFieldParams(TypedDict, total=False):
-    """Federation parameters accepted by field decorators."""
-
     authenticated: bool
     external: bool
     inaccessible: bool
@@ -32,8 +27,6 @@ class FederationFieldParams(TypedDict, total=False):
 
 
 class FederationInterfaceParams(TypedDict, total=False):
-    """Federation parameters accepted by interface decorators."""
-
     keys: Sequence[Key | str]
     authenticated: bool
     inaccessible: bool
@@ -43,11 +36,6 @@ class FederationInterfaceParams(TypedDict, total=False):
 
 
 class FederationTypeParams(FederationInterfaceParams, total=False):
-    """Federation parameters accepted by type decorators.
-
-    Extends :class:`FederationInterfaceParams` with ``extend`` and ``shareable``.
-    """
-
     extend: bool
     shareable: bool
 
@@ -66,13 +54,6 @@ def process_federation_field_directives(
     shareable: bool = False,
     tags: Sequence[str] | None = None,
 ) -> list[object]:
-    """Convert federation field parameters into directive instances.
-
-    Returns a new list starting with *directives*, extended with any
-    directive objects implied by the keyword arguments.
-    """
-    from strawberry.types.unset import UNSET
-
     from .schema_directives import (
         Authenticated,
         External,
@@ -87,7 +68,6 @@ def process_federation_field_directives(
     from .schema_directives import (
         Override as OverrideDirective,
     )
-    from .types import FieldSet
 
     result = list(directives or [])
 
@@ -140,14 +120,6 @@ def process_federation_type_directives(
     requires_scopes: Sequence[Sequence[str]] | None = None,
     tags: Sequence[str] = (),
 ) -> tuple[list[object], bool]:
-    """Convert federation type/interface parameters into directive instances.
-
-    Returns ``(directives, extend)`` where *directives* is a new list
-    starting with the input directives, extended with any directive objects
-    implied by the keyword arguments.
-    """
-    from strawberry.types.unset import UNSET
-
     from .schema_directives import (
         Authenticated,
         Inaccessible,
@@ -159,7 +131,6 @@ def process_federation_type_directives(
     from .schema_directives import (
         Key as KeyDirective,
     )
-    from .types import FieldSet
 
     result = list(directives or [])
 

@@ -23,7 +23,6 @@ if TYPE_CHECKING:
         _RESOLVER_TYPE,
         _RESOLVER_TYPE_ASYNC,
         _RESOLVER_TYPE_SYNC,
-        StrawberryField,
     )
 
 T = TypeVar("T")
@@ -33,7 +32,7 @@ T = TypeVar("T")
 
 
 @overload
-def field(  # type: ignore[overload-overlap]
+def field(
     *,
     resolver: _RESOLVER_TYPE_ASYNC[T],
     name: str | None = None,
@@ -89,44 +88,6 @@ def field(
     graphql_type: Any | None = None,
     **federation_kwargs: Unpack[FederationFieldParams],
 ) -> Any: ...
-
-
-@overload
-def field(
-    resolver: _RESOLVER_TYPE_ASYNC[T],
-    *,
-    name: str | None = None,
-    is_subscription: bool = False,
-    description: str | None = None,
-    permission_classes: list[type[BasePermission]] | None = None,
-    deprecation_reason: str | None = None,
-    default: Any = dataclasses.MISSING,
-    default_factory: Callable[..., object] | object = dataclasses.MISSING,
-    metadata: Mapping[Any, Any] | None = None,
-    directives: Sequence[object] | None = (),
-    extensions: list[FieldExtension] | None = None,
-    graphql_type: Any | None = None,
-    **federation_kwargs: Unpack[FederationFieldParams],
-) -> StrawberryField: ...
-
-
-@overload
-def field(
-    resolver: _RESOLVER_TYPE_SYNC[T],
-    *,
-    name: str | None = None,
-    is_subscription: bool = False,
-    description: str | None = None,
-    permission_classes: list[type[BasePermission]] | None = None,
-    deprecation_reason: str | None = None,
-    default: Any = dataclasses.MISSING,
-    default_factory: Callable[..., object] | object = dataclasses.MISSING,
-    metadata: Mapping[Any, Any] | None = None,
-    directives: Sequence[object] | None = (),
-    extensions: list[FieldExtension] | None = None,
-    graphql_type: Any | None = None,
-    **federation_kwargs: Unpack[FederationFieldParams],
-) -> StrawberryField: ...
 
 
 def field(
