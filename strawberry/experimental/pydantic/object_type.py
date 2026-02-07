@@ -31,6 +31,7 @@ from strawberry.types.auto import StrawberryAuto
 from strawberry.types.cast import get_strawberry_type_cast
 from strawberry.types.field import StrawberryField
 from strawberry.types.object_type import _process_type, _wrap_dataclass
+from strawberry.types.private import is_private
 from strawberry.types.type_resolver import _get_fields
 
 if TYPE_CHECKING:
@@ -143,10 +144,29 @@ def type(
 
         existing_fields = getattr(cls, "__annotations__", {})
 
+        # Fields explicitly marked as Private should be excluded from pydantic
+        # field processing - they should be handled as private fields instead
+        private_field_names = {
+            name for name, type_ in existing_fields.items() if is_private(type_)
+        }
+
+        # Fields with explicit (non-auto) type annotations should use their
+        # explicit type rather than auto-deriving from pydantic
+        explicitly_typed_fields = {
+            name
+            for name, type_ in existing_fields.items()
+            if not isinstance(type_, StrawberryAuto) and name not in private_field_names
+        }
+
         # these are the fields that matched a field name in the pydantic model
         # and should copy their alias from the pydantic model
+        # Private fields are excluded since they shouldn't be exposed in the schema
         fields_set = original_fields_set.union(
-            {name for name, _ in existing_fields.items() if name in model_fields}
+            {
+                name
+                for name, _ in existing_fields.items()
+                if name in model_fields and name not in private_field_names
+            }
         )
         # these are the fields that were marked with strawberry.auto and
         # should copy their type from the pydantic model
@@ -159,14 +179,14 @@ def type(
         )
 
         if all_fields:
-            if fields_set:
-                warnings.warn(
-                    "Using all_fields overrides any explicitly defined fields "
-                    "in the model, using both is likely a bug",
-                    stacklevel=2,
-                )
-            fields_set = set(model_fields.keys())
-            auto_fields_set = set(model_fields.keys())
+            # all_fields adds all pydantic model fields, but respects explicit definitions:
+            # - Private fields are excluded (handled separately as private fields)
+            # - Explicitly typed fields keep their type (not auto-derived from pydantic)
+            fields_set = set(model_fields.keys()) - private_field_names
+            # Only auto-derive types for fields not explicitly typed
+            auto_fields_set = (
+                set(model_fields.keys()) - private_field_names - explicitly_typed_fields
+            )
 
         if not fields_set:
             raise MissingFieldsListError(cls)
