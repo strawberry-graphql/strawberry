@@ -1,24 +1,21 @@
 import builtins
 from collections.abc import Callable, Iterable, Sequence
 from typing import (
-    TYPE_CHECKING,
     TypeVar,
-    Union,
     overload,
 )
-from typing_extensions import dataclass_transform
+from typing_extensions import Unpack, dataclass_transform
 
 from strawberry.types.field import StrawberryField
 from strawberry.types.field import field as base_field
 from strawberry.types.object_type import type as base_type
-from strawberry.types.unset import UNSET
 
 from .field import field
-from .types import FieldSet
-
-if TYPE_CHECKING:
-    from .schema_directives import Key
-
+from .params import (
+    FederationInterfaceParams,
+    FederationTypeParams,
+    process_federation_type_directives,
+)
 
 T = TypeVar("T", bound=builtins.type)
 
@@ -30,54 +27,17 @@ def _impl_type(
     description: str | None = None,
     one_of: bool | None = None,
     directives: Iterable[object] = (),
-    authenticated: bool = False,
-    keys: Iterable[Union["Key", str]] = (),
-    extend: bool = False,
-    shareable: bool = False,
-    inaccessible: bool = UNSET,
-    policy: list[list[str]] | None = None,
-    requires_scopes: list[list[str]] | None = None,
-    tags: Iterable[str] = (),
     is_input: bool = False,
     is_interface: bool = False,
     is_interface_object: bool = False,
+    **federation_kwargs: Unpack[FederationTypeParams],
 ) -> T:
-    from strawberry.federation.schema_directives import (
-        Authenticated,
-        Inaccessible,
-        InterfaceObject,
-        Key,
-        Policy,
-        RequiresScopes,
-        Shareable,
-        Tag,
-    )
+    from strawberry.federation.schema_directives import InterfaceObject
     from strawberry.schema_directives import OneOf
 
-    directives = list(directives)
-
-    directives.extend(
-        Key(fields=FieldSet(key), resolvable=UNSET) if isinstance(key, str) else key
-        for key in keys
+    directives, extend = process_federation_type_directives(
+        directives, **federation_kwargs
     )
-
-    if authenticated:
-        directives.append(Authenticated())
-
-    if inaccessible is not UNSET:
-        directives.append(Inaccessible())
-
-    if policy:
-        directives.append(Policy(policies=policy))
-
-    if requires_scopes:
-        directives.append(RequiresScopes(scopes=requires_scopes))
-
-    if shareable:
-        directives.append(Shareable())
-
-    if tags:
-        directives.extend(Tag(name=tag) for tag in tags)
 
     if is_interface_object:
         directives.append(InterfaceObject())
@@ -108,14 +68,7 @@ def type(
     name: str | None = None,
     description: str | None = None,
     directives: Iterable[object] = (),
-    authenticated: bool = False,
-    extend: bool = False,
-    inaccessible: bool = UNSET,
-    keys: Iterable[Union["Key", str]] = (),
-    policy: list[list[str]] | None = None,
-    requires_scopes: list[list[str]] | None = None,
-    shareable: bool = False,
-    tags: Iterable[str] = (),
+    **federation_kwargs: Unpack[FederationTypeParams],
 ) -> T: ...
 
 
@@ -130,14 +83,7 @@ def type(
     name: str | None = None,
     description: str | None = None,
     directives: Iterable[object] = (),
-    authenticated: bool = False,
-    extend: bool = False,
-    inaccessible: bool = UNSET,
-    keys: Iterable[Union["Key", str]] = (),
-    policy: list[list[str]] | None = None,
-    requires_scopes: list[list[str]] | None = None,
-    shareable: bool = False,
-    tags: Iterable[str] = (),
+    **federation_kwargs: Unpack[FederationTypeParams],
 ) -> Callable[[T], T]: ...
 
 
@@ -147,28 +93,14 @@ def type(
     name: str | None = None,
     description: str | None = None,
     directives: Iterable[object] = (),
-    authenticated: bool = False,
-    extend: bool = False,
-    inaccessible: bool = UNSET,
-    keys: Iterable[Union["Key", str]] = (),
-    policy: list[list[str]] | None = None,
-    requires_scopes: list[list[str]] | None = None,
-    shareable: bool = False,
-    tags: Iterable[str] = (),
+    **federation_kwargs: Unpack[FederationTypeParams],
 ):
     return _impl_type(
         cls,
         name=name,
         description=description,
         directives=directives,
-        authenticated=authenticated,
-        keys=keys,
-        extend=extend,
-        inaccessible=inaccessible,
-        policy=policy,
-        requires_scopes=requires_scopes,
-        shareable=shareable,
-        tags=tags,
+        **federation_kwargs,
     )
 
 
@@ -185,8 +117,8 @@ def input(
     one_of: bool | None = None,
     description: str | None = None,
     directives: Sequence[object] = (),
-    inaccessible: bool = UNSET,
-    tags: Iterable[str] = (),
+    inaccessible: bool = False,
+    tags: Sequence[str] = (),
 ) -> T: ...
 
 
@@ -202,8 +134,8 @@ def input(
     description: str | None = None,
     one_of: bool | None = None,
     directives: Sequence[object] = (),
-    inaccessible: bool = UNSET,
-    tags: Iterable[str] = (),
+    inaccessible: bool = False,
+    tags: Sequence[str] = (),
 ) -> Callable[[T], T]: ...
 
 
@@ -214,8 +146,8 @@ def input(
     one_of: bool | None = None,
     description: str | None = None,
     directives: Sequence[object] = (),
-    inaccessible: bool = UNSET,
-    tags: Iterable[str] = (),
+    inaccessible: bool = False,
+    tags: Sequence[str] = (),
 ):
     return _impl_type(
         cls,
@@ -241,12 +173,7 @@ def interface(
     name: str | None = None,
     description: str | None = None,
     directives: Iterable[object] = (),
-    authenticated: bool = False,
-    inaccessible: bool = UNSET,
-    keys: Iterable[Union["Key", str]] = (),
-    policy: list[list[str]] | None = None,
-    requires_scopes: list[list[str]] | None = None,
-    tags: Iterable[str] = (),
+    **federation_kwargs: Unpack[FederationInterfaceParams],
 ) -> T: ...
 
 
@@ -261,12 +188,7 @@ def interface(
     name: str | None = None,
     description: str | None = None,
     directives: Iterable[object] = (),
-    authenticated: bool = False,
-    inaccessible: bool = UNSET,
-    keys: Iterable[Union["Key", str]] = (),
-    policy: list[list[str]] | None = None,
-    requires_scopes: list[list[str]] | None = None,
-    tags: Iterable[str] = (),
+    **federation_kwargs: Unpack[FederationInterfaceParams],
 ) -> Callable[[T], T]: ...
 
 
@@ -276,25 +198,15 @@ def interface(
     name: str | None = None,
     description: str | None = None,
     directives: Iterable[object] = (),
-    authenticated: bool = False,
-    inaccessible: bool = UNSET,
-    keys: Iterable[Union["Key", str]] = (),
-    policy: list[list[str]] | None = None,
-    requires_scopes: list[list[str]] | None = None,
-    tags: Iterable[str] = (),
+    **federation_kwargs: Unpack[FederationInterfaceParams],
 ):
     return _impl_type(
         cls,
         name=name,
         description=description,
         directives=directives,
-        authenticated=authenticated,
-        keys=keys,
-        inaccessible=inaccessible,
-        policy=policy,
-        requires_scopes=requires_scopes,
-        tags=tags,
         is_interface=True,
+        **federation_kwargs,
     )
 
 
@@ -310,12 +222,7 @@ def interface_object(
     name: str | None = None,
     description: str | None = None,
     directives: Iterable[object] = (),
-    authenticated: bool = False,
-    inaccessible: bool = UNSET,
-    keys: Iterable[Union["Key", str]] = (),
-    policy: list[list[str]] | None = None,
-    requires_scopes: list[list[str]] | None = None,
-    tags: Iterable[str] = (),
+    **federation_kwargs: Unpack[FederationInterfaceParams],
 ) -> T: ...
 
 
@@ -330,12 +237,7 @@ def interface_object(
     name: str | None = None,
     description: str | None = None,
     directives: Iterable[object] = (),
-    authenticated: bool = False,
-    inaccessible: bool = UNSET,
-    keys: Iterable[Union["Key", str]] = (),
-    policy: list[list[str]] | None = None,
-    requires_scopes: list[list[str]] | None = None,
-    tags: Iterable[str] = (),
+    **federation_kwargs: Unpack[FederationInterfaceParams],
 ) -> Callable[[T], T]: ...
 
 
@@ -345,26 +247,16 @@ def interface_object(
     name: str | None = None,
     description: str | None = None,
     directives: Iterable[object] = (),
-    authenticated: bool = False,
-    inaccessible: bool = UNSET,
-    keys: Iterable[Union["Key", str]] = (),
-    policy: list[list[str]] | None = None,
-    requires_scopes: list[list[str]] | None = None,
-    tags: Iterable[str] = (),
+    **federation_kwargs: Unpack[FederationInterfaceParams],
 ):
     return _impl_type(
         cls,
         name=name,
         description=description,
         directives=directives,
-        authenticated=authenticated,
-        keys=keys,
-        inaccessible=inaccessible,
-        policy=policy,
-        requires_scopes=requires_scopes,
-        tags=tags,
         is_interface=False,
         is_interface_object=True,
+        **federation_kwargs,
     )
 
 
