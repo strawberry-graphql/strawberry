@@ -1,3 +1,4 @@
+import functools
 import itertools
 from collections.abc import Callable
 from typing import Any
@@ -59,7 +60,7 @@ def with_gql_core_parametrize(name: str, params: list[str]) -> Callable[[Any], A
     arg_names = f"{name}, gql_core"
     combinations = list(itertools.product(params, GQL_CORE_VERSIONS))
     ids = [f"{name}-{comb[0]}__graphql-core-{comb[1]}" for comb in combinations]
-    return lambda fn: nox.parametrize(arg_names, combinations, ids=ids)(fn)
+    return functools.partial(nox.parametrize, arg_names, combinations, ids=ids)
 
 
 @session(python=PYTHON_VERSIONS, name="Tests", tags=["tests"])
