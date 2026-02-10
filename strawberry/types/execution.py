@@ -33,7 +33,9 @@ class ExecutionContext:
     allowed_operations: Iterable[OperationType]
     context: Any = None
     variables: dict[str, Any] | None = None
-    parse_options: ParseOptions = dataclasses.field(default_factory=dict)
+    parse_options: ParseOptions = dataclasses.field(
+        default_factory=lambda: ParseOptions()
+    )
     root_value: Any | None = None
     validation_rules: tuple[type[ASTValidationRule], ...] = dataclasses.field(
         default_factory=lambda: tuple(specified_rules)
