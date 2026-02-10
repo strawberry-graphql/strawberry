@@ -1,9 +1,12 @@
 Release type: patch
 
-Fix schema-codegen emit order so types that implement interfaces (or are referenced by other types) are generated before types that reference them. Previously, types like `Foo implements Bar` were emitted at the end of the file after `schema = strawberry.Schema(...)`, so types such as `FooContainer { foo: Foo! }` were defined before `Foo`, causing `NameError: name 'Foo' is not defined` when importing the generated module.
+Fix two `NameError` issues in schema-codegen output when types are referenced before they are defined.
+
+First, forward references in field annotations (e.g. `foo: Foo` appearing before `Foo` is defined) are now handled by emitting `from __future__ import annotations` at the top of the generated file. Per PEP 563, this stores all annotations as strings instead of evaluating them at class definition time, so the referenced names don't need to exist yet.
+
+Second, union definitions like `FooOrBar = Annotated[Foo | Bar, strawberry.union(...)]` are runtime expressions that `from __future__ import annotations` cannot defer. These are now correctly ordered by declaring union member types as dependencies, so unions are always emitted after their members.
 
 Changes:
-- Add field-type dependencies for object/interface/input definitions so referenced types are emitted first.
+- Emit `from __future__ import annotations` in generated code to handle forward references in field annotations.
 - Add member-type dependencies for union definitions so unions are emitted after their member types.
-- Filter the topological-sort dependency graph to only include dependencies that exist in the generated definitions (e.g. exclude built-in scalars).
 - Ensure the schema assignment is emitted last by giving it dependencies on all other definitions.

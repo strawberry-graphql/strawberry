@@ -25,6 +25,7 @@ def test_generates_used_interface_before():
 
     expected = textwrap.dedent(
         """
+        from __future__ import annotations
         import strawberry
 
         @strawberry.interface
@@ -49,55 +50,25 @@ def test_generates_used_interface_before():
     assert codegen(schema).strip() == expected
 
 
-def test_generates_implementing_type_before_referencing_type():
-    """Types that implement an interface must be emitted before types that reference them.
+def test_forward_reference_in_field_annotation():
+    """A type can reference another type that appears later in the generated output.
 
-    Otherwise the referencing type (e.g. FooContainer with foo: Foo) would be
-    defined before Foo, causing NameError when the module is loaded.
+    The generated ``from __future__ import annotations`` (PEP 563) defers
+    evaluation of annotations, so ``foo: Foo`` does not require ``Foo`` to be
+    defined at class-creation time.
     """
-    schema = """
-    interface Bar {
-        bar: String!
-    }
-
-    type Foo implements Bar {
-        bar: String!
-    }
-
-    type FooContainer {
-        foo: Foo!
-    }
-    """
-
-    generated = codegen(schema).strip()
-
-    # Bar (interface) must appear first
-    bar_pos = generated.index("@strawberry.interface\nclass Bar:")
-    # Foo (implements Bar) must appear before FooContainer (which references Foo)
-    foo_pos = generated.index("@strawberry.type\nclass Foo(Bar):")
-    foo_container_pos = generated.index("@strawberry.type\nclass FooContainer:")
-
-    assert bar_pos < foo_pos < foo_container_pos, (
-        "Order should be Bar, Foo, FooContainer so Foo is defined before FooContainer"
-    )
-
-
-def test_generated_module_imports_without_name_error():
-    """Generated code that references implementing types must be importable."""
     import subprocess
     import sys
     import tempfile
     from pathlib import Path
 
     schema = """
-    interface Bar {
-        bar: String!
-    }
-    type Foo implements Bar {
-        bar: String!
-    }
     type FooContainer {
         foo: Foo!
+    }
+
+    type Foo {
+        name: String!
     }
     """
     code = codegen(schema)
@@ -117,3 +88,43 @@ def test_generated_module_imports_without_name_error():
         )
     finally:
         Path(path).unlink()
+
+
+def test_generates_union_members_before_union():
+    """Union member types must be emitted before the union definition.
+
+    The generated union assignment (e.g.
+    ``FooOrBar = Annotated[Foo | Bar, strawberry.union(...)]``) is a runtime
+    expression, not an annotation, so ``from __future__ import annotations``
+    would not defer its evaluation.  The member types must therefore be defined
+    before the union line.
+    """
+    schema = """
+    interface Base {
+        id: ID!
+    }
+
+    type Foo implements Base {
+        id: ID!
+        name: String!
+    }
+
+    type Bar implements Base {
+        id: ID!
+        title: String!
+    }
+
+    union FooOrBar = Foo | Bar
+    """
+
+    generated = codegen(schema).strip()
+
+    base_pos = generated.index("@strawberry.interface\nclass Base:")
+    foo_pos = generated.index("@strawberry.type\nclass Foo(Base):")
+    bar_pos = generated.index("@strawberry.type\nclass Bar(Base):")
+    union_pos = generated.index("FooOrBar = Annotated[")
+
+    assert base_pos < foo_pos, "Interface must precede implementing type"
+    assert base_pos < bar_pos, "Interface must precede implementing type"
+    assert foo_pos < union_pos, "Union members must precede union definition"
+    assert bar_pos < union_pos, "Union members must precede union definition"

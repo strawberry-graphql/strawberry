@@ -12,6 +12,7 @@ def test_extend_query():
 
     expected = textwrap.dedent(
         """
+        from __future__ import annotations
         import strawberry
 
         @strawberry.type
@@ -34,6 +35,7 @@ def test_extend_mutation():
 
     expected = textwrap.dedent(
         """
+        from __future__ import annotations
         import strawberry
 
         @strawberry.type
@@ -56,6 +58,7 @@ def test_extend_subscription():
 
     expected = textwrap.dedent(
         """
+        from __future__ import annotations
         import strawberry
 
         @strawberry.type

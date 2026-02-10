@@ -19,6 +19,7 @@ def test_handles_keywords(name: str):
 
     expected = textwrap.dedent(
         f"""
+        from __future__ import annotations
         import strawberry
 
         @strawberry.type
@@ -41,6 +42,7 @@ def test_converts_names_to_snake_case():
 
     expected = textwrap.dedent(
         """
+        from __future__ import annotations
         import strawberry
 
         @strawberry.type
