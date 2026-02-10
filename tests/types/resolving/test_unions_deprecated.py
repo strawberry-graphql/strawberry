@@ -115,11 +115,7 @@ def test_error_with_scalar_types():
     InvalidUnionTypeError, match="Type `CustomScalar` cannot be used in a GraphQL Union"
 )
 def test_error_with_custom_scalar_types():
-    CustomScalar = strawberry.scalar(
-        NewType("CustomScalar", str),
-        serialize=lambda v: str(v),
-        parse_value=lambda v: str(v),
-    )
+    CustomScalar = NewType("CustomScalar", str)
 
     strawberry.union("Result", (CustomScalar,))
 
