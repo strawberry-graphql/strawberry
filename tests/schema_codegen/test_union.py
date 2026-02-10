@@ -18,6 +18,7 @@ def test_union():
 
     expected = textwrap.dedent(
         """
+        from __future__ import annotations
         import strawberry
         from typing import Annotated
 
