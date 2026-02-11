@@ -6,7 +6,7 @@ from typing import (
     Any,
     runtime_checkable,
 )
-from typing_extensions import Protocol, TypedDict, deprecated
+from typing_extensions import NotRequired, Protocol, TypedDict, deprecated
 
 from graphql import specified_rules
 
@@ -14,7 +14,6 @@ from strawberry.utils.operation import get_first_operation, get_operation_type
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
-    from typing_extensions import NotRequired
 
     from graphql import ASTValidationRule
     from graphql.error.graphql_error import GraphQLError
@@ -26,6 +25,10 @@ if TYPE_CHECKING:
     from .graphql import OperationType
 
 
+class ParseOptions(TypedDict):
+    max_tokens: NotRequired[int]
+
+
 @dataclasses.dataclass
 class ExecutionContext:
     query: str | None
@@ -33,9 +36,7 @@ class ExecutionContext:
     allowed_operations: Iterable[OperationType]
     context: Any = None
     variables: dict[str, Any] | None = None
-    parse_options: ParseOptions = dataclasses.field(
-        default_factory=lambda: ParseOptions()
-    )
+    parse_options: ParseOptions = dataclasses.field(default_factory=ParseOptions)
     root_value: Any | None = None
     validation_rules: tuple[type[ASTValidationRule], ...] = dataclasses.field(
         default_factory=lambda: tuple(specified_rules)
@@ -109,10 +110,6 @@ class PreExecutionError(ExecutionResult):
     These errors are required by `graphql-ws-transport` protocol in order to close the operation
     right away once the error is encountered.
     """
-
-
-class ParseOptions(TypedDict):
-    max_tokens: NotRequired[int]
 
 
 @runtime_checkable
