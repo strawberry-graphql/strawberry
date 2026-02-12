@@ -70,35 +70,39 @@ _SCALAR_MAP = {
     "DateTime": cst.Name("datetime"),
 }
 
-_FEDERATION_DIRECTIVE_NAMES = frozenset({
-    "key",
-    "shareable",
-    "inaccessible",
-    "external",
-    "authenticated",
-    "override",
-    "requires",
-    "provides",
-    "tag",
-    "requiresScopes",
-    "policy",
-    "link",
-    "specifiedBy",
-})
+_FEDERATION_DIRECTIVE_NAMES = frozenset(
+    {
+        "key",
+        "shareable",
+        "inaccessible",
+        "external",
+        "authenticated",
+        "override",
+        "requires",
+        "provides",
+        "tag",
+        "requiresScopes",
+        "policy",
+        "link",
+        "specifiedBy",
+    }
+)
 
-_STRAWBERRY_LOCATION_NAMES = frozenset({
-    "SCHEMA",
-    "SCALAR",
-    "OBJECT",
-    "FIELD_DEFINITION",
-    "ARGUMENT_DEFINITION",
-    "INTERFACE",
-    "UNION",
-    "ENUM",
-    "ENUM_VALUE",
-    "INPUT_OBJECT",
-    "INPUT_FIELD_DEFINITION",
-})
+_STRAWBERRY_LOCATION_NAMES = frozenset(
+    {
+        "SCHEMA",
+        "SCALAR",
+        "OBJECT",
+        "FIELD_DEFINITION",
+        "ARGUMENT_DEFINITION",
+        "INTERFACE",
+        "UNION",
+        "ENUM",
+        "ENUM_VALUE",
+        "INPUT_OBJECT",
+        "INPUT_FIELD_DEFINITION",
+    }
+)
 
 
 @dataclasses.dataclass(frozen=True)
@@ -1096,9 +1100,7 @@ def _get_directive_definition(
             )
 
     if not body_lines:
-        body_lines.append(
-            cst.SimpleStatementLine(body=[cst.Expr(cst.Name("pass"))])
-        )
+        body_lines.append(cst.SimpleStatementLine(body=[cst.Expr(cst.Name("pass"))]))
 
     class_definition = cst.ClassDef(
         name=cst.Name(class_name),
