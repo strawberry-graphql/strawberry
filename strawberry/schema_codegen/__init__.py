@@ -9,6 +9,7 @@ from typing_extensions import Protocol
 
 import libcst as cst
 from graphql import (
+    DirectiveDefinitionNode,
     EnumTypeDefinitionNode,
     EnumValueDefinitionNode,
     FieldDefinitionNode,
@@ -231,9 +232,20 @@ def _get_default_value_expr(
     raise NotImplementedError(f"Unknown default value node {node}")
 
 
-def _sanitize_argument(value: ArgumentValue) -> cst.SimpleString | cst.Name | cst.List:
+def _sanitize_argument(
+    value: ArgumentValue,
+) -> cst.SimpleString | cst.Name | cst.List | cst.Integer | cst.Float:
     if isinstance(value, bool):
         return cst.Name(value=str(value))
+
+    if value is None:
+        return cst.Name(value="None")
+
+    if isinstance(value, int):
+        return cst.Integer(value=str(value))
+
+    if isinstance(value, float):
+        return cst.Float(value=str(value))
 
     if isinstance(value, list):
         return cst.List(
@@ -380,21 +392,30 @@ def _get_field(
     )
 
 
-ArgumentValue: TypeAlias = str | bool | list["ArgumentValue"]
+ArgumentValue: TypeAlias = str | bool | int | float | None | list["ArgumentValue"]
 
 
 def _get_argument_value(argument_value: ConstValueNode) -> ArgumentValue:
     if isinstance(argument_value, StringValueNode):
         return argument_value.value
 
-    if isinstance(argument_value, EnumValueDefinitionNode):
-        return argument_value.name.value
+    if isinstance(argument_value, EnumValueNode):
+        return argument_value.value
 
     if isinstance(argument_value, ListValueNode):
         return [_get_argument_value(arg) for arg in argument_value.values]
 
     if isinstance(argument_value, BooleanValueNode):
         return argument_value.value
+
+    if isinstance(argument_value, IntValueNode):
+        return int(argument_value.value)
+
+    if isinstance(argument_value, FloatValueNode):
+        return float(argument_value.value)
+
+    if isinstance(argument_value, NullValueNode):
+        return None
 
     raise NotImplementedError(f"Unknown argument value {argument_value}")
 
@@ -883,6 +904,8 @@ def codegen(schema: str) -> str:
                 _is_federation_link_directive(directive)
                 for directive in graphql_definition.directives
             )
+        elif isinstance(graphql_definition, DirectiveDefinitionNode):
+            pass
         else:
             raise NotImplementedError(f"Unknown definition {definition}")
 
