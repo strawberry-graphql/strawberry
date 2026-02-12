@@ -189,7 +189,7 @@ class ReservedType(NamedTuple):
         type_name = self.type.__name__
         module = self.type.__module__
 
-        base_annotation = annotation.split("[")[0].strip()
+        base_annotation = annotation.split("[", maxsplit=1)[0].strip()
         # Only match qualified names (strawberry.X or full module path)
         valid_names = {
             f"strawberry.{type_name}",  # e.g. "strawberry.Info"
