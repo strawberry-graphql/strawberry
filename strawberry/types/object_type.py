@@ -508,9 +508,7 @@ def asdict(obj: Any) -> dict[str, object]:
             cls = builtins.type(obj)
             return cls(_asdict_inner(v) for v in obj)
         if isinstance(obj, dict):
-            return {
-                _asdict_inner(k): _asdict_inner(v) for k, v in obj.items()
-            }
+            return {_asdict_inner(k): _asdict_inner(v) for k, v in obj.items()}
         return obj
 
     return _asdict_inner(obj)
