@@ -465,7 +465,11 @@ def interface(
 def asdict(obj: Any) -> dict[str, object]:
     """Convert a strawberry object into a dictionary.
 
-    This wraps the dataclasses.asdict function to strawberry.
+    This wraps the dataclasses.asdict function with additional handling
+    for strawberry-specific types like ``Some`` and ``UNSET``.
+
+    - Fields set to ``UNSET`` are excluded from the result.
+    - ``Some(value)`` wrappers are unwrapped to their inner value.
 
     Args:
         obj: The object to convert into a dictionary.
@@ -486,7 +490,30 @@ def asdict(obj: Any) -> dict[str, object]:
     # {"name": "Lorem", "age": 25}
     ```
     """
-    return dataclasses.asdict(obj)
+    from strawberry.types.maybe import Some
+    from strawberry.types.unset import UNSET
+
+    def _asdict_inner(obj: Any) -> Any:
+        if isinstance(obj, Some):
+            return _asdict_inner(obj.value)
+        if dataclasses.is_dataclass(obj) and not isinstance(obj, builtins.type):
+            result = {}
+            for f in dataclasses.fields(obj):
+                value = getattr(obj, f.name)
+                if value is UNSET:
+                    continue
+                result[f.name] = _asdict_inner(value)
+            return result
+        if isinstance(obj, (list, tuple)):
+            cls = builtins.type(obj)
+            return cls(_asdict_inner(v) for v in obj)
+        if isinstance(obj, dict):
+            return {
+                _asdict_inner(k): _asdict_inner(v) for k, v in obj.items()
+            }
+        return obj
+
+    return _asdict_inner(obj)
 
 
 __all__ = [
