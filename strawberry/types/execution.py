@@ -14,6 +14,7 @@ from strawberry.utils.operation import get_first_operation, get_operation_type
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
+    from typing_extensions import NotRequired
 
     from graphql import ASTValidationRule
     from graphql.error.graphql_error import GraphQLError
