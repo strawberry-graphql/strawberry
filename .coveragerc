@@ -6,8 +6,8 @@ branch = True
 source =
     strawberry/
     tests/
-    D:\a\strawberry\strawberry\strawberry\
-    D:\a\strawberry\strawberry\tests\
+    D:/a/strawberry/strawberry/strawberry/
+    D:/a/strawberry/strawberry/tests/
 
 [report]
 # Regexes for lines to exclude from consideration
