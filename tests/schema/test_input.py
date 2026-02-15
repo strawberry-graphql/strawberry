@@ -45,7 +45,7 @@ def test_input_with_nonscalar_field_default():
     @strawberry.input
     class Input:
         non_scalar_field: NonScalarField = strawberry.field(
-            default_factory=lambda: NonScalarField()
+            default_factory=NonScalarField
         )
         id: int = 10
 

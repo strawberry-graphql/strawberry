@@ -157,7 +157,7 @@ class NameConverter:
         if isinstance(type_, StrawberryEnumDefinition):
             name = type_.name
         elif isinstance(type_, StrawberryUnion):
-            name = type_.graphql_name if type_.graphql_name else self.from_union(type_)
+            name = type_.graphql_name or self.from_union(type_)
         elif isinstance(type_, StrawberryList):
             name = self.get_name_from_type(type_.of_type) + "List"
         elif isinstance(type_, StrawberryOptional):
