@@ -642,8 +642,8 @@ def test_scalar_definition_direct_creation():
     definition = strawberry.scalar(
         name="TestScalar",
         description="A test scalar",
-        serialize=lambda v: str(v),
-        parse_value=lambda v: int(v),
+        serialize=str,
+        parse_value=int,
     )
 
     assert definition.name == "TestScalar"

@@ -507,7 +507,7 @@ def print_schema_directives(schema: BaseSchema, *, extras: PrintExtras) -> str:
         directive
         for directive in schema.schema_directives
         if any(
-            location in [Location.SCHEMA]
+            location == Location.SCHEMA
             for location in directive.__strawberry_directive__.locations  # type: ignore
         )
     )
