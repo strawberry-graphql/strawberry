@@ -31,7 +31,7 @@
     "tw-animate-css": "^1.3.5"
   },
   "devDependencies": {
-    "@eslint/js": "^9.31.0",
+    "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.54.1",
     "@types/node": "^25.0.9",
     "@types/react": "^19.1.8",
@@ -40,7 +40,7 @@
     "@types/relay-runtime": "^20.1.1",
     "@vitejs/plugin-react": "^5.1.2",
     "babel-plugin-relay": "^20.1.1",
-    "eslint": "^9.31.0",
+    "eslint": "^10.0.0",
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.5.0",
     "globals": "^17.0.0",
