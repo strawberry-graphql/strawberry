@@ -220,6 +220,7 @@ async def test_listen_to_channel_group(ws: WebsocketCommunicator):
     await ws.send_json_to(CompleteMessage({"id": "sub1", "type": "complete"}))
 
 
+@pytest.mark.django_db
 async def test_listen_to_channel_group_twice(ws: WebsocketCommunicator):
     from channels.layers import get_channel_layer
 
