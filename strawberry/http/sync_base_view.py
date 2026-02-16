@@ -37,7 +37,6 @@ class SyncBaseHTTPView(
     Generic[Request, Response, SubResponse, Context, RootValue],
 ):
     schema: BaseSchema
-    graphiql: bool | None
     graphql_ide: GraphQL_IDE | None
     request_adapter_class: Callable[[Request], SyncHTTPRequestAdapter]
 
