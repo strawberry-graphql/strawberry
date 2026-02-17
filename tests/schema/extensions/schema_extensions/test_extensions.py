@@ -1,6 +1,5 @@
 import contextlib
 import json
-import warnings
 from typing import Any
 from unittest.mock import patch
 
@@ -411,190 +410,6 @@ async def test_extension_no_yield(default_query_types_and_query):
     SyncExt.assert_expected()
 
 
-def test_raise_if_defined_both_legacy_and_new_style(default_query_types_and_query):
-    class WrongUsageExtension(SchemaExtension):
-        def on_execute(self):
-            yield
-
-        def on_executing_start(self): ...
-
-    schema = strawberry.Schema(
-        query=default_query_types_and_query.query_type, extensions=[WrongUsageExtension]
-    )
-    result = schema.execute_sync(default_query_types_and_query.query)
-    assert len(result.errors) == 1
-    assert isinstance(result.errors[0].original_error, ValueError)
-
-
-async def test_legacy_extension_supported():
-    with warnings.catch_warnings(record=True) as w:
-        warnings.filterwarnings(
-            "ignore",
-            category=DeprecationWarning,
-            message=r"'.*' is deprecated and slated for removal in Python 3\.\d+",
-        )
-
-        class CompatExtension(ExampleExtension):
-            async def on_request_start(self):
-                self.called_hooks.append(
-                    f"{SchemaExtension.on_operation.__name__} Entered"
-                )
-
-            async def on_request_end(self):
-                self.called_hooks.append(
-                    f"{SchemaExtension.on_operation.__name__} Exited"
-                )
-
-            async def on_validation_start(self):
-                self.called_hooks.append(
-                    f"{SchemaExtension.on_validate.__name__} Entered"
-                )
-
-            async def on_validation_end(self):
-                self.called_hooks.append(
-                    f"{SchemaExtension.on_validate.__name__} Exited"
-                )
-
-            async def on_parsing_start(self):
-                self.called_hooks.append(f"{SchemaExtension.on_parse.__name__} Entered")
-
-            async def on_parsing_end(self):
-                self.called_hooks.append(f"{SchemaExtension.on_parse.__name__} Exited")
-
-            def on_executing_start(self):
-                self.called_hooks.append(
-                    f"{SchemaExtension.on_execute.__name__} Entered"
-                )
-
-            def on_executing_end(self):
-                self.called_hooks.append(
-                    f"{SchemaExtension.on_execute.__name__} Exited"
-                )
-
-        @strawberry.type
-        class Person:
-            name: str = "Jess"
-
-        @strawberry.type
-        class Query:
-            @strawberry.field
-            def person(self) -> Person:
-                return Person()
-
-        schema = strawberry.Schema(query=Query, extensions=[CompatExtension])
-        query = "query TestQuery { person { name } }"
-
-        result = await schema.execute(query)
-        assert result.errors is None
-
-        assert CompatExtension.called_hooks == list(
-            filter(lambda x: x.startswith("on_"), ExampleExtension.expected)
-        )
-        assert "Event driven styled extensions for" in w[0].message.args[0]
-
-
-async def test_legacy_only_start():
-    with warnings.catch_warnings(record=True) as w:
-        warnings.filterwarnings(
-            "ignore",
-            category=DeprecationWarning,
-            message=r"'.*' is deprecated and slated for removal in Python 3\.\d+",
-        )
-
-        class CompatExtension(ExampleExtension):
-            expected = list(
-                filter(lambda x: x.endswith(" Entered"), ExampleExtension.expected)
-            )
-
-            async def on_request_start(self):
-                self.called_hooks.append(
-                    f"{SchemaExtension.on_operation.__name__} Entered"
-                )
-
-            async def on_validation_start(self):
-                self.called_hooks.append(
-                    f"{SchemaExtension.on_validate.__name__} Entered"
-                )
-
-            async def on_parsing_start(self):
-                self.called_hooks.append(f"{SchemaExtension.on_parse.__name__} Entered")
-
-            def on_executing_start(self):
-                self.called_hooks.append(
-                    f"{SchemaExtension.on_execute.__name__} Entered"
-                )
-
-        @strawberry.type
-        class Person:
-            name: str = "Jess"
-
-        @strawberry.type
-        class Query:
-            @strawberry.field
-            def person(self) -> Person:
-                return Person()
-
-        schema = strawberry.Schema(query=Query, extensions=[CompatExtension])
-        query = "query TestQuery { person { name } }"
-
-        result = await schema.execute(query)
-        assert result.errors is None
-
-        CompatExtension.assert_expected()
-        assert "Event driven styled extensions for" in w[0].message.args[0]
-
-
-async def test_legacy_only_end():
-    with warnings.catch_warnings(record=True) as w:
-        warnings.filterwarnings(
-            "ignore",
-            category=DeprecationWarning,
-            message=r"'.*' is deprecated and slated for removal in Python 3\.\d+",
-        )
-
-        class CompatExtension(ExampleExtension):
-            expected = list(
-                filter(lambda x: x.endswith(" Exited"), ExampleExtension.expected)
-            )
-
-            async def on_request_end(self):
-                self.called_hooks.append(
-                    f"{SchemaExtension.on_operation.__name__} Exited"
-                )
-
-            async def on_validation_end(self):
-                self.called_hooks.append(
-                    f"{SchemaExtension.on_validate.__name__} Exited"
-                )
-
-            async def on_parsing_end(self):
-                self.called_hooks.append(f"{SchemaExtension.on_parse.__name__} Exited")
-
-            def on_executing_end(self):
-                self.called_hooks.append(
-                    f"{SchemaExtension.on_execute.__name__} Exited"
-                )
-
-        @strawberry.type
-        class Person:
-            name: str = "Jess"
-
-        @strawberry.type
-        class Query:
-            @strawberry.field
-            def person(self) -> Person:
-                return Person()
-
-        schema = strawberry.Schema(query=Query, extensions=[CompatExtension])
-        query = "query TestQuery { person { name } }"
-
-        result = await schema.execute(query)
-        assert result.errors is None
-
-        CompatExtension.assert_expected()
-        assert "Event driven styled extensions for" in w[0].message.args[0]
-
-
 def test_warning_about_async_get_results_hooks_in_sync_context():
     class MyExtension(SchemaExtension):
         async def get_results(self):
@@ -961,7 +776,7 @@ async def test_extension_override_execution_async():
 
 @patch("strawberry.schema.schema.execute", wraps=original_execute)
 def test_execution_cache_example(mock_original_execute):
-    # Test that the example of how to use the on_executing_start hook in the
+    # Test that the example of how to use the on_execute hook in the
     # docs actually works
 
     response_cache = {}
@@ -1033,7 +848,7 @@ def test_execution_cache_example(mock_original_execute):
 
 @patch("strawberry.schema.schema.execute", wraps=original_execute)
 def test_execution_reject_example(mock_original_execute):
-    # Test that the example of how to use the on_executing_start hook in the
+    # Test that the example of how to use the on_execute hook in the
     # docs actually works
 
     class RejectSomeQueries(SchemaExtension):
