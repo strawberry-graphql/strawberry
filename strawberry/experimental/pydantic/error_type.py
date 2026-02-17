@@ -9,12 +9,10 @@ from typing import (
     cast,
 )
 
-from pydantic import BaseModel
-
 from strawberry.experimental.pydantic._compat import (
     CompatModelField,
     PydanticCompat,
-    lenient_issubclass,
+    is_model_class,
 )
 from strawberry.experimental.pydantic.utils import (
     get_private_fields,
@@ -30,6 +28,8 @@ from .exceptions import MissingFieldsListError
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
+
+    from pydantic import BaseModel
 
     from strawberry.types.base import WithStrawberryObjectDefinition
 
@@ -49,13 +49,13 @@ def field_type_to_type(type_: type) -> Any | list[Any] | None:
 
         if is_list(child_type):
             strawberry_type = field_type_to_type(child_type)
-        elif lenient_issubclass(child_type, BaseModel):
+        elif is_model_class(child_type):
             strawberry_type = get_strawberry_type_from_model(child_type)
         else:
             strawberry_type = list[error_class]
 
         strawberry_type = Optional[strawberry_type]  # noqa: UP045
-    elif lenient_issubclass(type_, BaseModel):
+    elif is_model_class(type_):
         strawberry_type = get_strawberry_type_from_model(type_)
         return Optional[strawberry_type]  # noqa: UP045
 
