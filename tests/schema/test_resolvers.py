@@ -1,5 +1,4 @@
 # type: ignore
-from contextlib import nullcontext
 from typing import Any, Generic, NamedTuple, TypeVar
 
 import pytest
@@ -495,10 +494,6 @@ def test_generic_resolver_list():
     assert result.data == {"listType": [{"some": 1}]}
 
 
-def name_based_info(info, icon: str) -> str:
-    return f"I'm a resolver for {icon} {info.field_name}"
-
-
 def type_based_info(info: strawberry.Info, icon: str) -> str:
     return f"I'm a resolver for {icon} {info.field_name}"
 
@@ -512,40 +507,23 @@ def arbitrarily_named_info(icon: str, info_argument: Info) -> str:
 
 
 @pytest.mark.parametrize(
-    ("resolver", "deprecation"),
+    "resolver",
     [
-        pytest.param(
-            name_based_info,
-            pytest.deprecated_call(match="Argument name-based matching of"),
-        ),
-        pytest.param(type_based_info, nullcontext()),
-        pytest.param(generic_type_based_info, nullcontext()),
-        pytest.param(arbitrarily_named_info, nullcontext()),
+        pytest.param(type_based_info),
+        pytest.param(generic_type_based_info),
+        pytest.param(arbitrarily_named_info),
     ],
 )
-def test_info_argument(resolver, deprecation):
-    with deprecation:
-
-        @strawberry.type
-        class ResolverGreeting:
-            hello: str = strawberry.field(resolver=resolver)
+def test_info_argument(resolver):
+    @strawberry.type
+    class ResolverGreeting:
+        hello: str = strawberry.field(resolver=resolver)
 
     schema = strawberry.Schema(query=ResolverGreeting)
     result = schema.execute_sync('{ hello(icon: "🍓") }')
 
     assert not result.errors
     assert result.data["hello"] == "I'm a resolver for 🍓 hello"
-
-
-def test_name_based_info_is_deprecated():
-    with pytest.deprecated_call(match=r"Argument name-based matching of 'info'"):
-
-        @strawberry.type
-        class Query:
-            @strawberry.field
-            def foo(info: Any) -> str: ...
-
-        strawberry.Schema(query=Query)
 
 
 class UserLiteral(NamedTuple):
