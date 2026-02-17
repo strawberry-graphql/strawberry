@@ -1,6 +1,16 @@
 CHANGELOG
 =========
 
+0.296.1 - 2026-02-17
+--------------------
+
+Fix `strawberry.experimental.pydantic` to correctly handle nested `pydantic.v1`
+models when running on Pydantic 2 (for example, `list[LegacyModel]` fields with
+`all_fields=True`), and add a regression test for this case.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #4246](https://github.com/strawberry-graphql/strawberry/pull/4246/)
+
+
 0.296.0 - 2026-02-17
 --------------------
 
