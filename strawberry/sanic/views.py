@@ -1,10 +1,7 @@
 from __future__ import annotations
 
-import json
-import warnings
 from typing import (
     TYPE_CHECKING,
-    Any,
     TypeGuard,
 )
 
@@ -65,31 +62,11 @@ class GraphQLView(
         schema: BaseSchema,
         graphql_ide: GraphQL_IDE | None = "graphiql",
         allow_queries_via_get: bool = True,
-        json_encoder: type[json.JSONEncoder] | None = None,
-        json_dumps_params: dict[str, Any] | None = None,
         multipart_uploads_enabled: bool = False,
     ) -> None:
         self.schema = schema
         self.allow_queries_via_get = allow_queries_via_get
-        self.json_encoder = json_encoder
-        self.json_dumps_params = json_dumps_params
         self.multipart_uploads_enabled = multipart_uploads_enabled
-
-        if self.json_encoder is not None:  # pragma: no cover
-            warnings.warn(
-                "json_encoder is deprecated, override encode_json instead",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-
-        if self.json_dumps_params is not None:  # pragma: no cover
-            warnings.warn(
-                "json_dumps_params is deprecated, override encode_json instead",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-
-            self.json_encoder = json.JSONEncoder
 
         self.graphql_ide = graphql_ide
 
