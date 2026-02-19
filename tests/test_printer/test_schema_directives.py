@@ -748,7 +748,7 @@ def test_print_directive_with_unset_value():
     @strawberry.type
     class Query:
         @strawberry.field(directives=[FooDirective(input=FooInput(a="something"))])
-        def foo(self, info) -> str: ...
+        def foo(self, info: strawberry.Info) -> str: ...
 
     schema = strawberry.Schema(query=Query)
 
@@ -789,7 +789,7 @@ def test_print_directive_with_snake_case_arguments():
                 FooDirective(input=FooInput(hello="hello", hello_world="hello world"))
             ]
         )
-        def foo(self, info) -> str: ...
+        def foo(self, info: strawberry.Info) -> str: ...
 
     schema = strawberry.Schema(query=Query)
 

@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import warnings
 from typing import TYPE_CHECKING
 
 from chalice.app import Request, Response
@@ -25,21 +24,12 @@ class GraphQLView(
     def __init__(
         self,
         schema: BaseSchema,
-        graphiql: bool | None = None,
         graphql_ide: GraphQL_IDE | None = "graphiql",
         allow_queries_via_get: bool = True,
     ) -> None:
         self.allow_queries_via_get = allow_queries_via_get
         self.schema = schema
-        if graphiql is not None:
-            warnings.warn(
-                "The `graphiql` argument is deprecated in favor of `graphql_ide`",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-            self.graphql_ide = "graphiql" if graphiql else None
-        else:
-            self.graphql_ide = graphql_ide
+        self.graphql_ide = graphql_ide
 
     def get_root_value(self, request: Request) -> RootValue | None:
         return None

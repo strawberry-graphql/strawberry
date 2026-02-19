@@ -3,7 +3,6 @@ from __future__ import annotations as _
 import asyncio
 import inspect
 import sys
-import warnings
 from functools import cached_property
 from inspect import isasyncgenfunction
 from typing import (
@@ -143,19 +142,6 @@ class ReservedType(NamedTuple):
         if type_parameters:
             return type_parameters[0]
 
-        # Fallback to matching by name
-        if not self.name:
-            return None
-        reserved_name = ReservedName(name=self.name).find(parameters, resolver)
-        if reserved_name:
-            warning = DeprecationWarning(
-                f"Argument name-based matching of '{self.name}' is deprecated and will "
-                "be removed in v1.0. Ensure that reserved arguments are annotated "
-                "their respective types (i.e. use value: 'DirectiveValue[str]' instead "
-                "of 'value: str' and 'info: Info' instead of a plain 'info')."
-            )
-            warnings.warn(warning, stacklevel=3)
-            return reserved_name
         return None
 
     def is_reserved_type(self, other: builtins.type | str | ForwardRef) -> bool:
