@@ -1,6 +1,153 @@
 CHANGELOG
 =========
 
+0.296.1 - 2026-02-17
+--------------------
+
+Fix `strawberry.experimental.pydantic` to correctly handle nested `pydantic.v1`
+models when running on Pydantic 2 (for example, `list[LegacyModel]` fields with
+`all_fields=True`), and add a regression test for this case.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #4246](https://github.com/strawberry-graphql/strawberry/pull/4246/)
+
+
+0.296.0 - 2026-02-17
+--------------------
+
+Remove deprecated argument name-based matching for `info` and `directive_value` parameters, deprecated since [0.159.0](https://github.com/strawberry-graphql/strawberry/releases/tag/0.159.0).
+
+### Migration guide
+
+Parameters named `info` or `directive_value` are no longer automatically recognized by name. You must use explicit type annotations.
+
+**Before (deprecated):**
+```python
+@strawberry.type
+class Query:
+    @strawberry.field
+    def example(self, info) -> str:
+        return info.context["key"]
+```
+
+**After:**
+```python
+@strawberry.type
+class Query:
+    @strawberry.field
+    def example(self, info: strawberry.Info) -> str:
+        return info.context["key"]
+```
+
+Contributed by [Luis Gustavo](https://github.com/Ckk3) via [PR #4224](https://github.com/strawberry-graphql/strawberry/pull/4224/)
+
+
+0.295.0 - 2026-02-17
+--------------------
+
+Remove deprecated legacy extension hooks (`on_request_start`, `on_request_end`, `on_validation_start`, `on_validation_end`, `on_parsing_start`, `on_parsing_end`), deprecated since [0.159.0](https://github.com/strawberry-graphql/strawberry/releases/tag/0.159.0).
+
+### Migration guide
+
+**Before (deprecated):**
+```python
+class MyExtension(SchemaExtension):
+    def on_request_start(self): ...
+
+    def on_request_end(self): ...
+```
+
+**After:**
+```python
+class MyExtension(SchemaExtension):
+    def on_operation(self):
+        # on_request_start logic
+        yield
+        # on_request_end logic
+```
+
+Contributed by [Luis Gustavo](https://github.com/Ckk3) via [PR #4226](https://github.com/strawberry-graphql/strawberry/pull/4226/)
+
+
+0.294.0 - 2026-02-17
+--------------------
+
+Remove deprecated Sanic-specific features: `json_encoder` parameter (deprecated since [0.147.0](https://github.com/strawberry-graphql/strawberry/releases/tag/0.147.0)), `json_dumps_params` parameter (deprecated since [0.147.0](https://github.com/strawberry-graphql/strawberry/releases/tag/0.147.0)), and context dot notation (deprecated since [0.146.0](https://github.com/strawberry-graphql/strawberry/releases/tag/0.146.0)).
+
+### Migration guide
+
+**json_encoder / json_dumps_params — Before (deprecated):**
+```python
+class MyView(GraphQLView):
+    def __init__(self):
+        super().__init__(json_encoder=MyEncoder, json_dumps_params={"indent": 2})
+```
+
+**After:**
+```python
+class MyView(GraphQLView):
+    def encode_json(self, data):
+        return json.dumps(data, cls=MyEncoder, indent=2)
+```
+
+**Context dot notation — Before (deprecated):**
+```python
+request = info.context.request
+```
+
+**After:**
+```python
+request = info.context["request"]
+```
+
+Contributed by [Luis Gustavo](https://github.com/Ckk3) via [PR #4221](https://github.com/strawberry-graphql/strawberry/pull/4221/)
+
+
+0.293.0 - 2026-02-16
+--------------------
+
+Remove deprecated `channel_listen` method from the Channels integration, deprecated since [0.193.0](https://github.com/strawberry-graphql/strawberry/releases/tag/0.193.0).
+
+### Migration guide
+
+**Before (deprecated):**
+```python
+async for message in info.context["ws"].channel_listen("my_channel"):
+    yield Message(message=message["text"])
+```
+
+**After:**
+```python
+async with info.context["ws"].listen_to_channel("my_channel") as listener:
+    async for message in listener:
+        yield Message(message=message["text"])
+```
+
+Contributed by [Luis Gustavo](https://github.com/Ckk3) via [PR #4216](https://github.com/strawberry-graphql/strawberry/pull/4216/)
+
+
+0.292.0 - 2026-02-16
+--------------------
+
+Remove deprecated `graphiql` parameter from all HTTP integrations (ASGI, Flask, FastAPI, Quart, Sanic, Chalice, Django, Aiohttp, Channels, and Litestar), deprecated since [0.213.0](https://github.com/strawberry-graphql/strawberry/releases/tag/0.213.0).
+
+### Migration guide
+
+**Before (deprecated):**
+```python
+app = GraphQL(schema, graphiql=True)
+```
+
+**After:**
+```python
+app = GraphQL(schema, graphql_ide="graphiql")
+
+# or to disable:
+app = GraphQL(schema, graphql_ide=None)
+```
+
+Contributed by [Luis Gustavo](https://github.com/Ckk3) via [PR #4222](https://github.com/strawberry-graphql/strawberry/pull/4222/)
+
+
 0.291.3 - 2026-02-07
 --------------------
 
