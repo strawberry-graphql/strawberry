@@ -1,6 +1,32 @@
 CHANGELOG
 =========
 
+0.297.0 - 2026-02-19
+--------------------
+
+Remove the `ExecutionContext.errors` property, deprecated since [0.276.2](https://github.com/strawberry-graphql/strawberry/releases/tag/0.276.2).
+
+### Migration guide
+
+**Before (deprecated):**
+```python
+class MyExtension(SchemaExtension):
+    def on_execute(self):
+        yield
+        errors = self.execution_context.errors
+```
+
+**After:**
+```python
+class MyExtension(SchemaExtension):
+    def on_execute(self):
+        yield
+        errors = self.execution_context.pre_execution_errors
+```
+
+Contributed by [Luis Gustavo](https://github.com/Ckk3) via [PR #4214](https://github.com/strawberry-graphql/strawberry/pull/4214/)
+
+
 0.296.2 - 2026-02-19
 --------------------
 
