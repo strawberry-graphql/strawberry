@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.296.2 - 2026-02-19
+--------------------
+
+Fix false-positive `DuplicatedTypeName` error when two different `StrawberryObjectDefinition` instances share the same `origin` class. This can happen when third-party decorators (e.g. strawberry-django's `filter_type`) re-process a type, creating a new definition while keeping the same Python class as origin.
+
+Contributed by [Thiago Bellini Ribeiro](https://github.com/bellini666) via [PR #4193](https://github.com/strawberry-graphql/strawberry/pull/4193/)
+
+
 0.296.1 - 2026-02-17
 --------------------
 
