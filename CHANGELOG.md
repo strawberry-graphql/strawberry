@@ -1,6 +1,26 @@
 CHANGELOG
 =========
 
+0.299.0 - 2026-02-20
+--------------------
+
+Remove deprecated `debug-server` extra from `pyproject.toml`, deprecated since [0.283.0](https://github.com/strawberry-graphql/strawberry/releases/tag/0.283.0).
+
+### Migration guide
+
+**Before (deprecated):**
+```bash
+pip install strawberry-graphql[debug-server]
+```
+
+**After:**
+```bash
+pip install strawberry-graphql[cli]
+```
+
+Contributed by [Luis Gustavo](https://github.com/Ckk3) via [PR #4228](https://github.com/strawberry-graphql/strawberry/pull/4228/)
+
+
 0.298.1 - 2026-02-20
 --------------------
 
