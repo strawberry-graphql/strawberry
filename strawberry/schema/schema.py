@@ -383,6 +383,21 @@ class Schema(BaseSchema):
     def _sync_extensions(self) -> list[SchemaExtension]:
         return self.get_extensions(sync=True)
 
+    def _create_middleware_manager(
+        self, extensions: list[SchemaExtension]
+    ) -> MiddlewareManager:
+        """Create a fresh MiddlewareManager from extensions that implement resolve.
+
+        Used by async execute/subscribe to build per-request middleware. Async
+        execution must not cache extensions or middleware because concurrent
+        requests would overwrite each other's execution_context. Sync execution
+        is safe to cache (_sync_extensions, _get_middleware_manager) because it
+        cannot run concurrently.
+        """
+        return MiddlewareManager(
+            *(ext for ext in extensions if ext._implements_resolve())
+        )
+
     def create_extensions_runner(
         self, execution_context: ExecutionContext, extensions: list[SchemaExtension]
     ) -> SchemaExtensionsRunner:
@@ -572,9 +587,7 @@ class Schema(BaseSchema):
             extension.execution_context = execution_context
 
         extensions_runner = self.create_extensions_runner(execution_context, extensions)
-        middleware_manager = MiddlewareManager(
-            *(ext for ext in extensions if ext._implements_resolve())
-        )
+        middleware_manager = self._create_middleware_manager(extensions)
 
         execute_function = execute
 
@@ -906,9 +919,7 @@ class Schema(BaseSchema):
             extensions_runner=self.create_extensions_runner(
                 execution_context, extensions
             ),
-            middleware_manager=MiddlewareManager(
-                *(ext for ext in extensions if ext._implements_resolve())
-            ),
+            middleware_manager=self._create_middleware_manager(extensions),
             execution_context_class=self.execution_context_class,
             operation_extensions=operation_extensions,
         )

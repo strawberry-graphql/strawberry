@@ -1,4 +1,5 @@
 import asyncio
+from collections.abc import AsyncGenerator
 
 import pytest
 from freezegun import freeze_time
@@ -271,3 +272,40 @@ async def test_concurrent_execution_context_result():
     )
     assert len(results) == 2
     assert all(r is not None for r in results)
+
+
+@pytest.mark.asyncio
+async def test_concurrent_subscribe_has_isolated_extensions():
+    """Regression test: concurrent subscriptions must get isolated extension instances."""
+    contexts: list[object] = []
+
+    class RecordContextExtension(SchemaExtension):
+        async def on_execute(self):
+            contexts.append(id(self.execution_context))
+            yield
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def node(self) -> str:
+            return ""
+
+    @strawberry.type
+    class Subscription:
+        @strawberry.subscription
+        async def node(self) -> AsyncGenerator[str, None]:
+            yield ""
+
+    schema = strawberry.Schema(
+        query=Query, subscription=Subscription, extensions=[RecordContextExtension]
+    )
+
+    async def run() -> None:
+        sub = await schema.subscribe("subscription { node }")
+        async for result in sub:  # type: ignore[union-attr]
+            assert result.data == {"node": ""}
+            break
+
+    await asyncio.gather(run(), run())
+    assert len(contexts) == 2
+    assert contexts[0] != contexts[1], "each subscription must have its own context"
