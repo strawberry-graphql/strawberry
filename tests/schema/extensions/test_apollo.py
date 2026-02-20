@@ -1,8 +1,11 @@
+import asyncio
+
 import pytest
 from freezegun import freeze_time
 from graphql.utilities import get_introspection_query
 
 import strawberry
+from strawberry.extensions import SchemaExtension
 from strawberry.extensions.tracing.apollo import (
     ApolloTracingExtension,
     ApolloTracingExtensionSync,
@@ -243,3 +246,28 @@ def test_tracing_resolvers_populated_on_multiple_sync_executions():
             f"Expected 1 resolver on execution {i}, got {len(resolvers)}"
         )
         assert resolvers[0]["field_name"] == "node"
+
+
+@pytest.mark.asyncio
+async def test_concurrent_execution_context_result():
+    """Regression test: execution_context.result must not be None during concurrent requests."""
+    results = []
+
+    class RecordResultExtension(SchemaExtension):
+        async def on_operation(self):
+            yield
+            results.append(self.execution_context.result)
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def node(self) -> str:
+            return ""
+
+    schema = strawberry.Schema(Query, extensions=[RecordResultExtension])
+    await asyncio.gather(
+        schema.execute("query { node }"),
+        schema.execute("query { node }"),
+    )
+    assert len(results) == 2
+    assert all(r is not None for r in results)

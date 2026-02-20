@@ -383,10 +383,6 @@ class Schema(BaseSchema):
     def _sync_extensions(self) -> list[SchemaExtension]:
         return self.get_extensions(sync=True)
 
-    @cached_property
-    def _async_extensions(self) -> list[SchemaExtension]:
-        return self.get_extensions(sync=False)
-
     def create_extensions_runner(
         self, execution_context: ExecutionContext, extensions: list[SchemaExtension]
     ) -> SchemaExtensionsRunner:
@@ -570,13 +566,15 @@ class Schema(BaseSchema):
             operation_name=operation_name,
             operation_extensions=operation_extensions,
         )
-        extensions = self._async_extensions
+        extensions = self.get_extensions()
         # TODO (#3571): remove this when we implement execution context as parameter.
         for extension in extensions:
             extension.execution_context = execution_context
 
         extensions_runner = self.create_extensions_runner(execution_context, extensions)
-        middleware_manager = self._get_middleware_manager(extensions)
+        middleware_manager = MiddlewareManager(
+            *(ext for ext in extensions if ext._implements_resolve())
+        )
 
         execute_function = execute
 
@@ -898,7 +896,7 @@ class Schema(BaseSchema):
             root_value=root_value,
             operation_name=operation_name,
         )
-        extensions = self._async_extensions
+        extensions = self.get_extensions()
         # TODO (#3571): remove this when we implement execution context as parameter.
         for extension in extensions:
             extension.execution_context = execution_context
@@ -908,7 +906,9 @@ class Schema(BaseSchema):
             extensions_runner=self.create_extensions_runner(
                 execution_context, extensions
             ),
-            middleware_manager=self._get_middleware_manager(extensions),
+            middleware_manager=MiddlewareManager(
+                *(ext for ext in extensions if ext._implements_resolve())
+            ),
             execution_context_class=self.execution_context_class,
             operation_extensions=operation_extensions,
         )
