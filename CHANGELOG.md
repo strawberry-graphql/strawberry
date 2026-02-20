@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.298.1 - 2026-02-20
+--------------------
+
+Fix `execution_context.result` being `None` or belonging to a wrong request when multiple async requests execute concurrently (e.g. via `asyncio.gather`). Shared cached extension instances are no longer reused across concurrent async requests.
+
+Contributed by [Thiago Bellini Ribeiro](https://github.com/bellini666) via [PR #4256](https://github.com/strawberry-graphql/strawberry/pull/4256/)
+
+
 0.298.0 - 2026-02-20
 --------------------
 
