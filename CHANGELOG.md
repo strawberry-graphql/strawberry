@@ -1,6 +1,33 @@
 CHANGELOG
 =========
 
+0.298.0 - 2026-02-20
+--------------------
+
+Remove deprecated `types` parameter from `strawberry.union()`, deprecated since [0.191.0](https://github.com/strawberry-graphql/strawberry/releases/tag/0.191.0).
+
+You can run `strawberry upgrade annotated-union <path>` to automatically migrate your code.
+
+### Migration guide
+
+**Before (deprecated):**
+```python
+import strawberry
+
+MyUnion = strawberry.union("MyUnion", types=(TypeA, TypeB))
+```
+
+**After:**
+```python
+from typing import Annotated
+import strawberry
+
+MyUnion = Annotated[TypeA | TypeB, strawberry.union("MyUnion")]
+```
+
+Contributed by [Luis Gustavo](https://github.com/Ckk3) via [PR #4220](https://github.com/strawberry-graphql/strawberry/pull/4220/)
+
+
 0.297.0 - 2026-02-19
 --------------------
 
