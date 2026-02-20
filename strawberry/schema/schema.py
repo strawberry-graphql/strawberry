@@ -402,13 +402,7 @@ class Schema(BaseSchema):
     def _get_middleware_manager(
         self, extensions: list[SchemaExtension], *, cached: bool = True
     ) -> MiddlewareManager:
-        """Create a MiddlewareManager from extensions that implement resolve.
-
-        Pass cached=False for async execution: concurrent requests need their
-        own extensions and middleware so they don't overwrite each other's
-        execution_context. Sync execution can safely cache because it cannot
-        run concurrently.
-        """
+        # create a middleware manager with all the extensions that implement resolve
         if cached and self._cached_middleware_manager:
             return self._cached_middleware_manager
 
@@ -584,6 +578,8 @@ class Schema(BaseSchema):
             extension.execution_context = execution_context
 
         extensions_runner = self.create_extensions_runner(execution_context, extensions)
+        # uncached: each async request needs its own middleware to avoid
+        # concurrent requests overwriting each other's execution_context
         middleware_manager = self._get_middleware_manager(extensions, cached=False)
 
         execute_function = execute
@@ -916,6 +912,8 @@ class Schema(BaseSchema):
             extensions_runner=self.create_extensions_runner(
                 execution_context, extensions
             ),
+            # uncached: subscriptions are long-lived and concurrent, so each
+            # needs isolated middleware to keep its own execution_context
             middleware_manager=self._get_middleware_manager(extensions, cached=False),
             execution_context_class=self.execution_context_class,
             operation_extensions=operation_extensions,
