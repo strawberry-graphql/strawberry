@@ -357,7 +357,7 @@ type Query {
 
 Pydantic BaseModels may define a custom type with
 [`__get_validators__`](https://pydantic-docs.helpmanual.io/usage/types/#classes-with-__get_validators__)
-logic. You will need to add a scalar type and add the mapping to the
+logic. You will need to add a scalar definition and add the mapping to the
 `scalar_overrides` argument in the Schema class.
 
 ```python
@@ -383,14 +383,6 @@ class Example(BaseModel):
 class ExampleGQL: ...
 
 
-MyScalarType = strawberry.scalar(
-    MyCustomType,
-    # or another function describing how to represent MyCustomType in the response
-    serialize=str,
-    parse_value=lambda v: MyCustomType(),
-)
-
-
 @strawberry.type
 class Query:
     @strawberry.field()
@@ -398,8 +390,17 @@ class Query:
         return Example(custom=MyCustomType())
 
 
-# Tells strawberry to convert MyCustomType into MyScalarType
-schema = strawberry.Schema(query=Query, scalar_overrides={MyCustomType: MyScalarType})
+schema = strawberry.Schema(
+    query=Query,
+    scalar_overrides={
+        MyCustomType: strawberry.scalar(
+            name="MyScalarType",
+            # or another function describing how to represent MyCustomType in the response
+            serialize=str,
+            parse_value=lambda v: MyCustomType(),
+        )
+    },
+)
 ```
 
 ## Custom Conversion Logic
@@ -429,11 +430,7 @@ class User(BaseModel):
     hash: bytes
 
 
-Base64 = strawberry.scalar(
-    NewType("Base64", bytes),
-    serialize=lambda v: base64.b64encode(v).decode("utf-8"),
-    parse_value=lambda v: base64.b64decode(v.encode("utf-8")),
-)
+Base64 = NewType("Base64", bytes)
 
 
 @strawberry.experimental.pydantic.type(model=User)
@@ -449,7 +446,16 @@ class Query:
         return UserType.from_pydantic(User(id=123, hash=b"abcd"))
 
 
-schema = strawberry.Schema(query=Query)
+schema = strawberry.Schema(
+    query=Query,
+    scalar_overrides={
+        Base64: strawberry.scalar(
+            name="Base64",
+            serialize=lambda v: base64.b64encode(v).decode("utf-8"),
+            parse_value=lambda v: base64.b64decode(v.encode("utf-8")),
+        )
+    },
+)
 
 print(schema.execute_sync("query { test { id, hash } }").data)
 # {"test": {"id": "123", "hash": "YWJjZA=="}}
