@@ -35,7 +35,7 @@ EpochDateTime = NewType("EpochDateTime", datetime)
 
 @strawberry.type
 class Query:
-    created: datetime
+    created: EpochDateTime
 
 
 schema = strawberry.Schema(
