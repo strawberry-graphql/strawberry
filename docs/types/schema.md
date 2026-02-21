@@ -116,7 +116,7 @@ union results. See
 
 #### `scalar_overrides: Optional[Dict[object, ScalarDefinition]] = None`
 
-Override the implementation of the built in scalars.
+Override the implementation of the built-in scalars.
 [More information](/docs/types/scalars#overriding-built-in-scalars).
 
 ---
