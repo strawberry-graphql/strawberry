@@ -1,6 +1,26 @@
 CHANGELOG
 =========
 
+0.300.0 - 2026-02-21
+--------------------
+
+Remove deprecated `asserts_errors` parameter from test clients, deprecated since [0.246.0](https://github.com/strawberry-graphql/strawberry/releases/tag/0.246.0).
+
+### Migration guide
+
+**Before (deprecated):**
+```python
+result = client.query(query, asserts_errors=False)
+```
+
+**After:**
+```python
+result = client.query(query, assert_no_errors=False)
+```
+
+Contributed by [Luis Gustavo](https://github.com/Ckk3) via [PR #4217](https://github.com/strawberry-graphql/strawberry/pull/4217/)
+
+
 0.299.0 - 2026-02-20
 --------------------
 
