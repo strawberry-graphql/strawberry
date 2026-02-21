@@ -16,7 +16,7 @@ def union(
 
     Args:
         name: The GraphQL name of the Union type.
-        description: The  GraphQL description of the Union type.
+        description: The GraphQL description of the Union type.
         directives: The directives to attach to the Union type.
         inaccessible: Whether the Union type is inaccessible.
         tags: The federation tags to attach to the Union type.

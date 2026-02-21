@@ -6,7 +6,7 @@ from typing import (
     Any,
     runtime_checkable,
 )
-from typing_extensions import NotRequired, Protocol, TypedDict, deprecated
+from typing_extensions import NotRequired, Protocol, TypedDict
 
 from graphql import specified_rules
 
@@ -14,6 +14,7 @@ from strawberry.utils.operation import get_first_operation, get_operation_type
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
+    from typing_extensions import NotRequired
 
     from graphql import ASTValidationRule
     from graphql.error.graphql_error import GraphQLError
@@ -85,12 +86,6 @@ class ExecutionContext:
             return None
 
         return get_first_operation(graphql_document)
-
-    @property
-    @deprecated("Use 'pre_execution_errors' instead")
-    def errors(self) -> list[GraphQLError] | None:
-        """Deprecated: Use pre_execution_errors instead."""
-        return self.pre_execution_errors
 
 
 @dataclasses.dataclass

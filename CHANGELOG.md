@@ -1,6 +1,115 @@
 CHANGELOG
 =========
 
+0.300.0 - 2026-02-21
+--------------------
+
+Remove deprecated `asserts_errors` parameter from test clients, deprecated since [0.246.0](https://github.com/strawberry-graphql/strawberry/releases/tag/0.246.0).
+
+### Migration guide
+
+**Before (deprecated):**
+```python
+result = client.query(query, asserts_errors=False)
+```
+
+**After:**
+```python
+result = client.query(query, assert_no_errors=False)
+```
+
+Contributed by [Luis Gustavo](https://github.com/Ckk3) via [PR #4217](https://github.com/strawberry-graphql/strawberry/pull/4217/)
+
+
+0.299.0 - 2026-02-20
+--------------------
+
+Remove deprecated `debug-server` extra from `pyproject.toml`, deprecated since [0.283.0](https://github.com/strawberry-graphql/strawberry/releases/tag/0.283.0).
+
+### Migration guide
+
+**Before (deprecated):**
+```bash
+pip install strawberry-graphql[debug-server]
+```
+
+**After:**
+```bash
+pip install strawberry-graphql[cli]
+```
+
+Contributed by [Luis Gustavo](https://github.com/Ckk3) via [PR #4228](https://github.com/strawberry-graphql/strawberry/pull/4228/)
+
+
+0.298.1 - 2026-02-20
+--------------------
+
+Fix `execution_context.result` being `None` or belonging to a wrong request when multiple async requests execute concurrently (e.g. via `asyncio.gather`). Shared cached extension instances are no longer reused across concurrent async requests.
+
+Contributed by [Thiago Bellini Ribeiro](https://github.com/bellini666) via [PR #4256](https://github.com/strawberry-graphql/strawberry/pull/4256/)
+
+
+0.298.0 - 2026-02-20
+--------------------
+
+Remove deprecated `types` parameter from `strawberry.union()`, deprecated since [0.191.0](https://github.com/strawberry-graphql/strawberry/releases/tag/0.191.0).
+
+You can run `strawberry upgrade annotated-union <path>` to automatically migrate your code.
+
+### Migration guide
+
+**Before (deprecated):**
+```python
+import strawberry
+
+MyUnion = strawberry.union("MyUnion", types=(TypeA, TypeB))
+```
+
+**After:**
+```python
+from typing import Annotated
+import strawberry
+
+MyUnion = Annotated[TypeA | TypeB, strawberry.union("MyUnion")]
+```
+
+Contributed by [Luis Gustavo](https://github.com/Ckk3) via [PR #4220](https://github.com/strawberry-graphql/strawberry/pull/4220/)
+
+
+0.297.0 - 2026-02-19
+--------------------
+
+Remove the `ExecutionContext.errors` property, deprecated since [0.276.2](https://github.com/strawberry-graphql/strawberry/releases/tag/0.276.2).
+
+### Migration guide
+
+**Before (deprecated):**
+```python
+class MyExtension(SchemaExtension):
+    def on_execute(self):
+        yield
+        errors = self.execution_context.errors
+```
+
+**After:**
+```python
+class MyExtension(SchemaExtension):
+    def on_execute(self):
+        yield
+        errors = self.execution_context.pre_execution_errors
+```
+
+Contributed by [Luis Gustavo](https://github.com/Ckk3) via [PR #4214](https://github.com/strawberry-graphql/strawberry/pull/4214/)
+
+
+0.296.2 - 2026-02-19
+--------------------
+
+Fix false-positive `DuplicatedTypeName` error when two different `StrawberryObjectDefinition` instances share the same `origin` class. This can happen when third-party decorators (e.g. strawberry-django's `filter_type`) re-process a type, creating a new definition while keeping the same Python class as origin.
+
+Contributed by [Thiago Bellini Ribeiro](https://github.com/bellini666) via [PR #4193](https://github.com/strawberry-graphql/strawberry/pull/4193/)
+
+
 0.296.1 - 2026-02-17
 --------------------
 

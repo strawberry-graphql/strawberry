@@ -1037,10 +1037,28 @@ class GraphQLCoreConverter:
         second_type_definition: StrawberryObjectDefinition | StrawberryType,
     ) -> bool:
         # TODO: maybe move this on the StrawberryType class
+        if not isinstance(
+            first_type_definition, StrawberryObjectDefinition
+        ) or not isinstance(second_type_definition, StrawberryObjectDefinition):
+            return False
+
+        if first_type_definition.origin is second_type_definition.origin:
+            return True
+
+        # When sys.modules is cleared (e.g. by test runners or Django reloaders)
+        # and a module is reimported, Python creates brand-new class objects.
+        # The identity check above fails, so fall back to comparing the
+        # fully-qualified class name which survives reimports.
+        first_origin = first_type_definition.origin
+        second_origin = second_type_definition.origin
         if (
-            not isinstance(first_type_definition, StrawberryObjectDefinition)
-            or not isinstance(second_type_definition, StrawberryObjectDefinition)
-            or first_type_definition.concrete_of is None
+            first_origin.__qualname__ == second_origin.__qualname__
+            and first_origin.__module__ == second_origin.__module__
+        ):
+            return True
+
+        if (
+            first_type_definition.concrete_of is None
             or first_type_definition.concrete_of != second_type_definition.concrete_of
             or (
                 first_type_definition.type_var_map.keys()

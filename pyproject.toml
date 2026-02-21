@@ -1,6 +1,6 @@
 [project]
 name = "strawberry-graphql"
-version = "0.296.1"
+version = "0.300.0"
 description = "A library for creating GraphQL APIs"
 authors = [{ name = "Patrick Arminio", email = "patrick.arminio@gmail.com" }]
 license = { text = "MIT" }
@@ -40,16 +40,6 @@ strawberry = "strawberry.cli:run"
 aiohttp = ["aiohttp>=3.7.4.post0,<4"]
 asgi = ["starlette>=0.18.0", "python-multipart>=0.0.7"]
 debug = ["rich>=12.0.0", "libcst"]
-debug-server = [
-  "starlette>=0.18.0",
-  "uvicorn>=0.11.6",
-  "websockets>=15.0.1,<16",
-  "python-multipart>=0.0.7",
-  "typer>=0.12.4",
-  "pygments>=2.3",
-  "rich>=12.0.0",
-  "libcst",
-]
 django = ["Django>=3.2", "asgiref>=3.2"]
 channels = ["channels>=3.0.5", "asgiref>=3.2"]
 flask = ["flask>=1.1"]

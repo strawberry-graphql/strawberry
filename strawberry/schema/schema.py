@@ -381,8 +381,10 @@ class Schema(BaseSchema):
     def _sync_extensions(self) -> list[SchemaExtension]:
         return self.get_extensions(sync=True)
 
-    @cached_property
+    @property
     def _async_extensions(self) -> list[SchemaExtension]:
+        # Fresh instances per access: concurrent async requests must not share
+        # extension state. See _sync_extensions for the cached counterpart.
         return self.get_extensions(sync=False)
 
     def create_extensions_runner(
@@ -402,14 +404,20 @@ class Schema(BaseSchema):
         return {"operation_extensions": operation_extensions}
 
     def _get_middleware_manager(
-        self, extensions: list[SchemaExtension]
+        self, extensions: list[SchemaExtension], *, cached: bool = True
     ) -> MiddlewareManager:
         # create a middleware manager with all the extensions that implement resolve
-        if not self._cached_middleware_manager:
-            self._cached_middleware_manager = MiddlewareManager(
-                *(ext for ext in extensions if ext._implements_resolve())
-            )
-        return self._cached_middleware_manager
+        if cached and self._cached_middleware_manager:
+            return self._cached_middleware_manager
+
+        manager = MiddlewareManager(
+            *(ext for ext in extensions if ext._implements_resolve())
+        )
+
+        if cached:
+            self._cached_middleware_manager = manager
+
+        return manager
 
     def _create_execution_context(
         self,
@@ -574,7 +582,9 @@ class Schema(BaseSchema):
             extension.execution_context = execution_context
 
         extensions_runner = self.create_extensions_runner(execution_context, extensions)
-        middleware_manager = self._get_middleware_manager(extensions)
+        # uncached: each async request needs its own middleware to avoid
+        # concurrent requests overwriting each other's execution_context
+        middleware_manager = self._get_middleware_manager(extensions, cached=False)
 
         execute_function = execute
 
@@ -906,7 +916,9 @@ class Schema(BaseSchema):
             extensions_runner=self.create_extensions_runner(
                 execution_context, extensions
             ),
-            middleware_manager=self._get_middleware_manager(extensions),
+            # uncached: subscriptions are long-lived and concurrent, so each
+            # needs isolated middleware to keep its own execution_context
+            middleware_manager=self._get_middleware_manager(extensions, cached=False),
             execution_context_class=self.execution_context_class,
             operation_extensions=operation_extensions,
         )

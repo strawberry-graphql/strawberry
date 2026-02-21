@@ -15,7 +15,7 @@ class TypeB:
     b: int
 
 
-ABUnion = Annotated[TypeA | TypeB, strawberry.union("ABUnion", types=[TypeA, TypeB])]
+ABUnion = Annotated[TypeA | TypeB, strawberry.union("ABUnion")]
 
 # New syntax unions (without explicit types= argument) - for issue #4066
 NewSyntaxUnion = Annotated[TypeA | TypeB, strawberry.union("NewSyntaxUnion")]
@@ -32,7 +32,7 @@ TypeBLazy = Annotated[
 ]
 LazyABUnion = Annotated[
     TypeALazy | TypeBLazy,
-    strawberry.union("LazyABUnion", types=[TypeALazy, TypeBLazy]),
+    strawberry.union("LazyABUnion"),
 ]
 
 
