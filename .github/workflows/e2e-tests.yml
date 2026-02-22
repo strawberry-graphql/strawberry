@@ -30,27 +30,22 @@ jobs:
           cd e2e
           bunx playwright install --with-deps
 
-      - name: Setup Python
-        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+      - name: Install uv
+        uses: astral-sh/setup-uv@eac588ad8def6316056a12d4907a9d4d84ff7a3b # v7.3.0
         with:
+          enable-cache: true
           python-version: "3.12"
-
-      - name: Install Poetry
-        uses: snok/install-poetry@76e04a911780d5b312d89783f7b1cd627778900a # v1
-        with:
-          version: latest
-          virtualenvs-create: true
-          virtualenvs-in-project: true
 
       - name: Install Python dependencies
         run: |
-          poetry install --extras cli
-          poetry run pip install graphql-core==3.3.0a9
+          uv sync --extra cli
+          uv pip install graphql-core==3.3.0a9
 
       - name: Start Strawberry server
         run: |
           cd e2e
-          poetry run strawberry dev app:schema --port 8000 &
+          # --no-sync prevents uv from reverting graphql-core to lockfile version
+          uv run --no-sync strawberry dev app:schema --port 8000 &
           echo $! > server.pid
           sleep 5  # Wait for server to start
 

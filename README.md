@@ -100,14 +100,14 @@ urlpatterns = [
 
 ## Contributing
 
-We use [poetry](https://github.com/sdispater/poetry) to manage dependencies, to
+We use [uv](https://docs.astral.sh/uv) to manage dependencies, to
 get started follow these steps:
 
 ```shell
 git clone https://github.com/strawberry-graphql/strawberry
 cd strawberry
-poetry install
-poetry run pytest
+uv sync
+uv run pytest
 ```
 
 For all further detail, check out the [Contributing Page](CONTRIBUTING.md)

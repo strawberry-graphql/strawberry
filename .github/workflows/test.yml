@@ -14,8 +14,11 @@ on:
       - "tests/**"
       - "noxfile.py"
       - "pyproject.toml"
-      - "poetry.lock"
+      - "uv.lock"
       - ".github/workflows/test.yml"
+
+permissions:
+  contents: read
 
 jobs:
   generate-jobs-tests:
@@ -29,14 +32,12 @@ jobs:
           persist-credentials: false
       - name: Install uv
         uses: astral-sh/setup-uv@eac588ad8def6316056a12d4907a9d4d84ff7a3b # v7.3.0
-      - run: uv venv
-      - run: uv pip install "poetry<2.3" nox nox-poetry
+      - run: uv sync
       - id: set-matrix
         shell: bash
         run: |
-          . .venv/bin/activate
           echo sessions=$(
-            nox --json -t tests -l |
+            uv run nox --json -t tests -l |
             jq 'map(
               {
                 session,
@@ -58,17 +59,13 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
-      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+      - name: Install uv
+        uses: astral-sh/setup-uv@eac588ad8def6316056a12d4907a9d4d84ff7a3b # v7.3.0
         with:
-          python-version: |
-            3.10
-            3.11
-            3.12
-            3.13
-            3.14
+          enable-cache: true
 
-      - run: pip install "poetry<2.3" nox nox-poetry uv
-      - run: nox -r -t tests -s "${{ matrix.session.session }}"
+      - run: uv sync
+      - run: uv run nox -r -t tests -s "${{ matrix.session.session }}"
       - name: Rename coverage data
         if: ${{ always() }}
         run: |
@@ -97,9 +94,8 @@ jobs:
         with:
           persist-credentials: false
           fetch-depth: 0
-      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
-        with:
-          python-version: "3.12"
+      - name: Install uv
+        uses: astral-sh/setup-uv@eac588ad8def6316056a12d4907a9d4d84ff7a3b # v7.3.0
 
       - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
@@ -108,11 +104,10 @@ jobs:
 
       - name: Combine coverage & generate report
         run: |
-          python -Im pip install --upgrade coverage[toml] diff-cover
-          python -Im coverage combine
-          python -Im coverage xml
-          python -Im coverage html --skip-covered --skip-empty
-          python -Im coverage report --format=markdown >> $GITHUB_STEP_SUMMARY
+          uv run --with coverage[toml] --with diff-cover coverage combine
+          uv run --with coverage[toml] coverage xml
+          uv run --with coverage[toml] coverage html --skip-covered --skip-empty
+          uv run --with coverage[toml] coverage report --format=markdown >> $GITHUB_STEP_SUMMARY
 
       - name: Generate diff coverage report
         if: github.event_name == 'pull_request'
@@ -120,7 +115,7 @@ jobs:
           BASE_REF: ${{ github.base_ref }}
         run: |
           echo "## Diff Coverage" >> $GITHUB_STEP_SUMMARY
-          diff-cover coverage.xml --compare-branch="origin/$BASE_REF" --markdown-report diff-cover.md --fail-under=0 || true
+          uv run --with coverage[toml] --with diff-cover diff-cover coverage.xml --compare-branch="origin/$BASE_REF" --markdown-report diff-cover.md --fail-under=0 || true
           cat diff-cover.md >> $GITHUB_STEP_SUMMARY
 
       - name: Upload HTML report
@@ -143,23 +138,19 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
-      - run: pipx install poetry
-      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
-        id: setup-python
+      - name: Install uv
+        uses: astral-sh/setup-uv@eac588ad8def6316056a12d4907a9d4d84ff7a3b # v7.3.0
         with:
+          enable-cache: true
           python-version: "3.12"
-          architecture: x64
-          cache: "poetry"
 
-      - run: poetry env use 3.12
-      - run: poetry install
-        if: steps.setup-python.outputs.cache-hit != 'true'
+      - run: uv sync
 
       - name: Run benchmarks
         uses: CodSpeedHQ/action@0d7de549485db8284c0b87a0d2c0dd871097e641 # v4
         with:
           mode: simulation
-          run: poetry run pytest tests/benchmarks --codspeed -p no:codeflash-benchmark
+          run: uv run pytest tests/benchmarks --codspeed -p no:codeflash-benchmark
 
   lint:
     name: ✨ Lint
@@ -169,20 +160,18 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
-      - run: pipx install poetry
-      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
-        id: setup-python
+      - name: Install uv
+        uses: astral-sh/setup-uv@eac588ad8def6316056a12d4907a9d4d84ff7a3b # v7.3.0
         with:
+          enable-cache: true
           python-version: "3.12"
-          cache: "poetry"
 
-      - run: poetry install --with integrations
-        if: steps.setup-python.outputs.cache-hit != 'true'
+      - run: uv sync
 
       - run: |
-          mkdir .mypy_cache
+          mkdir -p .mypy_cache
 
-          poetry run mypy --install-types --non-interactive --cache-dir=.mypy_cache/ --config-file mypy.ini
+          uv run mypy --install-types --non-interactive --cache-dir=.mypy_cache/ --config-file mypy.ini
 
   unit-tests-on-windows:
     name: 🪟 Tests on Windows
@@ -192,21 +181,18 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
-      - run: pipx install poetry
-      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
-        id: setup-python
+      - name: Install uv
+        uses: astral-sh/setup-uv@eac588ad8def6316056a12d4907a9d4d84ff7a3b # v7.3.0
         with:
+          enable-cache: true
           python-version: "3.11"
-          cache: "poetry"
 
-      - run: poetry install --with integrations
-        if: steps.setup-python.outputs.cache-hit != 'true'
+      - run: uv sync
 
-      # we use poetry directly instead of nox since we want to
+      # we use uv directly instead of nox since we want to
       # test all integrations at once on windows
-      # but we want to exclude tests/mypy since we are using an old version of pydantic
       - run: |
-          poetry run pytest --cov=. --cov-append -n auto --showlocals --ignore tests/mypy -vv
+          uv run pytest --cov=. --cov-append -n auto --showlocals -vv
 
       - name: Rename coverage data
         if: ${{ always() }}

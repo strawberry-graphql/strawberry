@@ -10,126 +10,21 @@ on:
       - "pyproject.toml"
 
 jobs:
-  get-contributor-info:
-    name: Get PR info
-    runs-on: ubuntu-latest
-
-    outputs:
-      contributor-name: ${{ steps.get-info.outputs.contributor-name }}
-      contributor-username: ${{ steps.get-info.outputs.contributor-username }}
-      contributor-twitter-username: ${{ steps.get-info.outputs.contributor-twitter-username }}
-
-    steps:
-      - name: Get PR info
-        id: get-info
-        uses: strawberry-graphql/get-pr-info-action@a6d95647fa027e52c0d751a225d3864d5c091284 # v6
-      - run: echo "${{ steps.get-info.outputs.contributor-twitter-username }}"
-
-  skip-if-bot:
-    name: Set skip if PR is from a bot
-    runs-on: ubuntu-latest
-    needs: get-contributor-info
-
-    outputs:
-      skip: ${{ steps.skip.outputs.skip }}
-
-    steps:
-      - name: Set skip to true if contributor is a bot
-        id: skip
-        shell: python
-        run: |
-          bots = [
-             "dependabot-preview[bot]",
-             "dependabot-preview",
-             "dependabot",
-             "dependabot[bot]",
-           ]
-
-          username = "${{ needs.get-contributor-info.outputs.contributor-username }}"
-
-          if username in bots:
-            print(f"Skipping {username} because it is a bot")
-            print("::set-output name=skip::true")
-          else:
-            print("::set-output name=skip::false")
-
-  release-file-check:
+  check-release:
     name: Release check
     runs-on: ubuntu-latest
-    needs: skip-if-bot
-    if: needs.skip-if-bot.outputs.skip == 'false'
-
-    outputs:
-      changelog: ${{ steps.release-check.outputs.changelog }}
-      status: ${{ steps.release-check.outputs.release_status }}
-      change_type: ${{ steps.release-check.outputs.change_type }}
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
-        with:
-          ref: "refs/pull/${{ github.event.number }}/merge"
-
-      - name: Release file check
-        uses: strawberry-graphql/strawberry/.github/release-check-action@main
-        id: release-check
-        if: github.event.pull_request.draft == false
-
-  read-tweet-md:
-    name: Read TWEET.md
-    runs-on: ubuntu-latest
-    needs: [get-contributor-info, release-file-check]
-
-    outputs:
-      tweet: ${{ steps.extract.outputs.tweet }}
+    if: github.event.pull_request.user.type != 'Bot'
 
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           ref: "refs/pull/${{ github.event.number }}/merge"
-      - name: Extract tweet message and changelog
-        id: extract
-        uses: strawberry-graphql/tweet-actions/read-tweet@b8d51a501ab14ac32d79b61e3a0af5c3add4ead0 # v6
+          sparse-checkout: |
+            RELEASE.md
+            pyproject.toml
+
+      - uses: autopub/autopub-action@v1
         with:
-          changelog: ${{ needs.release-file-check.outputs.changelog }}
-          version: "(next)"
-          contributor_name: ${{ needs.get-contributor-info.outputs.contributor-name }}
-          contributor_twitter_username: ${{ needs.get-contributor-info.outputs.contributor-twitter-username }}
-
-  validate-tweet:
-    runs-on: ubuntu-latest
-    needs: read-tweet-md
-    if: ${{ needs.read-tweet-md.outputs.tweet != '' }}
-    steps:
-      - name: Validate tweet
-        uses: strawberry-graphql/tweet-actions/validate-tweet@b8d51a501ab14ac32d79b61e3a0af5c3add4ead0 # v6
-        with:
-          tweet: ${{ needs.read-tweet-md.outputs.tweet }}
-
-  send-comment:
-    runs-on: ubuntu-latest
-    needs: [release-file-check, read-tweet-md]
-    if: github.event.pull_request.draft == false
-
-    steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
-      - name: Send comment
-        uses: ./.github/bot-action
-        env:
-          BOT_API_URL: ${{ secrets.BOT_API_URL }}
-          API_SECRET: ${{ secrets.API_SECRET }}
-        with:
-          pr_number: ${{ github.event.number }}
-          status: ${{ needs.release-file-check.outputs.status }}
-          change_type: ${{ needs.release-file-check.outputs.change_type }}
-          changelog_base64: ${{ needs.release-file-check.outputs.changelog }}
-          tweet: ${{ needs.read-tweet-md.outputs.tweet }}
-
-  fail-if-status-is-not-ok:
-    runs-on: ubuntu-latest
-    needs: [release-file-check, send-comment]
-
-    steps:
-      - name: Fail if status is not ok
-        if: ${{ needs.release-file-check.outputs.status != 'OK' }}
-        run: exit 1
+          command: check
+          github-token: ${{ secrets.BOT_TOKEN }}
+          fail-on-missing: "true"

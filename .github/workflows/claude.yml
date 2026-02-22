@@ -50,4 +50,3 @@ jobs:
             Bash(mypy:*)
             Bash(python:*)
             Bash(uv:*)
-            Bash(poetry:*)
