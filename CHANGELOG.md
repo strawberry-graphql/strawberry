@@ -1,6 +1,15 @@
 CHANGELOG
 =========
 
+0.303.1 - 2026-02-22
+--------------------
+
+Fix `Annotated[Union[A, B], strawberry.union("Name")]` raising `TypeError` when
+used as a type parameter in a generic subclass (e.g., `class Items(Listing[ItemResponse])`).
+
+Contributed by [Thiago Bellini Ribeiro](https://github.com/bellini666) via [PR #4235](https://github.com/strawberry-graphql/strawberry/pull/4235/)
+
+
 0.303.0 - 2026-02-22
 --------------------
 
