@@ -9,6 +9,7 @@ from typing_extensions import Protocol
 
 import libcst as cst
 from graphql import (
+    DirectiveDefinitionNode,
     EnumTypeDefinitionNode,
     EnumValueDefinitionNode,
     FieldDefinitionNode,
@@ -39,7 +40,7 @@ from graphql.language.ast import (
     NullValueNode,
 )
 
-from strawberry.utils.str_converters import to_snake_case
+from strawberry.utils.str_converters import capitalize_first, to_snake_case
 
 if TYPE_CHECKING:
     from graphql.language.ast import ConstDirectiveNode
@@ -68,6 +69,40 @@ _SCALAR_MAP = {
     "Time": cst.Name("time"),
     "DateTime": cst.Name("datetime"),
 }
+
+_FEDERATION_DIRECTIVE_NAMES = frozenset(
+    {
+        "key",
+        "shareable",
+        "inaccessible",
+        "external",
+        "authenticated",
+        "override",
+        "requires",
+        "provides",
+        "tag",
+        "requiresScopes",
+        "policy",
+        "link",
+        "specifiedBy",
+    }
+)
+
+_STRAWBERRY_LOCATION_NAMES = frozenset(
+    {
+        "SCHEMA",
+        "SCALAR",
+        "OBJECT",
+        "FIELD_DEFINITION",
+        "ARGUMENT_DEFINITION",
+        "INTERFACE",
+        "UNION",
+        "ENUM",
+        "ENUM_VALUE",
+        "INPUT_OBJECT",
+        "INPUT_FIELD_DEFINITION",
+    }
+)
 
 
 @dataclasses.dataclass(frozen=True)
@@ -231,9 +266,20 @@ def _get_default_value_expr(
     raise NotImplementedError(f"Unknown default value node {node}")
 
 
-def _sanitize_argument(value: ArgumentValue) -> cst.SimpleString | cst.Name | cst.List:
+def _sanitize_argument(
+    value: ArgumentValue,
+) -> cst.SimpleString | cst.Name | cst.List | cst.Integer | cst.Float:
     if isinstance(value, bool):
         return cst.Name(value=str(value))
+
+    if value is None:
+        return cst.Name(value="None")
+
+    if isinstance(value, int):
+        return cst.Integer(value=str(value))
+
+    if isinstance(value, float):
+        return cst.Float(value=str(value))
 
     if isinstance(value, list):
         return cst.List(
@@ -271,6 +317,7 @@ def _get_field_value(
     imports: set[Import],
     *,
     default_value: cst.BaseExpression | None = None,
+    directive_definitions: dict[str, str] | None = None,
 ) -> cst.Call | cst.BaseExpression | None:
     description = field.description.value if field.description else None
 
@@ -287,6 +334,13 @@ def _get_field_value(
     directives = _get_directives(field)
 
     apollo_federation_args = _get_federation_arguments(directives, imports)
+
+    if directive_definitions:
+        non_fed_directives_arg = _get_non_federation_directives_arg(
+            directives, directive_definitions
+        )
+        if non_fed_directives_arg is not None:
+            args.append(non_fed_directives_arg)
 
     default_arg = (
         cst.Arg(
@@ -337,6 +391,7 @@ def _get_field(
     imports: set[Import],
     *,
     is_input_field: bool = False,
+    directive_definitions: dict[str, str] | None = None,
 ) -> cst.SimpleStatementLine:
     name = to_snake_case(field.name.value)
     alias: str | None = None
@@ -374,27 +429,37 @@ def _get_field(
                     is_apollo_federation=is_apollo_federation,
                     imports=imports,
                     default_value=default_value,
+                    directive_definitions=directive_definitions,
                 ),
             )
         ]
     )
 
 
-ArgumentValue: TypeAlias = str | bool | list["ArgumentValue"]
+ArgumentValue: TypeAlias = str | bool | int | float | None | list["ArgumentValue"]
 
 
 def _get_argument_value(argument_value: ConstValueNode) -> ArgumentValue:
     if isinstance(argument_value, StringValueNode):
         return argument_value.value
 
-    if isinstance(argument_value, EnumValueDefinitionNode):
-        return argument_value.name.value
+    if isinstance(argument_value, EnumValueNode):
+        return argument_value.value
 
     if isinstance(argument_value, ListValueNode):
         return [_get_argument_value(arg) for arg in argument_value.values]
 
     if isinstance(argument_value, BooleanValueNode):
         return argument_value.value
+
+    if isinstance(argument_value, IntValueNode):
+        return int(argument_value.value)
+
+    if isinstance(argument_value, FloatValueNode):
+        return float(argument_value.value)
+
+    if isinstance(argument_value, NullValueNode):
+        return None
 
     raise NotImplementedError(f"Unknown argument value {argument_value}")
 
@@ -491,6 +556,52 @@ def _get_federation_arguments(
     return arguments
 
 
+def _get_non_federation_directives_arg(
+    directives: dict[str, list[dict[str, ArgumentValue]]],
+    directive_definitions: dict[str, str],
+) -> cst.Arg | None:
+    directive_calls: list[cst.Element] = []
+
+    for directive_name, applications in directives.items():
+        if directive_name not in directive_definitions:
+            continue
+
+        class_name = directive_definitions[directive_name]
+
+        for application in applications:
+            call_args = []
+            for arg_name, arg_value in application.items():
+                kwarg_name = to_snake_case(arg_name)
+                if keyword.iskeyword(kwarg_name):
+                    kwarg_name = f"{kwarg_name}_"
+                call_args.append(
+                    cst.Arg(
+                        keyword=cst.Name(kwarg_name),
+                        value=_sanitize_argument(arg_value),
+                        equal=cst.AssignEqual(
+                            cst.SimpleWhitespace(""), cst.SimpleWhitespace("")
+                        ),
+                    )
+                )
+            directive_calls.append(
+                cst.Element(
+                    value=cst.Call(
+                        func=cst.Name(class_name),
+                        args=call_args,
+                    )
+                )
+            )
+
+    if not directive_calls:
+        return None
+
+    return cst.Arg(
+        keyword=cst.Name("directives"),
+        value=cst.List(elements=directive_calls),
+        equal=cst.AssignEqual(cst.SimpleWhitespace(""), cst.SimpleWhitespace("")),
+    )
+
+
 def _get_strawberry_decorator(
     definition: ObjectTypeDefinitionNode
     | ObjectTypeExtensionNode
@@ -498,6 +609,8 @@ def _get_strawberry_decorator(
     | InputObjectTypeDefinitionNode,
     is_apollo_federation: bool,
     imports: set[Import],
+    *,
+    directive_definitions: dict[str, str] | None = None,
 ) -> cst.Decorator:
     type_ = {
         ObjectTypeDefinitionNode: "type",
@@ -538,6 +651,13 @@ def _get_strawberry_decorator(
 
         arguments.extend(federation_arguments)
 
+    if directive_definitions:
+        non_fed_directives_arg = _get_non_federation_directives_arg(
+            directives, directive_definitions
+        )
+        if non_fed_directives_arg is not None:
+            arguments.append(non_fed_directives_arg)
+
     if arguments:
         decorator = cst.Call(
             func=decorator,
@@ -556,8 +676,15 @@ def _get_class_definition(
     | InputObjectTypeDefinitionNode,
     is_apollo_federation: bool,
     imports: set[Import],
+    *,
+    directive_definitions: dict[str, str] | None = None,
 ) -> Definition:
-    decorator = _get_strawberry_decorator(definition, is_apollo_federation, imports)
+    decorator = _get_strawberry_decorator(
+        definition,
+        is_apollo_federation,
+        imports,
+        directive_definitions=directive_definitions,
+    )
 
     interfaces = (
         [interface.name.value for interface in definition.interfaces]
@@ -579,6 +706,7 @@ def _get_class_definition(
                     is_apollo_federation,
                     imports,
                     is_input_field=is_input_type,
+                    directive_definitions=directive_definitions,
                 )
                 for field in definition.fields
             ]
@@ -587,7 +715,25 @@ def _get_class_definition(
         decorators=[decorator],
     )
 
-    return Definition(class_definition, interfaces, definition.name.value)
+    dependencies = list(interfaces)
+
+    if directive_definitions:
+        type_directives = _get_directives(definition)
+        for dir_name in type_directives:
+            if dir_name in directive_definitions:
+                cls = directive_definitions[dir_name]
+                if cls not in dependencies:
+                    dependencies.append(cls)
+
+        for field in definition.fields:
+            field_directives = _get_directives(field)
+            for dir_name in field_directives:
+                if dir_name in directive_definitions:
+                    cls = directive_definitions[dir_name]
+                    if cls not in dependencies:
+                        dependencies.append(cls)
+
+    return Definition(class_definition, dependencies, definition.name.value)
 
 
 def _get_enum_value(enum_value: EnumValueDefinitionNode) -> cst.SimpleStatementLine:
@@ -819,6 +965,154 @@ def _get_scalar_definition(
     return Definition(statement_definition, [], name=definition.name.value)
 
 
+def _get_directive_definition(
+    definition: DirectiveDefinitionNode,
+    imports: set[Import],
+) -> Definition | None:
+    name = definition.name.value
+
+    if name in _FEDERATION_DIRECTIVE_NAMES:
+        return None
+
+    class_name = capitalize_first(name)
+
+    locations = [
+        loc.value
+        for loc in definition.locations
+        if loc.value in _STRAWBERRY_LOCATION_NAMES
+    ]
+
+    if not locations:
+        return None
+
+    location_elements = [
+        cst.Element(
+            value=cst.Attribute(
+                value=cst.Name("Location"),
+                attr=cst.Name(loc),
+            )
+        )
+        for loc in locations
+    ]
+
+    decorator_args: list[cst.Arg] = []
+
+    if definition.description:
+        decorator_args.append(
+            _get_argument("description", definition.description.value)
+        )
+
+    decorator_args.append(
+        cst.Arg(
+            keyword=cst.Name("locations"),
+            value=cst.List(elements=location_elements),
+            equal=cst.AssignEqual(cst.SimpleWhitespace(""), cst.SimpleWhitespace("")),
+        )
+    )
+
+    if definition.repeatable:
+        decorator_args.append(
+            cst.Arg(
+                keyword=cst.Name("repeatable"),
+                value=cst.Name("True"),
+                equal=cst.AssignEqual(
+                    cst.SimpleWhitespace(""), cst.SimpleWhitespace("")
+                ),
+            )
+        )
+
+    decorator = cst.Decorator(
+        decorator=cst.Call(
+            func=cst.Attribute(
+                value=cst.Name("strawberry"),
+                attr=cst.Name("schema_directive"),
+            ),
+            args=decorator_args,
+        ),
+    )
+
+    dependencies: list[str] = []
+    body_lines: list[cst.BaseStatement] = []
+
+    if definition.arguments:
+        for arg in definition.arguments:
+            arg_name = to_snake_case(arg.name.value)
+            alias: str | None = None
+
+            if keyword.iskeyword(arg_name):
+                arg_name = f"{arg_name}_"
+                alias = arg.name.value
+            elif arg_name != arg.name.value:
+                alias = arg.name.value
+
+            field_type_expr = _get_field_type(arg.type)
+
+            base_type = _get_base_type_name(arg.type)
+            if base_type not in _SCALAR_MAP:
+                dependencies.append(base_type)
+
+            default_value: cst.BaseExpression | None = None
+            if arg.default_value is not None:
+                enum_type_name = (
+                    _get_base_type_name(arg.type)
+                    if isinstance(arg.default_value, EnumValueNode)
+                    else None
+                )
+                default_value = _get_default_value_expr(
+                    arg.default_value, enum_type_name=enum_type_name
+                )
+
+            field_value: cst.BaseExpression | None = None
+            if alias is not None:
+                directive_field_args: list[cst.Arg] = [
+                    _get_argument("name", alias),
+                ]
+                if default_value is not None:
+                    directive_field_args.append(
+                        cst.Arg(
+                            keyword=cst.Name("default"),
+                            value=default_value,
+                            equal=cst.AssignEqual(
+                                cst.SimpleWhitespace(""), cst.SimpleWhitespace("")
+                            ),
+                        )
+                    )
+                field_value = cst.Call(
+                    func=cst.Attribute(
+                        value=cst.Name("strawberry"),
+                        attr=cst.Name("directive_field"),
+                    ),
+                    args=directive_field_args,
+                )
+            elif default_value is not None:
+                field_value = default_value
+
+            body_lines.append(
+                cst.SimpleStatementLine(
+                    body=[
+                        cst.AnnAssign(
+                            target=cst.Name(arg_name),
+                            annotation=cst.Annotation(field_type_expr),
+                            value=field_value,
+                        )
+                    ]
+                )
+            )
+
+    if not body_lines:
+        body_lines.append(cst.SimpleStatementLine(body=[cst.Expr(cst.Name("pass"))]))
+
+    class_definition = cst.ClassDef(
+        name=cst.Name(class_name),
+        body=cst.IndentedBlock(body=body_lines),
+        decorators=[decorator],
+    )
+
+    imports.add(Import(module="strawberry.schema_directive", imports=("Location",)))
+
+    return Definition(class_definition, dependencies, class_name)
+
+
 def codegen(schema: str) -> str:
     document = parse(schema)
 
@@ -831,6 +1125,19 @@ def codegen(schema: str) -> str:
     imports: set[Import] = {
         Import(module=None, imports=("strawberry",)),
     }
+
+    # Pre-scan for directive definitions to build name mapping
+    directive_definitions: dict[str, str] = {}
+    for graphql_definition in document.definitions:
+        if isinstance(graphql_definition, DirectiveDefinitionNode):
+            name = graphql_definition.name.value
+            if name not in _FEDERATION_DIRECTIVE_NAMES:
+                has_type_system_location = any(
+                    loc.value in _STRAWBERRY_LOCATION_NAMES
+                    for loc in graphql_definition.locations
+                )
+                if has_type_system_location:
+                    directive_definitions[name] = capitalize_first(name)
 
     # when we encounter a extend schema @link ..., we check if is an apollo federation schema
     # and we use this variable to keep track of it, but at the moment the assumption is that
@@ -851,7 +1158,10 @@ def codegen(schema: str) -> str:
             ),
         ):
             definition = _get_class_definition(
-                graphql_definition, is_apollo_federation, imports
+                graphql_definition,
+                is_apollo_federation,
+                imports,
+                directive_definitions=directive_definitions,
             )
 
         elif isinstance(graphql_definition, EnumTypeDefinitionNode):
@@ -883,6 +1193,8 @@ def codegen(schema: str) -> str:
                 _is_federation_link_directive(directive)
                 for directive in graphql_definition.directives
             )
+        elif isinstance(graphql_definition, DirectiveDefinitionNode):
+            definition = _get_directive_definition(graphql_definition, imports)
         else:
             raise NotImplementedError(f"Unknown definition {definition}")
 

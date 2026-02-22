@@ -315,3 +315,35 @@ def test_input_field_default_with_description():
     ).strip()
 
     assert codegen(schema).strip() == expected
+
+
+def test_input_type_with_directive_on_field():
+    """Directive definitions and directives with int args on input fields generate directive classes."""
+    schema = """
+    directive @limits(max: Int!) on INPUT_FIELD_DEFINITION
+
+    input ConversationMessageInput {
+        "The message to send to the conversation."
+        message: String!
+        "Recordings that the model should consider when processing the message."
+        recordings: [String!] @limits(max: 10)
+    }
+    """
+
+    expected = textwrap.dedent(
+        """
+        import strawberry
+        from strawberry.schema_directive import Location
+
+        @strawberry.schema_directive(locations=[Location.INPUT_FIELD_DEFINITION])
+        class Limits:
+            max: int
+
+        @strawberry.input
+        class ConversationMessageInput:
+            message: str = strawberry.field(description="The message to send to the conversation.")
+            recordings: strawberry.Maybe[list[str] | None] = strawberry.field(description="Recordings that the model should consider when processing the message.", directives=[Limits(max=10)])
+        """
+    ).strip()
+
+    assert codegen(schema).strip() == expected
