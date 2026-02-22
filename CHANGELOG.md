@@ -1,6 +1,26 @@
 CHANGELOG
 =========
 
+0.301.0 - 2026-02-22
+--------------------
+
+Remove deprecated `strawberry server` CLI command, deprecated since [0.283.0](https://github.com/strawberry-graphql/strawberry/releases/tag/0.283.0).
+
+### Migration guide
+
+**Before (deprecated):**
+```bash
+strawberry server myapp:schema
+```
+
+**After:**
+```bash
+strawberry dev myapp:schema
+```
+
+Contributed by [Luis Gustavo](https://github.com/Ckk3) via [PR #4215](https://github.com/strawberry-graphql/strawberry/pull/4215/)
+
+
 0.300.0 - 2026-02-21
 --------------------
 
