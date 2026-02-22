@@ -5,8 +5,6 @@ from dataclasses import dataclass
 from typing import (
     TYPE_CHECKING,
     Any,
-    TypeVar,
-    overload,
 )
 
 from strawberry.types.base import StrawberryType
@@ -17,10 +15,7 @@ if TYPE_CHECKING:
     from graphql import GraphQLScalarType
 
 
-_T = TypeVar("_T", bound=type)
-
-
-def identity(x: _T) -> _T:
+def identity(x: Any) -> Any:
     return x
 
 
@@ -53,7 +48,6 @@ class ScalarDefinition(StrawberryType):
         return False
 
 
-@overload
 def scalar(
     *,
     name: str,
@@ -63,40 +57,11 @@ def scalar(
     parse_value: Callable | None = None,
     parse_literal: Callable | None = None,
     directives: Iterable[object] = (),
-) -> ScalarDefinition: ...
-
-
-@overload
-def scalar(
-    *,
-    name: None = None,
-    description: str | None = None,
-    specified_by_url: str | None = None,
-    serialize: Callable = identity,
-    parse_value: Callable | None = None,
-    parse_literal: Callable | None = None,
-    directives: Iterable[object] = (),
-) -> Callable[[_T], _T]: ...
-
-
-def scalar(
-    *,
-    name: str | None = None,
-    description: str | None = None,
-    specified_by_url: str | None = None,
-    serialize: Callable = identity,
-    parse_value: Callable | None = None,
-    parse_literal: Callable | None = None,
-    directives: Iterable[object] = (),
-) -> Any:
+) -> ScalarDefinition:
     """Creates a GraphQL custom scalar definition.
 
-    This function can be used in two ways:
-
-    1. With a `name`: Returns a `ScalarDefinition` for use in
-       `StrawberryConfig.scalar_map`. This is the recommended approach.
-
-    2. As a decorator (no `name`): Returns a decorator function for typing purposes.
+    Returns a `ScalarDefinition` for use in `StrawberryConfig.scalar_map`
+    or `Schema(scalar_overrides=...)`.
 
     Args:
         name: The GraphQL name of the scalar.
@@ -108,8 +73,7 @@ def scalar(
         directives: The directives to apply to the scalar.
 
     Returns:
-        A `ScalarDefinition` when called with `name`, or a decorator function
-        when called without `name`.
+        A `ScalarDefinition`.
 
     Example usage:
 
@@ -146,25 +110,18 @@ def scalar(
         _source_file = frame.f_code.co_filename
         _source_line = frame.f_lineno
 
-    if name is not None:
-        return ScalarDefinition(
-            name=name,
-            description=description,
-            specified_by_url=specified_by_url,
-            serialize=serialize,
-            parse_literal=parse_literal,
-            parse_value=parse_value,
-            directives=directives,
-            origin=None,
-            _source_file=_source_file,
-            _source_line=_source_line,
-        )
-
-    # Decorator pattern for type hinting purposes only
-    def wrap(cls: _T) -> _T:
-        return cls
-
-    return wrap
+    return ScalarDefinition(
+        name=name,
+        description=description,
+        specified_by_url=specified_by_url,
+        serialize=serialize,
+        parse_literal=parse_literal,
+        parse_value=parse_value,
+        directives=directives,
+        origin=None,
+        _source_file=_source_file,
+        _source_line=_source_line,
+    )
 
 
-__all__ = ["ScalarDefinition", "scalar"]
+__all__ = ["ScalarDefinition", "identity", "scalar"]
