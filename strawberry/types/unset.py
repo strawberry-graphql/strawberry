@@ -17,6 +17,9 @@ class UnsetType:
             return ret
         return cls.__instance
 
+    def __call__(self) -> "UnsetType":
+        return self
+
     def __str__(self) -> str:
         return ""
 
