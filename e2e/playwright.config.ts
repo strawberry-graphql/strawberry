@@ -26,7 +26,7 @@ export default defineConfig({
 		{
 			// Strawberry server with GraphiQL
 			// In CI, this is started by the workflow; locally we start it here
-			command: "poetry run strawberry dev app:schema --port 8000",
+			command: "uv run strawberry dev app:schema --port 8000",
 			url: "http://localhost:8000",
 			reuseExistingServer: true,
 			cwd: "..",

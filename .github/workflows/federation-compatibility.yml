@@ -14,7 +14,7 @@ on:
       - "strawberry/printer/**"
       - "federation-compatibility/**"
       - "pyproject.toml"
-      - "poetry.lock"
+      - "uv.lock"
       - ".github/workflows/federation-compatibility.yml"
 
 jobs:
@@ -25,17 +25,15 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
-      - run: pipx install poetry
-      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
-        id: setup-python
+      - name: Install uv
+        uses: astral-sh/setup-uv@eac588ad8def6316056a12d4907a9d4d84ff7a3b # v7.3.0
         with:
+          enable-cache: true
           python-version: "3.12"
-          cache: "poetry"
-      - run: poetry env use python3.12
-      - run: poetry install
+      - run: uv sync
 
       - name: export schema
-        run: poetry run strawberry export-schema schema:schema > schema.graphql
+        run: uv run strawberry export-schema schema:schema > schema.graphql
         working-directory: federation-compatibility
 
       - uses: apollographql/federation-subgraph-compatibility@b6981fd83d24450a7cbd2d7727196e0ba57614e0 # v2

@@ -1,5 +1,0 @@
-name: "Strawberry Release Check Action"
-description: "Check that the RELEASE.md file is valid"
-runs:
-  using: "docker"
-  image: "Dockerfile"

@@ -79,6 +79,7 @@ convenience, it is included in extras: `strawberry-graphql[asgi]` (for
 ASGI/Starlette) or `strawberry-graphql[fastapi]` (for FastAPI). For example:
 
 - if using Pip, `pip install 'strawberry-graphql[fastapi]'`
+- if using uv, `uv add 'strawberry-graphql[fastapi]'`
 - if using Poetry,
   `strawberry-graphql = { version = "...", extras = ["fastapi"] }` in
   `pyproject.toml`.

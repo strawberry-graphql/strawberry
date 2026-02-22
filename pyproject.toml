@@ -19,7 +19,7 @@ dependencies = [
   "typing-extensions>=4.5.0",
   "python-dateutil>=2.7",
   "packaging>=23",
-  "cross-web (>=0.4.0)",
+  "cross-web>=0.4.0",
 ]
 
 [project.urls]
@@ -64,72 +64,73 @@ pyinstrument = ["pyinstrument>=4.0.0"]
 
 [dependency-groups]
 dev = [
-  "ruff (>=0.14.1,<0.15.0)",
-  "asgiref (>=3.2,<4.0)",
-  "email-validator (>=1.1.3,<3.0.0)",
-  "freezegun (>=1.2.1,<2.0.0)",
-  "libcst (>=1.8.2,<2.0.0)",
-  "markupsafe (~=3.0.3)",
-  "nox (~=2025.11.12)",
-  "nox-poetry (>=1.0.3,<2.0.0)",
-  "opentelemetry-api (<2)",
-  "opentelemetry-sdk (<2)",
-  "pygments (>=2.3,<3.0)",
-  "pyinstrument (>=4.0.0)",
-  "pytest (~=9.0.2)",
-  "pytest-asyncio (~=1.3.0)",
-  "pytest-codspeed (>=4.2.0)",
-  "pytest-cov (~=7.0.0)",
-  "pytest-emoji (>=0.2.0,<0.3.0)",
-  "pytest-mock (>=3.10,<4.0)",
-  "pytest-snapshot (>=0.9.0,<0.10.0)",
-  "pytest-xdist[psutil] (>=3.1.0,<4.0.0)",
-  "python-multipart (>=0.0.7)",
-  "rich (>=12.5.1)",
-  "sanic-testing (~=24.6.0)",
-  "typer (>=0.12.4)",
-  "types-aiofiles (~=25.1.0.20251011)",
-  "types-certifi (>=2021.10.8,<2022.0.0)",
-  "types-chardet (>=5.0.4,<6.0.0)",
-  "types-freezegun (>=1.1.9,<2.0.0)",
-  "types-python-dateutil (>=2.8.19,<3.0.0)",
-  "types-toml (>=0.10.8,<0.11.0)",
-  "types-typed-ast (>=1.5.8,<2.0.0)",
-  "types-ujson (>=5.10.0.20250326,<6.0.0.0)",
-  "types-protobuf (~=6.32.1.20251210)",
-  "poetry-plugin-export (>=1.6.0,<2.0.0)",
-  # another bug in poetry
-  "urllib3 (~=2.6.3)",
-  "inline-snapshot (~=0.31.1)",
-  "types-deprecated (>=1.2.15.20241117,<2.0.0.0)",
-  "types-six (>=1.17.0.20250403,<2.0.0.0)",
-  "types-pyyaml (>=6.0.12.20240917,<7.0.0.0)",
-  "mypy (>=1.15.0,<2.0.0)",
-  "pyright (~=1.1.408)",
-  "codeflash (>=0.19.1)",
+  "ruff>=0.14.1,<0.15.0",
+  "asgiref>=3.2,<4.0",
+  "email-validator>=1.1.3,<3.0.0",
+  "freezegun>=1.2.1,<2.0.0",
+  "libcst>=1.8.2,<2.0.0",
+  "markupsafe~=3.0.3",
+  "nox~=2025.11.12",
+  "opentelemetry-api<2",
+  "opentelemetry-sdk<2",
+  "pygments>=2.3,<3.0",
+  "pyinstrument>=4.0.0",
+  "pytest~=9.0.2",
+  "pytest-asyncio~=1.3.0",
+  "pytest-codspeed>=4.2.0",
+  "pytest-cov~=7.0.0",
+  "pytest-emoji>=0.2.0,<0.3.0",
+  "pytest-mock>=3.10,<4.0",
+  "pytest-snapshot>=0.9.0,<0.10.0",
+  "pytest-xdist[psutil]>=3.1.0,<4.0.0",
+  "python-multipart>=0.0.7",
+  "rich>=12.5.1",
+  "sanic-testing~=24.6.0",
+  "typer>=0.12.4",
+  "types-aiofiles~=25.1.0.20251011",
+  "types-certifi>=2021.10.8,<2022.0.0",
+  "types-chardet>=5.0.4,<6.0.0",
+  "types-freezegun>=1.1.9,<2.0.0",
+  "types-python-dateutil>=2.8.19,<3.0.0",
+  "types-toml>=0.10.8,<0.11.0",
+  "types-typed-ast>=1.5.8,<2.0.0",
+  "types-ujson>=5.10.0.20250326,<6.0.0.0",
+  "types-protobuf~=6.32.1.20251210",
+  "inline-snapshot~=0.31.1",
+  "types-deprecated>=1.2.15.20241117,<2.0.0.0",
+  "types-six>=1.17.0.20250403,<2.0.0.0",
+  "types-pyyaml>=6.0.12.20240917,<7.0.0.0",
+  "mypy>=1.15.0,<2.0.0",
+  "pyright~=1.1.408",
+  "codeflash>=0.19.1",
   "pre-commit",
 ]
 integrations = [
-  "aiohttp (>=3.7.4.post0,<4.0.0)",
-  "chalice (>=1.22,<2.0)",
-  "channels (>=3.0.5,<5.0.0)",
-  "django (>=3.2)",
-  "fastapi (>=0.65.0)",
-  "flask (>=1.1)",
-  "quart (>=0.19.3)",
-  "pydantic (>=2.0)",
-  "pytest-aiohttp (>=1.0.3,<2.0.0)",
-  "pytest-django (>=4.5,<5.0)",
-  "sanic (>=20.12.2)",
-  "starlette (>=0.13.6)",
-  "litestar (>=2) ; python_version >= \"3.10\"",
-  "uvicorn (>=0.11.6)",
-  "daphne (>=4.0.0,<5.0.0)",
+  "aiohttp>=3.7.4.post0,<4.0.0",
+  "chalice>=1.22,<2.0",
+  "channels>=3.0.5,<5.0.0",
+  "django>=3.2",
+  "fastapi>=0.65.0",
+  "flask>=1.1",
+  "quart>=0.19.3",
+  "pydantic>=2.0",
+  "pytest-aiohttp>=1.0.3,<2.0.0",
+  "pytest-django>=4.5,<5.0",
+  "sanic>=20.12.2",
+  "starlette>=0.13.6",
+  "litestar>=2; python_version >= '3.10'",
+  "uvicorn>=0.11.6",
+  "daphne>=4.0.0,<5.0.0",
 ]
 
-[tool.poetry]
-packages = [{ include = "strawberry" }]
-include = ["strawberry/py.typed"]
+[tool.uv]
+default-groups = ["dev", "integrations"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["strawberry"]
+
+[tool.hatch.build.targets.sdist]
+include = ["strawberry", "pyproject.toml", "README*", "LICENSE*"]
 
 [tool.pytest.ini_options]
 addopts = "--emoji"
@@ -177,6 +178,7 @@ git-username = "Botberry"
 git-email = "bot@strawberry.rocks"
 project-name = "🍓"
 append-github-contributor = true
+plugins = ["autopub.plugins.github", "autopub.plugins.uv"]
 
 [tool.pyright]
 # include = ["strawberry"]
@@ -397,5 +399,5 @@ ignore-paths = []
 formatter-cmds = ["ruff check --exit-zero --fix $file", "ruff format $file"]
 
 [build-system]
-requires = ["poetry-core>=1.6"]
-build-backend = "poetry.core.masonry.api"
+requires = ["hatchling"]
+build-backend = "hatchling.build"

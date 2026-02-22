@@ -1,13 +1,54 @@
+import codecs
 import contextlib
 import json
+import uuid
 from io import BytesIO
 
 import pytest
-from urllib3 import encode_multipart_formdata
 
 from tests.views.schema import schema
 
 from .clients.base import HttpClient
+
+writer = codecs.lookup("utf-8")[3]
+
+
+def _encode_multipart_formdata(fields, boundary=None):
+    # Do we really need this?
+    # Copied from urllib3: https://github.com/urllib3/urllib3/blob/main/src/urllib3/filepost.py
+    if boundary is None:
+        boundary = uuid.uuid4().hex
+
+    body = []
+
+    for fieldname, value in fields.items():
+        body.append(f"--{boundary}\r\n".encode())
+
+        if isinstance(value, tuple):
+            filename, data, content_type = value
+            body.append(
+                f'Content-Disposition: form-data; name="{fieldname}"; '
+                f'filename="{filename}"\r\n'.encode()
+            )
+            body.append(f"Content-Type: {content_type}\r\n\r\n".encode())
+
+            if isinstance(data, str):
+                data = data.encode("utf-8")
+            body.append(data)
+        else:
+            body.append(
+                f'Content-Disposition: form-data; name="{fieldname}"\r\n\r\n'.encode()
+            )
+
+            body.append(value.encode("utf-8") if isinstance(value, str) else value)
+
+        body.append(b"\r\n")
+
+    body.append(f"--{boundary}--\r\n".encode())
+
+    content_type = f"multipart/form-data; boundary={boundary}"
+
+    return b"".join(body), content_type
 
 
 @pytest.fixture
@@ -206,7 +247,7 @@ async def test_extra_form_data_fields_are_ignored(enabled_http_client: HttpClien
         "textFile": ("textFile.txt", f.read(), "text/plain"),
     }
 
-    data, header = encode_multipart_formdata(fields)
+    data, header = _encode_multipart_formdata(fields)
 
     response = await enabled_http_client.post(
         url="/graphql",
@@ -246,7 +287,7 @@ async def test_sending_invalid_json_body(enabled_http_client: HttpClient):
         "textFile": ("textFile.txt", f.read(), "text/plain"),
     }
 
-    data, header = encode_multipart_formdata(fields)
+    data, header = _encode_multipart_formdata(fields)
 
     response = await enabled_http_client.post(
         "/graphql",
