@@ -1,16 +1,17 @@
+from typing_extensions import TypedDict
 from typing import Union
 
-class OperationNameResultInterfaceBlogPost:
+class OperationNameResultInterfaceBlogPost(TypedDict):
     # typename: BlogPost
     id: str
     title: str
 
-class OperationNameResultInterfaceImage:
+class OperationNameResultInterfaceImage(TypedDict):
     # typename: Image
     id: str
     url: str
 
 OperationNameResultInterface = Union[OperationNameResultInterfaceBlogPost, OperationNameResultInterfaceImage]
 
-class OperationNameResult:
+class OperationNameResult(TypedDict):
     interface: OperationNameResultInterface
