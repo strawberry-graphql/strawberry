@@ -816,13 +816,15 @@ def test_raises_on_union_with_list_str_38():
     InvalidUnionTypeError, match="Type `Always42` cannot be used in a GraphQL Union"
 )
 def test_raises_on_union_of_custom_scalar():
+    from typing import NewType
+
+    from strawberry.schema.config import StrawberryConfig
+
     @strawberry.type
     class ICanBeInUnion:
         foo: str
 
-    @strawberry.scalar(serialize=lambda x: 42, parse_value=lambda x: Always42())
-    class Always42:
-        pass
+    Always42 = NewType("Always42", int)
 
     @strawberry.type
     class Query:
@@ -830,7 +832,18 @@ def test_raises_on_union_of_custom_scalar():
             Always42 | ICanBeInUnion, strawberry.union(name="ExampleUnion")
         ]
 
-    strawberry.Schema(query=Query)
+    strawberry.Schema(
+        query=Query,
+        config=StrawberryConfig(
+            scalar_map={
+                Always42: strawberry.scalar(
+                    name="Always42",
+                    serialize=lambda x: 42,
+                    parse_value=lambda x: x,
+                )
+            }
+        ),
+    )
 
 
 def test_union_of_unions():

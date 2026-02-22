@@ -44,7 +44,7 @@ from strawberry.types.base import (
 )
 from strawberry.types.enum import StrawberryEnumDefinition
 from strawberry.types.lazy_type import LazyType
-from strawberry.types.scalar import ScalarDefinition, ScalarWrapper
+from strawberry.types.scalar import ScalarDefinition
 from strawberry.types.union import StrawberryUnion
 from strawberry.types.unset import UNSET
 from strawberry.utils.str_converters import capitalize_first, to_camel_case
@@ -541,14 +541,18 @@ class QueryCodegen:
             not isinstance(field_type, StrawberryType)
             and field_type in self.schema.schema_converter.scalar_registry
         ):
-            field_type = self.schema.schema_converter.scalar_registry[field_type]  # type: ignore
-
-        if isinstance(field_type, ScalarWrapper):
-            python_type = field_type.wrap
-            if hasattr(python_type, "__supertype__"):
-                python_type = python_type.__supertype__
-
-            return self._collect_scalar(field_type._scalar_definition, python_type)  # type: ignore
+            # Store the original Python type (could be a type or NewType)
+            # before replacing with the ScalarDefinition
+            original_python_type = field_type
+            # For NewTypes, get the underlying type for the codegen
+            if hasattr(original_python_type, "__supertype__"):
+                python_type = original_python_type.__supertype__
+            elif isinstance(original_python_type, type):
+                python_type = original_python_type
+            else:
+                python_type = None
+            field_type = self.schema.schema_converter.scalar_registry[field_type]
+            return self._collect_scalar(field_type, python_type)
 
         if isinstance(field_type, ScalarDefinition):
             return self._collect_scalar(field_type, None)

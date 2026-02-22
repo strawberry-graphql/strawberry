@@ -108,9 +108,9 @@ schema = strawberry.Schema(Query, types=[Individual, Company])
 
 List of [extensions](/docs/extensions) to add to your Schema.
 
-#### `scalar_overrides: Optional[Dict[object, ScalarWrapper]] = None`
+#### `scalar_overrides: Optional[Dict[object, ScalarDefinition]] = None`
 
-Override the implementation of the built in scalars.
+Override the implementation of the built-in scalars.
 [More information](/docs/types/scalars#overriding-built-in-scalars).
 
 ---
