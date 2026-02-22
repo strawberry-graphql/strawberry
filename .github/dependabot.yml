@@ -1,11 +1,13 @@
 version: 2
 updates:
-  # Python dependencies
-  - package-ecosystem: "pip"
+  # Python dependencies (uv)
+  - package-ecosystem: "uv"
     directory: "/"
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 10
+    cooldown:
+      default-days: 7
     reviewers:
       - "bellini666"
       - "patrick91"
@@ -51,31 +53,7 @@ updates:
       include: "scope"
 
   - package-ecosystem: "docker"
-    directory: "/.github/bot-action"
-    schedule:
-      interval: "weekly"
-    open-pull-requests-limit: 5
-    reviewers:
-      - "bellini666"
-      - "patrick91"
-    commit-message:
-      prefix: "deps(docker)"
-      include: "scope"
-
-  - package-ecosystem: "docker"
     directory: "/.devcontainer"
-    schedule:
-      interval: "weekly"
-    open-pull-requests-limit: 5
-    reviewers:
-      - "bellini666"
-      - "patrick91"
-    commit-message:
-      prefix: "deps(docker)"
-      include: "scope"
-
-  - package-ecosystem: "docker"
-    directory: "/.github/release-check-action"
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 5

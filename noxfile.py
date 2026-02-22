@@ -3,7 +3,6 @@ from collections.abc import Callable
 from typing import Any
 
 import nox
-from nox_poetry import Session, session
 
 nox.options.reuse_existing_virtualenvs = True
 nox.options.error_on_external_run = True
@@ -44,8 +43,8 @@ INTEGRATIONS = [
 ]
 
 
-def _install_gql_core(session: Session, version: str) -> None:
-    session._session.install(f"graphql-core=={version}")
+def _install_gql_core(session: nox.Session, version: str) -> None:
+    session.install(f"graphql-core=={version}")
 
 
 gql_core_parametrize = nox.parametrize(
@@ -62,10 +61,15 @@ def with_gql_core_parametrize(name: str, params: list[str]) -> Callable[[Any], A
     return nox.parametrize(arg_names, combinations, ids=ids)
 
 
-@session(python=PYTHON_VERSIONS, name="Tests", tags=["tests"])
+@nox.session(python=PYTHON_VERSIONS, name="Tests", tags=["tests"])
 @gql_core_parametrize
-def tests(session: Session, gql_core: str) -> None:
-    session.run_always("poetry", "install", "--without=integrations", external=True)
+def tests(session: nox.Session, gql_core: str) -> None:
+    session.run_install(
+        "uv",
+        "sync",
+        "--no-group=integrations",
+        env={"UV_PROJECT_ENVIRONMENT": session.virtualenv.location},
+    )
     _install_gql_core(session, gql_core)
     markers = (
         ["-m", f"not {integration}", f"--ignore=tests/{integration}"]
@@ -80,28 +84,37 @@ def tests(session: Session, gql_core: str) -> None:
     )
 
 
-@session(python=["3.12"], name="Django tests", tags=["tests"])
+@nox.session(python=["3.12"], name="Django tests", tags=["tests"])
 @with_gql_core_parametrize("django", ["5.1.3", "5.0.9", "4.2.0"])
-def tests_django(session: Session, django: str, gql_core: str) -> None:
-    session.run_always("poetry", "install", "--without=integrations", external=True)
+def tests_django(session: nox.Session, django: str, gql_core: str) -> None:
+    session.run_install(
+        "uv",
+        "sync",
+        "--no-group=integrations",
+        env={"UV_PROJECT_ENVIRONMENT": session.virtualenv.location},
+    )
     _install_gql_core(session, gql_core)
-    session._session.install(f"django~={django}")  # type: ignore
-    session._session.install("pytest-django")  # type: ignore
+    session.install(f"django~={django}")
+    session.install("pytest-django")
 
     session.run("pytest", *COMMON_PYTEST_OPTIONS, "-m", "django")
 
 
-@session(python=["3.11"], name="Starlette tests", tags=["tests"])
+@nox.session(python=["3.11"], name="Starlette tests", tags=["tests"])
 @gql_core_parametrize
-def tests_starlette(session: Session, gql_core: str) -> None:
-    session.run_always("poetry", "install", "--without=integrations", external=True)
-
-    session._session.install("starlette")  # type: ignore
+def tests_starlette(session: nox.Session, gql_core: str) -> None:
+    session.run_install(
+        "uv",
+        "sync",
+        "--no-group=integrations",
+        env={"UV_PROJECT_ENVIRONMENT": session.virtualenv.location},
+    )
+    session.install("starlette")
     _install_gql_core(session, gql_core)
     session.run("pytest", *COMMON_PYTEST_OPTIONS, "-m", "asgi")
 
 
-@session(python=["3.11"], name="Test integrations", tags=["tests"])
+@nox.session(python=["3.11"], name="Test integrations", tags=["tests"])
 @with_gql_core_parametrize(
     "integration",
     [
@@ -115,30 +128,38 @@ def tests_starlette(session: Session, gql_core: str) -> None:
         "litestar",
     ],
 )
-def tests_integrations(session: Session, integration: str, gql_core: str) -> None:
-    session.run_always("poetry", "install", "--without=integrations", external=True)
-
-    session._session.install(integration)  # type: ignore
+def tests_integrations(session: nox.Session, integration: str, gql_core: str) -> None:
+    session.run_install(
+        "uv",
+        "sync",
+        "--no-group=integrations",
+        env={"UV_PROJECT_ENVIRONMENT": session.virtualenv.location},
+    )
+    session.install(integration)
     _install_gql_core(session, gql_core)
     if integration == "aiohttp":
-        session._session.install("pytest-aiohttp")  # type: ignore
+        session.install("pytest-aiohttp")
     elif integration == "channels":
-        session._session.install("pytest-django")  # type: ignore
-        session._session.install("daphne")  # type: ignore
+        session.install("pytest-django")
+        session.install("daphne")
 
     session.run("pytest", *COMMON_PYTEST_OPTIONS, "-m", integration)
 
 
-@session(
+@nox.session(
     python=["3.10", "3.11", "3.12", "3.13"],
     name="Pydantic V1 tests",
     tags=["tests", "pydantic"],
 )
 @gql_core_parametrize
-def test_pydantic(session: Session, gql_core: str) -> None:
-    session.run_always("poetry", "install", "--without=integrations", external=True)
-
-    session._session.install("pydantic~=1.10")  # type: ignore
+def test_pydantic(session: nox.Session, gql_core: str) -> None:
+    session.run_install(
+        "uv",
+        "sync",
+        "--no-group=integrations",
+        env={"UV_PROJECT_ENVIRONMENT": session.virtualenv.location},
+    )
+    session.install("pydantic~=1.10")
     _install_gql_core(session, gql_core)
     session.run(
         "pytest",
@@ -151,12 +172,16 @@ def test_pydantic(session: Session, gql_core: str) -> None:
     )
 
 
-@session(python=PYTHON_VERSIONS, name="Pydantic tests", tags=["tests", "pydantic"])
+@nox.session(python=PYTHON_VERSIONS, name="Pydantic tests", tags=["tests", "pydantic"])
 @gql_core_parametrize
-def test_pydantic_v2(session: Session, gql_core: str) -> None:
-    session.run_always("poetry", "install", "--without=integrations", external=True)
-
-    session._session.install("pydantic>=2.2")  # type: ignore
+def test_pydantic_v2(session: nox.Session, gql_core: str) -> None:
+    session.run_install(
+        "uv",
+        "sync",
+        "--no-group=integrations",
+        env={"UV_PROJECT_ENVIRONMENT": session.virtualenv.location},
+    )
+    session.install("pydantic>=2.2")
     _install_gql_core(session, gql_core)
     session.run(
         "pytest",
@@ -169,10 +194,13 @@ def test_pydantic_v2(session: Session, gql_core: str) -> None:
     )
 
 
-@session(python=PYTHON_VERSIONS, name="Type checkers tests", tags=["tests"])
-def tests_typecheckers(session: Session) -> None:
-    session.run_always("poetry", "install", external=True)
-
+@nox.session(python=PYTHON_VERSIONS, name="Type checkers tests", tags=["tests"])
+def tests_typecheckers(session: nox.Session) -> None:
+    session.run_install(
+        "uv",
+        "sync",
+        env={"UV_PROJECT_ENVIRONMENT": session.virtualenv.location},
+    )
     session.install("pyright")
     session.install("pydantic")
     session.install("mypy")
@@ -187,12 +215,16 @@ def tests_typecheckers(session: Session) -> None:
     )
 
 
-@session(python=PYTHON_VERSIONS, name="CLI tests", tags=["tests"])
-def tests_cli(session: Session) -> None:
-    session.run_always("poetry", "install", "--without=integrations", external=True)
-
-    session._session.install("uvicorn")  # type: ignore
-    session._session.install("starlette")  # type: ignore
+@nox.session(python=PYTHON_VERSIONS, name="CLI tests", tags=["tests"])
+def tests_cli(session: nox.Session) -> None:
+    session.run_install(
+        "uv",
+        "sync",
+        "--no-group=integrations",
+        env={"UV_PROJECT_ENVIRONMENT": session.virtualenv.location},
+    )
+    session.install("uvicorn")
+    session.install("starlette")
 
     session.run(
         "pytest",

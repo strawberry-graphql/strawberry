@@ -101,9 +101,10 @@ where you can create a new one and provide the following information:
 
 #### Local development
 
-You will need Poetry to start contributing to Strawberry. Refer to the
-[documentation](https://poetry.eustace.io/docs/#introduction) to start using
-Poetry.
+You will need [uv](https://docs.astral.sh/uv/) to start contributing to
+Strawberry. Refer to the
+[documentation](https://docs.astral.sh/uv/getting-started/installation/) to
+install uv.
 
 You will first need to clone the repository using `git` and place yourself in
 its directory:
@@ -117,9 +118,9 @@ Now, you will need to install the required dependencies for Strawberry and be su
 that the current tests are passing on your machine:
 
 ```shell
-$ poetry install
-$ poetry run pytest
-$ poetry run mypy
+$ uv sync
+$ uv run pytest
+$ uv run mypy
 ```
 
 Some tests are known to be inconsistent. (The fix is in progress.) These tests are marked with the `pytest.mark.flaky` marker.
@@ -132,7 +133,7 @@ coding style, you can install a pre-commit hook that will check that everything
 is in order:
 
 ```shell
-$ poetry run pre-commit install
+$ uv run pre-commit install
 ```
 
 Your code must always be accompanied by corresponding tests. If tests are not

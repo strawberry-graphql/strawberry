@@ -1,5 +1,6 @@
 ARG VARIANT=3.13
 FROM mcr.microsoft.com/devcontainers/python:${VARIANT}
 
-RUN pip3 install poetry pre-commit
-RUN poetry config virtualenvs.in-project true
+COPY --from=ghcr.io/astral-sh/uv:0.11.3 /uv /uvx /bin/
+
+RUN pip3 install pre-commit
