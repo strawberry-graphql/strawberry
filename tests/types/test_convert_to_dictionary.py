@@ -1,7 +1,8 @@
 from enum import Enum
 
 import strawberry
-from strawberry import asdict
+from strawberry import UNSET, asdict
+from strawberry.types.maybe import Some
 
 
 def test_convert_simple_type_to_dictionary():
@@ -61,4 +62,63 @@ def test_convert_input_to_dictionary():
         "title": title,
         "description": description,
         "tags": None,
+    }
+
+
+def test_convert_some_values_are_unwrapped():
+    @strawberry.type
+    class User:
+        name: str
+        age: strawberry.Maybe[int]
+
+    user = User(name="Alex", age=Some(30))
+
+    assert asdict(user) == {
+        "name": "Alex",
+        "age": 30,
+    }
+
+
+def test_convert_unset_fields_are_excluded():
+    @strawberry.input
+    class UserInput:
+        name: str
+        age: int | None = UNSET
+
+    user = UserInput(name="Alex")
+
+    assert asdict(user) == {
+        "name": "Alex",
+    }
+
+
+def test_convert_some_none_is_preserved():
+    @strawberry.type
+    class User:
+        name: str
+        age: strawberry.Maybe[int]
+
+    user = User(name="Alex", age=Some(None))
+
+    assert asdict(user) == {
+        "name": "Alex",
+        "age": None,
+    }
+
+
+def test_convert_nested_some_values():
+    @strawberry.type
+    class Address:
+        city: str
+
+    @strawberry.type
+    class User:
+        name: str
+        address: strawberry.Maybe[Address]
+
+    user = User(name="Alex", address=Some(Address(city="NYC")))
+
+    assert asdict(user) == {
+        "name": "Alex",
+        "address": {"city": "NYC"},
     }
