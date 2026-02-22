@@ -1,0 +1,1 @@
+# Test package for Strawberry Pydantic integration
