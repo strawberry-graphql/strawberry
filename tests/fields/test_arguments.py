@@ -503,29 +503,3 @@ def test_resolver_with_invalid_field_argument_type():
     @strawberry.type
     class Mutation:
         add_adjective: bool = strawberry.field(resolver=add_adjective_resolver)
-
-
-def test_unset_deprecation_warning():
-    with pytest.deprecated_call():
-        from strawberry.types.arguments import UNSET  # noqa: F401
-    with pytest.deprecated_call():
-        from strawberry.types.arguments import is_unset  # noqa: F401
-
-
-def test_deprecated_unset():
-    warning = "`is_unset` is deprecated use `value is UNSET` instead"
-
-    with pytest.deprecated_call(match=warning):
-        from strawberry.types.unset import is_unset
-
-    with pytest.deprecated_call(match=warning):
-        assert is_unset(UNSET)
-
-    with pytest.deprecated_call(match=warning):
-        assert not is_unset(None)
-
-    with pytest.deprecated_call(match=warning):
-        assert not is_unset(False)
-
-    with pytest.deprecated_call(match=warning):
-        assert not is_unset("hello world")
