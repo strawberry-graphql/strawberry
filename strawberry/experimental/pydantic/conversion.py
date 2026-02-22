@@ -76,6 +76,8 @@ def convert_pydantic_model_to_strawberry_class(
     model_instance=None,  # noqa: ANN001
     extra=None,  # noqa: ANN001
 ) -> Any:
+    from strawberry.types.private import is_private
+
     extra = extra or {}
     kwargs = {}
 
@@ -94,6 +96,18 @@ def convert_pydantic_model_to_strawberry_class(
             kwargs[python_name] = _convert_from_pydantic_to_strawberry_type(
                 field.type, data_from_model, extra=data_from_extra
             )
+
+    # Also handle private fields from extra dict or pydantic model
+    # Private fields are in dataclass fields but not in strawberry definition
+    if dataclasses.is_dataclass(cls):
+        for dataclass_field in dataclasses.fields(cls):
+            if is_private(dataclass_field.type):
+                field_name = dataclass_field.name
+                # Priority: extra dict > pydantic model attribute
+                if field_name in extra:
+                    kwargs[field_name] = extra[field_name]
+                elif model_instance and hasattr(model_instance, field_name):
+                    kwargs[field_name] = getattr(model_instance, field_name)
 
     return cls(**kwargs)
 
