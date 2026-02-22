@@ -1317,3 +1317,55 @@ def test_union_used_inside_generic():
     """
         ).strip()
     )
+
+
+def test_annotated_union_inside_generic_subclass():
+    T = TypeVar("T")
+
+    @strawberry.type
+    class Dog:
+        name: str
+
+    @strawberry.type
+    class Cat:
+        name: str
+
+    DogCat = Annotated[Union[Dog, Cat], strawberry.union("DogCat")]
+
+    @strawberry.type
+    class Listing(Generic[T]):
+        items: list[T]
+
+    @strawberry.type
+    class Items(Listing[DogCat]):
+        pass
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def items(self) -> Items:
+            return Items(items=[Dog(name="Fido"), Cat(name="Whiskers")])
+
+    schema = strawberry.Schema(query=Query)
+
+    result = schema.execute_sync("""
+        {
+            items {
+                items {
+                    __typename
+                    ... on Dog { name }
+                    ... on Cat { name }
+                }
+            }
+        }
+    """)
+
+    assert not result.errors
+    assert result.data == {
+        "items": {
+            "items": [
+                {"__typename": "Dog", "name": "Fido"},
+                {"__typename": "Cat", "name": "Whiskers"},
+            ]
+        }
+    }

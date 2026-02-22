@@ -4,12 +4,14 @@ import dataclasses
 from abc import ABC, abstractmethod
 from typing import (
     TYPE_CHECKING,
+    Annotated,
     Any,
     ClassVar,
     Generic,
     Literal,
     TypeGuard,
     TypeVar,
+    get_origin,
     overload,
 )
 from typing_extensions import Protocol, Self, deprecated
@@ -131,6 +133,11 @@ class StrawberryContainer(StrawberryType):
             isinstance(self.of_type, StrawberryType) and self.of_type.is_graphql_generic
         ):
             of_type_copy = self.of_type.copy_with(type_var_map)
+
+        if get_origin(of_type_copy) is Annotated:
+            from strawberry.annotation import StrawberryAnnotation
+
+            of_type_copy = StrawberryAnnotation(of_type_copy).resolve()
 
         return type(self)(of_type_copy)
 
