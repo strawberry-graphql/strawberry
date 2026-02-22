@@ -9,6 +9,7 @@ from typing_extensions import Protocol
 
 import libcst as cst
 from graphql import (
+    DirectiveDefinitionNode,
     EnumTypeDefinitionNode,
     EnumValueDefinitionNode,
     FieldDefinitionNode,
@@ -883,8 +884,14 @@ def codegen(schema: str) -> str:
                 _is_federation_link_directive(directive)
                 for directive in graphql_definition.directives
             )
+        elif isinstance(graphql_definition, DirectiveDefinitionNode):
+            # Custom directive definitions don't need code generation,
+            # they're only used by the GraphQL schema itself
+            pass
         else:
-            raise NotImplementedError(f"Unknown definition {definition}")
+            raise NotImplementedError(
+                f"Unknown definition {type(graphql_definition).__name__}"
+            )
 
         if definition is not None:
             definitions[definition.name] = definition
