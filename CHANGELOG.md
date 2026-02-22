@@ -1,6 +1,18 @@
 CHANGELOG
 =========
 
+0.303.0 - 2026-02-22
+--------------------
+
+Add `strawberry.federation.params` module with shared TypedDicts (`FederationFieldParams`, `FederationInterfaceParams`, `FederationTypeParams`) and processing functions (`process_federation_field_directives`, `process_federation_type_directives`) for federation directives.
+
+These TypedDicts can be consumed via `Unpack[...]` to avoid duplicating federation parameter lists across packages. The processing functions are extracted from inline logic previously in `field.py` and `object_type.py`.
+
+Also fixes a bug where `inaccessible=False` incorrectly added the `Inaccessible` directive on types/interfaces.
+
+Contributed by [Thiago Bellini Ribeiro](https://github.com/bellini666) via [PR #4196](https://github.com/strawberry-graphql/strawberry/pull/4196/)
+
+
 0.302.0 - 2026-02-22
 --------------------
 
