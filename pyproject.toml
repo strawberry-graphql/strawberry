@@ -35,6 +35,7 @@ documentation = "https://strawberry.rocks/"
 
 [project.scripts]
 strawberry = "strawberry.cli:run"
+pre-commit-no-redundant-dataclasses = "strawberry.hooks.no_redundant_dataclasses:main"
 
 [project.optional-dependencies]
 aiohttp = ["aiohttp>=3.7.4.post0,<4"]
@@ -334,6 +335,7 @@ ignore = [
 "strawberry/extensions/tracing/__init__.py" = ["TCH004"]
 "strawberry/fastapi/*" = ["B008"]
 "strawberry/annotation.py" = ["RET505"]
+"strawberry/hooks/*" = ["T201"]
 "tests/*" = [
   "ANN001",
   "ANN201",
