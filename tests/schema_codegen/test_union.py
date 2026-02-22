@@ -18,10 +18,9 @@ def test_union():
 
     expected = textwrap.dedent(
         """
+        from __future__ import annotations
         import strawberry
         from typing import Annotated
-
-        User = Annotated[Admin | Client, strawberry.union(name="User")]
 
         @strawberry.type
         class Admin:
@@ -30,6 +29,8 @@ def test_union():
         @strawberry.type
         class Client:
             name: str
+
+        User = Annotated[Admin | Client, strawberry.union(name="User")]
         """
     ).strip()
 

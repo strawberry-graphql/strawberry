@@ -14,6 +14,7 @@ def test_enum():
 
     expected = textwrap.dedent(
         """
+        from __future__ import annotations
         import strawberry
         from enum import Enum
 
@@ -42,6 +43,7 @@ def test_multiple_enums_single_import():
 
     expected = textwrap.dedent(
         """
+        from __future__ import annotations
         import strawberry
         from enum import Enum
 

@@ -15,6 +15,7 @@ def test_support_for_key_directive():
 
     expected = textwrap.dedent(
         """
+        from __future__ import annotations
         import strawberry
 
         @strawberry.federation.type(keys=["id"])
@@ -39,6 +40,7 @@ def test_support_for_shareable_directive():
 
     expected = textwrap.dedent(
         """
+        from __future__ import annotations
         import strawberry
 
         @strawberry.federation.type(shareable=True)
@@ -63,6 +65,7 @@ def test_support_for_inaccessible_directive():
 
     expected = textwrap.dedent(
         """
+        from __future__ import annotations
         import strawberry
 
         @strawberry.federation.type(inaccessible=True)
@@ -87,6 +90,7 @@ def test_support_for_tags_directive():
 
     expected = textwrap.dedent(
         """
+        from __future__ import annotations
         import strawberry
 
         @strawberry.federation.type(tags=["user", "admin"])
@@ -110,6 +114,7 @@ def test_uses_federation_schema():
 
     expected = textwrap.dedent(
         """
+        from __future__ import annotations
         import strawberry
 
         @strawberry.type
@@ -134,6 +139,7 @@ def test_supports_authenticated_directive():
 
     expected = textwrap.dedent(
         """
+        from __future__ import annotations
         import strawberry
 
         @strawberry.federation.type(authenticated=True)
@@ -156,6 +162,7 @@ def test_requires_scope():
 
     expected = textwrap.dedent(
         """
+        from __future__ import annotations
         import strawberry
 
         @strawberry.federation.type(requires_scopes=[["client", "poweruser"], ["admin"], ["productowner"]])
@@ -178,6 +185,7 @@ def test_policy_directive():
 
     expected = textwrap.dedent(
         """
+        from __future__ import annotations
         import strawberry
 
         @strawberry.federation.type(policy=["userPolicy", [["client", "poweruser"], ["admin"], ["productowner"]]])
@@ -207,6 +215,7 @@ def test_support_for_directives_on_fields():
 
     expected = textwrap.dedent(
         """
+        from __future__ import annotations
         import strawberry
         from strawberry.federation.schema_directives import Override
 
