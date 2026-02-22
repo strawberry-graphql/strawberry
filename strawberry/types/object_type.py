@@ -18,7 +18,6 @@ from strawberry.exceptions import (
 )
 from strawberry.types.base import get_object_definition
 from strawberry.types.maybe import _annotation_is_maybe
-from strawberry.utils.deprecations import DEPRECATION_MESSAGES, DeprecatedDescriptor
 from strawberry.utils.str_converters import to_camel_case
 
 from .base import StrawberryObjectDefinition
@@ -157,12 +156,6 @@ def _process_type(
         is_type_of=is_type_of,
         resolve_type=resolve_type,
     )
-    # TODO: remove when deprecating _type_definition
-    DeprecatedDescriptor(
-        DEPRECATION_MESSAGES._TYPE_DEFINITION,
-        cls.__strawberry_definition__,  # type: ignore[attr-defined]
-        "_type_definition",
-    ).inject(cls)
 
     # dataclasses removes attributes from the class here:
     # https://github.com/python/cpython/blob/577d7c4e/Lib/dataclasses.py#L873-L880
