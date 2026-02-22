@@ -1,6 +1,37 @@
 CHANGELOG
 =========
 
+0.304.0 - 2026-02-22
+--------------------
+
+Remove deprecated `LazyType["Name", "module"]` syntax, deprecated since [0.129.0](https://github.com/strawberry-graphql/strawberry/releases/tag/0.129.0).
+
+### Migration guide
+
+**Before (deprecated):**
+```python
+from strawberry.lazy_type import LazyType
+
+
+@strawberry.type
+class Query:
+    user: LazyType["User", "myapp.types"]
+```
+
+**After:**
+```python
+from typing import Annotated
+import strawberry
+
+
+@strawberry.type
+class Query:
+    user: Annotated["User", strawberry.lazy("myapp.types")]
+```
+
+Contributed by [Luis Gustavo](https://github.com/Ckk3) via [PR #4218](https://github.com/strawberry-graphql/strawberry/pull/4218/)
+
+
 0.303.1 - 2026-02-22
 --------------------
 
