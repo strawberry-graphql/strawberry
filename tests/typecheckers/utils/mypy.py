@@ -52,8 +52,11 @@ def run_mypy(code: str, strict: bool = True) -> list[Result]:
         module_path = pathlib.Path(directory) / "mypy_test.py"
         module_path.write_text(code)
 
+        config_path = pathlib.Path(directory) / "mypy.ini"
+        config_path.write_text("[mypy]\n")
+
         process_result = subprocess.run(
-            [*args, str(module_path)],
+            [*args, "--config-file", str(config_path), str(module_path)],
             check=False,
             capture_output=True,
             env={
