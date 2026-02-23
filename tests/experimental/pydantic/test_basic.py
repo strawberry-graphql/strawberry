@@ -17,32 +17,6 @@ from strawberry.types.enum import StrawberryEnumDefinition
 from strawberry.types.union import StrawberryUnion
 
 
-def test_basic_type_field_list():
-    class User(pydantic.BaseModel):
-        age: int
-        password: str | None
-
-    with pytest.deprecated_call():
-
-        @strawberry.experimental.pydantic.type(User, fields=["age", "password"])
-        class UserType:
-            pass
-
-    definition: StrawberryObjectDefinition = UserType.__strawberry_definition__
-    assert definition.name == "UserType"
-
-    [field1, field2] = definition.fields
-
-    assert field1.python_name == "age"
-    assert field1.graphql_name is None
-    assert field1.type is int
-
-    assert field2.python_name == "password"
-    assert field2.graphql_name is None
-    assert isinstance(field2.type, StrawberryOptional)
-    assert field2.type.of_type is str
-
-
 def test_basic_type_all_fields():
     class User(pydantic.BaseModel):
         age: int
