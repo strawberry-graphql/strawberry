@@ -957,14 +957,14 @@ colorama = {version = "*", markers = "platform_system == \"Windows\""}
 
 [[package]]
 name = "codeflash"
-version = "0.20.0"
+version = "0.20.1"
 description = "Client for codeflash.ai - automatic code performance optimization, powered by AI"
 optional = false
 python-versions = ">=3.9"
 groups = ["dev"]
 files = [
-    {file = "codeflash-0.20.0-py3-none-any.whl", hash = "sha256:84db60709e8b16c7cae5fd673ee5dd71cd572ae7ca3749df2fa1bc6a83bb9699"},
-    {file = "codeflash-0.20.0.tar.gz", hash = "sha256:5acf3c6fcdec34c44bb2037d81063e9dbdc7c0fa5f6b77547a4fae4fde3658d3"},
+    {file = "codeflash-0.20.1-py3-none-any.whl", hash = "sha256:23ca9822db8a59b5714cd55a783cfb42d06aa3b866e3e589aba404c085ea4a2a"},
+    {file = "codeflash-0.20.1.tar.gz", hash = "sha256:035934397277ec18860fb9ee81460f96cab11bc1cab4e9b5e16414955f2f2aea"},
 ]
 
 [package.dependencies]
@@ -989,11 +989,14 @@ posthog = ">=3.0.0"
 pydantic = ">=1.10.1"
 pygls = ">=2.0.0,<3.0.0"
 pytest = ">=7.0.0"
-pytest-asyncio = ">=1.2.0"
+pytest-asyncio = ">=0.18.0"
 pytest-timeout = ">=2.1.0"
 rich = ">=13.8.1"
 sentry-sdk = ">=1.40.6,<3.0.0"
 tomlkit = ">=0.11.7"
+tree-sitter = ">=0.23.0"
+tree-sitter-javascript = ">=0.23.0"
+tree-sitter-typescript = ">=0.23.0"
 unidiff = ">=0.7.4"
 
 [[package]]
@@ -1633,14 +1636,14 @@ tzdata = "*"
 
 [[package]]
 name = "fastapi"
-version = "0.129.0"
+version = "0.131.0"
 description = "FastAPI framework, high performance, easy to learn, fast to code, ready for production"
 optional = false
 python-versions = ">=3.10"
 groups = ["main", "integrations"]
 files = [
-    {file = "fastapi-0.129.0-py3-none-any.whl", hash = "sha256:b4946880e48f462692b31c083be0432275cbfb6e2274566b1be91479cc1a84ec"},
-    {file = "fastapi-0.129.0.tar.gz", hash = "sha256:61315cebd2e65df5f97ec298c888f9de30430dd0612d59d6480beafbc10655af"},
+    {file = "fastapi-0.131.0-py3-none-any.whl", hash = "sha256:ed0e53decccf4459de78837ce1b867cd04fa9ce4579497b842579755d20b405a"},
+    {file = "fastapi-0.131.0.tar.gz", hash = "sha256:6531155e52bee2899a932c746c9a8250f210e3c3303a5f7b9f8a808bfe0548ff"},
 ]
 
 [package.dependencies]
@@ -1651,7 +1654,7 @@ typing-extensions = ">=4.8.0"
 typing-inspection = ">=0.4.2"
 
 [package.extras]
-all = ["email-validator (>=2.0.0)", "fastapi-cli[standard] (>=0.0.8)", "httpx (>=0.23.0,<1.0.0)", "itsdangerous (>=1.1.0)", "jinja2 (>=3.1.5)", "orjson (>=3.9.3)", "pydantic-extra-types (>=2.0.0)", "pydantic-settings (>=2.0.0)", "python-multipart (>=0.0.18)", "pyyaml (>=5.3.1)", "ujson (>=5.8.0)", "uvicorn[standard] (>=0.12.0)"]
+all = ["email-validator (>=2.0.0)", "fastapi-cli[standard] (>=0.0.8)", "httpx (>=0.23.0,<1.0.0)", "itsdangerous (>=1.1.0)", "jinja2 (>=3.1.5)", "pydantic-extra-types (>=2.0.0)", "pydantic-settings (>=2.0.0)", "python-multipart (>=0.0.18)", "pyyaml (>=5.3.1)", "uvicorn[standard] (>=0.12.0)"]
 standard = ["email-validator (>=2.0.0)", "fastapi-cli[standard] (>=0.0.8)", "httpx (>=0.23.0,<1.0.0)", "jinja2 (>=3.1.5)", "pydantic-extra-types (>=2.0.0)", "pydantic-settings (>=2.0.0)", "python-multipart (>=0.0.18)", "uvicorn[standard] (>=0.12.0)"]
 standard-no-fastapi-cloud-cli = ["email-validator (>=2.0.0)", "fastapi-cli[standard-no-fastapi-cloud-cli] (>=0.0.8)", "httpx (>=0.23.0,<1.0.0)", "jinja2 (>=3.1.5)", "pydantic-extra-types (>=2.0.0)", "pydantic-settings (>=2.0.0)", "python-multipart (>=0.0.18)", "uvicorn[standard] (>=0.12.0)"]
 
@@ -5017,14 +5020,14 @@ requests = ">=2.0.1,<3.0.0"
 
 [[package]]
 name = "rich"
-version = "14.3.2"
+version = "14.3.3"
 description = "Render rich text, tables, progress bars, syntax highlighting, markdown and more to the terminal"
 optional = false
 python-versions = ">=3.8.0"
 groups = ["main", "dev", "integrations"]
 files = [
-    {file = "rich-14.3.2-py3-none-any.whl", hash = "sha256:08e67c3e90884651da3239ea668222d19bea7b589149d8014a21c633420dbb69"},
-    {file = "rich-14.3.2.tar.gz", hash = "sha256:e712f11c1a562a11843306f5ed999475f09ac31ffb64281f73ab29ffdda8b3b8"},
+    {file = "rich-14.3.3-py3-none-any.whl", hash = "sha256:793431c1f8619afa7d3b52b2cdec859562b950ea0d4b6b505397612db8d5362d"},
+    {file = "rich-14.3.3.tar.gz", hash = "sha256:b8daa0b9e4eef54dd8cf7c86c03713f53241884e814f4e2f5fb342fe520f639b"},
 ]
 
 [package.dependencies]
@@ -5473,6 +5476,99 @@ html5tagger = ">=1.2.1"
 nb = ["ipykernel (>=6.29.5)", "ipywidgets (>=8.1.8)", "jupyter (>=1.1.1)", "jupyter-client (>=8.6.3)", "jupyterlab (>=4.3.8)", "notebook (>=7.3.3)"]
 
 [[package]]
+name = "tree-sitter"
+version = "0.25.2"
+description = "Python bindings to the Tree-sitter parsing library"
+optional = false
+python-versions = ">=3.10"
+groups = ["dev"]
+files = [
+    {file = "tree-sitter-0.25.2.tar.gz", hash = "sha256:fe43c158555da46723b28b52e058ad444195afd1db3ca7720c59a254544e9c20"},
+    {file = "tree_sitter-0.25.2-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:72a510931c3c25f134aac2daf4eb4feca99ffe37a35896d7150e50ac3eee06c7"},
+    {file = "tree_sitter-0.25.2-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:44488e0e78146f87baaa009736886516779253d6d6bac3ef636ede72bc6a8234"},
+    {file = "tree_sitter-0.25.2-cp310-cp310-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:c2f8e7d6b2f8489d4a9885e3adcaef4bc5ff0a275acd990f120e29c4ab3395c5"},
+    {file = "tree_sitter-0.25.2-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:20b570690f87f1da424cd690e51cc56728d21d63f4abd4b326d382a30353acc7"},
+    {file = "tree_sitter-0.25.2-cp310-cp310-musllinux_1_2_x86_64.whl", hash = "sha256:a0ec41b895da717bc218a42a3a7a0bfcfe9a213d7afaa4255353901e0e21f696"},
+    {file = "tree_sitter-0.25.2-cp310-cp310-win_amd64.whl", hash = "sha256:7712335855b2307a21ae86efe949c76be36c6068d76df34faa27ce9ee40ff444"},
+    {file = "tree_sitter-0.25.2-cp310-cp310-win_arm64.whl", hash = "sha256:a925364eb7fbb9cdce55a9868f7525a1905af512a559303bd54ef468fd88cb37"},
+    {file = "tree_sitter-0.25.2-cp311-cp311-macosx_10_9_x86_64.whl", hash = "sha256:b8ca72d841215b6573ed0655b3a5cd1133f9b69a6fa561aecad40dca9029d75b"},
+    {file = "tree_sitter-0.25.2-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:cc0351cfe5022cec5a77645f647f92a936b38850346ed3f6d6babfbeeeca4d26"},
+    {file = "tree_sitter-0.25.2-cp311-cp311-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:1799609636c0193e16c38f366bda5af15b1ce476df79ddaae7dd274df9e44266"},
+    {file = "tree_sitter-0.25.2-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:3e65ae456ad0d210ee71a89ee112ac7e72e6c2e5aac1b95846ecc7afa68a194c"},
+    {file = "tree_sitter-0.25.2-cp311-cp311-musllinux_1_2_x86_64.whl", hash = "sha256:49ee3c348caa459244ec437ccc7ff3831f35977d143f65311572b8ba0a5f265f"},
+    {file = "tree_sitter-0.25.2-cp311-cp311-win_amd64.whl", hash = "sha256:56ac6602c7d09c2c507c55e58dc7026b8988e0475bd0002f8a386cce5e8e8adc"},
+    {file = "tree_sitter-0.25.2-cp311-cp311-win_arm64.whl", hash = "sha256:b3d11a3a3ac89bb8a2543d75597f905a9926f9c806f40fcca8242922d1cc6ad5"},
+    {file = "tree_sitter-0.25.2-cp312-cp312-macosx_10_13_x86_64.whl", hash = "sha256:ddabfff809ffc983fc9963455ba1cecc90295803e06e140a4c83e94c1fa3d960"},
+    {file = "tree_sitter-0.25.2-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:c0c0ab5f94938a23fe81928a21cc0fac44143133ccc4eb7eeb1b92f84748331c"},
+    {file = "tree_sitter-0.25.2-cp312-cp312-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:dd12d80d91d4114ca097626eb82714618dcdfacd6a5e0955216c6485c350ef99"},
+    {file = "tree_sitter-0.25.2-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:b43a9e4c89d4d0839de27cd4d6902d33396de700e9ff4c5ab7631f277a85ead9"},
+    {file = "tree_sitter-0.25.2-cp312-cp312-musllinux_1_2_x86_64.whl", hash = "sha256:fbb1706407c0e451c4f8cc016fec27d72d4b211fdd3173320b1ada7a6c74c3ac"},
+    {file = "tree_sitter-0.25.2-cp312-cp312-win_amd64.whl", hash = "sha256:6d0302550bbe4620a5dc7649517c4409d74ef18558276ce758419cf09e578897"},
+    {file = "tree_sitter-0.25.2-cp312-cp312-win_arm64.whl", hash = "sha256:0c8b6682cac77e37cfe5cf7ec388844957f48b7bd8d6321d0ca2d852994e10d5"},
+    {file = "tree_sitter-0.25.2-cp313-cp313-macosx_10_13_x86_64.whl", hash = "sha256:0628671f0de69bb279558ef6b640bcfc97864fe0026d840f872728a86cd6b6cd"},
+    {file = "tree_sitter-0.25.2-cp313-cp313-macosx_11_0_arm64.whl", hash = "sha256:f5ddcd3e291a749b62521f71fc953f66f5fd9743973fd6dd962b092773569601"},
+    {file = "tree_sitter-0.25.2-cp313-cp313-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:bd88fbb0f6c3a0f28f0a68d72df88e9755cf5215bae146f5a1bdc8362b772053"},
+    {file = "tree_sitter-0.25.2-cp313-cp313-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:b878e296e63661c8e124177cc3084b041ba3f5936b43076d57c487822426f614"},
+    {file = "tree_sitter-0.25.2-cp313-cp313-musllinux_1_2_x86_64.whl", hash = "sha256:d77605e0d353ba3fe5627e5490f0fbfe44141bafa4478d88ef7954a61a848dae"},
+    {file = "tree_sitter-0.25.2-cp313-cp313-win_amd64.whl", hash = "sha256:463c032bd02052d934daa5f45d183e0521ceb783c2548501cf034b0beba92c9b"},
+    {file = "tree_sitter-0.25.2-cp313-cp313-win_arm64.whl", hash = "sha256:b3f63a1796886249bd22c559a5944d64d05d43f2be72961624278eff0dcc5cb8"},
+    {file = "tree_sitter-0.25.2-cp314-cp314-macosx_10_13_x86_64.whl", hash = "sha256:65d3c931013ea798b502782acab986bbf47ba2c452610ab0776cf4a8ef150fc0"},
+    {file = "tree_sitter-0.25.2-cp314-cp314-macosx_11_0_arm64.whl", hash = "sha256:bda059af9d621918efb813b22fb06b3fe00c3e94079c6143fcb2c565eb44cb87"},
+    {file = "tree_sitter-0.25.2-cp314-cp314-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:eac4e8e4c7060c75f395feec46421eb61212cb73998dbe004b7384724f3682ab"},
+    {file = "tree_sitter-0.25.2-cp314-cp314-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:260586381b23be33b6191a07cea3d44ecbd6c01aa4c6b027a0439145fcbc3358"},
+    {file = "tree_sitter-0.25.2-cp314-cp314-musllinux_1_2_x86_64.whl", hash = "sha256:7d2ee1acbacebe50ba0f85fff1bc05e65d877958f00880f49f9b2af38dce1af0"},
+    {file = "tree_sitter-0.25.2-cp314-cp314-win_amd64.whl", hash = "sha256:4973b718fcadfb04e59e746abfbb0288694159c6aeecd2add59320c03368c721"},
+    {file = "tree_sitter-0.25.2-cp314-cp314-win_arm64.whl", hash = "sha256:b8d4429954a3beb3e844e2872610d2a4800ba4eb42bb1990c6a4b1949b18459f"},
+]
+
+[package.extras]
+docs = ["sphinx (>=8.1,<9.0)", "sphinx-book-theme"]
+tests = ["tree-sitter-html (>=0.23.2)", "tree-sitter-javascript (>=0.23.1)", "tree-sitter-json (>=0.24.8)", "tree-sitter-python (>=0.23.6)", "tree-sitter-rust (>=0.23.2)"]
+
+[[package]]
+name = "tree-sitter-javascript"
+version = "0.25.0"
+description = "JavaScript grammar for tree-sitter"
+optional = false
+python-versions = ">=3.10"
+groups = ["dev"]
+files = [
+    {file = "tree_sitter_javascript-0.25.0-cp310-abi3-macosx_10_9_x86_64.whl", hash = "sha256:b70f887fb269d6e58c349d683f59fa647140c410cfe2bee44a883b20ec92e3dc"},
+    {file = "tree_sitter_javascript-0.25.0-cp310-abi3-macosx_11_0_arm64.whl", hash = "sha256:8264a996b8845cfce06965152a013b5d9cbb7d199bc3503e12b5682e62bb1de1"},
+    {file = "tree_sitter_javascript-0.25.0-cp310-abi3-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl", hash = "sha256:9dc04ba91fc8583344e57c1f1ed5b2c97ecaaf47480011b92fbeab8dda96db75"},
+    {file = "tree_sitter_javascript-0.25.0-cp310-abi3-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:199d09985190852e0912da2b8d26c932159be314bc04952cf917ed0e4c633e6b"},
+    {file = "tree_sitter_javascript-0.25.0-cp310-abi3-musllinux_1_2_aarch64.whl", hash = "sha256:dfcf789064c58dc13c0a4edb550acacfc6f0f280577f1e7a00de3e89fc7f8ddc"},
+    {file = "tree_sitter_javascript-0.25.0-cp310-abi3-musllinux_1_2_x86_64.whl", hash = "sha256:1b852d3aee8a36186dbcc32c798b11b4869f9b5041743b63b65c2ef793db7a54"},
+    {file = "tree_sitter_javascript-0.25.0-cp310-abi3-win_amd64.whl", hash = "sha256:e5ed840f5bd4a3f0272e441d19429b26eedc257abe5574c8546da6b556865e3c"},
+    {file = "tree_sitter_javascript-0.25.0-cp310-abi3-win_arm64.whl", hash = "sha256:622a69d677aa7f6ee2931d8c77c981a33f0ebb6d275aa9d43d3397c879a9bb0b"},
+    {file = "tree_sitter_javascript-0.25.0.tar.gz", hash = "sha256:329b5414874f0588a98f1c291f1b28138286617aa907746ffe55adfdcf963f38"},
+]
+
+[package.extras]
+core = ["tree-sitter (>=0.24,<1.0)"]
+
+[[package]]
+name = "tree-sitter-typescript"
+version = "0.23.2"
+description = "TypeScript and TSX grammars for tree-sitter"
+optional = false
+python-versions = ">=3.9"
+groups = ["dev"]
+files = [
+    {file = "tree_sitter_typescript-0.23.2-cp39-abi3-macosx_10_9_x86_64.whl", hash = "sha256:3cd752d70d8e5371fdac6a9a4df9d8924b63b6998d268586f7d374c9fba2a478"},
+    {file = "tree_sitter_typescript-0.23.2-cp39-abi3-macosx_11_0_arm64.whl", hash = "sha256:c7cc1b0ff5d91bac863b0e38b1578d5505e718156c9db577c8baea2557f66de8"},
+    {file = "tree_sitter_typescript-0.23.2-cp39-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:4b1eed5b0b3a8134e86126b00b743d667ec27c63fc9de1b7bb23168803879e31"},
+    {file = "tree_sitter_typescript-0.23.2-cp39-abi3-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:e96d36b85bcacdeb8ff5c2618d75593ef12ebaf1b4eace3477e2bdb2abb1752c"},
+    {file = "tree_sitter_typescript-0.23.2-cp39-abi3-musllinux_1_2_x86_64.whl", hash = "sha256:8d4f0f9bcb61ad7b7509d49a1565ff2cc363863644a234e1e0fe10960e55aea0"},
+    {file = "tree_sitter_typescript-0.23.2-cp39-abi3-win_amd64.whl", hash = "sha256:3f730b66396bc3e11811e4465c41ee45d9e9edd6de355a58bbbc49fa770da8f9"},
+    {file = "tree_sitter_typescript-0.23.2-cp39-abi3-win_arm64.whl", hash = "sha256:05db58f70b95ef0ea126db5560f3775692f609589ed6f8dd0af84b7f19f1cbb7"},
+    {file = "tree_sitter_typescript-0.23.2.tar.gz", hash = "sha256:7b167b5827c882261cb7a50dfa0fb567975f9b315e87ed87ad0a0a3aedb3834d"},
+]
+
+[package.extras]
+core = ["tree-sitter (>=0.23,<1.0)"]
+
+[[package]]
 name = "trove-classifiers"
 version = "2025.12.1.14"
 description = "Canonical source for classifiers on PyPI (pypi.org)."
@@ -5563,14 +5659,14 @@ twisted = ["twisted (>=22.10.0)", "zope-interface (>=5.2.0)"]
 
 [[package]]
 name = "typer"
-version = "0.24.0"
+version = "0.24.1"
 description = "Typer, build great CLIs. Easy to code. Based on Python type hints."
 optional = false
 python-versions = ">=3.10"
 groups = ["main", "dev"]
 files = [
-    {file = "typer-0.24.0-py3-none-any.whl", hash = "sha256:5fc435a9c8356f6160ed6e85a6301fdd6e3d8b2851da502050d1f92c5e9eddc8"},
-    {file = "typer-0.24.0.tar.gz", hash = "sha256:f9373dc4eff901350694f519f783c29b6d7a110fc0dcc11b1d7e353b85ca6504"},
+    {file = "typer-0.24.1-py3-none-any.whl", hash = "sha256:112c1f0ce578bfb4cab9ffdabc68f031416ebcc216536611ba21f04e9aa84c9e"},
+    {file = "typer-0.24.1.tar.gz", hash = "sha256:e39b4732d65fbdcde189ae76cf7cd48aeae72919dea1fdfc16593be016256b45"},
 ]
 
 [package.dependencies]
