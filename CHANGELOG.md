@@ -1,6 +1,31 @@
 CHANGELOG
 =========
 
+0.306.0 - 2026-02-23
+--------------------
+
+Remove deprecated `fields` parameter from Pydantic decorators, deprecated since [0.82.0](https://github.com/strawberry-graphql/strawberry/releases/tag/0.82.0).
+
+### Migration guide
+
+**Before (deprecated):**
+```python
+@strawberry.experimental.pydantic.type(model=UserModel, fields=["name", "age"])
+class User:
+    pass
+```
+
+**After:**
+```python
+@strawberry.experimental.pydantic.type(model=UserModel)
+class User:
+    name: strawberry.auto
+    age: strawberry.auto
+```
+
+Contributed by [Luis Gustavo](https://github.com/Ckk3) via [PR #4223](https://github.com/strawberry-graphql/strawberry/pull/4223/)
+
+
 0.305.0 - 2026-02-22
 --------------------
 
