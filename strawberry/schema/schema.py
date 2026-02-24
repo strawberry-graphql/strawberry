@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import inspect as _inspect
 import warnings
 from asyncio import ensure_future
 from collections.abc import AsyncGenerator, AsyncIterator, Awaitable, Callable, Iterable
@@ -93,6 +94,10 @@ if TYPE_CHECKING:
     from strawberry.types.field import StrawberryField
     from strawberry.types.scalar import ScalarDefinition, ScalarWrapper
     from strawberry.types.union import StrawberryUnion
+
+_EXECUTE_HAS_IS_ASYNC_ITERABLE = (
+    IS_GQL_33 and "is_async_iterable" in _inspect.signature(execute).parameters
+)
 
 SubscriptionResult: TypeAlias = AsyncGenerator[
     PreExecutionError | ExecutionResult, None
@@ -395,12 +400,18 @@ class Schema(BaseSchema):
         )
 
     def _get_custom_context_kwargs(
-        self, operation_extensions: dict[str, Any] | None = None
+        self,
+        operation_extensions: dict[str, Any] | None = None,
+        *,
+        sync: bool = False,
     ) -> dict[str, Any]:
         if not IS_GQL_33:
             return {}
 
-        return {"operation_extensions": operation_extensions}
+        kwargs: dict[str, Any] = {"operation_extensions": operation_extensions}
+        if sync and _EXECUTE_HAS_IS_ASYNC_ITERABLE:
+            kwargs["is_async_iterable"] = lambda _x: False
+        return kwargs
 
     def _get_middleware_manager(
         self, extensions: list[SchemaExtension]
@@ -693,7 +704,9 @@ class Schema(BaseSchema):
                     "Incremental execution is enabled but experimental_execute_incrementally is not available, "
                     "please install graphql-core>=3.3.0"
                 )
-        custom_context_kwargs = self._get_custom_context_kwargs(operation_extensions)
+        custom_context_kwargs = self._get_custom_context_kwargs(
+            operation_extensions, sync=True
+        )
 
         try:
             with extensions_runner.operation():
