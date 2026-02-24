@@ -1,4 +1,5 @@
 import dataclasses
+import warnings
 from enum import Enum
 from typing import Annotated, Any
 
@@ -68,9 +69,6 @@ def test_basic_type_all_fields():
 
 
 def test_basic_type_all_fields_respects_explicit_definitions():
-    """Test that all_fields=True respects explicit field definitions without warning."""
-    import warnings
-
     class User(pydantic.BaseModel):
         age: int
         password: str | None

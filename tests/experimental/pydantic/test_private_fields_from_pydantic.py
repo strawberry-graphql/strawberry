@@ -1,12 +1,10 @@
-"""Test that Private fields work correctly with from_pydantic in experimental pydantic types."""
-
-from typing import Any
+import warnings
+from typing import Any, Optional
 
 import pytest
 from pydantic import BaseModel
 
 import strawberry
-from strawberry.experimental.pydantic import type as pyd_type
 
 
 def test_private_field_from_pydantic_with_extra():
@@ -16,7 +14,7 @@ def test_private_field_from_pydantic_with_extra():
         name: str
         age: int
 
-    @pyd_type(model=UserModel)
+    @strawberry.experimental.pydantic.type(model=UserModel)
     class User:
         name: strawberry.auto
         age: strawberry.auto
@@ -36,7 +34,7 @@ def test_private_field_from_pydantic_without_extra_raises_error():
     class UserModel(BaseModel):
         name: str
 
-    @pyd_type(model=UserModel)
+    @strawberry.experimental.pydantic.type(model=UserModel)
     class User:
         name: strawberry.auto
         password: strawberry.Private[str]
@@ -57,7 +55,7 @@ def test_private_field_from_pydantic_multiple_private_fields():
         name: str
         price: float
 
-    @pyd_type(model=ProductModel)
+    @strawberry.experimental.pydantic.type(model=ProductModel)
     class Product:
         name: strawberry.auto
         price: strawberry.auto
@@ -81,7 +79,7 @@ def test_private_field_not_exposed_in_schema():
     class UserModel(BaseModel):
         name: str
 
-    @pyd_type(model=UserModel)
+    @strawberry.experimental.pydantic.type(model=UserModel)
     class User:
         name: strawberry.auto
         password: strawberry.Private[str]
@@ -111,7 +109,7 @@ def test_private_field_accessible_in_resolver():
         first_name: str
         last_name: str
 
-    @pyd_type(model=UserModel)
+    @strawberry.experimental.pydantic.type(model=UserModel)
     class User:
         first_name: strawberry.auto
         last_name: strawberry.auto
@@ -141,7 +139,7 @@ def test_private_field_with_optional_private_field():
     class UserModel(BaseModel):
         name: str
 
-    @pyd_type(model=UserModel)
+    @strawberry.experimental.pydantic.type(model=UserModel)
     class User:
         name: strawberry.auto
         session_token: strawberry.Private[str | None] = None
@@ -171,12 +169,12 @@ def test_private_field_from_pydantic_with_nested_types():
         name: str
         address: AddressModel
 
-    @pyd_type(model=AddressModel)
+    @strawberry.experimental.pydantic.type(model=AddressModel)
     class Address:
         street: strawberry.auto
         city: strawberry.auto
 
-    @pyd_type(model=UserModel)
+    @strawberry.experimental.pydantic.type(model=UserModel)
     class User:
         name: strawberry.auto
         address: strawberry.auto
@@ -206,7 +204,7 @@ def test_private_field_overrides_pydantic_model_field():
         name: str
         password: str  # This field exists in pydantic model
 
-    @pyd_type(model=UserModel)
+    @strawberry.experimental.pydantic.type(model=UserModel)
     class User:
         name: strawberry.auto
         # Marking password as Private even though it's in the pydantic model
@@ -239,7 +237,6 @@ def test_private_field_overrides_pydantic_model_field():
 
 def test_private_field_with_all_fields_no_warning():
     """Test that using Private fields with all_fields=True does not produce a warning."""
-    import warnings
 
     class UserModel(BaseModel):
         name: str
@@ -250,7 +247,7 @@ def test_private_field_with_all_fields_no_warning():
     with warnings.catch_warnings(record=True) as w:
         warnings.simplefilter("always")
 
-        @pyd_type(model=UserModel, all_fields=True)
+        @strawberry.experimental.pydantic.type(model=UserModel, all_fields=True)
         class User:
             password: strawberry.Private[str]
 
@@ -301,7 +298,7 @@ def test_all_fields_respects_explicit_field_definitions():
     with warnings.catch_warnings(record=True) as w:
         warnings.simplefilter("always")
 
-        @pyd_type(model=UserModel, all_fields=True)
+        @strawberry.experimental.pydantic.type(model=UserModel, all_fields=True)
         class User:
             # Explicit field with extension - should be respected
             name: str = strawberry.field(extensions=[UpperCaseExtension()])
@@ -336,13 +333,12 @@ def test_all_fields_respects_explicit_field_definitions():
 
 def test_all_fields_with_explicit_type_override():
     """Test that explicit type annotations are respected with all_fields=True."""
-    from typing import Optional
 
     class UserModel(BaseModel):
         name: str
         age: int  # int in pydantic model
 
-    @pyd_type(model=UserModel, all_fields=True)
+    @strawberry.experimental.pydantic.type(model=UserModel, all_fields=True)
     class User:
         # Override age to be Optional[str] instead of int
         age: Optional[str] = None
