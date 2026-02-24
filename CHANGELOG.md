@@ -1,6 +1,28 @@
 CHANGELOG
 =========
 
+0.307.0 - 2026-02-24
+--------------------
+
+Remove deprecated `_type_definition` and `_enum_definition` aliases, deprecated since [0.187.0](https://github.com/strawberry-graphql/strawberry/releases/tag/0.187.0).
+
+### Migration guide
+
+**Before (deprecated):**
+```python
+type_def = MyType._type_definition
+enum_def = MyEnum._enum_definition
+```
+
+**After:**
+```python
+type_def = MyType.__strawberry_definition__
+enum_def = MyEnum.__strawberry_definition__
+```
+
+Contributed by [Luis Gustavo](https://github.com/Ckk3) via [PR #4219](https://github.com/strawberry-graphql/strawberry/pull/4219/)
+
+
 0.306.0 - 2026-02-23
 --------------------
 
