@@ -14,9 +14,8 @@ from typing import (
     get_origin,
     overload,
 )
-from typing_extensions import Protocol, Self, deprecated
+from typing_extensions import Protocol, Self
 
-from strawberry.utils.deprecations import DEPRECATION_MESSAGES, DeprecatedDescriptor
 from strawberry.utils.inspect import get_specialized_type_var_map
 from strawberry.utils.typing import is_concrete_generic
 from strawberry.utils.typing import is_generic as is_type_generic
@@ -342,12 +341,6 @@ class StrawberryObjectDefinition(StrawberryType):
             (self.origin,),
             {"__strawberry_definition__": new_type_definition},
         )
-        # TODO: remove when deprecating _type_definition
-        DeprecatedDescriptor(
-            DEPRECATION_MESSAGES._TYPE_DEFINITION,
-            new_type.__strawberry_definition__,  # type: ignore
-            "_type_definition",
-        ).inject(new_type)
 
         new_type_definition.origin = new_type
 
@@ -479,16 +472,6 @@ class StrawberryObjectDefinition(StrawberryType):
         return any(isinstance(directive, OneOf) for directive in self.directives)
 
 
-# TODO: remove when deprecating _type_definition
-if TYPE_CHECKING:
-
-    @deprecated("Use StrawberryObjectDefinition instead")
-    class TypeDefinition(StrawberryObjectDefinition): ...
-
-else:
-    TypeDefinition = StrawberryObjectDefinition
-
-
 __all__ = [
     "StrawberryContainer",
     "StrawberryList",
@@ -496,7 +479,6 @@ __all__ = [
     "StrawberryOptional",
     "StrawberryType",
     "StrawberryTypeVar",
-    "TypeDefinition",
     "WithStrawberryObjectDefinition",
     "get_object_definition",
     "has_object_definition",
