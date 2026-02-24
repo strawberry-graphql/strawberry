@@ -1,5 +1,4 @@
-from collections.abc import Collection, Iterable
-from typing import Any
+from collections.abc import Iterable
 
 from strawberry.types.union import StrawberryUnion
 from strawberry.types.union import union as base_union
@@ -7,7 +6,6 @@ from strawberry.types.union import union as base_union
 
 def union(
     name: str,
-    types: Collection[type[Any]] | None = None,
     *,
     description: str | None = None,
     directives: Iterable[object] = (),
@@ -18,9 +16,7 @@ def union(
 
     Args:
         name: The GraphQL name of the Union type.
-        types: The types that the Union can be.
-            (Deprecated, use `Annotated[U, strawberry.federation.union("Name")]` instead)
-        description: The  GraphQL description of the Union type.
+        description: The GraphQL description of the Union type.
         directives: The directives to attach to the Union type.
         inaccessible: Whether the Union type is inaccessible.
         tags: The federation tags to attach to the Union type.
@@ -53,7 +49,6 @@ def union(
 
     return base_union(
         name,
-        types,
         description=description,
         directives=directives,
     )

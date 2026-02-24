@@ -4,33 +4,33 @@ title: Mypy
 
 # Mypy
 
-Strawberry comes with support for
-[Mypy](https://mypy.readthedocs.io/en/stable/), a popular static type checker
-for Python.
+Strawberry works with [Mypy](https://mypy.readthedocs.io/en/stable/) out of the
+box thanks to
+[`dataclass_transform`](https://typing.readthedocs.io/en/latest/spec/dataclasses.html#dataclass-transform).
+No plugin is needed for standard Strawberry types, inputs, interfaces, enums,
+scalars, or unions.
 
-This guide will explain how to configure Mypy to work with Strawberry.
+## Pydantic integration
 
-## Install Mypy
-
-The first thing we need to do is to install
-[Mypy](https://mypy.readthedocs.io/en/stable/), this is the tool that will
-perform the type checking.
-
-Once the tool is installed, we need to configure it to enable type checking and
-use the Strawberry plugin. To do so we need to create a `mypy.ini` file in the
-root of our project and add the following settings:
+If you use `strawberry.experimental.pydantic`, add the **pydantic** plugin to
+your mypy configuration:
 
 ```ini
 [mypy]
-plugins = strawberry.ext.mypy_plugin
+plugins = pydantic.mypy
 ```
 
-You can also configure Mypy inside the `pyproject.toml` file, like so:
+Or in `pyproject.toml`:
 
 ```toml
 [tool.mypy]
-plugins = ["strawberry.ext.mypy_plugin"]
+plugins = ["pydantic.mypy"]
 ```
 
-Once you have configured the settings, you can run `mypy` and you should be
-getting type checking errors.
+No Strawberry-specific plugin is required.
+
+## Deprecated plugin
+
+If you still have `strawberry.ext.mypy_plugin` in your mypy configuration, it
+will emit a `DeprecationWarning` at startup. You can safely remove it — it is a
+no-op.

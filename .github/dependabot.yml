@@ -31,6 +31,11 @@ updates:
     commit-message:
       prefix: "deps(e2e)"
       include: "scope"
+    groups:
+      eslint:
+        patterns:
+          - "eslint*"
+          - "@eslint/*"
 
   # Docker dependencies
   - package-ecosystem: "docker"

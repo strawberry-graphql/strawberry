@@ -9,7 +9,6 @@ try:
     from .commands.schema_codegen import (
         schema_codegen as schema_codegen,
     )
-    from .commands.server import server as server
     from .commands.upgrade import upgrade as upgrade
 
     def run() -> None:

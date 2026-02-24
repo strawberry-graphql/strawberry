@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-import warnings
 from datetime import timedelta
 from typing import (
     TYPE_CHECKING,
@@ -372,7 +371,6 @@ class GraphQLController(
 def make_graphql_controller(
     schema: BaseSchema,
     path: str = "",
-    graphiql: bool | None = None,
     graphql_ide: GraphQL_IDE | None = "graphiql",
     allow_queries_via_get: bool = True,
     keep_alive: bool = False,
@@ -400,17 +398,7 @@ def make_graphql_controller(
 
     schema_: BaseSchema = schema
     allow_queries_via_get_: bool = allow_queries_via_get
-    graphql_ide_: GraphQL_IDE | None
-
-    if graphiql is not None:
-        warnings.warn(
-            "The `graphiql` argument is deprecated in favor of `graphql_ide`",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        graphql_ide_ = "graphiql" if graphiql else None
-    else:
-        graphql_ide_ = graphql_ide
+    graphql_ide_: GraphQL_IDE | None = graphql_ide
 
     routes_path: str = path
 

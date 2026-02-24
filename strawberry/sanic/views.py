@@ -1,10 +1,7 @@
 from __future__ import annotations
 
-import json
-import warnings
 from typing import (
     TYPE_CHECKING,
-    Any,
     TypeGuard,
 )
 
@@ -44,7 +41,7 @@ class GraphQLView(
 
     Args:
         schema: strawberry.Schema
-        graphiql: bool, default is True
+        graphql_ide: The GraphQL IDE to use, default is "graphiql"
         allow_queries_via_get: bool, default is True
 
     Returns:
@@ -52,7 +49,7 @@ class GraphQLView(
 
     Example:
         app.add_route(
-            GraphQLView.as_view(schema=schema, graphiql=True),
+            GraphQLView.as_view(schema=schema, graphql_ide="graphiql"),
             "/graphql"
         )
     """
@@ -63,44 +60,15 @@ class GraphQLView(
     def __init__(
         self,
         schema: BaseSchema,
-        graphiql: bool | None = None,
         graphql_ide: GraphQL_IDE | None = "graphiql",
         allow_queries_via_get: bool = True,
-        json_encoder: type[json.JSONEncoder] | None = None,
-        json_dumps_params: dict[str, Any] | None = None,
         multipart_uploads_enabled: bool = False,
     ) -> None:
         self.schema = schema
         self.allow_queries_via_get = allow_queries_via_get
-        self.json_encoder = json_encoder
-        self.json_dumps_params = json_dumps_params
         self.multipart_uploads_enabled = multipart_uploads_enabled
 
-        if self.json_encoder is not None:  # pragma: no cover
-            warnings.warn(
-                "json_encoder is deprecated, override encode_json instead",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-
-        if self.json_dumps_params is not None:  # pragma: no cover
-            warnings.warn(
-                "json_dumps_params is deprecated, override encode_json instead",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-
-            self.json_encoder = json.JSONEncoder
-
-        if graphiql is not None:
-            warnings.warn(
-                "The `graphiql` argument is deprecated in favor of `graphql_ide`",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-            self.graphql_ide = "graphiql" if graphiql else None
-        else:
-            self.graphql_ide = graphql_ide
+        self.graphql_ide = graphql_ide
 
     async def get_root_value(self, request: Request) -> RootValue | None:
         return None

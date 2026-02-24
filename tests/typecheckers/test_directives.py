@@ -52,7 +52,7 @@ def test():
         [
             Result(
                 type="information",
-                message="Revealed type: `StrawberryDirective[Unknown]`",
+                message="Revealed type: `StrawberryDirective[int]`",
                 line=16,
                 column=13,
             ),

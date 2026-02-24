@@ -1,8 +1,6 @@
 import importlib
 import importlib.util
-import inspect
 import sys
-import warnings
 from dataclasses import dataclass
 from pathlib import Path
 from typing import (
@@ -13,7 +11,6 @@ from typing import (
     Union,
     cast,
 )
-from typing_extensions import Self
 
 TypeName = TypeVar("TypeName")
 Module = TypeVar("Module")
@@ -33,28 +30,6 @@ class LazyType(Generic[TypeName, Module]):
     type_name: str
     module: str
     package: str | None = None
-
-    def __class_getitem__(cls, params: tuple[str, str]) -> "Self":
-        warnings.warn(
-            (
-                "LazyType is deprecated, use "
-                "Annotated[YourType, strawberry.lazy(path)] instead"
-            ),
-            DeprecationWarning,
-            stacklevel=2,
-        )
-
-        type_name, module = params
-
-        package = None
-
-        if module.startswith("."):
-            current_frame = inspect.currentframe()
-            assert current_frame is not None
-            assert current_frame.f_back is not None
-            package = current_frame.f_back.f_globals["__package__"]
-
-        return cls(type_name, module, package)
 
     def __or__(self, other: Other) -> object:
         return Union[self, other]  # noqa: UP007
@@ -89,10 +64,8 @@ class LazyType(Generic[TypeName, Module]):
 
         return module.__dict__[self.type_name]
 
-    # this empty call method allows LazyTypes to be used in generic types
-    # for example: list[LazyType["A", "module"]]
-
     def __call__(self) -> None:  # pragma: no cover
+        # this empty call method allows LazyTypes to be used in generic types
         return None
 
 

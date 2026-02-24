@@ -234,9 +234,9 @@ class StrawberryAnnotation:
         types = get_args(evaled_type)
         non_optional_types = tuple(
             filter(
-                lambda x: x is not type(None)
-                and x is not type(UNSET)
-                and x != type[UNSET],
+                lambda x: (
+                    x is not type(None) and x is not type(UNSET) and x != type[UNSET]
+                ),
                 types,
             )
         )

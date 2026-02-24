@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import inspect
-import warnings
 from typing import (
     TYPE_CHECKING,
     Annotated,
@@ -23,10 +22,7 @@ from strawberry.types.base import (
 from strawberry.types.enum import StrawberryEnumDefinition, has_enum_definition
 from strawberry.types.lazy_type import LazyType, StrawberryLazyReference
 from strawberry.types.maybe import Some
-from strawberry.types.unset import UNSET as _deprecated_UNSET  # noqa: N811
-from strawberry.types.unset import (
-    _deprecated_is_unset,  # noqa: F401
-)
+from strawberry.types.unset import UNSET
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Mapping
@@ -36,21 +32,13 @@ if TYPE_CHECKING:
     from strawberry.types.scalar import ScalarDefinition, ScalarWrapper
 
 
-DEPRECATED_NAMES: dict[str, str] = {
-    "UNSET": (
-        "importing `UNSET` from `strawberry.arguments` is deprecated, "
-        "import instead from `strawberry` or from `strawberry.types.unset`"
-    ),
-    "is_unset": "`is_unset` is deprecated use `value is UNSET` instead",
-}
-
-
 class StrawberryArgumentAnnotation:
     description: str | None
     name: str | None
     deprecation_reason: str | None
     directives: Iterable[object]
     metadata: Mapping[Any, Any]
+    graphql_type: Any | None
 
     def __init__(
         self,
@@ -59,12 +47,14 @@ class StrawberryArgumentAnnotation:
         deprecation_reason: str | None = None,
         directives: Iterable[object] = (),
         metadata: Mapping[Any, Any] | None = None,
+        graphql_type: Any | None = None,
     ) -> None:
         self.description = description
         self.name = name
         self.deprecation_reason = deprecation_reason
         self.directives = directives
         self.metadata = metadata or {}
+        self.graphql_type = graphql_type
 
 
 class StrawberryArgument:
@@ -75,7 +65,7 @@ class StrawberryArgument:
         type_annotation: StrawberryAnnotation,
         is_subscription: bool = False,
         description: str | None = None,
-        default: object = _deprecated_UNSET,
+        default: object = UNSET,
         deprecation_reason: str | None = None,
         directives: Iterable[object] = (),
         metadata: Mapping[Any, Any] | None = None,
@@ -90,9 +80,7 @@ class StrawberryArgument:
         self.metadata = metadata or {}
 
         # TODO: Consider moving this logic to a function
-        self.default = (
-            _deprecated_UNSET if default is inspect.Parameter.empty else default
-        )
+        self.default = UNSET if default is inspect.Parameter.empty else default
 
         annotation = type_annotation.annotation
         if not isinstance(annotation, str):
@@ -122,6 +110,10 @@ class StrawberryArgument:
                         self.deprecation_reason = arg.deprecation_reason
                         self.directives = arg.directives
                         self.metadata = arg.metadata
+                        if arg.graphql_type is not None:
+                            self.type_annotation = StrawberryAnnotation(
+                                arg.graphql_type
+                            )
 
                     if isinstance(arg, StrawberryLazyReference):
                         self.type_annotation = StrawberryAnnotation(
@@ -218,8 +210,8 @@ def convert_argument(
     if value is None:
         return None
 
-    if value is _deprecated_UNSET:
-        return _deprecated_UNSET
+    if value is UNSET:
+        return UNSET
 
     if isinstance(type_, StrawberryList):
         value_list = cast("Iterable", value)
@@ -313,6 +305,7 @@ def argument(
     deprecation_reason: str | None = None,
     directives: Iterable[object] = (),
     metadata: Mapping[Any, Any] | None = None,
+    graphql_type: Any | None = None,
 ) -> StrawberryArgumentAnnotation:
     """Function to add metadata to an argument, like a description or deprecation reason.
 
@@ -324,6 +317,8 @@ def argument(
         directives: The directives to attach to the argument
         metadata: Metadata to attach to the argument, this can be used
             to store custom data that can be used by custom logic or plugins
+        graphql_type: The GraphQL type for the argument, useful when you want to use a
+            different type than the one in the schema.
 
     Returns:
         A StrawberryArgumentAnnotation object that can be used to customise an argument
@@ -348,21 +343,12 @@ def argument(
         deprecation_reason=deprecation_reason,
         directives=directives,
         metadata=metadata,
+        graphql_type=graphql_type,
     )
 
 
-def __getattr__(name: str) -> Any:
-    if name in DEPRECATED_NAMES:
-        warnings.warn(DEPRECATED_NAMES[name], DeprecationWarning, stacklevel=2)
-        return globals()[f"_deprecated_{name}"]
-    raise AttributeError(f"module {__name__} has no attribute {name}")
-
-
-# TODO: check exports
-__all__ = [  # noqa: F822
-    "UNSET",  # for backwards compatibility  # type: ignore
+__all__ = [
     "StrawberryArgument",
     "StrawberryArgumentAnnotation",
     "argument",
-    "is_unset",  # for backwards compatibility  # type: ignore
 ]

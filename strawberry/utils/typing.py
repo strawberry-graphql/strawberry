@@ -186,10 +186,10 @@ def _get_namespace_from_ast(
     expr: ast.Expr | ast.expr,
     globalns: dict | None = None,
     localns: dict | None = None,
-) -> dict[str, type]:
+) -> dict[str, Any]:
     from strawberry.types.lazy_type import StrawberryLazyReference
 
-    extra = {}
+    extra: dict[str, Any] = {}
 
     if isinstance(expr, ast.Expr) and isinstance(
         expr.value, (ast.BinOp, ast.Subscript)

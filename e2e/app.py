@@ -18,7 +18,7 @@ class Comment:
 
     @strawberry.field
     async def author(self) -> Author:
-        await asyncio.sleep(random.randint(0, 2))  # noqa: S311
+        await asyncio.sleep(random.uniform(0, 0.5))  # noqa: S311
         return Author(id=strawberry.ID("Author:1"), name="John Doe")
 
 
@@ -31,7 +31,7 @@ class BlogPost:
     @strawberry.field
     async def comments(self) -> strawberry.Streamable[Comment]:
         for x in range(5):
-            await asyncio.sleep(random.choice([0, 0.5, 1, 1.5, 2]))  # noqa: S311
+            await asyncio.sleep(random.uniform(0, 0.5))  # noqa: S311
 
             yield Comment(id=strawberry.ID(f"Comment:{x}"), content="Great post!")
 

@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import dataclasses
 import sys
-import warnings
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -120,7 +119,6 @@ if TYPE_CHECKING:
 def type(
     model: builtins.type[PydanticModel],
     *,
-    fields: list[str] | None = None,
     name: str | None = None,
     is_input: bool = False,
     is_interface: bool = False,
@@ -133,14 +131,6 @@ def type(
     def wrap(cls: Any) -> builtins.type[StrawberryTypeFromPydantic[PydanticModel]]:
         compat = PydanticCompat.from_model(model)
         model_fields = compat.get_model_fields(model, include_computed=include_computed)
-        original_fields_set = set(fields) if fields else set()
-
-        if fields:
-            warnings.warn(
-                "`fields` is deprecated, use `auto` type annotations instead",
-                DeprecationWarning,
-                stacklevel=2,
-            )
 
         existing_fields = getattr(cls, "__annotations__", {})
 
@@ -161,22 +151,18 @@ def type(
         # these are the fields that matched a field name in the pydantic model
         # and should copy their alias from the pydantic model
         # Private fields are excluded since they shouldn't be exposed in the schema
-        fields_set = original_fields_set.union(
-            {
-                name
-                for name, _ in existing_fields.items()
-                if name in model_fields and name not in private_field_names
-            }
-        )
+        fields_set = {
+            name
+            for name, _ in existing_fields.items()
+            if name in model_fields and name not in private_field_names
+        }
         # these are the fields that were marked with strawberry.auto and
         # should copy their type from the pydantic model
-        auto_fields_set = original_fields_set.union(
-            {
-                name
-                for name, type_ in existing_fields.items()
-                if isinstance(type_, StrawberryAuto)
-            }
-        )
+        auto_fields_set = {
+            name
+            for name, type_ in existing_fields.items()
+            if isinstance(type_, StrawberryAuto)
+        }
 
         if all_fields:
             # all_fields adds all pydantic model fields, but respects explicit definitions:
@@ -323,7 +309,6 @@ def type(
 def input(
     model: builtins.type[PydanticModel],
     *,
-    fields: list[str] | None = None,
     name: str | None = None,
     is_interface: bool = False,
     description: str | None = None,
@@ -339,7 +324,6 @@ def input(
     """
     return type(
         model=model,
-        fields=fields,
         name=name,
         is_input=True,
         is_interface=is_interface,
@@ -353,7 +337,6 @@ def input(
 def interface(
     model: builtins.type[PydanticModel],
     *,
-    fields: list[str] | None = None,
     name: str | None = None,
     is_input: bool = False,
     description: str | None = None,
@@ -369,7 +352,6 @@ def interface(
     """
     return type(
         model=model,
-        fields=fields,
         name=name,
         is_input=is_input,
         is_interface=True,
