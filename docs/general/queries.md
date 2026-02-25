@@ -130,7 +130,9 @@ This can be useful for static typing, as custom scalars are not valid type
 annotations.
 
 ```python
-from typing import NewType
+import strawberry
+from typing import Annotated, NewType
+from strawberry.schema.config import StrawberryConfig
 
 BigInt = NewType("BigInt", int)
 
@@ -142,4 +144,18 @@ class Query:
         self,
         ids: Annotated[list[int], strawberry.argument(graphql_type=list[BigInt])],
     ) -> list[User]: ...
+
+
+schema = strawberry.Schema(
+    query=Query,
+    config=StrawberryConfig(
+        scalar_map={
+            BigInt: strawberry.scalar(
+                name="BigInt",
+                serialize=lambda v: str(v),
+                parse_value=lambda v: int(v),
+            )
+        }
+    ),
+)
 ```
