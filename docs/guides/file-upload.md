@@ -46,11 +46,12 @@ override based on the integrations above. For example with Starlette:
 import strawberry
 from starlette.datastructures import UploadFile
 from strawberry.file_uploads import UploadDefinition
+from strawberry.schema.config import StrawberryConfig
 
 schema = strawberry.Schema(
     query=Query,
     mutation=Mutation,
-    scalar_overrides={UploadFile: UploadDefinition},
+    config=StrawberryConfig(scalar_map={UploadFile: UploadDefinition}),
 )
 ```
 
