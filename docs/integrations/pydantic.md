@@ -1729,12 +1729,13 @@ type Query {
 
 Pydantic BaseModels may define a custom type with
 [`__get_validators__`](https://pydantic-docs.helpmanual.io/usage/types/#classes-with-__get_validators__)
-logic. You will need to add a scalar definition and add the mapping to the
-`scalar_overrides` argument in the Schema class.
+logic. You will need to add a scalar definition and add the mapping to
+`scalar_map` in `StrawberryConfig`.
 
 ```python
 import strawberry
 from pydantic import BaseModel
+from strawberry.schema.config import StrawberryConfig
 
 
 class MyCustomType:
@@ -1764,14 +1765,15 @@ class Query:
 
 schema = strawberry.Schema(
     query=Query,
-    scalar_overrides={
-        MyCustomType: strawberry.scalar(
-            name="MyScalarType",
-            # or another function describing how to represent MyCustomType in the response
-            serialize=str,
-            parse_value=lambda v: MyCustomType(),
-        )
-    },
+    config=StrawberryConfig(
+        scalar_map={
+            MyCustomType: strawberry.scalar(
+                name="MyScalarType",
+                serialize=str,
+                parse_value=lambda v: MyCustomType(),
+            )
+        }
+    ),
 )
 ```
 
@@ -1795,6 +1797,7 @@ import base64
 import strawberry
 from pydantic import BaseModel
 from typing import Union, NewType
+from strawberry.schema.config import StrawberryConfig
 
 
 class User(BaseModel):
@@ -1820,13 +1823,15 @@ class Query:
 
 schema = strawberry.Schema(
     query=Query,
-    scalar_overrides={
-        Base64: strawberry.scalar(
-            name="Base64",
-            serialize=lambda v: base64.b64encode(v).decode("utf-8"),
-            parse_value=lambda v: base64.b64decode(v.encode("utf-8")),
-        )
-    },
+    config=StrawberryConfig(
+        scalar_map={
+            Base64: strawberry.scalar(
+                name="Base64",
+                serialize=lambda v: base64.b64encode(v).decode("utf-8"),
+                parse_value=lambda v: base64.b64decode(v.encode("utf-8")),
+            )
+        }
+    ),
 )
 
 print(schema.execute_sync("query { test { id, hash } }").data)
