@@ -92,7 +92,9 @@ class BaseGraphQLWSHandler(Generic[Context, RootValue]):
 
     async def handle_connection_init(self, message: ConnectionInitMessage) -> None:
         payload = message.get("payload")
-        if payload is not None and not isinstance(payload, dict):
+        if payload is None:
+            payload = {}
+        if not isinstance(payload, dict):
             await self.send_message({"type": "connection_error"})
             await self.websocket.close(code=1000, reason="")
             return
