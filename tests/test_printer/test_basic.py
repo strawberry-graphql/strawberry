@@ -2,10 +2,10 @@ import textwrap
 from uuid import UUID
 
 import strawberry
+from strawberry import UNSET, Maybe, Some
 from strawberry.printer import print_schema
 from strawberry.scalars import JSON
 from strawberry.schema.config import StrawberryConfig
-from strawberry.types.unset import UNSET
 from tests.conftest import skip_if_gql_32
 
 
@@ -375,3 +375,81 @@ def test_root_objects_with_different_names():
     )
 
     assert print_schema(schema) == textwrap.dedent(expected_type).strip()
+
+
+def test_input_with_unset_default():
+    @strawberry.input
+    class FilterInput:
+        name: str | None = UNSET
+        age: int | None = None
+
+    @strawberry.input
+    class QueryInput:
+        filter: FilterInput = strawberry.field(
+            default_factory=lambda: FilterInput(name=UNSET, age=None)
+        )
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def search(self, filter: QueryInput) -> str:
+            return "ok"
+
+    schema = strawberry.Schema(query=Query)
+    sdl = print_schema(schema).strip()
+
+    expected = textwrap.dedent("""
+        input FilterInput {
+          name: String
+          age: Int = null
+        }
+
+        type Query {
+          search(filter: QueryInput!): String!
+        }
+
+        input QueryInput {
+          filter: FilterInput! = {age: null}
+        }
+    """).strip()
+
+    assert sdl == expected
+
+
+def test_input_with_maybe_some_none_default():
+    @strawberry.input
+    class FilterInput:
+        name: Maybe[str | None] = Some(None)
+        age: Maybe[int] = UNSET
+
+    @strawberry.input
+    class QueryInput:
+        filter: FilterInput = strawberry.field(
+            default_factory=lambda: FilterInput(name=Some(None), age=UNSET)
+        )
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def search(self, filter: QueryInput) -> str:
+            return "ok"
+
+    schema = strawberry.Schema(query=Query)
+    sdl = print_schema(schema).strip()
+
+    expected = textwrap.dedent("""
+        input FilterInput {
+          name: String
+          age: Int
+        }
+
+        type Query {
+          search(filter: QueryInput!): String!
+        }
+
+        input QueryInput {
+          filter: FilterInput! = {name: null}
+        }
+    """).strip()
+
+    assert sdl == expected
