@@ -410,7 +410,7 @@ def test_input_with_unset_default():
         }
 
         input QueryInput {
-          filter: FilterInput! = {age: null}
+          filter: FilterInput! = { age: null }
         }
     """).strip()
 
@@ -450,7 +450,7 @@ def test_input_with_maybe_some_none_default():
         }
 
         input QueryInput {
-          filter: FilterInput! = {name: null}
+          filter: FilterInput! = { name: null }
         }
     """).strip()
 
