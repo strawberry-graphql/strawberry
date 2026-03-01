@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import dataclasses
 import re
 from collections.abc import Mapping
 from math import isfinite
@@ -27,7 +28,6 @@ from graphql.type import (
     is_non_null_type,
 )
 
-import strawberry
 from strawberry.types.base import has_object_definition
 
 if TYPE_CHECKING:
@@ -118,7 +118,7 @@ def ast_from_value(value: Any, type_: GraphQLInputType) -> ValueNode | None:
     # Python dict according to the fields in the input type.
     if is_input_object_type(type_):
         if has_object_definition(value):
-            value = strawberry.asdict(value)
+            value = dataclasses.asdict(value)
 
         if value is None or not isinstance(value, Mapping):
             return None
