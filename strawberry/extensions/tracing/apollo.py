@@ -85,7 +85,7 @@ class ApolloTracingExtension(SchemaExtension):
     def __init__(self, execution_context: ExecutionContext) -> None:
         self._resolver_stats: list[ApolloResolverStats] = []
         self.execution_context = execution_context
-        now = time.perf_counter_ns()
+        now = self.now()
         self.start_timestamp: int = now
         self.end_timestamp: int = now
         self.start_time: datetime = datetime.now(timezone.utc)
