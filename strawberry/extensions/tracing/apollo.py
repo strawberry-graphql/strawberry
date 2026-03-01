@@ -85,24 +85,39 @@ class ApolloTracingExtension(SchemaExtension):
     def __init__(self, execution_context: ExecutionContext) -> None:
         self._resolver_stats: list[ApolloResolverStats] = []
         self.execution_context = execution_context
+        now = time.perf_counter_ns()
+        self.start_timestamp: int = now
+        self.end_timestamp: int = now
+        self.start_time: datetime = datetime.now(timezone.utc)
+        self.end_time: datetime = self.start_time
+        self._start_parsing: int = now
+        self._end_parsing: int = now
+        self._start_validation: int = now
+        self._end_validation: int = now
 
     def on_operation(self) -> Generator[None, None, None]:
         self._resolver_stats = []
         self.start_timestamp = self.now()
         self.start_time = datetime.now(timezone.utc)
-        yield
-        self.end_timestamp = self.now()
-        self.end_time = datetime.now(timezone.utc)
+        try:
+            yield
+        finally:
+            self.end_timestamp = self.now()
+            self.end_time = datetime.now(timezone.utc)
 
     def on_parse(self) -> Generator[None, None, None]:
         self._start_parsing = self.now()
-        yield
-        self._end_parsing = self.now()
+        try:
+            yield
+        finally:
+            self._end_parsing = self.now()
 
     def on_validate(self) -> Generator[None, None, None]:
         self._start_validation = self.now()
-        yield
-        self._end_validation = self.now()
+        try:
+            yield
+        finally:
+            self._end_validation = self.now()
 
     def now(self) -> int:
         return time.perf_counter_ns()
