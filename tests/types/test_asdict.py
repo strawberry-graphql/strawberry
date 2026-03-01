@@ -55,6 +55,7 @@ def test_unset_field_is_excluded():
     class Input:
         field: str | None
 
+    assert asdict(Input(field=None)) == {"field": None}
     assert asdict(Input(field=UNSET)) == {}
 
 
