@@ -17,7 +17,8 @@ from strawberry.exceptions import (
     ObjectIsNotClassError,
 )
 from strawberry.types.base import get_object_definition
-from strawberry.types.maybe import _annotation_is_maybe
+from strawberry.types.maybe import Some, _annotation_is_maybe
+from strawberry.types.unset import UNSET
 from strawberry.utils.str_converters import to_camel_case
 
 from .base import StrawberryObjectDefinition
@@ -458,7 +459,8 @@ def interface(
 def asdict(obj: Any) -> dict[str, object]:
     """Convert a strawberry object into a dictionary.
 
-    This wraps the dataclasses.asdict function to strawberry.
+    If the field type is Maybe[T | None] and the field is absent, it's not going
+    to be present in the result. Similarly, if the value of the field is `UNSET`.
 
     Args:
         obj: The object to convert into a dictionary.
@@ -479,7 +481,35 @@ def asdict(obj: Any) -> dict[str, object]:
     # {"name": "Lorem", "age": 25}
     ```
     """
-    return dataclasses.asdict(obj)
+    result = {}
+    for field_ in dataclasses.fields(obj):
+        value = getattr(obj, field_.name)
+        is_maybe = _annotation_is_maybe(field_.type)
+
+        if isinstance(value, Some):
+            if dataclasses.is_dataclass(value.value):
+                result[field_.name] = asdict(value.value)
+            elif isinstance(value.value, list):
+                result[field_.name] = [
+                    asdict(item) if dataclasses.is_dataclass(item) else item
+                    for item in value.value
+                ]
+            else:
+                result[field_.name] = value.value
+        elif value is None and not is_maybe:
+            result[field_.name] = None
+        elif value is not UNSET and not is_maybe:
+            if dataclasses.is_dataclass(value):
+                result[field_.name] = asdict(value)
+            elif isinstance(value, list):
+                result[field_.name] = [
+                    asdict(item) if dataclasses.is_dataclass(item) else item
+                    for item in value
+                ]
+            else:
+                result[field_.name] = value
+
+    return result
 
 
 __all__ = [
