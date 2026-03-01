@@ -489,7 +489,7 @@ def asdict(obj: Any) -> dict[str, object]:
         if isinstance(value, Some):
             if dataclasses.is_dataclass(value.value):
                 result[field_.name] = asdict(value.value)
-            elif isinstance(value.value, list):
+            elif isinstance(value.value, (list, tuple)):
                 result[field_.name] = [
                     asdict(item) if dataclasses.is_dataclass(item) else item
                     for item in value.value
@@ -501,7 +501,7 @@ def asdict(obj: Any) -> dict[str, object]:
         elif value is not UNSET and not is_maybe:
             if dataclasses.is_dataclass(value):
                 result[field_.name] = asdict(value)
-            elif isinstance(value, list):
+            elif isinstance(value, (list, tuple)):
                 result[field_.name] = [
                     asdict(item) if dataclasses.is_dataclass(item) else item
                     for item in value
