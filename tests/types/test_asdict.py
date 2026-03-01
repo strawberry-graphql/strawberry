@@ -234,6 +234,14 @@ def test_empty_list():
     assert asdict(Input(items=[])) == {"items": []}
 
 
+def test_empty_tuple():
+    @strawberry.input
+    class Input:
+        items: tuple[str, ...]
+
+    assert asdict(Input(items=())) == {"items": []}
+
+
 def test_list_with_none_items():
     @strawberry.input
     class Input:
@@ -253,6 +261,20 @@ def test_list_of_nested_inputs():
 
     assert asdict(
         OuterInput(items=[InnerInput(field="foo"), InnerInput(field="bar")])
+    ) == {"items": [{"field": "foo"}, {"field": "bar"}]}
+
+
+def test_tuple_of_nested_inputs():
+    @strawberry.input
+    class InnerInput:
+        field: str
+
+    @strawberry.input
+    class OuterInput:
+        items: tuple[InnerInput, ...]
+
+    assert asdict(
+        OuterInput(items=(InnerInput(field="foo"), InnerInput(field="bar")))
     ) == {"items": [{"field": "foo"}, {"field": "bar"}]}
 
 
