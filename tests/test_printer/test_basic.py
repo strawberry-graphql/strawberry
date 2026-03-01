@@ -377,6 +377,7 @@ def test_root_objects_with_different_names():
     assert print_schema(schema) == textwrap.dedent(expected_type).strip()
 
 
+@skip_if_gql_32("formatting is different in gql 3.2")
 def test_input_with_unset_default():
     @strawberry.input
     class FilterInput:
@@ -416,6 +417,7 @@ def test_input_with_unset_default():
     assert sdl == expected
 
 
+@skip_if_gql_32("formatting is different in gql 3.2")
 def test_input_with_maybe_some_none_default():
     @strawberry.input
     class FilterInput:
