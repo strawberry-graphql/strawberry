@@ -118,7 +118,7 @@ def ast_from_value(value: Any, type_: GraphQLInputType) -> ValueNode | None:
     # Python dict according to the fields in the input type.
     if is_input_object_type(type_):
         if has_object_definition(value):
-            value = dataclasses.asdict(value)
+            value = dataclasses.asdict(value)  # type: ignore
 
         if value is None or not isinstance(value, Mapping):
             return None

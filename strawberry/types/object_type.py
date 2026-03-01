@@ -482,7 +482,7 @@ def asdict(obj: Any) -> dict[str, object]:
     # {"name": "Lorem", "age": 25}
     ```
     """
-    result = {}
+    result: dict[str, Any] = {}
     for field_ in dataclasses.fields(obj):
         value = getattr(obj, field_.name)
         is_maybe = _annotation_is_maybe(field_.type)
