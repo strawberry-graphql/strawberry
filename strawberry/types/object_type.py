@@ -459,8 +459,9 @@ def interface(
 def asdict(obj: Any) -> dict[str, object]:
     """Convert a strawberry object into a dictionary.
 
-    If the field type is Maybe[T | None] and the field is absent, it's not going
-    to be present in the result. Similarly, if the value of the field is `UNSET`.
+    Works similarly to `dataclasses.asdict`, but excludes fields in the following cases:
+    * The field is typed as `Maybe[T]` (or `Maybe[T | None]`) and is absent.
+    * The field's value is explicitly `UNSET`.
 
     Args:
         obj: The object to convert into a dictionary.
