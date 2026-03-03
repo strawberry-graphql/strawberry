@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.308.1 - 2026-03-03
+--------------------
+
+Fix `ApolloTracingExtension` crashing with `AttributeError` when executing invalid queries (e.g., `{ node() }`). All timing attributes are now initialized in `__init__` and lifecycle hooks use `try/finally` to ensure proper cleanup.
+
+Contributed by [Br1an](https://github.com/Br1an67) via [PR #4271](https://github.com/strawberry-graphql/strawberry/pull/4271/)
+
+
 0.308.0 - 2026-03-03
 --------------------
 
