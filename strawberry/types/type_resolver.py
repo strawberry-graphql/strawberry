@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 import dataclasses
 import sys
 from typing import Annotated, Any, get_args, get_origin
@@ -83,6 +84,19 @@ def _get_fields(
     # then we can proceed with finding the fields for the current class
     for field in dataclasses.fields(cls):  # type: ignore
         if isinstance(field, StrawberryField):
+            # Check for conflict: strawberry.field in both Annotated and assignment
+            annotation = (
+                field.type_annotation.annotation
+                if isinstance(field.type_annotation, StrawberryAnnotation)
+                else field.type
+            )
+            if get_origin(annotation) is Annotated:
+                annotated_args = get_args(annotation)
+                if any(isinstance(arg, StrawberryField) for arg in annotated_args[1:]):
+                    raise MultipleStrawberryFieldsError(
+                        field_name=field.python_name or field.name, cls=cls
+                    )
+
             # Check that the field type is not Private
             if is_private(field.type):
                 raise PrivateStrawberryFieldError(field.python_name, cls)
@@ -156,7 +170,7 @@ def _get_fields(
                     raise MultipleStrawberryFieldsError(field_name=field.name, cls=cls)
 
                 if field_annotations:
-                    strawberry_field_from_annotated = field_annotations[0]
+                    strawberry_field_from_annotated = copy.copy(field_annotations[0])
 
                 # If we found a StrawberryField in Annotated, use it
                 if strawberry_field_from_annotated is not None:
@@ -173,21 +187,10 @@ def _get_fields(
                         strawberry_field_from_annotated.default = field.default
                         strawberry_field_from_annotated.default_value = field.default
                     field = strawberry_field_from_annotated  # noqa: PLW2901
-                else:
-                    # No StrawberryField in Annotated, create a basic one
-                    # but keep the full Annotated type for other metadata
-                    field = StrawberryField(  # noqa: PLW2901
-                        python_name=field.name,
-                        graphql_name=None,
-                        type_annotation=StrawberryAnnotation(
-                            annotation=field_type,
-                            namespace=module.__dict__,
-                        ),
-                        origin=origin,
-                        default=getattr(cls, field.name, dataclasses.MISSING),
-                    )
-            else:
-                # Create a StrawberryField, for fields of Types #1 and #2a
+
+            if not isinstance(field, StrawberryField):
+                # Create a StrawberryField for plain fields and Annotated
+                # without a StrawberryField (Types #1 and #2a)
                 field = StrawberryField(  # noqa: PLW2901
                     python_name=field.name,
                     graphql_name=None,

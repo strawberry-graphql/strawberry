@@ -368,6 +368,23 @@ def test_annotated_field_multiple_raises_error():
         ]
 
 
+@pytest.mark.raises_strawberry_exception(
+    MultipleStrawberryFieldsError,
+    match=(
+        "Annotation for field `name` on type `Query` "
+        "cannot have multiple `strawberry.field`s"
+    ),
+)
+def test_annotated_field_and_assignment_raises_error():
+    """Using strawberry.field in both Annotated and assignment should raise."""
+
+    @strawberry.type
+    class Query:
+        name: Annotated[str, strawberry.field(description="From Annotated")] = (
+            strawberry.field(description="From assignment")
+        )
+
+
 def test_annotated_field_with_other_annotations():
     """Test that Annotated with non-StrawberryField annotations still works."""
 
@@ -451,3 +468,31 @@ def test_annotated_field_with_input_default_in_schema():
     # Instance should use the default
     instance = CreateUserInput()
     assert instance.name == "Anonymous"
+
+
+def test_annotated_field_alias_reused_across_types():
+    """Test that reusing an Annotated alias across types doesn't corrupt fields."""
+    NameField = Annotated[str, strawberry.field(description="The name")]
+
+    @strawberry.type
+    class TypeA:
+        name: NameField
+
+    @strawberry.type
+    class TypeB:
+        name: NameField
+
+    def_a = get_object_definition(TypeA)
+    def_b = get_object_definition(TypeB)
+
+    field_a = def_a.fields[0]
+    field_b = def_b.fields[0]
+
+    # Both fields should have correct descriptions
+    assert field_a.description == "The name"
+    assert field_b.description == "The name"
+
+    # Fields should be independent instances
+    assert field_a is not field_b
+    assert field_a.origin is TypeA
+    assert field_b.origin is TypeB
