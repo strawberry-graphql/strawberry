@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.308.2 - 2026-03-03
+--------------------
+
+Fix `from __future__ import annotations` breaking lazy types inside generic wrappers like `Optional[]`, `tuple[]`, `dict[]`, `Sequence[]`, etc. Previously only `Union[]`, `list[]`/`List[]`, and `Annotated[]` were handled during AST namespace resolution, causing `_eval_type` to fail when lazy types were nested inside other generic subscripts.
+
+Contributed by [Thiago Bellini Ribeiro](https://github.com/bellini666) via [PR #4270](https://github.com/strawberry-graphql/strawberry/pull/4270/)
+
+
 0.308.1 - 2026-03-03
 --------------------
 
