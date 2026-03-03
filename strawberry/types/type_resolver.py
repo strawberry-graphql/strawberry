@@ -1,19 +1,64 @@
 from __future__ import annotations
 
+import copy
 import dataclasses
 import sys
-from typing import Any
+from typing import Annotated, Any, get_args, get_origin
 
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.exceptions import (
     FieldWithResolverAndDefaultFactoryError,
     FieldWithResolverAndDefaultValueError,
+    MultipleStrawberryFieldsError,
     PrivateStrawberryFieldError,
 )
 from strawberry.types.base import has_object_definition
 from strawberry.types.field import StrawberryField
 from strawberry.types.private import is_private
 from strawberry.types.unset import UNSET
+
+
+def _get_field_from_annotated(
+    field: dataclasses.Field,
+    origin: type,
+    module_namespace: dict[str, Any],
+    cls: type,
+) -> StrawberryField | None:
+    """Extract a StrawberryField from an Annotated type annotation.
+
+    Returns a configured StrawberryField if the annotation contains one,
+    or None if no StrawberryField is found in the Annotated args.
+    Raises MultipleStrawberryFieldsError if more than one is found.
+    """
+    field_type = field.type
+
+    if get_origin(field_type) is not Annotated:
+        return None
+
+    first, *rest = get_args(field_type)
+
+    strawberry_fields = [arg for arg in rest if isinstance(arg, StrawberryField)]
+
+    if len(strawberry_fields) > 1:
+        raise MultipleStrawberryFieldsError(field_name=field.name, cls=cls)
+
+    if not strawberry_fields:
+        return None
+
+    result = copy.copy(strawberry_fields[0])
+    result.python_name = field.name
+    result.type_annotation = StrawberryAnnotation(
+        annotation=first,
+        namespace=module_namespace,
+    )
+    result.origin = origin
+
+    # Transfer default from dataclass field if not set in strawberry.field()
+    if result.default is dataclasses.MISSING:
+        result.default = field.default
+        result.default_value = field.default
+
+    return result
 
 
 def _get_fields(
@@ -82,6 +127,19 @@ def _get_fields(
     # then we can proceed with finding the fields for the current class
     for field in dataclasses.fields(cls):  # type: ignore
         if isinstance(field, StrawberryField):
+            # Check for conflict: strawberry.field in both Annotated and assignment
+            annotation = (
+                field.type_annotation.annotation
+                if isinstance(field.type_annotation, StrawberryAnnotation)
+                else field.type
+            )
+            if get_origin(annotation) is Annotated:
+                annotated_args = get_args(annotation)
+                if any(isinstance(arg, StrawberryField) for arg in annotated_args[1:]):
+                    raise MultipleStrawberryFieldsError(
+                        field_name=field.python_name or field.name, cls=cls
+                    )
+
             # Check that the field type is not Private
             if is_private(field.type):
                 raise PrivateStrawberryFieldError(field.python_name, cls)
@@ -140,17 +198,23 @@ def _get_fields(
             origin = origins.get(field.name, cls)
             module = sys.modules[origin.__module__]
 
-            # Create a StrawberryField, for fields of Types #1 and #2a
-            field = StrawberryField(  # noqa: PLW2901
-                python_name=field.name,
-                graphql_name=None,
-                type_annotation=StrawberryAnnotation(
-                    annotation=field.type,
-                    namespace=module.__dict__,
-                ),
-                origin=origin,
-                default=getattr(cls, field.name, dataclasses.MISSING),
+            annotated_field = _get_field_from_annotated(
+                field, origin, module.__dict__, cls
             )
+
+            if annotated_field is not None:
+                field = annotated_field  # noqa: PLW2901
+            else:
+                field = StrawberryField(  # noqa: PLW2901
+                    python_name=field.name,
+                    graphql_name=None,
+                    type_annotation=StrawberryAnnotation(
+                        annotation=field.type,
+                        namespace=module.__dict__,
+                    ),
+                    origin=origin,
+                    default=getattr(cls, field.name, dataclasses.MISSING),
+                )
 
         field_name = field.python_name
 

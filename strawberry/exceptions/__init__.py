@@ -16,6 +16,7 @@ from .missing_arguments_annotations import MissingArgumentsAnnotationsError
 from .missing_dependencies import MissingOptionalDependenciesError
 from .missing_field_annotation import MissingFieldAnnotationError
 from .missing_return_annotation import MissingReturnAnnotationError
+from .multiple_strawberry_fields import MultipleStrawberryFieldsError
 from .object_is_not_a_class import ObjectIsNotClassError
 from .object_is_not_an_enum import ObjectIsNotAnEnumError
 from .private_strawberry_field import PrivateStrawberryFieldError
@@ -185,6 +186,7 @@ __all__ = [
     "MissingReturnAnnotationError",
     "MissingTypesForGenericError",
     "MultipleStrawberryArgumentsError",
+    "MultipleStrawberryFieldsError",
     "ObjectIsNotAnEnumError",
     "ObjectIsNotClassError",
     "PrivateStrawberryFieldError",
