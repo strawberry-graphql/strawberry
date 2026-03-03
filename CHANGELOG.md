@@ -1,6 +1,48 @@
 CHANGELOG
 =========
 
+0.308.0 - 2026-03-03
+--------------------
+
+This release adds support for defining fields using the `Annotated` syntax. This provides an
+alternative way to specify field metadata alongside the type annotation.
+
+Example usage:
+
+```python
+from typing import Annotated
+
+import strawberry
+
+
+@strawberry.type
+class Query:
+    name: Annotated[str, strawberry.field(description="The name")]
+    age: Annotated[int, strawberry.field(deprecation_reason="Use birthDate instead")]
+
+
+@strawberry.input
+class CreateUserInput:
+    name: Annotated[str, strawberry.field(description="User's name")]
+    email: Annotated[str, strawberry.field(description="User's email")]
+```
+
+This syntax works alongside the existing assignment syntax:
+
+```python
+@strawberry.type
+class Query:
+    # Both styles work
+    field1: Annotated[str, strawberry.field(description="Using Annotated")]
+    field2: str = strawberry.field(description="Using assignment")
+```
+
+All `strawberry.field()` options are supported including `description`, `name`,
+`deprecation_reason`, `directives`, `metadata`, and `permission_classes`.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #4059](https://github.com/strawberry-graphql/strawberry/pull/4059/)
+
+
 0.307.1 - 2026-02-24
 --------------------
 
