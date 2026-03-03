@@ -18,6 +18,49 @@ from strawberry.types.private import is_private
 from strawberry.types.unset import UNSET
 
 
+def _get_field_from_annotated(
+    field: dataclasses.Field,
+    origin: type,
+    module_namespace: dict[str, Any],
+    cls: type,
+) -> StrawberryField | None:
+    """Extract a StrawberryField from an Annotated type annotation.
+
+    Returns a configured StrawberryField if the annotation contains one,
+    or None if no StrawberryField is found in the Annotated args.
+    Raises MultipleStrawberryFieldsError if more than one is found.
+    """
+    field_type = field.type
+
+    if get_origin(field_type) is not Annotated:
+        return None
+
+    first, *rest = get_args(field_type)
+
+    strawberry_fields = [arg for arg in rest if isinstance(arg, StrawberryField)]
+
+    if len(strawberry_fields) > 1:
+        raise MultipleStrawberryFieldsError(field_name=field.name, cls=cls)
+
+    if not strawberry_fields:
+        return None
+
+    result = copy.copy(strawberry_fields[0])
+    result.python_name = field.name
+    result.type_annotation = StrawberryAnnotation(
+        annotation=first,
+        namespace=module_namespace,
+    )
+    result.origin = origin
+
+    # Transfer default from dataclass field if not set in strawberry.field()
+    if result.default is dataclasses.MISSING:
+        result.default = field.default
+        result.default_value = field.default
+
+    return result
+
+
 def _get_fields(
     cls: type[Any], original_type_annotations: dict[str, type[Any]]
 ) -> list[StrawberryField]:
@@ -155,47 +198,18 @@ def _get_fields(
             origin = origins.get(field.name, cls)
             module = sys.modules[origin.__module__]
 
-            # Check if the field type is Annotated and contains a StrawberryField
-            field_type = field.type
-            strawberry_field_from_annotated: StrawberryField | None = None
+            annotated_field = _get_field_from_annotated(
+                field, origin, module.__dict__, cls
+            )
 
-            if get_origin(field_type) is Annotated:
-                first, *rest = get_args(field_type)
-
-                # Look for StrawberryField instances in the Annotated args
-                field_annotations = [
-                    arg for arg in rest if isinstance(arg, StrawberryField)
-                ]
-                if len(field_annotations) > 1:
-                    raise MultipleStrawberryFieldsError(field_name=field.name, cls=cls)
-
-                if field_annotations:
-                    strawberry_field_from_annotated = copy.copy(field_annotations[0])
-
-                # If we found a StrawberryField in Annotated, use it
-                if strawberry_field_from_annotated is not None:
-                    strawberry_field_from_annotated.python_name = field.name
-                    strawberry_field_from_annotated.type_annotation = (
-                        StrawberryAnnotation(
-                            annotation=first,
-                            namespace=module.__dict__,
-                        )
-                    )
-                    strawberry_field_from_annotated.origin = origin
-                    # Transfer default from dataclass field if not set in strawberry.field()
-                    if strawberry_field_from_annotated.default is dataclasses.MISSING:
-                        strawberry_field_from_annotated.default = field.default
-                        strawberry_field_from_annotated.default_value = field.default
-                    field = strawberry_field_from_annotated  # noqa: PLW2901
-
-            if not isinstance(field, StrawberryField):
-                # Create a StrawberryField for plain fields and Annotated
-                # without a StrawberryField (Types #1 and #2a)
+            if annotated_field is not None:
+                field = annotated_field  # noqa: PLW2901
+            else:
                 field = StrawberryField(  # noqa: PLW2901
                     python_name=field.name,
                     graphql_name=None,
                     type_annotation=StrawberryAnnotation(
-                        annotation=field_type,
+                        annotation=field.type,
                         namespace=module.__dict__,
                     ),
                     origin=origin,
