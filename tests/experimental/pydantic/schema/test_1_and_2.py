@@ -148,7 +148,5 @@ def test_no_pydantic_v1_warning_on_python_314():
         warnings.simplefilter("always")
         importlib.reload(compat_module)
 
-    pydantic_v1_warnings = [
-        w for w in caught if "Pydantic V1" in str(w.message)
-    ]
+    pydantic_v1_warnings = [w for w in caught if "Pydantic V1" in str(w.message)]
     assert pydantic_v1_warnings == []
