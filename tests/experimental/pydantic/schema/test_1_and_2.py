@@ -1,5 +1,7 @@
+import importlib
 import sys
 import textwrap
+import warnings
 
 import pytest
 
@@ -132,3 +134,21 @@ def test_can_use_nested_pydantic_v1_models():
     """
 
     assert str(schema) == textwrap.dedent(expected_schema).strip()
+
+
+@pytest.mark.skipif(
+    sys.version_info < (3, 14),
+    reason="This test is only relevant on Python 3.14+",
+)
+@needs_pydantic_v2
+def test_no_pydantic_v1_warning_on_python_314():
+    import strawberry.experimental.pydantic._compat as compat_module
+
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        importlib.reload(compat_module)
+
+    pydantic_v1_warnings = [
+        w for w in caught if "Pydantic V1" in str(w.message)
+    ]
+    assert pydantic_v1_warnings == []
