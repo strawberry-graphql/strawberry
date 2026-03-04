@@ -1,4 +1,5 @@
 import dataclasses
+import sys
 from collections.abc import Callable
 from dataclasses import dataclass
 from decimal import Decimal
@@ -21,6 +22,9 @@ IS_PYDANTIC_V1: bool = not IS_PYDANTIC_V2
 
 def _get_base_model_types() -> tuple[type[Any], ...]:
     model_types: list[type[Any]] = [BaseModel]
+
+    if sys.version_info >= (3, 14):
+        return tuple(model_types)
 
     try:
         from pydantic.v1 import BaseModel as BaseModelV1
