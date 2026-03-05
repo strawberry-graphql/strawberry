@@ -142,7 +142,7 @@ class Info(Generic[ContextType, RootValueType]):
 
     @property
     def query(self) -> str | None:
-        """The query being executed."""
+        """The full GraphQL document string sent in the request."""
         operation = self.operation
         if operation.loc is not None:
             return operation.loc.source.body

@@ -1,6 +1,6 @@
 Release type: minor
 
-Add `query` property to `Info` class, allowing resolvers to access the GraphQL query string being executed via `info.query`.
+Add `query` property to `Info` class, allowing resolvers to access the full GraphQL document string sent in the request via `info.query`.
 
 Example usage:
 

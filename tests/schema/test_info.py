@@ -458,6 +458,40 @@ def test_info_query_with_mutation():
     assert graphql_query == query
 
 
+def test_info_query_with_multiple_operations():
+    graphql_query = None
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def hello(self, info: strawberry.Info) -> str:
+            nonlocal graphql_query
+            graphql_query = info.query
+            return "world"
+
+        @strawberry.field
+        def goodbye(self, info: strawberry.Info) -> str:
+            nonlocal graphql_query
+            graphql_query = info.query
+            return "farewell"
+
+    schema = strawberry.Schema(query=Query)
+    query = """query FirstOp {
+        hello
+    }
+
+    query SecondOp {
+        goodbye
+    }"""
+    result = schema.execute_sync(query, operation_name="SecondOp")
+
+    assert not result.errors
+    # info.query returns the full document, including all operations
+    assert graphql_query == query
+    assert "FirstOp" in graphql_query
+    assert "SecondOp" in graphql_query
+
+
 def test_info_query_returns_none_without_loc():
     mock_raw_info = MagicMock()
     mock_raw_info.operation.loc = None
