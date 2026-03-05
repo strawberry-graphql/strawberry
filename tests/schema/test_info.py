@@ -1,11 +1,13 @@
 import dataclasses
 import json
 from typing import Annotated, Optional
+from unittest.mock import MagicMock
 
 import pytest
 
 import strawberry
 from strawberry.types.base import StrawberryOptional
+from strawberry.types.info import Info
 from strawberry.types.nodes import FragmentSpread, InlineFragment, SelectedField
 from strawberry.types.unset import UNSET
 
@@ -354,6 +356,116 @@ def test_field_nodes_deprecation():
     assert not result.errors
     assert result.data
     assert result.data["field"] == 0
+
+
+def test_info_query():
+    graphql_query = None
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def hello(self, info: strawberry.Info) -> str:
+            nonlocal graphql_query
+            graphql_query = info.query
+            return "world"
+
+    schema = strawberry.Schema(query=Query)
+    query = "{ hello }"
+    result = schema.execute_sync(query)
+
+    assert not result.errors
+    assert graphql_query == query
+
+
+def test_info_query_with_variables():
+    graphql_query = None
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def hello(self, info: strawberry.Info, name: str = "world") -> str:
+            nonlocal graphql_query
+            graphql_query = info.query
+            return f"hello {name}"
+
+    schema = strawberry.Schema(query=Query)
+    query = """query Hello($name: String!) {
+        hello(name: $name)
+    }"""
+    result = schema.execute_sync(query, variable_values={"name": "test"})
+
+    assert not result.errors
+    assert graphql_query == query
+
+
+def test_info_query_with_fragments():
+    graphql_query = None
+
+    @strawberry.type
+    class User:
+        name: str
+        age: int
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def user(self, info: strawberry.Info) -> User:
+            nonlocal graphql_query
+            graphql_query = info.query
+            return User(name="Alice", age=30)
+
+    schema = strawberry.Schema(query=Query)
+    query = """query {
+        user {
+            ...UserFields
+        }
+    }
+
+    fragment UserFields on User {
+        name
+        age
+    }"""
+    result = schema.execute_sync(query)
+
+    assert not result.errors
+    assert graphql_query == query
+
+
+def test_info_query_with_mutation():
+    graphql_query = None
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def hello(self) -> str:
+            return "world"
+
+    @strawberry.type
+    class Mutation:
+        @strawberry.mutation
+        def create_user(self, info: strawberry.Info, name: str) -> str:
+            nonlocal graphql_query
+            graphql_query = info.query
+            return name
+
+    schema = strawberry.Schema(query=Query, mutation=Mutation)
+    query = """mutation CreateUser($name: String!) {
+        createUser(name: $name)
+    }"""
+    result = schema.execute_sync(query, variable_values={"name": "Alice"})
+
+    assert not result.errors
+    assert graphql_query == query
+
+
+def test_info_query_returns_none_without_loc():
+    mock_raw_info = MagicMock()
+    mock_raw_info.operation.loc = None
+
+    mock_field = MagicMock()
+
+    info = Info(_raw_info=mock_raw_info, _field=mock_field)
+    assert info.query is None
 
 
 def test_get_argument_defintion_helper():
