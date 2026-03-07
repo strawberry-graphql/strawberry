@@ -581,8 +581,12 @@ def test_kw_only():
 
 
 def test_execute_sync_with_aiter_object():
-    """Regression: graphql-core 3.3's is_async_iterable default treats objects
-    with __aiter__ as async, causing execute_sync to return a coroutine."""
+    """Sync execution works with objects that define __aiter__.
+
+    graphql-core 3.3's is_async_iterable default treats any object with
+    __aiter__ (e.g. Django QuerySets) as async, causing execute_sync to
+    return a coroutine instead of an ExecutionResult.
+    """
 
     class FakeQuerySet:
         def __aiter__(self):
