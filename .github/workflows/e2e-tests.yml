@@ -45,7 +45,7 @@ jobs:
       - name: Install Python dependencies
         run: |
           poetry install --extras cli
-          poetry run pip install graphql-core==3.3.0a9
+          poetry run pip install graphql-core==3.3.0a12
 
       - name: Start Strawberry server
         run: |
