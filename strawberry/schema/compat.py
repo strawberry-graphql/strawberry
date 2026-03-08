@@ -16,7 +16,7 @@ if TYPE_CHECKING:
     from collections.abc import Mapping
     from typing import TypeGuard
 
-    from strawberry.types.scalar import ScalarDefinition, ScalarWrapper
+    from strawberry.types.scalar import ScalarDefinition
 
 
 def is_input_type(type_: StrawberryType | type) -> TypeGuard[type]:
@@ -33,7 +33,7 @@ def is_interface_type(type_: StrawberryType | type) -> TypeGuard[type]:
 
 def is_scalar(
     type_: StrawberryType | type,
-    scalar_registry: Mapping[object, ScalarWrapper | ScalarDefinition],
+    scalar_registry: Mapping[object, ScalarDefinition],
 ) -> TypeGuard[type]:
     return is_strawberry_scalar(type_, scalar_registry)
 

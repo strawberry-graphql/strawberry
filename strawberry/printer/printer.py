@@ -37,7 +37,6 @@ from strawberry.types.base import (
     has_object_definition,
 )
 from strawberry.types.enum import StrawberryEnumDefinition
-from strawberry.types.scalar import ScalarWrapper
 from strawberry.types.unset import UNSET
 
 from .ast_from_value import ast_from_value
@@ -627,8 +626,6 @@ def print_schema(schema: BaseSchema) -> str:
     def _name_getter(type_: Any) -> str:
         if hasattr(type_, "name"):
             return type_.name
-        if isinstance(type_, ScalarWrapper):
-            return type_._scalar_definition.name
         return type_.__name__
 
     return "\n\n".join(
