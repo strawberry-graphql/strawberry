@@ -1,6 +1,42 @@
 CHANGELOG
 =========
 
+0.309.0 - 2026-03-08
+--------------------
+
+Add `query` property to `Info` class, allowing resolvers to access the full GraphQL document string sent in the request via `info.query`.
+
+Example usage:
+
+```python
+import strawberry
+
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def hello(self, info: strawberry.Info, name: str) -> str:
+        print(info.query)
+        return f"Hello {name}"
+```
+
+When executing this query:
+
+```graphql
+query Hello($name: String!) {
+    hello(name: $name)
+}
+```
+
+`info.query` returns the full query string:
+
+```
+"query Hello($name: String!) {\n    hello(name: $name)\n}"
+```
+
+Contributed by [Luis Gustavo](https://github.com/Ckk3) via [PR #4289](https://github.com/strawberry-graphql/strawberry/pull/4289/)
+
+
 0.308.3 - 2026-03-04
 --------------------
 
