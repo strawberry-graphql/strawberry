@@ -12,25 +12,20 @@ scalars, or unions.
 
 ## Pydantic integration
 
-If you use `strawberry.experimental.pydantic`, add the **pydantic** plugin to
-your mypy configuration:
+If you use `strawberry.experimental.pydantic`, add **both** the pydantic and
+strawberry plugins to your mypy configuration:
 
 ```ini
 [mypy]
-plugins = pydantic.mypy
+plugins = pydantic.mypy, strawberry.ext.mypy_plugin
 ```
 
 Or in `pyproject.toml`:
 
 ```toml
 [tool.mypy]
-plugins = ["pydantic.mypy"]
+plugins = ["pydantic.mypy", "strawberry.ext.mypy_plugin"]
 ```
 
-No Strawberry-specific plugin is required.
-
-## Deprecated plugin
-
-If you still have `strawberry.ext.mypy_plugin` in your mypy configuration, it
-will emit a `DeprecationWarning` at startup. You can safely remove it — it is a
-no-op.
+The strawberry plugin synthesises `__init__`, `to_pydantic()` and
+`from_pydantic()` on pydantic-decorated classes so that mypy can see them.
