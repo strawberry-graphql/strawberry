@@ -1,6 +1,41 @@
 CHANGELOG
 =========
 
+0.311.0 - 2026-03-08
+--------------------
+
+Enums can now be registered via `Annotated`. The preferred way is still using
+`@strawberry.enum` as a decorator, but when you need to expose an existing enum
+under a different name or alias, `Annotated` works as a proper type alias in all
+type checkers:
+
+```python
+from typing import Annotated
+from enum import Enum
+import strawberry
+
+
+class IceCreamFlavour(Enum):
+    VANILLA = "vanilla"
+    STRAWBERRY = "strawberry"
+    CHOCOLATE = "chocolate"
+
+
+MyIceCreamFlavour = Annotated[
+    IceCreamFlavour, strawberry.enum(description="Ice cream flavours")
+]
+
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def flavour(self) -> MyIceCreamFlavour:
+        return IceCreamFlavour.VANILLA
+```
+
+Contributed by [Thiago Bellini Ribeiro](https://github.com/bellini666) via [PR #4293](https://github.com/strawberry-graphql/strawberry/pull/4293/)
+
+
 0.310.2 - 2026-03-08
 --------------------
 
