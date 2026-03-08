@@ -1,6 +1,21 @@
 CHANGELOG
 =========
 
+0.310.2 - 2026-03-08
+--------------------
+
+The strawberry mypy plugin has been restored with minimal support for
+`strawberry.experimental.pydantic` types. If you use pydantic integration,
+add the plugin to your mypy configuration:
+
+```ini
+[mypy]
+plugins = pydantic.mypy, strawberry.ext.mypy_plugin
+```
+
+Contributed by [Thiago Bellini Ribeiro](https://github.com/bellini666) via [PR #4292](https://github.com/strawberry-graphql/strawberry/pull/4292/)
+
+
 0.310.1 - 2026-03-08
 --------------------
 
