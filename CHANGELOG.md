@@ -1,6 +1,21 @@
 CHANGELOG
 =========
 
+0.310.1 - 2026-03-08
+--------------------
+
+Fix sync execution crash with graphql-core 3.3 where `execute_sync()` would return a coroutine
+instead of an `ExecutionResult`, causing `RuntimeError: There is no current event loop`,
+because graphql-core 3.3's `is_async_iterable` default treats objects with `__aiter__`
+(like Django QuerySets) as async iterables.
+
+Now passes `is_async_iterable=lambda _x: False` during sync execution to prevent this.
+
+Note: graphql-core >= 3.3.0a12 is now the minimum required version for the 3.3.x series.
+
+Contributed by [Thiago Bellini Ribeiro](https://github.com/bellini666) via [PR #4267](https://github.com/strawberry-graphql/strawberry/pull/4267/)
+
+
 0.310.0 - 2026-03-08
 --------------------
 
