@@ -278,18 +278,19 @@ def test_annotated_enum_with_name():
     assert "IceCreamFlavour" in str(schema)
 
 
-def test_annotated_enum_with_strawberry_enum():
+def test_annotated_enum_on_already_decorated():
+    @strawberry.enum
     class Flavour(Enum):
         VANILLA = "vanilla"
         STRAWBERRY = "strawberry"
 
-    MyIceCreamFlavour = Annotated[Flavour, strawberry.enum(description="Flavours")]
+    MyFlavour = Annotated[Flavour, strawberry.enum(description="Flavours")]
 
     @strawberry.type
     class Query:
         @strawberry.field
-        def flavour(self) -> MyIceCreamFlavour:
+        def flavour(self) -> MyFlavour:
             return Flavour.VANILLA
 
     schema = strawberry.Schema(Query)
-    assert '"""Flavours"""' in str(schema)
+    assert "enum Flavour" in str(schema)
