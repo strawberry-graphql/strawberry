@@ -1,4 +1,4 @@
-Release type: patch
+Release type: minor
 
 Fix two `NameError` issues in schema-codegen output when types are referenced before they are defined.
 
