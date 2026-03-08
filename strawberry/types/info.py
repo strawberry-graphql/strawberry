@@ -141,6 +141,14 @@ class Info(Generic[ContextType, RootValueType]):
         return self._raw_info.operation
 
     @property
+    def query(self) -> str | None:
+        """The full GraphQL document string sent in the request."""
+        operation = self.operation
+        if operation.loc is not None:
+            return operation.loc.source.body
+        return None
+
+    @property
     def path(self) -> Path:
         """The path of the current field being resolved."""
         return self._raw_info.path
