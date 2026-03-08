@@ -279,6 +279,59 @@ def test_enum_with_manual_decorator_and_name():
     )
 
 
+CODE_WITH_ANNOTATED = """
+from enum import Enum
+from typing import Annotated
+
+import strawberry
+
+class IceCreamFlavour(Enum):
+    VANILLA = "vanilla"
+    STRAWBERRY = "strawberry"
+    CHOCOLATE = "chocolate"
+
+MyIceCreamFlavour = Annotated[IceCreamFlavour, strawberry.enum(description="Flavours")]
+
+x: MyIceCreamFlavour = IceCreamFlavour.VANILLA
+reveal_type(x)
+"""
+
+
+def test_enum_with_annotated():
+    results = typecheck(CODE_WITH_ANNOTATED)
+
+    assert results.pyright == snapshot(
+        [
+            Result(
+                type="information",
+                message='Type of "x" is "Literal[IceCreamFlavour.VANILLA]"',
+                line=15,
+                column=13,
+            ),
+        ]
+    )
+    assert results.mypy == snapshot(
+        [
+            Result(
+                type="note",
+                message='Revealed type is "mypy_test.IceCreamFlavour"',
+                line=15,
+                column=13,
+            ),
+        ]
+    )
+    assert results.ty == snapshot(
+        [
+            Result(
+                type="information",
+                message="Revealed type: `Literal[IceCreamFlavour.VANILLA]`",
+                line=15,
+                column=13,
+            ),
+        ]
+    )
+
+
 CODE_WITH_DEPRECATION_REASON = """
 from enum import Enum
 

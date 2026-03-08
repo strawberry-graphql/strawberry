@@ -105,6 +105,23 @@ EnumType = TypeVar("EnumType", bound=EnumMeta)
 GraphqlEnumNameFrom = Literal["key", "value"]
 
 
+@dataclasses.dataclass
+class EnumAnnotation:
+    name: str | None = None
+    description: str | None = None
+    directives: Iterable[object] = ()
+    graphql_name_from: GraphqlEnumNameFrom = "key"
+
+    def __call__(self, cls: EnumType) -> EnumType:
+        return _process_enum(
+            cls,
+            self.name,
+            self.description,
+            directives=self.directives,
+            graphql_name_from=self.graphql_name_from,
+        )
+
+
 def _process_enum(
     cls: EnumType,
     name: str | None = None,
@@ -238,20 +255,17 @@ def enum(
     If name is passed, the name of the GraphQL type will be
     the value passed of name instead of the Enum class name.
     """
-
-    def wrap(cls: EnumType) -> EnumType:
-        return _process_enum(
-            cls,
-            name,
-            description,
-            directives=directives,
-            graphql_name_from=graphql_name_from,
-        )
+    wrapper = EnumAnnotation(
+        name=name,
+        description=description,
+        directives=directives,
+        graphql_name_from=graphql_name_from,
+    )
 
     if not cls:
-        return wrap
+        return wrapper
 
-    return wrap(cls)
+    return wrapper(cls)
 
 
 WithStrawberryEnumDefinition = WithStrawberryDefinition["StrawberryEnumDefinition"]
@@ -265,6 +279,7 @@ def has_enum_definition(obj: Any) -> TypeGuard[type[WithStrawberryEnumDefinition
 
 
 __all__ = [
+    "EnumAnnotation",
     "EnumValue",
     "EnumValueDefinition",
     "StrawberryEnumDefinition",

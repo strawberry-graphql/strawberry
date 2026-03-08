@@ -29,7 +29,7 @@ from strawberry.types.base import (
     get_object_definition,
     has_object_definition,
 )
-from strawberry.types.enum import StrawberryEnumDefinition
+from strawberry.types.enum import EnumAnnotation, StrawberryEnumDefinition
 from strawberry.types.enum import enum as strawberry_enum
 from strawberry.types.lazy_type import LazyType
 from strawberry.types.maybe import _annotation_is_maybe
@@ -189,7 +189,7 @@ class StrawberryAnnotation:
         # Everything remaining should be a raw annotation that needs to be turned into
         # a StrawberryType
         if self._is_enum(evaled_type):
-            return self.create_enum(evaled_type)
+            return self.create_enum(evaled_type, args)
         if self._is_optional(evaled_type, args):
             return self.create_optional(evaled_type)
         if self._is_union(evaled_type, args):
@@ -215,10 +215,20 @@ class StrawberryAnnotation:
             return evaled_type.__strawberry_definition__.resolve_generic(evaled_type)
         raise ValueError(f"Not supported {evaled_type}")
 
-    def create_enum(self, evaled_type: Any) -> StrawberryEnumDefinition:
+    def create_enum(
+        self, evaled_type: Any, args: list[Any] | None = None
+    ) -> StrawberryEnumDefinition:
+        enum_annotation: EnumAnnotation | None = None
+        if args:
+            enum_annotation = next(
+                (a for a in args if isinstance(a, EnumAnnotation)), None
+            )
+
         try:
             return evaled_type.__strawberry_definition__
         except AttributeError:
+            if enum_annotation is not None:
+                return enum_annotation(evaled_type).__strawberry_definition__
             return strawberry_enum(evaled_type).__strawberry_definition__
 
     def create_list(self, evaled_type: Any) -> StrawberryList:
