@@ -578,3 +578,35 @@ def test_kw_only():
             FooBar(foo=1)
         FooBar(bar=2)
         FooBar(foo=1, bar=2)
+
+
+def test_execute_sync_with_aiter_object():
+    """Sync execution works with objects that define __aiter__.
+
+    graphql-core 3.3's is_async_iterable default treats any object with
+    __aiter__ (e.g. Django QuerySets) as async, causing execute_sync to
+    return a coroutine instead of an ExecutionResult.
+    """
+
+    class FakeQuerySet:
+        def __aiter__(self):
+            raise NotImplementedError
+
+        def __iter__(self):
+            yield from [{"name": "Alice"}, {"name": "Bob"}]
+
+    @strawberry.type
+    class User:
+        name: str
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def users(self) -> list[User]:
+            return [User(name=u["name"]) for u in FakeQuerySet()]
+
+    schema = strawberry.Schema(query=Query)
+    result = schema.execute_sync("{ users { name } }")
+
+    assert not result.errors
+    assert result.data == {"users": [{"name": "Alice"}, {"name": "Bob"}]}
