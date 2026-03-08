@@ -1,6 +1,7 @@
 import dataclasses
 from collections.abc import Callable, Iterable, Mapping
 from enum import EnumMeta
+from functools import partial
 from typing import Any, Literal, TypeGuard, TypeVar, overload
 
 from strawberry.exceptions import ObjectIsNotAnEnumError
@@ -103,38 +104,6 @@ def enum_value(
 
 EnumType = TypeVar("EnumType", bound=EnumMeta)
 GraphqlEnumNameFrom = Literal["key", "value"]
-
-
-@dataclasses.dataclass
-class EnumDefinition:
-    """Metadata for ``Annotated`` enum registration *and* deferred decorator.
-
-    Returned by ``strawberry.enum(description=...)`` when no class is passed.
-    Can be used in two ways:
-
-    1. As a decorator::
-
-        @strawberry.enum(description="...")
-        class MyEnum(Enum): ...
-
-    2. As ``Annotated`` metadata::
-
-        MyEnumGQL = Annotated[MyEnum, strawberry.enum(description="...")]
-    """
-
-    name: str | None = None
-    description: str | None = None
-    directives: Iterable[object] = ()
-    graphql_name_from: GraphqlEnumNameFrom = "key"
-
-    def __call__(self, cls: EnumType) -> EnumType:
-        return _process_enum(
-            cls,
-            self.name,
-            self.description,
-            directives=self.directives,
-            graphql_name_from=self.graphql_name_from,
-        )
 
 
 def _process_enum(
@@ -270,17 +239,22 @@ def enum(
     If name is passed, the name of the GraphQL type will be
     the value passed of name instead of the Enum class name.
     """
-    wrapper = EnumDefinition(
-        name=name,
-        description=description,
+    if not cls:
+        return partial(
+            _process_enum,
+            name=name,
+            description=description,
+            directives=directives,
+            graphql_name_from=graphql_name_from,
+        )
+
+    return _process_enum(
+        cls,
+        name,
+        description,
         directives=directives,
         graphql_name_from=graphql_name_from,
     )
-
-    if not cls:
-        return wrapper
-
-    return wrapper(cls)
 
 
 WithStrawberryEnumDefinition = WithStrawberryDefinition["StrawberryEnumDefinition"]
@@ -294,7 +268,6 @@ def has_enum_definition(obj: Any) -> TypeGuard[type[WithStrawberryEnumDefinition
 
 
 __all__ = [
-    "EnumDefinition",
     "EnumValue",
     "EnumValueDefinition",
     "StrawberryEnumDefinition",
