@@ -1,3 +1,4 @@
+from __future__ import annotations
 import strawberry
 
 @strawberry.type(description="A connection to a list of items.")

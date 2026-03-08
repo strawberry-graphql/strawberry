@@ -723,9 +723,11 @@ def _get_union_definition(definition: UnionTypeDefinitionNode) -> Definition:
             )
         ]
     )
+    # Unions must be emitted after their member types.
+    member_names = [type_.name.value for type_ in definition.types]
     return Definition(
         simple_statement,
-        [],
+        member_names,
         definition.name.value,
     )
 
@@ -908,11 +910,19 @@ def codegen(schema: str) -> str:
     )
 
     if schema_definition:
-        definitions["Schema"] = Definition(schema_definition, [], "schema")
+        # Schema must be emitted last; it depends on all other definitions.
+        definitions["Schema"] = Definition(
+            schema_definition, list(definitions.keys()), "schema"
+        )
+
+    future_import = Import(module="__future__", imports=("annotations",))
 
     body: list[cst.CSTNode] = [
-        cst.SimpleStatementLine(body=[import_.to_cst()])
-        for import_ in sorted(imports, key=lambda i: (i.module or "", i.imports))
+        cst.SimpleStatementLine(body=[future_import.to_cst()]),
+        *[
+            cst.SimpleStatementLine(body=[import_.to_cst()])
+            for import_ in sorted(imports, key=lambda i: (i.module or "", i.imports))
+        ],
     ]
 
     # DAG to sort definitions based on dependencies

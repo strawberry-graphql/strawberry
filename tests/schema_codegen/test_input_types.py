@@ -26,6 +26,7 @@ def test_codegen_input_type():
 
     expected = textwrap.dedent(
         """
+        from __future__ import annotations
         import strawberry
 
         @strawberry.input
@@ -61,6 +62,7 @@ def test_nullable_input_fields_use_maybe():
 
     expected = textwrap.dedent(
         """
+        from __future__ import annotations
         import strawberry
 
         @strawberry.input
@@ -84,6 +86,7 @@ def test_mixed_required_and_nullable_input_fields():
 
     expected = textwrap.dedent(
         """
+        from __future__ import annotations
         import strawberry
 
         @strawberry.input
@@ -109,6 +112,7 @@ def test_nullable_input_fields_with_default_values():
 
     expected = textwrap.dedent(
         """
+        from __future__ import annotations
         import strawberry
 
         @strawberry.input
@@ -133,6 +137,7 @@ def test_output_type_nullable_fields_do_not_use_maybe():
 
     expected = textwrap.dedent(
         """
+        from __future__ import annotations
         import strawberry
 
         @strawberry.type
@@ -154,6 +159,7 @@ def test_input_field_integer_default():
 
     expected = textwrap.dedent(
         """
+        from __future__ import annotations
         import strawberry
 
         @strawberry.input
@@ -174,6 +180,7 @@ def test_input_field_float_default():
 
     expected = textwrap.dedent(
         """
+        from __future__ import annotations
         import strawberry
 
         @strawberry.input
@@ -194,6 +201,7 @@ def test_input_field_string_default():
 
     expected = textwrap.dedent(
         """
+        from __future__ import annotations
         import strawberry
 
         @strawberry.input
@@ -214,6 +222,7 @@ def test_input_field_boolean_default():
 
     expected = textwrap.dedent(
         """
+        from __future__ import annotations
         import strawberry
 
         @strawberry.input
@@ -234,6 +243,7 @@ def test_input_field_null_default():
 
     expected = textwrap.dedent(
         """
+        from __future__ import annotations
         import strawberry
 
         @strawberry.input
@@ -259,6 +269,7 @@ def test_input_field_enum_default():
 
     expected = textwrap.dedent(
         """
+        from __future__ import annotations
         import strawberry
         from enum import Enum
 
@@ -285,6 +296,7 @@ def test_input_field_list_default():
 
     expected = textwrap.dedent(
         """
+        from __future__ import annotations
         import strawberry
 
         @strawberry.input
@@ -306,6 +318,7 @@ def test_input_field_default_with_description():
 
     expected = textwrap.dedent(
         """
+        from __future__ import annotations
         import strawberry
 
         @strawberry.input
