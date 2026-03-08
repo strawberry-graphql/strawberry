@@ -49,7 +49,8 @@ treats the latter as a value, not a type, so it cannot be used in annotations.
 from typing import Annotated
 import strawberry
 
-MyEnumGQL = Annotated[MyEnum, strawberry.enum(description="...")]
+MyIceCreamFlavour = Annotated[MyEnum, strawberry.enum(description="...")]
 ```
 
-`MyEnumGQL` is a proper type alias that mypy and pyright accept in annotations.
+`MyIceCreamFlavour` is a proper type alias that mypy and pyright accept in
+annotations.
