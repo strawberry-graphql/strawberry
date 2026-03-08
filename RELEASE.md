@@ -12,7 +12,9 @@ plugins = pydantic.mypy, strawberry.ext.mypy_plugin
 If you don't use pydantic types, no plugin is needed — `dataclass_transform`
 handles everything else.
 
-Additionally, enums can now be registered via `Annotated`, which works as a
+Additionally, enums can now be registered via `Annotated`. The preferred way
+is still using `@strawberry.enum` as a decorator, but when you need to expose
+an existing enum under a different name or alias, `Annotated` works as a
 proper type alias in all type checkers:
 
 ```python

@@ -11,6 +11,7 @@ from typing import (
 
 from mypy.nodes import (
     ARG_OPT,
+    ARG_POS,
     ARG_STAR2,
     MDEF,
     Argument,
@@ -183,7 +184,7 @@ def strawberry_pydantic_class_callback(ctx: ClassDefContext) -> None:
             variable=Var(name="instance", type=model_type),
             type_annotation=model_type,
             initializer=None,
-            kind=ARG_OPT,
+            kind=ARG_POS,
         )
         extra_type = ctx.api.named_type(
             "builtins.dict",
@@ -204,11 +205,34 @@ def strawberry_pydantic_class_callback(ctx: ClassDefContext) -> None:
             return_type=fill_typevars(ctx.cls.info),
         )
     # Fallback: add methods with Any types
-    elif "to_pydantic" not in ctx.cls.info.names:
-        to_pydantic_args = [
-            Argument(Var("kwargs"), AnyType(TypeOfAny.explicit), None, ARG_STAR2)
-        ]
-        add_method(ctx, "to_pydantic", to_pydantic_args, AnyType(TypeOfAny.explicit))
+    else:
+        if "to_pydantic" not in ctx.cls.info.names:
+            to_pydantic_args = [
+                Argument(Var("kwargs"), AnyType(TypeOfAny.explicit), None, ARG_STAR2)
+            ]
+            add_method(
+                ctx, "to_pydantic", to_pydantic_args, AnyType(TypeOfAny.explicit)
+            )
+
+        fallback_model_argument = Argument(
+            variable=Var(name="instance", type=AnyType(TypeOfAny.explicit)),
+            type_annotation=AnyType(TypeOfAny.explicit),
+            initializer=None,
+            kind=ARG_POS,
+        )
+        fallback_extra_argument = Argument(
+            variable=Var(name="extra", type=AnyType(TypeOfAny.explicit)),
+            type_annotation=AnyType(TypeOfAny.explicit),
+            initializer=None,
+            kind=ARG_OPT,
+        )
+        add_static_method_to_class(
+            ctx.api,
+            ctx.cls,
+            name="from_pydantic",
+            args=[fallback_model_argument, fallback_extra_argument],
+            return_type=fill_typevars(ctx.cls.info),
+        )
 
 
 class StrawberryPlugin(Plugin):
@@ -220,20 +244,13 @@ class StrawberryPlugin(Plugin):
         return None
 
     def _is_strawberry_pydantic_decorator(self, fullname: str) -> bool:
-        if any(
-            strawberry_decorator in fullname
-            for strawberry_decorator in (
-                "strawberry.experimental.pydantic.object_type.type",
-                "strawberry.experimental.pydantic.object_type.input",
-                "strawberry.experimental.pydantic.object_type.interface",
-                "strawberry.experimental.pydantic.error_type",
-            )
-        ):
-            return True
-
         return any(
             fullname.endswith(decorator)
             for decorator in (
+                "strawberry.experimental.pydantic.object_type.type",
+                "strawberry.experimental.pydantic.object_type.input",
+                "strawberry.experimental.pydantic.object_type.interface",
+                "strawberry.experimental.pydantic.object_type.error_type",
                 "strawberry.experimental.pydantic.type",
                 "strawberry.experimental.pydantic.input",
                 "strawberry.experimental.pydantic.error_type",

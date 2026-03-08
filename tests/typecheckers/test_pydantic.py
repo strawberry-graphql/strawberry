@@ -52,3 +52,29 @@ def test_pydantic_type():
             ),
         ]
     )
+
+    assert results.pyright == snapshot(
+        [
+            Result(
+                type="information",
+                message='Type of "user" is "StrawberryTypeFromPydantic[UserModel]"',
+                line=15,
+                column=13,
+            ),
+            Result(
+                type="information",
+                message='Type of "user.to_pydantic()" is "UserModel"',
+                line=16,
+                column=13,
+            ),
+            Result(
+                type="information",
+                message='Type of "User.from_pydantic(UserModel(age=1, name="abc"))" is "StrawberryTypeFromPydantic[UserModel]"',
+                line=17,
+                column=13,
+            ),
+        ]
+    )
+
+    # TY doesn't properly support this yet
+    # assert results.ty == snapshot(...)  # noqa: ERA001
