@@ -29,7 +29,7 @@ from strawberry.types.base import (
     get_object_definition,
     has_object_definition,
 )
-from strawberry.types.enum import StrawberryEnumDefinition
+from strawberry.types.enum import EnumDefinition, StrawberryEnumDefinition
 from strawberry.types.enum import enum as strawberry_enum
 from strawberry.types.lazy_type import LazyType
 from strawberry.types.maybe import _annotation_is_maybe
@@ -189,7 +189,7 @@ class StrawberryAnnotation:
         # Everything remaining should be a raw annotation that needs to be turned into
         # a StrawberryType
         if self._is_enum(evaled_type):
-            return self.create_enum(evaled_type)
+            return self.create_enum(evaled_type, args)
         if self._is_optional(evaled_type, args):
             return self.create_optional(evaled_type)
         if self._is_union(evaled_type, args):
@@ -215,11 +215,23 @@ class StrawberryAnnotation:
             return evaled_type.__strawberry_definition__.resolve_generic(evaled_type)
         raise ValueError(f"Not supported {evaled_type}")
 
-    def create_enum(self, evaled_type: Any) -> StrawberryEnumDefinition:
+    def create_enum(
+        self, evaled_type: Any, args: list[Any] | None = None
+    ) -> StrawberryEnumDefinition:
+        enum_def: EnumDefinition | None = None
+        if args:
+            enum_def = next((a for a in args if isinstance(a, EnumDefinition)), None)
+
         try:
             return evaled_type.__strawberry_definition__
         except AttributeError:
-            return strawberry_enum(evaled_type).__strawberry_definition__
+            return strawberry_enum(
+                evaled_type,
+                name=enum_def.name if enum_def else None,
+                description=enum_def.description if enum_def else None,
+                directives=enum_def.directives if enum_def else (),
+                graphql_name_from=enum_def.graphql_name_from if enum_def else "key",
+            ).__strawberry_definition__
 
     def create_list(self, evaled_type: Any) -> StrawberryList:
         item_type, *_ = get_args(evaled_type)

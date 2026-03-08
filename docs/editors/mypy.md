@@ -12,25 +12,44 @@ scalars, or unions.
 
 ## Pydantic integration
 
-If you use `strawberry.experimental.pydantic`, add the **pydantic** plugin to
-your mypy configuration:
+If you use `strawberry.experimental.pydantic`, add **both** the pydantic and
+strawberry plugins to your mypy configuration:
 
 ```ini
 [mypy]
-plugins = pydantic.mypy
+plugins = pydantic.mypy, strawberry.ext.mypy_plugin
 ```
 
 Or in `pyproject.toml`:
 
 ```toml
 [tool.mypy]
-plugins = ["pydantic.mypy"]
+plugins = ["pydantic.mypy", "strawberry.ext.mypy_plugin"]
 ```
 
-No Strawberry-specific plugin is required.
+The strawberry plugin synthesises `__init__`, `to_pydantic()` and
+`from_pydantic()` on pydantic-decorated classes so that mypy can see them.
 
-## Deprecated plugin
+## Enums
 
-If you still have `strawberry.ext.mypy_plugin` in your mypy configuration, it
-will emit a `DeprecationWarning` at startup. You can safely remove it — it is a
-no-op.
+The preferred way to register an enum is with the decorator:
+
+```python
+@strawberry.enum
+class IceCreamFlavour(Enum):
+    VANILLA = "vanilla"
+    STRAWBERRY = "strawberry"
+```
+
+If you need to expose an existing enum under a different name or alias, use
+`Annotated` instead of assigning `strawberry.enum(MyEnum)` to a variable — mypy
+treats the latter as a value, not a type, so it cannot be used in annotations.
+
+```python
+from typing import Annotated
+import strawberry
+
+MyEnumGQL = Annotated[MyEnum, strawberry.enum(description="...")]
+```
+
+`MyEnumGQL` is a proper type alias that mypy and pyright accept in annotations.

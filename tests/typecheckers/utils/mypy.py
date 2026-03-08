@@ -42,7 +42,9 @@ class Summary(TypedDict):
     timeInSec: float
 
 
-def run_mypy(code: str, strict: bool = True) -> list[Result]:
+def run_mypy(
+    code: str, strict: bool = True, mypy_plugins: list[str] | None = None
+) -> list[Result]:
     args = ["mypy", "--output=json"]
 
     if strict:
@@ -52,8 +54,11 @@ def run_mypy(code: str, strict: bool = True) -> list[Result]:
         module_path = pathlib.Path(directory) / "mypy_test.py"
         module_path.write_text(code)
 
+        config_lines = ["[mypy]\n"]
+        if mypy_plugins:
+            config_lines.append(f"plugins = {', '.join(mypy_plugins)}\n")
         config_path = pathlib.Path(directory) / "mypy.ini"
-        config_path.write_text("[mypy]\n")
+        config_path.write_text("".join(config_lines))
 
         process_result = subprocess.run(
             [*args, "--config-file", str(config_path), str(module_path)],
