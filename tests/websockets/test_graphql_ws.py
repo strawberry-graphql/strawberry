@@ -865,3 +865,31 @@ async def test_unexpected_client_disconnects_are_gracefully_handled(
 
         assert not process_errors.called
         assert Subscription.active_infinity_subscriptions == 0
+
+@mock.patch.object(MyExtension, "_process_result", create=True)
+async def test_subscription_errors_trigger_extension_process_result(
+    mock: mock.MagicMock, ws: WebSocketClient
+):
+    """Test that schema extensions are called to process results when a subscription yields an error."""
+    await ws.send_legacy_message(
+        {
+            "type": "start",
+            "id": "demo",
+            "payload": {
+                "query": 'subscription { exception(message: "TEST EXC") }',
+            },
+        }
+    )
+
+    data_message: DataMessage = await ws.receive_json()
+
+    assert data_message["type"] == "data"
+    assert data_message["id"] == "demo"
+    assert "errors" in data_message["payload"]
+
+    # Error intercepted and extension called
+    mock.assert_called_once()
+
+    await ws.send_legacy_message({"type": "stop", "id": "demo"})
+    complete_message = await ws.receive_json()
+    assert complete_message["type"] == "complete"
