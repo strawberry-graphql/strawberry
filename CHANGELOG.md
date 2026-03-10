@@ -1,6 +1,20 @@
 CHANGELOG
 =========
 
+0.311.1 - 2026-03-10
+--------------------
+
+This release fixes an `InvalidStateError` crash in the DataLoader when a batch
+load function raises an exception and some futures in the batch have already been
+cancelled (e.g. due to client disconnection).
+
+The error handler in `dispatch_batch` now skips cancelled futures before calling
+`set_exception`, matching the guard that already exists in the success path
+(added in #2339).
+
+Contributed by [Ben XO](https://github.com/ben-xo) via [PR #4300](https://github.com/strawberry-graphql/strawberry/pull/4300/)
+
+
 0.311.0 - 2026-03-08
 --------------------
 
