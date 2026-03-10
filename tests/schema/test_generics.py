@@ -1208,3 +1208,59 @@ def test_generic_with_interface():
 
     assert not query_result.errors
     assert query_result.data == {"hello": {"items": [{"data": "test1"}]}}
+
+
+def test_generic_with_union_typevar_in_outer_union():
+    T = TypeVar("T")
+
+    @strawberry.type
+    class Animal:
+        name: str
+
+    @strawberry.type
+    class Plant:
+        name: str
+
+    @strawberry.type
+    class Error:
+        message: str
+
+    @strawberry.type
+    class Collection(Generic[T]):
+        items: list[T]
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def things(self) -> Collection[Animal | Plant] | Error:
+            return Collection(items=[Animal(name="Dog"), Plant(name="Rose")])
+
+        @strawberry.field
+        def failing_things(self) -> Collection[Animal | Plant] | Error:
+            return Error(message="something went wrong")
+
+    schema = strawberry.Schema(query=Query)
+
+    result = schema.execute_sync(
+        textwrap.dedent("""
+        {
+            things {
+                ... on AnimalPlantCollection {
+                    items {
+                        ... on Animal { name }
+                        ... on Plant { name }
+                    }
+                }
+            }
+            failingThings {
+                ... on Error { message }
+            }
+        }
+    """)
+    )
+
+    assert not result.errors
+    assert result.data == {
+        "things": {"items": [{"name": "Dog"}, {"name": "Rose"}]},
+        "failingThings": {"message": "something went wrong"},
+    }
