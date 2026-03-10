@@ -866,6 +866,7 @@ async def test_unexpected_client_disconnects_are_gracefully_handled(
         assert not process_errors.called
         assert Subscription.active_infinity_subscriptions == 0
 
+
 @mock.patch.object(MyExtension, "_process_result", create=True)
 async def test_subscription_errors_trigger_extension_process_result(
     mock: mock.MagicMock, ws: WebSocketClient
