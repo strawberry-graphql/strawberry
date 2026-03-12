@@ -1,5 +1,7 @@
-class OperationNameResultPerson:
+from typing_extensions import TypedDict
+
+class OperationNameResultPerson(TypedDict):
     name: str
 
-class OperationNameResult:
+class OperationNameResult(TypedDict):
     person: OperationNameResultPerson
