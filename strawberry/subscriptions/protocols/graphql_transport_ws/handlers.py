@@ -372,6 +372,17 @@ class Operation(Generic[Context, RootValue]):
         self.completed = False
         self.task: asyncio.Task | None = None
 
+    def _process_extensions(self, execution_result: ExecutionResult) -> None:
+        """Run the execution result through any active schema extensions."""
+        if not execution_result.errors:
+            return
+
+        extensions = getattr(self.handler.schema, "extensions", [])
+        for ext in extensions:
+            extension_instance = ext() if isinstance(ext, type) else ext
+            if hasattr(extension_instance, "_process_result"):
+                extension_instance._process_result(execution_result)
+
     async def send_operation_message(self, message: Message) -> None:
         if self.completed:
             return
@@ -394,6 +405,8 @@ class Operation(Generic[Context, RootValue]):
         )
 
     async def send_next(self, execution_result: ExecutionResult) -> None:
+        self._process_extensions(execution_result)
+
         next_payload: NextMessagePayload = {"data": execution_result.data}
 
         if execution_result.errors:

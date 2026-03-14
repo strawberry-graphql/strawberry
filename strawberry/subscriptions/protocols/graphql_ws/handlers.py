@@ -216,6 +216,13 @@ class BaseGraphQLWSHandler(Generic[Context, RootValue]):
     async def send_data_message(
         self, execution_result: ExecutionResult, operation_id: str
     ) -> None:
+        if execution_result.errors:
+            extensions = getattr(self.schema, "extensions", [])
+            for ext in extensions:
+                extension_instance = ext() if isinstance(ext, type) else ext
+                if hasattr(extension_instance, "_process_result"):
+                    extension_instance._process_result(execution_result)
+
         data_message: DataMessage = {
             "type": "data",
             "id": operation_id,
