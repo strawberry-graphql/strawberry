@@ -294,3 +294,23 @@ def test_annotated_enum_on_already_decorated():
 
     schema = strawberry.Schema(Query)
     assert "enum Flavour" in str(schema)
+
+
+def test_annotated_enum_as_resolver_parameter():
+    class Color(Enum):
+        RED = "red"
+        GREEN = "green"
+        BLUE = "blue"
+
+    GqlColor = Annotated[Color, strawberry.enum()]
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def color_name(self, color: GqlColor) -> str:
+            return color.value
+
+    schema = strawberry.Schema(query=Query)
+    result = schema.execute_sync("{ colorName(color: RED) }")
+    assert result.errors is None
+    assert result.data == {"colorName": "red"}
