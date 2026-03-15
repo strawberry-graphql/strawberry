@@ -105,7 +105,7 @@ EnumType = TypeVar("EnumType", bound=EnumMeta)
 GraphqlEnumNameFrom = Literal["key", "value"]
 
 
-@dataclasses.dataclass
+@dataclasses.dataclass(frozen=True)
 class EnumAnnotation:
     name: str | None = None
     description: str | None = None
