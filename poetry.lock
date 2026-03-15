@@ -957,23 +957,23 @@ colorama = {version = "*", markers = "platform_system == \"Windows\""}
 
 [[package]]
 name = "codeflash"
-version = "0.20.1"
+version = "0.20.2"
 description = "Client for codeflash.ai - automatic code performance optimization, powered by AI"
 optional = false
 python-versions = ">=3.9"
 groups = ["dev"]
 files = [
-    {file = "codeflash-0.20.1-py3-none-any.whl", hash = "sha256:23ca9822db8a59b5714cd55a783cfb42d06aa3b866e3e589aba404c085ea4a2a"},
-    {file = "codeflash-0.20.1.tar.gz", hash = "sha256:035934397277ec18860fb9ee81460f96cab11bc1cab4e9b5e16414955f2f2aea"},
+    {file = "codeflash-0.20.2-py3-none-any.whl", hash = "sha256:26dd1fb79861d4dddb9a7c5768ba666e3135ce6d0f0c6ed701a0861a9908d4a1"},
+    {file = "codeflash-0.20.2.tar.gz", hash = "sha256:2eae9bec7bf69938384d63557af649e52f723a30bf739142fcefcc97562cc7c7"},
 ]
 
 [package.dependencies]
 click = ">=8.1.0"
 codeflash-benchmark = "*"
 coverage = ">=7.6.4"
-crosshair-tool = ">=0.0.78"
+crosshair-tool = {version = ">=0.0.78", markers = "python_version < \"3.15\""}
 dill = ">=0.3.8"
-filelock = "*"
+filelock = {version = ">=3.20.3", markers = "python_version >= \"3.10\""}
 gitpython = ">=3.1.31"
 humanize = ">=4.0.0"
 inquirer = ">=3.0.0"
@@ -1199,6 +1199,7 @@ description = "Analyze Python code for correctness using symbolic execution."
 optional = false
 python-versions = ">=3.8"
 groups = ["dev"]
+markers = "python_version < \"3.15\""
 files = [
     {file = "crosshair_tool-0.0.101-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:95a448fc876925c614852101db768ff4136bd1cabc2898440d3e191adf0bda50"},
     {file = "crosshair_tool-0.0.101-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:4c5132457fc85517f95ff772a05596ad45c9b7ad0753939621eb0c9b8476d900"},
@@ -2209,6 +2210,7 @@ description = "Read resources from Python packages"
 optional = false
 python-versions = ">=3.9"
 groups = ["dev"]
+markers = "python_version < \"3.15\""
 files = [
     {file = "importlib_resources-6.5.2-py3-none-any.whl", hash = "sha256:789cfdc3ed28c78b67a06acb8126751ced69a3d5f79c095a98298cd8a760ccec"},
     {file = "importlib_resources-6.5.2.tar.gz", hash = "sha256:185f87adef5bcc288449d98fb4fba07cea78bc036455dd44c5fc4a2fe78fed2c"},
@@ -5826,6 +5828,7 @@ description = "A library for accessing stubs in typeshed."
 optional = false
 python-versions = ">=3.9"
 groups = ["dev"]
+markers = "python_version < \"3.15\""
 files = [
     {file = "typeshed_client-2.8.2-py3-none-any.whl", hash = "sha256:4cf886d976c777689cd31889f13abf5bfb7797c82519b07e5969e541380c75ee"},
     {file = "typeshed_client-2.8.2.tar.gz", hash = "sha256:9d8e29fb74574d87bf9a719f77131dc40f2aeea20e97d25d4a3dc2cc30debd31"},
@@ -5854,6 +5857,7 @@ description = "Runtime inspection utilities for typing module."
 optional = false
 python-versions = "*"
 groups = ["dev"]
+markers = "python_version < \"3.15\""
 files = [
     {file = "typing_inspect-0.9.0-py3-none-any.whl", hash = "sha256:9ee6fc59062311ef8547596ab6b955e1b8aa46242d854bfc78f4f6b0eff35f9f"},
     {file = "typing_inspect-0.9.0.tar.gz", hash = "sha256:b23fc42ff6f6ef6954e4852c1fb512cdd18dbea03134f91f856a95ccc9461f78"},
@@ -6508,6 +6512,7 @@ description = "an efficient SMT solver library"
 optional = false
 python-versions = "*"
 groups = ["dev"]
+markers = "python_version < \"3.15\""
 files = [
     {file = "z3_solver-4.15.4.0-py3-none-macosx_13_0_arm64.whl", hash = "sha256:407e825cc9211f95ef46bdc8d151bf630e7ab2d62a21d24cd74c09cc5b73f3aa"},
     {file = "z3_solver-4.15.4.0-py3-none-macosx_13_0_x86_64.whl", hash = "sha256:00bd10c5a6a5f6112d3a9a810d0799227e52f76caa860dafa5e00966bb47eb13"},
