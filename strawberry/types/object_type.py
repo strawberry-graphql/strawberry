@@ -1,4 +1,5 @@
 import builtins
+import copy
 import dataclasses
 import inspect
 import types
@@ -17,7 +18,8 @@ from strawberry.exceptions import (
     ObjectIsNotClassError,
 )
 from strawberry.types.base import get_object_definition
-from strawberry.types.maybe import _annotation_is_maybe
+from strawberry.types.maybe import Some, _annotation_is_maybe
+from strawberry.types.unset import UNSET
 from strawberry.utils.str_converters import to_camel_case
 
 from .base import StrawberryObjectDefinition
@@ -455,6 +457,50 @@ def interface(
     )
 
 
+def _prepare(obj: Any) -> Any:
+    """Recursively unwrap Some() instances so dataclasses.asdict can process the result."""
+    if isinstance(obj, Some):
+        # Unwrap that Some container
+        return _prepare(obj.value)
+
+    if dataclasses.is_dataclass(obj) and not isinstance(obj, builtins.type):
+        hints = get_annotations(builtins.type(obj))
+        # Intentionally avoiding the similar `dataclasses.replace` here,
+        # which calls `__init__` (and therefore `__post_init__`).
+        # That may trigger unintended side effects, and it rejects `init=False` fields
+        # in its changes dict. A shallow `copy.copy` sidesteps both issues:
+        # it duplicates the instance without invoking any initialisation logic.
+        obj_copy = copy.copy(obj)
+        for f in dataclasses.fields(obj):
+            value = getattr(obj, f.name)
+            if value is None and _annotation_is_maybe(hints.get(f.name)):
+                value = UNSET
+            else:
+                value = _prepare(value)
+            # `object.__setattr__` bypasses the frozen dataclass override of
+            # `__setattr__` (which raises `FrozenInstanceError`), writing
+            # directly to the instance. This is the same approach used by
+            # `dataclasses.replace` internally.
+            object.__setattr__(obj_copy, f.name, value)
+        return obj_copy
+
+    # Handle the recursive preparation of tuples, lists, and dicts:
+    if isinstance(obj, tuple) and hasattr(obj, "_fields"):  # namedtuple
+        return builtins.type(obj)(*[_prepare(v) for v in obj])
+    if isinstance(obj, (list, tuple)):
+        return builtins.type(obj)(_prepare(v) for v in obj)
+    if isinstance(obj, dict):
+        return {k: _prepare(v) for k, v in obj.items()}
+
+    # obj is none of the above instances -> return unchanged
+    return obj
+
+
+def _asdict_dict_factory(items: list[tuple[str, Any]]) -> dict[str, Any]:
+    """dict_factory for dataclasses.asdict that excludes UNSET values."""
+    return {k: v for k, v in items if v is not UNSET}
+
+
 def asdict(obj: Any) -> dict[str, object]:
     """Convert a strawberry object into a dictionary.
 
@@ -479,7 +525,7 @@ def asdict(obj: Any) -> dict[str, object]:
     # {"name": "Lorem", "age": 25}
     ```
     """
-    return dataclasses.asdict(obj)
+    return dataclasses.asdict(_prepare(obj), dict_factory=_asdict_dict_factory)
 
 
 __all__ = [
