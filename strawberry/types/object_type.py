@@ -504,7 +504,11 @@ def _asdict_dict_factory(items: list[tuple[str, Any]]) -> dict[str, Any]:
 def asdict(obj: Any) -> dict[str, object]:
     """Convert a strawberry object into a dictionary.
 
-    This wraps the dataclasses.asdict function to strawberry.
+    This wraps the ``dataclasses.asdict`` function to strawberry,
+    while handling some special cases that ``dataclasses.asdict`` does not:
+
+    - ``UNSET`` fields are excluded.
+    - ``Some(value)`` containers are unwrapped, returning their ``value`` only.
 
     Args:
         obj: The object to convert into a dictionary.
