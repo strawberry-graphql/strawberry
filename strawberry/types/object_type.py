@@ -488,7 +488,8 @@ def _prepare(obj: Any) -> Any:
     if isinstance(obj, tuple) and hasattr(obj, "_fields"):  # namedtuple
         return builtins.type(obj)(*[_prepare(v) for v in obj])
     if isinstance(obj, (list, tuple)):
-        return builtins.type(obj)(_prepare(v) for v in obj)
+        # Edge case: filter out `UNSET` values from these sequences.
+        return builtins.type(obj)(_prepare(v) for v in obj if v is not UNSET)
     if isinstance(obj, dict):
         return {k: _prepare(v) for k, v in obj.items()}
 

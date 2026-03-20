@@ -251,6 +251,17 @@ def test_list_with_none_items():
     assert asdict(Input(items=["a", None, "b"])) == {"items": ["a", None, "b"]}
 
 
+def test_unset_inside_list_is_filtered():
+    # UNSET values nested inside a list should be stripped, the same way
+    # UNSET top-level fields are omitted from the output dict.
+    @strawberry.input
+    class Input:
+        items: list[str | None]
+
+    result = asdict(Input(items=[UNSET, "foo", UNSET]))
+    assert result == {"items": ["foo"]}
+
+
 def test_list_of_nested_inputs():
     @strawberry.input
     class InnerInput:
