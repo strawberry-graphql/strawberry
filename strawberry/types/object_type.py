@@ -484,14 +484,15 @@ def _prepare(obj: Any) -> Any:
             object.__setattr__(obj_copy, f.name, value)
         return obj_copy
 
-    # Handle the recursive preparation of tuples, lists, and dicts:
-    if isinstance(obj, tuple) and hasattr(obj, "_fields"):  # namedtuple
-        return builtins.type(obj)(_prepare(v) for v in obj)
+    # Recurse into lists, tuples, namedtuples, and dicts to prepare their values.
+    # Defensively filter out the `UNSET` value at each level, as well.
     if isinstance(obj, (list, tuple)):
-        # Edge case: filter out `UNSET` values from these sequences.
+        # NOTE namedtuples are also included in this case.
+        # If more specific handling is needed for a namedtuple, check for
+        # `hasattr(obj, "_fields")` later.
         return builtins.type(obj)(_prepare(v) for v in obj if v is not UNSET)
     if isinstance(obj, dict):
-        return {k: _prepare(v) for k, v in obj.items()}
+        return {k: _prepare(v) for k, v in obj.items() if v is not UNSET}
 
     # obj is none of the above instances -> return unchanged
     return obj
