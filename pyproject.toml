@@ -108,7 +108,6 @@ dev = [
   "pyright (~=1.1.408)",
   "codeflash (>=0.19.1)",
   "pre-commit",
-  "ty",
 ]
 integrations = [
   "aiohttp (>=3.7.4.post0,<4.0.0)",
