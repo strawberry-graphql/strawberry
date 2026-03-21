@@ -486,7 +486,7 @@ def _prepare(obj: Any) -> Any:
 
     # Handle the recursive preparation of tuples, lists, and dicts:
     if isinstance(obj, tuple) and hasattr(obj, "_fields"):  # namedtuple
-        return tuple(_prepare(v) for v in obj)
+        return builtins.type(obj)(_prepare(v) for v in obj)
     if isinstance(obj, (list, tuple)):
         # Edge case: filter out `UNSET` values from these sequences.
         return builtins.type(obj)(_prepare(v) for v in obj if v is not UNSET)
