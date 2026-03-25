@@ -3,7 +3,7 @@ from typing import Any
 
 from starlette.applications import Starlette
 from starlette.middleware.cors import CORSMiddleware
-from starlette.routing import Route, WebSocketRoute
+from starlette.routing import BaseRoute, Route, WebSocketRoute
 
 from strawberry import Schema
 from strawberry.asgi import GraphQL
@@ -17,10 +17,10 @@ assert isinstance(schema_symbol, Schema)
 graphql_app = GraphQL[Any, Any](schema_symbol)
 
 paths = ["/", "/graphql"]
-routes = []
+routes: list[BaseRoute] = []
 for path in paths:
-    routes.append(Route(path, graphql_app))  # type: ignore
-    routes.append(WebSocketRoute(path, graphql_app))  # type: ignore
+    routes.append(Route(path, graphql_app))
+    routes.append(WebSocketRoute(path, graphql_app))
 
 app = Starlette(debug=True, routes=routes)
 app.add_middleware(
