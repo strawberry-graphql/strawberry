@@ -1,3 +1,4 @@
+import asyncio
 from collections.abc import AsyncGenerator
 
 import pytest
@@ -85,3 +86,42 @@ async def test_mask_errors_scrubs_subscription_exceptions():
     error_message = results[1].errors[0].message
     assert error_message == "Unexpected error."
     assert "Secret database credentials" not in error_message
+
+
+class AsyncStreamModifierExtension(SchemaExtension):
+    side_effect_ran = False
+
+    async def _side_effect(self) -> None:
+        # Simulate an async dependency / side effect
+        await asyncio.sleep(0)
+        AsyncStreamModifierExtension.side_effect_ran = True
+
+    async def on_subscription_result(self, result: ExecutionResult) -> None:
+        # This should be awaited by extensions_runner.on_subscription_result
+        await self._side_effect()
+
+        if result.data and "count" in result.data:
+            # Mutate the outgoing data stream after the async side effect
+            result.data["count"] = f"Modified: {result.data['count']}"
+
+
+@pytest.mark.asyncio
+async def test_async_on_subscription_result_is_awaited() -> None:
+    # Reset class-level flag before running the subscription
+    AsyncStreamModifierExtension.side_effect_ran = False
+
+    schema = strawberry.Schema(
+        query=Query,
+        subscription=Subscription,
+        extensions=[AsyncStreamModifierExtension()],
+    )
+
+    query = "subscription { count }"
+    sub_generator = await schema.subscribe(query)
+
+    # Consume first result from the async iterator
+    first_result = await sub_generator.__anext__()
+
+    assert first_result.errors is None
+    assert first_result.data == {"count": "Modified: 1"}
+    assert AsyncStreamModifierExtension.side_effect_ran is True

@@ -43,10 +43,7 @@ class SchemaExtensionsRunner:
     async def on_subscription_result(self, result: ExecutionResult) -> None:
         """Run the subscription result hook across all active extensions."""
         for extension in self.extensions:
-            # Check if the extension implemented the new hook
-            hook = getattr(extension, "on_subscription_result", None)
-            if hook:
-                await await_maybe(hook(result))
+            await await_maybe(extension.on_subscription_result(result))
 
     def get_extensions_results_sync(self) -> dict[str, Any]:
         data: dict[str, Any] = {}
