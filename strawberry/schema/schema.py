@@ -927,9 +927,21 @@ class Schema(BaseSchema):
                 initial_error.extensions = (
                     await extensions_runner.get_extensions_results(execution_context)
                 )
-                yield await self._handle_execution_result(
+                execution_result = await self._handle_execution_result(
                     execution_context, initial_error, extensions_runner
                 )
+                try:
+                    is_subscription = (
+                        execution_context.operation_type is OperationType.SUBSCRIPTION
+                    )
+                except RuntimeError:
+                    is_subscription = set(execution_context.allowed_operations) == {
+                        OperationType.SUBSCRIPTION
+                    }
+
+                if is_subscription:
+                    await extensions_runner.on_subscription_result(execution_result)
+                yield execution_result
                 return
 
             assert execution_context.graphql_document is not None
@@ -978,11 +990,13 @@ class Schema(BaseSchema):
 
                 # Handle pre-execution errors.
                 if isinstance(aiter_or_result, OriginalExecutionResult):
-                    yield await self._handle_execution_result(
+                    execution_result = await self._handle_execution_result(
                         execution_context,
                         PreExecutionError(data=None, errors=aiter_or_result.errors),
                         extensions_runner,
                     )
+                    await extensions_runner.on_subscription_result(execution_result)
+                    yield execution_result
                 else:
                     try:
                         async with aclosing(aiter_or_result):

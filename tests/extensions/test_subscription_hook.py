@@ -125,3 +125,33 @@ async def test_async_on_subscription_result_is_awaited() -> None:
     assert first_result.errors is None
     assert first_result.data == {"count": "Modified: 1"}
     assert AsyncStreamModifierExtension.side_effect_ran is True
+
+
+@pytest.mark.asyncio
+async def test_mask_errors_scrubs_pre_execution_errors():
+    # Initialize schema with MaskErrors
+    schema = strawberry.Schema(
+        query=Query, subscription=Subscription, extensions=[MaskErrors()]
+    )
+
+    # Querying a field that doesn't exist triggers Validation errors BEFORE execution
+    query = "subscription { fieldThatDoesNotExist }"
+
+    # Run the subscription
+    sub_generator = await schema.subscribe(query)
+
+    # Exhaust the generator
+    results = [result async for result in sub_generator]
+
+    # Strawberry yields 1 or more errors depending on the validation layers it hits.
+    # We must ensure that EVERY result yielded was successfully intercepted and masked.
+    assert len(results) > 0
+
+    for result in results:
+        assert result.data is None
+        assert len(result.errors) == 1
+
+        # The crucial check: MaskErrors successfully intercepted and masked it!
+        error_message = result.errors[0].message
+        assert error_message == "Unexpected error."
+        assert "fieldThatDoesNotExist" not in error_message

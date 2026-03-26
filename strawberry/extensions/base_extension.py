@@ -85,7 +85,6 @@ HOOK_METHODS: set[str] = {
     SchemaExtension.on_validate.__name__,
     SchemaExtension.on_parse.__name__,
     SchemaExtension.on_execute.__name__,
-    SchemaExtension.on_subscription_result.__name__,
 }
 
 __all__ = ["HOOK_METHODS", "Hook", "LifecycleStep", "SchemaExtension"]
