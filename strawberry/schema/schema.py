@@ -987,20 +987,29 @@ class Schema(BaseSchema):
                     try:
                         async with aclosing(aiter_or_result):
                             async for result in aiter_or_result:
-                                yield await self._handle_execution_result(
+                                extension_result = await self._handle_execution_result(
                                     execution_context,
                                     result,
                                     extensions_runner,
                                 )
+
+                                await extensions_runner.on_subscription_result(
+                                    extension_result
+                                )
+
+                                yield extension_result
+
                     # graphql-core doesn't handle exceptions raised while executing.
                     except Exception as exc:  # noqa: BLE001
-                        yield await self._handle_execution_result(
+                        execution_result = await self._handle_execution_result(
                             execution_context,
                             OriginalExecutionResult(
                                 data=None, errors=[_coerce_error(exc)]
                             ),
                             extensions_runner,
                         )
+                        await extensions_runner.on_subscription_result(execution_result)
+                        yield execution_result
             # catch exceptions raised in `on_execute` hook.
             except Exception as exc:  # noqa: BLE001
                 origin_result = OriginalExecutionResult(

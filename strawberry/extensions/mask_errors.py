@@ -59,3 +59,7 @@ class MaskErrors(SchemaExtension):
             self._process_result(result)
         elif result:
             self._process_result(result.initial_result)
+
+    def on_subscription_result(self, result: StrawberryExecutionResult) -> None:
+        """Mask errors on streaming subscription results."""
+        self._process_result(result)

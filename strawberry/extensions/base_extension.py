@@ -9,7 +9,7 @@ from strawberry.utils.await_maybe import AsyncIteratorOrIterator, AwaitableOrVal
 if TYPE_CHECKING:
     from graphql import GraphQLResolveInfo
 
-    from strawberry.types import ExecutionContext
+    from strawberry.types import ExecutionContext, ExecutionResult
 
 
 class LifecycleStep(Enum):
@@ -50,6 +50,14 @@ class SchemaExtension:
     ) -> AsyncIteratorOrIterator[None]:  # pragma: no cover
         """Called before and after the execution step."""
         yield None
+
+    def on_subscription_result(
+        self, result: ExecutionResult
+    ) -> None | AwaitableOrValue[None]:
+        """Called exactly once for every event/result yielded by a GraphQL subscription.
+
+        Extensions can mutate the `result` object directly (e.g., masking errors).
+        """
 
     def resolve(
         self,

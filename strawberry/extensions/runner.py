@@ -12,7 +12,7 @@ from strawberry.extensions.context import (
 from strawberry.utils.await_maybe import await_maybe
 
 if TYPE_CHECKING:
-    from strawberry.types import ExecutionContext
+    from strawberry.types import ExecutionContext, ExecutionResult
 
     from . import SchemaExtension
 
@@ -39,6 +39,14 @@ class SchemaExtensionsRunner:
 
     def executing(self) -> ExecutingContextManager:
         return ExecutingContextManager(self.extensions)
+
+    async def on_subscription_result(self, result: ExecutionResult) -> None:
+        """Run the subscription result hook across all active extensions."""
+        for extension in self.extensions:
+            # Check if the extension implemented the new hook
+            hook = getattr(extension, "on_subscription_result", None)
+            if hook:
+                await await_maybe(hook(result))
 
     def get_extensions_results_sync(self) -> dict[str, Any]:
         data: dict[str, Any] = {}
