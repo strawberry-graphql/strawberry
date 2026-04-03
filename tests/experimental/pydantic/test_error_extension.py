@@ -1,11 +1,19 @@
-from pydantic import BaseModel, EmailStr
-
 import strawberry
-from strawberry.extensions.pydantic_error_extension import PydanticErrorExtension
+from pydantic import BaseModel, Field
+
+from strawberry.extensions import PydanticErrorExtension
+from strawberry.experimental.pydantic import input as pydantic_input
 
 
 class UserModel(BaseModel):
-    email: EmailStr
+    age: int = Field(gt=18)
+    score: int = Field(gt=50)
+
+
+@pydantic_input(model=UserModel)
+class UserInput:
+    age: int
+    score: int
 
 
 @strawberry.type
@@ -16,9 +24,9 @@ class Query:
 @strawberry.type
 class Mutation:
     @strawberry.mutation
-    def create_user(self, email: str) -> str:
-        UserModel(email=email)
-        return "ok"
+    def create_user(self, data: UserInput) -> bool:
+        UserModel(**data.__dict__)
+        return True
 
 
 schema = strawberry.Schema(
@@ -28,14 +36,40 @@ schema = strawberry.Schema(
 )
 
 
-def test_pydantic_error_formatting():
+def test_single_validation_error():
     result = schema.execute_sync(
         """
         mutation {
-            createUser(email: "not-an-email")
+            createUser(data: { age: 10, score: 60 })
         }
         """
     )
 
     assert result.errors is not None
-    assert "validation_errors" in result.errors[0].extensions
+    extensions = result.errors[0].extensions or {}
+    assert "validation_errors" in extensions
+
+    errors = extensions["validation_errors"]
+    assert len(errors) == 1
+    assert errors[0]["field"] == "age"
+
+
+def test_multiple_validation_errors():
+    result = schema.execute_sync(
+        """
+        mutation {
+            createUser(data: { age: 10, score: 40 })
+        }
+        """
+    )
+
+    assert result.errors is not None
+    extensions = result.errors[0].extensions or {}
+    assert "validation_errors" in extensions
+
+    errors = extensions["validation_errors"]
+    fields = [e["field"] for e in errors]
+
+    assert "age" in fields
+    assert "score" in fields
+    assert len(errors) == 2
