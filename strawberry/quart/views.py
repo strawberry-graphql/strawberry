@@ -93,6 +93,7 @@ class GraphQLView(
         ),
         connection_init_wait_timeout: timedelta = timedelta(minutes=1),
         multipart_uploads_enabled: bool = False,
+        max_subscriptions_per_connection: int | None = 100,
     ) -> None:
         self.schema = schema
         self.allow_queries_via_get = allow_queries_via_get
@@ -101,6 +102,7 @@ class GraphQLView(
         self.subscription_protocols = subscription_protocols
         self.connection_init_wait_timeout = connection_init_wait_timeout
         self.multipart_uploads_enabled = multipart_uploads_enabled
+        self.max_subscriptions_per_connection = max_subscriptions_per_connection
         self.graphql_ide = graphql_ide
 
     async def render_graphql_ide(self, request: Request) -> Response:

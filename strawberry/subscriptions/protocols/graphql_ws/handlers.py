@@ -44,6 +44,7 @@ class BaseGraphQLWSHandler(Generic[Context, RootValue]):
         schema: BaseSchema,
         keep_alive: bool,
         keep_alive_interval: float | None,
+        max_subscriptions_per_connection: int | None = None,
     ) -> None:
         self.view = view
         self.websocket = websocket
@@ -52,6 +53,7 @@ class BaseGraphQLWSHandler(Generic[Context, RootValue]):
         self.schema = schema
         self.keep_alive = keep_alive
         self.keep_alive_interval = keep_alive_interval
+        self.max_subscriptions_per_connection = max_subscriptions_per_connection
         self.keep_alive_task: asyncio.Task | None = None
         self.subscriptions: dict[str, AsyncGenerator] = {}
         self.tasks: dict[str, asyncio.Task] = {}
@@ -137,6 +139,24 @@ class BaseGraphQLWSHandler(Generic[Context, RootValue]):
             return
 
         operation_id = message["id"]
+
+        # Clean up existing operation with same ID to prevent task leaks
+        if operation_id in self.tasks:
+            await self.cleanup_operation(operation_id)
+
+        if (
+            self.max_subscriptions_per_connection is not None
+            and len(self.tasks) >= self.max_subscriptions_per_connection
+        ):
+            await self.send_message(
+                ErrorMessage(
+                    type="error",
+                    id=operation_id,
+                    payload={"message": "Subscription limit reached"},
+                )
+            )
+            return
+
         payload = message["payload"]
         query = payload["query"]
         operation_name = payload.get("operationName")

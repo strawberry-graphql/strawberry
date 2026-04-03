@@ -88,6 +88,7 @@ class AsyncBaseHTTPView(
     keep_alive = False
     keep_alive_interval: float | None = None
     connection_init_wait_timeout: timedelta = timedelta(minutes=1)
+    max_subscriptions_per_connection: int | None = 100
     request_adapter_class: Callable[[Request], AsyncHTTPRequestAdapter]
     websocket_adapter_class: Callable[
         [
@@ -322,6 +323,7 @@ class AsyncBaseHTTPView(
                     root_value=root_value,
                     schema=self.schema,
                     connection_init_wait_timeout=self.connection_init_wait_timeout,
+                    max_subscriptions_per_connection=self.max_subscriptions_per_connection,
                 ).handle()
             elif websocket_subprotocol == GRAPHQL_WS_PROTOCOL:
                 await self.graphql_ws_handler_class(
@@ -332,6 +334,7 @@ class AsyncBaseHTTPView(
                     schema=self.schema,
                     keep_alive=self.keep_alive,
                     keep_alive_interval=self.keep_alive_interval,
+                    max_subscriptions_per_connection=self.max_subscriptions_per_connection,
                 ).handle()
             else:
                 await websocket.close(4406, "Subprotocol not acceptable")

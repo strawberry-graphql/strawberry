@@ -1216,3 +1216,100 @@ async def test_unexpected_client_disconnects_are_gracefully_handled(
 
         assert not process_errors.called
         assert Subscription.active_infinity_subscriptions == 0
+
+
+async def test_max_subscriptions_per_connection(http_client_class: type[HttpClient]):
+    """Test that subscriptions beyond the limit are rejected with an error."""
+    test_client = http_client_class(schema, max_subscriptions_per_connection=2)
+
+    async with test_client.ws_connect(
+        "/graphql", protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL]
+    ) as ws:
+        await ws.send_message({"type": "connection_init"})
+        connection_ack_message: ConnectionAckMessage = await ws.receive_json()
+        assert connection_ack_message == {"type": "connection_ack"}
+
+        # First two subscriptions should succeed
+        await ws.send_message(
+            {
+                "id": "sub1",
+                "type": "subscribe",
+                "payload": {"query": 'subscription { infinity(message: "Hi") }'},
+            }
+        )
+        next_message: NextMessage = await ws.receive_json()
+        assert next_message["type"] == "next"
+        assert next_message["id"] == "sub1"
+
+        await ws.send_message(
+            {
+                "id": "sub2",
+                "type": "subscribe",
+                "payload": {"query": 'subscription { infinity(message: "Hi") }'},
+            }
+        )
+        next_message = await ws.receive_json()
+        assert next_message["type"] == "next"
+        assert next_message["id"] == "sub2"
+
+        # Third subscription should be rejected
+        await ws.send_message(
+            {
+                "id": "sub3",
+                "type": "subscribe",
+                "payload": {"query": 'subscription { infinity(message: "Hi") }'},
+            }
+        )
+        error_message: ErrorMessage = await ws.receive_json()
+        assert error_message["type"] == "error"
+        assert error_message["id"] == "sub3"
+        assert error_message["payload"] == [{"message": "Subscription limit reached"}]
+
+        # Completing one should free a slot
+        await ws.send_message({"id": "sub1", "type": "complete"})
+
+        await ws.send_message(
+            {
+                "id": "sub4",
+                "type": "subscribe",
+                "payload": {"query": 'subscription { infinity(message: "Hi") }'},
+            }
+        )
+        next_message = await ws.receive_json()
+        assert next_message["type"] == "next"
+        assert next_message["id"] == "sub4"
+
+        await ws.send_message({"id": "sub2", "type": "complete"})
+        await ws.send_message({"id": "sub4", "type": "complete"})
+        await ws.close()
+
+
+async def test_max_subscriptions_per_connection_disabled(
+    http_client_class: type[HttpClient],
+):
+    """Test that setting max_subscriptions_per_connection to None disables the limit."""
+    test_client = http_client_class(schema, max_subscriptions_per_connection=None)
+
+    async with test_client.ws_connect(
+        "/graphql", protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL]
+    ) as ws:
+        await ws.send_message({"type": "connection_init"})
+        connection_ack_message: ConnectionAckMessage = await ws.receive_json()
+        assert connection_ack_message == {"type": "connection_ack"}
+
+        # Should be able to create many subscriptions without limit
+        for i in range(5):
+            await ws.send_message(
+                {
+                    "id": f"sub{i}",
+                    "type": "subscribe",
+                    "payload": {"query": 'subscription { infinity(message: "Hi") }'},
+                }
+            )
+            next_message: NextMessage = await ws.receive_json()
+            assert next_message["type"] == "next"
+            assert next_message["id"] == f"sub{i}"
+
+        for i in range(5):
+            await ws.send_message({"id": f"sub{i}", "type": "complete"})
+        await ws.close()

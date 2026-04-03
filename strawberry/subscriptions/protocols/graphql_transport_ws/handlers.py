@@ -54,6 +54,7 @@ class BaseGraphQLTransportWSHandler(Generic[Context, RootValue]):
         root_value: RootValue | None,
         schema: BaseSchema,
         connection_init_wait_timeout: timedelta,
+        max_subscriptions_per_connection: int | None = None,
     ) -> None:
         self.view = view
         self.websocket = websocket
@@ -61,6 +62,7 @@ class BaseGraphQLTransportWSHandler(Generic[Context, RootValue]):
         self.root_value = root_value
         self.schema = schema
         self.connection_init_wait_timeout = connection_init_wait_timeout
+        self.max_subscriptions_per_connection = max_subscriptions_per_connection
         self.connection_init_timeout_task: asyncio.Task | None = None
         self.connection_init_received = False
         self.connection_acknowledged = False
@@ -231,6 +233,20 @@ class BaseGraphQLTransportWSHandler(Generic[Context, RootValue]):
         if message["id"] in self.operations:
             reason = f"Subscriber for {message['id']} already exists"
             await self.websocket.close(code=4409, reason=reason)
+            return
+
+        if (
+            self.max_subscriptions_per_connection is not None
+            and len(self.operations) >= self.max_subscriptions_per_connection
+        ):
+            error = GraphQLError("Subscription limit reached")
+            await self.send_message(
+                {
+                    "id": message["id"],
+                    "type": "error",
+                    "payload": [error.formatted],
+                }
+            )
             return
 
         operation = Operation(

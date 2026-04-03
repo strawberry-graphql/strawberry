@@ -888,3 +888,78 @@ async def test_unexpected_client_disconnects_are_gracefully_handled(
 
         assert not process_errors.called
         assert Subscription.active_infinity_subscriptions == 0
+
+
+async def test_max_subscriptions_per_connection(http_client_class: type[HttpClient]):
+    """Test that subscriptions beyond the limit are rejected with an error."""
+    test_client = http_client_class(schema, max_subscriptions_per_connection=2)
+
+    async with test_client.ws_connect(
+        "/graphql", protocols=[GRAPHQL_WS_PROTOCOL]
+    ) as ws:
+        await ws.send_legacy_message({"type": "connection_init"})
+        response: ConnectionAckMessage = await ws.receive_json()
+        assert response["type"] == "connection_ack"
+
+        # First two subscriptions should succeed
+        await ws.send_legacy_message(
+            {
+                "type": "start",
+                "id": "sub1",
+                "payload": {
+                    "query": 'subscription { infinity(message: "Hi") }',
+                },
+            }
+        )
+        data_message: DataMessage = await ws.receive_json()
+        assert data_message["type"] == "data"
+        assert data_message["id"] == "sub1"
+
+        await ws.send_legacy_message(
+            {
+                "type": "start",
+                "id": "sub2",
+                "payload": {
+                    "query": 'subscription { infinity(message: "Hi") }',
+                },
+            }
+        )
+        data_message = await ws.receive_json()
+        assert data_message["type"] == "data"
+        assert data_message["id"] == "sub2"
+
+        # Third subscription should be rejected
+        await ws.send_legacy_message(
+            {
+                "type": "start",
+                "id": "sub3",
+                "payload": {
+                    "query": 'subscription { infinity(message: "Hi") }',
+                },
+            }
+        )
+        error_message: ErrorMessage = await ws.receive_json()
+        assert error_message["type"] == "error"
+        assert error_message["id"] == "sub3"
+        assert error_message["payload"] == {"message": "Subscription limit reached"}
+
+        # Completing one should free a slot
+        await ws.send_legacy_message({"type": "stop", "id": "sub1"})
+
+        await ws.send_legacy_message(
+            {
+                "type": "start",
+                "id": "sub4",
+                "payload": {
+                    "query": 'subscription { infinity(message: "Hi") }',
+                },
+            }
+        )
+        # After stop, we may receive a complete for sub1 first
+        msg = await ws.receive_json()
+        while msg.get("id") == "sub1":
+            msg = await ws.receive_json()
+        assert msg["type"] == "data"
+        assert msg["id"] == "sub4"
+
+        await ws.close()

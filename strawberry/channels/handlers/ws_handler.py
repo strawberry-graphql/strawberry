@@ -112,6 +112,7 @@ class GraphQLWSConsumer(
             GRAPHQL_WS_PROTOCOL,
         ),
         connection_init_wait_timeout: datetime.timedelta | None = None,
+        max_subscriptions_per_connection: int | None = 100,
     ) -> None:
         if connection_init_wait_timeout is None:
             connection_init_wait_timeout = datetime.timedelta(minutes=1)
@@ -119,6 +120,7 @@ class GraphQLWSConsumer(
         self.schema = schema
         self.keep_alive = keep_alive
         self.keep_alive_interval = keep_alive_interval
+        self.max_subscriptions_per_connection = max_subscriptions_per_connection
         self.protocols = subscription_protocols
         self.message_queue: asyncio.Queue[MessageQueueData] = asyncio.Queue()
         self.run_task: asyncio.Task | None = None

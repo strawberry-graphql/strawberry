@@ -108,6 +108,7 @@ class HttpClient(abc.ABC):
         connection_init_wait_timeout: timedelta = timedelta(minutes=1),
         result_override: ResultOverrideFunction = None,
         multipart_uploads_enabled: bool = False,
+        max_subscriptions_per_connection: int | None = 100,
     ): ...
 
     @abc.abstractmethod

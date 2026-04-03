@@ -78,6 +78,7 @@ class AsgiHttpClient(HttpClient):
         connection_init_wait_timeout: timedelta = timedelta(minutes=1),
         result_override: ResultOverrideFunction = None,
         multipart_uploads_enabled: bool = False,
+        max_subscriptions_per_connection: int | None = 100,
     ):
         view = GraphQLView(
             schema,
@@ -88,6 +89,7 @@ class AsgiHttpClient(HttpClient):
             subscription_protocols=subscription_protocols,
             connection_init_wait_timeout=connection_init_wait_timeout,
             multipart_uploads_enabled=multipart_uploads_enabled,
+            max_subscriptions_per_connection=max_subscriptions_per_connection,
         )
         view.result_override = result_override
 
