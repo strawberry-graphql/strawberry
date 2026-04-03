@@ -255,6 +255,29 @@ async def test_rejecting_connection_with_custom_connection_error_payload(
     assert not ws_raw.close_reason
 
 
+async def test_start_without_connection_init_is_rejected(
+    ws_raw: WebSocketClient,
+):
+    """Sending a 'start' message without a prior 'connection_init' must be rejected.
+
+    This ensures that the on_ws_connect authentication hook cannot be bypassed
+    by skipping the connection_init handshake.
+    """
+    await ws_raw.send_legacy_message(
+        {
+            "type": "start",
+            "id": "1",
+            "payload": {
+                "query": "subscription { listener }",
+            },
+        }
+    )
+
+    await ws_raw.receive(timeout=2)
+    assert ws_raw.closed
+    assert ws_raw.close_code == 4401
+
+
 async def test_context_can_be_modified_from_within_on_ws_connect(
     ws_raw: WebSocketClient,
 ):

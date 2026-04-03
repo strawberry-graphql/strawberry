@@ -55,6 +55,7 @@ class BaseGraphQLWSHandler(Generic[Context, RootValue]):
         self.keep_alive_task: asyncio.Task | None = None
         self.subscriptions: dict[str, AsyncGenerator] = {}
         self.tasks: dict[str, asyncio.Task] = {}
+        self.connection_acknowledged: bool = False
 
     async def handle(self) -> None:
         try:
@@ -119,6 +120,8 @@ class BaseGraphQLWSHandler(Generic[Context, RootValue]):
                 {"type": "connection_ack", "payload": connection_ack_payload}
             )
 
+        self.connection_acknowledged = True
+
         if self.keep_alive:
             keep_alive_handler = self.handle_keep_alive()
             self.keep_alive_task = asyncio.create_task(keep_alive_handler)
@@ -129,6 +132,10 @@ class BaseGraphQLWSHandler(Generic[Context, RootValue]):
         await self.websocket.close(code=1000, reason="")
 
     async def handle_start(self, message: StartMessage) -> None:
+        if not self.connection_acknowledged:
+            await self.websocket.close(code=4401, reason="Unauthorized")
+            return
+
         operation_id = message["id"]
         payload = message["payload"]
         query = payload["query"]
