@@ -4,6 +4,7 @@ from strawberry.extensions.base_extension import SchemaExtension
 
 try:
     from pydantic import ValidationError as PydanticValidationError
+
     _PYDANTIC_AVAILABLE = True
 except ImportError:
     _PYDANTIC_AVAILABLE = False

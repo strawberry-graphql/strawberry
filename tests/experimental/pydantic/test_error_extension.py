@@ -1,8 +1,8 @@
-import strawberry
 from pydantic import BaseModel, Field
 
-from strawberry.extensions import PydanticErrorExtension
+import strawberry
 from strawberry.experimental.pydantic import input as pydantic_input
+from strawberry.extensions import PydanticErrorExtension
 
 
 class UserModel(BaseModel):
