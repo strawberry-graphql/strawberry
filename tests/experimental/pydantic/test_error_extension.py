@@ -1,5 +1,6 @@
-import strawberry
 from pydantic import BaseModel, EmailStr
+
+import strawberry
 from strawberry.extensions.pydantic_error_extension import PydanticErrorExtension
 
 
