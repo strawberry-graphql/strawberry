@@ -963,3 +963,99 @@ async def test_max_subscriptions_per_connection(http_client_class: type[HttpClie
         assert msg["id"] == "sub4"
 
         await ws.close()
+
+
+async def test_reusing_operation_id_does_not_count_against_limit(
+    http_client_class: type[HttpClient],
+):
+    """Reusing an existing operation ID should clean up the old subscription
+    and not count against the subscription limit."""
+    test_client = http_client_class(schema, max_subscriptions_per_connection=2)
+
+    async with test_client.ws_connect(
+        "/graphql", protocols=[GRAPHQL_WS_PROTOCOL]
+    ) as ws:
+        await ws.send_legacy_message({"type": "connection_init"})
+        response: ConnectionAckMessage = await ws.receive_json()
+        assert response["type"] == "connection_ack"
+
+        # Fill up to the limit
+        await ws.send_legacy_message(
+            {
+                "type": "start",
+                "id": "sub1",
+                "payload": {
+                    "query": 'subscription { infinity(message: "Hi") }',
+                },
+            }
+        )
+        data_message: DataMessage = await ws.receive_json()
+        assert data_message["type"] == "data"
+        assert data_message["id"] == "sub1"
+
+        await ws.send_legacy_message(
+            {
+                "type": "start",
+                "id": "sub2",
+                "payload": {
+                    "query": 'subscription { infinity(message: "Hi") }',
+                },
+            }
+        )
+        data_message = await ws.receive_json()
+        assert data_message["type"] == "data"
+        assert data_message["id"] == "sub2"
+
+        # Reuse "sub1" — should clean up the old one, not hit the limit
+        await ws.send_legacy_message(
+            {
+                "type": "start",
+                "id": "sub1",
+                "payload": {
+                    "query": 'subscription { infinity(message: "Hello") }',
+                },
+            }
+        )
+
+        msg = await ws.receive_json()
+        # skip any leftover messages from the old sub1
+        while msg.get("id") == "sub1" and msg.get("type") == "complete":
+            msg = await ws.receive_json()
+
+        assert msg["type"] == "data"
+        assert msg["id"] == "sub1"
+
+        await ws.close()
+
+
+async def test_max_subscriptions_per_connection_disabled(
+    http_client_class: type[HttpClient],
+):
+    """Test that setting max_subscriptions_per_connection to None disables the limit."""
+    test_client = http_client_class(schema, max_subscriptions_per_connection=None)
+
+    async with test_client.ws_connect(
+        "/graphql", protocols=[GRAPHQL_WS_PROTOCOL]
+    ) as ws:
+        await ws.send_legacy_message({"type": "connection_init"})
+        response: ConnectionAckMessage = await ws.receive_json()
+        assert response["type"] == "connection_ack"
+
+        # Should be able to create many subscriptions without limit
+        for i in range(5):
+            await ws.send_legacy_message(
+                {
+                    "type": "start",
+                    "id": f"sub{i}",
+                    "payload": {
+                        "query": 'subscription { infinity(message: "Hi") }',
+                    },
+                }
+            )
+            data_message: DataMessage = await ws.receive_json()
+            assert data_message["type"] == "data"
+            assert data_message["id"] == f"sub{i}"
+
+        for i in range(5):
+            await ws.send_legacy_message({"type": "stop", "id": f"sub{i}"})
+        await ws.close()
