@@ -276,6 +276,7 @@ async def test_start_without_connection_init_is_rejected(
     await ws_raw.receive(timeout=2)
     assert ws_raw.closed
     assert ws_raw.close_code == 4401
+    assert ws_raw.close_reason == "Unauthorized"
 
 
 async def test_context_can_be_modified_from_within_on_ws_connect(
@@ -955,7 +956,8 @@ async def test_max_subscriptions_per_connection(http_client_class: type[HttpClie
                 },
             }
         )
-        # After stop, we may receive a complete for sub1 first
+        # The 'complete' for sub1 is always sent before sub4's first data message
+        # (cleanup_operation awaits the cancelled task, which sends the complete).
         msg = await ws.receive_json()
         while msg.get("id") == "sub1":
             msg = await ws.receive_json()

@@ -235,6 +235,8 @@ class BaseGraphQLTransportWSHandler(Generic[Context, RootValue]):
             await self.websocket.close(code=4409, reason=reason)
             return
 
+        # NOTE: this applies to all in-flight operations (queries and mutations
+        # executed over WebSocket included), not only subscriptions.
         if (
             self.max_subscriptions_per_connection is not None
             and len(self.operations) >= self.max_subscriptions_per_connection
