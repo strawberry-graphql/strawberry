@@ -70,13 +70,13 @@ def ast_from_leaf_type(serialized: object, type_: GraphQLInputType | None) -> Va
 
     if isinstance(serialized, dict):
         return ObjectValueNode(
-            fields=[
+            fields=tuple(
                 ObjectFieldNode(
                     name=NameNode(value=key),
                     value=ast_from_leaf_type(value, None),
                 )
                 for key, value in serialized.items()
-            ]
+            )
         )
 
     raise TypeError(

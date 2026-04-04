@@ -456,6 +456,14 @@ class StrawberryObjectDefinition(StrawberryType):
             ):
                 return True
 
+            from strawberry.types.union import StrawberryUnion
+
+            if (
+                isinstance(expected_concrete_type, StrawberryUnion)
+                and real_concrete_type in expected_concrete_type.types
+            ):
+                return True
+
             if real_concrete_type is not expected_concrete_type:
                 return False
 

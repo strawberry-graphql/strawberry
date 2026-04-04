@@ -360,6 +360,52 @@ async def test_dont_dispatch_cancelled():
 
 
 @pytest.mark.asyncio
+async def test_cancelled_future_with_failing_loader():
+    """When the load function raises and some futures are already cancelled,
+    the error handler should skip cancelled futures instead of raising
+    InvalidStateError.
+
+    This reproduces a real-world scenario where a client disconnects
+    mid-request: some DataLoader futures get cancelled by the event loop,
+    then the batch load function fails (e.g. because the executor is torn
+    down). The error handler must not crash trying to set_exception on
+    the already-cancelled futures.
+    """
+
+    async def failing_loader(keys: list[int]) -> list[int]:
+        raise RuntimeError("executor is broken")
+
+    loader = DataLoader(load_fn=failing_loader, cache=False)
+
+    future_a = cast("Future[Any]", loader.load(1))
+    future_b = cast("Future[Any]", loader.load(2))
+    future_c = cast("Future[Any]", loader.load(3))
+
+    # Simulate a client disconnect cancelling one of the futures before
+    # the batch dispatches
+    future_a.cancel()
+
+    # Let the event loop dispatch the batch — this must not raise
+    # InvalidStateError from trying to set_exception on the cancelled future.
+    # Two yields: one for call_soon to fire create_task, one for the task to run.
+    await asyncio.sleep(0)
+    await asyncio.sleep(0)
+
+    # The cancelled future should remain cleanly cancelled — not broken by
+    # an InvalidStateError inside dispatch_batch
+    assert future_a.cancelled()
+    with pytest.raises(asyncio.CancelledError):
+        future_a.result()
+
+    # The non-cancelled futures should have received the loader's exception
+    # (without the fix, dispatch_batch crashes on future_a before reaching these)
+    with pytest.raises(RuntimeError, match="executor is broken"):
+        future_b.result()
+    with pytest.raises(RuntimeError, match="executor is broken"):
+        future_c.result()
+
+
+@pytest.mark.asyncio
 async def test_cache_override():
     class TestCache(AbstractCache[int, int]):
         def __init__(self):

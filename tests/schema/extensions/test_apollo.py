@@ -249,6 +249,41 @@ def test_tracing_resolvers_populated_on_multiple_sync_executions():
         assert resolvers[0]["field_name"] == "node"
 
 
+def test_tracing_invalid_query_sync():
+    """Regression test: invalid query must not crash ApolloTracingExtension."""
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def node(self) -> str:
+            return ""
+
+    schema = strawberry.Schema(Query, extensions=[ApolloTracingExtensionSync])
+
+    result = schema.execute_sync("{ node() }")
+    assert result.errors
+    assert result.extensions is not None
+    assert "tracing" in result.extensions
+
+
+@pytest.mark.asyncio
+async def test_tracing_invalid_query_async():
+    """Regression test: invalid query must not crash ApolloTracingExtension."""
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def node(self) -> str:
+            return ""
+
+    schema = strawberry.Schema(Query, extensions=[ApolloTracingExtension])
+
+    result = await schema.execute("{ node() }")
+    assert result.errors
+    assert result.extensions is not None
+    assert "tracing" in result.extensions
+
+
 @pytest.mark.asyncio
 async def test_concurrent_execution_context_result():
     """Regression test: execution_context.result must not be None during concurrent requests."""

@@ -1,4 +1,5 @@
 from enum import Enum, IntEnum
+from typing import Annotated
 
 import pytest
 
@@ -236,3 +237,80 @@ def test_invalid_enum_value() -> None:
 
     with pytest.raises(TypeError, match=r"Expected name to be a string."):
         strawberry.Schema(Query)
+
+
+def test_annotated_enum_with_description():
+    class IceCreamFlavour(Enum):
+        VANILLA = "vanilla"
+        STRAWBERRY = "strawberry"
+        CHOCOLATE = "chocolate"
+
+    MyIceCreamFlavour = Annotated[
+        IceCreamFlavour, strawberry.enum(description="Ice cream flavours")
+    ]
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def flavour(self) -> MyIceCreamFlavour:
+            return IceCreamFlavour.VANILLA
+
+    schema = strawberry.Schema(Query)
+    schema_str = str(schema)
+    assert '"""Ice cream flavours"""' in schema_str
+    assert "enum IceCreamFlavour" in schema_str
+
+
+def test_annotated_enum_with_name():
+    class Flavour(Enum):
+        VANILLA = "vanilla"
+        STRAWBERRY = "strawberry"
+
+    MyIceCreamFlavour = Annotated[Flavour, strawberry.enum(name="IceCreamFlavour")]
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def flavour(self) -> MyIceCreamFlavour:
+            return Flavour.VANILLA
+
+    schema = strawberry.Schema(Query)
+    assert "IceCreamFlavour" in str(schema)
+
+
+def test_annotated_enum_on_already_decorated():
+    @strawberry.enum
+    class Flavour(Enum):
+        VANILLA = "vanilla"
+        STRAWBERRY = "strawberry"
+
+    MyFlavour = Annotated[Flavour, strawberry.enum(description="Flavours")]
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def flavour(self) -> MyFlavour:
+            return Flavour.VANILLA
+
+    schema = strawberry.Schema(Query)
+    assert "enum Flavour" in str(schema)
+
+
+def test_annotated_enum_as_resolver_parameter():
+    class Color(Enum):
+        RED = "red"
+        GREEN = "green"
+        BLUE = "blue"
+
+    GqlColor = Annotated[Color, strawberry.enum()]
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def color_name(self, color: GqlColor) -> str:
+            return color.value
+
+    schema = strawberry.Schema(query=Query)
+    result = schema.execute_sync("{ colorName(color: RED) }")
+    assert result.errors is None
+    assert result.data == {"colorName": "red"}

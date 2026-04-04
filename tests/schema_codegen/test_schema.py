@@ -26,6 +26,7 @@ def test_adds_schema_if_schema_is_defined():
 
     expected = textwrap.dedent(
         """
+        from __future__ import annotations
         import strawberry
 
         @strawberry.type
@@ -56,6 +57,7 @@ def test_adds_schema_if_has_query():
 
     expected = textwrap.dedent(
         """
+        from __future__ import annotations
         import strawberry
 
         @strawberry.type
@@ -78,6 +80,7 @@ def test_adds_schema_if_has_mutation():
 
     expected = textwrap.dedent(
         """
+        from __future__ import annotations
         import strawberry
 
         @strawberry.type
@@ -100,6 +103,7 @@ def test_adds_schema_if_has_subscription():
 
     expected = textwrap.dedent(
         """
+        from __future__ import annotations
         import strawberry
 
         @strawberry.type

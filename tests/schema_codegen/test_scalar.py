@@ -10,6 +10,7 @@ def test_scalar():
 
     expected = textwrap.dedent(
         """
+        from __future__ import annotations
         import strawberry
         from typing import NewType
 
@@ -28,6 +29,7 @@ def test_scalar_with_description():
 
     expected = textwrap.dedent(
         """
+        from __future__ import annotations
         import strawberry
         from typing import NewType
 
@@ -59,6 +61,7 @@ def test_builtin_scalars():
 
     expected = textwrap.dedent(
         """
+        from __future__ import annotations
         import strawberry
         from datetime import date
         from datetime import datetime

@@ -1,6 +1,256 @@
 CHANGELOG
 =========
 
+0.312.2 - 2026-03-25
+--------------------
+
+Fix compatibility with Starlette 1.0.0 in the dev server by replacing
+removed `add_route`/`add_websocket_route` methods with `Route`/`WebSocketRoute`
+objects passed to the `Starlette` constructor.
+
+Contributed by [Thiago Bellini Ribeiro](https://github.com/bellini666) via [PR #4328](https://github.com/strawberry-graphql/strawberry/pull/4328/)
+
+
+0.312.1 - 2026-03-25
+--------------------
+
+Fix `Annotated` metadata being lost on optional union types
+
+When using `Annotated[A | B | None, strawberry.union("MyUnion")]`,
+the custom union name and other metadata would be dropped during `None` stripping, causing the schema to fall back to an auto-generated name
+(e.g. "AB" instead of "MyUnion").
+
+Contributed by [GabrielTDS-dev](https://github.com/GabrielTDS-dev) via [PR #4321](https://github.com/strawberry-graphql/strawberry/pull/4321/)
+
+
+0.312.0 - 2026-03-21
+--------------------
+
+`strawberry.asdict` now recursively unwraps `Some()` container values and removes keys with the `UNSET` value.
+
+Contributed by [Galen Rice](https://github.com/GriceTurrble) via [PR #4320](https://github.com/strawberry-graphql/strawberry/pull/4320/)
+
+
+0.311.3 - 2026-03-16
+--------------------
+
+Fix `UnallowedReturnTypeForUnion` when using a generic type with a union
+TypeVar (e.g. `Collection[A | B]`) inside an outer union
+(`Collection[A | B] | Error`).
+
+Contributed by [Thiago Bellini Ribeiro](https://github.com/bellini666) via [PR #4302](https://github.com/strawberry-graphql/strawberry/pull/4302/)
+
+
+0.311.2 - 2026-03-16
+--------------------
+
+Fix `TypeError: unhashable type: 'EnumAnnotation'` when using `Annotated` enums as resolver parameter types (e.g., `Annotated[Color, strawberry.enum()]`).
+
+Contributed by [Thiago Bellini Ribeiro](https://github.com/bellini666) via [PR #4305](https://github.com/strawberry-graphql/strawberry/pull/4305/)
+
+
+0.311.1 - 2026-03-10
+--------------------
+
+This release fixes an `InvalidStateError` crash in the DataLoader when a batch
+load function raises an exception and some futures in the batch have already been
+cancelled (e.g. due to client disconnection).
+
+The error handler in `dispatch_batch` now skips cancelled futures before calling
+`set_exception`, matching the guard that already exists in the success path
+(added in #2339).
+
+Contributed by [Ben XO](https://github.com/ben-xo) via [PR #4300](https://github.com/strawberry-graphql/strawberry/pull/4300/)
+
+
+0.311.0 - 2026-03-08
+--------------------
+
+Enums can now be registered via `Annotated`. The preferred way is still using
+`@strawberry.enum` as a decorator, but when you need to expose an existing enum
+under a different name or alias, `Annotated` works as a proper type alias in all
+type checkers:
+
+```python
+from typing import Annotated
+from enum import Enum
+import strawberry
+
+
+class IceCreamFlavour(Enum):
+    VANILLA = "vanilla"
+    STRAWBERRY = "strawberry"
+    CHOCOLATE = "chocolate"
+
+
+MyIceCreamFlavour = Annotated[
+    IceCreamFlavour, strawberry.enum(description="Ice cream flavours")
+]
+
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def flavour(self) -> MyIceCreamFlavour:
+        return IceCreamFlavour.VANILLA
+```
+
+Contributed by [Thiago Bellini Ribeiro](https://github.com/bellini666) via [PR #4293](https://github.com/strawberry-graphql/strawberry/pull/4293/)
+
+
+0.310.2 - 2026-03-08
+--------------------
+
+The strawberry mypy plugin has been restored with minimal support for
+`strawberry.experimental.pydantic` types. If you use pydantic integration,
+add the plugin to your mypy configuration:
+
+```ini
+[mypy]
+plugins = pydantic.mypy, strawberry.ext.mypy_plugin
+```
+
+Contributed by [Thiago Bellini Ribeiro](https://github.com/bellini666) via [PR #4292](https://github.com/strawberry-graphql/strawberry/pull/4292/)
+
+
+0.310.1 - 2026-03-08
+--------------------
+
+Fix sync execution crash with graphql-core 3.3 where `execute_sync()` would return a coroutine
+instead of an `ExecutionResult`, causing `RuntimeError: There is no current event loop`,
+because graphql-core 3.3's `is_async_iterable` default treats objects with `__aiter__`
+(like Django QuerySets) as async iterables.
+
+Now passes `is_async_iterable=lambda _x: False` during sync execution to prevent this.
+
+Note: graphql-core >= 3.3.0a12 is now the minimum required version for the 3.3.x series.
+
+Contributed by [Thiago Bellini Ribeiro](https://github.com/bellini666) via [PR #4267](https://github.com/strawberry-graphql/strawberry/pull/4267/)
+
+
+0.310.0 - 2026-03-08
+--------------------
+
+Fix two `NameError` issues in schema-codegen output when types are referenced before they are defined.
+
+First, forward references in field annotations (e.g. `foo: Foo` appearing before `Foo` is defined) are now handled by emitting `from __future__ import annotations` at the top of the generated file. Per PEP 563, this stores all annotations as strings instead of evaluating them at class definition time, so the referenced names don't need to exist yet.
+
+Second, union definitions like `FooOrBar = Annotated[Foo | Bar, strawberry.union(...)]` are runtime expressions that `from __future__ import annotations` cannot defer. These are now correctly ordered by declaring union member types as dependencies, so unions are always emitted after their members.
+
+Changes:
+- Emit `from __future__ import annotations` in generated code to handle forward references in field annotations.
+- Add member-type dependencies for union definitions so unions are emitted after their member types.
+- Ensure the schema assignment is emitted last by giving it dependencies on all other definitions.
+
+Contributed by [Sandra Liljeqvist](https://github.com/sanlil) via [PR #4192](https://github.com/strawberry-graphql/strawberry/pull/4192/)
+
+
+0.309.0 - 2026-03-08
+--------------------
+
+Add `query` property to `Info` class, allowing resolvers to access the full GraphQL document string sent in the request via `info.query`.
+
+Example usage:
+
+```python
+import strawberry
+
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def hello(self, info: strawberry.Info, name: str) -> str:
+        print(info.query)
+        return f"Hello {name}"
+```
+
+When executing this query:
+
+```graphql
+query Hello($name: String!) {
+    hello(name: $name)
+}
+```
+
+`info.query` returns the full query string:
+
+```
+"query Hello($name: String!) {\n    hello(name: $name)\n}"
+```
+
+Contributed by [Luis Gustavo](https://github.com/Ckk3) via [PR #4289](https://github.com/strawberry-graphql/strawberry/pull/4289/)
+
+
+0.308.3 - 2026-03-04
+--------------------
+
+Fix compatibility with Python 3.14 when using the Pydantic integration with Pydantic V2. Previously, importing `strawberry.experimental.pydantic` on Python 3.14 would trigger:
+
+    UserWarning: Core Pydantic V1 functionality isn't compatible with Python 3.14 or greater.
+
+This is now fixed by avoiding `pydantic.v1` imports on Python 3.14+.
+
+Contributed by [Rish](https://github.com/zshuzh) via [PR #4283](https://github.com/strawberry-graphql/strawberry/pull/4283/)
+
+
+0.308.2 - 2026-03-03
+--------------------
+
+Fix `from __future__ import annotations` breaking lazy types inside generic wrappers like `Optional[]`, `tuple[]`, `dict[]`, `Sequence[]`, etc. Previously only `Union[]`, `list[]`/`List[]`, and `Annotated[]` were handled during AST namespace resolution, causing `_eval_type` to fail when lazy types were nested inside other generic subscripts.
+
+Contributed by [Thiago Bellini Ribeiro](https://github.com/bellini666) via [PR #4270](https://github.com/strawberry-graphql/strawberry/pull/4270/)
+
+
+0.308.1 - 2026-03-03
+--------------------
+
+Fix `ApolloTracingExtension` crashing with `AttributeError` when executing invalid queries (e.g., `{ node() }`). All timing attributes are now initialized in `__init__` and lifecycle hooks use `try/finally` to ensure proper cleanup.
+
+Contributed by [Br1an](https://github.com/Br1an67) via [PR #4271](https://github.com/strawberry-graphql/strawberry/pull/4271/)
+
+
+0.308.0 - 2026-03-03
+--------------------
+
+This release adds support for defining fields using the `Annotated` syntax. This provides an
+alternative way to specify field metadata alongside the type annotation.
+
+Example usage:
+
+```python
+from typing import Annotated
+
+import strawberry
+
+
+@strawberry.type
+class Query:
+    name: Annotated[str, strawberry.field(description="The name")]
+    age: Annotated[int, strawberry.field(deprecation_reason="Use birthDate instead")]
+
+
+@strawberry.input
+class CreateUserInput:
+    name: Annotated[str, strawberry.field(description="User's name")]
+    email: Annotated[str, strawberry.field(description="User's email")]
+```
+
+This syntax works alongside the existing assignment syntax:
+
+```python
+@strawberry.type
+class Query:
+    # Both styles work
+    field1: Annotated[str, strawberry.field(description="Using Annotated")]
+    field2: str = strawberry.field(description="Using assignment")
+```
+
+All `strawberry.field()` options are supported including `description`, `name`,
+`deprecation_reason`, `directives`, `metadata`, and `permission_classes`.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #4059](https://github.com/strawberry-graphql/strawberry/pull/4059/)
+
+
 0.307.1 - 2026-02-24
 --------------------
 

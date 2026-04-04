@@ -11,6 +11,7 @@ type Query {
 """
 
 expected_output = """
+from __future__ import annotations
 import strawberry
 
 @strawberry.type

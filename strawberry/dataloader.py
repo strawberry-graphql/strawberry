@@ -260,6 +260,8 @@ async def dispatch_batch(loader: DataLoader, batch: Batch) -> None:
                 task.future.set_result(value)
     except Exception as e:  # noqa: BLE001
         for task in batch.tasks:
+            if task.future.cancelled():
+                continue
             task.future.set_exception(e)
 
 

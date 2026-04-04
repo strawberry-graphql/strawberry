@@ -238,10 +238,25 @@ def _get_namespace_from_ast(
         # type directly and then adding it to extra namespace, so that _eval_type
         # can properly resolve it later
         type_name = args[0].strip(" '\"\n")
+        already_resolved = (globalns and type_name in globalns) or (
+            localns and type_name in localns
+        )
         for arg in args[1:]:
             evaled_arg = eval(arg, globalns, localns)  # noqa: S307
-            if isinstance(evaled_arg, StrawberryLazyReference):
+            if isinstance(evaled_arg, StrawberryLazyReference) and not already_resolved:
                 extra[type_name] = evaled_arg.resolve_forward_ref(ForwardRef(type_name))
+
+    elif isinstance(expr, ast.Subscript):
+        if hasattr(ast, "Index") and isinstance(expr.slice, ast.Index):
+            expr_slice = cast("Any", expr.slice).value
+        else:
+            expr_slice = expr.slice
+
+        if isinstance(expr_slice, ast.Tuple):
+            for elt in expr_slice.elts:
+                extra.update(_get_namespace_from_ast(elt, globalns, localns))
+        else:
+            extra.update(_get_namespace_from_ast(expr_slice, globalns, localns))
 
     return extra
 
