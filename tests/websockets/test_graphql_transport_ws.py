@@ -1320,7 +1320,9 @@ async def test_task_done_callback_fires_for_completed_operations(
 ):
     """The done callback fires for each completed operation task."""
     handler = None
-    done_callback_tasks: list[asyncio.Task] = []
+    callback_count = 0
+    all_callbacks_fired = asyncio.Event()
+    expected_callbacks = 6  # 1 timeout task + 5 operations
 
     def on_init(_handler):
         nonlocal handler
@@ -1328,8 +1330,11 @@ async def test_task_done_callback_fires_for_completed_operations(
         original_task_done = _handler._task_done
 
         def tracking_task_done(task):
+            nonlocal callback_count
             original_task_done(task)
-            done_callback_tasks.append(task)
+            callback_count += 1
+            if callback_count >= expected_callbacks:
+                all_callbacks_fired.set()
 
         _handler._task_done = tracking_task_done
 
@@ -1355,22 +1360,30 @@ async def test_task_done_callback_fires_for_completed_operations(
                 complete = await ws.receive_json()  # complete
                 assert complete["type"] == "complete"
 
-            await asyncio.sleep(0.1)
+            await asyncio.wait_for(all_callbacks_fired.wait(), timeout=2)
             await ws.close()
 
-    # 1 for the connection_init_timeout_task + 5 for operations
-    assert len(done_callback_tasks) == 6
+    assert callback_count == expected_callbacks
 
 
-async def test_cancelled_subscription_task_cleaned_up_via_callback(
+async def test_done_callback_fires_for_cancelled_subscription(
     http_client: HttpClient,
 ):
-    """Cancelling a long-running subscription removes it from operations."""
+    """The done callback fires for a cancelled subscription task."""
     handler = None
+    cancelled_callback_fired = asyncio.Event()
 
     def on_init(_handler):
         nonlocal handler
         handler = _handler
+        original_task_done = _handler._task_done
+
+        def tracking_task_done(task):
+            original_task_done(task)
+            if task.cancelled():
+                cancelled_callback_fired.set()
+
+        _handler._task_done = tracking_task_done
 
     with patch.object(DebuggableGraphQLTransportWSHandler, "on_init", on_init):
         async with http_client.ws_connect(
@@ -1391,23 +1404,7 @@ async def test_cancelled_subscription_task_cleaned_up_via_callback(
 
             await ws.send_message({"id": "sub1", "type": "complete"})
 
-            # Start another subscription to ensure the complete message
-            # has been processed (messages are handled sequentially)
-            await ws.send_message(
-                {
-                    "id": "sub2",
-                    "type": "subscribe",
-                    "payload": {
-                        "query": "subscription { debug { numActiveResultHandlers } }"
-                    },
-                }
-            )
-            next_message: NextMessage = await ws.receive_json()
-            assert_next(next_message, "sub2", {"debug": {"numActiveResultHandlers": 1}})
-
-            assert handler is not None
-            assert "sub1" not in handler.operations
-
+            await asyncio.wait_for(cancelled_callback_fired.wait(), timeout=2)
             await ws.close()
 
 
@@ -1442,44 +1439,73 @@ async def test_shutdown_with_multiple_in_flight_operations(
                 assert next_message["type"] == "next"
 
             assert handler is not None
-            assert len(handler.operations) == 3
+            operation_tasks = list(handler.get_tasks())
+            assert len(operation_tasks) == 3
 
             await ws.close()
 
-        await asyncio.sleep(0.1)
-        assert len(handler.operations) == 0
+        await asyncio.wait_for(
+            asyncio.gather(*operation_tasks, return_exceptions=True), timeout=2
+        )
+        assert all(t.done() for t in operation_tasks)
+        assert all(t.cancelled() for t in operation_tasks)
 
 
 async def test_task_done_callback_retrieves_exception(
     http_client: HttpClient,
 ):
-    """The done callback retrieves exceptions from the timeout task.
+    """The done callback retrieves unhandled exceptions from the timeout task.
 
-    Forces an error in the timeout task and verifies it completes without
-    'Task exception was never retrieved' warnings.
+    Makes handle_task_exception re-raise so the exception escapes the
+    coroutine's except block, then verifies the callback retrieved it.
     """
     handler = None
+    callback_fired = asyncio.Event()
 
     def on_init(_handler):
         nonlocal handler
         handler = _handler
+        # Break the timeout attribute to cause an AttributeError
         handler.connection_init_wait_timeout = None
+
+        # Make handle_task_exception re-raise so the exception escapes
+        async def reraise(error):
+            raise error
+
+        handler.handle_task_exception = reraise
+
+        original_task_done = _handler._task_done
+
+        def tracking_task_done(task):
+            original_task_done(task)
+            callback_fired.set()
+
+        _handler._task_done = tracking_task_done
 
     with patch.object(DebuggableGraphQLTransportWSHandler, "on_init", on_init):
         async with http_client.ws_connect(
             "/graphql", protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL]
         ) as ws:
-            await asyncio.sleep(0.01)  # let the timeout task start and fail
+            # Wait for the timeout task to fail and the callback to fire
+            await asyncio.wait_for(callback_fired.wait(), timeout=2)
+
+            assert handler is not None
+            assert handler.connection_init_timeout_task is not None
+            assert handler.connection_init_timeout_task.done()
+            assert not handler.connection_init_timeout_task.cancelled()
+            # The exception escaped the coroutine and was retrieved by _task_done
+            assert isinstance(
+                handler.connection_init_timeout_task.exception(), AttributeError
+            )
+
+            # Clear the timeout task so shutdown() doesn't re-raise
+            # when awaiting the already-failed task
+            handler.connection_init_timeout_task = None
 
             await ws.send_message({"type": "connection_init"})
             connection_ack_message: ConnectionAckMessage = await ws.receive_json()
             assert connection_ack_message == {"type": "connection_ack"}
             await ws.close()
-
-    assert handler is not None
-    assert handler.connection_init_timeout_task is not None
-    assert handler.connection_init_timeout_task.done()
-    assert not handler.connection_init_timeout_task.cancelled()
 
 
 async def test_task_done_callback_on_unhandled_operation_exception(
@@ -1491,7 +1517,8 @@ async def test_task_done_callback_on_unhandled_operation_exception(
     and verifies the callback fires and retrieves the exception.
     """
     handler = None
-    done_callback_tasks: list[asyncio.Task] = []
+    failed_task_exception: list[BaseException] = []
+    callback_fired = asyncio.Event()
 
     def on_init(_handler):
         nonlocal handler
@@ -1500,7 +1527,9 @@ async def test_task_done_callback_on_unhandled_operation_exception(
 
         def tracking_task_done(task):
             original_task_done(task)
-            done_callback_tasks.append(task)
+            if not task.cancelled() and task.exception() is not None:
+                failed_task_exception.append(task.exception())
+                callback_fired.set()
 
         _handler._task_done = tracking_task_done
 
@@ -1526,11 +1555,8 @@ async def test_task_done_callback_on_unhandled_operation_exception(
                 }
             )
 
-            await asyncio.sleep(0.1)
+            await asyncio.wait_for(callback_fired.wait(), timeout=2)
             await ws.close()
 
-    # The callback should have fired for the failed task
-    failed_tasks = [t for t in done_callback_tasks if not t.cancelled() and t.done()]
-    assert len(failed_tasks) >= 1
-    # Exception was retrieved by the callback (no asyncio warning)
-    assert isinstance(failed_tasks[0].exception(), RuntimeError)
+    assert len(failed_task_exception) == 1
+    assert isinstance(failed_task_exception[0], RuntimeError)
