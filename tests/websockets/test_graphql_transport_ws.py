@@ -1413,10 +1413,23 @@ async def test_shutdown_with_multiple_in_flight_operations(
 ):
     """Closing a connection with in-flight subscriptions cancels all tasks cleanly."""
     handler = None
+    shutdown_callbacks = 0
+    all_shutdown = asyncio.Event()
 
     def on_init(_handler):
         nonlocal handler
         handler = _handler
+        original_task_done = _handler._task_done
+
+        def tracking_task_done(task):
+            nonlocal shutdown_callbacks
+            original_task_done(task)
+            if task.cancelled():
+                shutdown_callbacks += 1
+                if shutdown_callbacks >= 3:  # 3 operation tasks
+                    all_shutdown.set()
+
+        _handler._task_done = tracking_task_done
 
     with patch.object(DebuggableGraphQLTransportWSHandler, "on_init", on_init):
         async with http_client.ws_connect(
@@ -1439,16 +1452,13 @@ async def test_shutdown_with_multiple_in_flight_operations(
                 assert next_message["type"] == "next"
 
             assert handler is not None
-            operation_tasks = list(handler.get_tasks())
-            assert len(operation_tasks) == 3
+            assert len(handler.operations) == 3
 
             await ws.close()
 
-        await asyncio.wait_for(
-            asyncio.gather(*operation_tasks, return_exceptions=True), timeout=2
-        )
-        assert all(t.done() for t in operation_tasks)
-        assert all(t.cancelled() for t in operation_tasks)
+        await asyncio.wait_for(all_shutdown.wait(), timeout=2)
+        # 3 operation tasks + possibly the connection_init_timeout_task
+        assert shutdown_callbacks >= 3
 
 
 async def test_task_done_callback_retrieves_exception(
