@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import warnings
 from dataclasses import InitVar, dataclass, field
 from typing import TYPE_CHECKING, Any, TypedDict
 
@@ -25,7 +26,7 @@ class StrawberryConfig:
         auto_camel_case: Whether to automatically convert field names to camelCase.
         name_converter: The name converter to use for type/field names.
         default_resolver: The default resolver function for fields.
-        relay_max_results: Maximum results for Relay connections.
+        connection_max_results: Maximum results for connection pagination.
         relay_use_legacy_global_id: Use legacy GlobalID format for Relay.
         disable_field_suggestions: Disable field suggestions in error messages.
         info_class: Custom Info class to use.
@@ -39,7 +40,8 @@ class StrawberryConfig:
     auto_camel_case: InitVar[bool] = None  # pyright: reportGeneralTypeIssues=false
     name_converter: NameConverter = field(default_factory=NameConverter)
     default_resolver: Callable[[Any, str], object] = getattr
-    relay_max_results: int = 100
+    connection_max_results: int = 100
+    relay_max_results: InitVar[int | None] = None
     relay_use_legacy_global_id: bool = False
     disable_field_suggestions: bool = False
     info_class: type[Info] = Info
@@ -51,9 +53,18 @@ class StrawberryConfig:
     def __post_init__(
         self,
         auto_camel_case: bool,
+        relay_max_results: int | None,
     ) -> None:
         if auto_camel_case is not None:
             self.name_converter.auto_camel_case = auto_camel_case
+
+        if relay_max_results is not None:
+            warnings.warn(
+                "relay_max_results is deprecated, use connection_max_results instead",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            self.connection_max_results = relay_max_results
 
         if not issubclass(self.info_class, Info):
             raise TypeError("`info_class` must be a subclass of strawberry.Info")

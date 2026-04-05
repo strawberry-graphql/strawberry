@@ -85,14 +85,23 @@ schema = strawberry.Schema(
 )
 ```
 
-### relay_max_results
+### connection_max_results
 
-By default Strawberry's max limit for relay connections is 100. You can
-customise this by setting the `relay_max_results` configuration.
+By default Strawberry's max limit for connections is 100. You can customise this
+by setting the `connection_max_results` configuration.
 
 ```python
-schema = strawberry.Schema(query=Query, config=StrawberryConfig(relay_max_results=50))
+schema = strawberry.Schema(
+    query=Query, config=StrawberryConfig(connection_max_results=50)
+)
 ```
+
+<Note>
+
+The previous name `relay_max_results` is still accepted for backwards
+compatibility, but will emit a deprecation warning.
+
+</Note>
 
 ### disable_field_suggestions
 

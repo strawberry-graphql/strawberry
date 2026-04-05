@@ -13,6 +13,7 @@ from strawberry.codemods.annotated_unions import ConvertUnionToAnnotatedUnion
 from strawberry.codemods.maybe_optional import ConvertMaybeToOptional
 from strawberry.codemods.replace_scalar_wrappers import ReplaceScalarWrappers
 from strawberry.codemods.update_imports import UpdateImportsCodemod
+from strawberry.codemods.update_relay_imports import UpdateRelayImportsCodemod
 
 from ._run_codemod import run_codemod
 
@@ -21,6 +22,7 @@ codemods = {
     "update-imports": UpdateImportsCodemod,
     "maybe-optional": ConvertMaybeToOptional,
     "replace-scalar-wrappers": ReplaceScalarWrappers,
+    "update-relay-imports": UpdateRelayImportsCodemod,
 }
 
 
@@ -55,6 +57,7 @@ def upgrade(
         | ReplaceScalarWrappers
         | ConvertMaybeToOptional
         | ConvertUnionToAnnotatedUnion
+        | UpdateRelayImportsCodemod
     )
 
     if codemod == "update-imports":
@@ -63,6 +66,8 @@ def upgrade(
         transformer = ReplaceScalarWrappers(context=context)
     elif codemod == "maybe-optional":
         transformer = ConvertMaybeToOptional(context=context)
+    elif codemod == "update-relay-imports":
+        transformer = UpdateRelayImportsCodemod(context=context)
     else:
         transformer = ConvertUnionToAnnotatedUnion(
             context,

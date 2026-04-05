@@ -249,7 +249,7 @@ def test_max_results(
 
     schema = strawberry.Schema(
         query=Query,
-        config=StrawberryConfig(relay_max_results=schema_max_results),
+        config=StrawberryConfig(connection_max_results=schema_max_results),
     )
     query = """
       query {
