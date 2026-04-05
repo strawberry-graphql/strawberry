@@ -1,8 +1,9 @@
 import textwrap
 from enum import Enum
-from typing import Annotated
+from typing import Annotated, NewType
 
 import strawberry
+from strawberry.schema.config import StrawberryConfig
 
 
 def test_field_tag_printed_correctly():
@@ -56,15 +57,22 @@ def test_field_tag_printed_correctly():
 
 
 def test_field_tag_printed_correctly_on_scalar():
-    @strawberry.federation.scalar(tags=["myTag", "anotherTag"])
-    class SomeScalar(str):
-        __slots__ = ()
+    SomeScalar = NewType("SomeScalar", str)
 
     @strawberry.federation.type
     class Query:
         hello: SomeScalar
 
-    schema = strawberry.federation.Schema(query=Query)
+    schema = strawberry.federation.Schema(
+        query=Query,
+        config=StrawberryConfig(
+            scalar_map={
+                SomeScalar: strawberry.federation.scalar(
+                    name="SomeScalar", tags=["myTag", "anotherTag"]
+                )
+            }
+        ),
+    )
 
     expected = """
         schema @link(url: "https://specs.apollo.dev/federation/v2.11", import: ["@tag"]) {

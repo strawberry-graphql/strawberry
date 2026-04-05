@@ -22,7 +22,7 @@ from strawberry.types.base import (
     get_object_definition,
 )
 from strawberry.types.info import Info
-from strawberry.types.scalar import ScalarDefinition, ScalarWrapper, scalar
+from strawberry.types.scalar import ScalarDefinition, scalar
 from strawberry.types.union import StrawberryUnion
 from strawberry.utils.inspect import get_func_args
 
@@ -56,8 +56,7 @@ class Schema(BaseSchema):
         extensions: Iterable[Union[type["SchemaExtension"], "SchemaExtension"]] = (),
         execution_context_class: type["GraphQLExecutionContext"] | None = None,
         config: Optional["StrawberryConfig"] = None,
-        scalar_overrides: dict[object, Union[type, "ScalarWrapper", "ScalarDefinition"]]
-        | None = None,
+        scalar_overrides: dict[object, Union[type, "ScalarDefinition"]] | None = None,
         schema_directives: Iterable[object] = (),
         federation_version: Literal[
             "2.0",
@@ -83,9 +82,7 @@ class Schema(BaseSchema):
         types = [*types, FederationAny]
 
         # Add federation scalars to scalar_overrides so they can be recognized
-        federation_scalar_overrides: dict[
-            object, type | ScalarDefinition | ScalarWrapper
-        ] = {
+        federation_scalar_overrides: dict[object, type | ScalarDefinition] = {
             FederationAny: scalar(
                 name="_Any", serialize=lambda v: v, parse_value=lambda v: v
             ),
