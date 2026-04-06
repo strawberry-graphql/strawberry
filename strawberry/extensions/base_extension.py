@@ -4,12 +4,13 @@ from collections.abc import Callable
 from enum import Enum
 from typing import TYPE_CHECKING, Any
 
+from strawberry.types import ExecutionResult
 from strawberry.utils.await_maybe import AsyncIteratorOrIterator, AwaitableOrValue
 
 if TYPE_CHECKING:
     from graphql import GraphQLResolveInfo
 
-    from strawberry.types import ExecutionContext, ExecutionResult
+    from strawberry.types import ExecutionContext
 
 
 class LifecycleStep(Enum):
@@ -79,7 +80,10 @@ class SchemaExtension:
         return cls.resolve is not SchemaExtension.resolve
 
 
-Hook = Callable[[SchemaExtension], AsyncIteratorOrIterator[None]]
+Hook = (
+    Callable[[SchemaExtension], AsyncIteratorOrIterator[None]]
+    | Callable[[SchemaExtension, ExecutionResult], AsyncIteratorOrIterator[None]]
+)
 
 HOOK_METHODS: set[str] = {
     SchemaExtension.on_operation.__name__,
