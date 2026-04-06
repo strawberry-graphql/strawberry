@@ -60,8 +60,9 @@ class MaskErrors(SchemaExtension):
                 return
         except RuntimeError:
             # If the query fails to parse early on, operation_type throws a RuntimeError.
-            # We can ignore it here and let the error masker handle the parse error.
-            pass
+            # We return here to let the subscription hook handle the parse error,
+            # preventing double-masking.
+            return
 
         result = self.execution_context.result
 

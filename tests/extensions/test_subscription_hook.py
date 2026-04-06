@@ -160,3 +160,32 @@ async def test_mask_errors_scrubs_pre_execution_errors():
         error_message = result.errors[0].message
         assert error_message == "Unexpected error."
         assert "fieldThatDoesNotExist" not in error_message
+
+
+@pytest.mark.asyncio
+async def test_mask_errors_scrubs_subscription_parse_errors():
+    # Initialize schema with MaskErrors
+    schema = strawberry.Schema(
+        query=Query, subscription=Subscription, extensions=[MaskErrors()]
+    )
+
+    # A syntactically invalid query (missing closing brace) triggers a Parse error BEFORE execution
+    query = "subscription { count"
+
+    # Run the subscription
+    sub_generator = await schema.subscribe(query)
+
+    # Exhaust the generator
+    results = [result async for result in sub_generator]
+
+    # Parse errors immediately yield exactly 1 result containing the error
+    assert len(results) == 1
+
+    for result in results:
+        assert result.data is None
+        assert len(result.errors) == 1
+
+        # The crucial check: MaskErrors successfully intercepted and masked it!
+        error_message = result.errors[0].message
+        assert error_message == "Unexpected error."
+        assert "Syntax Error" not in error_message
