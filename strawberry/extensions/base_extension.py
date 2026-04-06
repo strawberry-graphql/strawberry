@@ -51,9 +51,9 @@ class SchemaExtension:
         """Called before and after the execution step."""
         yield None
 
-    def on_subscription_result(
+    def on_subscription_result(  # type: ignore
         self, result: ExecutionResult
-    ) -> AsyncIteratorOrIterator[None]:
+    ) -> AsyncIteratorOrIterator[None]:  # pragma: no cover
         """Called before and after each event/result yielded by a GraphQL subscription.
 
         Extensions can mutate the `result` object directly (e.g., masking errors).

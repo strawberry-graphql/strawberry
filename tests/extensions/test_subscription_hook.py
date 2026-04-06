@@ -1,5 +1,6 @@
 import asyncio
 from collections.abc import AsyncGenerator, AsyncIterator, Iterator
+from typing import Any
 
 import pytest
 
@@ -90,12 +91,14 @@ async def test_mask_errors_scrubs_subscription_exceptions():
 
 
 class AsyncStreamModifierExtension(SchemaExtension):
-    side_effect_ran = False
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        self.side_effect_ran = False  # Attached to the instance
 
     async def _side_effect(self) -> None:
         # Simulate an async dependency / side effect
         await asyncio.sleep(0)
-        AsyncStreamModifierExtension.side_effect_ran = True
+        self.side_effect_ran = True
 
     async def on_subscription_result(
         self, result: ExecutionResult
@@ -111,13 +114,12 @@ class AsyncStreamModifierExtension(SchemaExtension):
 
 @pytest.mark.asyncio
 async def test_async_on_subscription_result_is_awaited() -> None:
-    # Reset class-level flag before running the subscription
-    AsyncStreamModifierExtension.side_effect_ran = False
+    extension = AsyncStreamModifierExtension()
 
     schema = strawberry.Schema(
         query=Query,
         subscription=Subscription,
-        extensions=[AsyncStreamModifierExtension()],
+        extensions=[extension],
     )
 
     query = "subscription { count }"
@@ -128,7 +130,7 @@ async def test_async_on_subscription_result_is_awaited() -> None:
 
     assert first_result.errors is None
     assert first_result.data == {"count": "Modified: 1"}
-    assert AsyncStreamModifierExtension.side_effect_ran is True
+    assert extension.side_effect_ran is True
 
 
 @pytest.mark.asyncio
@@ -147,9 +149,8 @@ async def test_mask_errors_scrubs_pre_execution_errors():
     # Exhaust the generator
     results = [result async for result in sub_generator]
 
-    # Strawberry yields 1 or more errors depending on the validation layers it hits.
-    # We must ensure that EVERY result yielded was successfully intercepted and masked.
-    assert len(results) > 0
+    # Pre-execution errors immediately yield exactly 1 result containing the error
+    assert len(results) == 1
 
     for result in results:
         assert result.data is None
