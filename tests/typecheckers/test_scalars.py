@@ -185,7 +185,7 @@ def test_schema_overrides():
         [
             Result(
                 type="note",
-                message='Revealed type is "def (year: typing.SupportsIndex, month: typing.SupportsIndex, day: typing.SupportsIndex, hour: typing.SupportsIndex =, minute: typing.SupportsIndex =, second: typing.SupportsIndex =, microsecond: typing.SupportsIndex =, tzinfo: datetime.tzinfo | None =, *, fold: builtins.int =) -> datetime.datetime"',
+                message='Revealed type is "def (year: typing.SupportsIndex, month: typing.SupportsIndex, day: typing.SupportsIndex, hour: typing.SupportsIndex =, minute: typing.SupportsIndex =, second: typing.SupportsIndex =, microsecond: typing.SupportsIndex =, tzinfo: datetime.tzinfo | None =, *, fold: int =) -> datetime.datetime"',
                 line=17,
                 column=13,
             )
@@ -254,7 +254,7 @@ def test_scalar_map():
         [
             Result(
                 type="note",
-                message='Revealed type is "def (item: builtins.str) -> mypy_test.MyString"',
+                message='Revealed type is "def (item: str) -> mypy_test.MyString"',
                 line=24,
                 column=13,
             ),

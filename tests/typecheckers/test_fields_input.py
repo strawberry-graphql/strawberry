@@ -59,13 +59,13 @@ def test():
             ),
             Result(
                 type="note",
-                message='Revealed type is "def (*, name: builtins.str) -> mypy_test.User"',
+                message='Revealed type is "def (*, name: str) -> mypy_test.User"',
                 line=13,
                 column=13,
             ),
             Result(
                 type="note",
-                message='Revealed type is "def (self: mypy_test.User, *, name: builtins.str)"',
+                message='Revealed type is "def (self: mypy_test.User, *, name: str)"',
                 line=14,
                 column=13,
             ),

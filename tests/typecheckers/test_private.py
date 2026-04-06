@@ -60,13 +60,13 @@ def test():
             ),
             Result(
                 type="note",
-                message='Revealed type is "builtins.str"',
+                message='Revealed type is "str"',
                 line=14,
                 column=13,
             ),
             Result(
                 type="note",
-                message='Revealed type is "builtins.int"',
+                message='Revealed type is "int"',
                 line=15,
                 column=13,
             ),

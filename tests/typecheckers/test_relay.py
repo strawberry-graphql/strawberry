@@ -310,7 +310,7 @@ def test():
             ),
             Result(
                 type="note",
-                message='Revealed type is "builtins.list[strawberry.relay.types.Node]"',
+                message='Revealed type is "list[strawberry.relay.types.Node]"',
                 line=131,
                 column=13,
             ),
@@ -322,7 +322,7 @@ def test():
             ),
             Result(
                 type="note",
-                message='Revealed type is "builtins.list[strawberry.relay.types.Node | None]"',
+                message='Revealed type is "list[strawberry.relay.types.Node | None]"',
                 line=133,
                 column=13,
             ),

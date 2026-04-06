@@ -44,7 +44,7 @@ def test_enum_with_decorator():
         [
             Result(
                 type="note",
-                message='Revealed type is "def (value: builtins.object) -> mypy_test.IceCreamFlavour"',
+                message='Revealed type is "def (value: object) -> mypy_test.IceCreamFlavour"',
                 line=12,
                 column=13,
             ),
@@ -113,7 +113,7 @@ def test_enum_with_decorator_and_name():
         [
             Result(
                 type="note",
-                message='Revealed type is "def (value: builtins.object) -> mypy_test.Flavour"',
+                message='Revealed type is "def (value: object) -> mypy_test.Flavour"',
                 line=12,
                 column=13,
             ),
@@ -181,7 +181,7 @@ def test_enum_with_manual_decorator():
         [
             Result(
                 type="note",
-                message='Revealed type is "def (value: builtins.object) -> mypy_test.IceCreamFlavour"',
+                message='Revealed type is "def (value: object) -> mypy_test.IceCreamFlavour"',
                 line=11,
                 column=13,
             ),
@@ -249,7 +249,7 @@ def test_enum_with_manual_decorator_and_name():
         [
             Result(
                 type="note",
-                message='Revealed type is "def (value: builtins.object) -> mypy_test.Flavour"',
+                message='Revealed type is "def (value: object) -> mypy_test.Flavour"',
                 line=11,
                 column=13,
             ),
@@ -373,7 +373,7 @@ def test_enum_deprecated():
         [
             Result(
                 type="note",
-                message='Revealed type is "def (value: builtins.object) -> mypy_test.IceCreamFlavour"',
+                message='Revealed type is "def (value: object) -> mypy_test.IceCreamFlavour"',
                 line=14,
                 column=13,
             ),
