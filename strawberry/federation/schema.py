@@ -206,7 +206,7 @@ class Schema(BaseSchema):
                     kwargs["info"] = info  # type: ignore[index]
 
                 try:
-                    result = resolve_reference(**kwargs)
+                    result = resolve_reference(**kwargs)  # type: ignore[arg-type]
                 except Exception as e:  # noqa: BLE001
                     result = e
             else:
