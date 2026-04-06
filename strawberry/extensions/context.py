@@ -17,6 +17,7 @@ if TYPE_CHECKING:
     from types import TracebackType
 
     from strawberry.extensions.base_extension import Hook
+    from strawberry.types import ExecutionResult
     from strawberry.utils.await_maybe import AwaitableOrValue
 
 
@@ -155,3 +156,56 @@ class ParsingContextManager(ExtensionContextManagerBase):
 
 class ExecutingContextManager(ExtensionContextManagerBase):
     HOOK_NAME = SchemaExtension.on_execute.__name__
+
+
+class SubscriptionResultContextManager(ExtensionContextManagerBase):
+    HOOK_NAME = SchemaExtension.on_subscription_result.__name__
+
+    def __init__(
+        self, extensions: list[SchemaExtension], result: ExecutionResult
+    ) -> None:
+        self.result = result
+        super().__init__(extensions)
+
+    def from_callable(  # type: ignore[override]
+        self,
+        extension: SchemaExtension,
+        func: Callable[..., AwaitableOrValue[Any]],
+    ) -> WrappedHook:
+        if iscoroutinefunction(func):
+
+            @contextlib.asynccontextmanager
+            async def iterator(result: ExecutionResult) -> AsyncIterator[None]:
+                await func(extension, result)
+                yield
+
+            return WrappedHook(extension=extension, hook=iterator, is_async=True)
+
+        @contextlib.contextmanager
+        def iterator(result: ExecutionResult) -> Iterator[None]:
+            func(extension, result)
+            yield
+
+        return WrappedHook(extension=extension, hook=iterator, is_async=False)
+
+    def __enter__(self) -> None:
+        self.exit_stack = contextlib.ExitStack()
+        self.exit_stack.__enter__()
+
+        for hook in self.hooks:
+            if hook.is_async:
+                raise RuntimeError(
+                    f"SchemaExtension hook {hook.extension}.{self.HOOK_NAME} "
+                    "failed to complete synchronously."
+                )
+            self.exit_stack.enter_context(hook.hook(self.result))  # type: ignore
+
+    async def __aenter__(self) -> None:
+        self.async_exit_stack = contextlib.AsyncExitStack()
+        await self.async_exit_stack.__aenter__()
+
+        for hook in self.hooks:
+            if hook.is_async:
+                await self.async_exit_stack.enter_async_context(hook.hook(self.result))  # type: ignore
+            else:
+                self.async_exit_stack.enter_context(hook.hook(self.result))  # type: ignore

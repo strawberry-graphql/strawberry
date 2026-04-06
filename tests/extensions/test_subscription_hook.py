@@ -1,5 +1,5 @@
 import asyncio
-from collections.abc import AsyncGenerator
+from collections.abc import AsyncGenerator, AsyncIterator, Iterator
 
 import pytest
 
@@ -11,10 +11,11 @@ from strawberry.types import ExecutionResult
 
 # Dummy extension that uses the new hook
 class StreamModifierExtension(SchemaExtension):
-    def on_subscription_result(self, result: ExecutionResult) -> None:
+    def on_subscription_result(self, result: ExecutionResult) -> Iterator[None]:
         if result.data and "count" in result.data:
             # Mutate the outgoing data stream
             result.data["count"] = f"Modified: {result.data['count']}"
+        yield None
 
 
 # Create a basic schema with a subscription
@@ -96,13 +97,16 @@ class AsyncStreamModifierExtension(SchemaExtension):
         await asyncio.sleep(0)
         AsyncStreamModifierExtension.side_effect_ran = True
 
-    async def on_subscription_result(self, result: ExecutionResult) -> None:
+    async def on_subscription_result(
+        self, result: ExecutionResult
+    ) -> AsyncIterator[None]:
         # This should be awaited by extensions_runner.on_subscription_result
         await self._side_effect()
 
         if result.data and "count" in result.data:
             # Mutate the outgoing data stream after the async side effect
             result.data["count"] = f"Modified: {result.data['count']}"
+        yield None
 
 
 @pytest.mark.asyncio

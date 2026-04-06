@@ -940,8 +940,12 @@ class Schema(BaseSchema):
                     }
 
                 if is_subscription:
-                    await extensions_runner.on_subscription_result(execution_result)
-                yield execution_result
+                    async with extensions_runner.on_subscription_result(
+                        execution_result
+                    ):
+                        yield execution_result
+                else:
+                    yield execution_result
                 return
 
             assert execution_context.graphql_document is not None
@@ -995,8 +999,10 @@ class Schema(BaseSchema):
                         PreExecutionError(data=None, errors=aiter_or_result.errors),
                         extensions_runner,
                     )
-                    await extensions_runner.on_subscription_result(execution_result)
-                    yield execution_result
+                    async with extensions_runner.on_subscription_result(
+                        execution_result
+                    ):
+                        yield execution_result
                 else:
                     try:
                         async with aclosing(aiter_or_result):
@@ -1007,12 +1013,10 @@ class Schema(BaseSchema):
                                     extensions_runner,
                                 )
 
-                                await extensions_runner.on_subscription_result(
+                                async with extensions_runner.on_subscription_result(
                                     extension_result
-                                )
-
-                                yield extension_result
-
+                                ):
+                                    yield extension_result
                     # graphql-core doesn't handle exceptions raised while executing.
                     except Exception as exc:  # noqa: BLE001
                         execution_result = await self._handle_execution_result(
@@ -1022,8 +1026,10 @@ class Schema(BaseSchema):
                             ),
                             extensions_runner,
                         )
-                        await extensions_runner.on_subscription_result(execution_result)
-                        yield execution_result
+                        async with extensions_runner.on_subscription_result(
+                            execution_result
+                        ):
+                            yield execution_result
             # catch exceptions raised in `on_execute` hook.
             except Exception as exc:  # noqa: BLE001
                 origin_result = OriginalExecutionResult(
@@ -1034,8 +1040,8 @@ class Schema(BaseSchema):
                     origin_result,
                     extensions_runner,
                 )
-                await extensions_runner.on_subscription_result(execution_result)
-                yield execution_result
+                async with extensions_runner.on_subscription_result(execution_result):
+                    yield execution_result
 
     async def _stream_non_subscription(
         self,

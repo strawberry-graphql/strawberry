@@ -7,6 +7,7 @@ from strawberry.extensions.context import (
     ExecutingContextManager,
     OperationContextManager,
     ParsingContextManager,
+    SubscriptionResultContextManager,
     ValidationContextManager,
 )
 from strawberry.utils.await_maybe import await_maybe
@@ -40,10 +41,10 @@ class SchemaExtensionsRunner:
     def executing(self) -> ExecutingContextManager:
         return ExecutingContextManager(self.extensions)
 
-    async def on_subscription_result(self, result: ExecutionResult) -> None:
-        """Run the subscription result hook across all active extensions."""
-        for extension in self.extensions:
-            await await_maybe(extension.on_subscription_result(result))
+    def on_subscription_result(
+        self, result: ExecutionResult
+    ) -> SubscriptionResultContextManager:
+        return SubscriptionResultContextManager(self.extensions, result)
 
     def get_extensions_results_sync(self) -> dict[str, Any]:
         data: dict[str, Any] = {}

@@ -53,11 +53,12 @@ class SchemaExtension:
 
     def on_subscription_result(
         self, result: ExecutionResult
-    ) -> None | AwaitableOrValue[None]:
-        """Called exactly once for every event/result yielded by a GraphQL subscription.
+    ) -> AsyncIteratorOrIterator[None]:
+        """Called before and after each event/result yielded by a GraphQL subscription.
 
         Extensions can mutate the `result` object directly (e.g., masking errors).
         """
+        yield None
 
     def resolve(
         self,
@@ -85,6 +86,7 @@ HOOK_METHODS: set[str] = {
     SchemaExtension.on_validate.__name__,
     SchemaExtension.on_parse.__name__,
     SchemaExtension.on_execute.__name__,
+    SchemaExtension.on_subscription_result.__name__,
 }
 
 __all__ = ["HOOK_METHODS", "Hook", "LifecycleStep", "SchemaExtension"]
