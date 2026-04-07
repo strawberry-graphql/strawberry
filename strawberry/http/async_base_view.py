@@ -625,11 +625,15 @@ class AsyncBaseHTTPView(
 
         return self._stream_with_heartbeat(stream, separator)
 
-    def encode_sse_event(self, event: str, data: Any) -> str:
+    def encode_sse_event(self, event: str, data: Any = None) -> str:
         """Encode a Server-Sent Event message.
 
         Format per SSE spec: https://html.spec.whatwg.org/multipage/server-sent-events.html
+        When data is None, an empty data field is included (required for
+        EventSource clients to trigger event listeners).
         """
+        if data is None:
+            return f"event: {event}\ndata:\n\n"
         encoded_data = self.encode_json(data)
         if isinstance(encoded_data, bytes):
             encoded_data = encoded_data.decode()
@@ -645,7 +649,7 @@ class AsyncBaseHTTPView(
                 response = await self.process_result(request, value)
                 yield self.encode_sse_event("next", {"payload": response})
 
-            yield "event: complete\ndata:\n\n"
+            yield self.encode_sse_event("complete")
 
         return self._stream_sse_with_heartbeat(stream)
 

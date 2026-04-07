@@ -80,16 +80,13 @@ for await (const result of subscription) {
 
 #### Using the native EventSource API
 
-For simple use cases, you can use the browser's built-in `EventSource`:
+For simple use cases with GET requests, you can use the browser's built-in
+`EventSource`. Note that `EventSource` does not support custom headers or POST
+requests — for those, use the `graphql-sse` client library.
 
 ```javascript
-// Note: EventSource only supports GET requests. For POST-based SSE,
-// use the graphql-sse client library instead.
 const eventSource = new EventSource(
-  "/graphql?query=subscription { count(target: 10) }",
-  {
-    headers: { Accept: "text/event-stream" },
-  }
+  "/graphql?query=subscription { count(target: 10) }"
 );
 
 eventSource.addEventListener("next", (event) => {
