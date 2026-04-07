@@ -83,12 +83,12 @@ can be used to decorate other parts of the schema.
 @strawberry.directive(
     locations=[DirectiveLocation.FIELD], description="Make string uppercase"
 )
-def turn_uppercase(value: str):
+def turn_uppercase(value: DirectiveValue[str]):
     return value.upper()
 
 
 @strawberry.directive(locations=[DirectiveLocation.FIELD])
-def replace(value: str, old: str, new: str):
+def replace(value: DirectiveValue[str], old: str, new: str):
     return value.replace(old, new)
 ```
 
