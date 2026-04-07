@@ -185,7 +185,7 @@ plugins = [
 [tool.autopub.plugin_config.typefully]
 project-name = "Strawberry GraphQL"
 platforms = ["x", "linkedin", "bluesky", "mastodon"]
-publish-mode = "draft"
+publish-mode = "next-free-slot"
 
 [tool.pyright]
 # include = ["strawberry"]
