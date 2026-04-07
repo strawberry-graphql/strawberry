@@ -375,3 +375,32 @@ def test_tracing_with_no_request_in_context():
 
     assert not result.errors
     assert "ftv1" not in result.extensions
+
+
+def test_lazy_import_from_public_tracing_module(mock_request_with_ftv1_header):
+    """The extensions must be importable via the public lazy `tracing` module."""
+    from strawberry.extensions import tracing
+
+    assert tracing.ApolloFederationTracingExtension is ApolloFederationTracingExtension
+    assert (
+        tracing.ApolloFederationTracingExtensionSync
+        is ApolloFederationTracingExtensionSync
+    )
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def hello(self) -> str:
+            return "world"
+
+    schema = strawberry.Schema(
+        query=Query, extensions=[tracing.ApolloFederationTracingExtensionSync]
+    )
+
+    result = schema.execute_sync(
+        "query { hello }",
+        context_value={"request": mock_request_with_ftv1_header},
+    )
+
+    assert not result.errors
+    assert "ftv1" in result.extensions

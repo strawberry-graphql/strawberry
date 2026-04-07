@@ -12,6 +12,16 @@ When a request includes the `apollo-federation-include-trace: ftv1` header, the
 extension records per-resolver timing and includes the trace in the response as
 a base64-encoded protobuf under `extensions.ftv1`.
 
+<Warning>
+
+Any client can send the `apollo-federation-include-trace: ftv1` header unless
+you restrict it. Tracing payloads expose resolver timing details, so make sure
+only a trusted Apollo Gateway (or other internal traffic) can request traces —
+for example by enforcing authentication, network policy, or stripping the header
+from public requests at the edge.
+
+</Warning>
+
 <Note>
 
 Make sure you have `protobuf` installed before using this extension.

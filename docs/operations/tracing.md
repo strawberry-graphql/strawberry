@@ -31,6 +31,12 @@ subgraphs, you can use the ApolloFederationTracingExtension to provide inline
 tracing data. When a gateway sends the `apollo-federation-include-trace: ftv1`
 header, the extension includes trace data in the response.
 
+> **Security:** any client can send the `apollo-federation-include-trace: ftv1`
+> header unless you restrict it. Tracing payloads expose resolver timing
+> details, so make sure only a trusted Apollo Gateway (or other internal
+> traffic) can request traces — for example by enforcing authentication, network
+> policy, or stripping the header from public requests at the edge.
+
 You need to install the extras for apollo-federation by doing:
 
 ```shell

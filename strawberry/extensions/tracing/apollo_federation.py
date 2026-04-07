@@ -217,16 +217,6 @@ class _SimpleNode:
         return b"".join(parts)
 
 
-def _create_trace() -> tuple[type[_SimpleTrace], type[_SimpleNode]]:
-    """Return the Trace and Node classes after checking protobuf availability.
-
-    Classes are defined at module scope for efficiency.
-    This function just validates protobuf is available.
-    """
-    _check_protobuf_available()
-    return _SimpleTrace, _SimpleNode
-
-
 class ApolloFederationTracingExtension(SchemaExtension):
     """Extension that provides Apollo Federation inline tracing (ftv1).
 
@@ -274,7 +264,7 @@ class ApolloFederationTracingExtension(SchemaExtension):
 
         if self._should_trace:
             try:
-                _create_trace()  # Validates protobuf is available
+                _check_protobuf_available()
                 self._trace = _SimpleTrace()
                 self._trace.start_time = _get_protobuf_timestamp()
                 self._start_time_ns = time.perf_counter_ns()
