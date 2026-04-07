@@ -53,6 +53,10 @@ class Response:
         return self.headers.get("content-type", "").startswith("multipart/mixed")
 
     @property
+    def is_sse(self) -> bool:
+        return self.headers.get("content-type", "").startswith("text/event-stream")
+
+    @property
     def text(self) -> str:
         assert isinstance(self.data, bytes)
         return self.data.decode()
@@ -92,6 +96,52 @@ class Response:
             for chunk in chunks:
                 if data := parse_chunk(chunk):
                     yield data
+
+    async def streaming_sse(self) -> AsyncIterable[tuple[str, JSON | None]]:
+        """Parse SSE event stream, yielding (event_type, data) tuples."""
+        if not self.is_sse:
+            raise ValueError("SSE streaming not supported")
+
+        def parse_sse_block(block: str) -> tuple[str, JSON | None] | None:
+            event = ""
+            data_lines: list[str] = []
+            for line in block.split("\n"):
+                if line.startswith("event: "):
+                    event = line[7:].strip()
+                elif line.startswith("data: "):
+                    data_lines.append(line[6:])
+                elif line.startswith("data:"):
+                    data_lines.append(line[5:])
+                elif line.startswith(":"):
+                    # SSE comment (heartbeat), skip
+                    continue
+            if not event:
+                return None
+            raw = "\n".join(data_lines).strip()
+            data = None
+            if raw:
+                with contextlib.suppress(json.JSONDecodeError):
+                    data = json.loads(raw)
+            return (event, data)
+
+        if isinstance(self.data, AsyncIterable):
+            buffer = ""
+            async for chunk in self.data:
+                buffer += chunk.decode("utf-8")
+                while "\n\n" in buffer:
+                    block, buffer = buffer.split("\n\n", 1)
+                    if result := parse_sse_block(block):
+                        yield result
+            # Handle any remaining data
+            if buffer.strip():
+                if result := parse_sse_block(buffer):
+                    yield result
+        else:
+            text = self.data.decode("utf-8")
+            for block in text.split("\n\n"):
+                if block.strip():
+                    if result := parse_sse_block(block):
+                        yield result
 
 
 class HttpClient(abc.ABC):
