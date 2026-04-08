@@ -144,6 +144,10 @@ class ChannelsConsumer(AsyncConsumer):
             except asyncio.TimeoutError:
                 # TODO: shall we add log here and maybe in the suppress below?
                 return
+            # WARNING: do not refactor back to ``yield await awaitable``.
+            # That compound form places the yield inside the try block's
+            # bytecode exception table, so a throw at the yield point is
+            # routed through the except handler instead of propagating.
             yield result
 
 
