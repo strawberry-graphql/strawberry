@@ -31,6 +31,7 @@ class InputMutationExtension(FieldExtension):
                 python_name=arg.python_name,
                 graphql_name=arg.graphql_name,
                 description=arg.description,
+                deprecation_reason=arg.deprecation_reason,
                 default=arg.default,
                 type_annotation=arg.type_annotation,
                 directives=tuple(arg.directives),

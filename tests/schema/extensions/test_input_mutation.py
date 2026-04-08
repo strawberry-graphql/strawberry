@@ -41,6 +41,12 @@ class Mutation:
                 directives=[SomeDirective(some="foo", directive="bar")],
             ),
         ],
+        variety: Annotated[
+            str | None,
+            strawberry.argument(
+                deprecation_reason="Use `color` instead",
+            ),
+        ] = None,
     ) -> Fruit:
         return Fruit(
             name=name,
@@ -76,6 +82,7 @@ def test_schema():
 
       """The color of the fruit"""
       color: String! @some_directive(some: "foo", directive: "bar")
+      variety: String = null @deprecated(reason: "Use `color` instead")
     }
 
     type Fruit {
