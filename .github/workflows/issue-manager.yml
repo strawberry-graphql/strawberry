@@ -9,10 +9,14 @@ on:
   issues:
     types:
       - labeled
-  pull_request_target:
-    types:
-      - labeled
+  # `pull_request_target` would make this workflow run with elevated privileges
+  # on PR events, which `zizmor` correctly flags as unsafe. PRs are still
+  # handled on the daily schedule and whenever new comments are added.
   workflow_dispatch:
+
+permissions:
+  issues: write
+  pull-requests: write
 
 jobs:
   issue-manager:
