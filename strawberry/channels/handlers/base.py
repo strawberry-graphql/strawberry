@@ -140,10 +140,11 @@ class ChannelsConsumer(AsyncConsumer):
             if timeout is not None:
                 awaitable = asyncio.wait_for(awaitable, timeout)
             try:
-                yield await awaitable
+                result = await awaitable
             except asyncio.TimeoutError:
                 # TODO: shall we add log here and maybe in the suppress below?
                 return
+            yield result
 
 
 class ChannelsWSConsumer(ChannelsConsumer, AsyncWebsocketConsumer):
