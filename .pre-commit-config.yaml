@@ -25,7 +25,7 @@ repos:
       - id: trailing-whitespace
       - id: check-merge-conflict
       - id: end-of-file-fixer
-        exclude: ^tests/relay/snapshots
+        exclude: ^(tests/relay/snapshots|CHANGELOG\.md)
       - id: check-toml
       - id: no-commit-to-branch
         args: ["--branch", "main"]
