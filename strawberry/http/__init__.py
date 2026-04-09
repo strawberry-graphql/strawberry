@@ -43,7 +43,7 @@ class GraphQLRequestData:
     variables: dict[str, Any] | None
     operation_name: str | None
     extensions: dict[str, Any] | None
-    protocol: Literal["http", "multipart-subscription"] = "http"
+    protocol: Literal["http", "multipart-subscription", "graphql-sse"] = "http"
 
 
 __all__ = [

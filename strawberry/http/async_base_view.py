@@ -37,7 +37,11 @@ from strawberry.subscriptions.protocols.graphql_transport_ws.handlers import (
     BaseGraphQLTransportWSHandler,
 )
 from strawberry.subscriptions.protocols.graphql_ws.handlers import BaseGraphQLWSHandler
-from strawberry.types import ExecutionResult, SubscriptionExecutionResult
+from strawberry.types import (
+    ExecutionResult,
+    PreExecutionError,
+    SubscriptionExecutionResult,
+)
 from strawberry.types.graphql import OperationType
 from strawberry.types.unset import UNSET, UnsetType
 
@@ -164,7 +168,7 @@ class AsyncBaseHTTPView(
         context: Context,
         root_value: RootValue | None,
         sub_response: SubResponse,
-    ) -> ExecutionResult | list[ExecutionResult] | SubscriptionExecutionResult:
+    ) -> ExecutionResult | list[ExecutionResult] | SubscriptionExecutionResult | AsyncGenerator[PreExecutionError | ExecutionResult, None]:
         request_adapter = self.request_adapter_class(request)
 
         try:
@@ -196,9 +200,14 @@ class AsyncBaseHTTPView(
                 ]
             )
 
-        if request_data.protocol == "multipart-subscription":
+        if request_data.protocol in ("multipart-subscription", "graphql-sse"):
+            if not request_data.query:
+                raise HTTPException(
+                    400, 'Request data is missing a "query" value'
+                )
+
             return await self.schema.subscribe(
-                request_data.query,  # type: ignore
+                request_data.query,
                 variable_values=request_data.variables,
                 context_value=context,
                 root_value=root_value,
@@ -366,6 +375,24 @@ class AsyncBaseHTTPView(
         )
 
         if isinstance(result, SubscriptionExecutionResult):
+            accept = {
+                key.lower(): value for key, value in request_adapter.headers.items()
+            }.get("accept", "")
+
+            if self._is_sse_subscription(accept):
+                stream = self._get_sse_stream(request, result)
+
+                return await self.create_streaming_response(
+                    request,
+                    stream,
+                    sub_response,
+                    headers={
+                        "Content-Type": "text/event-stream",
+                        "Cache-Control": "no-cache",
+                        "Connection": "keep-alive",
+                    },
+                )
+
             stream = self._get_stream(request, result)
 
             return await self.create_streaming_response(
@@ -607,6 +634,95 @@ class AsyncBaseHTTPView(
 
         return self._stream_with_heartbeat(stream, separator)
 
+    def encode_sse_event(self, event: str, data: Any = None) -> str:
+        """Encode a Server-Sent Event message.
+
+        Format per SSE spec: https://html.spec.whatwg.org/multipage/server-sent-events.html
+        When data is None, an empty data field is included (required for
+        EventSource clients to trigger event listeners).
+        """
+        if data is None:
+            return f"event: {event}\ndata:\n\n"
+        encoded_data = self.encode_json(data)
+        if isinstance(encoded_data, bytes):
+            encoded_data = encoded_data.decode()
+        return f"event: {event}\ndata: {encoded_data}\n\n"
+
+    def _get_sse_stream(
+        self,
+        request: Request,
+        result: SubscriptionExecutionResult,
+    ) -> Callable[[], AsyncGenerator[str, None]]:
+        async def stream() -> AsyncGenerator[str, None]:
+            async for value in result:
+                response = await self.process_result(request, value)
+                yield self.encode_sse_event("next", {"payload": response})
+
+            yield self.encode_sse_event("complete")
+
+        return self._stream_sse_with_heartbeat(stream)
+
+    def _stream_sse_with_heartbeat(
+        self, stream: Callable[[], AsyncGenerator[str, None]]
+    ) -> Callable[[], AsyncGenerator[str, None]]:
+        """Add SSE comment heartbeat messages to prevent connection timeouts.
+
+        Uses SSE comments (lines starting with ':') as keepalive signals,
+        which are silently ignored by SSE clients per the spec.
+        """
+        queue: asyncio.Queue[tuple[bool, bool, Any]] = asyncio.Queue(maxsize=1)
+        cancelling = False
+
+        async def drain() -> None:
+            try:
+                async for item in stream():
+                    await queue.put((False, False, item))
+            except Exception as e:
+                if not cancelling:
+                    await queue.put((True, False, e))
+                else:
+                    raise
+            await queue.put((False, True, None))
+
+        async def heartbeat() -> None:
+            while True:
+                await queue.put((False, False, ":\n\n"))
+                await asyncio.sleep(5)
+
+        async def merged() -> AsyncGenerator[str, None]:
+            heartbeat_task = asyncio.create_task(heartbeat())
+            task = asyncio.create_task(drain())
+
+            async def cancel_tasks() -> None:
+                nonlocal cancelling
+                cancelling = True
+                task.cancel()
+
+                with contextlib.suppress(asyncio.CancelledError):
+                    await task
+
+                heartbeat_task.cancel()
+
+                with contextlib.suppress(asyncio.CancelledError):
+                    await heartbeat_task
+
+            try:
+                while not task.done():
+                    raised, done, data = await queue.get()
+
+                    if done:
+                        break
+
+                    if raised:
+                        await cancel_tasks()
+                        raise data
+
+                    yield data
+            finally:
+                await cancel_tasks()
+
+        return merged
+
     async def parse_multipart_subscriptions(
         self, request: AsyncHTTPRequestAdapter
     ) -> dict[str, str]:
@@ -622,11 +738,13 @@ class AsyncBaseHTTPView(
         content_type, _ = parse_content_type(request.content_type or "")
         accept = headers.get("accept", "")
 
-        protocol: Literal["http", "multipart-subscription"] = (
-            "multipart-subscription"
-            if self._is_multipart_subscriptions(*parse_content_type(accept))
-            else "http"
-        )
+        protocol: Literal["http", "multipart-subscription", "graphql-sse"]
+        if self._is_multipart_subscriptions(*parse_content_type(accept)):
+            protocol = "multipart-subscription"
+        elif self._is_sse_subscription(accept):
+            protocol = "graphql-sse"
+        else:
+            protocol = "http"
 
         if request.method == "GET":
             data = self.parse_query_params(request.query_params)
@@ -634,6 +752,12 @@ class AsyncBaseHTTPView(
             data = self.parse_json(await request.get_body())
         elif self.multipart_uploads_enabled and content_type == "multipart/form-data":
             data = await self.parse_multipart(request)
+        elif protocol in ("graphql-sse", "multipart-subscription"):
+            # SSE and multipart subscription protocols require JSON request
+            # bodies. Try parsing as JSON even when Content-Type is incorrect
+            # to provide better error messages instead of "Unsupported content
+            # type".
+            data = self.parse_json(await request.get_body())
         else:
             raise HTTPException(400, "Unsupported content type")
 

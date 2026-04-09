@@ -85,6 +85,9 @@ class BaseView(Generic[Request]):
             and subscription_spec.startswith("1.0")
         )
 
+    def _is_sse_subscription(self, accept: str) -> bool:
+        return "text/event-stream" in accept
+
     def _validate_batch_request(
         self, request_data: list[GraphQLRequestData], protocol: str
     ) -> None:
@@ -94,6 +97,11 @@ class BaseView(Generic[Request]):
         if protocol == "multipart-subscription":
             raise HTTPException(
                 400, "Batching is not supported for multipart subscriptions"
+            )
+
+        if protocol == "graphql-sse":
+            raise HTTPException(
+                400, "Batching is not supported for SSE subscriptions"
             )
 
         if len(request_data) > self.schema.config.batching_config["max_operations"]:
