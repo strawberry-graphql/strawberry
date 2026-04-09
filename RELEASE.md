@@ -131,7 +131,7 @@ None - all DX work is addressed.
 
 **Remaining architecture work:**
 
-- **SSE connection pooling metrics**: Add metrics for active SSE connections, subscription duration, and event throughput
+- Support single connection re-use for HTTP/1.0,1.1
 
 ### 6. ✊ ASGI Support
 
