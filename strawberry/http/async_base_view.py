@@ -15,7 +15,7 @@ from typing import (
 from cross_web import AsyncHTTPRequestAdapter, HTTPException
 from graphql import GraphQLError
 
-from strawberry.exceptions import MissingQueryError
+from strawberry.exceptions import ConnectionRejectionError, MissingQueryError
 from strawberry.file_uploads.utils import replace_placeholders_with_files
 from strawberry.http import (
     GraphQLHTTPResponse,
@@ -94,6 +94,7 @@ class AsyncBaseHTTPView(
     connection_init_wait_timeout: timedelta = timedelta(minutes=1)
     max_subscriptions_per_connection: int | None = 100
     sse_heartbeat_interval: float = 5.0
+    sse_queue_buffer_size: int = 1
     request_adapter_class: Callable[[Request], AsyncHTTPRequestAdapter]
     websocket_adapter_class: Callable[
         [
@@ -387,7 +388,21 @@ class AsyncBaseHTTPView(
             }.get("accept", "")
 
             if self._is_sse_subscription(accept):
-                stream = self._get_sse_stream(request, result)
+                last_event_id = self._get_last_event_id(request_adapter)
+                try:
+                    await self.on_sse_connect(context)
+                except ConnectionRejectionError as e:
+                    if e.payload:
+                        error_response = e.payload
+                    else:
+                        error_response = {"message": "Forbidden", "code": "FORBIDDEN"}
+                    return await self._create_sse_error_response(
+                        request,
+                        sub_response,
+                        error_response.get("code", "FORBIDDEN"),
+                        error_response.get("message", "Forbidden"),
+                    )
+                stream = self._get_sse_stream(request, result, last_event_id)
 
                 return await self.create_streaming_response(
                     request,
@@ -580,39 +595,104 @@ class AsyncBaseHTTPView(
 
         return self._stream_with_heartbeat(stream, separator)
 
-    def encode_sse_event(self, event: str, data: Any = None) -> str:
+    def encode_sse_event(
+        self, event: str, data: Any = None, event_id: int | None = None
+    ) -> str:
         """Encode a Server-Sent Event message.
 
         Format per SSE spec: https://html.spec.whatwg.org/multipage/server-sent-events.html
         When data is None, an empty data field is included (required for
         EventSource clients to trigger event listeners).
+
+        Args:
+            event: The event type (e.g., "next", "complete", "error")
+            data: The event data to encode as JSON
+            event_id: Optional numeric ID for Last-Event-ID header support
         """
+        id_line = f"id: {event_id}\n" if event_id is not None else ""
         if data is None:
-            return f"event: {event}\ndata:\n\n"
+            return f"{id_line}event: {event}\ndata:\n\n"
         encoded_data = self.encode_json(data)
         if isinstance(encoded_data, bytes):
             encoded_data = encoded_data.decode()
-        return f"event: {event}\ndata: {encoded_data}\n\n"
+        return f"{id_line}event: {event}\ndata: {encoded_data}\n\n"
 
     def _get_sse_stream(
         self,
         request: Request,
         result: SubscriptionExecutionResult,
+        last_event_id: int | None = None,
     ) -> Callable[[], AsyncGenerator[str, None]]:
+        event_counter = last_event_id or 0
+
         async def stream() -> AsyncGenerator[str, None]:
+            nonlocal event_counter
             try:
                 async for value in result:
+                    event_counter += 1
                     response = await self.process_result(request, value)
-                    yield self.encode_sse_event("next", {"payload": response})
+                    yield self.encode_sse_event(
+                        "next", {"payload": response}, event_id=event_counter
+                    )
             except Exception as exc:  # noqa: BLE001
+                event_counter += 1
                 yield self.encode_sse_event(
                     "error",
                     [{"message": str(exc)}],
+                    event_id=event_counter,
                 )
                 return
-            yield self.encode_sse_event("complete")
+            event_counter += 1
+            yield self.encode_sse_event("complete", event_id=event_counter)
 
         return self._stream_sse_with_heartbeat(stream)
+
+    def _get_last_event_id(
+        self, request_adapter: AsyncHTTPRequestAdapter
+    ) -> int | None:
+        """Extract Last-Event-ID header for SSE reconnection support.
+
+        The Last-Event-ID header is sent by SSE clients when reconnecting,
+        allowing the server to resume from the last processed event.
+        Returns None if header is not present or invalid.
+        """
+        headers = {k.lower(): v for k, v in request_adapter.headers.items()}
+        last_event_id = headers.get("last-event-id", "")
+        if last_event_id:
+            try:
+                return int(last_event_id)
+            except ValueError:
+                return None
+        return None
+
+    async def _create_sse_error_response(
+        self,
+        request: Request,
+        sub_response: SubResponse,
+        code: str,
+        message: str,
+    ) -> Response:
+        """Create an SSE error response when subscription limits are exceeded."""
+        error_event = self.encode_sse_event(
+            "error",
+            [{"message": message, "code": code}],
+        )
+        complete_event = self.encode_sse_event("complete")
+
+        async def error_stream() -> AsyncGenerator[str, None]:
+            yield error_event
+            yield complete_event
+
+        return await self.create_streaming_response(
+            request,
+            error_stream,
+            sub_response,
+            headers={
+                "Content-Type": "text/event-stream",
+                "Cache-Control": "no-cache",
+                "Connection": "keep-alive",
+            },
+        )
 
     def _make_heartbeat_stream(
         self,
@@ -620,6 +700,7 @@ class AsyncBaseHTTPView(
         heartbeat_message_provider: Callable[[], str],
         emit_error_event: bool = False,
         heartbeat_interval: float = 5.0,
+        queue_maxsize: int | None = None,
     ) -> Callable[[], AsyncGenerator[str, None]]:
         """Shared heartbeat orchestration for SSE and multipart streams.
 
@@ -629,12 +710,17 @@ class AsyncBaseHTTPView(
             emit_error_event: If True, yield an error event before raising exceptions
                              (used by SSE). If False, just raise exceptions (multipart).
             heartbeat_interval: Interval in seconds between heartbeat messages.
+            queue_maxsize: Maximum size of the internal queue for flow control.
+                          Default is `sse_queue_buffer_size` attribute. Higher values
+                          allow more buffering but increase memory usage.
         """
         import logging as logger_module
 
         log = logger_module.getLogger("strawberry.http")
         queue: asyncio.Queue[tuple[bool, bool, Any]] = asyncio.Queue(
-            maxsize=1,
+            maxsize=queue_maxsize
+            if queue_maxsize is not None
+            else self.sse_queue_buffer_size,
         )
         cancelling = False
 
@@ -799,6 +885,11 @@ class AsyncBaseHTTPView(
         return process_result(result)
 
     async def on_ws_connect(
+        self, context: Context
+    ) -> UnsetType | None | dict[str, object]:
+        return UNSET
+
+    async def on_sse_connect(
         self, context: Context
     ) -> UnsetType | None | dict[str, object]:
         return UNSET

@@ -125,6 +125,44 @@ connection timeouts:
 
 ```
 
+## Extensions
+
+Schema extensions work with SSE subscriptions just as they do with regular GraphQL
+operations. Each `next` event triggers the extension's `get_results()` method,
+allowing extensions to inject additional fields into the response payload.
+
+```python
+import strawberry
+from strawberry.extensions import SchemaExtension
+
+
+class TracingExtension(SchemaExtension):
+    async def get_results(self) -> dict:
+        return {"extension": {"traceId": "abc123"}}
+
+
+@strawberry.type
+class Subscription:
+    @strawberry.subscription
+    async def count(self, target: int = 10) -> AsyncGenerator[int, None]:
+        for i in range(target):
+            yield i
+
+
+schema = strawberry.Schema(
+    Subscription,
+    extensions=[TracingExtension],
+)
+```
+
+Each concurrent subscription receives its own extension instance, so state is
+isolated between subscriptions. Extension lifecycle hooks (`on_operation`,
+`on_execute`) are called once per subscription start, while `get_results` is
+called for each yielded value.
+
+For more details on creating custom extensions, see the
+[custom extensions guide](../guides/custom-extensions.md).
+
 ## Comparison with other subscription transports
 
 | Feature            | WebSocket    | Multipart HTTP | SSE           |

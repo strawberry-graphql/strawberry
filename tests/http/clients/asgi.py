@@ -23,7 +23,7 @@ from strawberry.subscriptions import (
 from strawberry.types import ExecutionResult
 from tests.http.context import get_context
 from tests.views.schema import Query
-from tests.websockets.views import OnWSConnectMixin
+from tests.websockets.views import OnSSEConnectMixin, OnWSConnectMixin
 
 from .base import (
     JSON,
@@ -37,7 +37,9 @@ from .base import (
 )
 
 
-class GraphQLView(OnWSConnectMixin, BaseGraphQLView[dict[str, object], object]):
+class GraphQLView(
+    OnSSEConnectMixin, OnWSConnectMixin, BaseGraphQLView[dict[str, object], object]
+):
     result_override: ResultOverrideFunction = None
     graphql_transport_ws_handler_class = DebuggableGraphQLTransportWSHandler
     graphql_ws_handler_class = DebuggableGraphQLWSHandler

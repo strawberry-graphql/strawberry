@@ -317,6 +317,16 @@ class Subscription:
         finally:
             await asyncio.sleep(delay)
 
+    @strawberry.subscription
+    async def large_payload(
+        self, data: strawberry.scalars.JSON
+    ) -> AsyncGenerator[strawberry.scalars.JSON, None]:
+        yield data
+
+    @strawberry.subscription
+    async def context_values(self, info: strawberry.Info) -> AsyncGenerator[bool, None]:
+        yield info.context.get("modified", False)
+
 
 class Schema(strawberry.Schema):
     def process_errors(

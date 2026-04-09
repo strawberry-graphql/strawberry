@@ -68,7 +68,6 @@ async def test_sse_subscription(http_client: HttpClient):
 
     events = [(event, data) async for event, data in response.streaming_sse()]
 
-    # Filter out heartbeat comments (they don't appear as events)
     next_events = [(e, d) for e, d in events if e == "next"]
     complete_events = [(e, d) for e, d in events if e == "complete"]
 
@@ -189,8 +188,6 @@ async def test_sse_subscription_with_wrong_content_type(http_client: HttpClient)
         },
     )
 
-    # The server should still work - it detects graphql-sse protocol and
-    # falls back to JSON parsing regardless of Content-Type
     assert response.status_code == 200
     assert response.is_sse
 
@@ -355,3 +352,194 @@ async def test_sse_subscription_with_malformed_json_body(http_client: HttpClient
     )
 
     assert response.status_code == 400
+
+
+async def test_sse_subscription_with_large_payload(http_client: HttpClient):
+    """SSE subscriptions should handle large nested objects correctly."""
+    large_data = {"nested": {"deep": {"value": "x" * 1000}}}
+    response = await http_client.query(
+        method="post",
+        query="subscription { largePayload(data: $data) }",
+        variables={"data": large_data},
+        headers={
+            "accept": "text/event-stream",
+            "content-type": "application/json",
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.is_sse
+
+    events = [(event, data) async for event, data in response.streaming_sse()]
+    next_events = [d for e, d in events if e == "next"]
+    complete_events = [e for e, _ in events if e == "complete"]
+
+    assert len(next_events) >= 1
+    assert len(complete_events) == 1
+
+
+async def test_sse_subscription_last_event_id_support(http_client: HttpClient):
+    """SSE events should include id fields for Last-Event-ID header support.
+
+    The Last-Event-ID header allows clients to resume from where they left off
+    after a connection drop. Each event should have a unique id field.
+    """
+    response = await http_client.query(
+        method="post",
+        query='subscription { echo(message: "test", delay: 0.2) }',
+        headers={
+            "accept": "text/event-stream",
+            "content-type": "application/json",
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.is_sse
+
+    raw_text = response.text
+    id_lines = [line for line in raw_text.split("\n") if line.startswith("id:")]
+    assert len(id_lines) >= 2, (
+        f"Expected at least 2 id lines (next + complete), got {len(id_lines)}"
+    )
+    ids = [int(line.split(":")[1].strip()) for line in id_lines]
+    assert ids == list(range(1, len(ids) + 1)), (
+        f"Expected sequential IDs starting at 1, got {ids}"
+    )
+
+
+async def test_sse_subscription_reconnects_from_last_event_id(
+    incremental_http_client_class: type[HttpClient],
+):
+    """When a client reconnects with Last-Event-ID, server should start from that point.
+
+    This verifies that the server correctly parses Last-Event-ID and starts
+    event numbering from that point.
+    """
+    http_client = incremental_http_client_class(schema=schema)
+
+    response = await http_client.query(
+        method="post",
+        query='subscription { echo(message: "test", delay: 0.2) }',
+        headers={
+            "accept": "text/event-stream",
+            "content-type": "application/json",
+            "last-event-id": "5",
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.is_sse
+
+    raw_text = response.text
+    id_lines = [line for line in raw_text.split("\n") if line.startswith("id:")]
+    ids = [int(line.split(":")[1].strip()) for line in id_lines]
+    assert ids == [6, 7], (
+        f"Expected IDs 6 and 7 (continuing from last-event-id: 5), got {ids}"
+    )
+
+
+async def test_sse_complete_event_has_empty_data_field(http_client: HttpClient):
+    """The 'complete' event must have an empty 'data:' field to trigger
+    EventSource listeners per the SSE spec.
+
+    Without an empty data field, the complete event won't trigger the listener.
+    """
+    response = await http_client.query(
+        method="post",
+        query='subscription { echo(message: "Hello world", delay: 0.2) }',
+        headers={
+            "accept": "text/event-stream",
+            "content-type": "application/json",
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.is_sse
+
+    raw_text = response.text
+    complete_blocks = [
+        block for block in raw_text.split("\n\n") if "event: complete" in block
+    ]
+
+    assert len(complete_blocks) >= 1, "Expected at least one complete event"
+
+    for block in complete_blocks:
+        assert "data:" in block or "data:\n" in block or "data: " in block, (
+            f"Complete event block must have 'data:' field: {block!r}"
+        )
+        lines = block.split("\n")
+        data_lines = [line for line in lines if line.startswith("data:")]
+        assert len(data_lines) == 1, "Expected exactly one data line in complete block"
+        data_value = data_lines[0][5:].strip()
+        assert data_value == "", (
+            f"Complete event 'data:' field must be empty, got: {data_value!r}"
+        )
+
+
+async def test_sse_next_event_has_data_field(http_client: HttpClient):
+    """The 'next' event must have a 'data:' field with the payload."""
+    response = await http_client.query(
+        method="post",
+        query='subscription { echo(message: "Hello world", delay: 0.2) }',
+        headers={
+            "accept": "text/event-stream",
+            "content-type": "application/json",
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.is_sse
+
+    raw_text = response.text
+    next_blocks = [block for block in raw_text.split("\n\n") if "event: next" in block]
+
+    assert len(next_blocks) == 1, "Expected exactly one next event"
+
+    block = next_blocks[0]
+    lines = block.split("\n")
+    data_lines = [line for line in lines if line.startswith("data:")]
+
+    assert len(data_lines) == 1, "Expected exactly one data line in next block"
+    data_value = data_lines[0][5:].strip()
+    assert data_value.startswith("{"), (
+        f"Next event 'data:' field must contain JSON, got: {data_value!r}"
+    )
+
+
+async def test_sse_error_event_yields_next_event_with_errors(http_client: HttpClient):
+    """When a subscription resolver yields a GraphQLError, it should be
+    delivered as a 'next' event with errors field (not a separate 'error' event).
+
+    The 'error' event type is reserved for non-GraphQL exceptions that occur
+    during subscription iteration. GraphQL errors are wrapped in the 'next' event.
+    """
+    response = await http_client.query(
+        method="post",
+        query='subscription { error(message: "test error") }',
+        headers={
+            "accept": "text/event-stream",
+            "content-type": "application/json",
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.is_sse
+
+    raw_text = response.text
+    next_blocks = [block for block in raw_text.split("\n\n") if "event: next" in block]
+
+    assert len(next_blocks) >= 1, (
+        f"Expected at least one next event with errors, got raw: {raw_text!r}"
+    )
+
+    for block in next_blocks:
+        lines = block.split("\n")
+        data_lines = [line for line in lines if line.startswith("data:")]
+        assert len(data_lines) == 1, "Expected exactly one data line in next block"
+        data_value = data_lines[0][5:].strip()
+        assert data_value.startswith("{"), (
+            f"Next event 'data:' field must contain JSON, got: {data_value!r}"
+        )
+        assert '"errors"' in data_value, (
+            f"Next event should contain errors, got: {data_value!r}"
+        )

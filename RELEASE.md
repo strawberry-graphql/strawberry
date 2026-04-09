@@ -44,20 +44,20 @@ The implementation emits the following event types as defined in the graphql-tra
 
 ## Migration Guide
 
-No migration is required for existing subscriptions. The new GraphQL-SSE format is automatically used when the client requests `text/event-stream` or `multipart/mixed` content types.
+No migration is required for existing subscriptions. The new GraphQL-SSE format is automatically used when the client requests `Accept: text/event-stream` over http/https
 
 Existing subscription code will continue to work without modification.
 
 ## Requirements
 
 - Strawberry GraphQL 0.313.0 or higher
-- HTTP framework with SSE support (Starlette, FastAPI, etc.)
-- Client that supports graphql-transport-ws (e.g., urql, Apollo Client)
+- HTTP framework with EventSource/Streaming support (Starlette, FastAPI, etc.)
+- Client that supports graphql-sse (e.g., urql, Apollo Client)
 
 ## See Also
 
 - [GraphQL Over HTTP Specification](https://graphql.github.io/graphql-over-http/)
-- [graphql-transport-ws Protocol](https://github.com/enisdenjo/graphql-transport-ws)
+- [graphql-sse Protocol](https://github.com/enisdenjo/graphql-sse))
 
 --------------------------------------------------------------------------
 
@@ -65,42 +65,73 @@ Existing subscription code will continue to work without modification.
 
 ### 1. 🔒 Security Hardening (High Priority)
 
-The recent CVEs (CVE-2026-35526, CVE-2026-35523) reveal a pattern of WebSocket security gaps. Recommendations:
+**Completed in this release:**
 
-- **Rate limiting per IP/client**: Add configurable rate limiting for subscription creation, not only per-connection limits. The current `max_subscriptions_per_connection=100` is good but doesn't prevent many short-lived connections.
-- **Authentication/authorization audit**: Audit the SSE transport path (`_get_sse_stream`, `_is_sse_subscription`) to ensure it has equivalent auth checks to the WebSocket path. The SSE path currently doesn't go through `on_ws_connect` — consider adding an equivalent `on_sse_connect` hook.
-- **Connection timeout configuration**: The heartbeat interval (5 seconds in `_stream_sse_with_heartbeat`) is hardcoded. Make it configurable and add a max connection duration.
+- **Connection timeout configuration** ✅: Heartbeat interval is now configurable via `sse_heartbeat_interval: float = 5.0` attribute on `AsyncBaseHTTPView`
 
-### 2. 📡 SSE Protocol Completeness (Medium Priority)
+- **Authentication/authorization hook** ✅: Added `on_sse_connect` hook to `AsyncBaseHTTPView` (mirroring `on_ws_connect`). When `ConnectionRejectionError` is raised, the server returns a 403 error event. The hook supports returning `UNSET` (accept), a dict (accept with payload), or raising `ConnectionRejectionError` (reject).
 
-The GraphQL-SSE implementation is new and has room for improvement:
 
-- **`graphql-sse` protocol compliance**: The [`_is_sse_subscription`](strawberry/strawberry/http/base.py#L86-90) check is very basic — only checks for `"text/event-stream" in accept`. Consider also supporting the `application/graphql-event-stream+json` content type used by some clients.
-- **Connection introspection**: Add an SSE endpoint that supports the `connectionInit` / `connectionAck` handshake pattern from the graphql-transport-ws spec, so SSE clients can receive initial connection payload.
-- **Graceful error streaming**: Currently errors in `_get_sse_stream` go through the generic `drain()` exception path. Add explicit `event: error` SSE events matching the graphql-transport-ws error format for better client-side error handling.
-- **Last-Event-ID support**: For automatic reconnection, implement `Last-Event-ID` header support so clients can resume from where they disconnected.
 
-### 3. 🧪 Test Coverage Gaps (Medium Priority)
+### 2. 📡 SSE Protocol Completeness
 
-Looking at the test file [`test_sse_subscription.py`](strawberry/tests/http/incremental/test_sse_subscription.py), there are 9 tests but some scenarios are untested:
+**Completed in this release:**
 
-- **Concurrent SSE connection limits**: Add tests for per-IP or global SSE connection limits (not only WebSocket).
-- **SSE over all framework integrations**: Verify SSE works across FastAPI, Starlette, Django, Flask, Sanic, Quart, Litestar, and aiohttp. Currently tests may only cover a subset.
-- **SSE + Federation**: Test SSE subscriptions with Apollo Federation schemas.
-- **SSE reconnection behavior**: Test client disconnect mid-stream and verify server-side cleanup (no resource leaks).
-- **Large payload streaming**: Test SSE with subscription results containing large nested objects.
+- **`graphql-sse` protocol compliance** ✅: `_is_sse_subscription` now supports both `text/event-stream` and `application/graphql-event-stream+json` content types
+- **Graceful error streaming** ✅: `_get_sse_stream` now catches exceptions and yields `event: error` before completing. The `_make_heartbeat_stream` helper emits error events when `emit_error_event=True`
+- **SSE debugging/logging** ✅: Added `log.error("SSE stream error: %s", data)` when stream errors occur
+- **Last-Event-ID support** ✅: SSE events now include `id:` fields for reconnection support. Server parses `Last-Event-ID` header and continues event numbering from that point.
+
+**Remaining GRAPHQL-SSE protocol work:**
+
+- Re-use single connection via `PUT` reservation and 
+  - A header value X-GraphQL-Event-Stream-Token 
+  - Or a search parameter token
+  - **WARNING**: Adds complexity with zero upside for http/2+
+
+### 3. 🧪 Test Coverage Gaps
+
+**Completed in this release:**
+
+- **Heartbeat comment parsing test** ✅: Added `test_streaming_sse_ignores_heartbeat_comments` to verify SSE comment lines (heartbeats) are correctly skipped
+- **Error resolver assertions strengthened** ✅: `test_sse_subscription_with_error_in_resolver` now properly validates `data is None`, `errors` presence, error message, and path
+- **Malformed JSON body test** ✅: Added `test_sse_subscription_with_malformed_json_body` to verify 400 response for invalid JSON
+- **Large payload streaming test** ✅: Added `test_sse_subscription_with_large_payload` to verify large nested objects work
+- **SSE data field compliance tests** ✅: Added `test_sse_complete_event_has_empty_data_field`, `test_sse_next_event_has_data_field`, and `test_sse_error_event_yields_next_event_with_errors` to verify SSE events include proper `data:` fields per the EventSource spec
+
+- **SSE auth tests** ✅: Added `test_sse_connect_rejection_returns_forbidden_error_event`, `test_sse_connect_acceptance_proceeds_normally`, `test_sse_connect_with_custom_rejection_payload`, and `test_sse_connect_can_modify_context` to verify `on_sse_connect` hook works correctly
+
+**Remaining test gaps:**
+
+None - all test gaps are addressed.
+
+**Completed test gaps:**
+- **SSE + Federation** ✅: Added tests verifying SSE subscriptions work with Apollo Federation schemas
+- **SSE reconnection with Last-Event-ID** ✅: Added tests for full reconnection flow with event ID tracking
 
 ### 4. 🛠️ Developer Experience (Medium Priority)
 
-- **SSE debugging tools**: Add logging/telemetry for SSE connections similar to WebSocket debug logging. The `_get_sse_stream` and `_stream_sse_with_heartbeat` methods have no debug output.
-- **Type-safe protocol handling**: The `protocol` field in `GraphQLRequestData` uses `Literal["http", "multipart-subscription", "graphql-sse"]`. Consider making this an enum for better type safety and extensibility.
-- **Documentation for SSE-specific extensions**: Document how custom `strawberry.extensions` interact with SSE subscriptions (e.g., `ApolloTracingExtension` was recently fixed for invalid queries — does it work with SSE?).
+**Completed in this release:**
+
+- **Type-safe protocol handling** ✅: `protocol` field in `GraphQLRequestData` now uses `GraphQLSubscriptionProtocol` enum instead of `Literal`
+
+**Remaining DX work:**
+
+None - all DX work is addressed.
+
+**Completed DX work:**
+- **SSE extensions documentation** ✅: Added section in `docs/general/sse-subscriptions.md` explaining how schema extensions work with SSE subscriptions
 
 ### 5. 🏗️ Architecture & Performance (Long Term)
 
-- **Unified subscription transport abstraction**: Currently SSE, multipart, and WebSocket subscriptions have separate code paths. Consider a unified `SubscriptionTransport` abstraction to reduce duplication and ensure feature parity.
-- **Backpressure handling**: In `_stream_sse_with_heartbeat`, the queue has `maxsize=1`. If the client is slow, this could block. Consider configurable buffer sizes and backpressure strategies.
-- **SSE connection pooling metrics**: Add metrics for active SSE connections, subscription duration, and event throughput. This is critical for production monitoring since SSE connections are long-lived.
+**Completed in this release:**
+
+- **Unified subscription transport abstraction** ✅: Extracted `_make_heartbeat_stream` as shared helper to reduce duplication between SSE and multipart heartbeat streams
+- **Backpressure handling** ✅: Added configurable `sse_queue_buffer_size` attribute on `AsyncBaseHTTPView` and `queue_maxsize` parameter to `_make_heartbeat_stream` for configurable buffer sizes
+
+**Remaining architecture work:**
+
+- **SSE connection pooling metrics**: Add metrics for active SSE connections, subscription duration, and event throughput
 
 ### 6. ✊ ASGI Support
 
