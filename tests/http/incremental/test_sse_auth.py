@@ -176,7 +176,6 @@ async def test_sse_connect_can_modify_context(
 
     async def modify_context(context):
         context["modified"] = True
-        return None
 
     view.on_sse_connect = modify_context  # type: ignore
     try:
