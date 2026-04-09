@@ -36,7 +36,7 @@ SSE subscriptions are supported out of the box in the following HTTP frameworks:
 
 SSE subscriptions are automatically enabled when using
 `@strawberry.subscription`. No additional server configuration is required. The
-client simply needs to send the `Accept: text/event-stream` header with its
+client needs to send the `Accept: text/event-stream` header with its
 subscription request.
 
 ### Example subscription
@@ -82,7 +82,7 @@ for await (const result of subscription) {
 
 #### Using the native EventSource API
 
-For simple use cases with GET requests, you can use the browser's built-in
+For basic use cases with GET requests, you can use the browser's built-in
 `EventSource`. Note that `EventSource` does not support custom headers or POST
 requests — for those, use the `graphql-sse` client library.
 
