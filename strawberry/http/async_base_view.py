@@ -197,8 +197,13 @@ class AsyncBaseHTTPView(
             )
 
         if request_data.protocol in ("multipart-subscription", "graphql-sse"):
+            if not request_data.query:
+                raise HTTPException(
+                    400, 'Request data is missing a "query" value'
+                )
+
             return await self.schema.subscribe(
-                request_data.query,  # type: ignore
+                request_data.query,
                 variable_values=request_data.variables,
                 context_value=context,
                 root_value=root_value,
@@ -743,6 +748,12 @@ class AsyncBaseHTTPView(
             data = self.parse_json(await request.get_body())
         elif self.multipart_uploads_enabled and content_type == "multipart/form-data":
             data = await self.parse_multipart(request)
+        elif protocol in ("graphql-sse", "multipart-subscription"):
+            # SSE and multipart subscription protocols require JSON request
+            # bodies. Try parsing as JSON even when Content-Type is incorrect
+            # to provide better error messages instead of "Unsupported content
+            # type".
+            data = self.parse_json(await request.get_body())
         else:
             raise HTTPException(400, "Unsupported content type")
 

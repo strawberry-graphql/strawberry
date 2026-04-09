@@ -157,6 +157,95 @@ async def test_returns_error_when_trying_to_use_batching_with_sse_subscriptions(
     assert "Batching is not supported for SSE subscriptions" in response.text
 
 
+async def test_sse_subscription_via_get(http_client: HttpClient):
+    """SSE subscriptions should also work via GET, matching multipart parity."""
+    response = await http_client.query(
+        method="get",
+        query='subscription { echo(message: "Hello world", delay: 0.2) }',
+        headers={
+            "accept": "text/event-stream",
+            "content-type": "application/json",
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.is_sse
+
+    events = [(event, data) async for event, data in response.streaming_sse()]
+    next_events = [(e, d) for e, d in events if e == "next"]
+    complete_events = [(e, d) for e, d in events if e == "complete"]
+
+    assert len(next_events) == 1
+    assert next_events[0][1]["payload"]["data"]["echo"] == "Hello world"
+    assert len(complete_events) == 1
+
+
+async def test_sse_subscription_with_wrong_content_type(http_client: HttpClient):
+    """When Accept is text/event-stream but Content-Type is also text/event-stream
+    (instead of application/json), the server should still parse the JSON body
+    gracefully rather than raising MissingQueryError deep in the stack."""
+    response = await http_client.query(
+        method="post",
+        query='subscription { echo(message: "Hello world", delay: 0.2) }',
+        headers={
+            "accept": "text/event-stream",
+            "content-type": "text/event-stream",
+        },
+    )
+
+    # The server should still work - it detects graphql-sse protocol and
+    # falls back to JSON parsing regardless of Content-Type
+    assert response.status_code == 200
+    assert response.is_sse
+
+    events = [(event, data) async for event, data in response.streaming_sse()]
+    next_events = [(e, d) for e, d in events if e == "next"]
+
+    assert len(next_events) == 1
+    assert next_events[0][1]["payload"]["data"]["echo"] == "Hello world"
+
+
+async def test_sse_subscription_with_missing_query(http_client: HttpClient):
+    """When the query field is missing from the request body, the server should
+    return a proper 400 error instead of an unhandled MissingQueryError."""
+    response = await http_client.post(
+        url="/graphql",
+        json={"variables": {}},
+        headers={
+            "accept": "text/event-stream",
+            "content-type": "application/json",
+        },
+    )
+
+    assert response.status_code == 400
+    assert "missing" in response.text.lower() and "query" in response.text.lower()
+
+
+async def test_sse_subscription_with_error_in_resolver(http_client: HttpClient):
+    """When the subscription resolver yields a GraphQLError, it should be
+    returned as a proper SSE 'next' event with errors field."""
+    response = await http_client.query(
+        method="post",
+        query='subscription { error(message: "test error") }',
+        headers={
+            "accept": "text/event-stream",
+            "content-type": "application/json",
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.is_sse
+
+    events = [(event, data) async for event, data in response.streaming_sse()]
+    next_events = [d for e, d in events if e == "next"]
+    complete_events = [e for e, _ in events if e == "complete"]
+
+    assert len(next_events) == 1
+    payload = next_events[0]["payload"]
+    assert payload["data"] is None or payload.get("errors")
+    assert "complete" in complete_events
+
+
 async def test_sse_concurrent_requests_are_independent_of_websocket_subscription_limit(
     http_client_class: type[HttpClient],
 ):
