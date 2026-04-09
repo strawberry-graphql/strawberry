@@ -218,7 +218,7 @@ async def test_sse_subscription_with_missing_query(http_client: HttpClient):
     )
 
     assert response.status_code == 400
-    assert "missing" in response.text.lower() and "query" in response.text.lower()
+    assert 'missing a "query" value' in response.text
 
 
 async def test_sse_subscription_with_error_in_resolver(http_client: HttpClient):
