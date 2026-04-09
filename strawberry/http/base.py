@@ -100,9 +100,7 @@ class BaseView(Generic[Request]):
             )
 
         if protocol == "graphql-sse":
-            raise HTTPException(
-                400, "Batching is not supported for SSE subscriptions"
-            )
+            raise HTTPException(400, "Batching is not supported for SSE subscriptions")
 
         if len(request_data) > self.schema.config.batching_config["max_operations"]:
             raise HTTPException(400, "Too many operations")

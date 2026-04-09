@@ -6,14 +6,15 @@ title: SSE Subscriptions (GraphQL-SSE)
 
 Strawberry supports subscriptions over Server-Sent Events (SSE) following the
 [GraphQL over SSE protocol](https://github.com/enisdenjo/graphql-sse/blob/master/PROTOCOL.md)
-(distinct connections mode). This provides a lightweight alternative to WebSocket
-subscriptions that works over standard HTTP connections.
+(distinct connections mode). This provides a lightweight alternative to
+WebSocket subscriptions that works over standard HTTP connections.
 
 ## How it works
 
-When a client sends a GraphQL subscription request with `Accept: text/event-stream`,
-Strawberry responds with an SSE stream instead of using WebSocket or multipart
-responses. The server streams results using standard SSE event format:
+When a client sends a GraphQL subscription request with
+`Accept: text/event-stream`, Strawberry responds with an SSE stream instead of
+using WebSocket or multipart responses. The server streams results using
+standard SSE event format:
 
 - **`next` events** contain execution results as JSON in the `data` field
 - **`complete` event** signals the end of the subscription stream
@@ -33,9 +34,10 @@ SSE subscriptions are supported out of the box in the following HTTP frameworks:
 
 ## Usage
 
-SSE subscriptions are automatically enabled when using `@strawberry.subscription`.
-No additional server configuration is required. The client simply needs to send
-the `Accept: text/event-stream` header with its subscription request.
+SSE subscriptions are automatically enabled when using
+`@strawberry.subscription`. No additional server configuration is required. The
+client simply needs to send the `Accept: text/event-stream` header with its
+subscription request.
 
 ### Example subscription
 
@@ -86,7 +88,7 @@ requests — for those, use the `graphql-sse` client library.
 
 ```javascript
 const eventSource = new EventSource(
-  "/graphql?query=subscription { count(target: 10) }"
+  "/graphql?query=subscription { count(target: 10) }",
 );
 
 eventSource.addEventListener("next", (event) => {
@@ -115,8 +117,8 @@ event: complete
 data:
 ```
 
-Heartbeat messages are sent as SSE comments every 5 seconds to prevent connection
-timeouts:
+Heartbeat messages are sent as SSE comments every 5 seconds to prevent
+connection timeouts:
 
 ```
 :
@@ -125,11 +127,11 @@ timeouts:
 
 ## Comparison with other subscription transports
 
-| Feature | WebSocket | Multipart HTTP | SSE |
-| --- | --- | --- | --- |
-| Protocol | `ws://` / `wss://` | HTTP | HTTP |
-| Connection upgrade | Yes (101) | No | No |
-| Bidirectional | Yes | No | No |
-| Proxy-friendly | Sometimes | Yes | Yes |
-| Browser support | Good | Limited | Excellent |
-| Client library | `graphql-ws` | Apollo Client | `graphql-sse` |
+| Feature            | WebSocket          | Multipart HTTP | SSE           |
+| ------------------ | ------------------ | -------------- | ------------- |
+| Protocol           | `ws://` / `wss://` | HTTP           | HTTP          |
+| Connection upgrade | Yes (101)          | No             | No            |
+| Bidirectional      | Yes                | No             | No            |
+| Proxy-friendly     | Sometimes          | Yes            | Yes           |
+| Browser support    | Good               | Limited        | Excellent     |
+| Client library     | `graphql-ws`       | Apollo Client  | `graphql-sse` |

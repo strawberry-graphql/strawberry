@@ -33,6 +33,7 @@ import strawberry
 from strawberry.types import Info
 from typing import AsyncGenerator
 
+
 @strawberry.type
 class Subscription:
     @strawberry.subscription

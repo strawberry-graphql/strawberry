@@ -168,7 +168,12 @@ class AsyncBaseHTTPView(
         context: Context,
         root_value: RootValue | None,
         sub_response: SubResponse,
-    ) -> ExecutionResult | list[ExecutionResult] | SubscriptionExecutionResult | AsyncGenerator[PreExecutionError | ExecutionResult, None]:
+    ) -> (
+        ExecutionResult
+        | list[ExecutionResult]
+        | SubscriptionExecutionResult
+        | AsyncGenerator[PreExecutionError | ExecutionResult, None]
+    ):
         request_adapter = self.request_adapter_class(request)
 
         try:
@@ -202,9 +207,7 @@ class AsyncBaseHTTPView(
 
         if request_data.protocol in ("multipart-subscription", "graphql-sse"):
             if not request_data.query:
-                raise HTTPException(
-                    400, 'Request data is missing a "query" value'
-                )
+                raise HTTPException(400, 'Request data is missing a "query" value')
 
             return await self.schema.subscribe(
                 request_data.query,
