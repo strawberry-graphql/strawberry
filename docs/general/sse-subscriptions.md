@@ -127,9 +127,10 @@ connection timeouts:
 
 ## Extensions
 
-Schema extensions work with SSE subscriptions just as they do with regular GraphQL
-operations. Each `next` event triggers the extension's `get_results()` method,
-allowing extensions to inject additional fields into the response payload.
+Schema extensions work with SSE subscriptions just as they do with regular
+GraphQL operations. Each `next` event triggers the extension's `get_results()`
+method, allowing extensions to inject additional fields into the response
+payload.
 
 ```python
 import strawberry

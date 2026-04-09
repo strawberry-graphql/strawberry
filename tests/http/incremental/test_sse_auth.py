@@ -1,6 +1,5 @@
 """Tests for SSE authentication via on_sse_connect hook."""
 
-
 import strawberry
 from strawberry.exceptions import ConnectionRejectionError
 from tests.http.clients.asgi import AsgiHttpClient

@@ -84,8 +84,8 @@ Existing subscription code will continue to work without modification.
 
 **Remaining GRAPHQL-SSE protocol work:**
 
-- Re-use single connection via `PUT` reservation and 
-  - A header value X-GraphQL-Event-Stream-Token 
+- Re-use single connection via `PUT` reservation and
+  - A header value X-GraphQL-Event-Stream-Token
   - Or a search parameter token
   - **WARNING**: Adds complexity with zero upside for http/2+
 
