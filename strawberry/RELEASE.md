@@ -173,3 +173,28 @@ Looking at the test file [`test_sse_subscription.py`](strawberry/tests/http/incr
 - **Unified subscription transport abstraction**: Currently SSE, multipart, and WebSocket subscriptions have separate code paths. Consider a unified `SubscriptionTransport` abstraction to reduce duplication and ensure feature parity.
 - **Backpressure handling**: In `_stream_sse_with_heartbeat`, the queue has `maxsize=1`. If the client is slow, this could block. Consider configurable buffer sizes and backpressure strategies.
 - **SSE connection pooling metrics**: Add metrics for active SSE connections, subscription duration, and event throughput. This is critical for production monitoring since SSE connections are long-lived.
+
+### 6. ✊ ASGI Support
+
+#### WebSocket Support (by the view, not HTTP client)
+
+| Framework | WebSocket | Notes |
+|-----------|-----------|-------|
+| Django | ❌ NO | `AsyncGraphQLView` raises `NotImplementedError` for websocket methods |
+| Flask | ❌ NO | `AsyncGraphQLView` raises `NotImplementedError` |
+| Sanic | ❌ NO | `GraphQLView` raises `NotImplementedError` |
+| Channels | ✅ YES | Has `GraphQLWsHandler` |
+| FastAPI, Quart, Litestar, AioHttp, ASGI | ✅ YES | Full support |
+
+#### SSE Support
+
+| Framework | SSE Support | Notes |
+|-----------|-------------|-------|
+| Sync clients (Django sync, Flask sync, Chalice) | ❌ NO | Use `SyncBaseHTTPView` which never sets `protocol="graphql-sse"`. Adding SSE would require async streaming which sync views can't do. |
+| Async clients (AsyncDjango, AsyncFlask, Sanic) | ⚠️ PARTIAL | Extend `AsyncBaseHTTPView` which has full SSE support, but their HTTP clients don't accept `max_subscriptions_per_connection`. |
+
+#### Key Issues
+
+1. **Sync clients**: `SyncBaseHTTPView.parse_http_body()` line 164-168 sets `protocol` to only `"http"` or `"multipart-subscription"`, never `"graphql-sse"`.
+
+2. **Async clients**: `SanicHttpClient`, `AsyncDjangoHttpClient`, and `AsyncFlaskHttpClient` don't accept `max_subscriptions_per_connection` in their `__init__`, causing `TypeError` when testing SSE subscription limits.
