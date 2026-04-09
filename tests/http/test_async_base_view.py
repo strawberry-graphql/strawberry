@@ -41,6 +41,19 @@ async def test_stream_with_heartbeat_should_yield_items_correctly(
         def encode_multipart_data(self, *_: Any, **__: Any) -> str:
             return ""
 
+        def _make_heartbeat_stream(
+            self,
+            stream,
+            heartbeat_message_provider,
+            emit_error_event: bool = False,
+            heartbeat_interval: float = 5.0,
+        ):
+            async def merged():
+                async for item in stream():
+                    yield item
+
+            return merged
+
     view = MockAsyncBaseHTTPView()
 
     async def stream() -> AsyncGenerator[str, None]:

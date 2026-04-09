@@ -5,7 +5,7 @@ from typing_extensions import Protocol
 
 from cross_web import HTTPException
 
-from strawberry.http import GraphQLRequestData
+from strawberry.http import GraphQLRequestData, GraphQLSubscriptionProtocol
 from strawberry.http.ides import GraphQL_IDE, get_graphql_ide_html
 from strawberry.http.types import HTTPMethod, QueryParams
 from strawberry.schema.base import BaseSchema
@@ -86,7 +86,10 @@ class BaseView(Generic[Request]):
         )
 
     def _is_sse_subscription(self, accept: str) -> bool:
-        return "text/event-stream" in accept
+        return (
+            "text/event-stream" in accept
+            or "application/graphql-event-stream+json" in accept
+        )
 
     def _validate_batch_request(
         self, request_data: list[GraphQLRequestData], protocol: str
@@ -94,12 +97,12 @@ class BaseView(Generic[Request]):
         if self.schema.config.batching_config is None:
             raise HTTPException(400, "Batching is not enabled")
 
-        if protocol == "multipart-subscription":
+        if protocol == GraphQLSubscriptionProtocol.MULTIPART_SUBSCRIPTION:
             raise HTTPException(
                 400, "Batching is not supported for multipart subscriptions"
             )
 
-        if protocol == "graphql-sse":
+        if protocol == GraphQLSubscriptionProtocol.GRAPHQL_SSE:
             raise HTTPException(400, "Batching is not supported for SSE subscriptions")
 
         if len(request_data) > self.schema.config.batching_config["max_operations"]:

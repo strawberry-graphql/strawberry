@@ -7,7 +7,6 @@ from datetime import timedelta
 from typing import (
     Any,
     Generic,
-    Literal,
     TypeGuard,
     cast,
     overload,
@@ -21,6 +20,7 @@ from strawberry.file_uploads.utils import replace_placeholders_with_files
 from strawberry.http import (
     GraphQLHTTPResponse,
     GraphQLRequestData,
+    GraphQLSubscriptionProtocol,
     process_result,
 )
 from strawberry.http.ides import GraphQL_IDE
@@ -93,6 +93,7 @@ class AsyncBaseHTTPView(
     keep_alive_interval: float | None = None
     connection_init_wait_timeout: timedelta = timedelta(minutes=1)
     max_subscriptions_per_connection: int | None = 100
+    sse_heartbeat_interval: float = 5.0
     request_adapter_class: Callable[[Request], AsyncHTTPRequestAdapter]
     websocket_adapter_class: Callable[
         [
@@ -205,7 +206,10 @@ class AsyncBaseHTTPView(
                 ]
             )
 
-        if request_data.protocol in ("multipart-subscription", "graphql-sse"):
+        if request_data.protocol in (
+            GraphQLSubscriptionProtocol.MULTIPART_SUBSCRIPTION,
+            GraphQLSubscriptionProtocol.GRAPHQL_SSE,
+        ):
             if not request_data.query:
                 raise HTTPException(400, 'Request data is missing a "query" value')
 
@@ -554,73 +558,12 @@ class AsyncBaseHTTPView(
         Apollo's protocol defines heartbeats as empty JSON objects that clients must
         silently ignore.
         """
-        queue: asyncio.Queue[tuple[bool, bool, Any]] = asyncio.Queue(
-            maxsize=1,  # Critical: maxsize=1 for flow control.
+        return self._make_heartbeat_stream(
+            stream,
+            heartbeat_message_provider=lambda: self.encode_multipart_data(
+                {}, separator
+            ),
         )
-        cancelling = False
-
-        async def drain() -> None:
-            try:
-                async for item in stream():
-                    await queue.put((False, False, item))
-            except Exception as e:
-                if not cancelling:
-                    await queue.put((True, False, e))
-                else:
-                    raise
-            # Send completion signal to prevent race conditions. The queue.put()
-            # blocks until space is available (due to maxsize=1), guaranteeing that
-            # when task.done() is True, the final stream message has been dequeued.
-            await queue.put((False, True, None))  # Always use None with done=True
-
-        async def heartbeat() -> None:
-            while True:
-                item = self.encode_multipart_data({}, separator)
-                await queue.put((False, False, item))
-
-                await asyncio.sleep(5)
-
-        async def merged() -> AsyncGenerator[str, None]:
-            heartbeat_task = asyncio.create_task(heartbeat())
-            task = asyncio.create_task(drain())
-
-            async def cancel_tasks() -> None:
-                nonlocal cancelling
-                cancelling = True
-                task.cancel()
-
-                with contextlib.suppress(asyncio.CancelledError):
-                    await task
-
-                heartbeat_task.cancel()
-
-                with contextlib.suppress(asyncio.CancelledError):
-                    await heartbeat_task
-
-            try:
-                # When task.done() is True, the final stream message has been
-                # dequeued due to queue size 1 and the blocking nature of queue.put().
-                while not task.done():
-                    raised, done, data = await queue.get()
-
-                    if done:
-                        # Received done signal (data is None), stream is complete.
-                        # Note that we may not get here because of the race between
-                        # task.done() and queue.get(), but that's OK because if
-                        # task.done() is True, the actual final message (including any
-                        # exception) has been consumed. The only intent here is to
-                        # ensure that data=None is not yielded.
-                        break
-
-                    if raised:
-                        await cancel_tasks()
-                        raise data
-
-                    yield data
-            finally:
-                await cancel_tasks()
-
-        return merged
 
     def _get_stream(
         self,
@@ -657,23 +600,42 @@ class AsyncBaseHTTPView(
         result: SubscriptionExecutionResult,
     ) -> Callable[[], AsyncGenerator[str, None]]:
         async def stream() -> AsyncGenerator[str, None]:
-            async for value in result:
-                response = await self.process_result(request, value)
-                yield self.encode_sse_event("next", {"payload": response})
-
+            try:
+                async for value in result:
+                    response = await self.process_result(request, value)
+                    yield self.encode_sse_event("next", {"payload": response})
+            except Exception as exc:  # noqa: BLE001
+                yield self.encode_sse_event(
+                    "error",
+                    [{"message": str(exc)}],
+                )
+                return
             yield self.encode_sse_event("complete")
 
         return self._stream_sse_with_heartbeat(stream)
 
-    def _stream_sse_with_heartbeat(
-        self, stream: Callable[[], AsyncGenerator[str, None]]
+    def _make_heartbeat_stream(
+        self,
+        stream: Callable[[], AsyncGenerator[str, None]],
+        heartbeat_message_provider: Callable[[], str],
+        emit_error_event: bool = False,
+        heartbeat_interval: float = 5.0,
     ) -> Callable[[], AsyncGenerator[str, None]]:
-        """Add SSE comment heartbeat messages to prevent connection timeouts.
+        """Shared heartbeat orchestration for SSE and multipart streams.
 
-        Uses SSE comments (lines starting with ':') as keepalive signals,
-        which are silently ignored by SSE clients per the spec.
+        Args:
+            stream: The data stream to wrap with heartbeats.
+            heartbeat_message_provider: Callable that returns the heartbeat message string.
+            emit_error_event: If True, yield an error event before raising exceptions
+                             (used by SSE). If False, just raise exceptions (multipart).
+            heartbeat_interval: Interval in seconds between heartbeat messages.
         """
-        queue: asyncio.Queue[tuple[bool, bool, Any]] = asyncio.Queue(maxsize=1)
+        import logging as logger_module
+
+        log = logger_module.getLogger("strawberry.http")
+        queue: asyncio.Queue[tuple[bool, bool, Any]] = asyncio.Queue(
+            maxsize=1,
+        )
         cancelling = False
 
         async def drain() -> None:
@@ -689,8 +651,10 @@ class AsyncBaseHTTPView(
 
         async def heartbeat() -> None:
             while True:
-                await queue.put((False, False, ":\n\n"))
-                await asyncio.sleep(5)
+                item = heartbeat_message_provider()
+                await queue.put((False, False, item))
+
+                await asyncio.sleep(heartbeat_interval)
 
         async def merged() -> AsyncGenerator[str, None]:
             heartbeat_task = asyncio.create_task(heartbeat())
@@ -717,6 +681,11 @@ class AsyncBaseHTTPView(
                         break
 
                     if raised:
+                        if emit_error_event:
+                            log.error("SSE stream error: %s", data)
+                            yield self.encode_sse_event(
+                                "error", [{"message": str(data)}]
+                            )
                         await cancel_tasks()
                         raise data
 
@@ -725,6 +694,21 @@ class AsyncBaseHTTPView(
                 await cancel_tasks()
 
         return merged
+
+    def _stream_sse_with_heartbeat(
+        self, stream: Callable[[], AsyncGenerator[str, None]]
+    ) -> Callable[[], AsyncGenerator[str, None]]:
+        """Add SSE comment heartbeat messages to prevent connection timeouts.
+
+        Uses SSE comments (lines starting with ':') as keepalive signals,
+        which are silently ignored by SSE clients per the spec.
+        """
+        return self._make_heartbeat_stream(
+            stream,
+            heartbeat_message_provider=lambda: ":\n\n",
+            emit_error_event=True,
+            heartbeat_interval=self.sse_heartbeat_interval,
+        )
 
     async def parse_multipart_subscriptions(
         self, request: AsyncHTTPRequestAdapter
@@ -741,13 +725,13 @@ class AsyncBaseHTTPView(
         content_type, _ = parse_content_type(request.content_type or "")
         accept = headers.get("accept", "")
 
-        protocol: Literal["http", "multipart-subscription", "graphql-sse"]
+        protocol: GraphQLSubscriptionProtocol
         if self._is_multipart_subscriptions(*parse_content_type(accept)):
-            protocol = "multipart-subscription"
+            protocol = GraphQLSubscriptionProtocol.MULTIPART_SUBSCRIPTION
         elif self._is_sse_subscription(accept):
-            protocol = "graphql-sse"
+            protocol = GraphQLSubscriptionProtocol.GRAPHQL_SSE
         else:
-            protocol = "http"
+            protocol = GraphQLSubscriptionProtocol.HTTP
 
         if request.method == "GET":
             data = self.parse_query_params(request.query_params)
@@ -755,7 +739,10 @@ class AsyncBaseHTTPView(
             data = self.parse_json(await request.get_body())
         elif self.multipart_uploads_enabled and content_type == "multipart/form-data":
             data = await self.parse_multipart(request)
-        elif protocol in ("graphql-sse", "multipart-subscription"):
+        elif protocol in (
+            GraphQLSubscriptionProtocol.GRAPHQL_SSE,
+            GraphQLSubscriptionProtocol.MULTIPART_SUBSCRIPTION,
+        ):
             # SSE and multipart subscription protocols require JSON request
             # bodies. Try parsing as JSON even when Content-Type is incorrect
             # to provide better error messages instead of "Unsupported content

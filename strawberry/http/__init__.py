@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Literal
+from enum import Enum
+from typing import Any
 from typing_extensions import TypedDict
 
 from strawberry.schema._graphql_core import (
@@ -35,6 +36,12 @@ def process_result(result: ResultType) -> GraphQLHTTPResponse:
     return data
 
 
+class GraphQLSubscriptionProtocol(Enum):
+    HTTP = "http"
+    MULTIPART_SUBSCRIPTION = "multipart-subscription"
+    GRAPHQL_SSE = "graphql-sse"
+
+
 @dataclass
 class GraphQLRequestData:
     # query is optional here as it can be added by an extensions
@@ -43,11 +50,12 @@ class GraphQLRequestData:
     variables: dict[str, Any] | None
     operation_name: str | None
     extensions: dict[str, Any] | None
-    protocol: Literal["http", "multipart-subscription", "graphql-sse"] = "http"
+    protocol: GraphQLSubscriptionProtocol = GraphQLSubscriptionProtocol.HTTP
 
 
 __all__ = [
     "GraphQLHTTPResponse",
     "GraphQLRequestData",
+    "GraphQLSubscriptionProtocol",
     "process_result",
 ]

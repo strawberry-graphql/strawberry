@@ -24,79 +24,6 @@ The implementation supports multiple response formats:
 1. **SSE (text/event-stream)**: Streams individual events as they occur
 2. **Multipart (multipart/mixed)**: Supports the graphql-transport-ws multipart format
 
-## Example Usage
-
-### Subscription Definition
-
-```python
-import strawberry
-from strawberry.types import Info
-from typing import AsyncGenerator
-
-
-@strawberry.type
-class Subscription:
-    @strawberry.subscription
-    async def check(self, info: Info) -> AsyncGenerator[str, None]:
-        while True:
-            yield "Hello"
-            await anyio.sleep(2.5)
-```
-
-### Client Usage
-
-#### SSE with GET
-
-```bash
-curl -N -k -G 'https://localhost:8888/graphql' \
-  -H 'Accept: text/event-stream' \
-  --data-urlencode 'query=subscription { check }'
-```
-
-#### SSE with POST
-
-```bash
-curl -N -k -X POST https://localhost:8888/graphql \
-  -H 'Accept: text/event-stream' \
-  -H 'Content-Type: application/json' \
-  --data-binary @- <<EOF
-{
-  "query": "subscription { check }"
-}
-EOF
-```
-
-#### Multipart with POST
-
-```bash
-curl -N -k -X POST https://localhost:8888/graphql \
-  -H 'Accept: multipart/mixed; boundary=graphql; subscriptionSpec=1.0, application/json' \
-  -H 'Content-Type: application/json' \
-  --data-binary @- <<EOF
-{
-  "query": "subscription { check }"
-}
-EOF
-```
-
-## Response Format Changes
-
-### Before (Legacy Format)
-
-SSE responses used a legacy JSON format that didn't follow the graphql-transport-ws specification:
-
-```
-{"data":null,"errors":[{"message":"Cannot return null for non-nullable field Subscription.check","locations":[{"line":1,"column":16}],"path":["check"]}]}
-```
-
-### After (GraphQL-SSE Format)
-
-SSE responses now use the proper graphql-transport-ws event stream format:
-
-```
-event: next
-data: {"payload":{"data":{"check":"Hello"}}}
-```
 
 ## Technical Details
 
@@ -140,7 +67,7 @@ Existing subscription code will continue to work without modification.
 
 The recent CVEs (CVE-2026-35526, CVE-2026-35523) reveal a pattern of WebSocket security gaps. Recommendations:
 
-- **Rate limiting per IP/client**: Add configurable rate limiting for subscription creation, not just per-connection limits. The current `max_subscriptions_per_connection=100` is good but doesn't prevent many short-lived connections.
+- **Rate limiting per IP/client**: Add configurable rate limiting for subscription creation, not only per-connection limits. The current `max_subscriptions_per_connection=100` is good but doesn't prevent many short-lived connections.
 - **Authentication/authorization audit**: Audit the SSE transport path (`_get_sse_stream`, `_is_sse_subscription`) to ensure it has equivalent auth checks to the WebSocket path. The SSE path currently doesn't go through `on_ws_connect` — consider adding an equivalent `on_sse_connect` hook.
 - **Connection timeout configuration**: The heartbeat interval (5 seconds in `_stream_sse_with_heartbeat`) is hardcoded. Make it configurable and add a max connection duration.
 
@@ -148,7 +75,7 @@ The recent CVEs (CVE-2026-35526, CVE-2026-35523) reveal a pattern of WebSocket s
 
 The GraphQL-SSE implementation is new and has room for improvement:
 
-- **`graphql-sse` protocol compliance**: The [`_is_sse_subscription`](strawberry/strawberry/http/base.py#L86-90) check is very basic — it just checks for `"text/event-stream" in accept`. Consider also supporting the `application/graphql-event-stream+json` content type used by some clients.
+- **`graphql-sse` protocol compliance**: The [`_is_sse_subscription`](strawberry/strawberry/http/base.py#L86-90) check is very basic — only checks for `"text/event-stream" in accept`. Consider also supporting the `application/graphql-event-stream+json` content type used by some clients.
 - **Connection introspection**: Add an SSE endpoint that supports the `connectionInit` / `connectionAck` handshake pattern from the graphql-transport-ws spec, so SSE clients can receive initial connection payload.
 - **Graceful error streaming**: Currently errors in `_get_sse_stream` go through the generic `drain()` exception path. Add explicit `event: error` SSE events matching the graphql-transport-ws error format for better client-side error handling.
 - **Last-Event-ID support**: For automatic reconnection, implement `Last-Event-ID` header support so clients can resume from where they disconnected.
@@ -157,7 +84,7 @@ The GraphQL-SSE implementation is new and has room for improvement:
 
 Looking at the test file [`test_sse_subscription.py`](strawberry/tests/http/incremental/test_sse_subscription.py), there are 9 tests but some scenarios are untested:
 
-- **Concurrent SSE connection limits**: Add tests for per-IP or global SSE connection limits (not just WebSocket).
+- **Concurrent SSE connection limits**: Add tests for per-IP or global SSE connection limits (not only WebSocket).
 - **SSE over all framework integrations**: Verify SSE works across FastAPI, Starlette, Django, Flask, Sanic, Quart, Litestar, and aiohttp. Currently tests may only cover a subset.
 - **SSE + Federation**: Test SSE subscriptions with Apollo Federation schemas.
 - **SSE reconnection behavior**: Test client disconnect mid-stream and verify server-side cleanup (no resource leaks).
