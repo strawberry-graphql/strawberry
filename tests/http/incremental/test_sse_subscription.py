@@ -1,3 +1,4 @@
+import asyncio
 import contextlib
 
 import pytest
@@ -154,3 +155,37 @@ async def test_returns_error_when_trying_to_use_batching_with_sse_subscriptions(
 
     assert response.status_code == 400
     assert "Batching is not supported for SSE subscriptions" in response.text
+
+
+async def test_sse_concurrent_requests_are_independent_of_websocket_subscription_limit(
+    http_client_class: type[HttpClient],
+):
+    http_client = http_client_class(schema=schema, max_subscriptions_per_connection=1)
+
+    async def run_one_subscription(message: str) -> str:
+        response = await http_client.query(
+            method="post",
+            query=f'subscription {{ echo(message: "{message}", delay: 0.2) }}',
+            headers={
+                "accept": "text/event-stream",
+                "content-type": "application/json",
+            },
+        )
+
+        assert response.status_code == 200
+        assert response.is_sse
+
+        events = [(event, data) async for event, data in response.streaming_sse()]
+        next_events = [data for event, data in events if event == "next"]
+        complete_events = [event for event, _ in events if event == "complete"]
+
+        assert len(next_events) == 1
+        assert next_events[0]["payload"]["data"]["echo"] == message
+        assert "complete" in complete_events
+
+        return message
+
+    messages = [f"message-{index}" for index in range(8)]
+    results = await asyncio.gather(*(run_one_subscription(message) for message in messages))
+
+    assert sorted(results) == sorted(messages)
