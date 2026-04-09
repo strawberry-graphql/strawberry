@@ -185,7 +185,7 @@ Looking at the test file [`test_sse_subscription.py`](strawberry/tests/http/incr
 | Flask | ❌ NO | `AsyncGraphQLView` raises `NotImplementedError` |
 | Sanic | ❌ NO | `GraphQLView` raises `NotImplementedError` |
 | Channels | ✅ YES | Has `GraphQLWsHandler` |
-| FastAPI, Quart, Litestar, AioHttp, ASGI | ✅ YES | Full support |
+| FastAPI, Quart, Litestar, AioHTTP, ASGI | ✅ YES | Full support |
 
 #### SSE Support
 

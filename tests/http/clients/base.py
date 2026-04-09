@@ -133,15 +133,13 @@ class Response:
                     if result := parse_sse_block(block):
                         yield result
             # Handle any remaining data
-            if buffer.strip():
-                if result := parse_sse_block(buffer):
-                    yield result
+            if buffer.strip() and (result := parse_sse_block(buffer)):
+                yield result
         else:
             text = self.data.decode("utf-8")
             for block in text.split("\n\n"):
-                if block.strip():
-                    if result := parse_sse_block(block):
-                        yield result
+                if block.strip() and (result := parse_sse_block(block)):
+                    yield result
 
 
 class HttpClient(abc.ABC):
