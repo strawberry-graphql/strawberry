@@ -299,7 +299,6 @@ async def test_streaming_sse_ignores_heartbeat_comments():
     import contextlib
     import json
 
-    from tests.http.clients.base import Response
 
     def parse_sse_block(block: str):
         event = ""

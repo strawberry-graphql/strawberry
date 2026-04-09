@@ -127,11 +127,11 @@ connection timeouts:
 
 ## Comparison with other subscription transports
 
-| Feature            | WebSocket          | Multipart HTTP | SSE           |
-| ------------------ | ------------------ | -------------- | ------------- |
-| Protocol           | `wss://`           | HTTP           | HTTP          |
-| Connection upgrade | Yes (101)          | No             | No            |
-| Bidirectional      | Yes                | No             | No            |
-| Proxy-friendly     | Sometimes          | Yes            | Yes           |
-| Browser support    | Good               | Limited        | Excellent     |
-| Client library     | `graphql-ws`       | Apollo Client  | `graphql-sse` |
+| Feature            | WebSocket    | Multipart HTTP | SSE           |
+| ------------------ | ------------ | -------------- | ------------- |
+| Protocol           | `wss://`     | HTTP           | HTTP          |
+| Connection upgrade | Yes (101)    | No             | No            |
+| Bidirectional      | Yes          | No             | No            |
+| Proxy-friendly     | Sometimes    | Yes            | Yes           |
+| Browser support    | Good         | Limited        | Excellent     |
+| Client library     | `graphql-ws` | Apollo Client  | `graphql-sse` |
