@@ -16,10 +16,16 @@ def incremental_http_client_class(
         if django.VERSION < (4, 2):
             pytest.skip(reason="Django < 4.2 doesn't async streaming responses")
 
+        from tests.http.clients.async_django import AsyncDjangoHttpClient
         from tests.http.clients.django import DjangoHttpClient
 
         if http_client_class is DjangoHttpClient:
             pytest.skip(reason="(sync) DjangoHttpClient doesn't support streaming")
+
+        if http_client_class is AsyncDjangoHttpClient:
+            pytest.skip(
+                reason="AsyncDjangoHttpClient doesn't support max_subscriptions_per_connection"
+            )
 
     with contextlib.suppress(ImportError):
         from tests.http.clients.channels import SyncChannelsHttpClient
@@ -43,6 +49,14 @@ def incremental_http_client_class(
 
         if http_client_class is ChaliceHttpClient:
             pytest.skip(reason="ChaliceHttpClient doesn't support streaming")
+
+    with contextlib.suppress(ImportError):
+        from tests.http.clients.sanic import SanicHttpClient
+
+        if http_client_class is SanicHttpClient:
+            pytest.skip(
+                reason="SanicHttpClient doesn't support max_subscriptions_per_connection"
+            )
 
     return http_client_class
 
