@@ -37,7 +37,11 @@ from strawberry.subscriptions.protocols.graphql_transport_ws.handlers import (
     BaseGraphQLTransportWSHandler,
 )
 from strawberry.subscriptions.protocols.graphql_ws.handlers import BaseGraphQLWSHandler
-from strawberry.types import ExecutionResult, SubscriptionExecutionResult
+from strawberry.types import (
+    ExecutionResult,
+    PreExecutionError,
+    SubscriptionExecutionResult,
+)
 from strawberry.types.graphql import OperationType
 from strawberry.types.unset import UNSET, UnsetType
 
@@ -164,7 +168,7 @@ class AsyncBaseHTTPView(
         context: Context,
         root_value: RootValue | None,
         sub_response: SubResponse,
-    ) -> ExecutionResult | list[ExecutionResult] | SubscriptionExecutionResult:
+    ) -> ExecutionResult | list[ExecutionResult] | SubscriptionExecutionResult | AsyncGenerator[PreExecutionError | ExecutionResult, None]:
         request_adapter = self.request_adapter_class(request)
 
         try:

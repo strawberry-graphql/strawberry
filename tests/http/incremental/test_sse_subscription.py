@@ -37,9 +37,7 @@ def http_client(http_client_class: type[HttpClient]) -> HttpClient:
         from tests.http.clients.flask import FlaskHttpClient
 
         if http_client_class is FlaskHttpClient:
-            pytest.skip(
-                reason="FlaskHttpClient doesn't support SSE subscriptions"
-            )
+            pytest.skip(reason="FlaskHttpClient doesn't support SSE subscriptions")
 
         if http_client_class is AsyncFlaskHttpClient:
             pytest.xfail(
@@ -50,9 +48,7 @@ def http_client(http_client_class: type[HttpClient]) -> HttpClient:
         from tests.http.clients.chalice import ChaliceHttpClient
 
         if http_client_class is ChaliceHttpClient:
-            pytest.skip(
-                reason="ChaliceHttpClient doesn't support SSE subscriptions"
-            )
+            pytest.skip(reason="ChaliceHttpClient doesn't support SSE subscriptions")
 
     return http_client_class(schema=schema)
 
@@ -128,9 +124,9 @@ async def test_sse_subscription_event_format(http_client: HttpClient):
 
 
 async def test_returns_error_when_trying_to_use_batching_with_sse_subscriptions(
-    http_client_class: type[HttpClient],
+    incremental_http_client_class: type[HttpClient],
 ):
-    http_client = http_client_class(
+    http_client = incremental_http_client_class(
         schema=strawberry.Schema(
             query=Query,
             mutation=Mutation,
@@ -247,9 +243,11 @@ async def test_sse_subscription_with_error_in_resolver(http_client: HttpClient):
 
 
 async def test_sse_concurrent_requests_are_independent_of_websocket_subscription_limit(
-    http_client_class: type[HttpClient],
+    incremental_http_client_class: type[HttpClient],
 ):
-    http_client = http_client_class(schema=schema, max_subscriptions_per_connection=1)
+    http_client = incremental_http_client_class(
+        schema=schema, max_subscriptions_per_connection=1
+    )
 
     async def run_one_subscription(message: str) -> str:
         response = await http_client.query(
@@ -275,6 +273,8 @@ async def test_sse_concurrent_requests_are_independent_of_websocket_subscription
         return message
 
     messages = [f"message-{index}" for index in range(8)]
-    results = await asyncio.gather(*(run_one_subscription(message) for message in messages))
+    results = await asyncio.gather(
+        *(run_one_subscription(message) for message in messages)
+    )
 
     assert sorted(results) == sorted(messages)

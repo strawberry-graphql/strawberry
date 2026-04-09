@@ -1,3 +1,5 @@
+Release Type: minor
+
 # Release Notes: Initial GraphQL-SSE Support
 
 ## Overview
