@@ -129,7 +129,7 @@ connection timeouts:
 
 | Feature            | WebSocket          | Multipart HTTP | SSE           |
 | ------------------ | ------------------ | -------------- | ------------- |
-| Protocol           | `ws://` / `wss://` | HTTP           | HTTP          |
+| Protocol           | `wss://`           | HTTP           | HTTP          |
 | Connection upgrade | Yes (101)          | No             | No            |
 | Bidirectional      | Yes                | No             | No            |
 | Proxy-friendly     | Sometimes          | Yes            | Yes           |

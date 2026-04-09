@@ -238,7 +238,17 @@ async def test_sse_subscription_with_error_in_resolver(http_client: HttpClient):
 
     assert len(next_events) == 1
     payload = next_events[0]["payload"]
-    assert payload["data"] is None or payload.get("errors")
+    assert payload["data"] is None
+    assert "errors" in payload
+    assert payload["errors"], "Expected non-empty errors list in payload"
+    messages = {
+        err.get("message") for err in payload["errors"] if isinstance(err, dict)
+    }
+    assert any("test error" in (msg or "") for msg in messages)
+    paths = {
+        tuple(err.get("path", [])) for err in payload["errors"] if isinstance(err, dict)
+    }
+    assert ("error",) in paths
     assert "complete" in complete_events
 
 
@@ -278,3 +288,72 @@ async def test_sse_concurrent_requests_are_independent_of_websocket_subscription
     )
 
     assert sorted(results) == sorted(messages)
+
+
+async def test_streaming_sse_ignores_heartbeat_comments():
+    """SSE comment lines (heartbeats) should be silently skipped by streaming_sse.
+
+    This is a unit test that directly exercises the SSE parsing logic with
+    interleaved comment lines to verify parse_sse_block skips them correctly.
+    """
+    import contextlib
+    import json
+
+    from tests.http.clients.base import Response
+
+    def parse_sse_block(block: str):
+        event = ""
+        data_lines: list[str] = []
+        for line in block.split("\n"):
+            if line.startswith("event: "):
+                event = line[7:].strip()
+            elif line.startswith("data: "):
+                data_lines.append(line[6:])
+            elif line.startswith("data:"):
+                data_lines.append(line[5:])
+            elif line.startswith(":"):
+                continue
+        if not event:
+            return None
+        raw = "\n".join(data_lines).strip()
+        data = None
+        if raw:
+            with contextlib.suppress(json.JSONDecodeError):
+                data = json.loads(raw)
+        return (event, data)
+
+    sse_payload = (
+        ": keep-alive\n\n"
+        "event: next\n"
+        'data: {"payload": {"data": {"echo": "Hello world"}}}\n\n'
+        ": another-heartbeat\n\n"
+        "event: complete\n"
+        "data: \n\n"
+    )
+
+    events = [
+        result
+        for block in sse_payload.split("\n\n")
+        if block.strip() and (result := parse_sse_block(block))
+    ]
+
+    assert events == [
+        ("next", {"payload": {"data": {"echo": "Hello world"}}}),
+        ("complete", None),
+    ]
+
+
+async def test_sse_subscription_with_malformed_json_body(http_client: HttpClient):
+    """When Accept is text/event-stream but the request body is invalid JSON,
+    the server should return a clear 400 error instead of a 500/traceback."""
+    response = await http_client.post(
+        url="/graphql",
+        data=b"this is not valid json",
+        json=None,
+        headers={
+            "accept": "text/event-stream",
+            "content-type": "application/json",
+        },
+    )
+
+    assert response.status_code == 400
