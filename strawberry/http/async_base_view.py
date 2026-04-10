@@ -61,7 +61,25 @@ from .typevars import (
     WebSocketResponse,
 )
 
-_sse_http1_warning_logged = False
+
+class _SSEHTTP1Warning:
+    _logged: bool = False
+
+    def __call__(self) -> None:
+        if self._logged:
+            return
+
+        self._logged = True
+        logger = logging.getLogger("strawberry.http")
+        logger.warning(
+            "SSE subscription over HTTP/1.x detected. "
+            "HTTP/1.x connections suffer from head-of-line blocking, which can cause "
+            "performance issues when SSE subscriptions share connections with other "
+            "requests. HTTP/2 is strongly recommended for SSE."
+        )
+
+
+_maybe_log_http1_warning = _SSEHTTP1Warning()
 
 
 class AsyncWebSocketAdapter(abc.ABC):
@@ -751,23 +769,9 @@ class AsyncBaseHTTPView(
         performance issues when SSE subscriptions share connections with other
         requests. HTTP/2 is strongly recommended for SSE.
         """
-        global _sse_http1_warning_logged
-        if _sse_http1_warning_logged:
-            return
-
         http_version = self._get_http_version(request)
         if http_version and http_version.startswith("1."):
-            _sse_http1_warning_logged = True
-            logger = logging.getLogger("strawberry.http")
-            logger.warning(
-                "SSE subscription over HTTP/%s detected. "
-                "HTTP/1.x connections suffer from head-of-line blocking, which can "
-                "affect other requests sharing this connection. This warning will not "
-                "be shown again. Consider using HTTP/2 or switching to "
-                "graphql-transport-ws for subscriptions. "
-                "See https://strawberry.rocks/docs/general/sse-subscriptions#http2-is-strongly-recommended-for-sse-subscriptions",
-                http_version,
-            )
+            _maybe_log_http1_warning()
 
     def _get_last_event_id(
         self, request_adapter: AsyncHTTPRequestAdapter

@@ -445,7 +445,7 @@ app.add_url_rule(
 )
 ```
 
-> **Important:**
+> **Important:**  
 > To enable `SSE` (Server-Sent Events) support, you must define the appropriate
 > protocols in your configuration.
 
