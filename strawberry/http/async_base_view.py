@@ -481,6 +481,16 @@ class AsyncBaseHTTPView(
             if self._is_sse_subscription(accept):
                 self._warn_if_http1_for_sse(request)
                 last_event_id = self._get_last_event_id(request_adapter)
+
+                headers = {k.lower(): v for k, v in request_adapter.headers.items()}
+                connection_params: dict[str, Any] = {}
+                if "authorization" in headers:
+                    connection_params["authorization"] = headers["authorization"]
+                if isinstance(context, dict):
+                    context["connection_params"] = connection_params
+                elif hasattr(context, "connection_params"):
+                    context.connection_params = connection_params
+
                 try:
                     await self.on_sse_connect(context)
                 except ConnectionRejectionError as e:

@@ -219,3 +219,30 @@ async def test_sse_connect_can_modify_context(
         assert next_events[0]["payload"]["data"]["contextValues"] is True
     finally:
         view.on_sse_connect = original
+
+
+async def test_sse_injects_authorization_header_as_connection_params(
+    http_client: HttpClient,
+):
+    """When an Authorization header is sent with a SSE subscription request,
+    it should be available as connection_params in the context."""
+    response = await http_client.query(
+        method="post",
+        query="subscription { connectionParams }",
+        headers={
+            "accept": "text/event-stream",
+            "content-type": "application/json",
+            "Authorization": "Bearer test-token-123",
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.is_sse
+
+    events = [(e, d) async for e, d in response.streaming_sse()]
+    next_events = [d for e, d in events if e == "next"]
+
+    assert len(next_events) == 1
+    assert next_events[0]["payload"]["data"]["connectionParams"] == {
+        "authorization": "Bearer test-token-123"
+    }
