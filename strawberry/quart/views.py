@@ -20,7 +20,11 @@ from strawberry.http.exceptions import (
 )
 from strawberry.http.ides import GraphQL_IDE
 from strawberry.http.typevars import Context, RootValue
-from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
+from strawberry.subscriptions import (
+    GRAPHQL_SSE_PROTOCOL,
+    GRAPHQL_TRANSPORT_WS_PROTOCOL,
+    GRAPHQL_WS_PROTOCOL,
+)
 
 if TYPE_CHECKING:
     from quart.typing import ResponseReturnValue
@@ -104,6 +108,7 @@ class GraphQLView(
         self.multipart_uploads_enabled = multipart_uploads_enabled
         self.max_subscriptions_per_connection = max_subscriptions_per_connection
         self.graphql_ide = graphql_ide
+        self.sse_enabled = GRAPHQL_SSE_PROTOCOL in subscription_protocols
 
     async def render_graphql_ide(self, request: Request) -> Response:
         return Response(self.graphql_ide_html)

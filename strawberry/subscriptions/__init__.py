@@ -1,8 +1,10 @@
 GRAPHQL_TRANSPORT_WS_PROTOCOL = "graphql-transport-ws"
 GRAPHQL_WS_PROTOCOL = "graphql-ws"
+GRAPHQL_SSE_PROTOCOL = "graphql-sse"
 
 
 __all__ = [
+    "GRAPHQL_SSE_PROTOCOL",
     "GRAPHQL_TRANSPORT_WS_PROTOCOL",
     "GRAPHQL_WS_PROTOCOL",
 ]

@@ -5,6 +5,11 @@ import pytest
 
 import strawberry
 from strawberry.schema.config import StrawberryConfig
+from strawberry.subscriptions import (
+    GRAPHQL_SSE_PROTOCOL,
+    GRAPHQL_TRANSPORT_WS_PROTOCOL,
+    GRAPHQL_WS_PROTOCOL,
+)
 from tests.http.clients.base import HttpClient
 from tests.views.schema import Mutation, MyExtension, Query, Subscription, schema
 
@@ -50,7 +55,14 @@ def http_client(http_client_class: type[HttpClient]) -> HttpClient:
         if http_client_class is ChaliceHttpClient:
             pytest.skip(reason="ChaliceHttpClient doesn't support SSE subscriptions")
 
-    return http_client_class(schema=schema)
+    return http_client_class(
+        schema=schema,
+        subscription_protocols=(
+            GRAPHQL_TRANSPORT_WS_PROTOCOL,
+            GRAPHQL_WS_PROTOCOL,
+            GRAPHQL_SSE_PROTOCOL,
+        ),
+    )
 
 
 async def test_sse_subscription(http_client: HttpClient):
@@ -132,7 +144,12 @@ async def test_returns_error_when_trying_to_use_batching_with_sse_subscriptions(
             subscription=Subscription,
             extensions=[MyExtension],
             config=StrawberryConfig(batching_config={"max_operations": 10}),
-        )
+        ),
+        subscription_protocols=(
+            GRAPHQL_TRANSPORT_WS_PROTOCOL,
+            GRAPHQL_WS_PROTOCOL,
+            GRAPHQL_SSE_PROTOCOL,
+        ),
     )
 
     response = await http_client.post(
@@ -253,7 +270,13 @@ async def test_sse_concurrent_requests_are_independent_of_websocket_subscription
     incremental_http_client_class: type[HttpClient],
 ):
     http_client = incremental_http_client_class(
-        schema=schema, max_subscriptions_per_connection=1
+        schema=schema,
+        max_subscriptions_per_connection=1,
+        subscription_protocols=(
+            GRAPHQL_TRANSPORT_WS_PROTOCOL,
+            GRAPHQL_WS_PROTOCOL,
+            GRAPHQL_SSE_PROTOCOL,
+        ),
     )
 
     async def run_one_subscription(message: str) -> str:
@@ -419,7 +442,14 @@ async def test_sse_subscription_reconnects_from_last_event_id(
     This verifies that the server correctly parses Last-Event-ID and starts
     event numbering from that point.
     """
-    http_client = incremental_http_client_class(schema=schema)
+    http_client = incremental_http_client_class(
+        schema=schema,
+        subscription_protocols=(
+            GRAPHQL_TRANSPORT_WS_PROTOCOL,
+            GRAPHQL_WS_PROTOCOL,
+            GRAPHQL_SSE_PROTOCOL,
+        ),
+    )
 
     response = await http_client.query(
         method="post",

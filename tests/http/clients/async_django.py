@@ -48,13 +48,23 @@ class AsyncDjangoHttpClient(DjangoHttpClient):
         allow_queries_via_get: bool = True,
         result_override: ResultOverrideFunction = None,
         multipart_uploads_enabled: bool = False,
+        sse_enabled: bool = False,
+        subscription_protocols=(),
+        **kwargs,
     ):
+        from strawberry.subscriptions import GRAPHQL_SSE_PROTOCOL
+
+        # Derive sse_enabled from subscription_protocols if not explicitly set
+        if not sse_enabled and GRAPHQL_SSE_PROTOCOL in subscription_protocols:
+            sse_enabled = True
+
         self.view = AsyncGraphQLView.as_view(
             schema=schema,
             graphql_ide=graphql_ide,
             allow_queries_via_get=allow_queries_via_get,
             result_override=result_override,
             multipart_uploads_enabled=multipart_uploads_enabled,
+            sse_enabled=sse_enabled,
         )
 
     async def _collect_streaming_content(

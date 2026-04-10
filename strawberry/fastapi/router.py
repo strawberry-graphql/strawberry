@@ -31,7 +31,11 @@ from strawberry.exceptions import InvalidCustomContext
 from strawberry.fastapi.context import BaseContext, CustomContext
 from strawberry.http.async_base_view import AsyncBaseHTTPView
 from strawberry.http.typevars import Context, RootValue
-from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
+from strawberry.subscriptions import (
+    GRAPHQL_SSE_PROTOCOL,
+    GRAPHQL_TRANSPORT_WS_PROTOCOL,
+    GRAPHQL_WS_PROTOCOL,
+)
 
 if TYPE_CHECKING:
     from collections.abc import (
@@ -188,6 +192,7 @@ class GraphQLRouter(
         self.max_subscriptions_per_connection = max_subscriptions_per_connection
         self.multipart_uploads_enabled = multipart_uploads_enabled
         self.graphql_ide = graphql_ide
+        self.sse_enabled = GRAPHQL_SSE_PROTOCOL in subscription_protocols
 
         @self.get(
             path,

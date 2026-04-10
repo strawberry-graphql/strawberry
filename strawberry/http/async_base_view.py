@@ -32,7 +32,11 @@ from strawberry.schema.exceptions import (
     CannotGetOperationTypeError,
     InvalidOperationTypeError,
 )
-from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
+from strawberry.subscriptions import (
+    GRAPHQL_SSE_PROTOCOL,
+    GRAPHQL_TRANSPORT_WS_PROTOCOL,
+    GRAPHQL_WS_PROTOCOL,
+)
 from strawberry.subscriptions.protocols.graphql_transport_ws.handlers import (
     BaseGraphQLTransportWSHandler,
 )
@@ -95,6 +99,7 @@ class AsyncBaseHTTPView(
     max_subscriptions_per_connection: int | None = 100
     sse_heartbeat_interval: float = 5.0
     sse_queue_buffer_size: int = 1
+    sse_enabled: bool = False
     request_adapter_class: Callable[[Request], AsyncHTTPRequestAdapter]
     websocket_adapter_class: Callable[
         [
@@ -164,6 +169,52 @@ class AsyncBaseHTTPView(
         self, request: WebSocketRequest, subprotocol: str | None
     ) -> WebSocketResponse: ...
 
+    @staticmethod
+    def _is_subscription_operation(
+        query: str, operation_name: str | None = None
+    ) -> bool:
+        """Check if a GraphQL query is a subscription using lightweight lexing.
+
+        Uses graphql-core's Lexer to scan only the tokens needed to determine
+        the operation type, avoiding a full AST parse. For unnamed operations,
+        this reads just 1-2 tokens. For named operations, it scans until it
+        finds the matching definition.
+        """
+        from graphql.language import Lexer, Source, TokenKind
+
+        try:
+            lexer = Lexer(Source(query))
+            token = lexer.advance()
+
+            if operation_name is None:
+                # Unnamed/first operation or shorthand query
+                if token.kind == TokenKind.BRACE_L:
+                    return False  # shorthand query: { field }
+                if token.kind == TokenKind.NAME:
+                    return token.value == "subscription"
+                return False
+
+            # Named operation: scan for matching definition
+            while token.kind != TokenKind.EOF:
+                if token.kind == TokenKind.NAME and token.value in (
+                    "query",
+                    "mutation",
+                    "subscription",
+                ):
+                    op_type_value = token.value
+                    next_token = lexer.advance()
+                    if (
+                        next_token.kind == TokenKind.NAME
+                        and next_token.value == operation_name
+                    ):
+                        return op_type_value == "subscription"
+                token = lexer.advance()
+        except Exception:  # noqa: BLE001
+            # If lexing fails, let the normal execution path handle the error
+            pass
+
+        return False
+
     async def execute_operation(
         self,
         request: Request,
@@ -213,6 +264,23 @@ class AsyncBaseHTTPView(
         ):
             if not request_data.query:
                 raise HTTPException(400, 'Request data is missing a "query" value')
+
+            # For SSE, only route subscriptions through subscribe().
+            # Queries and mutations should use the normal execution path.
+            if (
+                request_data.protocol == GraphQLSubscriptionProtocol.GRAPHQL_SSE
+                and not self._is_subscription_operation(
+                    request_data.query, request_data.operation_name
+                )
+            ):
+                return await self.execute_single(
+                    request=request,
+                    request_adapter=request_adapter,
+                    sub_response=sub_response,
+                    context=context,
+                    root_value=root_value,
+                    request_data=request_data,
+                )
 
             return await self.schema.subscribe(
                 request_data.query,
@@ -814,7 +882,7 @@ class AsyncBaseHTTPView(
         protocol: GraphQLSubscriptionProtocol
         if self._is_multipart_subscriptions(*parse_content_type(accept)):
             protocol = GraphQLSubscriptionProtocol.MULTIPART_SUBSCRIPTION
-        elif self._is_sse_subscription(accept):
+        elif self.sse_enabled and self._is_sse_subscription(accept):
             protocol = GraphQLSubscriptionProtocol.GRAPHQL_SSE
         else:
             protocol = GraphQLSubscriptionProtocol.HTTP

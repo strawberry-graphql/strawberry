@@ -13,6 +13,11 @@ from typing import Any
 import pytest
 
 import strawberry
+from strawberry.subscriptions import (
+    GRAPHQL_SSE_PROTOCOL,
+    GRAPHQL_TRANSPORT_WS_PROTOCOL,
+    GRAPHQL_WS_PROTOCOL,
+)
 from tests.http.clients.base import HttpClient
 from tests.views.schema import schema
 
@@ -58,7 +63,14 @@ def http_client(http_client_class: type[HttpClient]) -> HttpClient:
         if http_client_class is ChaliceHttpClient:
             pytest.skip(reason="ChaliceHttpClient doesn't support SSE subscriptions")
 
-    return http_client_class(schema=schema)
+    return http_client_class(
+        schema=schema,
+        subscription_protocols=(
+            GRAPHQL_TRANSPORT_WS_PROTOCOL,
+            GRAPHQL_WS_PROTOCOL,
+            GRAPHQL_SSE_PROTOCOL,
+        ),
+    )
 
 
 # ---------------------------------------------------------------------------

@@ -6,6 +6,11 @@ import pytest
 
 import strawberry
 from strawberry.extensions import SchemaExtension
+from strawberry.subscriptions import (
+    GRAPHQL_SSE_PROTOCOL,
+    GRAPHQL_TRANSPORT_WS_PROTOCOL,
+    GRAPHQL_WS_PROTOCOL,
+)
 from tests.http.clients.base import HttpClient
 from tests.views.schema import schema
 
@@ -58,7 +63,14 @@ def http_client(http_client_class: type[HttpClient]) -> HttpClient:
         if http_client_class is ChaliceHttpClient:
             pytest.skip(reason="ChaliceHttpClient doesn't support SSE subscriptions")
 
-    return http_client_class(schema=schema)
+    return http_client_class(
+        schema=schema,
+        subscription_protocols=(
+            GRAPHQL_TRANSPORT_WS_PROTOCOL,
+            GRAPHQL_WS_PROTOCOL,
+            GRAPHQL_SSE_PROTOCOL,
+        ),
+    )
 
 
 async def test_sse_subscription_with_federation_schema(
@@ -95,7 +107,14 @@ async def test_sse_subscription_with_federation_schema(
 
     fed_schema = FederationSchema(query=Query, subscription=Subscription)
 
-    http_client = incremental_http_client_class(schema=fed_schema)
+    http_client = incremental_http_client_class(
+        schema=fed_schema,
+        subscription_protocols=(
+            GRAPHQL_TRANSPORT_WS_PROTOCOL,
+            GRAPHQL_WS_PROTOCOL,
+            GRAPHQL_SSE_PROTOCOL,
+        ),
+    )
 
     response = await http_client.query(
         method="post",
@@ -153,7 +172,14 @@ async def test_sse_subscription_with_federation_and_entities(
 
     fed_schema = FederationSchema(query=Query, subscription=Subscription)
 
-    http_client = incremental_http_client_class(schema=fed_schema)
+    http_client = incremental_http_client_class(
+        schema=fed_schema,
+        subscription_protocols=(
+            GRAPHQL_TRANSPORT_WS_PROTOCOL,
+            GRAPHQL_WS_PROTOCOL,
+            GRAPHQL_SSE_PROTOCOL,
+        ),
+    )
 
     response = await http_client.query(
         method="post",
@@ -210,7 +236,14 @@ async def test_sse_subscription_with_extension(
         extensions=[TestExtension],
     )
 
-    http_client = incremental_http_client_class(schema=test_schema)
+    http_client = incremental_http_client_class(
+        schema=test_schema,
+        subscription_protocols=(
+            GRAPHQL_TRANSPORT_WS_PROTOCOL,
+            GRAPHQL_WS_PROTOCOL,
+            GRAPHQL_SSE_PROTOCOL,
+        ),
+    )
 
     response = await http_client.query(
         method="post",
@@ -246,7 +279,14 @@ async def test_sse_subscription_reconnects_from_last_event_id(
     This verifies the server correctly parses Last-Event-ID and continues
     event numbering, allowing clients to resume after connection drops.
     """
-    http_client = incremental_http_client_class(schema=schema)
+    http_client = incremental_http_client_class(
+        schema=schema,
+        subscription_protocols=(
+            GRAPHQL_TRANSPORT_WS_PROTOCOL,
+            GRAPHQL_WS_PROTOCOL,
+            GRAPHQL_SSE_PROTOCOL,
+        ),
+    )
 
     response = await http_client.query(
         method="post",
@@ -308,7 +348,14 @@ async def test_sse_subscription_full_reconnection_flow(
         extensions=[CountingExtension],
     )
 
-    http_client = incremental_http_client_class(schema=test_schema)
+    http_client = incremental_http_client_class(
+        schema=test_schema,
+        subscription_protocols=(
+            GRAPHQL_TRANSPORT_WS_PROTOCOL,
+            GRAPHQL_WS_PROTOCOL,
+            GRAPHQL_SSE_PROTOCOL,
+        ),
+    )
 
     response1 = await http_client.query(
         method="post",
