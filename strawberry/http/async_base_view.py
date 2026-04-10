@@ -209,8 +209,11 @@ class AsyncBaseHTTPView(
                     ):
                         return op_type_value == "subscription"
                 token = lexer.advance()
-        except Exception:  # noqa: BLE001
-            # If lexing fails, let the normal execution path handle the error
+        except (GraphQLError, TypeError, ValueError):
+            # GraphQLError (including GraphQLSyntaxError) for malformed queries,
+            # TypeError/ValueError for invalid input types.
+            # If we can't determine the type, default to non-subscription
+            # and let the normal execution path handle the error properly.
             pass
 
         return False
