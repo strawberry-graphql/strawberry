@@ -218,7 +218,9 @@ class StrawberryGraphQLCoreExecutionContext(GraphQLExecutionContext):
         awaitable_fields: list[str] = []
         for response_name, field_nodes in fields.items():
             field_path = Path(path, response_name, parent_type.name)
-            result = self.execute_field(parent_type, source_value, field_nodes, field_path)
+            result = self.execute_field(
+                parent_type, source_value, field_nodes, field_path
+            )
             if result is not Undefined:
                 results[response_name] = result
                 if is_awaitable(result):
