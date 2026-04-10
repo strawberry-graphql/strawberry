@@ -57,6 +57,14 @@ class AsyncDjangoHttpClient(DjangoHttpClient):
             multipart_uploads_enabled=multipart_uploads_enabled,
         )
 
+    async def _collect_streaming_content(
+        self, streaming_content: AsyncIterable[bytes]
+    ) -> bytes:
+        chunks: list[bytes] = []
+        async for chunk in streaming_content:
+            chunks.append(chunk)
+        return b"".join(chunks)
+
     async def _do_request(self, request: HttpRequest) -> Response:
         try:
             response = await self.view(request)
@@ -69,12 +77,14 @@ class AsyncDjangoHttpClient(DjangoHttpClient):
                 headers={},
             )
 
-        data = (
-            response.streaming_content
-            if isinstance(response, StreamingHttpResponse)
-            and isinstance(response.streaming_content, AsyncIterable)
-            else response.content
-        )
+        if isinstance(response, StreamingHttpResponse) and isinstance(
+            response.streaming_content, AsyncIterable
+        ):
+            data = await self._collect_streaming_content(
+                response.streaming_content
+            )
+        else:
+            data = response.content
 
         return Response(
             status_code=response.status_code,
