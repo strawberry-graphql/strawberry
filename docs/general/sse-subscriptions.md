@@ -11,7 +11,9 @@ WebSocket subscriptions that works over standard HTTP connections.
 
 ## Spec Compliance
 
-> [!IMPORTANT] The HTTP `PUT` reservation system for [**Single Connection Mode**](https://github.com/enisdenjo/graphql-sse/blob/master/PROTOCOL.md#single-connection-mode) is currently unsupported.
+> [!IMPORTANT] The HTTP `PUT` reservation system for
+> [**Single Connection Mode**](https://github.com/enisdenjo/graphql-sse/blob/master/PROTOCOL.md#single-connection-mode)
+> is currently unsupported.
 
 <Warning>
 
