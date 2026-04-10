@@ -339,10 +339,11 @@ async def test_e2e_sse_extensions_present_in_every_event(http_client: HttpClient
 async def test_e2e_sse_non_subscription_query_returns_200(
     http_client: HttpClient,
 ):
-    """End-to-end: a regular query (not subscription) sent with
+    """End-to-end: a regular query or mutation (not subscription) sent with
     Accept: text/event-stream should still return a 200 response.
 
-    The server processes the query normally even with SSE headers.
+    The server processes the request normally even with SSE headers,
+    returning a standard JSON response rather than an SSE stream.
     """
     response = await http_client.query(
         method="post",
@@ -353,8 +354,20 @@ async def test_e2e_sse_non_subscription_query_returns_200(
         },
     )
 
-    # Regular query should still return 200
     assert response.status_code == 200
+    assert response.json["data"]["hello"] == "Hello world"
+
+    mutation_response = await http_client.query(
+        method="post",
+        query='mutation { echo(stringToEcho: "test") }',
+        headers={
+            "accept": "text/event-stream",
+            "content-type": "application/json",
+        },
+    )
+
+    assert mutation_response.status_code == 200
+    assert mutation_response.json["data"]["echo"] == "test"
 
 
 async def test_e2e_sse_reconnection_with_last_event_id(http_client: HttpClient):
