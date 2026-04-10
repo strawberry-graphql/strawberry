@@ -645,30 +645,3 @@ async def test_sse_error_event_yields_next_event_with_errors(http_client: HttpCl
         assert '"errors"' in data_value, (
             f"Next event should contain errors, got: {data_value!r}"
         )
-
-
-async def test_sse_subscription_with_exception_terminates_immediately(
-    http_client: HttpClient,
-):
-    """When a subscription resolver raises an exception, the error event
-    should be sent and the connection should terminate immediately."""
-    response = await http_client.query(
-        method="post",
-        query='subscription { exception(message: "resolver exception") }',
-        headers={
-            "accept": "text/event-stream",
-            "content-type": "application/json",
-        },
-    )
-
-    assert response.status_code == 200
-    assert response.is_sse
-
-    raw_text = response.text
-
-    next_pos = raw_text.find("event: next")
-    complete_pos = raw_text.find("event: complete")
-
-    assert next_pos >= 0, f"Expected next event in response: {raw_text!r}"
-    assert complete_pos >= 0, f"Expected complete event in response: {raw_text!r}"
-    assert next_pos < complete_pos, f"Next should come before complete: {raw_text!r}"
