@@ -896,7 +896,7 @@ class AsyncBaseHTTPView(
                     await heartbeat_task
 
             try:
-                while not task.done():
+                while True:
                     raised, done, data = await queue.get()
 
                     if done:

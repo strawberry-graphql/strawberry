@@ -544,6 +544,68 @@ async def test_sse_next_event_has_data_field(http_client: HttpClient):
     assert data_value.startswith("{"), (
         f"Next event 'data:' field must contain JSON, got: {data_value!r}"
     )
+    assert '"payload"' in data_value, (
+        f"Next event should contain payload, got: {data_value!r}"
+    )
+
+
+async def test_sse_subscription_with_exception_terminates_immediately(
+    http_client: HttpClient,
+):
+    """When a subscription resolver raises an exception, it should be
+    sent as a 'next' event with errors and the connection should terminate."""
+    response = await http_client.query(
+        method="post",
+        query='subscription { exception(message: "resolver exception") }',
+        headers={
+            "accept": "text/event-stream",
+            "content-type": "application/json",
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.is_sse
+
+    events = [(event, data) async for event, data in response.streaming_sse()]
+    next_events = [d for e, d in events if e == "next"]
+    complete_events = [e for e, _ in events if e == "complete"]
+
+    assert len(next_events) == 1, f"Expected 1 next event, got: {events}"
+    payload = next_events[0]["payload"]
+    assert payload["data"] is None
+    assert "errors" in payload
+    assert "resolver exception" in str(payload["errors"])
+
+    assert "complete" in complete_events, (
+        f"Expected complete event after next, got: {events}"
+    )
+
+
+async def test_sse_subscription_with_exception_sends_error_before_complete(
+    http_client: HttpClient,
+):
+    """When a subscription resolver raises immediately, the error should be
+    sent before the complete event."""
+    response = await http_client.query(
+        method="post",
+        query='subscription { exception(message: "immediate error") }',
+        headers={
+            "accept": "text/event-stream",
+            "content-type": "application/json",
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.is_sse
+
+    raw_text = response.text
+
+    next_pos = raw_text.find("event: next")
+    complete_pos = raw_text.find("event: complete")
+
+    assert next_pos >= 0, f"Expected next event in response: {raw_text!r}"
+    assert complete_pos >= 0, f"Expected complete event in response: {raw_text!r}"
+    assert next_pos < complete_pos, f"Next should come before complete: {raw_text!r}"
 
 
 async def test_sse_error_event_yields_next_event_with_errors(http_client: HttpClient):
@@ -583,3 +645,30 @@ async def test_sse_error_event_yields_next_event_with_errors(http_client: HttpCl
         assert '"errors"' in data_value, (
             f"Next event should contain errors, got: {data_value!r}"
         )
+
+
+async def test_sse_subscription_with_exception_terminates_immediately(
+    http_client: HttpClient,
+):
+    """When a subscription resolver raises an exception, the error event
+    should be sent and the connection should terminate immediately."""
+    response = await http_client.query(
+        method="post",
+        query='subscription { exception(message: "resolver exception") }',
+        headers={
+            "accept": "text/event-stream",
+            "content-type": "application/json",
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.is_sse
+
+    raw_text = response.text
+
+    next_pos = raw_text.find("event: next")
+    complete_pos = raw_text.find("event: complete")
+
+    assert next_pos >= 0, f"Expected next event in response: {raw_text!r}"
+    assert complete_pos >= 0, f"Expected complete event in response: {raw_text!r}"
+    assert next_pos < complete_pos, f"Next should come before complete: {raw_text!r}"
