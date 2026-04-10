@@ -27,6 +27,15 @@ The implementation supports multiple response formats:
 
 ## Technical Details
 
+Explicitly requires setting `GRAPHQL_SSE_PROTOCOL`
+
+```
+    subscription_protocols=[
+        GRAPHQL_TRANSPORT_WS_PROTOCOL,
+        GRAPHQL_SSE_PROTOCOL,
+    ]
+```
+
 ### Event Types
 
 The implementation emits the following event types as defined in the graphql-transport-ws specification:
