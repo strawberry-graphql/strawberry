@@ -31,7 +31,11 @@ from strawberry.http.typevars import (
     Context,
     RootValue,
 )
-from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
+from strawberry.subscriptions import (
+    GRAPHQL_SSE_PROTOCOL,
+    GRAPHQL_TRANSPORT_WS_PROTOCOL,
+    GRAPHQL_WS_PROTOCOL,
+)
 
 if TYPE_CHECKING:
     from collections.abc import (
@@ -125,6 +129,7 @@ class GraphQL(
         self.multipart_uploads_enabled = multipart_uploads_enabled
         self.max_subscriptions_per_connection = max_subscriptions_per_connection
         self.graphql_ide = graphql_ide
+        self.sse_enabled = GRAPHQL_SSE_PROTOCOL in subscription_protocols
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         if scope["type"] == "http":

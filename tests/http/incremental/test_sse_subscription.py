@@ -5,6 +5,11 @@ import pytest
 
 import strawberry
 from strawberry.schema.config import StrawberryConfig
+from strawberry.subscriptions import (
+    GRAPHQL_SSE_PROTOCOL,
+    GRAPHQL_TRANSPORT_WS_PROTOCOL,
+    GRAPHQL_WS_PROTOCOL,
+)
 from tests.http.clients.base import HttpClient
 from tests.views.schema import Mutation, MyExtension, Query, Subscription, schema
 
@@ -50,7 +55,20 @@ def http_client(http_client_class: type[HttpClient]) -> HttpClient:
         if http_client_class is ChaliceHttpClient:
             pytest.skip(reason="ChaliceHttpClient doesn't support SSE subscriptions")
 
-    return http_client_class(schema=schema)
+    with contextlib.suppress(ImportError):
+        from tests.http.clients.sanic import SanicHttpClient
+
+        if http_client_class is SanicHttpClient:
+            pytest.skip(reason="SanicHttpClient doesn't support SSE subscriptions")
+
+    return http_client_class(
+        schema=schema,
+        subscription_protocols=(
+            GRAPHQL_TRANSPORT_WS_PROTOCOL,
+            GRAPHQL_WS_PROTOCOL,
+            GRAPHQL_SSE_PROTOCOL,
+        ),
+    )
 
 
 async def test_sse_subscription(http_client: HttpClient):
@@ -132,7 +150,12 @@ async def test_returns_error_when_trying_to_use_batching_with_sse_subscriptions(
             subscription=Subscription,
             extensions=[MyExtension],
             config=StrawberryConfig(batching_config={"max_operations": 10}),
-        )
+        ),
+        subscription_protocols=(
+            GRAPHQL_TRANSPORT_WS_PROTOCOL,
+            GRAPHQL_WS_PROTOCOL,
+            GRAPHQL_SSE_PROTOCOL,
+        ),
     )
 
     response = await http_client.post(
@@ -253,7 +276,13 @@ async def test_sse_concurrent_requests_are_independent_of_websocket_subscription
     incremental_http_client_class: type[HttpClient],
 ):
     http_client = incremental_http_client_class(
-        schema=schema, max_subscriptions_per_connection=1
+        schema=schema,
+        max_subscriptions_per_connection=1,
+        subscription_protocols=(
+            GRAPHQL_TRANSPORT_WS_PROTOCOL,
+            GRAPHQL_WS_PROTOCOL,
+            GRAPHQL_SSE_PROTOCOL,
+        ),
     )
 
     async def run_one_subscription(message: str) -> str:
@@ -359,7 +388,7 @@ async def test_sse_subscription_with_large_payload(http_client: HttpClient):
     large_data = {"nested": {"deep": {"value": "x" * 1000}}}
     response = await http_client.query(
         method="post",
-        query="subscription { largePayload(data: $data) }",
+        query="subscription LargePayload($data: JSON!) { largePayload(data: $data) }",
         variables={"data": large_data},
         headers={
             "accept": "text/event-stream",
@@ -374,8 +403,12 @@ async def test_sse_subscription_with_large_payload(http_client: HttpClient):
     next_events = [d for e, d in events if e == "next"]
     complete_events = [e for e, _ in events if e == "complete"]
 
-    assert len(next_events) >= 1
+    assert len(next_events) == 1, f"Expected 1 next event, got {len(next_events)}"
     assert len(complete_events) == 1
+
+    # Verify the large payload was echoed back correctly
+    payload_data = next_events[0]["payload"]["data"]["largePayload"]
+    assert payload_data["nested"]["deep"]["value"] == "x" * 1000
 
 
 async def test_sse_subscription_last_event_id_support(http_client: HttpClient):
@@ -415,7 +448,14 @@ async def test_sse_subscription_reconnects_from_last_event_id(
     This verifies that the server correctly parses Last-Event-ID and starts
     event numbering from that point.
     """
-    http_client = incremental_http_client_class(schema=schema)
+    http_client = incremental_http_client_class(
+        schema=schema,
+        subscription_protocols=(
+            GRAPHQL_TRANSPORT_WS_PROTOCOL,
+            GRAPHQL_WS_PROTOCOL,
+            GRAPHQL_SSE_PROTOCOL,
+        ),
+    )
 
     response = await http_client.query(
         method="post",

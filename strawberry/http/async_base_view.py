@@ -2,6 +2,7 @@ import abc
 import asyncio
 import contextlib
 import json
+import logging
 from collections.abc import AsyncGenerator, Callable, Mapping
 from datetime import timedelta
 from typing import (
@@ -27,12 +28,18 @@ from strawberry.http.ides import GraphQL_IDE
 from strawberry.schema._graphql_core import (
     GraphQLIncrementalExecutionResults,
 )
+
+_sse_http1_warning_logged = False
 from strawberry.schema.base import BaseSchema
 from strawberry.schema.exceptions import (
     CannotGetOperationTypeError,
     InvalidOperationTypeError,
 )
-from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
+from strawberry.subscriptions import (
+    GRAPHQL_SSE_PROTOCOL,
+    GRAPHQL_TRANSPORT_WS_PROTOCOL,
+    GRAPHQL_WS_PROTOCOL,
+)
 from strawberry.subscriptions.protocols.graphql_transport_ws.handlers import (
     BaseGraphQLTransportWSHandler,
 )
@@ -95,6 +102,7 @@ class AsyncBaseHTTPView(
     max_subscriptions_per_connection: int | None = 100
     sse_heartbeat_interval: float = 5.0
     sse_queue_buffer_size: int = 1
+    sse_enabled: bool = False
     request_adapter_class: Callable[[Request], AsyncHTTPRequestAdapter]
     websocket_adapter_class: Callable[
         [
@@ -164,6 +172,55 @@ class AsyncBaseHTTPView(
         self, request: WebSocketRequest, subprotocol: str | None
     ) -> WebSocketResponse: ...
 
+    @staticmethod
+    def _is_subscription_operation(
+        query: str, operation_name: str | None = None
+    ) -> bool:
+        """Check if a GraphQL query is a subscription using lightweight lexing.
+
+        Uses graphql-core's Lexer to scan only the tokens needed to determine
+        the operation type, avoiding a full AST parse. For unnamed operations,
+        this reads just 1-2 tokens. For named operations, it scans until it
+        finds the matching definition.
+        """
+        from graphql.language import Lexer, Source, TokenKind
+
+        try:
+            lexer = Lexer(Source(query))
+            token = lexer.advance()
+
+            if operation_name is None:
+                # Unnamed/first operation or shorthand query
+                if token.kind == TokenKind.BRACE_L:
+                    return False  # shorthand query: { field }
+                if token.kind == TokenKind.NAME:
+                    return token.value == "subscription"
+                return False
+
+            # Named operation: scan for matching definition
+            while token.kind != TokenKind.EOF:
+                if token.kind == TokenKind.NAME and token.value in (
+                    "query",
+                    "mutation",
+                    "subscription",
+                ):
+                    op_type_value = token.value
+                    next_token = lexer.advance()
+                    if (
+                        next_token.kind == TokenKind.NAME
+                        and next_token.value == operation_name
+                    ):
+                        return op_type_value == "subscription"
+                token = lexer.advance()
+        except (GraphQLError, TypeError, ValueError):
+            # GraphQLError (including GraphQLSyntaxError) for malformed queries,
+            # TypeError/ValueError for invalid input types.
+            # If we can't determine the type, default to non-subscription
+            # and let the normal execution path handle the error properly.
+            pass
+
+        return False
+
     async def execute_operation(
         self,
         request: Request,
@@ -213,6 +270,23 @@ class AsyncBaseHTTPView(
         ):
             if not request_data.query:
                 raise HTTPException(400, 'Request data is missing a "query" value')
+
+            # For SSE, only route subscriptions through subscribe().
+            # Queries and mutations should use the normal execution path.
+            if (
+                request_data.protocol == GraphQLSubscriptionProtocol.GRAPHQL_SSE
+                and not self._is_subscription_operation(
+                    request_data.query, request_data.operation_name
+                )
+            ):
+                return await self.execute_single(
+                    request=request,
+                    request_adapter=request_adapter,
+                    sub_response=sub_response,
+                    context=context,
+                    root_value=root_value,
+                    request_data=request_data,
+                )
 
             return await self.schema.subscribe(
                 request_data.query,
@@ -388,6 +462,7 @@ class AsyncBaseHTTPView(
             }.get("accept", "")
 
             if self._is_sse_subscription(accept):
+                self._warn_if_http1_for_sse(request)
                 last_event_id = self._get_last_event_id(request_adapter)
                 try:
                     await self.on_sse_connect(context)
@@ -647,6 +722,51 @@ class AsyncBaseHTTPView(
 
         return self._stream_sse_with_heartbeat(stream)
 
+    def _get_http_version(self, request: Request) -> str | None:
+        """Extract HTTP version from the request.
+
+        For ASGI apps (Starlette, FastAPI, etc.), the request has a scope dict
+        containing the HTTP version as a string (e.g., "1.1", "2.0").
+
+        For aiohttp, the request has a version attribute which is a tuple
+        (e.g., (1, 1) for HTTP/1.1, (2, 0) for HTTP/2).
+
+        Returns None if the HTTP version cannot be determined.
+        """
+        if hasattr(request, "scope") and isinstance(request.scope, dict):
+            return request.scope.get("http_version")
+        if hasattr(request, "version"):
+            version = request.version
+            if isinstance(version, tuple) and len(version) >= 1:
+                return f"{version[0]}.{version[1] if len(version) > 1 else 0}"
+        return None
+
+    def _warn_if_http1_for_sse(self, request: Request) -> None:
+        """Log a warning if SSE is being used over HTTP/1.x.
+
+        This warning is only shown once per process to avoid log spam.
+        HTTP/1.x connections suffer from head-of-line blocking, which can cause
+        performance issues when SSE subscriptions share connections with other
+        requests. HTTP/2 is strongly recommended for SSE.
+        """
+        global _sse_http1_warning_logged
+        if _sse_http1_warning_logged:
+            return
+
+        http_version = self._get_http_version(request)
+        if http_version and http_version.startswith("1."):
+            _sse_http1_warning_logged = True
+            logger = logging.getLogger("strawberry.http")
+            logger.warning(
+                "SSE subscription over HTTP/%s detected. "
+                "HTTP/1.x connections suffer from head-of-line blocking, which can "
+                "affect other requests sharing this connection. This warning will not "
+                "be shown again. Consider using HTTP/2 or switching to "
+                "graphql-transport-ws for subscriptions. "
+                "See https://strawberry.rocks/docs/general/sse-subscriptions#http2-is-strongly-recommended-for-sse-subscriptions",
+                http_version,
+            )
+
     def _get_last_event_id(
         self, request_adapter: AsyncHTTPRequestAdapter
     ) -> int | None:
@@ -814,7 +934,7 @@ class AsyncBaseHTTPView(
         protocol: GraphQLSubscriptionProtocol
         if self._is_multipart_subscriptions(*parse_content_type(accept)):
             protocol = GraphQLSubscriptionProtocol.MULTIPART_SUBSCRIPTION
-        elif self._is_sse_subscription(accept):
+        elif self.sse_enabled and self._is_sse_subscription(accept):
             protocol = GraphQLSubscriptionProtocol.GRAPHQL_SSE
         else:
             protocol = GraphQLSubscriptionProtocol.HTTP

@@ -6,6 +6,11 @@ import pytest
 
 import strawberry
 from strawberry.exceptions import ConnectionRejectionError
+from strawberry.subscriptions import (
+    GRAPHQL_SSE_PROTOCOL,
+    GRAPHQL_TRANSPORT_WS_PROTOCOL,
+    GRAPHQL_WS_PROTOCOL,
+)
 from tests.http.clients.base import HttpClient
 from tests.views.schema import Query, Subscription
 
@@ -51,8 +56,19 @@ def http_client(http_client_class: type[HttpClient]) -> HttpClient:
         if http_client_class is ChaliceHttpClient:
             pytest.skip(reason="ChaliceHttpClient doesn't support SSE subscriptions")
 
+    with contextlib.suppress(ImportError):
+        from tests.http.clients.sanic import SanicHttpClient
+
+        if http_client_class is SanicHttpClient:
+            pytest.skip(reason="SanicHttpClient doesn't support SSE subscriptions")
+
     return http_client_class(
-        schema=strawberry.Schema(query=Query, subscription=Subscription)
+        schema=strawberry.Schema(query=Query, subscription=Subscription),
+        subscription_protocols=(
+            GRAPHQL_TRANSPORT_WS_PROTOCOL,
+            GRAPHQL_WS_PROTOCOL,
+            GRAPHQL_SSE_PROTOCOL,
+        ),
     )
 
 
@@ -66,7 +82,12 @@ def patchable_http_client(http_client_class: type[HttpClient]) -> HttpClient | N
             pytest.skip("Only AsgiHttpClient exposes view for patching")
 
         return http_client_class(
-            schema=strawberry.Schema(query=Query, subscription=Subscription)
+            schema=strawberry.Schema(query=Query, subscription=Subscription),
+            subscription_protocols=(
+                GRAPHQL_TRANSPORT_WS_PROTOCOL,
+                GRAPHQL_WS_PROTOCOL,
+                GRAPHQL_SSE_PROTOCOL,
+            ),
         )
 
     pytest.skip("AsgiHttpClient not available")

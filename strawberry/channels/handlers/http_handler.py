@@ -24,6 +24,10 @@ from strawberry.http.async_base_view import AsyncBaseHTTPView
 from strawberry.http.sync_base_view import SyncBaseHTTPView
 from strawberry.http.temporal_response import TemporalResponse
 from strawberry.http.typevars import Context, RootValue
+from strawberry.subscriptions import (
+    GRAPHQL_TRANSPORT_WS_PROTOCOL,
+    GRAPHQL_WS_PROTOCOL,
+)
 from strawberry.types.unset import UNSET
 
 from .base import ChannelsConsumer
@@ -188,12 +192,21 @@ class BaseGraphQLHTTPConsumer(ChannelsConsumer, AsyncHttpConsumer):
         graphql_ide: GraphQL_IDE | None = "graphiql",
         allow_queries_via_get: bool = True,
         multipart_uploads_enabled: bool = False,
+        subscription_protocols: tuple[str, ...] = (
+            GRAPHQL_TRANSPORT_WS_PROTOCOL,
+            GRAPHQL_WS_PROTOCOL,
+        ),
         **kwargs: Any,
     ) -> None:
         self.schema = schema
         self.allow_queries_via_get = allow_queries_via_get
         self.multipart_uploads_enabled = multipart_uploads_enabled
         self.graphql_ide = graphql_ide
+        self.subscription_protocols = subscription_protocols
+
+        from strawberry.subscriptions import GRAPHQL_SSE_PROTOCOL
+
+        self.sse_enabled = GRAPHQL_SSE_PROTOCOL in subscription_protocols
 
         super().__init__(**kwargs)
 
