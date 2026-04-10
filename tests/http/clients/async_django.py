@@ -90,9 +90,7 @@ class AsyncDjangoHttpClient(DjangoHttpClient):
         if isinstance(response, StreamingHttpResponse) and isinstance(
             response.streaming_content, AsyncIterable
         ):
-            data = await self._collect_streaming_content(
-                response.streaming_content
-            )
+            data = await self._collect_streaming_content(response.streaming_content)
         else:
             data = response.content
 
