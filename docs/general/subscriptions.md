@@ -342,7 +342,8 @@ to learn more about why the newer protocol is preferred.
 
 Strawberry allows you to choose which protocols you want to accept. All
 integrations supporting subscriptions can be configured with a list of
-`subscription_protocols` to accept. By default, all protocols are accepted.
+`subscription_protocols` to accept. By default, all `WS` protocols are accepted.
+GraphQL Server Sent Events (`graphql-sse`), needs additional configuration (see below).
 
 ### AIOHTTP
 
@@ -442,6 +443,20 @@ app.add_url_rule(
     websocket=True,
 )
 ```
+
+> **Important:**  
+> To enable `SSE` (Server-Sent Events) support, you must define the appropriate protocols in your configuration.
+
+```python
+from strawberry.subscriptions import (
+    GRAPHQL_TRANSPORT_WS_PROTOCOL,
+    GRAPHQL_SSE_PROTOCOL,
+)
+
+subscription_protocols = [
+    GRAPHQL_TRANSPORT_WS_PROTOCOL,
+    GRAPHQL_SSE_PROTOCOL,
+]
 
 ## Single result operations
 
