@@ -2,6 +2,7 @@ import abc
 import asyncio
 import contextlib
 import json
+import logging
 from collections.abc import AsyncGenerator, Callable, Mapping
 from datetime import timedelta
 from typing import (
@@ -27,6 +28,8 @@ from strawberry.http.ides import GraphQL_IDE
 from strawberry.schema._graphql_core import (
     GraphQLIncrementalExecutionResults,
 )
+
+_sse_http1_warning_logged = False
 from strawberry.schema.base import BaseSchema
 from strawberry.schema.exceptions import (
     CannotGetOperationTypeError,
@@ -459,6 +462,7 @@ class AsyncBaseHTTPView(
             }.get("accept", "")
 
             if self._is_sse_subscription(accept):
+                self._warn_if_http1_for_sse(request)
                 last_event_id = self._get_last_event_id(request_adapter)
                 try:
                     await self.on_sse_connect(context)
@@ -717,6 +721,51 @@ class AsyncBaseHTTPView(
             yield self.encode_sse_event("complete", event_id=event_counter)
 
         return self._stream_sse_with_heartbeat(stream)
+
+    def _get_http_version(self, request: Request) -> str | None:
+        """Extract HTTP version from the request.
+
+        For ASGI apps (Starlette, FastAPI, etc.), the request has a scope dict
+        containing the HTTP version as a string (e.g., "1.1", "2.0").
+
+        For aiohttp, the request has a version attribute which is a tuple
+        (e.g., (1, 1) for HTTP/1.1, (2, 0) for HTTP/2).
+
+        Returns None if the HTTP version cannot be determined.
+        """
+        if hasattr(request, "scope") and isinstance(request.scope, dict):
+            return request.scope.get("http_version")
+        if hasattr(request, "version"):
+            version = request.version
+            if isinstance(version, tuple) and len(version) >= 1:
+                return f"{version[0]}.{version[1] if len(version) > 1 else 0}"
+        return None
+
+    def _warn_if_http1_for_sse(self, request: Request) -> None:
+        """Log a warning if SSE is being used over HTTP/1.x.
+
+        This warning is only shown once per process to avoid log spam.
+        HTTP/1.x connections suffer from head-of-line blocking, which can cause
+        performance issues when SSE subscriptions share connections with other
+        requests. HTTP/2 is strongly recommended for SSE.
+        """
+        global _sse_http1_warning_logged
+        if _sse_http1_warning_logged:
+            return
+
+        http_version = self._get_http_version(request)
+        if http_version and http_version.startswith("1."):
+            _sse_http1_warning_logged = True
+            logger = logging.getLogger("strawberry.http")
+            logger.warning(
+                "SSE subscription over HTTP/%s detected. "
+                "HTTP/1.x connections suffer from head-of-line blocking, which can "
+                "affect other requests sharing this connection. This warning will not "
+                "be shown again. Consider using HTTP/2 or switching to "
+                "graphql-transport-ws for subscriptions. "
+                "See https://strawberry.rocks/docs/general/sse-subscriptions#http2-is-strongly-recommended-for-sse-subscriptions",
+                http_version,
+            )
 
     def _get_last_event_id(
         self, request_adapter: AsyncHTTPRequestAdapter

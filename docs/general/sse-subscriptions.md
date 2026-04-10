@@ -9,6 +9,38 @@ Strawberry supports subscriptions over Server-Sent Events (SSE) following the
 (distinct connections mode). This provides a lightweight alternative to
 WebSocket subscriptions that works over standard HTTP connections.
 
+## Spec Compliance
+
+> [!IMPORTANT]
+> The HTTP `PUT` reservation system for [**Single Connection Mode**](https://github.com/enisdenjo/graphql-sse/blob/master/PROTOCOL.md#single-connection-mode) is currently unsupported. 
+
+<Warning>
+
+**HTTP/2 is strongly recommended for SSE subscriptions.**
+
+SSE connections over HTTP/1.1 suffer from **head-of-line blocking**, where a slow or
+stalled subscription can block all other HTTP requests on the same connection. This is
+particularly problematic for web applications where browsers limit HTTP/1.1 connections
+to 6 per domain, and a stalled SSE subscription could block page assets, API calls, or
+other critical resources.
+
+**For web applications**, HTTP/2 or HTTP/3 is strongly recommended because:
+- HTTP/2 multiplexes multiple streams over a single connection, avoiding head-of-line
+  blocking
+- Each SSE subscription runs on its own stream without affecting others
+- Modern CDNs and proxies handle HTTP/2 connections more efficiently
+
+**For backend-to-backend services**, HTTP/1.1 may be acceptable if:
+- You control the client and can manage connection pools
+- Subscriptions are short-lived
+- You have dedicated connections for SSE that don't share with other requests
+
+If you're deploying a web application, ensure your server infrastructure supports HTTP/2
+or HTTP/3 before using SSE subscriptions. Many ASGI servers (Granian, Hypercorn,
+Daphne) support HTTP/2 when configured with TLS.
+
+</Warning>
+
 ## How it works
 
 When a client sends a GraphQL subscription request with
@@ -173,3 +205,8 @@ For more details on creating custom extensions, see the
 | Proxy-friendly     | Sometimes    | Yes            | Yes           |
 | Browser support    | Good         | Limited        | Excellent     |
 | Client library     | `graphql-ws` | Apollo Client  | `graphql-sse` |
+
+## Polyfills
+
+Using a browser based EventSource call will likely call `graphql-sse` via `GET`.
+If you are looking for a `POST` polyfill we recommend [this one.](https://github.com/mpetazzoni/sse.js/)

@@ -4,9 +4,14 @@ title: Subscriptions
 
 # Subscriptions
 
-In GraphQL you can use subscriptions to stream data from a server. To enable
-this with Strawberry your server must support ASGI and websockets or use the
-AIOHTTP integration.
+In GraphQL you can use subscriptions to stream data from a server. Strawberry
+supports multiple subscription transport protocols, each with different trade-offs:
+
+| Protocol | Best For | Browser Support | HTTP/2 Compatible |
+|----------|----------|-----------------|-------------------|
+| [WebSocket](subscriptions.md#graphql-over-websocket-protocols) | Full-duplex communication | Good | Requires `wss://` |
+| [SSE](sse-subscriptions.md) | Simple streaming, fire-and-forget | Excellent | Yes (with HTTP/2) |
+| Multipart HTTP | Legacy clients | Limited | Yes |
 
 This is how you define a subscription-capable resolver:
 
@@ -441,3 +446,55 @@ correctly set up the graphql client of your choice.
 Strawberry supports single result operations out of the box when the
 `graphql-transport-ws` protocol is enabled. Single result operations are normal
 queries and mutations, so there is no need to adjust any resolvers.
+
+## Choosing a Subscription Transport
+
+Strawberry supports three subscription transports. Here's when to use each:
+
+### WebSocket (`graphql-ws` or `graphql-transport-ws`)
+
+**Use WebSocket when you need:**
+- Bidirectional communication (server can push arbitrary messages to client)
+- Long-lived connections with many concurrent subscriptions
+- Subscriptions that may send messages in both directions
+- Maximum browser compatibility (works in all browsers, including older ones)
+
+**Considerations:**
+- Requires WebSocket support on your server and proxy infrastructure
+- Some corporate proxies and firewalls block WebSocket connections
+- Authentication requires connection init params (headers not supported in browsers)
+
+### SSE (Server-Sent Events)
+
+**Use SSE when you need:**
+- Simple unidirectional streaming from server to client
+- Better browser support than WebSocket (native EventSource API)
+- Works through most HTTP proxies
+- Quick integration without WebSocket infrastructure
+- Better security from malicious clients
+- Can tolerate some disconnects
+
+**Important considerations:**
+- SSE is HTTP/1.1 based and suffers from head-of-line blocking on HTTP/1.1
+  connections. **HTTP/2 is strongly recommended** for web applications to avoid
+  blocking other resources (see [SSE Subscriptions](sse-subscriptions.md#http2-is-strongly-recommended-for-sse-subscriptions))
+- Not suitable for mobile apps or services that need bidirectional communication
+- Longer connection setup time compared to WebSocket
+
+**See the [SSE Subscriptions](sse-subscriptions.md) guide for full details.**
+
+### Multipart HTTP
+
+**Use Multipart when you need:**
+- Compatibility with Apollo Client's multipart subscription support
+- Streaming responses over HTTP `POST` without WebSocket or SSE
+
+**Considerations:**
+- Limited client library support
+- More complex connection management
+
+For most modern applications, we recommend:
+
+1. **Web/Mobile apps with complex real-time needs**: Use WebSocket with `graphql-transport-ws`
+2. **Simple streaming dashboards**: Use SSE with HTTP/2 only
+3. **Mobile apps**: Either Websocket/Multipart
