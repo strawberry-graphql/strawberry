@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import warnings
-from asyncio import ensure_future
+from asyncio import ensure_future, gather
 from collections.abc import AsyncGenerator, AsyncIterator, Awaitable, Callable, Iterable
 from functools import cached_property, lru_cache
 from inspect import isawaitable
@@ -33,6 +33,7 @@ from graphql import (
     validate_schema,
 )
 from graphql.execution.middleware import MiddlewareManager
+from graphql.pyutils import Path
 from graphql.type.directives import specified_directives
 from graphql.validation import validate
 
@@ -202,6 +203,47 @@ class StrawberryGraphQLCoreExecutionContext(GraphQLExecutionContext):
                 self.is_awaitable,
                 self.operation_extensions,
             )
+
+    def execute_fields(
+        self,
+        parent_type: GraphQLObjectType,
+        source_value: Any,
+        path: Path | None,
+        fields: dict,
+    ) -> Any:
+        from graphql.pyutils import Undefined
+
+        results: dict = {}
+        is_awaitable = self.is_awaitable
+        awaitable_fields: list[str] = []
+        for response_name, field_nodes in fields.items():
+            field_path = Path(path, response_name, parent_type.name)
+            result = self.execute_field(parent_type, source_value, field_nodes, field_path)
+            if result is not Undefined:
+                results[response_name] = result
+                if is_awaitable(result):
+                    awaitable_fields.append(response_name)
+
+        if not awaitable_fields:
+            return results
+
+        async def get_results() -> dict:
+            settled = await gather(
+                *(results[field] for field in awaitable_fields),
+                return_exceptions=True,
+            )
+            first_exc: BaseException | None = None
+            for field_name, field_result in zip(awaitable_fields, settled):
+                if isinstance(field_result, BaseException):
+                    if first_exc is None:
+                        first_exc = field_result
+                else:
+                    results[field_name] = field_result
+            if first_exc is not None:
+                raise first_exc
+            return results
+
+        return get_results()
 
 
 class Schema(BaseSchema):
