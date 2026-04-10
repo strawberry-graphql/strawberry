@@ -63,6 +63,12 @@ def http_client(http_client_class: type[HttpClient]) -> HttpClient:
         if http_client_class is ChaliceHttpClient:
             pytest.skip(reason="ChaliceHttpClient doesn't support SSE subscriptions")
 
+    with contextlib.suppress(ImportError):
+        from tests.http.clients.sanic import SanicHttpClient
+
+        if http_client_class is SanicHttpClient:
+            pytest.skip(reason="SanicHttpClient doesn't support SSE subscriptions")
+
     return http_client_class(
         schema=schema,
         subscription_protocols=(

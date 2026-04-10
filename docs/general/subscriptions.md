@@ -13,6 +13,16 @@ supports multiple subscription transport protocols, each with different trade-of
 | [SSE](sse-subscriptions.md) | Simple streaming, fire-and-forget | Excellent | Yes (with HTTP/2) |
 | Multipart HTTP | Legacy clients | Limited | Yes |
 
+#### WebSocket Support (by the view, not HTTP client)
+
+| Framework | WebSocket | Notes |
+|-----------|-----------|-------|
+| Django | ❌ NO | `AsyncGraphQLView` raises `NotImplementedError` for websocket methods |
+| Flask | ❌ NO | `AsyncGraphQLView` raises `NotImplementedError` |
+| Sanic | ❌ NO | `GraphQLView` raises `NotImplementedError` |
+| Channels | ✅ YES | Has `GraphQLWsHandler` |
+| FastAPI, Quart, Litestar, AioHTTP, ASGI | ✅ YES | Full support |
+
 This is how you define a subscription-capable resolver:
 
 ```python

@@ -176,6 +176,7 @@ class ChannelsHttpClient(HttpClient):
             allow_queries_via_get=allow_queries_via_get,
             result_override=result_override,
             multipart_uploads_enabled=multipart_uploads_enabled,
+            subscription_protocols=subscription_protocols,
         )
 
     async def _graphql_request(
