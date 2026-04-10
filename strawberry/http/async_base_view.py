@@ -28,8 +28,6 @@ from strawberry.http.ides import GraphQL_IDE
 from strawberry.schema._graphql_core import (
     GraphQLIncrementalExecutionResults,
 )
-
-_sse_http1_warning_logged = False
 from strawberry.schema.base import BaseSchema
 from strawberry.schema.exceptions import (
     CannotGetOperationTypeError,
@@ -62,6 +60,8 @@ from .typevars import (
     WebSocketRequest,
     WebSocketResponse,
 )
+
+_sse_http1_warning_logged = False
 
 
 class AsyncWebSocketAdapter(abc.ABC):
@@ -473,8 +473,8 @@ class AsyncBaseHTTPView(
                     return await self._create_sse_error_response(
                         request,
                         sub_response,
-                        error_response.get("code", "FORBIDDEN"),
-                        error_response.get("message", "Forbidden"),
+                        str(error_response.get("code", "FORBIDDEN")),
+                        str(error_response.get("message", "Forbidden")),
                     )
                 stream = self._get_sse_stream(request, result, last_event_id)
 
@@ -580,10 +580,13 @@ class AsyncBaseHTTPView(
                     self._handle_errors(execution_result.errors, processed_result)
                 response_data.append(processed_result)
         else:
-            response_data = await self.process_result(request=request, result=result)
+            result_cast = cast("ExecutionResult", result)
+            response_data = await self.process_result(
+                request=request, result=result_cast
+            )
 
-            if result.errors:
-                self._handle_errors(result.errors, response_data)
+            if result_cast.errors:
+                self._handle_errors(result_cast.errors, response_data)
 
         return self.create_response(
             response_data=response_data, sub_response=sub_response

@@ -49,8 +49,8 @@ class AsyncDjangoHttpClient(DjangoHttpClient):
         result_override: ResultOverrideFunction = None,
         multipart_uploads_enabled: bool = False,
         sse_enabled: bool = False,
-        subscription_protocols=(),
-        **kwargs,
+        subscription_protocols: tuple[str, ...] = (),
+        **kwargs: object,
     ):
         from strawberry.subscriptions import GRAPHQL_SSE_PROTOCOL
 
@@ -70,9 +70,7 @@ class AsyncDjangoHttpClient(DjangoHttpClient):
     async def _collect_streaming_content(
         self, streaming_content: AsyncIterable[bytes]
     ) -> bytes:
-        chunks: list[bytes] = []
-        async for chunk in streaming_content:
-            chunks.append(chunk)
+        chunks = [chunk async for chunk in streaming_content]
         return b"".join(chunks)
 
     async def _do_request(self, request: HttpRequest) -> Response:

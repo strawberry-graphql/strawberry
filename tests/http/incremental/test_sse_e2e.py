@@ -504,7 +504,7 @@ async def test_e2e_sse_raw_event_format_compliance(http_client: HttpClient):
     event_blocks = []
     for block in blocks:
         lines = block.strip().split("\n")
-        non_comment_lines = [l for l in lines if not l.startswith(":")]
+        non_comment_lines = [line for line in lines if not line.startswith(":")]
         if non_comment_lines:
             event_blocks.append(block)
 
@@ -514,22 +514,22 @@ async def test_e2e_sse_raw_event_format_compliance(http_client: HttpClient):
 
     for block in event_blocks:
         lines = block.strip().split("\n")
-        non_comment_lines = [l for l in lines if not l.startswith(":")]
+        non_comment_lines = [line for line in lines if not line.startswith(":")]
 
         # Each event block must have an event type
-        event_lines = [l for l in non_comment_lines if l.startswith("event:")]
+        event_lines = [line for line in non_comment_lines if line.startswith("event:")]
         assert len(event_lines) == 1, (
             f"Each block must have exactly one event line, got: {block!r}"
         )
 
         # Each event block must have a data field
-        data_lines = [l for l in non_comment_lines if l.startswith("data:")]
+        data_lines = [line for line in non_comment_lines if line.startswith("data:")]
         assert len(data_lines) >= 1, (
             f"Each block must have at least one data line, got: {block!r}"
         )
 
         # Each event block must have an id field
-        id_lines = [l for l in non_comment_lines if l.startswith("id:")]
+        id_lines = [line for line in non_comment_lines if line.startswith("id:")]
         assert len(id_lines) == 1, (
             f"Each block must have exactly one id line, got: {block!r}"
         )
