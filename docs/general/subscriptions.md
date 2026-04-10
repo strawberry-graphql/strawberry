@@ -445,9 +445,8 @@ app.add_url_rule(
 )
 ```
 
-> **Important:**
-> To enable `SSE` (Server-Sent Events) support, you must define the appropriate
-> protocols in your configuration.
+> **Important:** To enable `SSE` (Server-Sent Events) support, you must define
+> the appropriate protocols in your configuration.
 
 ```python
 from strawberry.subscriptions import (
