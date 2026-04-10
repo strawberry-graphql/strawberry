@@ -166,7 +166,14 @@ async def test_e2e_sse_multi_event_subscription(http_client: HttpClient):
             pytest.skip("AsyncDjango doesn't support custom schemas in this fixture")
 
     # Try to create a client with the multi-event schema
-    client = type(http_client)(schema=multi_schema)
+    client = type(http_client)(
+        schema=multi_schema,
+        subscription_protocols=(
+            GRAPHQL_TRANSPORT_WS_PROTOCOL,
+            GRAPHQL_WS_PROTOCOL,
+            GRAPHQL_SSE_PROTOCOL,
+        ),
+    )
 
     response = await client.query(
         method="post",
@@ -598,7 +605,14 @@ async def test_e2e_sse_subscription_that_yields_nothing_still_completes(
         if isinstance(http_client, AsyncDjangoHttpClient):
             pytest.skip("AsyncDjango doesn't support custom schemas in this fixture")
 
-    client = type(http_client)(schema=empty_schema)
+    client = type(http_client)(
+        schema=empty_schema,
+        subscription_protocols=(
+            GRAPHQL_TRANSPORT_WS_PROTOCOL,
+            GRAPHQL_WS_PROTOCOL,
+            GRAPHQL_SSE_PROTOCOL,
+        ),
+    )
 
     response = await client.query(
         method="post",
@@ -647,3 +661,185 @@ async def test_e2e_sse_malformed_json_returns_400(http_client: HttpClient):
     )
 
     assert response.status_code == 400
+
+
+# ---------------------------------------------------------------------------
+# SSE opt-in and protocol gating tests
+# ---------------------------------------------------------------------------
+
+
+async def test_e2e_sse_disabled_returns_normal_json_for_subscription(
+    http_client_class: type[HttpClient],
+):
+    """When SSE is not enabled (GRAPHQL_SSE_PROTOCOL not in subscription_protocols),
+    a subscription request with Accept: text/event-stream should be treated as
+    a normal HTTP request, not an SSE stream."""
+    with contextlib.suppress(ImportError):
+        import django
+
+        if django.VERSION < (4, 2):
+            pytest.skip(reason="Django < 4.2 doesn't support async streaming responses")
+
+        from tests.http.clients.django import DjangoHttpClient
+
+        if http_client_class is DjangoHttpClient:
+            pytest.skip(reason="(sync) DjangoHttpClient doesn't support this test")
+
+    with contextlib.suppress(ImportError):
+        from tests.http.clients.channels import SyncChannelsHttpClient
+
+        if http_client_class is SyncChannelsHttpClient:
+            pytest.skip(reason="SyncChannelsHttpClient doesn't support this test")
+
+    with contextlib.suppress(ImportError):
+        from tests.http.clients.async_flask import AsyncFlaskHttpClient
+        from tests.http.clients.flask import FlaskHttpClient
+
+        if http_client_class is FlaskHttpClient:
+            pytest.skip(reason="FlaskHttpClient doesn't support this test")
+        if http_client_class is AsyncFlaskHttpClient:
+            pytest.xfail(reason="AsyncFlaskHttpClient doesn't support this test")
+
+    with contextlib.suppress(ImportError):
+        from tests.http.clients.chalice import ChaliceHttpClient
+
+        if http_client_class is ChaliceHttpClient:
+            pytest.skip(reason="ChaliceHttpClient doesn't support this test")
+
+    # Create client WITHOUT GRAPHQL_SSE_PROTOCOL (SSE disabled)
+    client = http_client_class(
+        schema=schema,
+        subscription_protocols=(
+            GRAPHQL_TRANSPORT_WS_PROTOCOL,
+            GRAPHQL_WS_PROTOCOL,
+        ),
+    )
+
+    # A subscription query with SSE Accept header should NOT produce SSE
+    response = await client.query(
+        method="post",
+        query='subscription { echo(message: "test", delay: 0.1) }',
+        headers={
+            "accept": "text/event-stream",
+            "content-type": "application/json",
+        },
+    )
+
+    # Without SSE enabled, this goes through the normal HTTP path
+    # which will return a normal JSON response (subscription over HTTP
+    # without SSE protocol is treated as regular request)
+    assert not response.is_sse
+
+
+async def test_e2e_sse_query_with_sse_headers_returns_json(http_client: HttpClient):
+    """When SSE is enabled but a regular query (not subscription) is sent with
+    Accept: text/event-stream, it should return a normal JSON response."""
+    response = await http_client.query(
+        method="post",
+        query="{ hello }",
+        headers={
+            "accept": "text/event-stream",
+            "content-type": "application/json",
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.json["data"]["hello"] == "Hello world"
+
+
+async def test_e2e_sse_mutation_with_sse_headers_returns_json(http_client: HttpClient):
+    """When SSE is enabled but a mutation is sent with Accept: text/event-stream,
+    it should return a normal JSON response, not an SSE stream."""
+    response = await http_client.query(
+        method="post",
+        query='mutation { echo(stringToEcho: "test") }',
+        headers={
+            "accept": "text/event-stream",
+            "content-type": "application/json",
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.json["data"]["echo"] == "test"
+
+
+async def test_e2e_sse_validation_error_delivered_as_sse_event(
+    http_client: HttpClient,
+):
+    """Per graphql-sse spec: validation errors for subscription operations
+    should be delivered through the SSE connection as next events with errors,
+    not as HTTP 400 responses."""
+    response = await http_client.query(
+        method="post",
+        query="subscription { nonExistentField }",
+        headers={
+            "accept": "text/event-stream",
+            "content-type": "application/json",
+        },
+    )
+
+    # The SSE connection should be accepted (200) with errors in the stream
+    assert response.status_code == 200
+    assert response.is_sse
+
+    events = [(event, data) async for event, data in response.streaming_sse()]
+    next_events = [d for e, d in events if e == "next"]
+
+    # Validation errors should appear in a next event
+    assert len(next_events) >= 1, (
+        f"Expected at least one next event with validation error, got events: {events}"
+    )
+    payload = next_events[0]["payload"]
+    assert "errors" in payload, f"Expected errors in payload, got: {payload}"
+    assert payload["data"] is None
+
+
+async def test_e2e_sse_syntax_error_delivered_as_sse_event(
+    http_client: HttpClient,
+):
+    """Per graphql-sse spec: syntax/parse errors for subscription operations
+    should also be delivered as SSE events."""
+    response = await http_client.query(
+        method="post",
+        query="subscription { invalid syntax @@@ }",
+        headers={
+            "accept": "text/event-stream",
+            "content-type": "application/json",
+        },
+    )
+
+    # The SSE connection should be accepted (200) with errors in the stream
+    assert response.status_code == 200
+    assert response.is_sse
+
+    events = [(event, data) async for event, data in response.streaming_sse()]
+    next_events = [d for e, d in events if e == "next"]
+
+    assert len(next_events) >= 1, (
+        f"Expected at least one next event with parse error, got events: {events}"
+    )
+    payload = next_events[0]["payload"]
+    assert "errors" in payload, f"Expected errors in payload, got: {payload}"
+
+
+async def test_e2e_sse_named_operation_routing(http_client: HttpClient):
+    """When a document contains both query and subscription operations,
+    the operation_name parameter should correctly route to the right one."""
+    # Test that named subscription goes through SSE
+    response = await http_client.query(
+        method="post",
+        query='subscription MySub { echo(message: "named", delay: 0.1) }',
+        operation_name="MySub",
+        headers={
+            "accept": "text/event-stream",
+            "content-type": "application/json",
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.is_sse
+
+    events = [(event, data) async for event, data in response.streaming_sse()]
+    next_events = [d for e, d in events if e == "next"]
+    assert len(next_events) == 1
+    assert next_events[0]["payload"]["data"]["echo"] == "named"
