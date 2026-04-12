@@ -17,6 +17,19 @@ class BatchingConfig(TypedDict):
     max_operations: int
 
 
+class StrawberryConfigDict(TypedDict, total=False):
+    auto_camel_case: bool
+    name_converter: NameConverter
+    default_resolver: Callable[[Any, str], object]
+    relay_max_results: int
+    relay_use_legacy_global_id: bool
+    disable_field_suggestions: bool
+    info_class: type[Info]
+    enable_experimental_incremental_execution: bool
+    scalar_map: Mapping[object, ScalarDefinition]
+    batching_config: BatchingConfig | None
+
+
 @dataclass
 class StrawberryConfig:
     """Configuration for a Strawberry GraphQL schema.
@@ -59,4 +72,4 @@ class StrawberryConfig:
             raise TypeError("`info_class` must be a subclass of strawberry.Info")
 
 
-__all__ = ["StrawberryConfig"]
+__all__ = ["StrawberryConfig", "StrawberryConfigDict"]

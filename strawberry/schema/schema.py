@@ -76,7 +76,7 @@ from ._graphql_core import (
     subscribe,
 )
 from .base import BaseSchema
-from .config import StrawberryConfig
+from .config import StrawberryConfig, StrawberryConfigDict
 from .exceptions import CannotGetOperationTypeError, InvalidOperationTypeError
 
 if TYPE_CHECKING:
@@ -216,7 +216,7 @@ class Schema(BaseSchema):
         types: Iterable[type | StrawberryType] = (),
         extensions: Iterable[type[SchemaExtension] | SchemaExtension] = (),
         execution_context_class: type[GraphQLExecutionContext] | None = None,
-        config: StrawberryConfig | None = None,
+        config: StrawberryConfig | StrawberryConfigDict | None = None,
         scalar_overrides: (
             Mapping[object, type | ScalarWrapper | ScalarDefinition] | None
         ) = None,
@@ -266,7 +266,10 @@ class Schema(BaseSchema):
         self.execution_context_class = (
             execution_context_class or StrawberryGraphQLCoreExecutionContext
         )
-        self.config = config or StrawberryConfig()
+        if isinstance(config, dict):
+            self.config = StrawberryConfig(**config)
+        else:
+            self.config = config or StrawberryConfig()
 
         self.schema_converter = GraphQLCoreConverter(
             self.config,
