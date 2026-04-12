@@ -31,8 +31,7 @@ def schema_diff(
         new_text = new_schema.read_text(encoding="utf-8")
     except (OSError, UnicodeDecodeError) as exc:
         rich.print(
-            f"[red]Error reading schema files:"
-            f" {rich.markup.escape(str(exc))}[/red]"
+            f"[red]Error reading schema files: {rich.markup.escape(str(exc))}[/red]"
         )
         raise typer.Exit(2) from exc
 
