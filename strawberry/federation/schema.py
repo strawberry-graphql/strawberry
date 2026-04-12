@@ -7,7 +7,6 @@ from typing import (
     Any,
     Literal,
     NewType,
-    Optional,
     Union,
     cast,
 )
