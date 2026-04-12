@@ -35,7 +35,7 @@ if TYPE_CHECKING:
 
     from strawberry.extensions import SchemaExtension
     from strawberry.federation.schema_directives import ComposeDirective
-    from strawberry.schema.config import StrawberryConfig
+    from strawberry.schema.config import StrawberryConfig, StrawberryConfigDict
     from strawberry.schema_directive import StrawberrySchemaDirective
     from strawberry.types.enum import StrawberryEnumDefinition
 
@@ -55,7 +55,7 @@ class Schema(BaseSchema):
         types: Iterable[type] = (),
         extensions: Iterable[Union[type["SchemaExtension"], "SchemaExtension"]] = (),
         execution_context_class: type["GraphQLExecutionContext"] | None = None,
-        config: Optional["StrawberryConfig"] = None,
+        config: StrawberryConfig | StrawberryConfigDict | None = None,
         scalar_overrides: dict[object, Union[type, "ScalarWrapper", "ScalarDefinition"]]
         | None = None,
         schema_directives: Iterable[object] = (),
