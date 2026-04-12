@@ -145,6 +145,36 @@ def test_raises_field_error_when_using_untyped_explicit_resolver():
 
 
 @pytest.mark.raises_strawberry_exception(
+    MissingReturnAnnotationError,
+    match='Return annotation missing for field "goodbye", did you forget to add it?',
+)
+def test_raises_return_error_when_explicit_resolver_has_same_name():
+    """When resolver= overwrites the field name, it's indistinguishable from
+    the decorator pattern, so MissingReturnAnnotationError is raised."""
+
+    @strawberry.type
+    class Query:
+        def goodbye(self):
+            return -1
+
+        goodbye = strawberry.field(resolver=goodbye)
+
+
+@pytest.mark.raises_strawberry_exception(
+    MissingReturnAnnotationError,
+    match='Return annotation missing for field "hello", did you forget to add it?',
+)
+def test_raises_return_error_when_using_untyped_decorator_resolver():
+    """Ensure @strawberry.field decorator still raises MissingReturnAnnotationError."""
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def hello(self):
+            return "hello"
+
+
+@pytest.mark.raises_strawberry_exception(
     MissingArgumentsAnnotationsError,
     match=(
         'Missing annotation for argument "query" in field "hello", '
