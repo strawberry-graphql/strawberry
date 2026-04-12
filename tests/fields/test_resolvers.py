@@ -145,6 +145,24 @@ def test_raises_field_error_when_using_untyped_explicit_resolver():
 
 
 @pytest.mark.raises_strawberry_exception(
+    MissingFieldAnnotationError,
+    match=(
+        'Unable to determine the type of field "goodbye". Either annotate it '
+        "directly, or provide a typed resolver using @strawberry.field."
+    ),
+)
+def test_raises_field_error_when_using_external_untyped_resolver():
+    """Resolver defined outside the class should raise MissingFieldAnnotationError."""
+
+    def adios(self):
+        return -1
+
+    @strawberry.type
+    class Query:
+        goodbye = strawberry.field(resolver=adios)
+
+
+@pytest.mark.raises_strawberry_exception(
     MissingReturnAnnotationError,
     match='Return annotation missing for field "goodbye", did you forget to add it?',
 )
