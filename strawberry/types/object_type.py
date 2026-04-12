@@ -84,8 +84,7 @@ def _check_field_annotations(cls: builtins.type[Any]) -> None:
                     resolver_defined_separately = any(
                         v is resolver_func
                         for k, v in cls.__dict__.items()
-                        if k != field_name
-                        and not isinstance(v, StrawberryField)
+                        if k != field_name and not isinstance(v, StrawberryField)
                     )
                     if (
                         resolver_defined_separately
