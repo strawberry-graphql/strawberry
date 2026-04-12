@@ -129,10 +129,13 @@ def test_raises_error_when_return_annotation_missing_async_function():
 
 
 @pytest.mark.raises_strawberry_exception(
-    MissingReturnAnnotationError,
-    match='Return annotation missing for field "goodbye", did you forget to add it?',
+    MissingFieldAnnotationError,
+    match=(
+        'Unable to determine the type of field "goodbye". Either annotate it '
+        "directly, or provide a typed resolver using @strawberry.field."
+    ),
 )
-def test_raises_error_when_return_annotation_missing_resolver():
+def test_raises_field_error_when_using_untyped_explicit_resolver():
     @strawberry.type
     class Query2:
         def adios(self):
