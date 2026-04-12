@@ -36,3 +36,17 @@ def test_find_breaking_changes_between_sdls_field_removed() -> None:
 def test_build_schema_from_sdl_invalid_raises() -> None:
     with pytest.raises(GraphQLError):
         build_schema_from_sdl("{ not valid")
+
+
+def test_find_breaking_changes_invalid_old_sdl_raises() -> None:
+    with pytest.raises(GraphQLError):
+        find_breaking_changes_between_sdls(
+            "{ not valid", "type Query { hello: String }"
+        )
+
+
+def test_find_breaking_changes_invalid_new_sdl_raises() -> None:
+    with pytest.raises(GraphQLError):
+        find_breaking_changes_between_sdls(
+            "type Query { hello: String }", "{ not valid"
+        )
