@@ -63,6 +63,7 @@ def test_parent_forward_ref_pep649():
         [sys.executable, "-c", code],
         capture_output=True,
         text=True,
+        check=False,
     )
     assert result.returncode == 0, (
         f"Process failed with:\nstdout: {result.stdout}\nstderr: {result.stderr}"
@@ -108,6 +109,7 @@ def test_parent_forward_ref_pep649_async():
         [sys.executable, "-c", code],
         capture_output=True,
         text=True,
+        check=False,
     )
     assert result.returncode == 0, (
         f"Process failed with:\nstdout: {result.stdout}\nstderr: {result.stderr}"
@@ -151,6 +153,7 @@ def test_parent_no_forward_ref_still_works():
         [sys.executable, "-c", code],
         capture_output=True,
         text=True,
+        check=False,
     )
     assert result.returncode == 0, (
         f"Process failed with:\nstdout: {result.stdout}\nstderr: {result.stderr}"
