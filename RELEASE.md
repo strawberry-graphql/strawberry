@@ -14,9 +14,11 @@ For example, the following code now works on Python 3.14+:
 ```python
 import strawberry
 
+
 # Resolver defined before the class it references
 def get_full_name(user: strawberry.Parent[User]) -> str:
     return f"{user.first_name} {user.last_name}"
+
 
 @strawberry.type
 class User:
