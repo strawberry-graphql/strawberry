@@ -93,8 +93,14 @@ class BaseGraphQLTransportWSHandler(Generic[Context, RootValue]):
             with suppress(asyncio.CancelledError):
                 await self.connection_init_timeout_task
 
+        cancelled_tasks = []
         for operation_id in list(self.operations.keys()):
-            await self.cleanup_operation(operation_id)
+            task = await self.cleanup_operation(operation_id)
+            if task:
+                cancelled_tasks.append(task)
+        for task in cancelled_tasks:
+            with suppress(BaseException):
+                await task
 
     def on_request_accepted(self) -> None:
         # handle_request should call this once it has sent the
@@ -335,14 +341,15 @@ class BaseGraphQLTransportWSHandler(Generic[Context, RootValue]):
     async def send_message(self, message: Message) -> None:
         await self.websocket.send_json(message)
 
-    async def cleanup_operation(self, operation_id: str) -> None:
+    async def cleanup_operation(self, operation_id: str) -> asyncio.Task | None:
         if operation_id not in self.operations:
-            return
+            return None
         operation = self.operations.pop(operation_id)
         assert operation.task
         operation.task.cancel()
-        # do not await the task here, lest we block the main
-        # websocket handler Task.
+        # Do not await the task here, lest we block the main websocket
+        # handler Task. shutdown() awaits cancelled tasks separately.
+        return operation.task
 
 
 class Operation(Generic[Context, RootValue]):

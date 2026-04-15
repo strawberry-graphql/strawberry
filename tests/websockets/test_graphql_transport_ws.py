@@ -1570,3 +1570,55 @@ async def test_task_done_callback_on_unhandled_operation_exception(
 
     assert len(failed_task_exception) == 1
     assert isinstance(failed_task_exception[0], RuntimeError)
+
+
+async def test_shutdown_awaits_cancelled_subscription_tasks(
+    http_client: HttpClient,
+):
+    """Shutdown must await cancelled subscription tasks so their finally-blocks
+    complete before shared resources are torn down.
+
+    Regression test for https://github.com/strawberry-graphql/strawberry/issues/4284
+    """
+    cleanup_done_at_shutdown_end: bool | None = None
+    shutdown_done = asyncio.Event()
+
+    def on_init(_handler):
+        original_shutdown = _handler.shutdown
+
+        async def tracked_shutdown():
+            nonlocal cleanup_done_at_shutdown_end
+            await original_shutdown()
+            cleanup_done_at_shutdown_end = (
+                Subscription.active_infinity_subscriptions == 0
+            )
+            shutdown_done.set()
+
+        _handler.shutdown = tracked_shutdown
+
+    try:
+        with patch.object(DebuggableGraphQLTransportWSHandler, "on_init", on_init):
+            async with http_client.ws_connect(
+                "/graphql", protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL]
+            ) as ws:
+                await ws.send_message({"type": "connection_init"})
+                await ws.receive_json()
+
+                await ws.send_message(
+                    {
+                        "id": "sub1",
+                        "type": "subscribe",
+                        "payload": {
+                            "query": 'subscription { infinity(message: "Hi") }'
+                        },
+                    }
+                )
+                await ws.receive(timeout=2)
+                assert Subscription.active_infinity_subscriptions == 1
+
+                await ws.close()
+                await asyncio.wait_for(shutdown_done.wait(), timeout=5)
+
+        assert cleanup_done_at_shutdown_end is True
+    except AttributeError:
+        pytest.skip("Can't patch on_init for this client")
