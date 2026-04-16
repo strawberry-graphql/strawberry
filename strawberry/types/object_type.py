@@ -80,16 +80,10 @@ def _check_field_annotations(cls: builtins.type[Any]) -> None:
                 if field_.base_resolver.type_annotation is None:
                     # Distinguish @strawberry.field decorator from explicit
                     # strawberry.field(resolver=fn) assignment.
-                    resolver_func = field_.base_resolver.wrapped_func
-                    resolver_defined_separately = any(
-                        v is resolver_func
-                        for k, v in cls.__dict__.items()
-                        if k != field_name and not isinstance(v, StrawberryField)
+                    resolver_qualname = getattr(
+                        field_.base_resolver.wrapped_func, "__qualname__", ""
                     )
-                    if (
-                        resolver_defined_separately
-                        or field_name != field_.base_resolver.name
-                    ):
+                    if resolver_qualname != f"{cls.__qualname__}.{field_name}":
                         raise MissingFieldAnnotationError(field_name, cls)
                     raise MissingReturnAnnotationError(
                         field_name, resolver=field_.base_resolver
