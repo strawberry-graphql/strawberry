@@ -71,7 +71,7 @@ dev = [
   "freezegun>=1.2.1,<2.0.0",
   "libcst>=1.8.2,<2.0.0",
   "markupsafe~=3.0.3",
-  "nox>=2025.11.12,<2026.3.0",
+  "nox>=2025.11.12,<2026.5.0",
   "opentelemetry-api<2",
   "opentelemetry-sdk<2",
   "pygments>=2.3,<3.0",
