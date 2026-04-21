@@ -104,20 +104,30 @@ class StrawberryField(dataclasses.Field):
             "kw_only": True,
         }
 
-        # doc was added to python 3.14 and it is required
+        # doc was added to python 3.14 as a required positional argument
         if sys.version_info >= (3, 14):
-            kwargs["doc"] = None
-
-        super().__init__(
-            default=default,
-            default_factory=default_factory,  # type: ignore
-            init=is_basic_field,
-            repr=is_basic_field,
-            compare=is_basic_field,
-            hash=None,
-            metadata=metadata or {},
-            **kwargs,
-        )
+            super().__init__(
+                default=default,
+                default_factory=default_factory,  # type: ignore
+                init=is_basic_field,
+                repr=is_basic_field,
+                compare=is_basic_field,
+                hash=None,
+                metadata=metadata or {},
+                doc=None,
+                **kwargs,
+            )
+        else:
+            super().__init__(
+                default=default,
+                default_factory=default_factory,  # type: ignore
+                init=is_basic_field,
+                repr=is_basic_field,
+                compare=is_basic_field,
+                hash=None,
+                metadata=metadata or {},
+                **kwargs,
+            )
 
         self.graphql_name = graphql_name
         if python_name is not None:
