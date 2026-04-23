@@ -1,5 +1,5 @@
 ---
-release type: patch
+release type: minor
 ---
 
 Cancel DataLoader dispatch task when all futures are cancelled.
