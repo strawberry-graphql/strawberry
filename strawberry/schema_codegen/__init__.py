@@ -58,10 +58,8 @@ _SCALAR_MAP = {
         value=cst.Name("strawberry"),
         attr=cst.Name("ID"),
     ),
-    "JSON": cst.Attribute(
-        value=cst.Name("strawberry"),
-        attr=cst.Name("JSON"),
-    ),
+    "JSON": cst.Name("JSON"),
+    "JSONObject": cst.Name("JSONObject"),
     "UUID": cst.Name("UUID"),
     "Decimal": cst.Name("Decimal"),
     "Date": cst.Name("date"),
@@ -73,7 +71,7 @@ _SCALAR_MAP = {
 @dataclasses.dataclass(frozen=True)
 class Import:
     module: str | None
-    imports: tuple[str]
+    imports: tuple[str | tuple[str, str], ...]
 
     def module_path_to_cst(self, module_path: str) -> cst.Name | cst.Attribute:
         parts = module_path.split(".")
@@ -85,15 +83,24 @@ class Import:
 
         return module_name
 
+    def _to_import_alias(self, name: str | tuple[str, str]) -> cst.ImportAlias:
+        if isinstance(name, tuple):
+            original, alias = name
+            return cst.ImportAlias(
+                name=cst.Name(original),
+                asname=cst.AsName(name=cst.Name(alias)),
+            )
+        return cst.ImportAlias(name=cst.Name(name))
+
     def to_cst(self) -> cst.Import | cst.ImportFrom:
         if self.module is None:
             return cst.Import(
-                names=[cst.ImportAlias(name=cst.Name(name)) for name in self.imports]
+                names=[self._to_import_alias(name) for name in self.imports]
             )
 
         return cst.ImportFrom(
             module=self.module_path_to_cst(self.module),
-            names=[cst.ImportAlias(name=cst.Name(name)) for name in self.imports],
+            names=[self._to_import_alias(name) for name in self.imports],
         )
 
 
@@ -632,6 +639,7 @@ def _get_schema_definition(
     root_mutation_name: str | None,
     root_subscription_name: str | None,
     is_apollo_federation: bool,
+    scalar_map: list[cst.DictElement] | None = None,
 ) -> cst.SimpleStatementLine | None:
     if not any([root_query_name, root_mutation_name, root_subscription_name]):
         return None
@@ -653,6 +661,29 @@ def _get_schema_definition(
 
     if root_subscription_name:
         args.append(_get_arg("subscription", root_subscription_name))
+
+    if scalar_map:
+        config_call = cst.Call(
+            func=cst.Name("StrawberryConfig"),
+            args=[
+                cst.Arg(
+                    keyword=cst.Name("scalar_map"),
+                    value=cst.Dict(elements=scalar_map),
+                    equal=cst.AssignEqual(
+                        cst.SimpleWhitespace(""), cst.SimpleWhitespace("")
+                    ),
+                )
+            ],
+        )
+        args.append(
+            cst.Arg(
+                keyword=cst.Name("config"),
+                value=config_call,
+                equal=cst.AssignEqual(
+                    cst.SimpleWhitespace(""), cst.SimpleWhitespace("")
+                ),
+            )
+        )
 
     # Federation 2 is now always enabled for federation schemas
     if is_apollo_federation:
@@ -690,6 +721,7 @@ class Definition:
     code: cst.CSTNode
     dependencies: list[str]
     name: str
+    scalar_override: cst.DictElement | None = None
 
 
 def _get_union_definition(definition: UnionTypeDefinitionNode) -> Definition:
@@ -753,6 +785,12 @@ def _get_scalar_definition(
         imports.add(Import(module="uuid", imports=("UUID",)))
         return None
     if name == "JSON":
+        imports.add(Import(module="strawberry.scalars", imports=("JSON",)))
+        return None
+    if name == "JSONObject":
+        imports.add(
+            Import(module="strawberry.scalars", imports=(("JSON", "JSONObject"),))
+        )
         return None
 
     description = definition.description.value if definition.description else None
@@ -776,7 +814,8 @@ def _get_scalar_definition(
         ),
     )
 
-    additional_args: list[cst.Arg | None] = [
+    scalar_args: list[cst.Arg | None] = [
+        _get_argument("name", name),
         _get_argument("description", description) if description else None,
         _get_argument("specified_by_url", specified_by_url)
         if specified_by_url
@@ -793,32 +832,45 @@ def _get_scalar_definition(
         ),
     ]
 
+    # Emit `Foo = NewType("Foo", object)` at module scope so the name is a
+    # valid type expression under pyright (NewType is special-cased only on
+    # top-level same-name assignments).
     statement_definition = cst.SimpleStatementLine(
         body=[
             cst.Assign(
                 targets=[cst.AssignTarget(cst.Name(name))],
                 value=cst.Call(
-                    func=cst.Attribute(
-                        value=cst.Name("strawberry"),
-                        attr=cst.Name("scalar"),
-                    ),
+                    func=cst.Name("NewType"),
                     args=[
-                        cst.Arg(
-                            cst.Call(
-                                func=cst.Name("NewType"),
-                                args=[
-                                    cst.Arg(cst.SimpleString(f'"{name}"')),
-                                    cst.Arg(cst.Name("object")),
-                                ],
-                            )
-                        ),
-                        *filter(None, additional_args),
+                        cst.Arg(cst.SimpleString(f'"{name}"')),
+                        cst.Arg(cst.Name("object")),
                     ],
                 ),
             )
         ]
     )
-    return Definition(statement_definition, [], name=definition.name.value)
+
+    # Register the scalar via `scalar_overrides=` on the Schema constructor so
+    # the type expression and the scalar registration are decoupled. Calling
+    # `strawberry.scalar(name=..., ...)` without `cls` returns a
+    # ScalarDefinition and is the type-checker-friendly overload.
+    scalar_override = cst.DictElement(
+        key=cst.Name(name),
+        value=cst.Call(
+            func=cst.Attribute(
+                value=cst.Name("strawberry"),
+                attr=cst.Name("scalar"),
+            ),
+            args=list(filter(None, scalar_args)),
+        ),
+    )
+
+    return Definition(
+        statement_definition,
+        [],
+        name=definition.name.value,
+        scalar_override=scalar_override,
+    )
 
 
 def codegen(schema: str) -> str:
@@ -902,12 +954,22 @@ def codegen(schema: str) -> str:
             "Subscription" if "Subscription" in definitions else None
         )
 
+    scalar_map = [
+        d.scalar_override for d in definitions.values() if d.scalar_override is not None
+    ]
+
     schema_definition = _get_schema_definition(
         root_query_name=root_query_name,
         root_mutation_name=root_mutation_name,
         root_subscription_name=root_subscription_name,
         is_apollo_federation=is_apollo_federation,
+        scalar_map=scalar_map,
     )
+
+    if schema_definition is not None and scalar_map:
+        imports.add(
+            Import(module="strawberry.schema.config", imports=("StrawberryConfig",))
+        )
 
     if schema_definition:
         # Schema must be emitted last; it depends on all other definitions.
@@ -921,7 +983,13 @@ def codegen(schema: str) -> str:
         cst.SimpleStatementLine(body=[future_import.to_cst()]),
         *[
             cst.SimpleStatementLine(body=[import_.to_cst()])
-            for import_ in sorted(imports, key=lambda i: (i.module or "", i.imports))
+            for import_ in sorted(
+                imports,
+                key=lambda i: (
+                    i.module or "",
+                    tuple(n if isinstance(n, str) else n[1] for n in i.imports),
+                ),
+            )
         ],
     ]
 
