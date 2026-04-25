@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import dataclasses
 from abc import ABC, abstractmethod
 from asyncio import create_task, gather, get_event_loop
@@ -41,10 +42,24 @@ class LoaderTask(Generic[K, T]):
 class Batch(Generic[K, T]):
     tasks: list[LoaderTask] = dataclasses.field(default_factory=list)
     dispatched: bool = False
+    _dispatch_task: asyncio.Task[None] | None = dataclasses.field(
+        default=None, repr=False
+    )
 
     def add_task(self, key: Any, future: Future) -> None:
         task = LoaderTask[K, T](key, future)
         self.tasks.append(task)
+        future.add_done_callback(self._on_future_done)
+
+    def _on_future_done(self, future: Future) -> None:
+        """Cancel the dispatch task if all futures in the batch are cancelled."""
+        if (
+            future.cancelled()
+            and self._dispatch_task is not None
+            and not self._dispatch_task.done()
+            and all(t.future.cancelled() for t in self.tasks)
+        ):
+            self._dispatch_task.cancel()
 
     def __len__(self) -> int:
         return len(self.tasks)
@@ -224,7 +239,13 @@ def get_current_batch(loader: DataLoader) -> Batch:
 
 
 def dispatch(loader: DataLoader, batch: Batch) -> None:
-    loader.loop.call_soon(create_task, dispatch_batch(loader, batch))
+    def _schedule() -> None:
+        batch._dispatch_task = create_task(dispatch_batch(loader, batch))
+        batch._dispatch_task.add_done_callback(
+            lambda _: setattr(batch, "_dispatch_task", None)
+        )
+
+    loader.loop.call_soon(_schedule)
 
 
 async def dispatch_batch(loader: DataLoader, batch: Batch) -> None:
@@ -235,6 +256,12 @@ async def dispatch_batch(loader: DataLoader, batch: Batch) -> None:
         # Ensure batch is not empty
         # Unlikely, but could happen if the tasks are
         # overriden with preset values
+        return
+
+    # Skip the batch entirely if all futures have already been cancelled.
+    # This avoids calling load_fn (e.g. a database query) when no caller
+    # is waiting for the results.
+    if all(task.future.cancelled() for task in batch.tasks):
         return
 
     # TODO: check if load_fn return an awaitable and it is a list

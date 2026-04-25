@@ -78,6 +78,13 @@ def _check_field_annotations(cls: builtins.type[Any]) -> None:
                 # TODO: Maybe check this immediately when adding resolver to
                 #       field
                 if field_.base_resolver.type_annotation is None:
+                    # Distinguish @strawberry.field decorator from explicit
+                    # strawberry.field(resolver=fn) assignment.
+                    resolver_qualname = getattr(
+                        field_.base_resolver.wrapped_func, "__qualname__", ""
+                    )
+                    if resolver_qualname != f"{cls.__qualname__}.{field_name}":
+                        raise MissingFieldAnnotationError(field_name, cls)
                     raise MissingReturnAnnotationError(
                         field_name, resolver=field_.base_resolver
                     )

@@ -1,6 +1,31 @@
 CHANGELOG
 =========
 
+0.315.1 - 2026-04-25
+--------------------
+
+Raise `MissingFieldAnnotationError` instead of `MissingReturnAnnotationError` when a field using `strawberry.field(resolver=...)` is missing both a type annotation and a resolver return type.
+
+This release was contributed by [@youngjaekwon](https://github.com/youngjaekwon) in [#4360](https://github.com/strawberry-graphql/strawberry/pull/4360)
+
+Additional contributors: [@pre-commit-ci[bot]](https://github.com/pre-commit-ci[bot])
+
+0.315.0 - 2026-04-24
+--------------------
+
+Cancel DataLoader dispatch task when all futures are cancelled.
+
+Previously, the background task created by `dispatch()` was fire-and-forget — its
+reference was never stored, so it couldn't be cancelled even when no caller was
+waiting for the results. This caused wasted work (e.g. database queries against
+closed sessions) when using `asyncio.TaskGroup` or similar structured concurrency
+patterns that cancel futures on failure.
+
+The dispatch task is now tracked in `Batch._dispatch_task` and automatically
+cancelled when all futures in the batch are cancelled.
+
+This release was contributed by [@ChihebBENCHEIKH1](https://github.com/ChihebBENCHEIKH1) in [#4379](https://github.com/strawberry-graphql/strawberry/pull/4379)
+
 0.314.3 - 2026-04-08
 --------------------
 

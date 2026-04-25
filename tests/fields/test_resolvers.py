@@ -129,16 +129,143 @@ def test_raises_error_when_return_annotation_missing_async_function():
 
 
 @pytest.mark.raises_strawberry_exception(
-    MissingReturnAnnotationError,
-    match='Return annotation missing for field "goodbye", did you forget to add it?',
+    MissingFieldAnnotationError,
+    match=(
+        'Unable to determine the type of field "goodbye". Either annotate it '
+        "directly, or provide a typed resolver using @strawberry.field."
+    ),
 )
-def test_raises_error_when_return_annotation_missing_resolver():
+def test_raises_field_error_when_using_untyped_explicit_resolver():
     @strawberry.type
     class Query2:
         def adios(self):
             return -1
 
         goodbye = strawberry.field(resolver=adios)
+
+
+@pytest.mark.raises_strawberry_exception(
+    MissingFieldAnnotationError,
+    match=(
+        'Unable to determine the type of field "goodbye". Either annotate it '
+        "directly, or provide a typed resolver using @strawberry.field."
+    ),
+)
+def test_raises_field_error_when_using_external_untyped_resolver():
+    """Resolver defined outside the class should raise MissingFieldAnnotationError."""
+
+    def adios(self):
+        return -1
+
+    @strawberry.type
+    class Query:
+        goodbye = strawberry.field(resolver=adios)
+
+
+@pytest.mark.raises_strawberry_exception(
+    MissingReturnAnnotationError,
+    match='Return annotation missing for field "goodbye", did you forget to add it?',
+)
+def test_raises_return_error_when_explicit_resolver_has_same_name():
+    """When resolver= overwrites the field name, it's indistinguishable from
+    the decorator pattern, so MissingReturnAnnotationError is raised."""
+
+    @strawberry.type
+    class Query:
+        def goodbye(self):
+            return -1
+
+        goodbye = strawberry.field(resolver=goodbye)
+
+
+@pytest.mark.raises_strawberry_exception(
+    MissingReturnAnnotationError,
+    match='Return annotation missing for field "hello", did you forget to add it?',
+)
+def test_raises_return_error_when_using_untyped_decorator_resolver():
+    """Ensure @strawberry.field decorator still raises MissingReturnAnnotationError."""
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def hello(self):
+            return "hello"
+
+
+@pytest.mark.raises_strawberry_exception(
+    MissingFieldAnnotationError,
+    match=(
+        'Unable to determine the type of field "goodbye". Either annotate it '
+        "directly, or provide a typed resolver using @strawberry.field."
+    ),
+)
+def test_raises_field_error_when_external_resolver_shares_field_name():
+    """External resolver sharing the field name should still raise MissingFieldAnnotationError."""
+
+    def _make_goodbye():
+        def goodbye(self):
+            return -1
+
+        return goodbye
+
+    external_goodbye = _make_goodbye()
+
+    @strawberry.type
+    class Query:
+        goodbye = strawberry.field(resolver=external_goodbye)
+
+
+@pytest.mark.raises_strawberry_exception(
+    MissingFieldAnnotationError,
+    match=(
+        'Unable to determine the type of field "goodbye". Either annotate it '
+        "directly, or provide a typed resolver using @strawberry.field."
+    ),
+)
+def test_raises_field_error_when_resolver_from_other_class():
+    """Resolver borrowed from an unrelated class should raise MissingFieldAnnotationError."""
+
+    class Other:
+        def adios(self):
+            return -1
+
+    @strawberry.type
+    class Query:
+        goodbye = strawberry.field(resolver=Other.adios)
+
+
+@pytest.mark.raises_strawberry_exception(
+    MissingFieldAnnotationError,
+    match=(
+        'Unable to determine the type of field "goodbye". Either annotate it '
+        "directly, or provide a typed resolver using @strawberry.field."
+    ),
+)
+def test_raises_field_error_when_resolver_from_other_class_shares_field_name():
+    """Resolver from another class sharing the field name should still raise MissingFieldAnnotationError."""
+
+    class Other:
+        def goodbye(self):
+            return -1
+
+    @strawberry.type
+    class Query:
+        goodbye = strawberry.field(resolver=Other.goodbye)
+
+
+@pytest.mark.raises_strawberry_exception(
+    MissingReturnAnnotationError,
+    match='Return annotation missing for field "hello", did you forget to add it?',
+)
+def test_raises_return_error_for_decorator_in_nested_class():
+    """The decorator pattern must still be detected when the class is nested."""
+
+    class Outer:
+        @strawberry.type
+        class Query:
+            @strawberry.field
+            def hello(self):
+                return "hello"
 
 
 @pytest.mark.raises_strawberry_exception(
