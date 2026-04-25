@@ -99,7 +99,7 @@ class BaseGraphQLTransportWSHandler(Generic[Context, RootValue]):
             if task:
                 cancelled_tasks.append(task)
         for task in cancelled_tasks:
-            with suppress(BaseException):
+            with suppress(Exception, asyncio.CancelledError):
                 await task
 
     def on_request_accepted(self) -> None:

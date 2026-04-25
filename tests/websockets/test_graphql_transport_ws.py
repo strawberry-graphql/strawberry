@@ -1580,7 +1580,7 @@ async def test_shutdown_awaits_cancelled_subscription_tasks(
 
     Regression test for https://github.com/strawberry-graphql/strawberry/issues/4284
     """
-    cleanup_done_at_shutdown_end: bool | None = None
+    cleanup_done_at_shutdown_end: bool = False
     shutdown_done = asyncio.Event()
 
     def on_init(_handler):
