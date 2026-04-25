@@ -12,9 +12,12 @@ def test_scalar():
         """
         from __future__ import annotations
         import strawberry
+        from strawberry.types.scalar import ScalarDefinition
         from typing import NewType
 
         LocalDate = NewType("LocalDate", object)
+
+        scalar_map: dict[object, ScalarDefinition] = {LocalDate: strawberry.scalar(name="LocalDate", specified_by_url="https://scalars.graphql.org/andimarek/local-date.html", serialize=lambda v: v, parse_value=lambda v: v)}
         """
     ).strip()
 
@@ -31,9 +34,12 @@ def test_scalar_with_description():
         """
         from __future__ import annotations
         import strawberry
+        from strawberry.types.scalar import ScalarDefinition
         from typing import NewType
 
         LocalDate = NewType("LocalDate", object)
+
+        scalar_map: dict[object, ScalarDefinition] = {LocalDate: strawberry.scalar(name="LocalDate", description="A date without a time-zone in the ISO-8601 calendar system, such as 2007-12-03.", serialize=lambda v: v, parse_value=lambda v: v)}
         """
     ).strip()
 
@@ -54,6 +60,7 @@ def test_scalar_registered_via_scalar_map():
         from __future__ import annotations
         import strawberry
         from strawberry.schema.config import StrawberryConfig
+        from strawberry.types.scalar import ScalarDefinition
         from typing import NewType
 
         LocalDate = NewType("LocalDate", object)
@@ -62,7 +69,9 @@ def test_scalar_registered_via_scalar_map():
         class Query:
             when: LocalDate
 
-        schema = strawberry.Schema(query=Query, config=StrawberryConfig(scalar_map={LocalDate: strawberry.scalar(name="LocalDate", specified_by_url="https://scalars.graphql.org/andimarek/local-date.html", serialize=lambda v: v, parse_value=lambda v: v)}))
+        scalar_map: dict[object, ScalarDefinition] = {LocalDate: strawberry.scalar(name="LocalDate", specified_by_url="https://scalars.graphql.org/andimarek/local-date.html", serialize=lambda v: v, parse_value=lambda v: v)}
+
+        schema = strawberry.Schema(query=Query, config=StrawberryConfig(scalar_map=scalar_map))
         """
     ).strip()
 
@@ -84,6 +93,7 @@ def test_scalar_with_description_registered_via_scalar_map():
         from __future__ import annotations
         import strawberry
         from strawberry.schema.config import StrawberryConfig
+        from strawberry.types.scalar import ScalarDefinition
         from typing import NewType
 
         LocalDate = NewType("LocalDate", object)
@@ -92,7 +102,42 @@ def test_scalar_with_description_registered_via_scalar_map():
         class Query:
             when: LocalDate
 
-        schema = strawberry.Schema(query=Query, config=StrawberryConfig(scalar_map={LocalDate: strawberry.scalar(name="LocalDate", description="A date without a time-zone in the ISO-8601 calendar system, such as 2007-12-03.", serialize=lambda v: v, parse_value=lambda v: v)}))
+        scalar_map: dict[object, ScalarDefinition] = {LocalDate: strawberry.scalar(name="LocalDate", description="A date without a time-zone in the ISO-8601 calendar system, such as 2007-12-03.", serialize=lambda v: v, parse_value=lambda v: v)}
+
+        schema = strawberry.Schema(query=Query, config=StrawberryConfig(scalar_map=scalar_map))
+        """
+    ).strip()
+
+    assert codegen(schema).strip() == expected
+
+
+def test_scalar_with_description_and_specified_by_registered_via_scalar_map():
+    schema = """
+    "A date without a time-zone in the ISO-8601 calendar system, such as 2007-12-03."
+    scalar LocalDate @specifiedBy(url: "https://scalars.graphql.org/andimarek/local-date.html")
+
+    type Query {
+        when: LocalDate!
+    }
+    """
+
+    expected = textwrap.dedent(
+        """
+        from __future__ import annotations
+        import strawberry
+        from strawberry.schema.config import StrawberryConfig
+        from strawberry.types.scalar import ScalarDefinition
+        from typing import NewType
+
+        LocalDate = NewType("LocalDate", object)
+
+        @strawberry.type
+        class Query:
+            when: LocalDate
+
+        scalar_map: dict[object, ScalarDefinition] = {LocalDate: strawberry.scalar(name="LocalDate", description="A date without a time-zone in the ISO-8601 calendar system, such as 2007-12-03.", specified_by_url="https://scalars.graphql.org/andimarek/local-date.html", serialize=lambda v: v, parse_value=lambda v: v)}
+
+        schema = strawberry.Schema(query=Query, config=StrawberryConfig(scalar_map=scalar_map))
         """
     ).strip()
 
@@ -136,14 +181,30 @@ def test_multiple_unknown_scalars_aggregated_into_scalar_map():
     }
     """
 
-    output = codegen(schema)
+    expected = textwrap.dedent(
+        """
+        from __future__ import annotations
+        import strawberry
+        from strawberry.schema.config import StrawberryConfig
+        from strawberry.types.scalar import ScalarDefinition
+        from typing import NewType
 
-    assert 'Foo = NewType("Foo", object)' in output
-    assert 'Bar = NewType("Bar", object)' in output
-    assert "from strawberry.schema.config import StrawberryConfig" in output
-    assert "config=StrawberryConfig(scalar_map={" in output
-    assert 'Foo: strawberry.scalar(name="Foo"' in output
-    assert 'Bar: strawberry.scalar(name="Bar"' in output
+        Foo = NewType("Foo", object)
+
+        Bar = NewType("Bar", object)
+
+        @strawberry.type
+        class Query:
+            a: Foo
+            b: Bar
+
+        scalar_map: dict[object, ScalarDefinition] = {Foo: strawberry.scalar(name="Foo", serialize=lambda v: v, parse_value=lambda v: v), Bar: strawberry.scalar(name="Bar", serialize=lambda v: v, parse_value=lambda v: v)}
+
+        schema = strawberry.Schema(query=Query, config=StrawberryConfig(scalar_map=scalar_map))
+        """
+    ).strip()
+
+    assert codegen(schema).strip() == expected
 
 
 def test_builtin_scalars():

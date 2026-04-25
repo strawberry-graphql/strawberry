@@ -639,7 +639,7 @@ def _get_schema_definition(
     root_mutation_name: str | None,
     root_subscription_name: str | None,
     is_apollo_federation: bool,
-    scalar_map: list[cst.DictElement] | None = None,
+    has_scalar_map: bool = False,
 ) -> cst.SimpleStatementLine | None:
     if not any([root_query_name, root_mutation_name, root_subscription_name]):
         return None
@@ -662,13 +662,13 @@ def _get_schema_definition(
     if root_subscription_name:
         args.append(_get_arg("subscription", root_subscription_name))
 
-    if scalar_map:
+    if has_scalar_map:
         config_call = cst.Call(
             func=cst.Name("StrawberryConfig"),
             args=[
                 cst.Arg(
                     keyword=cst.Name("scalar_map"),
-                    value=cst.Dict(elements=scalar_map),
+                    value=cst.Name("scalar_map"),
                     equal=cst.AssignEqual(
                         cst.SimpleWhitespace(""), cst.SimpleWhitespace("")
                     ),
@@ -721,7 +721,7 @@ class Definition:
     code: cst.CSTNode
     dependencies: list[str]
     name: str
-    scalar_override: cst.DictElement | None = None
+    scalar_map_entry: cst.DictElement | None = None
 
 
 def _get_union_definition(definition: UnionTypeDefinitionNode) -> Definition:
@@ -850,11 +850,11 @@ def _get_scalar_definition(
         ]
     )
 
-    # Register the scalar via `scalar_overrides=` on the Schema constructor so
-    # the type expression and the scalar registration are decoupled. Calling
+    # Register the scalar via `scalar_map=` on `StrawberryConfig` so the type
+    # expression and the scalar registration are decoupled. Calling
     # `strawberry.scalar(name=..., ...)` without `cls` returns a
     # ScalarDefinition and is the type-checker-friendly overload.
-    scalar_override = cst.DictElement(
+    scalar_map_entry = cst.DictElement(
         key=cst.Name(name),
         value=cst.Call(
             func=cst.Attribute(
@@ -869,7 +869,7 @@ def _get_scalar_definition(
         statement_definition,
         [],
         name=definition.name.value,
-        scalar_override=scalar_override,
+        scalar_map_entry=scalar_map_entry,
     )
 
 
@@ -954,19 +954,54 @@ def codegen(schema: str) -> str:
             "Subscription" if "Subscription" in definitions else None
         )
 
-    scalar_map = [
-        d.scalar_override for d in definitions.values() if d.scalar_override is not None
+    scalar_map_entries = [
+        (d.name, d.scalar_map_entry)
+        for d in definitions.values()
+        if d.scalar_map_entry is not None
     ]
+
+    if scalar_map_entries:
+        # Annotate as `dict[object, ScalarDefinition]` so pyright can widen the
+        # inferred `dict[type[Foo], ScalarDefinition]` to the
+        # `Mapping[object, ScalarDefinition]` accepted by StrawberryConfig.
+        scalar_map_statement = cst.SimpleStatementLine(
+            body=[
+                cst.AnnAssign(
+                    target=cst.Name("scalar_map"),
+                    annotation=cst.Annotation(
+                        annotation=cst.Subscript(
+                            value=cst.Name("dict"),
+                            slice=[
+                                cst.SubscriptElement(cst.Index(cst.Name("object"))),
+                                cst.SubscriptElement(
+                                    cst.Index(cst.Name("ScalarDefinition"))
+                                ),
+                            ],
+                        )
+                    ),
+                    value=cst.Dict(elements=[entry for _, entry in scalar_map_entries]),
+                )
+            ]
+        )
+        imports.add(
+            Import(module="strawberry.types.scalar", imports=("ScalarDefinition",))
+        )
+        # Depends on each NewType binding so topological sort places it after them.
+        definitions["_scalar_map"] = Definition(
+            scalar_map_statement,
+            [name for name, _ in scalar_map_entries],
+            "scalar_map",
+        )
 
     schema_definition = _get_schema_definition(
         root_query_name=root_query_name,
         root_mutation_name=root_mutation_name,
         root_subscription_name=root_subscription_name,
         is_apollo_federation=is_apollo_federation,
-        scalar_map=scalar_map,
+        has_scalar_map=bool(scalar_map_entries),
     )
 
-    if schema_definition is not None and scalar_map:
+    if schema_definition is not None and scalar_map_entries:
         imports.add(
             Import(module="strawberry.schema.config", imports=("StrawberryConfig",))
         )
