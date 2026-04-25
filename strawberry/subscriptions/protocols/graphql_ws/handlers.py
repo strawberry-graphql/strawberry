@@ -184,6 +184,7 @@ class BaseGraphQLWSHandler(Generic[Context, RootValue]):
         operation_name: str | None,
         variables: dict[str, object] | None,
     ) -> None:
+        result_source: AsyncGenerator | None = None
         try:
             result_source = await self.schema.subscribe(
                 query=query,
@@ -224,17 +225,32 @@ class BaseGraphQLWSHandler(Generic[Context, RootValue]):
             )
         except asyncio.CancelledError:
             await self.send_message(CompleteMessage(type="complete", id=operation_id))
+        finally:
+            # Close the generator from inside this task so its ``__aexit__``
+            # (which resets the per-request ``execution_context_var`` token)
+            # runs in the same :class:`contextvars.Context` that drove
+            # iteration. ``aclose`` is a no-op once the generator finished.
+            if result_source is not None:
+                with suppress(RuntimeError):
+                    await result_source.aclose()
+            # Drop our own registry entries so ``max_subscriptions_per_connection``
+            # accounting and memory don't drift on long-lived connections.
+            # Idempotent against ``cleanup_operation`` racing on the same id.
+            self.subscriptions.pop(operation_id, None)
+            self.tasks.pop(operation_id, None)
 
     async def cleanup_operation(self, operation_id: str) -> None:
-        if operation_id in self.subscriptions:
-            with suppress(RuntimeError):
-                await self.subscriptions[operation_id].aclose()
-            del self.subscriptions[operation_id]
-
-        self.tasks[operation_id].cancel()
-        with suppress(BaseException):
-            await self.tasks[operation_id]
-        del self.tasks[operation_id]
+        # Idempotent: a ``stop`` for an unknown id (or for one already cleaned
+        # up by ``handle_async_results``' finally) is a no-op.
+        task = self.tasks.pop(operation_id, None)
+        self.subscriptions.pop(operation_id, None)
+        if task is None:
+            return
+        # Cancel and await so the task's ``finally`` closes the subscription
+        # generator in its own context (see ``handle_async_results``).
+        task.cancel()
+        with suppress(asyncio.CancelledError):
+            await task
 
     async def cleanup(self) -> None:
         for operation_id in list(self.tasks.keys()):

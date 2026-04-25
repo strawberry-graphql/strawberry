@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+import contextvars
+import dataclasses
 import hashlib
-from functools import cached_property
 from inspect import isawaitable
 from typing import TYPE_CHECKING, Any
 
@@ -23,29 +24,62 @@ if TYPE_CHECKING:
 
     from graphql import GraphQLResolveInfo
 
-    from strawberry.types.execution import ExecutionContext
+
+@dataclasses.dataclass
+class _DatadogTracingState:
+    """Per-request Datadog tracing state.
+
+    Held in a context variable so a shared extension instance is safe under
+    concurrent execution.
+    """
+
+    operation_name: str | None = None
+    resource_name: str | None = None
+    request_span: Span | None = None
+    validation_span: Span | None = None
+    parsing_span: Span | None = None
+
+
+_datadog_state_var: contextvars.ContextVar[_DatadogTracingState | None] = (
+    contextvars.ContextVar("strawberry.tracing.datadog", default=None)
+)
+
+
+def _get_state() -> _DatadogTracingState:
+    state = _datadog_state_var.get()
+    if state is None:
+        raise RuntimeError(
+            "DatadogTracingExtension state is not initialised: this method "
+            "must be called inside the on_operation lifecycle hook."
+        )
+    return state
 
 
 class DatadogTracingExtension(SchemaExtension):
-    def __init__(
-        self,
-        *,
-        execution_context: ExecutionContext | None = None,
-    ) -> None:
-        if execution_context:
-            self.execution_context = execution_context
-
-    @cached_property
+    @property
     def _resource_name(self) -> str:
+        """Datadog resource name for the current request, computed lazily.
+
+        Cached on the per-request state so multiple accesses don't re-hash.
+        Override this in a subclass to customise the resource label.
+        """
+        state = _get_state()
+        if state.resource_name is not None:
+            return state.resource_name
+
         if self.execution_context.query is None:
-            return "query_missing"
+            state.resource_name = "query_missing"
+            return state.resource_name
 
         query_hash = self.hash_query(self.execution_context.query)
 
         if self.execution_context.operation_name:
-            return f"{self.execution_context.operation_name}:{query_hash}"
-
-        return query_hash
+            state.resource_name = (
+                f"{self.execution_context.operation_name}:{query_hash}"
+            )
+        else:
+            state.resource_name = query_hash
+        return state.resource_name
 
     def create_span(
         self,
@@ -78,53 +112,63 @@ class DatadogTracingExtension(SchemaExtension):
         return hashlib.md5(query.encode("utf-8")).hexdigest()  # noqa: S324
 
     def on_operation(self) -> Iterator[None]:
-        self._operation_name = self.execution_context.operation_name
-        span_name = (
-            f"{self._operation_name}" if self._operation_name else "Anonymous Query"
-        )
+        state = _DatadogTracingState()
+        token = _datadog_state_var.set(state)
+        try:
+            state.operation_name = self.execution_context.operation_name
+            span_name = (
+                f"{state.operation_name}" if state.operation_name else "Anonymous Query"
+            )
 
-        self.request_span = self.create_span(
-            LifecycleStep.OPERATION,
-            span_name,
-            resource=self._resource_name,
-            service="strawberry",
-        )
-        self.request_span.set_tag("graphql.operation_name", self._operation_name)
+            request_span = self.create_span(
+                LifecycleStep.OPERATION,
+                span_name,
+                resource=self._resource_name,
+                service="strawberry",
+            )
+            state.request_span = request_span
+            request_span.set_tag("graphql.operation_name", state.operation_name)
 
-        query = self.execution_context.query
+            query = self.execution_context.query
 
-        if query is not None:
-            query = query.strip()
-            operation_type = "query"
+            if query is not None:
+                query = query.strip()
+                operation_type = "query"
 
-            if query.startswith("mutation"):
-                operation_type = "mutation"
-            elif query.startswith("subscription"):  # pragma: no cover
-                operation_type = "subscription"
-        else:
-            operation_type = "query_missing"
+                if query.startswith("mutation"):
+                    operation_type = "mutation"
+                elif query.startswith("subscription"):  # pragma: no cover
+                    operation_type = "subscription"
+            else:
+                operation_type = "query_missing"
 
-        self.request_span.set_tag("graphql.operation_type", operation_type)
+            request_span.set_tag("graphql.operation_type", operation_type)
 
-        yield
-
-        self.request_span.finish()
+            yield
+        finally:
+            if state.request_span is not None:
+                state.request_span.finish()
+            _datadog_state_var.reset(token)
 
     def on_validate(self) -> Generator[None, None, None]:
-        self.validation_span = self.create_span(
+        state = _get_state()
+        validation_span = self.create_span(
             lifecycle_step=LifecycleStep.VALIDATION,
             name="Validation",
         )
+        state.validation_span = validation_span
         yield
-        self.validation_span.finish()
+        validation_span.finish()
 
     def on_parse(self) -> Generator[None, None, None]:
-        self.parsing_span = self.create_span(
+        state = _get_state()
+        parsing_span = self.create_span(
             lifecycle_step=LifecycleStep.PARSE,
             name="Parsing",
         )
+        state.parsing_span = parsing_span
         yield
-        self.parsing_span.finish()
+        parsing_span.finish()
 
     async def resolve(
         self,

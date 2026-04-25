@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import contextvars
+import dataclasses
 from collections.abc import Callable
 from copy import deepcopy
 from inspect import isawaitable
@@ -30,9 +32,36 @@ DATETIME_FORMAT = "%Y-%m-%dT%H:%M:%S.%fZ"
 ArgFilter = Callable[[dict[str, Any], "GraphQLResolveInfo"], dict[str, Any]]
 
 
+@dataclasses.dataclass
+class _OpenTelemetryTracingState:
+    """Per-request OpenTelemetry tracing state.
+
+    Held in a context variable so a shared extension instance is safe under
+    concurrent execution. Stores the active spans (operation, validation,
+    parsing) and the operation name used to label them.
+    """
+
+    operation_name: str | None = None
+    span_holder: dict[LifecycleStep, Span] = dataclasses.field(default_factory=dict)
+
+
+_opentelemetry_state_var: contextvars.ContextVar[_OpenTelemetryTracingState | None] = (
+    contextvars.ContextVar("strawberry.tracing.opentelemetry", default=None)
+)
+
+
+def _get_state() -> _OpenTelemetryTracingState:
+    state = _opentelemetry_state_var.get()
+    if state is None:
+        raise RuntimeError(
+            "OpenTelemetryExtension state is not initialised: this method "
+            "must be called inside the on_operation lifecycle hook."
+        )
+    return state
+
+
 class OpenTelemetryExtension(SchemaExtension):
     _arg_filter: ArgFilter | None
-    _span_holder: dict[LifecycleStep, Span]
     _tracer: Tracer
 
     def __init__(
@@ -44,56 +73,60 @@ class OpenTelemetryExtension(SchemaExtension):
     ) -> None:
         self._arg_filter = arg_filter
         self._tracer = trace.get_tracer("strawberry", tracer_provider=tracer_provider)
-        self._span_holder = {}
-        if execution_context:
-            self.execution_context = execution_context
 
     def on_operation(self) -> Generator[None, None, None]:
-        self._operation_name = self.execution_context.operation_name
-        span_name = (
-            f"GraphQL Query: {self._operation_name}"
-            if self._operation_name
-            else "GraphQL Query"
-        )
-
-        self._span_holder[LifecycleStep.OPERATION] = self._tracer.start_span(
-            span_name, kind=SpanKind.SERVER
-        )
-        self._span_holder[LifecycleStep.OPERATION].set_attribute("component", "graphql")
-
-        if self.execution_context.query:
-            self._span_holder[LifecycleStep.OPERATION].set_attribute(
-                "query", self.execution_context.query
+        state = _OpenTelemetryTracingState()
+        token = _opentelemetry_state_var.set(state)
+        try:
+            state.operation_name = self.execution_context.operation_name
+            span_name = (
+                f"GraphQL Query: {state.operation_name}"
+                if state.operation_name
+                else "GraphQL Query"
             )
 
-        yield
-        # If the client doesn't provide an operation name then GraphQL will
-        # execute the first operation in the query string. This might be a named
-        # operation but we don't know until the parsing stage has finished. If
-        # that's the case we want to update the span name so that we have a more
-        # useful name in our trace.
-        if not self._operation_name and self.execution_context.operation_name:
-            span_name = f"GraphQL Query: {self.execution_context.operation_name}"
-            self._span_holder[LifecycleStep.OPERATION].update_name(span_name)
-        self._span_holder[LifecycleStep.OPERATION].end()
+            operation_span = self._tracer.start_span(span_name, kind=SpanKind.SERVER)
+            state.span_holder[LifecycleStep.OPERATION] = operation_span
+            operation_span.set_attribute("component", "graphql")
+
+            if self.execution_context.query:
+                operation_span.set_attribute("query", self.execution_context.query)
+
+            yield
+
+            # If the client doesn't provide an operation name then GraphQL will
+            # execute the first operation in the query string. This might be a named
+            # operation but we don't know until the parsing stage has finished. If
+            # that's the case we want to update the span name so that we have a more
+            # useful name in our trace.
+            if not state.operation_name and self.execution_context.operation_name:
+                span_name = f"GraphQL Query: {self.execution_context.operation_name}"
+                operation_span.update_name(span_name)
+        finally:
+            span = state.span_holder.get(LifecycleStep.OPERATION)
+            if span is not None:
+                span.end()
+            _opentelemetry_state_var.reset(token)
 
     def on_validate(self) -> Generator[None, None, None]:
-        ctx = trace.set_span_in_context(self._span_holder[LifecycleStep.OPERATION])
-        self._span_holder[LifecycleStep.VALIDATION] = self._tracer.start_span(
+        state = _get_state()
+        ctx = trace.set_span_in_context(state.span_holder[LifecycleStep.OPERATION])
+        validation_span = self._tracer.start_span(
             "GraphQL Validation",
             context=ctx,
         )
+        state.span_holder[LifecycleStep.VALIDATION] = validation_span
         yield
-        self._span_holder[LifecycleStep.VALIDATION].end()
+        validation_span.end()
 
     def on_parse(self) -> Generator[None, None, None]:
-        ctx = trace.set_span_in_context(self._span_holder[LifecycleStep.OPERATION])
-        self._span_holder[LifecycleStep.PARSE] = self._tracer.start_span(
-            "GraphQL Parsing", context=ctx
-        )
+        state = _get_state()
+        ctx = trace.set_span_in_context(state.span_holder[LifecycleStep.OPERATION])
+        parsing_span = self._tracer.start_span("GraphQL Parsing", context=ctx)
+        state.span_holder[LifecycleStep.PARSE] = parsing_span
 
         yield
-        self._span_holder[LifecycleStep.PARSE].end()
+        parsing_span.end()
 
     def filter_resolver_args(
         self, args: dict[str, Any], info: GraphQLResolveInfo
@@ -165,10 +198,11 @@ class OpenTelemetryExtension(SchemaExtension):
 
             return result
 
+        state = _get_state()
         with self._tracer.start_as_current_span(
             f"GraphQL Resolving: {info.field_name}",
             context=trace.set_span_in_context(
-                self._span_holder[LifecycleStep.OPERATION]
+                state.span_holder[LifecycleStep.OPERATION]
             ),
         ) as span:
             self.add_tags(span, info, kwargs)
@@ -192,10 +226,11 @@ class OpenTelemetryExtensionSync(OpenTelemetryExtension):
         if should_skip_tracing(_next, info):
             return _next(root, info, *args, **kwargs)
 
+        state = _get_state()
         with self._tracer.start_as_current_span(
             f"GraphQL Resolving: {info.field_name}",
             context=trace.set_span_in_context(
-                self._span_holder[LifecycleStep.OPERATION]
+                state.span_holder[LifecycleStep.OPERATION]
             ),
         ) as span:
             self.add_tags(span, info, kwargs)

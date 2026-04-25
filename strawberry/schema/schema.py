@@ -3,7 +3,7 @@ from __future__ import annotations
 import warnings
 from asyncio import ensure_future
 from collections.abc import AsyncGenerator, AsyncIterator, Awaitable, Callable, Iterable
-from functools import cached_property, lru_cache
+from functools import lru_cache
 from inspect import isawaitable
 from typing import (
     TYPE_CHECKING,
@@ -380,14 +380,12 @@ class Schema(BaseSchema):
             for ext in extensions
         ]
 
-    @cached_property
+    @property
     def _sync_extensions(self) -> list[SchemaExtension]:
         return self.get_extensions(sync=True)
 
     @property
     def _async_extensions(self) -> list[SchemaExtension]:
-        # Fresh instances per access: concurrent async requests must not share
-        # extension state. See _sync_extensions for the cached counterpart.
         return self.get_extensions(sync=False)
 
     def create_extensions_runner(
@@ -586,10 +584,6 @@ class Schema(BaseSchema):
             operation_extensions=operation_extensions,
         )
         extensions = self._async_extensions
-        # TODO (#3571): remove this when we implement execution context as parameter.
-        for extension in extensions:
-            extension.execution_context = execution_context
-
         extensions_runner = self.create_extensions_runner(execution_context, extensions)
         # uncached: each async request needs its own middleware to avoid
         # concurrent requests overwriting each other's execution_context
@@ -609,7 +603,7 @@ class Schema(BaseSchema):
         custom_context_kwargs = self._get_custom_context_kwargs(operation_extensions)
 
         try:
-            async with extensions_runner.operation():
+            async with extensions_runner.operation() as execution_context:
                 # Note: In graphql-core the schema would be validated here but in
                 # Strawberry we are validating it at initialisation time instead
 
@@ -667,7 +661,12 @@ class Schema(BaseSchema):
                 PreExecutionError(data=None, errors=[_coerce_error(exc)]),
                 extensions_runner,
             )
-        # return results after all the operation completed.
+        # Success path: returns *after* the operation context exits so that
+        # ``on_operation`` post-yield code (which can mutate
+        # ``execution_context.result``) runs before the response is built.
+        # ``SchemaExtensionsRunner.get_extensions_results`` re-binds the
+        # per-request ContextVar so extensions can still read
+        # ``self.execution_context`` from inside ``get_results``.
         return await self._handle_execution_result(
             execution_context, result, extensions_runner, skip_process_errors=True
         )
@@ -695,12 +694,10 @@ class Schema(BaseSchema):
             operation_extensions=operation_extensions,
         )
         extensions = self._sync_extensions
-        # TODO (#3571): remove this when we implement execution context as parameter.
-        for extension in extensions:
-            extension.execution_context = execution_context
-
         extensions_runner = self.create_extensions_runner(execution_context, extensions)
-        middleware_manager = self._get_middleware_manager(extensions)
+        # Uncached: extensions are fresh per request, so the middleware
+        # manager wrapping them must be too.
+        middleware_manager = self._get_middleware_manager(extensions, cached=False)
 
         execute_function = execute
 
@@ -717,7 +714,7 @@ class Schema(BaseSchema):
         )
 
         try:
-            with extensions_runner.operation():
+            with extensions_runner.operation() as execution_context:
                 # Note: In graphql-core the schema would be validated here but in
                 # Strawberry we are validating it at initialisation time instead
                 if not execution_context.query:
@@ -737,7 +734,9 @@ class Schema(BaseSchema):
                         return ExecutionResult(
                             data=None,
                             errors=[error],
-                            extensions=extensions_runner.get_extensions_results_sync(),
+                            extensions=extensions_runner.get_extensions_results_sync(
+                                execution_context
+                            ),
                         )
 
                 try:
@@ -754,12 +753,15 @@ class Schema(BaseSchema):
                     _run_validation(execution_context)
                     if execution_context.pre_execution_errors:
                         self._process_errors(
-                            execution_context.pre_execution_errors, execution_context
+                            execution_context.pre_execution_errors,
+                            execution_context,
                         )
                         return ExecutionResult(
                             data=None,
                             errors=execution_context.pre_execution_errors,
-                            extensions=extensions_runner.get_extensions_results_sync(),
+                            extensions=extensions_runner.get_extensions_results_sync(
+                                execution_context
+                            ),
                         )
 
                 with extensions_runner.executing():
@@ -778,7 +780,9 @@ class Schema(BaseSchema):
                         )
 
                         if isawaitable(result):
-                            result = cast("Awaitable[GraphQLExecutionResult]", result)  # type: ignore[redundant-cast]
+                            result = cast(  # type: ignore[redundant-cast]
+                                "Awaitable[GraphQLExecutionResult]", result
+                            )
                             ensure_future(result).cancel()
                             raise RuntimeError(  # noqa: TRY301
                                 "GraphQL execution failed to complete synchronously."
@@ -809,12 +813,20 @@ class Schema(BaseSchema):
             return ExecutionResult(
                 data=None,
                 errors=errors,
-                extensions=extensions_runner.get_extensions_results_sync(),
+                extensions=extensions_runner.get_extensions_results_sync(
+                    execution_context
+                ),
             )
+        # Success path: return *after* the operation context exits so
+        # ``on_operation`` post-yield code (e.g. ``MaskErrors`` mutating
+        # ``execution_context.result.errors``) runs before the response
+        # is built. ``SchemaExtensionsRunner.get_extensions_results_sync``
+        # re-binds the per-request ContextVar so extensions can still read
+        # ``self.execution_context`` from inside ``get_results``.
         return ExecutionResult(
             data=execution_context.result.data,
             errors=execution_context.result.errors,
-            extensions=extensions_runner.get_extensions_results_sync(),
+            extensions=extensions_runner.get_extensions_results_sync(execution_context),
         )
 
     async def _subscribe(
@@ -918,17 +930,13 @@ class Schema(BaseSchema):
             operation_name=operation_name,
         )
         extensions = self._async_extensions
-        # TODO (#3571): remove this when we implement execution context as parameter.
-        for extension in extensions:
-            extension.execution_context = execution_context
-
         return self._subscribe(
             execution_context,
             extensions_runner=self.create_extensions_runner(
                 execution_context, extensions
             ),
-            # uncached: subscriptions are long-lived and concurrent, so each
-            # needs isolated middleware to keep its own execution_context
+            # Uncached: subscriptions are long-lived and concurrent; each
+            # needs its own middleware referencing fresh extensions.
             middleware_manager=self._get_middleware_manager(extensions, cached=False),
             execution_context_class=self.execution_context_class,
             operation_extensions=operation_extensions,

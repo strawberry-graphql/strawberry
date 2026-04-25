@@ -291,3 +291,20 @@ class MyExtension(SchemaExtension):
         yield
         self.execution_context.context["db"].close()
 ```
+
+`execution_context` is backed by a
+[context variable](https://docs.python.org/3/library/contextvars.html), so
+concurrent requests sharing the same extension instance each see their own
+request's context. Reading `self.execution_context` outside an extension
+lifecycle hook (`on_operation`, `on_validate`, `on_parse`, `on_execute`,
+`resolve`, `get_results`) raises `RuntimeError`.
+
+### Request isolation
+
+If your extension needs to store request-scoped state, prefer holding it on
+`self.execution_context.extensions_results` or in a
+[`contextvars.ContextVar`](https://docs.python.org/3/library/contextvars.html)
+rather than on `self` directly. Plain `self` attributes are only safe when the
+extension is passed as a class (so the schema instantiates one per request); if
+you pass an extension as an instance, two concurrent requests share the same
+object and any mutable attribute on `self` will race.

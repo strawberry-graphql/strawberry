@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import contextvars
 import dataclasses
 import time
 from datetime import datetime, timezone
@@ -17,9 +18,6 @@ if TYPE_CHECKING:
     from graphql import GraphQLResolveInfo
 
 DATETIME_FORMAT = "%Y-%m-%dT%H:%M:%S.%fZ"
-
-if TYPE_CHECKING:
-    from strawberry.types.execution import ExecutionContext
 
 
 @dataclasses.dataclass
@@ -81,66 +79,131 @@ class ApolloTracingStats:
         }
 
 
+@dataclasses.dataclass
+class _ApolloTracingState:
+    """Per-request tracing state.
+
+    Held in a context variable so that a single ``ApolloTracingExtension``
+    instance shared across concurrent requests gives each request its own
+    timing buffer and resolver stats.
+    """
+
+    resolver_stats: list[ApolloResolverStats]
+    start_timestamp: int
+    end_timestamp: int
+    start_time: datetime
+    end_time: datetime
+    start_parsing: int
+    end_parsing: int
+    start_validation: int
+    end_validation: int
+
+
+_apollo_state_var: contextvars.ContextVar[_ApolloTracingState | None] = (
+    contextvars.ContextVar("strawberry.tracing.apollo", default=None)
+)
+
+
+def _get_state() -> _ApolloTracingState:
+    state = _apollo_state_var.get()
+    if state is None:
+        raise RuntimeError(
+            "ApolloTracingExtension state is not initialised: this method "
+            "must be called inside the on_operation lifecycle hook."
+        )
+    return state
+
+
 class ApolloTracingExtension(SchemaExtension):
-    def __init__(self, execution_context: ExecutionContext) -> None:
-        self._resolver_stats: list[ApolloResolverStats] = []
-        self.execution_context = execution_context
-        now = self.now()
-        self.start_timestamp: int = now
-        self.end_timestamp: int = now
-        self.start_time: datetime = datetime.now(timezone.utc)
-        self.end_time: datetime = self.start_time
-        self._start_parsing: int = now
-        self._end_parsing: int = now
-        self._start_validation: int = now
-        self._end_validation: int = now
-
-    def on_operation(self) -> Generator[None, None, None]:
-        self._resolver_stats = []
-        self.start_timestamp = self.now()
-        self.start_time = datetime.now(timezone.utc)
-        try:
-            yield
-        finally:
-            self.end_timestamp = self.now()
-            self.end_time = datetime.now(timezone.utc)
-
-    def on_parse(self) -> Generator[None, None, None]:
-        self._start_parsing = self.now()
-        try:
-            yield
-        finally:
-            self._end_parsing = self.now()
-
-    def on_validate(self) -> Generator[None, None, None]:
-        self._start_validation = self.now()
-        try:
-            yield
-        finally:
-            self._end_validation = self.now()
-
     def now(self) -> int:
         return time.perf_counter_ns()
 
+    def on_operation(self) -> Generator[None, None, None]:
+        now = self.now()
+        start_time = datetime.now(timezone.utc)
+        state = _ApolloTracingState(
+            resolver_stats=[],
+            start_timestamp=now,
+            end_timestamp=now,
+            start_time=start_time,
+            end_time=start_time,
+            start_parsing=now,
+            end_parsing=now,
+            start_validation=now,
+            end_validation=now,
+        )
+        token = _apollo_state_var.set(state)
+        try:
+            yield
+        finally:
+            state.end_timestamp = self.now()
+            state.end_time = datetime.now(timezone.utc)
+            # Publish the per-request tracing payload onto the
+            # ``ExecutionContext`` before clearing state, so the extensions
+            # runner can pick it up after this hook exits without needing
+            # to read the ContextVar again.
+            stats = self.stats
+            assert stats is not None
+            self.execution_context.extensions_results["tracing"] = stats.to_json()
+            _apollo_state_var.reset(token)
+
+    def on_parse(self) -> Generator[None, None, None]:
+        state = _get_state()
+        state.start_parsing = self.now()
+        try:
+            yield
+        finally:
+            state.end_parsing = self.now()
+
+    def on_validate(self) -> Generator[None, None, None]:
+        state = _get_state()
+        state.start_validation = self.now()
+        try:
+            yield
+        finally:
+            state.end_validation = self.now()
+
     @property
-    def stats(self) -> ApolloTracingStats:
+    def stats(self) -> ApolloTracingStats | None:
+        """Snapshot of the current request's tracing stats.
+
+        Returns ``None`` when accessed outside an active ``on_operation``
+        — i.e. once the per-request state ContextVar has been reset.
+        """
+        state = _apollo_state_var.get()
+        if state is None:
+            return None
         return ApolloTracingStats(
-            start_time=self.start_time,
-            end_time=self.end_time,
-            duration=self.end_timestamp - self.start_timestamp,
-            execution=ApolloExecutionStats(self._resolver_stats),
+            start_time=state.start_time,
+            end_time=state.end_time,
+            duration=state.end_timestamp - state.start_timestamp,
+            execution=ApolloExecutionStats(state.resolver_stats),
             validation=ApolloStepStats(
-                start_offset=self._start_validation - self.start_timestamp,
-                duration=self._end_validation - self._start_validation,
+                start_offset=state.start_validation - state.start_timestamp,
+                duration=state.end_validation - state.start_validation,
             ),
             parsing=ApolloStepStats(
-                start_offset=self._start_parsing - self.start_timestamp,
-                duration=self._end_parsing - self._start_parsing,
+                start_offset=state.start_parsing - state.start_timestamp,
+                duration=state.end_parsing - state.start_parsing,
             ),
         )
 
     def get_results(self) -> dict[str, dict[str, Any]]:
-        return {"tracing": self.stats.to_json()}
+        """Return the tracing payload for the current request.
+
+        Called by ``SchemaExtensionsRunner`` either *during* the operation
+        (e.g. on an early-return triggered by a parse error) or *after*
+        it. While the operation is still active the state is in the
+        ContextVar, so the payload is built from there. Once
+        ``on_operation``'s ``finally`` has reset the token, the payload
+        has already been published onto
+        ``execution_context.extensions_results`` and returning ``{}``
+        lets the runner pick that up.
+        """
+        stats = self.stats
+        if stats is None:
+            return {}
+        return {"tracing": stats.to_json()}
 
     async def resolve(
         self,
@@ -158,6 +221,7 @@ class ApolloTracingExtension(SchemaExtension):
 
             return result
 
+        state = _get_state()
         start_timestamp = self.now()
 
         resolver_stats = ApolloResolverStats(
@@ -165,7 +229,7 @@ class ApolloTracingExtension(SchemaExtension):
             field_name=info.field_name,
             parent_type=info.parent_type,
             return_type=info.return_type,
-            start_offset=start_timestamp - self.start_timestamp,
+            start_offset=start_timestamp - state.start_timestamp,
         )
 
         try:
@@ -178,7 +242,7 @@ class ApolloTracingExtension(SchemaExtension):
         finally:
             end_timestamp = self.now()
             resolver_stats.duration = end_timestamp - start_timestamp
-            self._resolver_stats.append(resolver_stats)
+            state.resolver_stats.append(resolver_stats)
 
 
 class ApolloTracingExtensionSync(ApolloTracingExtension):
@@ -193,6 +257,7 @@ class ApolloTracingExtensionSync(ApolloTracingExtension):
         if should_skip_tracing(_next, info):
             return _next(root, info, *args, **kwargs)
 
+        state = _get_state()
         start_timestamp = self.now()
 
         resolver_stats = ApolloResolverStats(
@@ -200,7 +265,7 @@ class ApolloTracingExtensionSync(ApolloTracingExtension):
             field_name=info.field_name,
             parent_type=info.parent_type,
             return_type=info.return_type,
-            start_offset=start_timestamp - self.start_timestamp,
+            start_offset=start_timestamp - state.start_timestamp,
         )
 
         try:
@@ -208,7 +273,7 @@ class ApolloTracingExtensionSync(ApolloTracingExtension):
         finally:
             end_timestamp = self.now()
             resolver_stats.duration = end_timestamp - start_timestamp
-            self._resolver_stats.append(resolver_stats)
+            state.resolver_stats.append(resolver_stats)
 
 
 __all__ = ["ApolloTracingExtension", "ApolloTracingExtensionSync"]

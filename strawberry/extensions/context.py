@@ -11,12 +11,15 @@ from typing import (
 )
 
 from strawberry.extensions import SchemaExtension
+from strawberry.extensions.base_extension import execution_context_var
 
 if TYPE_CHECKING:
+    import contextvars
     from collections.abc import AsyncIterator, Callable, Iterator
     from types import TracebackType
 
     from strawberry.extensions.base_extension import Hook
+    from strawberry.types import ExecutionContext
     from strawberry.utils.await_maybe import AwaitableOrValue
 
 
@@ -31,16 +34,35 @@ class WrappedHook(NamedTuple):
 
 
 class ExtensionContextManagerBase:
+    """Run extension lifecycle hooks and yield the bound ExecutionContext.
+
+    Runs a single class of hooks (named by ``HOOK_NAME``) and yields the
+    per-request ``ExecutionContext`` so callers can write
+    ``with cm as execution_context:``. Subclasses just provide
+    ``HOOK_NAME``. The only one that does extra work is
+    :class:`OperationContextManager`, which additionally binds the
+    per-request
+    :data:`strawberry.extensions.base_extension.execution_context_var`
+    so concurrent requests sharing one extension instance each see their
+    own context.
+    """
+
     __slots__ = (
         "async_exit_stack",
         "default_hook",
+        "execution_context",
         "exit_stack",
         "hooks",
     )
 
     HOOK_NAME: str
 
-    def __init__(self, extensions: list[SchemaExtension]) -> None:
+    def __init__(
+        self,
+        extensions: list[SchemaExtension],
+        execution_context: ExecutionContext,
+    ) -> None:
+        self.execution_context = execution_context
         self.hooks: list[WrappedHook] = []
         self.default_hook: Hook = getattr(SchemaExtension, self.HOOK_NAME)
         for extension in extensions:
@@ -100,7 +122,7 @@ class ExtensionContextManagerBase:
 
         return WrappedHook(extension=extension, hook=iterator, is_async=False)
 
-    def __enter__(self) -> None:
+    def __enter__(self) -> ExecutionContext:
         self.exit_stack = contextlib.ExitStack()
 
         self.exit_stack.__enter__()
@@ -112,6 +134,7 @@ class ExtensionContextManagerBase:
                     "failed to complete synchronously."
                 )
             self.exit_stack.enter_context(hook.hook())  # type: ignore
+        return self.execution_context
 
     def __exit__(
         self,
@@ -121,7 +144,7 @@ class ExtensionContextManagerBase:
     ) -> None:
         self.exit_stack.__exit__(exc_type, exc_val, exc_tb)
 
-    async def __aenter__(self) -> None:
+    async def __aenter__(self) -> ExecutionContext:
         self.async_exit_stack = contextlib.AsyncExitStack()
 
         await self.async_exit_stack.__aenter__()
@@ -131,6 +154,7 @@ class ExtensionContextManagerBase:
                 await self.async_exit_stack.enter_async_context(hook.hook())  # type: ignore
             else:
                 self.async_exit_stack.enter_context(hook.hook())  # type: ignore
+        return self.execution_context
 
     async def __aexit__(
         self,
@@ -142,7 +166,63 @@ class ExtensionContextManagerBase:
 
 
 class OperationContextManager(ExtensionContextManagerBase):
+    """Top-level extension context manager for a GraphQL operation.
+
+    In addition to running the ``on_operation`` lifecycle hooks and
+    yielding the ``ExecutionContext`` (inherited behaviour), it binds
+    that context to the per-request
+    :data:`strawberry.extensions.base_extension.execution_context_var`
+    so concurrent requests sharing a single extension instance each
+    see their own context (asyncio.gather, threaded ``execute_sync``).
+    """
+
+    __slots__ = ("_token",)
+
     HOOK_NAME = SchemaExtension.on_operation.__name__
+
+    def __enter__(self) -> ExecutionContext:
+        self._token: contextvars.Token | None = execution_context_var.set(
+            self.execution_context
+        )
+        try:
+            return super().__enter__()
+        except BaseException:
+            execution_context_var.reset(self._token)
+            self._token = None
+            raise
+
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
+    ) -> None:
+        try:
+            super().__exit__(exc_type, exc_val, exc_tb)
+        finally:
+            if self._token is not None:
+                execution_context_var.reset(self._token)
+
+    async def __aenter__(self) -> ExecutionContext:
+        self._token = execution_context_var.set(self.execution_context)
+        try:
+            return await super().__aenter__()
+        except BaseException:
+            execution_context_var.reset(self._token)
+            self._token = None
+            raise
+
+    async def __aexit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
+    ) -> None:
+        try:
+            await super().__aexit__(exc_type, exc_val, exc_tb)
+        finally:
+            if self._token is not None:
+                execution_context_var.reset(self._token)
 
 
 class ValidationContextManager(ExtensionContextManagerBase):
