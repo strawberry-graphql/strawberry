@@ -65,7 +65,7 @@ jobs:
           enable-cache: true
 
       - run: uv sync
-      - run: uv run nox -r -t tests -s "${{ matrix.session.session }}"
+      - run: uv run nox -r -s "${{ matrix.session.session }}"
       - name: Rename coverage data
         if: ${{ always() }}
         run: |
