@@ -152,6 +152,11 @@ class BaseChannelsRequestAdapter:
                     cookies[key.strip()] = value.strip()
         return cookies
 
+    @property
+    def path_params(self) -> Mapping[str, Any]:
+        url_route = self.request.consumer.scope.get("url_route", {})
+        return url_route.get("kwargs", {})
+
 
 class ChannelsRequestAdapter(BaseChannelsRequestAdapter, AsyncHTTPRequestAdapter):
     async def get_body(self) -> bytes:
