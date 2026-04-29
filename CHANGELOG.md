@@ -1,6 +1,16 @@
 CHANGELOG
 =========
 
+0.315.3 - 2026-04-29
+--------------------
+
+This release fixes the Channels integration when using `cross-web` 0.6.0 or newer.
+
+`cross-web` now requires request adapters to expose `path_params`, so Strawberry's
+Channels HTTP adapters now read them from the Channels `url_route` scope.
+
+This release was contributed by [@patrick91](https://github.com/patrick91) in [#4390](https://github.com/strawberry-graphql/strawberry/pull/4390)
+
 0.315.2 - 2026-04-26
 --------------------
 
