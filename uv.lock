@@ -888,14 +888,14 @@ toml = [
 
 [[package]]
 name = "cross-web"
-version = "0.4.1"
+version = "0.6.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/a4/58/e688e99d1493c565d1587e64b499268d0a3129ae59f4efe440aac395f803/cross_web-0.4.1.tar.gz", hash = "sha256:0466295028dcae98c9ab3d18757f90b0e74fac2ff90efbe87e74657546d9993d", size = 157385, upload-time = "2026-01-09T18:17:41.534Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/ad/83/b5ef04565acc065387dda3a4fbf0c4cfb6bab805c81b66b2bc5b5ac9a282/cross_web-0.6.0.tar.gz", hash = "sha256:ae90570802615365ca1a781117b43bfd0d6cd3bf611649d24c3a206a82a693c9", size = 331315, upload-time = "2026-04-13T14:29:12.718Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/67/49/92b46b6e65f09b717a66c4e5a9bc47a45ebc83dd0e0ed126f8258363479d/cross_web-0.4.1-py3-none-any.whl", hash = "sha256:41b07c3a38253c517ec0603c1a366353aff77538946092b0f9a2235033f192c2", size = 14320, upload-time = "2026-01-09T18:17:40.325Z" },
+    { url = "https://files.pythonhosted.org/packages/35/a2/dab06d9b80cb76c700883186a9a2e6fd103342c9b4def4d88f5787796e17/cross_web-0.6.0-py3-none-any.whl", hash = "sha256:bdebf0c08d02f3a48cf67b6904d3a6d8fd8cab2cd905592ab96ab00b259cd582", size = 24820, upload-time = "2026-04-13T14:29:11.198Z" },
 ]
 
 [[package]]
@@ -3818,7 +3818,7 @@ requires-dist = [
     { name = "asgiref", marker = "extra == 'django'", specifier = ">=3.2" },
     { name = "chalice", marker = "extra == 'chalice'", specifier = ">=1.22" },
     { name = "channels", marker = "extra == 'channels'", specifier = ">=3.0.5" },
-    { name = "cross-web", specifier = ">=0.4.0" },
+    { name = "cross-web", specifier = ">=0.6.0" },
     { name = "django", marker = "extra == 'django'", specifier = ">=3.2" },
     { name = "fastapi", marker = "extra == 'fastapi'", specifier = ">=0.65.2" },
     { name = "flask", marker = "extra == 'flask'", specifier = ">=1.1" },
