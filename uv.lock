@@ -3816,7 +3816,7 @@ requires-dist = [
     { name = "asgiref", marker = "extra == 'django'", specifier = ">=3.2" },
     { name = "chalice", marker = "extra == 'chalice'", specifier = ">=1.22" },
     { name = "channels", marker = "extra == 'channels'", specifier = ">=3.0.5" },
-    { name = "cross-web", specifier = ">=0.4.0" },
+    { name = "cross-web", specifier = ">=0.6.0" },
     { name = "django", marker = "extra == 'django'", specifier = ">=3.2" },
     { name = "fastapi", marker = "extra == 'fastapi'", specifier = ">=0.65.2" },
     { name = "flask", marker = "extra == 'flask'", specifier = ">=1.1" },

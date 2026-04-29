@@ -70,6 +70,12 @@ class ChannelsRequest:
         return query_params
 
     @property
+    def path_params(self) -> Mapping[str, Any]:
+        url_route = self.consumer.scope.get("url_route", {})
+
+        return url_route.get("kwargs", {})
+
+    @property
     def headers(self) -> Mapping[str, str]:
         return {
             header_name.decode().lower(): header_value.decode()
@@ -159,6 +165,10 @@ class BaseChannelsRequestAdapter:
 
 
 class ChannelsRequestAdapter(BaseChannelsRequestAdapter, AsyncHTTPRequestAdapter):
+    @property
+    def path_params(self) -> Mapping[str, Any]:
+        return self.request.path_params
+
     async def get_body(self) -> bytes:
         return self.request.body
 
@@ -167,6 +177,10 @@ class ChannelsRequestAdapter(BaseChannelsRequestAdapter, AsyncHTTPRequestAdapter
 
 
 class SyncChannelsRequestAdapter(BaseChannelsRequestAdapter, SyncHTTPRequestAdapter):
+    @property
+    def path_params(self) -> Mapping[str, Any]:
+        return self.request.path_params
+
     @property
     def body(self) -> bytes:
         return self.request.body
