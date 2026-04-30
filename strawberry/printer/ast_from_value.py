@@ -17,7 +17,7 @@ from graphql.language import (
     ObjectValueNode,
     StringValueNode,
 )
-from graphql.pyutils import Undefined, inspect, is_iterable
+from graphql.pyutils import Undefined, inspect, is_iterable, camel_to_snake
 from graphql.type import (
     GraphQLID,
     is_enum_type,
@@ -83,6 +83,25 @@ def ast_from_leaf_type(serialized: object, type_: GraphQLInputType | None) -> Va
         f"Cannot convert value to AST: {inspect(serialized)}."
     )  # pragma: no cover
 
+def field_in_object(field_name: str, value: dict) -> bool:
+    if field_name in value:
+        return True
+
+    if camel_to_snake(field_name) in value:
+        return True
+
+    return False
+
+
+def look_up_field(field_name: str, value: dict) -> str | None:
+    if field_name in value:
+        return value[field_name]
+
+    if camel_to_snake(field_name) in value:
+        return value[camel_to_snake(field_name)]
+
+    return None
+
 
 def ast_from_value(value: Any, type_: GraphQLInputType) -> ValueNode | None:
     # custom ast_from_value that allows to also serialize custom scalar that aren't
@@ -125,9 +144,9 @@ def ast_from_value(value: Any, type_: GraphQLInputType) -> ValueNode | None:
 
         type_ = cast("GraphQLInputObjectType", type_)
         field_items = (
-            (field_name, ast_from_value(value[field_name], field.type))
+            (field_name, ast_from_value(look_up_field(field_name, value), field.type))
             for field_name, field in type_.fields.items()
-            if field_name in value
+            if field_in_object(field_name, value)
         )
         field_nodes = tuple(
             ObjectFieldNode(name=NameNode(value=field_name), value=field_value)
