@@ -4,16 +4,19 @@ Previously attributes which were not camelCase would be removed from field argum
 ```python
 import strawberry
 
+
 @strawberry.input
 class Bar:
     a: str
     b: str
     some_values: list[str] | None = None
 
+
 @strawberry.input(one_of=True)
 class Foo:
     bar: strawberry.Maybe[Bar]
     c: strawberry.Maybe[str]
+
 
 @strawberry.type
 class Query:
@@ -26,6 +29,7 @@ class Query:
             c=None,
         ),
     ) -> str: ...
+
 
 schema = strawberry.Schema(Query)
 ```

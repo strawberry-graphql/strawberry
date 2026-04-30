@@ -28,8 +28,9 @@ def test_print_with_snake_case_values():
 
     schema = strawberry.Schema(Query)
 
-    assert schema.as_str() == \
-"""directive @oneOf on INPUT_OBJECT
+    assert (
+        schema.as_str()
+        == """directive @oneOf on INPUT_OBJECT
 
 input Bar {
   a: String!
@@ -45,6 +46,7 @@ input Foo @oneOf {
 type Query {
   foobar(foo: Foo! = {bar: {a: "hi", b: "bye", someValues: ["my", "world"]}}): String!
 }"""
+    )
 
 
 def test_print_with_camel_case_values():
@@ -74,8 +76,9 @@ def test_print_with_camel_case_values():
 
     schema = strawberry.Schema(Query)
 
-    assert schema.as_str() == \
-"""directive @oneOf on INPUT_OBJECT
+    assert (
+        schema.as_str()
+        == """directive @oneOf on INPUT_OBJECT
 
 input Bar {
   a: String!
@@ -91,3 +94,4 @@ input Foo @oneOf {
 type Query {
   foobar(foo: Foo! = {bar: {a: "hi", b: "bye", someValues: ["my", "world"]}}): String!
 }"""
+    )
