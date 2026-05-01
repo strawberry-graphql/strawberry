@@ -55,7 +55,7 @@ def test_print_with_camel_case_values():
     class Bar:
         a: str
         b: str
-        someValues: list[str] | None = None
+        someValues: list[str] | None = None  # noqa: N815
 
     @strawberry.input(one_of=True)
     class Foo:
