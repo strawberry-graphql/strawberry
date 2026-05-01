@@ -17,7 +17,7 @@ from graphql.language import (
     ObjectValueNode,
     StringValueNode,
 )
-from graphql.pyutils import Undefined, inspect, is_iterable, camel_to_snake
+from graphql.pyutils import Undefined, camel_to_snake, inspect, is_iterable
 from graphql.type import (
     GraphQLID,
     is_enum_type,
@@ -83,22 +83,21 @@ def ast_from_leaf_type(serialized: object, type_: GraphQLInputType | None) -> Va
         f"Cannot convert value to AST: {inspect(serialized)}."
     )  # pragma: no cover
 
+
 def field_in_object(field_name: str, value: dict) -> bool:
     if field_name in value:
         return True
 
-    if camel_to_snake(field_name) in value:
-        return True
-
-    return False
+    return camel_to_snake(field_name) in value
 
 
-def look_up_field(field_name: str, value: dict) -> str | None:
+def look_up_field(field_name: str, value: Mapping[str, Any]) -> Any:
     if field_name in value:
         return value[field_name]
 
-    if camel_to_snake(field_name) in value:
-        return value[camel_to_snake(field_name)]
+    snake_cased = camel_to_snake(field_name)
+    if snake_cased in value:
+        return value[snake_cased]
 
     return None
 
