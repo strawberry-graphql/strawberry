@@ -119,7 +119,7 @@ ProcessErrors: TypeAlias = (
 )
 
 
-_STRAWBERRY_ROOT = str(pathlib.Path(__file__).resolve().parent.parent)
+_STRAWBERRY_ROOT = pathlib.Path(__file__).resolve().parent.parent
 
 
 def _find_user_stacklevel() -> int:
@@ -134,10 +134,8 @@ def _find_user_stacklevel() -> int:
     frame: FrameType | None = sys._getframe(1)
     level = 1
     while frame is not None:
-        filename = str(pathlib.Path(frame.f_code.co_filename).resolve())
-        if not filename.startswith(_STRAWBERRY_ROOT + "/") and not filename.startswith(
-            _STRAWBERRY_ROOT + "\\"
-        ):
+        filename = pathlib.Path(frame.f_code.co_filename).resolve()
+        if not filename.is_relative_to(_STRAWBERRY_ROOT):
             return level
         frame = frame.f_back
         level += 1
