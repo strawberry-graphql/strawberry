@@ -1,8 +1,11 @@
+import re
 from pathlib import Path
 
 import pytest
 from typer import Typer
 from typer.testing import CliRunner
+
+_ANSI_ESCAPE_RE = re.compile(r"\x1b\[[0-9;]*m")
 
 schema = """
 type Query {
@@ -99,6 +102,10 @@ def test_schema_codegen_config_malformed(
         ["schema-codegen", str(schema_file), "--config", str(config_file)],
     )
 
+    # Strip ANSI escapes so the substring match isn't broken by Typer/Rich's
+    # syntax highlighting of the placeholders inside the error message.
+    plain_output = _ANSI_ESCAPE_RE.sub("", result.output)
+
     assert result.exit_code != 0
-    assert "JSONObject" in result.output
-    assert "<module>:<object>" in result.output
+    assert "JSONObject" in plain_output
+    assert "<module>:<object>" in plain_output
