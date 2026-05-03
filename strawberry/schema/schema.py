@@ -1,9 +1,10 @@
 from __future__ import annotations
 
+import copy
 import warnings
 from asyncio import ensure_future
 from collections.abc import AsyncGenerator, AsyncIterator, Awaitable, Callable, Iterable
-from functools import cached_property, lru_cache
+from functools import lru_cache
 from inspect import isawaitable
 from typing import (
     TYPE_CHECKING,
@@ -214,7 +215,9 @@ class Schema(BaseSchema):
         subscription: type | None = None,
         directives: Iterable[StrawberryDirective] = (),
         types: Iterable[type | StrawberryType] = (),
-        extensions: Iterable[type[SchemaExtension] | SchemaExtension] = (),
+        extensions: Iterable[
+            type[SchemaExtension] | Callable[[], SchemaExtension]
+        ] = (),
         execution_context_class: type[GraphQLExecutionContext] | None = None,
         config: StrawberryConfig | None = None,
         scalar_overrides: (
@@ -262,7 +265,19 @@ class Schema(BaseSchema):
         self.subscription = subscription
 
         self.extensions = extensions
-        self._cached_middleware_manager: MiddlewareManager | None = None
+        if any(isinstance(ext, SchemaExtension) for ext in self.extensions):
+            warnings.warn(
+                (
+                    "Passing an extension instance to `extensions=[...]` is "
+                    "deprecated and will be removed in a future release. "
+                    "Pass the class itself, or a factory callable "
+                    "(e.g. `lambda: MyExtension(arg=...)`), so that a fresh "
+                    "extension is constructed for each request. See "
+                    "https://github.com/strawberry-graphql/strawberry/issues/4369."
+                ),
+                DeprecationWarning,
+                stacklevel=2,
+            )
         self.execution_context_class = (
             execution_context_class or StrawberryGraphQLCoreExecutionContext
         )
@@ -369,25 +384,39 @@ class Schema(BaseSchema):
             raise ValueError(f"Invalid Schema. Errors:\n\n{formatted_errors}")
 
     def get_extensions(self, sync: bool = False) -> list[SchemaExtension]:
-        extensions: list[type[SchemaExtension] | SchemaExtension] = []
-        extensions.extend(self.extensions)
+        # `self.extensions` may legitimately contain instances on the
+        # deprecated runtime path, so the local list is widened to include
+        # ``SchemaExtension`` even though the public type signature does not.
+        extensions: list[
+            type[SchemaExtension] | Callable[[], SchemaExtension] | SchemaExtension
+        ] = list(self.extensions)
         if self.directives:
-            extensions.extend(
-                [DirectivesExtensionSync if sync else DirectivesExtension]
-            )
-        return [
-            ext if isinstance(ext, SchemaExtension) else ext(execution_context=None)
-            for ext in extensions
-        ]
+            extensions.append(DirectivesExtensionSync if sync else DirectivesExtension)
 
-    @cached_property
+        resolved: list[SchemaExtension] = []
+        for ext in extensions:
+            if isinstance(ext, SchemaExtension):
+                # Deprecated path: shallow-copy so each request gets its own
+                # `self`-attributes. The DeprecationWarning is emitted once at
+                # ``Schema.__init__``.
+                resolved.append(copy.copy(ext))
+            else:
+                # Class or factory callable. Both built-in extensions and
+                # ``SchemaExtension`` itself accept ``*, execution_context=None``,
+                # so calling with no args is safe.
+                resolved.append(ext())
+        return resolved
+
+    @property
     def _sync_extensions(self) -> list[SchemaExtension]:
+        # Fresh instances per access: concurrent sync requests (threaded
+        # ``execute_sync``) must not share extension state. See #4369.
         return self.get_extensions(sync=True)
 
     @property
     def _async_extensions(self) -> list[SchemaExtension]:
         # Fresh instances per access: concurrent async requests must not share
-        # extension state. See _sync_extensions for the cached counterpart.
+        # extension state.
         return self.get_extensions(sync=False)
 
     def create_extensions_runner(
@@ -413,20 +442,14 @@ class Schema(BaseSchema):
         return kwargs
 
     def _get_middleware_manager(
-        self, extensions: list[SchemaExtension], *, cached: bool = True
+        self, extensions: list[SchemaExtension]
     ) -> MiddlewareManager:
-        # create a middleware manager with all the extensions that implement resolve
-        if cached and self._cached_middleware_manager:
-            return self._cached_middleware_manager
-
-        manager = MiddlewareManager(
+        # Build a fresh middleware manager per request: the manager holds
+        # references to extension instances, which are now constructed
+        # per-request to avoid concurrency leaks (see #4369).
+        return MiddlewareManager(
             *(ext for ext in extensions if ext._implements_resolve())
         )
-
-        if cached:
-            self._cached_middleware_manager = manager
-
-        return manager
 
     def _create_execution_context(
         self,
@@ -591,9 +614,7 @@ class Schema(BaseSchema):
             extension.execution_context = execution_context
 
         extensions_runner = self.create_extensions_runner(execution_context, extensions)
-        # uncached: each async request needs its own middleware to avoid
-        # concurrent requests overwriting each other's execution_context
-        middleware_manager = self._get_middleware_manager(extensions, cached=False)
+        middleware_manager = self._get_middleware_manager(extensions)
 
         execute_function = execute
 
@@ -927,9 +948,7 @@ class Schema(BaseSchema):
             extensions_runner=self.create_extensions_runner(
                 execution_context, extensions
             ),
-            # uncached: subscriptions are long-lived and concurrent, so each
-            # needs isolated middleware to keep its own execution_context
-            middleware_manager=self._get_middleware_manager(extensions, cached=False),
+            middleware_manager=self._get_middleware_manager(extensions),
             execution_context_class=self.execution_context_class,
             operation_extensions=operation_extensions,
         )

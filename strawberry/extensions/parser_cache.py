@@ -9,17 +9,18 @@ from strawberry.extensions.base_extension import SchemaExtension
 class ParserCache(SchemaExtension):
     """Add LRU caching the parsing step during execution to improve performance.
 
-    Example:
+    The cache lives on the extension instance, so for it to be effective across
+    requests the same ``ParserCache`` instance has to be reused. Use it as a
+    pass-through factory that returns a singleton:
 
     ```python
     import strawberry
     from strawberry.extensions import ParserCache
 
+    parser_cache = ParserCache(maxsize=100)
     schema = strawberry.Schema(
         Query,
-        extensions=[
-            ParserCache(maxsize=100),
-        ],
+        extensions=[lambda: parser_cache],
     )
     ```
     """

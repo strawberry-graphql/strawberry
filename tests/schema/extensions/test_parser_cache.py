@@ -19,7 +19,8 @@ def test_parser_cache_extension(mock_parse):
         def ping(self) -> str:
             return "pong"
 
-    schema = strawberry.Schema(query=Query, extensions=[ParserCache()])
+    parser_cache = ParserCache()
+    schema = strawberry.Schema(query=Query, extensions=[lambda: parser_cache])
 
     query = "query { hello }"
 
@@ -61,8 +62,13 @@ def test_parser_cache_extension_arguments(mock_parse):
         def ping(self) -> str:
             return "pong"
 
+    parser_cache = ParserCache()
     schema = strawberry.Schema(
-        query=Query, extensions=[MaxTokensLimiter(max_token_count=20), ParserCache()]
+        query=Query,
+        extensions=[
+            lambda: MaxTokensLimiter(max_token_count=20),
+            lambda: parser_cache,
+        ],
     )
 
     query = "query { hello }"
@@ -83,7 +89,8 @@ def test_parser_cache_extension_syntax_error(mock_parse):
         def hello(self) -> str:  # pragma: no cover
             return "world"
 
-    schema = strawberry.Schema(query=Query, extensions=[ParserCache()])
+    parser_cache = ParserCache()
+    schema = strawberry.Schema(query=Query, extensions=[lambda: parser_cache])
 
     query = "query { hello"
 
@@ -107,7 +114,8 @@ def test_parser_cache_extension_max_size(mock_parse):
         def ping(self) -> str:
             return "pong"
 
-    schema = strawberry.Schema(query=Query, extensions=[ParserCache(maxsize=1)])
+    parser_cache = ParserCache(maxsize=1)
+    schema = strawberry.Schema(query=Query, extensions=[lambda: parser_cache])
 
     query = "query { hello }"
 
@@ -145,7 +153,8 @@ async def test_parser_cache_extension_async(mock_parse):
         def ping(self) -> str:
             return "pong"
 
-    schema = strawberry.Schema(query=Query, extensions=[ParserCache()])
+    parser_cache = ParserCache()
+    schema = strawberry.Schema(query=Query, extensions=[lambda: parser_cache])
 
     query = "query { hello }"
 

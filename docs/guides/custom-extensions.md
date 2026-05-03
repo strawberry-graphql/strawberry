@@ -24,6 +24,33 @@ class MyExtension(SchemaExtension):
 schema = strawberry.Schema(query=Query, extensions=[MyExtension])
 ```
 
+## Passing extensions
+
+Extensions can be passed to the schema as either:
+
+- a **class** (no constructor arguments):
+  ```python
+  schema = strawberry.Schema(query=Query, extensions=[MyExtension])
+  ```
+- a **factory** (configured constructor):
+  ```python
+  schema = strawberry.Schema(
+      query=Query,
+      extensions=[lambda: MaxTokensLimiter(max_token_count=100)],
+  )
+  ```
+
+In both cases Strawberry constructs a fresh extension for every request, so any
+mutable state you keep on `self` is automatically isolated across concurrent
+requests.
+
+> Passing an extension instance directly (`extensions=[MyExtension()]`) is
+> deprecated and is no longer accepted by the type signature — type checkers
+> (mypy, pyright) will report it. Strawberry still tolerates it at runtime: the
+> instance is shallow-copied per request and a `DeprecationWarning` is emitted.
+> Switch to the factory form (or pass the class) to silence both the type error
+> and the warning, and get full per-request isolation.
+
 ## Hooks
 
 ### Resolve

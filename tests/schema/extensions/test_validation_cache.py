@@ -19,7 +19,8 @@ def test_validation_cache_extension(mock_validate):
         def ping(self) -> str:
             return "pong"
 
-    schema = strawberry.Schema(query=Query, extensions=[ValidationCache()])
+    validation_cache = ValidationCache()
+    schema = strawberry.Schema(query=Query, extensions=[lambda: validation_cache])
 
     query = "query { hello }"
 
@@ -61,7 +62,8 @@ def test_validation_cache_extension_max_size(mock_validate):
         def ping(self) -> str:
             return "pong"
 
-    schema = strawberry.Schema(query=Query, extensions=[ValidationCache(maxsize=1)])
+    validation_cache = ValidationCache(maxsize=1)
+    schema = strawberry.Schema(query=Query, extensions=[lambda: validation_cache])
 
     query = "query { hello }"
 
@@ -98,7 +100,8 @@ async def test_validation_cache_extension_async():
         def ping(self) -> str:
             return "pong"
 
-    schema = strawberry.Schema(query=Query, extensions=[ValidationCache()])
+    validation_cache = ValidationCache()
+    schema = strawberry.Schema(query=Query, extensions=[lambda: validation_cache])
 
     query = "query { hello }"
 
