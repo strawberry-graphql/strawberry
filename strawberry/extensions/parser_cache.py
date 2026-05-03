@@ -1,26 +1,47 @@
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from functools import lru_cache
+from typing import Any
 
 from graphql.language.parser import parse
 
 from strawberry.extensions.base_extension import SchemaExtension
 
+# Shared LRU caches keyed by ``maxsize``. Multiple ``ParserCache`` instances
+# (e.g. a fresh one constructed per request via the factory pattern) reuse the
+# same wrapped ``parse`` so caching is effective across requests without
+# sharing extension instances.
+_caches: dict[int | None, Callable[..., Any]] = {}
+
+
+def _wrapped_parse(*args: Any, **kwargs: Any) -> Any:
+    # Indirection: tests patch ``parse`` on this module, so the wrapped
+    # function must look it up via the module's globals at call time rather
+    # than capture it at the time the cache wrapper is built.
+    return parse(*args, **kwargs)
+
+
+def _get_parse_cache(maxsize: int | None) -> Callable[..., Any]:
+    cached = _caches.get(maxsize)
+    if cached is None:
+        cached = lru_cache(maxsize=maxsize)(_wrapped_parse)
+        _caches[maxsize] = cached
+    return cached
+
 
 class ParserCache(SchemaExtension):
     """Add LRU caching the parsing step during execution to improve performance.
 
-    The cache lives on the extension instance, so for it to be effective across
-    requests the same ``ParserCache`` instance has to be reused. Use it as a
-    pass-through factory that returns a singleton:
+    Pass it as a factory; the LRU cache is shared across requests with the same
+    ``maxsize`` so caching is effective even when a fresh extension is built per
+    request.
 
     ```python
     import strawberry
     from strawberry.extensions import ParserCache
 
-    parser_cache = ParserCache(maxsize=100)
     schema = strawberry.Schema(
         Query,
-        extensions=[lambda: parser_cache],
+        extensions=[lambda: ParserCache(maxsize=100)],
     )
     ```
     """
@@ -33,7 +54,8 @@ class ParserCache(SchemaExtension):
                 cache will grow without bound.
                 More info: https://docs.python.org/3/library/functools.html#functools.lru_cache
         """
-        self.cached_parse_document = lru_cache(maxsize=maxsize)(parse)
+        super().__init__()
+        self.cached_parse_document = _get_parse_cache(maxsize)
 
     def on_parse(self) -> Iterator[None]:
         execution_context = self.execution_context

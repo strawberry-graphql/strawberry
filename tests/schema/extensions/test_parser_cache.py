@@ -5,6 +5,17 @@ from graphql import SourceLocation, parse
 
 import strawberry
 from strawberry.extensions import MaxTokensLimiter, ParserCache
+from strawberry.extensions import parser_cache as _parser_cache_module
+
+
+@pytest.fixture(autouse=True)
+def _clear_parser_caches():
+    # ``ParserCache`` shares its LRU cache module-level keyed by ``maxsize``;
+    # tests rely on patching ``parse`` and counting calls, so we clear between
+    # tests to keep them independent.
+    _parser_cache_module._caches.clear()
+    yield
+    _parser_cache_module._caches.clear()
 
 
 @patch("strawberry.extensions.parser_cache.parse", wraps=parse)
@@ -19,8 +30,7 @@ def test_parser_cache_extension(mock_parse):
         def ping(self) -> str:
             return "pong"
 
-    parser_cache = ParserCache()
-    schema = strawberry.Schema(query=Query, extensions=[lambda: parser_cache])
+    schema = strawberry.Schema(query=Query, extensions=[ParserCache])
 
     query = "query { hello }"
 
@@ -62,12 +72,11 @@ def test_parser_cache_extension_arguments(mock_parse):
         def ping(self) -> str:
             return "pong"
 
-    parser_cache = ParserCache()
     schema = strawberry.Schema(
         query=Query,
         extensions=[
             lambda: MaxTokensLimiter(max_token_count=20),
-            lambda: parser_cache,
+            ParserCache,
         ],
     )
 
@@ -89,8 +98,7 @@ def test_parser_cache_extension_syntax_error(mock_parse):
         def hello(self) -> str:  # pragma: no cover
             return "world"
 
-    parser_cache = ParserCache()
-    schema = strawberry.Schema(query=Query, extensions=[lambda: parser_cache])
+    schema = strawberry.Schema(query=Query, extensions=[ParserCache])
 
     query = "query { hello"
 
@@ -114,8 +122,10 @@ def test_parser_cache_extension_max_size(mock_parse):
         def ping(self) -> str:
             return "pong"
 
-    parser_cache = ParserCache(maxsize=1)
-    schema = strawberry.Schema(query=Query, extensions=[lambda: parser_cache])
+    schema = strawberry.Schema(
+        query=Query,
+        extensions=[lambda: ParserCache(maxsize=1)],
+    )
 
     query = "query { hello }"
 
@@ -153,8 +163,7 @@ async def test_parser_cache_extension_async(mock_parse):
         def ping(self) -> str:
             return "pong"
 
-    parser_cache = ParserCache()
-    schema = strawberry.Schema(query=Query, extensions=[lambda: parser_cache])
+    schema = strawberry.Schema(query=Query, extensions=[ParserCache])
 
     query = "query { hello }"
 

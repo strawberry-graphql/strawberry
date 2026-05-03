@@ -40,9 +40,14 @@ Extensions can be passed to the schema as either:
   )
   ```
 
-In both cases Strawberry constructs a fresh extension for every request, so any
-mutable state you keep on `self` is automatically isolated across concurrent
-requests.
+In both cases Strawberry calls the class or the factory once per request and
+uses the returned extension. With the recommended forms above you get a fresh
+extension per request, so any mutable state you keep on `self` is automatically
+isolated across concurrent requests. If your factory returns a long-lived shared
+instance instead of a new one each call, request-scoped state on `self`
+(including `execution_context`) will leak across concurrent requests — keep the
+cross-request state in module/class-level storage or in
+`execution_context.extensions_results`, not on the extension instance.
 
 > Passing an extension instance directly (`extensions=[MyExtension()]`) is
 > deprecated and is no longer accepted by the type signature — type checkers

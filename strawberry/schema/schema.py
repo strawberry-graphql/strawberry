@@ -82,6 +82,7 @@ from .exceptions import CannotGetOperationTypeError, InvalidOperationTypeError
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Mapping
+    from types import FrameType
     from typing import TypeAlias
 
     from graphql.language import DocumentNode
@@ -114,6 +115,32 @@ DEFAULT_ALLOWED_OPERATION_TYPES = {
 ProcessErrors: TypeAlias = (
     "Callable[[list[GraphQLError], ExecutionContext | None], None]"
 )
+
+
+def _find_user_stacklevel() -> int:
+    """Return the ``stacklevel`` that points at the first non-strawberry frame.
+
+    Used so deprecation warnings emitted from inside ``Schema.__init__`` end up
+    pointing at user code, regardless of how many strawberry-internal frames
+    sit between us and the caller (e.g. ``strawberry.federation.Schema``
+    delegating via ``super().__init__``).
+    """
+    import sys
+    from pathlib import Path as _PathlibPath
+
+    strawberry_root = str(_PathlibPath(__file__).resolve().parent.parent)
+    # Skip this helper itself.
+    frame: FrameType | None = sys._getframe(1)
+    level = 1
+    while frame is not None:
+        filename = str(_PathlibPath(frame.f_code.co_filename).resolve())
+        if not filename.startswith(strawberry_root + "/") and not filename.startswith(
+            strawberry_root + "\\"
+        ):
+            return level
+        frame = frame.f_back
+        level += 1
+    return level
 
 
 # TODO: merge with below
@@ -264,7 +291,10 @@ class Schema(BaseSchema):
         self.mutation = mutation
         self.subscription = subscription
 
-        self.extensions = extensions
+        # Materialize once so generators / one-shot iterables work on later
+        # ``get_extensions`` calls and so the deprecation check below doesn't
+        # consume the iterable.
+        self.extensions = tuple(extensions)
         if any(isinstance(ext, SchemaExtension) for ext in self.extensions):
             warnings.warn(
                 (
@@ -276,7 +306,7 @@ class Schema(BaseSchema):
                     "https://github.com/strawberry-graphql/strawberry/issues/4369."
                 ),
                 DeprecationWarning,
-                stacklevel=2,
+                stacklevel=_find_user_stacklevel(),
             )
         self.execution_context_class = (
             execution_context_class or StrawberryGraphQLCoreExecutionContext
@@ -401,9 +431,12 @@ class Schema(BaseSchema):
                 # ``Schema.__init__``.
                 resolved.append(copy.copy(ext))
             else:
-                # Class or factory callable. Both built-in extensions and
-                # ``SchemaExtension`` itself accept ``*, execution_context=None``,
-                # so calling with no args is safe.
+                # Class or factory callable. Both must be no-arg callable —
+                # ``SchemaExtension.__init__`` accepts ``*, execution_context=None``
+                # by default, and built-in extensions take their own optional
+                # configuration kwargs only. Custom extensions with a required
+                # positional ``execution_context`` argument should migrate to the
+                # base-class signature or be passed via a factory.
                 resolved.append(ext())
         return resolved
 

@@ -105,7 +105,7 @@ async def test_async_concurrent_factory_passed():
     assert results[1].extensions == {"query": queries[1], "label": "async-factory"}
 
 
-def test_factory_called_once_per_request():
+def test_class_constructed_per_request():
     construction_count = 0
 
     class _Counting(SchemaExtension):
@@ -121,6 +121,22 @@ def test_factory_called_once_per_request():
     assert construction_count == 3, "every request must build a fresh instance"
 
 
+def test_factory_called_per_request():
+    factory_call_count = 0
+
+    def factory() -> SchemaExtension:
+        nonlocal factory_call_count
+        factory_call_count += 1
+        return _CapturingExtension(label=f"req-{factory_call_count}")
+
+    schema = strawberry.Schema(query=Query, extensions=[factory])
+
+    for _ in range(3):
+        schema.execute_sync("{ hello }")
+
+    assert factory_call_count == 3, "factory must be invoked once per request"
+
+
 def test_instance_passed_emits_deprecation_warning():
     with pytest.warns(
         DeprecationWarning,
@@ -130,6 +146,45 @@ def test_instance_passed_emits_deprecation_warning():
             query=Query,
             extensions=[_CapturingExtension()],  # type: ignore[list-item]
         )
+
+
+def test_instance_passed_emits_deprecation_warning_via_federation_schema():
+    # The warning is emitted from inside ``Schema.__init__`` but the federation
+    # subclass sits in the call stack via ``super().__init__``. Check that the
+    # warning is still attributed to the user's call site.
+    import strawberry.federation
+
+    @strawberry.federation.type
+    class FedQuery:
+        hello: str = "world"
+
+    with pytest.warns(
+        DeprecationWarning,
+        match=r"Passing an extension instance.*deprecated",
+    ) as caught:
+        strawberry.federation.Schema(
+            query=FedQuery,
+            extensions=[_CapturingExtension()],  # type: ignore[list-item]
+        )
+
+    assert len(caught) == 1
+    # The warning's filename must not be inside ``strawberry/`` itself.
+    assert "strawberry/" not in caught[0].filename or caught[0].filename.endswith(
+        "test_isolation.py"
+    )
+
+
+def test_extensions_can_be_a_generator():
+    # ``Schema.__init__`` materializes the iterable so a generator passed as
+    # ``extensions`` still produces extensions on every request.
+    def gen():
+        yield _CapturingExtension
+
+    schema = strawberry.Schema(query=Query, extensions=gen())
+
+    for _ in range(2):
+        result = schema.execute_sync("{ hello }")
+        assert result.extensions == {"query": "{ hello }", "label": "default"}
 
 
 def test_instance_passed_per_request_copy_isolates_context():

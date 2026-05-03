@@ -1,24 +1,48 @@
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from functools import lru_cache
+from typing import Any
 
 from strawberry.extensions.base_extension import SchemaExtension
+
+# Shared LRU caches keyed by ``maxsize``. Multiple ``ValidationCache``
+# instances (e.g. a fresh one per request via the factory pattern) reuse the
+# same wrapped ``validate_document`` so caching is effective across requests
+# without sharing extension instances.
+_caches: dict[int | None, Callable[..., Any]] = {}
+
+
+def _wrapped_validate(*args: Any, **kwargs: Any) -> Any:
+    # Indirection: ``validate_document`` is imported lazily to dodge the
+    # circular import with ``strawberry.schema.schema``, and the wrapped
+    # function looks it up at call time so test patches on the schema module
+    # are honored.
+    from strawberry.schema.schema import validate_document
+
+    return validate_document(*args, **kwargs)
+
+
+def _get_validate_cache(maxsize: int | None) -> Callable[..., Any]:
+    cached = _caches.get(maxsize)
+    if cached is None:
+        cached = lru_cache(maxsize=maxsize)(_wrapped_validate)
+        _caches[maxsize] = cached
+    return cached
 
 
 class ValidationCache(SchemaExtension):
     """Add LRU caching the validation step during execution to improve performance.
 
-    The cache lives on the extension instance, so for it to be effective across
-    requests the same ``ValidationCache`` instance has to be reused. Use it as
-    a pass-through factory that returns a singleton:
+    Pass it as a factory; the LRU cache is shared across requests with the same
+    ``maxsize`` so caching is effective even when a fresh extension is built per
+    request.
 
     ```python
     import strawberry
     from strawberry.extensions import ValidationCache
 
-    validation_cache = ValidationCache(maxsize=100)
     schema = strawberry.Schema(
         Query,
-        extensions=[lambda: validation_cache],
+        extensions=[lambda: ValidationCache(maxsize=100)],
     )
     ```
     """
@@ -32,9 +56,8 @@ class ValidationCache(SchemaExtension):
 
         More info: https://docs.python.org/3/library/functools.html#functools.lru_cache
         """
-        from strawberry.schema.schema import validate_document
-
-        self.cached_validate_document = lru_cache(maxsize=maxsize)(validate_document)
+        super().__init__()
+        self.cached_validate_document = _get_validate_cache(maxsize)
 
     def on_validate(self) -> Iterator[None]:
         execution_context = self.execution_context
