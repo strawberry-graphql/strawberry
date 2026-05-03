@@ -64,10 +64,26 @@ identity `serialize` / `parse_value`:
 
 ```graphql
 scalar Foo
+
+type Query {
+  data: Foo!
+}
 ```
 
 ```python
+from __future__ import annotations
+import strawberry
+from strawberry.schema.config import StrawberryConfig
+from strawberry.types.scalar import ScalarDefinition
+from typing import NewType
+
 Foo = NewType("Foo", object)
+
+
+@strawberry.type
+class Query:
+    data: Foo
+
 
 scalar_map: dict[object, ScalarDefinition] = {
     Foo: strawberry.scalar(name="Foo", serialize=lambda v: v, parse_value=lambda v: v),

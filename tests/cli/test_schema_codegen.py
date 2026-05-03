@@ -109,3 +109,21 @@ def test_schema_codegen_config_malformed(
     assert result.exit_code != 0
     assert "JSONObject" in plain_output
     assert "<module>:<object>" in plain_output
+
+
+def test_schema_codegen_config_invalid_yaml(
+    cli_app: Typer, cli_runner: CliRunner, schema_file: Path, tmp_path: Path
+):
+    config_file = tmp_path / "codegen.yaml"
+    # Unbalanced bracket — yaml.safe_load raises yaml.YAMLError.
+    config_file.write_text("scalars: [JSONObject: strawberry.scalars:JSON\n")
+
+    result = cli_runner.invoke(
+        cli_app,
+        ["schema-codegen", str(schema_file), "--config", str(config_file)],
+    )
+
+    plain_output = _ANSI_ESCAPE_RE.sub("", result.output)
+
+    assert result.exit_code != 0
+    assert "Invalid YAML" in plain_output

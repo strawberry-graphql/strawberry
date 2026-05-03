@@ -10,7 +10,7 @@ if TYPE_CHECKING:
     from pathlib import Path
 
 
-_SCALAR_TARGET_RE = re.compile(r"^[A-Za-z_][\w.]*:[A-Za-z_]\w*$")
+_SCALAR_TARGET_RE = re.compile(r"^[A-Za-z_]\w*(?:\.[A-Za-z_]\w*)*:[A-Za-z_]\w*$")
 
 
 @dataclasses.dataclass(frozen=True)
@@ -19,7 +19,10 @@ class CodegenConfig:
 
 
 def load_config(path: Path) -> CodegenConfig:
-    raw = yaml.safe_load(path.read_text()) or {}
+    try:
+        raw = yaml.safe_load(path.read_text()) or {}
+    except yaml.YAMLError as exc:
+        raise ValueError(f"Invalid YAML in config file {path}: {exc}") from exc
 
     if not isinstance(raw, dict):
         raise TypeError(
