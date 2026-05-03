@@ -11,20 +11,14 @@ from strawberry.extensions.base_extension import SchemaExtension
 _caches: dict[int | None, Callable[..., Any]] = {}
 
 
-def _wrapped_validate(*args: Any, **kwargs: Any) -> Any:
-    # Indirection: ``validate_document`` is imported lazily to dodge the
-    # circular import with ``strawberry.schema.schema``, and the wrapped
-    # function looks it up at call time so test patches on the schema module
-    # are honored.
+def _get_validate_cache(maxsize: int | None) -> Callable[..., Any]:
+    # ``validate_document`` is imported lazily to break the circular import
+    # with ``strawberry.schema.schema``.
     from strawberry.schema.schema import validate_document
 
-    return validate_document(*args, **kwargs)
-
-
-def _get_validate_cache(maxsize: int | None) -> Callable[..., Any]:
     cached = _caches.get(maxsize)
     if cached is None:
-        cached = lru_cache(maxsize=maxsize)(_wrapped_validate)
+        cached = lru_cache(maxsize=maxsize)(validate_document)
         _caches[maxsize] = cached
     return cached
 

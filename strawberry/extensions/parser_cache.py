@@ -13,17 +13,10 @@ from strawberry.extensions.base_extension import SchemaExtension
 _caches: dict[int | None, Callable[..., Any]] = {}
 
 
-def _wrapped_parse(*args: Any, **kwargs: Any) -> Any:
-    # Indirection: tests patch ``parse`` on this module, so the wrapped
-    # function must look it up via the module's globals at call time rather
-    # than capture it at the time the cache wrapper is built.
-    return parse(*args, **kwargs)
-
-
 def _get_parse_cache(maxsize: int | None) -> Callable[..., Any]:
     cached = _caches.get(maxsize)
     if cached is None:
-        cached = lru_cache(maxsize=maxsize)(_wrapped_parse)
+        cached = lru_cache(maxsize=maxsize)(parse)
         _caches[maxsize] = cached
     return cached
 

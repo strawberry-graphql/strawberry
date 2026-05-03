@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import copy
+import pathlib
+import sys
 import warnings
 from asyncio import ensure_future
 from collections.abc import AsyncGenerator, AsyncIterator, Awaitable, Callable, Iterable
@@ -117,6 +119,9 @@ ProcessErrors: TypeAlias = (
 )
 
 
+_STRAWBERRY_ROOT = str(pathlib.Path(__file__).resolve().parent.parent)
+
+
 def _find_user_stacklevel() -> int:
     """Return the ``stacklevel`` that points at the first non-strawberry frame.
 
@@ -125,17 +130,13 @@ def _find_user_stacklevel() -> int:
     sit between us and the caller (e.g. ``strawberry.federation.Schema``
     delegating via ``super().__init__``).
     """
-    import sys
-    from pathlib import Path as _PathlibPath
-
-    strawberry_root = str(_PathlibPath(__file__).resolve().parent.parent)
     # Skip this helper itself.
     frame: FrameType | None = sys._getframe(1)
     level = 1
     while frame is not None:
-        filename = str(_PathlibPath(frame.f_code.co_filename).resolve())
-        if not filename.startswith(strawberry_root + "/") and not filename.startswith(
-            strawberry_root + "\\"
+        filename = str(pathlib.Path(frame.f_code.co_filename).resolve())
+        if not filename.startswith(_STRAWBERRY_ROOT + "/") and not filename.startswith(
+            _STRAWBERRY_ROOT + "\\"
         ):
             return level
         frame = frame.f_back
