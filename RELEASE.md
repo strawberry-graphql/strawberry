@@ -1,39 +1,33 @@
-Release type: patch
+Release type: minor
 
-`strawberry schema-codegen` now produces output that type-checks cleanly
-under Pyright's default ruleset for user-defined custom scalars, and the
-`JSON` / `JSONObject` registry entries have been repaired.
+`strawberry schema-codegen` now produces output that type-checks cleanly under
+Pyright's default ruleset for user-defined custom scalars, and adds a
+`-c / --config` option for telling codegen how specific scalars should be
+emitted.
+
+## Pyright-clean custom scalar output
 
 Previously, an SDL like:
 
 ```graphql
-scalar JSON
-scalar JSONObject
 scalar Foo
 
 type Query {
-  a: JSON!
-  b: JSONObject!
   c: Foo!
 }
 ```
 
-generated code that referenced the non-existent `strawberry.JSON`
-attribute (raising `AttributeError` at schema construction) and emitted
-the deprecated `ScalarWrapper` pattern for `Foo` (`Foo = strawberry.scalar(NewType("Foo", object), ...)`),
-which fails three Pyright checks per scalar.
+generated a `Foo = strawberry.scalar(NewType("Foo", object), ...)` binding,
+which fails three Pyright checks per scalar and uses the deprecated
+`ScalarWrapper` pattern.
 
-The generated output now uses `from strawberry.scalars import JSON`,
-`from strawberry.scalars import JSON as JSONObject` for the
-community-standard `JSONObject` convention, and a module-level `NewType`
-binding registered through `StrawberryConfig.scalar_map` (the recommended
-Strawberry API for custom scalars) for arbitrary user-defined scalars:
+The generated output now uses a module-level `NewType` binding plus a
+`scalar_map` registered through `StrawberryConfig` (the recommended Strawberry
+API):
 
 ```python
 from __future__ import annotations
 import strawberry
-from strawberry.scalars import JSON
-from strawberry.scalars import JSON as JSONObject
 from strawberry.schema.config import StrawberryConfig
 from strawberry.types.scalar import ScalarDefinition
 from typing import NewType
@@ -43,8 +37,6 @@ Foo = NewType("Foo", object)
 
 @strawberry.type
 class Query:
-    a: JSON
-    b: JSONObject
     c: Foo
 
 
@@ -58,7 +50,36 @@ schema = strawberry.Schema(
 )
 ```
 
-The `scalar_map` is emitted as a module-level constant so it is preserved
-even when codegen runs against a scalars-only SDL fragment (no
-`Query`/`Mutation`/`Subscription`), and so descriptions and
+The `scalar_map` is emitted as a module-level constant so it is preserved even
+when codegen runs against a scalars-only SDL fragment, and so descriptions and
 `@specifiedBy` URLs are never silently dropped.
+
+## Config file
+
+`strawberry schema-codegen` now accepts `-c / --config <file>` pointing at a
+YAML config. The first available section is `scalars:`, a mapping from a
+GraphQL scalar name to a `<module>:<object>` Python target. For each entry,
+codegen imports the target instead of generating a `NewType` plus `scalar_map`
+entry.
+
+```yaml
+# codegen.yaml
+scalars:
+  JSONObject: strawberry.scalars:JSON
+  MyDecimal: my_app.scalars:MyDecimal
+  Date: my_app.scalars:UnixDate
+```
+
+```shell
+strawberry schema-codegen schema.graphql -c codegen.yaml
+```
+
+For a scalar named `JSONObject` mapped to `strawberry.scalars:JSON` the
+generated code now contains `from strawberry.scalars import JSON as JSONObject`
+and skips the `NewType` / `scalar_map` machinery entirely. Overrides win over
+the built-in scalar mappings, so the same mechanism can redirect `Date`,
+`JSON`, `UUID`, etc. to custom implementations.
+
+Note: previous pre-release builds of this branch auto-mapped `JSONObject` to
+`strawberry.scalars.JSON` as a hard-coded convention. That convention has been
+removed — pass it through the config file instead.

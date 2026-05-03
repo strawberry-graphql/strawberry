@@ -63,3 +63,42 @@ def test_overrides_file_if_exists(
     assert "Code generated at `schema.py`" in result.stdout.strip()
     assert result.exit_code == 0
     assert output_file.read_text().strip() == expected_output
+
+
+def test_schema_codegen_with_config(
+    cli_app: Typer, cli_runner: CliRunner, tmp_path: Path
+):
+    schema_file = tmp_path / "schema.graphql"
+    schema_file.write_text(
+        "scalar JSONObject\n\ntype Query {\n  data: JSONObject!\n}\n"
+    )
+
+    config_file = tmp_path / "codegen.yaml"
+    config_file.write_text("scalars:\n  JSONObject: strawberry.scalars:JSON\n")
+
+    result = cli_runner.invoke(
+        cli_app,
+        ["schema-codegen", str(schema_file), "-c", str(config_file)],
+    )
+
+    assert result.exit_code == 0, result.stdout
+    assert "from strawberry.scalars import JSON as JSONObject" in result.stdout
+    assert "NewType" not in result.stdout
+    assert "scalar_map" not in result.stdout
+
+
+def test_schema_codegen_config_malformed(
+    cli_app: Typer, cli_runner: CliRunner, schema_file: Path, tmp_path: Path
+):
+    config_file = tmp_path / "codegen.yaml"
+    # Value missing `:` separator — invalid `<module>:<object>` shape.
+    config_file.write_text("scalars:\n  JSONObject: strawberry.scalars.JSON\n")
+
+    result = cli_runner.invoke(
+        cli_app,
+        ["schema-codegen", str(schema_file), "--config", str(config_file)],
+    )
+
+    assert result.exit_code != 0
+    assert "JSONObject" in result.output
+    assert "<module>:<object>" in result.output

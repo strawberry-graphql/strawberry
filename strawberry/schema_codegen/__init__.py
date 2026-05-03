@@ -59,7 +59,6 @@ _SCALAR_MAP = {
         attr=cst.Name("ID"),
     ),
     "JSON": cst.Name("JSON"),
-    "JSONObject": cst.Name("JSONObject"),
     "UUID": cst.Name("UUID"),
     "Decimal": cst.Name("Decimal"),
     "Date": cst.Name("date"),
@@ -129,12 +128,16 @@ def _get_field_type(
     was_non_nullable: bool = False,
     *,
     wrap_in_maybe: bool = False,
+    overridden_scalars: frozenset[str] = frozenset(),
 ) -> cst.BaseExpression:
     expr: cst.BaseExpression | None
 
     if isinstance(field_type, NonNullTypeNode):
         return _get_field_type(
-            field_type.type, was_non_nullable=True, wrap_in_maybe=wrap_in_maybe
+            field_type.type,
+            was_non_nullable=True,
+            wrap_in_maybe=wrap_in_maybe,
+            overridden_scalars=overridden_scalars,
         )
     if isinstance(field_type, ListTypeNode):
         expr = cst.Subscript(
@@ -142,16 +145,21 @@ def _get_field_type(
             slice=[
                 cst.SubscriptElement(
                     cst.Index(
-                        value=_get_field_type(field_type.type),
+                        value=_get_field_type(
+                            field_type.type, overridden_scalars=overridden_scalars
+                        ),
                     ),
                 )
             ],
         )
     elif isinstance(field_type, NamedTypeNode):
-        expr = _SCALAR_MAP.get(field_type.name.value)
-
-        if expr is None:
-            expr = cst.Name(field_type.name.value)
+        name = field_type.name.value
+        # User-supplied overrides replace the built-in `_SCALAR_MAP` mapping —
+        # the imported binding uses the scalar's GraphQL name.
+        if name in overridden_scalars:
+            expr = cst.Name(name)
+        else:
+            expr = _SCALAR_MAP.get(name) or cst.Name(name)
 
     else:
         raise NotImplementedError(f"Unknown type {field_type}")
@@ -344,6 +352,7 @@ def _get_field(
     imports: set[Import],
     *,
     is_input_field: bool = False,
+    overridden_scalars: frozenset[str] = frozenset(),
 ) -> cst.SimpleStatementLine:
     name = to_snake_case(field.name.value)
     alias: str | None = None
@@ -373,7 +382,11 @@ def _get_field(
             cst.AnnAssign(
                 target=cst.Name(name),
                 annotation=cst.Annotation(
-                    _get_field_type(field.type, wrap_in_maybe=wrap_in_maybe),
+                    _get_field_type(
+                        field.type,
+                        wrap_in_maybe=wrap_in_maybe,
+                        overridden_scalars=overridden_scalars,
+                    ),
                 ),
                 value=_get_field_value(
                     field,
@@ -563,6 +576,8 @@ def _get_class_definition(
     | InputObjectTypeDefinitionNode,
     is_apollo_federation: bool,
     imports: set[Import],
+    *,
+    overridden_scalars: frozenset[str] = frozenset(),
 ) -> Definition:
     decorator = _get_strawberry_decorator(definition, is_apollo_federation, imports)
 
@@ -586,6 +601,7 @@ def _get_class_definition(
                     is_apollo_federation,
                     imports,
                     is_input_field=is_input_type,
+                    overridden_scalars=overridden_scalars,
                 )
                 for field in definition.fields
             ]
@@ -765,9 +781,20 @@ def _get_union_definition(definition: UnionTypeDefinitionNode) -> Definition:
 
 
 def _get_scalar_definition(
-    definition: ScalarTypeDefinitionNode, imports: set[Import]
+    definition: ScalarTypeDefinitionNode,
+    imports: set[Import],
+    scalar_overrides: dict[str, str] | None = None,
 ) -> Definition | None:
     name = definition.name.value
+
+    # User-supplied overrides win over every built-in special-case below.
+    if scalar_overrides and name in scalar_overrides:
+        module, _, target = scalar_overrides[name].partition(":")
+        if target == name:
+            imports.add(Import(module=module, imports=(name,)))
+        else:
+            imports.add(Import(module=module, imports=((target, name),)))
+        return None
 
     if name == "Date":
         imports.add(Import(module="datetime", imports=("date",)))
@@ -786,11 +813,6 @@ def _get_scalar_definition(
         return None
     if name == "JSON":
         imports.add(Import(module="strawberry.scalars", imports=("JSON",)))
-        return None
-    if name == "JSONObject":
-        imports.add(
-            Import(module="strawberry.scalars", imports=(("JSON", "JSONObject"),))
-        )
         return None
 
     description = definition.description.value if definition.description else None
@@ -873,8 +895,10 @@ def _get_scalar_definition(
     )
 
 
-def codegen(schema: str) -> str:
+def codegen(schema: str, *, scalar_overrides: dict[str, str] | None = None) -> str:
     document = parse(schema)
+
+    overridden_scalars = frozenset(scalar_overrides or ())
 
     definitions: dict[str, Definition] = {}
 
@@ -905,7 +929,10 @@ def codegen(schema: str) -> str:
             ),
         ):
             definition = _get_class_definition(
-                graphql_definition, is_apollo_federation, imports
+                graphql_definition,
+                is_apollo_federation,
+                imports,
+                overridden_scalars=overridden_scalars,
             )
 
         elif isinstance(graphql_definition, EnumTypeDefinitionNode):
@@ -930,7 +957,9 @@ def codegen(schema: str) -> str:
 
             definition = _get_union_definition(graphql_definition)
         elif isinstance(graphql_definition, ScalarTypeDefinitionNode):
-            definition = _get_scalar_definition(graphql_definition, imports)
+            definition = _get_scalar_definition(
+                graphql_definition, imports, scalar_overrides
+            )
 
         elif isinstance(graphql_definition, SchemaExtensionNode):
             is_apollo_federation = any(
