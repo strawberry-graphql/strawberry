@@ -335,7 +335,7 @@ def argument(
         def example(
             self,
             info: strawberry.Info,
-            value: Annotated[int, strawberry.argument(description="The value")]
+            value: Annotated[int, strawberry.argument(description="The value")],
         ) -> int:
             return value
     ```
