@@ -143,9 +143,9 @@ def ast_from_value(value: Any, type_: GraphQLInputType) -> ValueNode | None:
 
         type_ = cast("GraphQLInputObjectType", type_)
         field_items = (
-            (field_name, ast_from_value(look_up_field(field_name, value), field.type))
+            (field_name, ast_from_value(field_value, field.type))
             for field_name, field in type_.fields.items()
-            if field_in_object(field_name, value)
+            if (field_value := look_up_field(field_name, value))
         )
         field_nodes = tuple(
             ObjectFieldNode(name=NameNode(value=field_name), value=field_value)
