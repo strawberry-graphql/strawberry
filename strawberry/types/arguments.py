@@ -325,6 +325,7 @@ def argument(
 
     Example:
     ```python
+    from typing import Annotated
     import strawberry
 
 
@@ -332,7 +333,9 @@ def argument(
     class Query:
         @strawberry.field
         def example(
-            self, info, value: int = strawberry.argument(description="The value")
+            self,
+            info: strawberry.Info,
+            value: Annotated[int, strawberry.argument(description="The value")]
         ) -> int:
             return value
     ```
