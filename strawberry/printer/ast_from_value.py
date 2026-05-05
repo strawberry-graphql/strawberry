@@ -84,13 +84,6 @@ def ast_from_leaf_type(serialized: object, type_: GraphQLInputType | None) -> Va
     )  # pragma: no cover
 
 
-def field_in_object(field_name: str, value: dict) -> bool:
-    if field_name in value:
-        return True
-
-    return camel_to_snake(field_name) in value
-
-
 def look_up_field(field_name: str, value: Mapping[str, Any]) -> Any:
     if field_name in value:
         return value[field_name]
