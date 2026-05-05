@@ -244,6 +244,12 @@ def convert_argument(
         return convert_argument(value, enum_definition, scalar_registry, config)
 
     if has_object_definition(type_):
+        # If the value is already an instance of the expected input type
+        # (e.g., from a default value), return it directly instead of trying
+        # to treat it as a mapping and re-convert it.
+        if isinstance(value, type_):
+            return value
+
         kwargs = {}
 
         type_definition = type_.__strawberry_definition__
