@@ -175,18 +175,18 @@ class SubscriptionResultContextManager(ExtensionContextManagerBase):
         if iscoroutinefunction(func):
 
             @contextlib.asynccontextmanager
-            async def iterator(result: ExecutionResult) -> AsyncIterator[None]:
+            async def async_iterator(result: ExecutionResult) -> AsyncIterator[None]:
                 await func(extension, result)
                 yield
 
-            return WrappedHook(extension=extension, hook=iterator, is_async=True)
+            return WrappedHook(extension=extension, hook=async_iterator, is_async=True)
 
         @contextlib.contextmanager
-        def iterator(result: ExecutionResult) -> Iterator[None]:
+        def sync_iterator(result: ExecutionResult) -> Iterator[None]:
             func(extension, result)
             yield
 
-        return WrappedHook(extension=extension, hook=iterator, is_async=False)
+        return WrappedHook(extension=extension, hook=sync_iterator, is_async=False)
 
     def __enter__(self) -> None:
         self.exit_stack = contextlib.ExitStack()
