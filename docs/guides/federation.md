@@ -19,6 +19,20 @@ Strawberry supports
 out of the box, that means that you can create services using Strawberry and
 federate them via Apollo Gateway or Apollo Router.
 
+<Warning>
+
+Federated schemas expose federation-specific fields, including `_service`, so
+gateways and routers can fetch the service SDL and compose the supergraph. The
+[`DisableIntrospection`](../extensions/disable-introspection.md) extension
+blocks standard GraphQL introspection fields such as `__schema` and `__type`,
+but it does not block `_service { sdl }`.
+
+If your federated service is reachable by untrusted clients, use authentication,
+authorization, or network controls to restrict access to federation fields and
+make sure entity resolvers enforce their own access checks.
+
+</Warning>
+
 ## Federated schema example
 
 Let’s look at an example on how to implement Apollo Federation using Strawberry.
