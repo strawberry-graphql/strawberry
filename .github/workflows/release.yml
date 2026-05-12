@@ -73,6 +73,5 @@ jobs:
           git-username: botberry
           git-email: bot@strawberry.rocks
         env:
-          UV_PUBLISH_TOKEN: ${{ secrets.PYPI_TOKEN }}
           TYPEFULLY_API_KEY: ${{ secrets.TYPEFULLY_API_KEY }}
           TYPEFULLY_SOCIAL_SET_ID: ${{ secrets.TYPEFULLY_SOCIAL_SET_ID }}
