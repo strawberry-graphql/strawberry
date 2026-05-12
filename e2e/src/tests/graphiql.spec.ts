@@ -133,4 +133,35 @@ test.describe("GraphiQL URL Sharing Tests", () => {
 		await expect(headersEditor).toContainText("Authorization");
 		await expect(headersEditor).toContainText("Bearer token123");
 	});
+
+	test("does not update URL when headers are edited", async ({
+		page,
+	}: { page: Page }) => {
+		await page.goto(GRAPHIQL_URL);
+		await waitForGraphiQL(page);
+
+		const headersTab = page.locator('button:has-text("Headers")');
+		await headersTab.click();
+
+		const headersEditor = page.locator(
+			".graphiql-editor-tool .graphiql-editor:not(.hidden) .CodeMirror",
+		);
+		await headersEditor.click();
+		await page.keyboard.type('{"Authorization": "Bearer token123"}', {
+			delay: 50,
+		});
+
+		await expect(page.locator(".graphiql-editor-tool")).toContainText(
+			"Authorization",
+		);
+
+		await expect
+			.poll(() => new URL(page.url()).searchParams.get("headers"))
+			.toBeNull();
+
+		const url = page.url();
+		expect(url).not.toContain("headers=");
+		expect(url).not.toContain("Authorization");
+		expect(url).not.toContain("token123");
+	});
 });
