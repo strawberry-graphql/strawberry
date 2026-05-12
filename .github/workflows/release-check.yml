@@ -13,7 +13,10 @@ jobs:
   check-release:
     name: Release check
     runs-on: ubuntu-latest
-    environment: release
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: write
     if: github.event.pull_request.user.type != 'Bot'
 
     steps:
@@ -31,6 +34,5 @@ jobs:
         with:
           command: check
           autopub-version: "1.0.0a58"
-          github-token: ${{ secrets.BOT_TOKEN }}
           fail-on-missing: "true"
           extra-plugins: strawberry-autopub-plugins
