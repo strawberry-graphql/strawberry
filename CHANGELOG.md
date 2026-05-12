@@ -1,6 +1,19 @@
 CHANGELOG
 =========
 
+0.315.4 - 2026-05-12
+--------------------
+
+This release fixes an issue in the bundled GraphiQL template where editing HTTP
+headers, including `Authorization` headers, wrote those values into the browser
+URL.
+
+GraphiQL still supports loading headers from existing `headers` URL parameters,
+but newly edited headers are no longer added to the URL. Query and variables URL
+sharing is unchanged.
+
+This release was contributed by [@patrick91](https://github.com/patrick91) in [#4409](https://github.com/strawberry-graphql/strawberry/pull/4409)
+
 0.315.3 - 2026-04-29
 --------------------
 
