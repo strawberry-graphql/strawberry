@@ -15,11 +15,10 @@ features of the API through GraphQL introspection.
 <Warning>
 
 `DisableIntrospection` does not block non-introspection fields that may expose
-schema information. For example, Apollo Federation schemas expose `_service`
-and its `sdl` field so gateways and routers can compose federated services. If
-you use `strawberry.federation.Schema`, protect federated endpoints from
-untrusted clients with your own authentication, authorization, or network
-controls.
+schema information. For example, Apollo Federation schemas expose `_service` and
+its `sdl` field so gateways and routers can compose federated services. If you
+use `strawberry.federation.Schema`, protect federated endpoints from untrusted
+clients with your own authentication, authorization, or network controls.
 
 </Warning>
 
@@ -51,8 +50,8 @@ _No arguments_
 
 ## Example query:
 
-Running any query including the introspection field `__schema` will result in
-an error. Consider the following query, for example:
+Running any query including the introspection field `__schema` will result in an
+error. Consider the following query, for example:
 
 ```graphql
 query {
