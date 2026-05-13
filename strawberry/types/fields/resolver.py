@@ -63,6 +63,7 @@ class ReservedParameterSpecification(Protocol):
         resolver: StrawberryResolver[Any],
     ) -> inspect.Parameter | None:
         """Finds the reserved parameter from ``parameters``."""
+    def __hash__(self) -> int: ...
 
 
 class ReservedName(NamedTuple):
