@@ -138,6 +138,7 @@ type Query {
     after: String = null
     first: Int = null
     last: Int = null
+    offset: Int = null
   ): FruitConnection!
 }
 ```
@@ -335,9 +336,10 @@ By default the connection will automatically insert some arguments for it to be
 able to paginate the results. Those are:
 
 - `before`: Returns the items in the list that come before the specified cursor
-- `after`: Returns the items in the list that come after the " "specified cursor
+- `after`: Returns the items in the list that come after the specified cursor
 - `first`: Returns the first n items from the list
-- `last`: Returns the items in the list that come after the " "specified cursor
+- `last`: Returns the last n items from the list
+- `offset`: Skips the first n items from the list
 
 You can still define extra arguments to be used by your own resolver or custom
 pagination logic. For example, suppose we want to return the pagination of all
@@ -367,6 +369,7 @@ type Query {
     after: String = null
     first: Int = null
     last: Int = null
+    offset: Int = null
   ): FruitConnection!
 }
 ```

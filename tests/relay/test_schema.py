@@ -95,8 +95,11 @@ def test_node_id_annotation():
             """Returns the first n items from the list."""
             first: Int = null
 
-            """Returns the items in the list that come after the specified cursor."""
+            """Returns the last n items from the list."""
             last: Int = null
+
+            """Skips the first n items in the list."""
+            offset: Int = null
           ): FruitConnection!
         }
         '''
@@ -119,6 +122,122 @@ def test_node_id_annotation():
     assert result.data == {
         "fruits": {
             "edges": [{"node": {"id": to_base64("Fruit", i)}} for i in range(10)]
+        }
+    }
+
+
+def test_connection_with_offset_argument():
+    @strawberry.type
+    class Fruit(relay.Node):
+        code: relay.NodeID[int]
+
+    @strawberry.type
+    class Query:
+        @relay.connection(relay.ListConnection[Fruit])
+        def fruits(self) -> list[Fruit]:
+            return [Fruit(code=i) for i in range(5)]
+
+    schema = strawberry.Schema(query=Query)
+    result = schema.execute_sync(
+        """
+        query {
+          fruits(first: 2, offset: 2) {
+            pageInfo {
+              hasPreviousPage
+              hasNextPage
+              startCursor
+              endCursor
+            }
+            edges {
+              cursor
+              node {
+                id
+              }
+            }
+          }
+        }
+        """
+    )
+
+    assert result.errors is None
+    assert result.data == {
+        "fruits": {
+            "pageInfo": {
+                "hasPreviousPage": True,
+                "hasNextPage": True,
+                "startCursor": to_base64("arrayconnection", 2),
+                "endCursor": to_base64("arrayconnection", 3),
+            },
+            "edges": [
+                {
+                    "cursor": to_base64("arrayconnection", 2),
+                    "node": {"id": to_base64("Fruit", 2)},
+                },
+                {
+                    "cursor": to_base64("arrayconnection", 3),
+                    "node": {"id": to_base64("Fruit", 3)},
+                },
+            ],
+        }
+    }
+
+
+def test_connection_with_last_and_offset_argument():
+    @strawberry.type
+    class Fruit(relay.Node):
+        code: relay.NodeID[int]
+
+    @strawberry.type
+    class Query:
+        @relay.connection(relay.ListConnection[Fruit])
+        def fruits(self) -> list[Fruit]:
+            return [Fruit(code=i) for i in range(5)]
+
+    schema = strawberry.Schema(query=Query)
+    result = schema.execute_sync(
+        """
+        query {
+          fruits(last: 3, offset: 2) {
+            pageInfo {
+              hasPreviousPage
+              hasNextPage
+              startCursor
+              endCursor
+            }
+            edges {
+              cursor
+              node {
+                id
+              }
+            }
+          }
+        }
+        """
+    )
+
+    assert result.errors is None
+    assert result.data == {
+        "fruits": {
+            "pageInfo": {
+                "hasPreviousPage": True,
+                "hasNextPage": False,
+                "startCursor": to_base64("arrayconnection", 2),
+                "endCursor": to_base64("arrayconnection", 4),
+            },
+            "edges": [
+                {
+                    "cursor": to_base64("arrayconnection", 2),
+                    "node": {"id": to_base64("Fruit", 2)},
+                },
+                {
+                    "cursor": to_base64("arrayconnection", 3),
+                    "node": {"id": to_base64("Fruit", 3)},
+                },
+                {
+                    "cursor": to_base64("arrayconnection", 4),
+                    "node": {"id": to_base64("Fruit", 4)},
+                },
+            ],
         }
     }
 
@@ -195,8 +314,11 @@ def test_node_id_annotation_in_superclass():
             """Returns the first n items from the list."""
             first: Int = null
 
-            """Returns the items in the list that come after the specified cursor."""
+            """Returns the last n items from the list."""
             last: Int = null
+
+            """Skips the first n items in the list."""
+            offset: Int = null
           ): FruitConnection!
         }
         '''
@@ -296,8 +418,11 @@ def test_node_id_annotation_in_superclass_and_subclass():
             """Returns the first n items from the list."""
             first: Int = null
 
-            """Returns the items in the list that come after the specified cursor."""
+            """Returns the last n items from the list."""
             last: Int = null
+
+            """Skips the first n items in the list."""
+            offset: Int = null
           ): FruitConnection!
         }
         '''
