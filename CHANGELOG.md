@@ -1,6 +1,16 @@
 CHANGELOG
 =========
 
+0.315.5 - 2026-05-14
+--------------------
+
+The `types.field.resolver.ReservedParameterSpecification` protocol now requires classes to have `__hash__` as well,
+because instances of those classes are to be used as dictionary keys.
+
+This release was contributed by [@jonathandung](https://github.com/jonathandung) in [#4411](https://github.com/strawberry-graphql/strawberry/pull/4411)
+
+Additional contributors: [@pre-commit-ci[bot]](https://github.com/pre-commit-ci[bot])
+
 0.315.4 - 2026-05-12
 --------------------
 
