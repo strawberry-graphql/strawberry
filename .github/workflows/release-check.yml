@@ -1,6 +1,9 @@
 name: 🆙 Release file check
 
 on:
+  # zizmor: ignore[dangerous-triggers] required so autopub can comment on
+  # fork PRs; sparse-checkout below limits the PR working tree to RELEASE.md
+  # and pyproject.toml, which autopub `check` parses as data only.
   pull_request_target:
     types: [synchronize, reopened, opened, ready_for_review]
     branches:
@@ -23,6 +26,7 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           ref: "refs/pull/${{ github.event.number }}/merge"
+          persist-credentials: false
           sparse-checkout: |
             RELEASE.md
             pyproject.toml

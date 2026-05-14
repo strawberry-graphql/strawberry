@@ -23,7 +23,7 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
-          token: ${{ secrets.BOT_TOKEN }}
+          persist-credentials: false
 
       - name: Check for release
         id: check
@@ -47,7 +47,7 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
-          token: ${{ secrets.BOT_TOKEN }}
+          persist-credentials: false
 
       - name: Prepare release
         uses: autopub/autopub-action@5fdc82e84c048a82303de6b5c5a9d027665e73cf # v1.1.1
