@@ -12,6 +12,9 @@ on:
       - "strawberry/**"
       - "pyproject.toml"
 
+permissions:
+  contents: read
+
 jobs:
   check-release:
     name: Release check
