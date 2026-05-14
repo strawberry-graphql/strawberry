@@ -119,6 +119,7 @@ class SliceMetadata:
         after: str | None = None,
         first: int | None = None,
         last: int | None = None,
+        offset: int | None = None,
         max_results: int | None = None,
         prefix: str | None = None,
     ) -> Self:
@@ -142,6 +143,11 @@ class SliceMetadata:
                 raise TypeError("Argument 'after' contains a non-existing value.")
 
             start = int(after_parsed) + 1
+        if isinstance(offset, int):
+            if offset < 0:
+                raise ValueError("Argument 'offset' must be a non-negative integer.")
+
+            start += offset
         if before:
             before_type, before_parsed = from_base64(before)
             if before_type != prefix:
@@ -158,6 +164,12 @@ class SliceMetadata:
                 )
 
             if end is not None:
+                if isinstance(offset, int) and offset > 0:
+                    raise ValueError(
+                        "Argument 'offset' cannot be used with both "
+                        "'before' and 'first'."
+                    )
+
                 start = max(0, end - 1)
 
             end = start + first

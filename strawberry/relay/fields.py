@@ -256,10 +256,14 @@ class ConnectionExtension(FieldExtension):
                 python_name="last",
                 graphql_name=None,
                 type_annotation=StrawberryAnnotation(Optional[int]),  # noqa: UP045
-                description=(
-                    "Returns the items in the list that come after the "
-                    "specified cursor."
-                ),
+                description="Returns the last n items from the list.",
+                default=None,
+            ),
+            StrawberryArgument(
+                python_name="offset",
+                graphql_name=None,
+                type_annotation=StrawberryAnnotation(Optional[int]),  # noqa: UP045
+                description="Skips the first n items in the list.",
                 default=None,
             ),
         ]
@@ -323,6 +327,7 @@ class ConnectionExtension(FieldExtension):
         after: str | None = None,
         first: int | None = None,
         last: int | None = None,
+        offset: int | None = None,
         **kwargs: Any,
     ) -> Any:
         assert self.connection_type is not None
@@ -333,6 +338,7 @@ class ConnectionExtension(FieldExtension):
             after=after,
             first=first,
             last=last,
+            offset=offset,
             max_results=self.max_results,
         )
 
@@ -346,6 +352,7 @@ class ConnectionExtension(FieldExtension):
         after: str | None = None,
         first: int | None = None,
         last: int | None = None,
+        offset: int | None = None,
         **kwargs: Any,
     ) -> Any:
         assert self.connection_type is not None
@@ -362,6 +369,7 @@ class ConnectionExtension(FieldExtension):
             after=after,
             first=first,
             last=last,
+            offset=offset,
             max_results=self.max_results,
         )
 

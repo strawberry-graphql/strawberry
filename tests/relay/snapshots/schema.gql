@@ -125,8 +125,11 @@ type Query {
     """Returns the first n items from the list."""
     first: Int = null
 
-    """Returns the items in the list that come after the specified cursor."""
+    """Returns the last n items from the list."""
     last: Int = null
+
+    """Skips the first n items in the list."""
+    offset: Int = null
   ): FruitConnection!
   fruitsLazy(
     """Returns the items in the list that come before the specified cursor."""
@@ -138,8 +141,11 @@ type Query {
     """Returns the first n items from the list."""
     first: Int = null
 
-    """Returns the items in the list that come after the specified cursor."""
+    """Returns the last n items from the list."""
     last: Int = null
+
+    """Skips the first n items in the list."""
+    offset: Int = null
   ): FruitConnection!
   fruitsAlias(
     """Returns the items in the list that come before the specified cursor."""
@@ -151,8 +157,11 @@ type Query {
     """Returns the first n items from the list."""
     first: Int = null
 
-    """Returns the items in the list that come after the specified cursor."""
+    """Returns the last n items from the list."""
     last: Int = null
+
+    """Skips the first n items in the list."""
+    offset: Int = null
   ): FruitConnection!
   fruitsAliasLazy(
     """Returns the items in the list that come before the specified cursor."""
@@ -164,8 +173,11 @@ type Query {
     """Returns the first n items from the list."""
     first: Int = null
 
-    """Returns the items in the list that come after the specified cursor."""
+    """Returns the last n items from the list."""
     last: Int = null
+
+    """Skips the first n items in the list."""
+    offset: Int = null
   ): FruitConnection!
   fruitsAsync(
     """Returns the items in the list that come before the specified cursor."""
@@ -177,8 +189,11 @@ type Query {
     """Returns the first n items from the list."""
     first: Int = null
 
-    """Returns the items in the list that come after the specified cursor."""
+    """Returns the last n items from the list."""
     last: Int = null
+
+    """Skips the first n items in the list."""
+    offset: Int = null
   ): FruitAsyncConnection!
   fruitsCustomPagination(
     """Returns the items in the list that come before the specified cursor."""
@@ -190,8 +205,11 @@ type Query {
     """Returns the first n items from the list."""
     first: Int = null
 
-    """Returns the items in the list that come after the specified cursor."""
+    """Returns the last n items from the list."""
     last: Int = null
+
+    """Skips the first n items in the list."""
+    offset: Int = null
   ): FruitCustomPaginationConnection!
   fruitsConcreteResolver(
     nameEndswith: String = null
@@ -205,8 +223,11 @@ type Query {
     """Returns the first n items from the list."""
     first: Int = null
 
-    """Returns the items in the list that come after the specified cursor."""
+    """Returns the last n items from the list."""
     last: Int = null
+
+    """Skips the first n items in the list."""
+    offset: Int = null
   ): FruitConnection!
   fruitsCustomResolver(
     nameEndswith: String = null
@@ -220,8 +241,11 @@ type Query {
     """Returns the first n items from the list."""
     first: Int = null
 
-    """Returns the items in the list that come after the specified cursor."""
+    """Returns the last n items from the list."""
     last: Int = null
+
+    """Skips the first n items in the list."""
+    offset: Int = null
   ): FruitConnection!
   fruitsCustomResolverLazy(
     nameEndswith: String = null
@@ -235,8 +259,11 @@ type Query {
     """Returns the first n items from the list."""
     first: Int = null
 
-    """Returns the items in the list that come after the specified cursor."""
+    """Returns the last n items from the list."""
     last: Int = null
+
+    """Skips the first n items in the list."""
+    offset: Int = null
   ): FruitConnection!
   fruitsCustomResolverIterator(
     nameEndswith: String = null
@@ -250,8 +277,11 @@ type Query {
     """Returns the first n items from the list."""
     first: Int = null
 
-    """Returns the items in the list that come after the specified cursor."""
+    """Returns the last n items from the list."""
     last: Int = null
+
+    """Skips the first n items in the list."""
+    offset: Int = null
   ): FruitConnection!
   fruitsCustomResolverIterable(
     nameEndswith: String = null
@@ -265,8 +295,11 @@ type Query {
     """Returns the first n items from the list."""
     first: Int = null
 
-    """Returns the items in the list that come after the specified cursor."""
+    """Returns the last n items from the list."""
     last: Int = null
+
+    """Skips the first n items in the list."""
+    offset: Int = null
   ): FruitConnection!
   fruitsCustomResolverGenerator(
     nameEndswith: String = null
@@ -280,8 +313,11 @@ type Query {
     """Returns the first n items from the list."""
     first: Int = null
 
-    """Returns the items in the list that come after the specified cursor."""
+    """Returns the last n items from the list."""
     last: Int = null
+
+    """Skips the first n items in the list."""
+    offset: Int = null
   ): FruitConnection!
   fruitsCustomResolverAsyncIterable(
     nameEndswith: String = null
@@ -295,8 +331,11 @@ type Query {
     """Returns the first n items from the list."""
     first: Int = null
 
-    """Returns the items in the list that come after the specified cursor."""
+    """Returns the last n items from the list."""
     last: Int = null
+
+    """Skips the first n items in the list."""
+    offset: Int = null
   ): FruitConnection!
   fruitsCustomResolverAsyncIterator(
     nameEndswith: String = null
@@ -310,8 +349,11 @@ type Query {
     """Returns the first n items from the list."""
     first: Int = null
 
-    """Returns the items in the list that come after the specified cursor."""
+    """Returns the last n items from the list."""
     last: Int = null
+
+    """Skips the first n items in the list."""
+    offset: Int = null
   ): FruitConnection!
   fruitsCustomResolverAsyncGenerator(
     nameEndswith: String = null
@@ -325,8 +367,11 @@ type Query {
     """Returns the first n items from the list."""
     first: Int = null
 
-    """Returns the items in the list that come after the specified cursor."""
+    """Returns the last n items from the list."""
     last: Int = null
+
+    """Skips the first n items in the list."""
+    offset: Int = null
   ): FruitConnection!
   fruitAlikeConnectionCustomResolver(
     nameEndswith: String = null
@@ -340,8 +385,11 @@ type Query {
     """Returns the first n items from the list."""
     first: Int = null
 
-    """Returns the items in the list that come after the specified cursor."""
+    """Returns the last n items from the list."""
     last: Int = null
+
+    """Skips the first n items in the list."""
+    offset: Int = null
   ): FruitAlikeConnection!
   someFruits(
     """Returns the items in the list that come before the specified cursor."""
@@ -353,7 +401,10 @@ type Query {
     """Returns the first n items from the list."""
     first: Int = null
 
-    """Returns the items in the list that come after the specified cursor."""
+    """Returns the last n items from the list."""
     last: Int = null
+
+    """Skips the first n items in the list."""
+    offset: Int = null
   ): FruitConnection!
 }

@@ -79,12 +79,14 @@ def test_to_base64_with_invalid_type(value: Any):
         "after",
         "first",
         "last",
+        "offset",
         "max_results",
         "expected",
         "expected_overfetch",
     ),
     [
         (
+            None,
             None,
             None,
             None,
@@ -98,6 +100,7 @@ def test_to_base64_with_invalid_type(value: Any):
             None,
             None,
             None,
+            None,
             200,
             SliceMetadata(start=0, end=200, expected=200),
             201,
@@ -107,6 +110,7 @@ def test_to_base64_with_invalid_type(value: Any):
             None,
             10,
             None,
+            None,
             100,
             SliceMetadata(start=0, end=10, expected=10),
             11,
@@ -116,6 +120,7 @@ def test_to_base64_with_invalid_type(value: Any):
             None,
             None,
             10,
+            None,
             100,
             SliceMetadata(start=0, end=sys.maxsize, expected=None),
             sys.maxsize,
@@ -125,6 +130,7 @@ def test_to_base64_with_invalid_type(value: Any):
             None,
             None,
             None,
+            None,
             100,
             SliceMetadata(start=0, end=10, expected=10),
             11,
@@ -132,6 +138,7 @@ def test_to_base64_with_invalid_type(value: Any):
         (
             None,
             10,
+            None,
             None,
             None,
             100,
@@ -143,6 +150,7 @@ def test_to_base64_with_invalid_type(value: Any):
             None,
             10,
             None,
+            None,
             100,
             SliceMetadata(start=14, end=24, expected=10),
             25,
@@ -152,9 +160,40 @@ def test_to_base64_with_invalid_type(value: Any):
             15,
             None,
             10,
+            None,
             100,
             SliceMetadata(start=16, end=sys.maxsize, expected=None),
             sys.maxsize,
+        ),
+        (
+            None,
+            None,
+            None,
+            None,
+            2,
+            100,
+            SliceMetadata(start=2, end=102, expected=100),
+            103,
+        ),
+        (
+            None,
+            None,
+            2,
+            None,
+            1,
+            100,
+            SliceMetadata(start=1, end=3, expected=2),
+            4,
+        ),
+        (
+            None,
+            10,
+            None,
+            None,
+            2,
+            100,
+            SliceMetadata(start=13, end=113, expected=100),
+            114,
         ),
     ],
 )
@@ -163,6 +202,7 @@ def test_get_slice_metadata(
     after: str | None,
     first: int | None,
     last: int | None,
+    offset: int | None,
     max_results: int,
     expected: SliceMetadata,
     expected_overfetch: int,
@@ -175,6 +215,28 @@ def test_get_slice_metadata(
         after=after and to_base64(PREFIX, after),
         first=first,
         last=last,
+        offset=offset,
     )
     assert slice_metadata == expected
     assert slice_metadata.overfetch == expected_overfetch
+
+
+def test_get_slice_metadata_with_negative_offset():
+    info = mock.Mock()
+    info.schema.config = StrawberryConfig(relay_max_results=100)
+
+    with pytest.raises(ValueError, match="Argument 'offset'"):
+        SliceMetadata.from_arguments(info, offset=-1)
+
+
+def test_get_slice_metadata_rejects_offset_with_before_and_first():
+    info = mock.Mock()
+    info.schema.config = StrawberryConfig(relay_max_results=100)
+
+    with pytest.raises(ValueError, match="Argument 'offset'"):
+        SliceMetadata.from_arguments(
+            info,
+            before=to_base64(PREFIX, 5),
+            first=2,
+            offset=1,
+        )
