@@ -287,7 +287,7 @@ def eval_type(
         if sys.version_info >= (3, 13):
             extra = {"type_params": None}
 
-        return _eval_type(type_, globalns, localns, **extra)
+        type_ = _eval_type(type_, globalns, localns, **extra)
 
     origin = get_origin(type_)
     if origin is not None:
