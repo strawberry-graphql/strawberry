@@ -44,6 +44,7 @@ class _CapturingExtension(SchemaExtension):
     """
 
     def __init__(self, *, execution_context=None, label: str = "default") -> None:
+        super().__init__(execution_context=execution_context)
         self.label = label
 
     def get_results(self) -> dict[str, Any]:
@@ -110,6 +111,7 @@ def test_class_constructed_per_request():
 
     class _Counting(SchemaExtension):
         def __init__(self, *, execution_context=None) -> None:
+            super().__init__(execution_context=execution_context)
             nonlocal construction_count
             construction_count += 1
 

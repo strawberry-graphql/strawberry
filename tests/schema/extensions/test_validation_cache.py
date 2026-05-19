@@ -12,9 +12,9 @@ from strawberry.extensions import validation_cache as _validation_cache_module
 def _clear_validation_caches():
     # ``ValidationCache`` shares its LRU cache module-level keyed by
     # ``maxsize``; clear between tests so patched call counts stay independent.
-    _validation_cache_module._caches.clear()
+    _validation_cache_module._get_validate_cache.cache_clear()
     yield
-    _validation_cache_module._caches.clear()
+    _validation_cache_module._get_validate_cache.cache_clear()
 
 
 @patch("strawberry.schema.schema.validate", wraps=validate)

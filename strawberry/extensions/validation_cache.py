@@ -1,34 +1,29 @@
 from collections.abc import Callable, Iterator
-from functools import lru_cache
+from functools import cache, lru_cache
 from typing import Any
 
 from strawberry.extensions.base_extension import SchemaExtension
 
-# Shared LRU caches keyed by ``maxsize``. Multiple ``ValidationCache``
-# instances (e.g. a fresh one per request via the factory pattern) reuse the
-# same wrapped ``validate_document`` so caching is effective across requests
-# without sharing extension instances.
-_caches: dict[int | None, Callable[..., Any]] = {}
 
-
+@cache
 def _get_validate_cache(maxsize: int | None) -> Callable[..., Any]:
+    # Shared LRU caches keyed by ``maxsize``. Multiple ``ValidationCache``
+    # instances (e.g. a fresh one per request via the factory pattern) reuse
+    # the same wrapped ``validate_document`` so caching is effective across
+    # requests without sharing extension instances.
     # ``validate_document`` is imported lazily to break the circular import
     # with ``strawberry.schema.schema``.
     from strawberry.schema.schema import validate_document
 
-    cached = _caches.get(maxsize)
-    if cached is None:
-        cached = lru_cache(maxsize=maxsize)(validate_document)
-        _caches[maxsize] = cached
-    return cached
+    return lru_cache(maxsize=maxsize)(validate_document)
 
 
 class ValidationCache(SchemaExtension):
     """Add LRU caching the validation step during execution to improve performance.
 
-    Pass it as a factory; the LRU cache is shared across requests with the same
-    ``maxsize`` so caching is effective even when a fresh extension is built per
-    request.
+    Pass it as a factory; the LRU cache lives at module level and is keyed by
+    ``maxsize``, so it is shared across every request and every schema that
+    constructs a ``ValidationCache`` with the same ``maxsize``.
 
     ```python
     import strawberry

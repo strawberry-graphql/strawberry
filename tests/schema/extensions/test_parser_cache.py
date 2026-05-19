@@ -13,9 +13,9 @@ def _clear_parser_caches():
     # ``ParserCache`` shares its LRU cache module-level keyed by ``maxsize``;
     # tests rely on patching ``parse`` and counting calls, so we clear between
     # tests to keep them independent.
-    _parser_cache_module._caches.clear()
+    _parser_cache_module._get_parse_cache.cache_clear()
     yield
-    _parser_cache_module._caches.clear()
+    _parser_cache_module._get_parse_cache.cache_clear()
 
 
 @patch("strawberry.extensions.parser_cache.parse", wraps=parse)

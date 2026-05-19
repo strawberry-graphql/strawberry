@@ -29,11 +29,20 @@ schema = strawberry.Schema(query=Query, extensions=[MyExtension])
 Extensions can be passed to the schema as either:
 
 - a **class** (no constructor arguments):
+
   ```python
+  import strawberry
+  from strawberry.extensions import MyExtension
+
   schema = strawberry.Schema(query=Query, extensions=[MyExtension])
   ```
+
 - a **factory** (configured constructor):
+
   ```python
+  import strawberry
+  from strawberry.extensions import MaxTokensLimiter
+
   schema = strawberry.Schema(
       query=Query,
       extensions=[lambda: MaxTokensLimiter(max_token_count=100)],
@@ -45,15 +54,14 @@ uses the returned extension. With the recommended forms above you get a fresh
 extension per request, so any mutable state you keep on `self` is automatically
 isolated across concurrent requests. If your factory returns a long-lived shared
 instance instead of a new one each call, request-scoped state on `self`
-(including `execution_context`) will leak across concurrent requests — keep the
-cross-request state in module/class-level storage or in
-`execution_context.extensions_results`, not on the extension instance.
+(including `execution_context`) will leak across concurrent requests. Keep
+cross-request state in module-level or class-level storage instead.
 
 > Passing an extension instance directly (`extensions=[MyExtension()]`) is
-> deprecated and is no longer accepted by the type signature — type checkers
+> deprecated and is no longer accepted by the type signature, so type checkers
 > (mypy, pyright) will report it. Strawberry still uses the instance at runtime
 > for backwards compatibility and emits a `DeprecationWarning`, but the same
-> instance is reused for every request — concurrent requests can observe each
+> instance is reused for every request, so concurrent requests can observe each
 > other's `ExecutionContext`. Migrate to passing the class or a factory callable
 > to silence the warning and get per-request isolation.
 
