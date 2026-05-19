@@ -287,7 +287,23 @@ def eval_type(
         if sys.version_info >= (3, 13):
             extra = {"type_params": None}
 
-        return _eval_type(type_, globalns, localns, **extra)
+        type_ = _eval_type(type_, globalns, localns, **extra)
+
+        # The forward ref may have resolved to a module-level alias such as
+        # `Annotated[ForwardRef("User"), StrawberryLazyReference(...)]`. The
+        # inner ForwardRef won't be resolved by `_eval_type` because its
+        # target only exists under `TYPE_CHECKING`; use the lazy reference
+        # to convert it into a LazyType, preserving the Annotated wrapper.
+        if (
+            get_origin(type_) is Annotated
+            and (args := get_args(type_))
+            and isinstance(args[0], ForwardRef)
+        ):
+            for arg in args[1:]:
+                if isinstance(arg, StrawberryLazyReference):
+                    return Annotated[(arg.resolve_forward_ref(args[0]), *args[1:])]
+
+        return type_
 
     origin = get_origin(type_)
     if origin is not None:
