@@ -399,18 +399,6 @@ class Schema(BaseSchema):
             )
         return resolved
 
-    @property
-    def _sync_extensions(self) -> list[SchemaExtension]:
-        # Fresh instances per access: concurrent sync requests (threaded
-        # ``execute_sync``) must not share extension state. See #4369.
-        return self.get_extensions(sync=True)
-
-    @property
-    def _async_extensions(self) -> list[SchemaExtension]:
-        # Fresh instances per access: concurrent async requests must not share
-        # extension state.
-        return self.get_extensions(sync=False)
-
     def create_extensions_runner(
         self, execution_context: ExecutionContext, extensions: list[SchemaExtension]
     ) -> SchemaExtensionsRunner:
@@ -600,7 +588,7 @@ class Schema(BaseSchema):
             operation_name=operation_name,
             operation_extensions=operation_extensions,
         )
-        extensions = self._async_extensions
+        extensions = self.get_extensions()
         # TODO (#3571): remove this when we implement execution context as parameter.
         for extension in extensions:
             extension.execution_context = execution_context
@@ -707,7 +695,7 @@ class Schema(BaseSchema):
             operation_name=operation_name,
             operation_extensions=operation_extensions,
         )
-        extensions = self._sync_extensions
+        extensions = self.get_extensions(sync=True)
         # TODO (#3571): remove this when we implement execution context as parameter.
         for extension in extensions:
             extension.execution_context = execution_context
@@ -930,7 +918,7 @@ class Schema(BaseSchema):
             root_value=root_value,
             operation_name=operation_name,
         )
-        extensions = self._async_extensions
+        extensions = self.get_extensions()
         # TODO (#3571): remove this when we implement execution context as parameter.
         for extension in extensions:
             extension.execution_context = execution_context
