@@ -75,4 +75,3 @@ jobs:
         env:
           TYPEFULLY_API_KEY: ${{ secrets.TYPEFULLY_API_KEY }}
           TYPEFULLY_SOCIAL_SET_ID: ${{ secrets.TYPEFULLY_SOCIAL_SET_ID }}
-

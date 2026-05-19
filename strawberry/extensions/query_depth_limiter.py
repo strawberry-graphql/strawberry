@@ -223,7 +223,11 @@ def determine_depth(
     context: ValidationContext,
     operation_name: str,
     should_ignore: ShouldIgnoreType | None,
+    visited_fragments: frozenset[str] | None = None,
 ) -> int:
+    if visited_fragments is None:
+        visited_fragments = frozenset()
+
     if depth_so_far > max_depth:
         context.report_error(
             GraphQLError(
@@ -261,18 +265,24 @@ def determine_depth(
                 context=context,
                 operation_name=operation_name,
                 should_ignore=should_ignore,
+                visited_fragments=visited_fragments,
             )
             for selection in node.selection_set.selections
         )
     if isinstance(node, FragmentSpreadNode):
+        fragment_name = node.name.value
+        if fragment_name in visited_fragments:
+            return 0
+
         return determine_depth(
-            node=fragments[node.name.value],
+            node=fragments[fragment_name],
             fragments=fragments,
             depth_so_far=depth_so_far,
             max_depth=max_depth,
             context=context,
             operation_name=operation_name,
             should_ignore=should_ignore,
+            visited_fragments=visited_fragments | {fragment_name},
         )
     if isinstance(
         node, (InlineFragmentNode, FragmentDefinitionNode, OperationDefinitionNode)
@@ -286,6 +296,7 @@ def determine_depth(
                 context=context,
                 operation_name=operation_name,
                 should_ignore=should_ignore,
+                visited_fragments=visited_fragments,
             )
             for selection in node.selection_set.selections
         )

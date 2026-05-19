@@ -1,8 +1,12 @@
+from collections.abc import Mapping
+
 from graphql import (
-    ExecutableDefinitionNode,
     FieldNode,
+    FragmentDefinitionNode,
+    FragmentSpreadNode,
     GraphQLError,
     InlineFragmentNode,
+    OperationDefinitionNode,
     ValidationContext,
     ValidationRule,
 )
@@ -43,13 +47,18 @@ def create_validator(max_alias_count: int) -> type[ValidationRule]:
     class MaxAliasesValidator(ValidationRule):
         def __init__(self, validation_context: ValidationContext) -> None:
             document = validation_context.document
+            fragments = {
+                definition.name.value: definition
+                for definition in document.definitions
+                if isinstance(definition, FragmentDefinitionNode)
+            }
             def_that_can_contain_alias = (
                 def_
                 for def_ in document.definitions
-                if isinstance(def_, (ExecutableDefinitionNode))
+                if isinstance(def_, OperationDefinitionNode)
             )
             total_aliases = sum(
-                count_fields_with_alias(def_node)
+                count_fields_with_alias(def_node, fragments)
                 for def_node in def_that_can_contain_alias
             )
             if total_aliases > max_alias_count:
@@ -62,10 +71,20 @@ def create_validator(max_alias_count: int) -> type[ValidationRule]:
 
 
 def count_fields_with_alias(
-    selection_set_owner: ExecutableDefinitionNode | FieldNode | InlineFragmentNode,
+    selection_set_owner: (
+        OperationDefinitionNode
+        | FragmentDefinitionNode
+        | FieldNode
+        | InlineFragmentNode
+    ),
+    fragments: Mapping[str, FragmentDefinitionNode] | None = None,
+    visited_fragments: frozenset[str] | None = None,
 ) -> int:
     if selection_set_owner.selection_set is None:
         return 0
+
+    if visited_fragments is None:
+        visited_fragments = frozenset()
 
     result = 0
 
@@ -76,7 +95,18 @@ def count_fields_with_alias(
             isinstance(selection, (FieldNode, InlineFragmentNode))
             and selection.selection_set
         ):
-            result += count_fields_with_alias(selection)
+            result += count_fields_with_alias(selection, fragments, visited_fragments)
+        if isinstance(selection, FragmentSpreadNode) and fragments:
+            fragment_name = selection.name.value
+            fragment = fragments.get(fragment_name)
+            if fragment is None or fragment_name in visited_fragments:
+                continue
+
+            result += count_fields_with_alias(
+                fragment,
+                fragments,
+                visited_fragments | {fragment_name},
+            )
 
     return result
 

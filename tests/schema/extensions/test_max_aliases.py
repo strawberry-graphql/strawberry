@@ -131,6 +131,54 @@ def test_alias_in_fragment():
     assert result.errors[0].message == "2 aliases found. Allowed: 1"
 
 
+def test_repeated_fragment_spreads_count_expanded_aliases():
+    query = """
+    fragment humanInfo on Human {
+      email_address: email
+      full_name: name
+    }
+    query read {
+      matt: user(name: "matt") {
+        ...humanInfo
+      }
+      jane: user(name: "jane") {
+        ...humanInfo
+      }
+    }
+    """
+
+    result = _execute_with_max_aliases(query, 4)
+
+    assert result.errors is not None
+    assert len(result.errors) == 1
+    assert result.errors[0].message == "6 aliases found. Allowed: 4"
+
+
+def test_circular_fragment_spreads_do_not_recurse_forever():
+    query = """
+    fragment A on Human {
+      email_address: email
+      ...B
+    }
+    fragment B on Human {
+      ...A
+    }
+    query read {
+      user(name: "matt") {
+        ...A
+      }
+    }
+    """
+
+    result = _execute_with_max_aliases(query, 10)
+
+    assert result.errors is not None
+    assert any(
+        error.message == "Cannot spread fragment 'A' within itself via 'B'."
+        for error in result.errors
+    )
+
+
 def test_2_top_level_1_nested():
     query = """{
       matt: user(name: "matt") {
