@@ -1,22 +1,37 @@
-from collections.abc import Iterator
-from functools import lru_cache
+from collections.abc import Callable, Iterator
+from functools import cache, lru_cache
+from typing import Any
 
 from strawberry.extensions.base_extension import SchemaExtension
+
+
+@cache
+def _get_validate_cache(maxsize: int | None) -> Callable[..., Any]:
+    # Shared LRU caches keyed by ``maxsize``. Multiple ``ValidationCache``
+    # instances (e.g. a fresh one per request via the factory pattern) reuse
+    # the same wrapped ``validate_document`` so caching is effective across
+    # requests without sharing extension instances.
+    # ``validate_document`` is imported lazily to break the circular import
+    # with ``strawberry.schema.schema``.
+    from strawberry.schema.schema import validate_document
+
+    return lru_cache(maxsize=maxsize)(validate_document)
 
 
 class ValidationCache(SchemaExtension):
     """Add LRU caching the validation step during execution to improve performance.
 
-    Example:
+    Pass it as a factory; the LRU cache lives at module level and is keyed by
+    ``maxsize``, so it is shared across every request and every schema that
+    constructs a ``ValidationCache`` with the same ``maxsize``.
+
     ```python
     import strawberry
     from strawberry.extensions import ValidationCache
 
     schema = strawberry.Schema(
         Query,
-        extensions=[
-            ValidationCache(maxsize=100),
-        ],
+        extensions=[lambda: ValidationCache(maxsize=100)],
     )
     ```
     """
@@ -30,9 +45,8 @@ class ValidationCache(SchemaExtension):
 
         More info: https://docs.python.org/3/library/functools.html#functools.lru_cache
         """
-        from strawberry.schema.schema import validate_document
-
-        self.cached_validate_document = lru_cache(maxsize=maxsize)(validate_document)
+        super().__init__()
+        self.cached_validate_document = _get_validate_cache(maxsize)
 
     def on_validate(self) -> Iterator[None]:
         execution_context = self.execution_context

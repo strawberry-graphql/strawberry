@@ -276,9 +276,7 @@ def test_should_raise_invalid_ignore():
         TypeError,
         match=r"The `should_ignore` argument to `QueryDepthLimiter` must be a callable.",
     ):
-        strawberry.Schema(
-            Query, extensions=[QueryDepthLimiter(max_depth=10, should_ignore=True)]
-        )
+        QueryDepthLimiter(max_depth=10, should_ignore=True)  # type: ignore[arg-type]
 
 
 def test_should_ignore_field_by_name():
@@ -482,7 +480,10 @@ def test_should_work_as_extension():
         return False
 
     schema = strawberry.Schema(
-        Query, extensions=[QueryDepthLimiter(max_depth=4, should_ignore=should_ignore)]
+        Query,
+        extensions=[
+            lambda: QueryDepthLimiter(max_depth=4, should_ignore=should_ignore)
+        ],
     )
 
     result = schema.execute_sync(query)

@@ -5,6 +5,16 @@ from graphql import validate
 
 import strawberry
 from strawberry.extensions import ValidationCache
+from strawberry.extensions import validation_cache as _validation_cache_module
+
+
+@pytest.fixture(autouse=True)
+def _clear_validation_caches():
+    # ``ValidationCache`` shares its LRU cache module-level keyed by
+    # ``maxsize``; clear between tests so patched call counts stay independent.
+    _validation_cache_module._get_validate_cache.cache_clear()
+    yield
+    _validation_cache_module._get_validate_cache.cache_clear()
 
 
 @patch("strawberry.schema.schema.validate", wraps=validate)
@@ -19,7 +29,7 @@ def test_validation_cache_extension(mock_validate):
         def ping(self) -> str:
             return "pong"
 
-    schema = strawberry.Schema(query=Query, extensions=[ValidationCache()])
+    schema = strawberry.Schema(query=Query, extensions=[ValidationCache])
 
     query = "query { hello }"
 
@@ -61,7 +71,10 @@ def test_validation_cache_extension_max_size(mock_validate):
         def ping(self) -> str:
             return "pong"
 
-    schema = strawberry.Schema(query=Query, extensions=[ValidationCache(maxsize=1)])
+    schema = strawberry.Schema(
+        query=Query,
+        extensions=[lambda: ValidationCache(maxsize=1)],
+    )
 
     query = "query { hello }"
 
@@ -98,7 +111,7 @@ async def test_validation_cache_extension_async():
         def ping(self) -> str:
             return "pong"
 
-    schema = strawberry.Schema(query=Query, extensions=[ValidationCache()])
+    schema = strawberry.Schema(query=Query, extensions=[ValidationCache])
 
     query = "query { hello }"
 

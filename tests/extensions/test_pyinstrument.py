@@ -33,7 +33,9 @@ def test_basic_pyinstrument():
 
         schema = strawberry.Schema(
             query=Query,
-            extensions=[pyinstrument.PyInstrument(report_path=report_file_path)],
+            extensions=[
+                lambda: pyinstrument.PyInstrument(report_path=report_file_path)
+            ],
         )
 
         # Query the schema

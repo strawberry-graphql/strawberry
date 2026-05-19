@@ -221,7 +221,7 @@ def test_can_initialize_extension(default_query_types_and_query):
     schema = strawberry.Schema(
         query=default_query_types_and_query.query_type,
         extensions=[
-            CustomizableExtension(20),
+            lambda: CustomizableExtension(20),
         ],
     )
     res = schema.execute_sync(query=default_query_types_and_query.query)
@@ -507,7 +507,7 @@ async def test_exceptions_are_included_in_the_execution_result(failing_hook):
 
     schema = strawberry.Schema(
         query=Query,
-        extensions=[ExceptionTestingExtension(failing_hook)],
+        extensions=[lambda: ExceptionTestingExtension(failing_hook)],
     )
     document = "query { ping }"
 
@@ -543,17 +543,25 @@ async def test_exceptions_abort_evaluation(failing_hook, expected_hooks):
         def ping(self) -> str:
             return "pong"
 
-    extension = ExceptionTestingExtension(failing_hook)
-    schema = strawberry.Schema(query=Query, extensions=[extension])
+    called_hooks: set[int] = set()
+
+    class _ExtForTest(ExceptionTestingExtension):
+        def __init__(self) -> None:
+            super().__init__(failing_hook)
+            # Share the closure-captured set so the test can observe which
+            # hooks ran across the per-request fresh instances.
+            self.called_hooks = called_hooks
+
+    schema = strawberry.Schema(query=Query, extensions=[_ExtForTest])
     document = "query { ping }"
 
-    extension.called_hooks = set()
+    called_hooks.clear()
     schema.execute_sync(document)
-    assert extension.called_hooks == expected_hooks
+    assert called_hooks == expected_hooks
 
-    extension.called_hooks = set()
+    called_hooks.clear()
     await schema.execute(document)
-    assert extension.called_hooks == expected_hooks
+    assert called_hooks == expected_hooks
 
 
 async def test_generic_exceptions_get_wrapped_in_a_graphql_error(

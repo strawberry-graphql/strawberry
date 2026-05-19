@@ -230,7 +230,8 @@ def test_no_error_for_multiple_but_not_too_many_aliases():
 
 def _execute_with_max_aliases(query: str, max_alias_count: int):
     schema = strawberry.Schema(
-        Query, extensions=[MaxAliasesLimiter(max_alias_count=max_alias_count)]
+        Query,
+        extensions=[lambda: MaxAliasesLimiter(max_alias_count=max_alias_count)],
     )
 
     return schema.execute_sync(query)

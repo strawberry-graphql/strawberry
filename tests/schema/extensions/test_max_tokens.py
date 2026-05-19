@@ -56,7 +56,8 @@ def test_no_errors_exactly_max_number_of_tokens():
 
 def _execute_with_max_tokens(query: str, max_token_count: int):
     schema = strawberry.Schema(
-        Query, extensions=[MaxTokensLimiter(max_token_count=max_token_count)]
+        Query,
+        extensions=[lambda: MaxTokensLimiter(max_token_count=max_token_count)],
     )
 
     return schema.execute_sync(query)

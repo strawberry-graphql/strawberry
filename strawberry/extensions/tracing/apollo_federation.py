@@ -293,8 +293,13 @@ class ApolloFederationTracingExtension(SchemaExtension):
     it in the response as a base64-encoded protobuf under extensions.ftv1.
     """
 
-    def __init__(self, execution_context: ExecutionContext) -> None:
+    def __init__(self, *, execution_context: ExecutionContext | None = None) -> None:
         super().__init__(execution_context=execution_context)
+        # ``execution_context`` is set by the schema right after construction;
+        # the parameter exists for the legacy ``cls(execution_context=...)``
+        # call shape only.
+        if execution_context is not None:
+            self.execution_context = execution_context
         self._should_trace = False
         self._trace: _SimpleTrace | None = None
         self._root_node: _SimpleNode | None = None
