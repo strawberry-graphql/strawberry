@@ -84,7 +84,10 @@ schema = strawberry.Schema(Query)
 
 
 def run_query(
-    query: str, max_depth: int, should_ignore: ShouldIgnoreType = None
+    query: str,
+    max_depth: int,
+    should_ignore: ShouldIgnoreType = None,
+    include_specified_rules: bool = True,
 ) -> tuple[list[GraphQLError], dict[str, int] | None]:
     document = parse(query)
 
@@ -95,11 +98,16 @@ def run_query(
         result = query_depths
 
     validation_rule = create_validator(max_depth, should_ignore, callback)
+    rules = (
+        (*specified_rules, validation_rule)
+        if include_specified_rules
+        else (validation_rule,)
+    )
 
     errors = validate(
         schema._schema,
         document,
-        rules=(*specified_rules, validation_rule),
+        rules=rules,
     )
 
     return errors, result
@@ -228,12 +236,10 @@ def test_circular_fragments_do_not_recurse_forever():
     }
     """
 
-    errors, _result = run_query(query, 10)
+    errors, result = run_query(query, 10, include_specified_rules=False)
 
-    assert any(
-        error.message == "Cannot spread fragment 'A' within itself via 'B'."
-        for error in errors
-    )
+    assert not errors
+    assert result == {"Crash": 1}
 
 
 def test_should_ignore_the_introspection_query():

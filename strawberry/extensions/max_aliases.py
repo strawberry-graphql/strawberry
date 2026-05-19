@@ -72,16 +72,19 @@ def create_validator(max_alias_count: int) -> type[ValidationRule]:
 
 def count_fields_with_alias(
     selection_set_owner: (
-        OperationDefinitionNode | FragmentDefinitionNode | FieldNode | InlineFragmentNode
+        OperationDefinitionNode
+        | FragmentDefinitionNode
+        | FieldNode
+        | InlineFragmentNode
     ),
     fragments: Mapping[str, FragmentDefinitionNode] | None = None,
-    visited_fragments: set[str] | None = None,
+    visited_fragments: frozenset[str] | None = None,
 ) -> int:
     if selection_set_owner.selection_set is None:
         return 0
 
     if visited_fragments is None:
-        visited_fragments = set()
+        visited_fragments = frozenset()
 
     result = 0
 
@@ -92,9 +95,7 @@ def count_fields_with_alias(
             isinstance(selection, (FieldNode, InlineFragmentNode))
             and selection.selection_set
         ):
-            result += count_fields_with_alias(
-                selection, fragments, visited_fragments
-            )
+            result += count_fields_with_alias(selection, fragments, visited_fragments)
         if isinstance(selection, FragmentSpreadNode) and fragments:
             fragment_name = selection.name.value
             fragment = fragments.get(fragment_name)
