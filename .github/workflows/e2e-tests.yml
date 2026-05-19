@@ -9,13 +9,20 @@ on:
       - "e2e/**"
       - ".github/workflows/e2e-tests.yml"
 
+permissions:
+  contents: read
+
 jobs:
   e2e-tests:
     name: 🎭 Run E2E Tests
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
 
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
