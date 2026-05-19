@@ -213,6 +213,29 @@ def test_should_count_with_fragments():
     assert result == expected
 
 
+def test_circular_fragments_do_not_recurse_forever():
+    query = """
+    fragment A on Human {
+      ...B
+    }
+    fragment B on Human {
+      ...A
+    }
+    query Crash {
+      user {
+        ...A
+      }
+    }
+    """
+
+    errors, _result = run_query(query, 10)
+
+    assert any(
+        error.message == "Cannot spread fragment 'A' within itself via 'B'."
+        for error in errors
+    )
+
+
 def test_should_ignore_the_introspection_query():
     errors, result = run_query(get_introspection_query(), 10)
     assert not errors
