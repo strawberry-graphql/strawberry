@@ -1,6 +1,22 @@
 CHANGELOG
 =========
 
+0.315.7 - 2026-05-19
+--------------------
+
+This release fixes validation of fragment spreads in `QueryDepthLimiter` and
+`MaxAliasesLimiter`.
+
+`QueryDepthLimiter` now tracks visited fragments while calculating operation depth,
+preventing circular fragment references from causing unbounded recursion.
+
+`MaxAliasesLimiter` now expands fragment spreads when counting aliases, so aliases
+declared inside fragments are counted each time the fragment is used.
+
+This release was contributed by [@patrick91](https://github.com/patrick91) in [#4421](https://github.com/strawberry-graphql/strawberry/pull/4421)
+
+Additional contributors: [@pre-commit-ci[bot]](https://github.com/pre-commit-ci[bot])
+
 0.315.6 - 2026-05-19
 --------------------
 
