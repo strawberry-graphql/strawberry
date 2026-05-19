@@ -51,10 +51,11 @@ cross-request state in module/class-level storage or in
 
 > Passing an extension instance directly (`extensions=[MyExtension()]`) is
 > deprecated and is no longer accepted by the type signature — type checkers
-> (mypy, pyright) will report it. Strawberry still tolerates it at runtime: the
-> instance is shallow-copied per request and a `DeprecationWarning` is emitted.
-> Switch to the factory form (or pass the class) to silence both the type error
-> and the warning, and get full per-request isolation.
+> (mypy, pyright) will report it. Strawberry still uses the instance at runtime
+> for backwards compatibility and emits a `DeprecationWarning`, but the same
+> instance is reused for every request — concurrent requests can observe each
+> other's `ExecutionContext`. Migrate to passing the class or a factory callable
+> to silence the warning and get per-request isolation.
 
 ## Hooks
 

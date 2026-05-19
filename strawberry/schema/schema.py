@@ -1,8 +1,5 @@
 from __future__ import annotations
 
-import copy
-import pathlib
-import sys
 import warnings
 from asyncio import ensure_future
 from collections.abc import AsyncGenerator, AsyncIterator, Awaitable, Callable, Iterable
@@ -84,7 +81,6 @@ from .exceptions import CannotGetOperationTypeError, InvalidOperationTypeError
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Mapping
-    from types import FrameType
     from typing import TypeAlias
 
     from graphql.language import DocumentNode
@@ -117,29 +113,6 @@ DEFAULT_ALLOWED_OPERATION_TYPES = {
 ProcessErrors: TypeAlias = (
     "Callable[[list[GraphQLError], ExecutionContext | None], None]"
 )
-
-
-_STRAWBERRY_ROOT = pathlib.Path(__file__).resolve().parent.parent
-
-
-def _find_user_stacklevel() -> int:
-    """Return the ``stacklevel`` that points at the first non-strawberry frame.
-
-    Used so deprecation warnings emitted from inside ``Schema.__init__`` end up
-    pointing at user code, regardless of how many strawberry-internal frames
-    sit between us and the caller (e.g. ``strawberry.federation.Schema``
-    delegating via ``super().__init__``).
-    """
-    # Skip this helper itself.
-    frame: FrameType | None = sys._getframe(1)
-    level = 1
-    while frame is not None:
-        filename = pathlib.Path(frame.f_code.co_filename).resolve()
-        if not filename.is_relative_to(_STRAWBERRY_ROOT):
-            return level
-        frame = frame.f_back
-        level += 1
-    return level
 
 
 # TODO: merge with below
@@ -305,7 +278,7 @@ class Schema(BaseSchema):
                     "https://github.com/strawberry-graphql/strawberry/issues/4369."
                 ),
                 DeprecationWarning,
-                stacklevel=_find_user_stacklevel(),
+                stacklevel=2,
             )
         self.execution_context_class = (
             execution_context_class or StrawberryGraphQLCoreExecutionContext
@@ -413,30 +386,17 @@ class Schema(BaseSchema):
             raise ValueError(f"Invalid Schema. Errors:\n\n{formatted_errors}")
 
     def get_extensions(self, sync: bool = False) -> list[SchemaExtension]:
-        # `self.extensions` may legitimately contain instances on the
-        # deprecated runtime path, so the local list is widened to include
-        # ``SchemaExtension`` even though the public type signature does not.
-        extensions: list[
-            type[SchemaExtension] | Callable[[], SchemaExtension] | SchemaExtension
-        ] = list(self.extensions)
+        # Deprecated instances are passed through as-is. The DeprecationWarning
+        # is emitted once at ``Schema.__init__``; users are expected to migrate
+        # to a class or factory for per-request isolation.
+        resolved: list[SchemaExtension] = [
+            ext if isinstance(ext, SchemaExtension) else ext()
+            for ext in self.extensions
+        ]
         if self.directives:
-            extensions.append(DirectivesExtensionSync if sync else DirectivesExtension)
-
-        resolved: list[SchemaExtension] = []
-        for ext in extensions:
-            if isinstance(ext, SchemaExtension):
-                # Deprecated path: shallow-copy so each request gets its own
-                # `self`-attributes. The DeprecationWarning is emitted once at
-                # ``Schema.__init__``.
-                resolved.append(copy.copy(ext))
-            else:
-                # Class or factory callable. Both must be no-arg callable —
-                # ``SchemaExtension.__init__`` accepts ``*, execution_context=None``
-                # by default, and built-in extensions take their own optional
-                # configuration kwargs only. Custom extensions with a required
-                # positional ``execution_context`` argument should migrate to the
-                # base-class signature or be passed via a factory.
-                resolved.append(ext())
+            resolved.append(
+                DirectivesExtensionSync() if sync else DirectivesExtension()
+            )
         return resolved
 
     @property

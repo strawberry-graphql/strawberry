@@ -148,32 +148,6 @@ def test_instance_passed_emits_deprecation_warning():
         )
 
 
-def test_instance_passed_emits_deprecation_warning_via_federation_schema():
-    # The warning is emitted from inside ``Schema.__init__`` but the federation
-    # subclass sits in the call stack via ``super().__init__``. Check that the
-    # warning is still attributed to the user's call site.
-    import strawberry.federation
-
-    @strawberry.federation.type
-    class FedQuery:
-        hello: str = "world"
-
-    with pytest.warns(
-        DeprecationWarning,
-        match=r"Passing an extension instance.*deprecated",
-    ) as caught:
-        strawberry.federation.Schema(
-            query=FedQuery,
-            extensions=[_CapturingExtension()],  # type: ignore[list-item]
-        )
-
-    assert len(caught) == 1
-    # The warning's filename must not be inside ``strawberry/`` itself.
-    assert "strawberry/" not in caught[0].filename or caught[0].filename.endswith(
-        "test_isolation.py"
-    )
-
-
 def test_extensions_can_be_a_generator():
     # ``Schema.__init__`` materializes the iterable so a generator passed as
     # ``extensions`` still produces extensions on every request.
@@ -185,23 +159,6 @@ def test_extensions_can_be_a_generator():
     for _ in range(2):
         result = schema.execute_sync("{ hello }")
         assert result.extensions == {"query": "{ hello }", "label": "default"}
-
-
-def test_instance_passed_per_request_copy_isolates_context():
-    # The schema warns on instance-passing but still copies the instance per
-    # request so concurrent requests do not share ``execution_context``.
-    with pytest.warns(DeprecationWarning, match="deprecated"):
-        schema = strawberry.Schema(
-            query=Query,
-            extensions=[_CapturingExtension()],  # type: ignore[list-item]
-        )
-
-    queries = ["{ hello }", "{ test: hello }"]
-    with ThreadPoolExecutor(max_workers=2) as executor:
-        results = list(executor.map(schema.execute_sync, queries))
-
-    assert results[0].extensions == {"query": queries[0], "label": "default"}
-    assert results[1].extensions == {"query": queries[1], "label": "default"}
 
 
 def test_apollo_tracing_sync_concurrent_class_passed():
