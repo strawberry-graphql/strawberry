@@ -68,7 +68,6 @@ def test_django_client_assert_no_errors_verbose_message():
     from django.test.client import Client
 
     from strawberry.django.test import GraphQLTestClient
-    from tests.views.schema import schema  # noqa: F401
 
     client = GraphQLTestClient(Client())
 
