@@ -53,7 +53,7 @@ def test_asgi_client_assert_no_errors_verbose_message():
 
 def test_graphql_test_client_assert_no_errors_verbose_message():
     from strawberry.test.client import GraphQLTestClient
-    from tests.views.schema import schema  # noqa: F401
+    from tests.views.schema import schema
 
     client = GraphQLTestClient(schema)
 
