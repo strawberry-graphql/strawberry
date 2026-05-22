@@ -51,6 +51,18 @@ def test_asgi_client_assert_no_errors_verbose_message():
     check_non_existent_field_error(exc_info.value.args[0])
 
 
+def test_graphql_test_client_assert_no_errors_verbose_message():
+    from strawberry.test.client import GraphQLTestClient
+    from tests.views.schema import schema  # noqa: F401
+
+    client = GraphQLTestClient(schema)
+
+    with pytest.raises(AssertionError) as exc_info:
+        client.query(query_to_non_existent_field)
+
+    check_non_existent_field_error(exc_info.value.args[0])
+
+
 @pytest.mark.django
 def test_django_client_assert_no_errors_verbose_message():
     from django.test.client import Client
