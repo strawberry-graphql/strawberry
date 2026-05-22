@@ -89,6 +89,47 @@ completely absent (common in update operations), you can use `strawberry.Maybe`.
 See the [Maybe documentation](./maybe.md) for comprehensive examples and usage
 patterns.
 
+## Using TypedDicts for Inputs
+
+If you prefer your resolvers to receive standard Python dictionaries rather than
+Strawberry input class instances, you can use the `@strawberry.typed_dict_input`
+decorator.
+
+<CodeGrid>
+
+```python
+import strawberry
+from typing import TypedDict
+
+
+@strawberry.typed_dict_input
+class Point2DInput(TypedDict):
+    x: float
+    y: float
+
+
+@strawberry.type
+class Mutation:
+    @strawberry.mutation
+    def store_point(self, data: Point2DInput) -> bool:
+        # data is a standard dictionary: {"x": 1.0, "y": 2.0}
+        print(data["x"])
+        return True
+```
+
+```graphql
+input Point2DInput {
+  x: Float!
+  y: Float!
+}
+
+type Mutation {
+  storePoint(data: Point2DInput!): Boolean!
+}
+```
+
+</CodeGrid>
+
 ## API
 
 `@strawberry.input(name: str = None, description: str = None)`
