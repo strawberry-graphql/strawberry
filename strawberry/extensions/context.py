@@ -71,7 +71,7 @@ class ExtensionContextManagerBase:
                 )
 
             if callable(hook_fn):
-                return self.from_callable(extension, hook_fn)
+                return self.from_callable(extension, hook_fn) # type: ignore[arg-type]
 
             raise ValueError(
                 f"Hook {self.HOOK_NAME} on {extension} "
