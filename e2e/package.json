@@ -39,7 +39,7 @@
     "@types/react-relay": "^18.2.1",
     "@types/relay-runtime": "^20.1.1",
     "@vitejs/plugin-react": "^6.0.0",
-    "babel-plugin-relay": "^20.1.1",
+    "babel-plugin-relay": "^21.0.0",
     "eslint": "^10.0.0",
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.5.0",
