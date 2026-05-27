@@ -1,7 +1,9 @@
-class OperationNameResultInterfaceBlogPost:
+from typing_extensions import TypedDict
+
+class OperationNameResultInterfaceBlogPost(TypedDict):
     # typename: BlogPost
     id: str
     title: str
 
-class OperationNameResult:
+class OperationNameResult(TypedDict):
     interface: OperationNameResultInterfaceBlogPost
