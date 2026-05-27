@@ -263,8 +263,8 @@ class Query:
 - `name` (`str`): Override the GraphQL name. Defaults to the CamelCase class
   name.
 - `description` (`str`): Set a GraphQL description for the type.
-- `directives` (`Iterable[object]`): An iterable of GraphQL directives to apply to
-  the type.
+- `directives` (`Iterable[object]`): An iterable of GraphQL directives to apply
+  to the type.
 
 ### `validate_typed_dict`
 
