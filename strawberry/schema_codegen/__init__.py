@@ -58,10 +58,7 @@ _SCALAR_MAP = {
         value=cst.Name("strawberry"),
         attr=cst.Name("ID"),
     ),
-    "JSON": cst.Attribute(
-        value=cst.Name("strawberry"),
-        attr=cst.Name("JSON"),
-    ),
+    "JSON": cst.Name("JSON"),
     "UUID": cst.Name("UUID"),
     "Decimal": cst.Name("Decimal"),
     "Date": cst.Name("date"),
@@ -73,7 +70,7 @@ _SCALAR_MAP = {
 @dataclasses.dataclass(frozen=True)
 class Import:
     module: str | None
-    imports: tuple[str]
+    imports: tuple[str | tuple[str, str], ...]
 
     def module_path_to_cst(self, module_path: str) -> cst.Name | cst.Attribute:
         parts = module_path.split(".")
@@ -85,15 +82,24 @@ class Import:
 
         return module_name
 
+    def _to_import_alias(self, name: str | tuple[str, str]) -> cst.ImportAlias:
+        if isinstance(name, tuple):
+            original, alias = name
+            return cst.ImportAlias(
+                name=cst.Name(original),
+                asname=cst.AsName(name=cst.Name(alias)),
+            )
+        return cst.ImportAlias(name=cst.Name(name))
+
     def to_cst(self) -> cst.Import | cst.ImportFrom:
         if self.module is None:
             return cst.Import(
-                names=[cst.ImportAlias(name=cst.Name(name)) for name in self.imports]
+                names=[self._to_import_alias(name) for name in self.imports]
             )
 
         return cst.ImportFrom(
             module=self.module_path_to_cst(self.module),
-            names=[cst.ImportAlias(name=cst.Name(name)) for name in self.imports],
+            names=[self._to_import_alias(name) for name in self.imports],
         )
 
 
@@ -122,12 +128,16 @@ def _get_field_type(
     was_non_nullable: bool = False,
     *,
     wrap_in_maybe: bool = False,
+    overridden_scalars: frozenset[str] = frozenset(),
 ) -> cst.BaseExpression:
     expr: cst.BaseExpression | None
 
     if isinstance(field_type, NonNullTypeNode):
         return _get_field_type(
-            field_type.type, was_non_nullable=True, wrap_in_maybe=wrap_in_maybe
+            field_type.type,
+            was_non_nullable=True,
+            wrap_in_maybe=wrap_in_maybe,
+            overridden_scalars=overridden_scalars,
         )
     if isinstance(field_type, ListTypeNode):
         expr = cst.Subscript(
@@ -135,16 +145,21 @@ def _get_field_type(
             slice=[
                 cst.SubscriptElement(
                     cst.Index(
-                        value=_get_field_type(field_type.type),
+                        value=_get_field_type(
+                            field_type.type, overridden_scalars=overridden_scalars
+                        ),
                     ),
                 )
             ],
         )
     elif isinstance(field_type, NamedTypeNode):
-        expr = _SCALAR_MAP.get(field_type.name.value)
-
-        if expr is None:
-            expr = cst.Name(field_type.name.value)
+        name = field_type.name.value
+        # User-supplied overrides replace the built-in `_SCALAR_MAP` mapping —
+        # the imported binding uses the scalar's GraphQL name.
+        if name in overridden_scalars:
+            expr = cst.Name(name)
+        else:
+            expr = _SCALAR_MAP.get(name) or cst.Name(name)
 
     else:
         raise NotImplementedError(f"Unknown type {field_type}")
@@ -337,6 +352,7 @@ def _get_field(
     imports: set[Import],
     *,
     is_input_field: bool = False,
+    overridden_scalars: frozenset[str] = frozenset(),
 ) -> cst.SimpleStatementLine:
     name = to_snake_case(field.name.value)
     alias: str | None = None
@@ -366,7 +382,11 @@ def _get_field(
             cst.AnnAssign(
                 target=cst.Name(name),
                 annotation=cst.Annotation(
-                    _get_field_type(field.type, wrap_in_maybe=wrap_in_maybe),
+                    _get_field_type(
+                        field.type,
+                        wrap_in_maybe=wrap_in_maybe,
+                        overridden_scalars=overridden_scalars,
+                    ),
                 ),
                 value=_get_field_value(
                     field,
@@ -556,6 +576,8 @@ def _get_class_definition(
     | InputObjectTypeDefinitionNode,
     is_apollo_federation: bool,
     imports: set[Import],
+    *,
+    overridden_scalars: frozenset[str] = frozenset(),
 ) -> Definition:
     decorator = _get_strawberry_decorator(definition, is_apollo_federation, imports)
 
@@ -579,6 +601,7 @@ def _get_class_definition(
                     is_apollo_federation,
                     imports,
                     is_input_field=is_input_type,
+                    overridden_scalars=overridden_scalars,
                 )
                 for field in definition.fields
             ]
@@ -632,6 +655,7 @@ def _get_schema_definition(
     root_mutation_name: str | None,
     root_subscription_name: str | None,
     is_apollo_federation: bool,
+    has_scalar_map: bool = False,
 ) -> cst.SimpleStatementLine | None:
     if not any([root_query_name, root_mutation_name, root_subscription_name]):
         return None
@@ -653,6 +677,29 @@ def _get_schema_definition(
 
     if root_subscription_name:
         args.append(_get_arg("subscription", root_subscription_name))
+
+    if has_scalar_map:
+        config_call = cst.Call(
+            func=cst.Name("StrawberryConfig"),
+            args=[
+                cst.Arg(
+                    keyword=cst.Name("scalar_map"),
+                    value=cst.Name("scalar_map"),
+                    equal=cst.AssignEqual(
+                        cst.SimpleWhitespace(""), cst.SimpleWhitespace("")
+                    ),
+                )
+            ],
+        )
+        args.append(
+            cst.Arg(
+                keyword=cst.Name("config"),
+                value=config_call,
+                equal=cst.AssignEqual(
+                    cst.SimpleWhitespace(""), cst.SimpleWhitespace("")
+                ),
+            )
+        )
 
     # Federation 2 is now always enabled for federation schemas
     if is_apollo_federation:
@@ -690,6 +737,7 @@ class Definition:
     code: cst.CSTNode
     dependencies: list[str]
     name: str
+    scalar_map_entry: cst.DictElement | None = None
 
 
 def _get_union_definition(definition: UnionTypeDefinitionNode) -> Definition:
@@ -733,9 +781,20 @@ def _get_union_definition(definition: UnionTypeDefinitionNode) -> Definition:
 
 
 def _get_scalar_definition(
-    definition: ScalarTypeDefinitionNode, imports: set[Import]
+    definition: ScalarTypeDefinitionNode,
+    imports: set[Import],
+    scalar_overrides: dict[str, str] | None = None,
 ) -> Definition | None:
     name = definition.name.value
+
+    # User-supplied overrides win over every built-in special-case below.
+    if scalar_overrides and name in scalar_overrides:
+        module, _, target = scalar_overrides[name].partition(":")
+        if target == name:
+            imports.add(Import(module=module, imports=(name,)))
+        else:
+            imports.add(Import(module=module, imports=((target, name),)))
+        return None
 
     if name == "Date":
         imports.add(Import(module="datetime", imports=("date",)))
@@ -753,6 +812,7 @@ def _get_scalar_definition(
         imports.add(Import(module="uuid", imports=("UUID",)))
         return None
     if name == "JSON":
+        imports.add(Import(module="strawberry.scalars", imports=("JSON",)))
         return None
 
     description = definition.description.value if definition.description else None
@@ -776,7 +836,8 @@ def _get_scalar_definition(
         ),
     )
 
-    additional_args: list[cst.Arg | None] = [
+    scalar_args: list[cst.Arg | None] = [
+        _get_argument("name", name),
         _get_argument("description", description) if description else None,
         _get_argument("specified_by_url", specified_by_url)
         if specified_by_url
@@ -793,36 +854,51 @@ def _get_scalar_definition(
         ),
     ]
 
+    # Emit `Foo = NewType("Foo", object)` at module scope so the name is a
+    # valid type expression under pyright (NewType is special-cased only on
+    # top-level same-name assignments).
     statement_definition = cst.SimpleStatementLine(
         body=[
             cst.Assign(
                 targets=[cst.AssignTarget(cst.Name(name))],
                 value=cst.Call(
-                    func=cst.Attribute(
-                        value=cst.Name("strawberry"),
-                        attr=cst.Name("scalar"),
-                    ),
+                    func=cst.Name("NewType"),
                     args=[
-                        cst.Arg(
-                            cst.Call(
-                                func=cst.Name("NewType"),
-                                args=[
-                                    cst.Arg(cst.SimpleString(f'"{name}"')),
-                                    cst.Arg(cst.Name("object")),
-                                ],
-                            )
-                        ),
-                        *filter(None, additional_args),
+                        cst.Arg(cst.SimpleString(f'"{name}"')),
+                        cst.Arg(cst.Name("object")),
                     ],
                 ),
             )
         ]
     )
-    return Definition(statement_definition, [], name=definition.name.value)
+
+    # Register the scalar via `scalar_map=` on `StrawberryConfig` so the type
+    # expression and the scalar registration are decoupled. Calling
+    # `strawberry.scalar(name=..., ...)` without `cls` returns a
+    # ScalarDefinition and is the type-checker-friendly overload.
+    scalar_map_entry = cst.DictElement(
+        key=cst.Name(name),
+        value=cst.Call(
+            func=cst.Attribute(
+                value=cst.Name("strawberry"),
+                attr=cst.Name("scalar"),
+            ),
+            args=list(filter(None, scalar_args)),
+        ),
+    )
+
+    return Definition(
+        statement_definition,
+        [],
+        name=definition.name.value,
+        scalar_map_entry=scalar_map_entry,
+    )
 
 
-def codegen(schema: str) -> str:
+def codegen(schema: str, *, scalar_overrides: dict[str, str] | None = None) -> str:
     document = parse(schema)
+
+    overridden_scalars = frozenset(scalar_overrides or ())
 
     definitions: dict[str, Definition] = {}
 
@@ -853,7 +929,10 @@ def codegen(schema: str) -> str:
             ),
         ):
             definition = _get_class_definition(
-                graphql_definition, is_apollo_federation, imports
+                graphql_definition,
+                is_apollo_federation,
+                imports,
+                overridden_scalars=overridden_scalars,
             )
 
         elif isinstance(graphql_definition, EnumTypeDefinitionNode):
@@ -878,7 +957,9 @@ def codegen(schema: str) -> str:
 
             definition = _get_union_definition(graphql_definition)
         elif isinstance(graphql_definition, ScalarTypeDefinitionNode):
-            definition = _get_scalar_definition(graphql_definition, imports)
+            definition = _get_scalar_definition(
+                graphql_definition, imports, scalar_overrides
+            )
 
         elif isinstance(graphql_definition, SchemaExtensionNode):
             is_apollo_federation = any(
@@ -902,12 +983,57 @@ def codegen(schema: str) -> str:
             "Subscription" if "Subscription" in definitions else None
         )
 
+    scalar_map_entries = [
+        (d.name, d.scalar_map_entry)
+        for d in definitions.values()
+        if d.scalar_map_entry is not None
+    ]
+
+    if scalar_map_entries:
+        # Annotate as `dict[object, ScalarDefinition]` so pyright can widen the
+        # inferred `dict[type[Foo], ScalarDefinition]` to the
+        # `Mapping[object, ScalarDefinition]` accepted by StrawberryConfig.
+        scalar_map_statement = cst.SimpleStatementLine(
+            body=[
+                cst.AnnAssign(
+                    target=cst.Name("scalar_map"),
+                    annotation=cst.Annotation(
+                        annotation=cst.Subscript(
+                            value=cst.Name("dict"),
+                            slice=[
+                                cst.SubscriptElement(cst.Index(cst.Name("object"))),
+                                cst.SubscriptElement(
+                                    cst.Index(cst.Name("ScalarDefinition"))
+                                ),
+                            ],
+                        )
+                    ),
+                    value=cst.Dict(elements=[entry for _, entry in scalar_map_entries]),
+                )
+            ]
+        )
+        imports.add(
+            Import(module="strawberry.types.scalar", imports=("ScalarDefinition",))
+        )
+        # Depends on each NewType binding so topological sort places it after them.
+        definitions["_scalar_map"] = Definition(
+            scalar_map_statement,
+            [name for name, _ in scalar_map_entries],
+            "scalar_map",
+        )
+
     schema_definition = _get_schema_definition(
         root_query_name=root_query_name,
         root_mutation_name=root_mutation_name,
         root_subscription_name=root_subscription_name,
         is_apollo_federation=is_apollo_federation,
+        has_scalar_map=bool(scalar_map_entries),
     )
+
+    if schema_definition is not None and scalar_map_entries:
+        imports.add(
+            Import(module="strawberry.schema.config", imports=("StrawberryConfig",))
+        )
 
     if schema_definition:
         # Schema must be emitted last; it depends on all other definitions.
@@ -921,7 +1047,13 @@ def codegen(schema: str) -> str:
         cst.SimpleStatementLine(body=[future_import.to_cst()]),
         *[
             cst.SimpleStatementLine(body=[import_.to_cst()])
-            for import_ in sorted(imports, key=lambda i: (i.module or "", i.imports))
+            for import_ in sorted(
+                imports,
+                key=lambda i: (
+                    i.module or "",
+                    tuple(n if isinstance(n, str) else n[1] for n in i.imports),
+                ),
+            )
         ],
     ]
 
