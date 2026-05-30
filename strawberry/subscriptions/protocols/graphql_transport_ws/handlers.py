@@ -161,7 +161,7 @@ class BaseGraphQLTransportWSHandler(Generic[Context, RootValue]):
 
     async def handle_connection_init(self, message: ConnectionInitMessage) -> None:
         if self.connection_timed_out:
-            # No way to reliably excercise this case during testing
+            # No way to reliably exercise this case during testing
             return  # pragma: no cover
 
         if self.connection_init_timeout_task:
@@ -329,7 +329,7 @@ class BaseGraphQLTransportWSHandler(Generic[Context, RootValue]):
 
     def forget_id(self, id: str) -> None:
         # de-register the operation id making it immediately available
-        # for re-use
+        # for reuse
         del self.operations[id]
 
     async def handle_complete(self, message: CompleteMessage) -> None:

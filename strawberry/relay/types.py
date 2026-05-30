@@ -351,7 +351,7 @@ class Node:
 
     The following methods can also be implemented:
         resolve_id:
-            (Optional) Called to resolve the node's id. Can be overriden to
+            (Optional) Called to resolve the node's id. Can be overridden to
             customize how the id is retrieved (e.g. in case you don't want
             to define a `NodeID` field)
         resolve_nodes:

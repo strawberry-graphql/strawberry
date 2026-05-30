@@ -255,7 +255,7 @@ async def dispatch_batch(loader: DataLoader, batch: Batch) -> None:
     if len(keys) == 0:
         # Ensure batch is not empty
         # Unlikely, but could happen if the tasks are
-        # overriden with preset values
+        # overridden with preset values
         return
 
     # Skip the batch entirely if all futures have already been cancelled.

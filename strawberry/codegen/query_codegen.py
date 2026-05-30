@@ -234,7 +234,7 @@ def _py_to_graphql_value(obj: Any) -> GraphQLArgumentValue:
         return GraphQLListValue([_py_to_graphql_value(v) for v in obj])
     if issubclass(obj_type, Mapping):
         return GraphQLObjectValue({k: _py_to_graphql_value(v) for k, v in obj.items()})
-    raise ValueError(f"Cannot convet {obj!r} into a GraphQLArgumentValue")
+    raise ValueError(f"Cannot convert {obj!r} into a GraphQLArgumentValue")
 
 
 class QueryCodegenPluginManager:
