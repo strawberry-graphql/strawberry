@@ -1,6 +1,7 @@
 from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal
 from textwrap import dedent
+from typing import Any
 from uuid import UUID
 
 import pytest
@@ -363,6 +364,46 @@ def test_override_unknown_scalars():
 
     assert not result.errors
     assert result.data == {"duration": 10}
+
+
+def test_override_generic_container_by_origin():
+    # Registering the bare ``dict`` should cover every ``dict[K, V]``
+    # parameterization instead of requiring one override entry per variant.
+    JSONScalar = scalar(
+        dict,
+        name="JSON",
+        serialize=lambda value: value,
+        parse_value=lambda value: value,
+    )
+
+    @strawberry.type
+    class Query:
+        ints: dict[str, int]
+        nested: dict[str, list[int]]
+
+    schema = strawberry.Schema(Query, scalar_overrides={dict: JSONScalar})
+
+    assert "ints: JSON!" in str(schema)
+    assert "nested: JSON!" in str(schema)
+
+
+def test_override_exact_generic_key_still_matches():
+    # The existing exact-key lookup must keep working: an override registered
+    # for a specific parameterization should only affect that exact type.
+    JSONScalar = scalar(
+        dict,
+        name="JSON",
+        serialize=lambda value: value,
+        parse_value=lambda value: value,
+    )
+
+    @strawberry.type
+    class Query:
+        settings: dict[str, Any]
+
+    schema = strawberry.Schema(Query, scalar_overrides={dict[str, Any]: JSONScalar})
+
+    assert "settings: JSON!" in str(schema)
 
 
 def test_decimal():

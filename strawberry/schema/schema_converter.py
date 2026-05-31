@@ -903,6 +903,13 @@ class GraphQLCoreConverter:
         ):  # TODO: Replace with StrawberryScalar
             return self.from_scalar(type_)
 
+        # Fall back to matching a generic container by its origin, so that
+        # registering e.g. ``{dict: JSON}`` covers every ``dict[K, V]``
+        # parameterization instead of requiring one entry per variant.
+        origin = typing.get_origin(type_)
+        if origin is not None and compat.is_scalar(origin, self.scalar_registry):
+            return self.from_scalar(origin)
+
         raise TypeError(f"Unexpected type '{type_}'")
 
     def from_union(self, union: StrawberryUnion) -> GraphQLUnionType:
