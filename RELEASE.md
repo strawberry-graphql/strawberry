@@ -12,10 +12,12 @@ annotation (`dict[str, Any]`), and any other shape such as
 import strawberry
 from strawberry.scalars import JSON
 
+
 @strawberry.type
 class Query:
     settings: dict[str, int]
     metadata: dict[str, list[str]]
+
 
 schema = strawberry.Schema(
     query=Query,
