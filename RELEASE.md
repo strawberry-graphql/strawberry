@@ -1,4 +1,4 @@
-Release type: patch
+Release type: minor
 
 Add native support for `typing.TypedDict` GraphQL object and input types via
 the new `@strawberry.typed_dict` and `@strawberry.typed_dict_input` decorators.

@@ -35,7 +35,12 @@ except ImportError:  # pragma: no cover
 
     def is_typeddict(tp: type[Any]) -> bool:
         """Fallback check for TypedDict across standard library and extensions."""
-        return isinstance(tp, type) and hasattr(tp, "__total__")
+        return (
+            isinstance(tp, type)
+            and hasattr(tp, "__total__")
+            and hasattr(tp, "__required_keys__")
+            and hasattr(tp, "__optional_keys__")
+        )
 
 
 _REQUIRED_TYPES: tuple[object, ...] = ()
@@ -388,7 +393,7 @@ def _apply_typed_dict(
     definition = _create_typed_dict_definition(
         cls, name, description, directives, is_input
     )
-    cls.__strawberry_definition__ = definition  # type: ignore[attr-defined]
+    cls.__strawberry_definition__ = definition
     return cls
 
 

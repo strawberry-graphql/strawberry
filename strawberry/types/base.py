@@ -282,7 +282,7 @@ class StrawberryObjectDefinition(StrawberryType):
     directives: Sequence[object] | None
     is_type_of: Callable[[Any, GraphQLResolveInfo], bool] | None
     resolve_type: Callable[[Any, GraphQLResolveInfo, GraphQLAbstractType], str] | None
-    _is_typed_dict: bool = dataclasses.field(
+    _is_typeddict: bool = dataclasses.field(
         default=False, init=False, repr=False, compare=False, hash=False
     )
 
