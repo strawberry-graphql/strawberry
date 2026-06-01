@@ -6,6 +6,7 @@ from graphql.execution.execute import ExecutionResult as GraphQLExecutionResult
 
 from strawberry.extensions.base_extension import SchemaExtension
 from strawberry.types.execution import ExecutionResult as StrawberryExecutionResult
+from strawberry.types.graphql import OperationType
 
 
 def default_should_mask_error(_: GraphQLError) -> bool:
@@ -53,9 +54,26 @@ class MaskErrors(SchemaExtension):
     def on_operation(self) -> Iterator[None]:
         yield
 
+        # Subscriptions are handled event-by-event in on_subscription_result
+        try:
+            if self.execution_context.operation_type == OperationType.SUBSCRIPTION:
+                return
+        except RuntimeError:
+            # If the query fails to parse early on, operation_type throws a RuntimeError.
+            # We must PASS here to ensure standard Queries/Mutations get masked,
+            # even if it means a malformed Subscription gets double-masked.
+            pass
+
         result = self.execution_context.result
 
         if isinstance(result, (GraphQLExecutionResult, StrawberryExecutionResult)):
             self._process_result(result)
         elif result:
             self._process_result(result.initial_result)
+
+    def on_subscription_result(
+        self, result: StrawberryExecutionResult
+    ) -> Iterator[None]:
+        """Mask errors on streaming subscription results."""
+        self._process_result(result)
+        yield None

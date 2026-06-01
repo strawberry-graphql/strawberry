@@ -4,6 +4,7 @@ from collections.abc import Callable
 from enum import Enum
 from typing import TYPE_CHECKING, Any
 
+from strawberry.types import ExecutionResult
 from strawberry.utils.await_maybe import AsyncIteratorOrIterator, AwaitableOrValue
 
 if TYPE_CHECKING:
@@ -51,6 +52,15 @@ class SchemaExtension:
         """Called before and after the execution step."""
         yield None
 
+    def on_subscription_result(  # type: ignore
+        self, result: ExecutionResult
+    ) -> AsyncIteratorOrIterator[None]:  # pragma: no cover
+        """Called before and after each event/result yielded by a GraphQL subscription.
+
+        Extensions can mutate the `result` object directly (e.g., masking errors).
+        """
+        yield None
+
     def resolve(
         self,
         _next: Callable,
@@ -70,13 +80,17 @@ class SchemaExtension:
         return cls.resolve is not SchemaExtension.resolve
 
 
-Hook = Callable[[SchemaExtension], AsyncIteratorOrIterator[None]]
+Hook = (
+    Callable[[SchemaExtension], AsyncIteratorOrIterator[None]]
+    | Callable[[SchemaExtension, ExecutionResult], AsyncIteratorOrIterator[None]]
+)
 
 HOOK_METHODS: set[str] = {
     SchemaExtension.on_operation.__name__,
     SchemaExtension.on_validate.__name__,
     SchemaExtension.on_parse.__name__,
     SchemaExtension.on_execute.__name__,
+    SchemaExtension.on_subscription_result.__name__,
 }
 
 __all__ = ["HOOK_METHODS", "Hook", "LifecycleStep", "SchemaExtension"]
