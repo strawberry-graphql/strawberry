@@ -33,7 +33,7 @@ try:
     from typing_extensions import is_typeddict
 except ImportError:  # pragma: no cover
 
-    def is_typeddict(tp: type[Any]) -> bool:
+    def is_typeddict(tp: object) -> bool:
         """Fallback check for TypedDict across standard library and extensions."""
         return (
             isinstance(tp, type)
