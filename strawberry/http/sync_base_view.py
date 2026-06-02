@@ -3,7 +3,6 @@ import json
 from collections.abc import Callable
 from typing import (
     Generic,
-    Literal,
 )
 
 from cross_web import HTTPException, SyncHTTPRequestAdapter
@@ -14,6 +13,7 @@ from strawberry.file_uploads.utils import replace_placeholders_with_files
 from strawberry.http import (
     GraphQLHTTPResponse,
     GraphQLRequestData,
+    GraphQLSubscriptionProtocol,
     process_result,
 )
 from strawberry.http.ides import GraphQL_IDE
@@ -161,10 +161,10 @@ class SyncBaseHTTPView(
         content_type, params = parse_content_type(request.content_type or "")
         accept = headers.get("accept", "")
 
-        protocol: Literal["http", "multipart-subscription"] = (
-            "multipart-subscription"
+        protocol: GraphQLSubscriptionProtocol = (
+            GraphQLSubscriptionProtocol.MULTIPART_SUBSCRIPTION
             if self._is_multipart_subscriptions(*parse_content_type(accept))
-            else "http"
+            else GraphQLSubscriptionProtocol.HTTP
         )
 
         if request.method == "GET":

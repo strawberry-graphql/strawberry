@@ -43,3 +43,32 @@ class OnWSConnectMixin(
                 return UNSET
 
         return await super().on_ws_connect(context)
+
+
+class OnSSEConnectMixin(
+    AsyncBaseHTTPView[
+        Request,
+        Response,
+        SubResponse,
+        WebSocketRequest,
+        WebSocketResponse,
+        dict[str, object],
+        object,
+    ]
+):
+    async def on_sse_connect(
+        self, context: dict[str, object]
+    ) -> UnsetType | None | dict[str, object]:
+        if context.get("test-reject"):
+            raise ConnectionRejectionError
+
+        if context.get("test-accept"):
+            if "ack-payload" in context:
+                return context["ack-payload"]
+            return UNSET
+
+        if context.get("test-modify"):
+            context["modified"] = True
+            return UNSET
+
+        return await super().on_sse_connect(context)

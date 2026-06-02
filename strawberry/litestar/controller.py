@@ -46,7 +46,11 @@ from strawberry.http.exceptions import (
     WebSocketDisconnected,
 )
 from strawberry.http.typevars import Context, RootValue
-from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
+from strawberry.subscriptions import (
+    GRAPHQL_SSE_PROTOCOL,
+    GRAPHQL_TRANSPORT_WS_PROTOCOL,
+    GRAPHQL_WS_PROTOCOL,
+)
 
 if TYPE_CHECKING:
     from collections.abc import (
@@ -426,6 +430,7 @@ def make_graphql_controller(
     _GraphQLController.max_subscriptions_per_connection = (
         max_subscriptions_per_connection
     )
+    _GraphQLController.sse_enabled = GRAPHQL_SSE_PROTOCOL in subscription_protocols
 
     return _GraphQLController
 

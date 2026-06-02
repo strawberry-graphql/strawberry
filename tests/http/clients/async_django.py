@@ -48,14 +48,30 @@ class AsyncDjangoHttpClient(DjangoHttpClient):
         allow_queries_via_get: bool = True,
         result_override: ResultOverrideFunction = None,
         multipart_uploads_enabled: bool = False,
+        sse_enabled: bool = False,
+        subscription_protocols: tuple[str, ...] = (),
+        **kwargs: object,
     ):
+        from strawberry.subscriptions import GRAPHQL_SSE_PROTOCOL
+
+        # Derive sse_enabled from subscription_protocols if not explicitly set
+        if not sse_enabled and GRAPHQL_SSE_PROTOCOL in subscription_protocols:
+            sse_enabled = True
+
         self.view = AsyncGraphQLView.as_view(
             schema=schema,
             graphql_ide=graphql_ide,
             allow_queries_via_get=allow_queries_via_get,
             result_override=result_override,
             multipart_uploads_enabled=multipart_uploads_enabled,
+            sse_enabled=sse_enabled,
         )
+
+    async def _collect_streaming_content(
+        self, streaming_content: AsyncIterable[bytes]
+    ) -> bytes:
+        chunks = [chunk async for chunk in streaming_content]
+        return b"".join(chunks)
 
     async def _do_request(self, request: HttpRequest) -> Response:
         try:
@@ -69,12 +85,12 @@ class AsyncDjangoHttpClient(DjangoHttpClient):
                 headers={},
             )
 
-        data = (
-            response.streaming_content
-            if isinstance(response, StreamingHttpResponse)
-            and isinstance(response.streaming_content, AsyncIterable)
-            else response.content
-        )
+        if isinstance(response, StreamingHttpResponse) and isinstance(
+            response.streaming_content, AsyncIterable
+        ):
+            data = await self._collect_streaming_content(response.streaming_content)
+        else:
+            data = response.content
 
         return Response(
             status_code=response.status_code,
