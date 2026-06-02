@@ -95,7 +95,7 @@ class ChannelsConsumer(AsyncConsumer):
             groups:
                 An optional sequence of groups to receive messages from.
                 When passing this parameter, the groups will be registered
-                using `self.channel_layer.group_add` at the beggining of the
+                using `self.channel_layer.group_add` at the beginning of the
                 execution and then discarded using `self.channel_layer.group_discard`
                 at the end of the execution.
         """
@@ -132,7 +132,7 @@ class ChannelsConsumer(AsyncConsumer):
     ) -> AsyncGenerator[Any, None]:
         """Generator for listen_to_channel method.
 
-        Seperated to allow user code to be run after subscribing to channels
+        Separated to allow user code to be run after subscribing to channels
         and before blocking to wait for incoming channel messages.
         """
         while True:

@@ -238,7 +238,7 @@ class Schema(BaseSchema):
             mutation: The entry point for mutations.
             subscription: The entry point for subscriptions.
             directives: A list of operation directives that clients can use.
-                The bult-in `@include` and `@skip` are included by default.
+                The built-in `@include` and `@skip` are included by default.
             types: A list of additional types that will be included in the schema.
             extensions: A list of Strawberry extensions.
             execution_context_class: The execution context class.

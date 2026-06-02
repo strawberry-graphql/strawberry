@@ -176,7 +176,7 @@ class SyncBaseHTTPView(
             data = self.parse_multipart(request)
         elif self._is_multipart_subscriptions(content_type, params):
             raise HTTPException(
-                400, "Multipart subcriptions are not supported in sync mode"
+                400, "Multipart subscriptions are not supported in sync mode"
             )
         else:
             raise HTTPException(400, "Unsupported content type")
