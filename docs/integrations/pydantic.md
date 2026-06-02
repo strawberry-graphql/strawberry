@@ -97,6 +97,60 @@ class UserInput:
     friends: strawberry.auto
 ```
 
+## Controlling omission semantics with `use_pydantic_default`
+
+`use_pydantic_default` on `@strawberry.experimental.pydantic.input` determines
+how omitted GraphQL fields are represented.
+
+- `True` (default): omitted fields use the Pydantic model's default or
+  `default_factory`.
+- `False`: omitted fields become `strawberry.UNSET`, allowing omission to be
+  distinguished from `null` and explicit values.
+
+| GraphQL input  | True (default)           | False     |
+| -------------- | ------------------------ | --------- |
+| omitted        | pydantic default applied | `UNSET`   |
+| provided value | unchanged                | unchanged |
+| null           | `None`                   | `None`    |
+
+When `False`, `UNSET` values remain on the Strawberry input and are not passed
+to the Pydantic constructor, enabling patch-style updates.
+
+```python
+from __future__ import annotations
+
+import pydantic
+import strawberry
+from strawberry import UNSET
+
+
+class UserModel(pydantic.BaseModel):
+    name: str
+    interests: list[str] | None = pydantic.Field(default_factory=list)
+
+
+@strawberry.experimental.pydantic.input(model=UserModel, use_pydantic_default=False)
+class UpdateUserInput:
+    name: strawberry.auto
+    interests: strawberry.auto
+
+
+@strawberry.type
+class Mutation:
+    @strawberry.mutation
+    async def update_user(self, user_data: UpdateUserInput) -> str:
+        changes: dict[str, object] = {}
+        if user_data.name is not UNSET:
+            changes["name"] = user_data.name
+        if user_data.interests is not UNSET:
+            changes["interests"] = user_data.interests
+
+        current = UserModel(name="Alice", interests=["games"])
+        updated = current.model_copy(update=changes)
+
+        return f"changes={changes} before={current.model_dump()} after={updated.model_dump()}"
+```
+
 ## Interface types
 
 Interface types are similar to normal types; we can create one by using the
