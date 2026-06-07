@@ -381,15 +381,65 @@ def test_override_generic_container_by_origin():
         ints: dict[str, int]
         nested: dict[str, list[int]]
 
-    schema = strawberry.Schema(Query, scalar_overrides={dict: JSONScalar})
+    @strawberry.type
+    class Mutation:
+        @strawberry.mutation
+        def echo(self, value: dict[str, int]) -> dict[str, int]:
+            return value
+
+        @strawberry.mutation
+        def echo_optional(
+            self, value: dict[str, int] | None = None
+        ) -> dict[str, int] | None:
+            return value
+
+        @strawberry.mutation
+        def echo_list(self, value: list[dict[str, int]]) -> list[dict[str, int]]:
+            return value
+
+    schema = strawberry.Schema(
+        Query,
+        mutation=Mutation,
+        scalar_overrides={dict: JSONScalar},
+    )
 
     assert "ints: JSON!" in str(schema)
     assert "nested: JSON!" in str(schema)
 
+    result = schema.execute_sync(
+        "{ ints nested }",
+        root_value=Query(ints={"a": 1}, nested={"b": [2]}),
+    )
+
+    assert not result.errors
+    assert result.data == {"ints": {"a": 1}, "nested": {"b": [2]}}
+
+    result = schema.execute_sync(
+        "mutation($value: JSON!) { echo(value: $value) }",
+        variable_values={"value": {"a": 1}},
+    )
+
+    assert not result.errors
+    assert result.data == {"echo": {"a": 1}}
+
+    result = schema.execute_sync(
+        "mutation($value: JSON) { echoOptional(value: $value) }",
+        variable_values={"value": {"b": 2}},
+    )
+
+    assert not result.errors
+    assert result.data == {"echoOptional": {"b": 2}}
+
+    result = schema.execute_sync(
+        "mutation($value: [JSON!]!) { echoList(value: $value) }",
+        variable_values={"value": [{"c": 3}]},
+    )
+
+    assert not result.errors
+    assert result.data == {"echoList": [{"c": 3}]}
+
 
 def test_override_exact_generic_key_still_matches():
-    # The existing exact-key lookup must keep working: an override registered
-    # for a specific parameterization should only affect that exact type.
     JSONScalar = scalar(
         dict,
         name="JSON",
@@ -404,6 +454,23 @@ def test_override_exact_generic_key_still_matches():
     schema = strawberry.Schema(Query, scalar_overrides={dict[str, Any]: JSONScalar})
 
     assert "settings: JSON!" in str(schema)
+
+
+def test_override_exact_generic_key_does_not_match_other_parameterizations():
+    JSONScalar = scalar(
+        dict,
+        name="JSON",
+        serialize=lambda value: value,
+        parse_value=lambda value: value,
+    )
+
+    @strawberry.type
+    class Query:
+        settings: dict[str, Any]
+        other: dict[str, int]
+
+    with pytest.raises(TypeError, match="Unexpected type 'dict\\[str, int\\]'"):
+        strawberry.Schema(Query, scalar_overrides={dict[str, Any]: JSONScalar})
 
 
 def test_decimal():

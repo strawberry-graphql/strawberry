@@ -810,6 +810,11 @@ class GraphQLCoreConverter:
 
         scalar_definition: ScalarDefinition
 
+        if scalar not in self.scalar_registry:
+            origin = typing.get_origin(scalar)
+            if origin is not None and origin in self.scalar_registry:
+                scalar = origin
+
         if scalar in self.scalar_registry:
             _scalar_definition = self.scalar_registry[scalar]
             # TODO: check why we need the cast and we are not trying with getattr first
@@ -902,13 +907,6 @@ class GraphQLCoreConverter:
             type_, self.scalar_registry
         ):  # TODO: Replace with StrawberryScalar
             return self.from_scalar(type_)
-
-        # Fall back to matching a generic container by its origin, so that
-        # registering e.g. ``{dict: JSON}`` covers every ``dict[K, V]``
-        # parameterization instead of requiring one entry per variant.
-        origin = typing.get_origin(type_)
-        if origin is not None and compat.is_scalar(origin, self.scalar_registry):
-            return self.from_scalar(origin)
 
         raise TypeError(f"Unexpected type '{type_}'")
 
