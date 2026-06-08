@@ -61,6 +61,7 @@ class GraphQLView(
         self,
         schema: BaseSchema,
         graphql_ide: GraphQL_IDE | None = "graphiql",
+        subscription_url: str | None = None,
         allow_queries_via_get: bool = True,
         multipart_uploads_enabled: bool = False,
     ) -> None:
@@ -69,6 +70,7 @@ class GraphQLView(
         self.multipart_uploads_enabled = multipart_uploads_enabled
 
         self.graphql_ide = graphql_ide
+        self.subscription_url = subscription_url
 
     async def get_root_value(self, request: Request) -> RootValue | None:
         return None

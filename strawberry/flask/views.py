@@ -33,6 +33,7 @@ class BaseGraphQLView:
         self,
         schema: BaseSchema,
         graphql_ide: GraphQL_IDE | None = "graphiql",
+        subscription_url: str | None = None,
         allow_queries_via_get: bool = True,
         multipart_uploads_enabled: bool = False,
     ) -> None:
@@ -40,6 +41,7 @@ class BaseGraphQLView:
         self.allow_queries_via_get = allow_queries_via_get
         self.multipart_uploads_enabled = multipart_uploads_enabled
         self.graphql_ide = graphql_ide
+        self.subscription_url = subscription_url
 
     def create_response(
         self,

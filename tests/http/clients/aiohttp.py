@@ -64,6 +64,7 @@ class AioHttpClient(HttpClient):
         self,
         schema: Schema,
         graphql_ide: GraphQL_IDE | None = "graphiql",
+        subscription_url: str | None = None,
         allow_queries_via_get: bool = True,
         keep_alive: bool = False,
         keep_alive_interval: float = 1,
@@ -79,6 +80,7 @@ class AioHttpClient(HttpClient):
         view = GraphQLView(
             schema=schema,
             graphql_ide=graphql_ide,
+            subscription_url=subscription_url,
             allow_queries_via_get=allow_queries_via_get,
             keep_alive=keep_alive,
             keep_alive_interval=keep_alive_interval,

@@ -26,6 +26,7 @@ class BaseRequestProtocol(Protocol):
 
 class BaseView(Generic[Request]):
     graphql_ide: GraphQL_IDE | None
+    subscription_url: str | None = None
     multipart_uploads_enabled: bool = False
     schema: BaseSchema
 
@@ -73,7 +74,10 @@ class BaseView(Generic[Request]):
 
     @property
     def graphql_ide_html(self) -> str:
-        return get_graphql_ide_html(graphql_ide=self.graphql_ide)
+        return get_graphql_ide_html(
+            graphql_ide=self.graphql_ide,
+            subscription_url=self.subscription_url,
+        )
 
     def _is_multipart_subscriptions(
         self, content_type: str, params: dict[str, str]

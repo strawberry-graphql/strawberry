@@ -217,6 +217,7 @@ class GraphQLController(
     allow_queries_via_get: bool = True
     graphiql_allowed_accept: frozenset[str] = frozenset({"text/html", "*/*"})
     graphql_ide: GraphQL_IDE | None = "graphiql"
+    subscription_url: str | None = None
     connection_init_wait_timeout: timedelta = timedelta(minutes=1)
     protocols: Sequence[str] = (
         GRAPHQL_TRANSPORT_WS_PROTOCOL,
@@ -373,6 +374,7 @@ def make_graphql_controller(
     schema: BaseSchema,
     path: str = "",
     graphql_ide: GraphQL_IDE | None = "graphiql",
+    subscription_url: str | None = None,
     allow_queries_via_get: bool = True,
     keep_alive: bool = False,
     keep_alive_interval: float = 1,
@@ -401,6 +403,7 @@ def make_graphql_controller(
     schema_: BaseSchema = schema
     allow_queries_via_get_: bool = allow_queries_via_get
     graphql_ide_: GraphQL_IDE | None = graphql_ide
+    subscription_url_: str | None = subscription_url
 
     routes_path: str = path
 
@@ -422,6 +425,7 @@ def make_graphql_controller(
     _GraphQLController.schema = schema_
     _GraphQLController.allow_queries_via_get = allow_queries_via_get_
     _GraphQLController.graphql_ide = graphql_ide_
+    _GraphQLController.subscription_url = subscription_url_
     _GraphQLController.multipart_uploads_enabled = multipart_uploads_enabled
     _GraphQLController.max_subscriptions_per_connection = (
         max_subscriptions_per_connection
