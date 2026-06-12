@@ -2,4 +2,4 @@
 release type: minor
 ---
 
-Make `assert_no_errors` assertion failures report response errors for verbose output. When a test fails due to GraphQL errors, the assertion now includes the actual error details, making debugging easier.
+Enhance `assert_no_errors` to report response errors in verbose output. When GraphQL errors are detected, the assertion now includes full error details, simplifying debugging.
