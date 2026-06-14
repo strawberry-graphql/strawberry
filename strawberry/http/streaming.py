@@ -1,14 +1,19 @@
 from __future__ import annotations
 
 import abc
-from collections.abc import AsyncGenerator, Callable, Mapping
-from typing import TYPE_CHECKING, ClassVar, Literal
+import asyncio
+import contextlib
+from collections.abc import AsyncGenerator, Callable, Iterable, Mapping
+from typing import TYPE_CHECKING, Any, ClassVar, Literal
+
+from strawberry.types.graphql import OperationType
 
 if TYPE_CHECKING:
     from strawberry.http import GraphQLHTTPResponse
 
 from .parse_content_type import parse_content_type
 
+AsyncTextStream = Callable[[], AsyncGenerator[str, None]]
 JSONEncoder = Callable[[object], str]
 
 MULTIPART_SUBSCRIPTION_BOUNDARY = "graphql"
@@ -84,6 +89,11 @@ class HTTPStreamTransport(abc.ABC):
     def accepts_content_type(self, content_type: str, params: dict[str, str]) -> bool:
         return False
 
+    def allowed_operation_types(
+        self, allowed_operation_types: set[OperationType]
+    ) -> Iterable[OperationType]:
+        return allowed_operation_types
+
     @abc.abstractmethod
     def encode_next(
         self, response: GraphQLHTTPResponse, encode_json: JSONEncoder
@@ -129,6 +139,11 @@ class MultipartSubscriptionTransport(MultipartTransport, HTTPStreamTransport):
     def accepts(self, accept: str) -> bool:
         return self.accepts_content_type(*parse_content_type(accept))
 
+    def allowed_operation_types(
+        self, allowed_operation_types: set[OperationType]
+    ) -> Iterable[OperationType]:
+        return (OperationType.SUBSCRIPTION,)
+
     def encode_next(
         self, response: GraphQLHTTPResponse, encode_json: JSONEncoder
     ) -> str:
@@ -141,8 +156,84 @@ class MultipartSubscriptionTransport(MultipartTransport, HTTPStreamTransport):
         return self.encode_multipart_data({}, encode_json)
 
 
+def merge_stream_with_heartbeat(
+    stream: AsyncTextStream,
+    heartbeat_message: Callable[[], str],
+    interval: float,
+    *,
+    send_initial_heartbeat: bool,
+) -> AsyncTextStream:
+    """Add heartbeat messages to a stream to prevent connection timeouts.
+
+    The source stream and heartbeat producer coordinate through a size-1 queue.
+    That keeps backpressure natural and avoids accumulating heartbeats while
+    data is active. The drain task sends an explicit completion message so a
+    fast source stream cannot finish before the consumer has read its final
+    chunk.
+    """
+
+    async def merged() -> AsyncGenerator[str, None]:
+        queue: asyncio.Queue[tuple[bool, bool, Any]] = asyncio.Queue(maxsize=1)
+        cancelling = False
+
+        async def drain() -> None:
+            try:
+                async for item in stream():
+                    await queue.put((False, False, item))
+            except Exception as e:
+                if not cancelling:
+                    await queue.put((True, False, e))
+                else:
+                    raise
+
+            await queue.put((False, True, None))
+
+        async def heartbeat() -> None:
+            if not send_initial_heartbeat:
+                await asyncio.sleep(interval)
+
+            while True:
+                await queue.put((False, False, heartbeat_message()))
+                await asyncio.sleep(interval)
+
+        heartbeat_task = asyncio.create_task(heartbeat())
+        task = asyncio.create_task(drain())
+
+        async def cancel_tasks() -> None:
+            nonlocal cancelling
+            cancelling = True
+            task.cancel()
+
+            with contextlib.suppress(asyncio.CancelledError):
+                await task
+
+            heartbeat_task.cancel()
+
+            with contextlib.suppress(asyncio.CancelledError):
+                await heartbeat_task
+
+        try:
+            while True:
+                raised, done, data = await queue.get()
+
+                if done:
+                    break
+
+                if raised:
+                    await cancel_tasks()
+                    raise data
+
+                yield data
+        finally:
+            await cancel_tasks()
+
+    return merged
+
+
 __all__ = [
+    "AsyncTextStream",
     "HTTPStreamTransport",
     "MultipartSubscriptionTransport",
     "MultipartTransport",
+    "merge_stream_with_heartbeat",
 ]

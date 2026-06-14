@@ -11,9 +11,15 @@ from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 import pytest_asyncio
+from graphql import parse
 from pytest_mock import MockerFixture
 
+from strawberry.extensions import ParserCache
+from strawberry.extensions import parser_cache as parser_cache_module
 from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL
+from strawberry.subscriptions.protocols.graphql_transport_ws import (
+    handlers as transport_handlers,
+)
 from strawberry.subscriptions.protocols.graphql_transport_ws.types import (
     CompleteMessage,
     ConnectionAckMessage,
@@ -25,7 +31,7 @@ from strawberry.subscriptions.protocols.graphql_transport_ws.types import (
     SubscribeMessage,
 )
 from tests.http.clients.base import DebuggableGraphQLTransportWSHandler
-from tests.views.schema import MyExtension, Schema, Subscription, schema
+from tests.views.schema import MyExtension, Query, Schema, Subscription, schema
 
 if TYPE_CHECKING:
     from tests.http.clients.base import HttpClient, WebSocketClient
@@ -469,6 +475,75 @@ async def test_simple_subscription(ws: WebSocketClient):
     await ws.send_message({"id": "sub1", "type": "complete"})
 
 
+async def test_document_is_parsed_by_schema_once(
+    ws: WebSocketClient, mocker: MockerFixture
+):
+    from strawberry.schema import schema as schema_module
+
+    parse_spy = mocker.spy(schema_module, "parse")
+
+    await ws.send_message(
+        {
+            "id": "sub1",
+            "type": "subscribe",
+            "payload": {"query": 'subscription { echo(message: "Hi") }'},
+        }
+    )
+
+    next_message: NextMessage = await ws.receive_json()
+    assert_next(next_message, "sub1", {"echo": "Hi"})
+    await ws.send_message({"id": "sub1", "type": "complete"})
+
+    parse_spy.assert_called_once()
+
+
+async def test_document_parsing_uses_schema_extensions(
+    http_client_class: type[HttpClient],
+):
+    from strawberry.schema import schema as schema_module
+
+    parser_cache_module._get_parse_cache.cache_clear()
+    cached_schema = Schema(
+        query=Query,
+        subscription=Subscription,
+        extensions=[ParserCache],
+    )
+    test_client = http_client_class(cached_schema)
+
+    with (
+        patch.object(
+            transport_handlers,
+            "parse",
+            side_effect=AssertionError("transport should not parse GraphQL documents"),
+            create=True,
+        ),
+        patch("strawberry.extensions.parser_cache.parse", wraps=parse) as cache_parse,
+        patch.object(schema_module, "parse", wraps=schema_module.parse) as schema_parse,
+    ):
+        async with test_client.ws_connect(
+            "/graphql", protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL]
+        ) as ws:
+            await ws.send_message({"type": "connection_init"})
+            connection_ack_message: ConnectionAckMessage = await ws.receive_json()
+            assert connection_ack_message == {"type": "connection_ack"}
+
+            await ws.send_message(
+                {
+                    "id": "sub1",
+                    "type": "subscribe",
+                    "payload": {"query": 'subscription { echo(message: "Hi") }'},
+                }
+            )
+
+            next_message: NextMessage = await ws.receive_json()
+            assert_next(next_message, "sub1", {"echo": "Hi"})
+            await ws.send_message({"id": "sub1", "type": "complete"})
+
+    cache_parse.assert_called_once_with('subscription { echo(message: "Hi") }')
+    schema_parse.assert_not_called()
+    parser_cache_module._get_parse_cache.cache_clear()
+
+
 @pytest.mark.parametrize(
     ("extra_payload", "expected_message"),
     [
@@ -586,6 +661,56 @@ async def test_subscription_field_errors(ws: WebSocketClient):
         )
 
         process_errors.assert_called_once()
+
+
+async def test_incremental_delivery_frames_are_rejected(ws: WebSocketClient):
+    """``stream`` expands incremental delivery (``@defer``/``@stream``) into raw
+    graphql-core frames, which the graphql-transport-ws ``next`` message cannot
+    represent. The handler must reject such an operation with an ``error`` rather
+    than crash or emit a malformed payload.
+
+    A synthetic frame is injected so the behaviour is exercised regardless of the
+    installed graphql-core version (incremental delivery needs >= 3.3).
+    """
+
+    class FakeIncrementalFrame:
+        # Mimics a graphql-core incremental frame: notably NOT a strawberry
+        # ``ExecutionResult`` and missing ``data``/``errors`` accessors.
+        has_next = True
+        incremental = ()
+
+    stream_closed = asyncio.Event()
+
+    async def fake_stream(
+        self, *args: object, **kwargs: object
+    ) -> AsyncGenerator[FakeIncrementalFrame, None]:
+        async def frames() -> AsyncGenerator[FakeIncrementalFrame, None]:
+            try:
+                yield FakeIncrementalFrame()
+                await asyncio.sleep(999)
+            finally:
+                stream_closed.set()
+
+        return frames()
+
+    with patch.object(Schema, "stream", fake_stream):
+        await ws.send_message(
+            {
+                "id": "sub1",
+                "type": "subscribe",
+                "payload": {"query": 'subscription { echo(message: "Hi") }'},
+            }
+        )
+
+        error_message: ErrorMessage = await ws.receive_json()
+        assert error_message["type"] == "error"
+        assert error_message["id"] == "sub1"
+        assert len(error_message["payload"]) == 1
+        assert (
+            "Incremental delivery is not supported"
+            in error_message["payload"][0]["message"]
+        )
+        await asyncio.wait_for(stream_closed.wait(), timeout=2)
 
 
 async def test_subscription_cancellation(ws: WebSocketClient):
