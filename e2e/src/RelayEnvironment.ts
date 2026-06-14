@@ -8,7 +8,7 @@ import {
 } from "relay-runtime";
 import type { Variables } from "relay-runtime";
 
-const uri = "http://localhost:8000/graphql";
+const uri = "/graphql";
 
 /**
  * Parse a multipart/mixed response body for GraphQL defer support.

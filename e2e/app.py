@@ -1,5 +1,6 @@
 import asyncio  # noqa: INP001
 import random
+from collections.abc import AsyncGenerator
 
 import strawberry
 from strawberry.schema.config import StrawberryConfig
@@ -47,9 +48,37 @@ class Query:
     async def blog_post(self, id: strawberry.ID) -> BlogPost:
         return BlogPost(id=id, title="My Blog Post", content="This is my blog post.")
 
+    @strawberry.field
+    async def failing(self) -> str:
+        raise ValueError("Query failed")
+
+
+@strawberry.type
+class Mutation:
+    @strawberry.mutation
+    async def echo(self, message: str) -> str:
+        return message
+
+
+@strawberry.type
+class Subscription:
+    @strawberry.subscription
+    async def count(self, target: int = 3) -> AsyncGenerator[int, None]:
+        for i in range(target):
+            yield i
+
+    @strawberry.subscription
+    async def count_then_fail(self, target: int = 2) -> AsyncGenerator[int, None]:
+        for i in range(target):
+            yield i
+
+        raise ValueError("Subscription failed")
+
 
 schema = strawberry.Schema(
     query=Query,
+    mutation=Mutation,
+    subscription=Subscription,
     config=StrawberryConfig(
         enable_experimental_incremental_execution=True,
     ),
