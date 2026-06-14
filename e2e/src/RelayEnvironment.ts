@@ -1,6 +1,8 @@
+import { createClient as createSSEClient } from "graphql-sse";
 import type { RequestParameters } from "relay-runtime";
 import {
 	Environment,
+	type GraphQLResponse,
 	Network,
 	Observable,
 	RecordSource,
@@ -9,6 +11,10 @@ import {
 import type { Variables } from "relay-runtime";
 
 const uri = "/graphql";
+const sseClient = createSSEClient({
+	url: uri,
+	retryAttempts: 0,
+});
 
 /**
  * Parse a multipart/mixed response body for GraphQL defer support.
@@ -170,7 +176,37 @@ function fetchQuery(operation: RequestParameters, variables: Variables) {
 
 const network = Network.create(fetchQuery);
 
+function executeSSE(operation: RequestParameters, variables: Variables) {
+	return Observable.create<GraphQLResponse>((sink) => {
+		return sseClient.subscribe(
+			{
+				operationName: operation.name,
+				query: operation.text || "",
+				variables,
+			},
+			{
+				next: (result) => {
+					sink.next(result as GraphQLResponse);
+				},
+				error: (error) => {
+					sink.error(error instanceof Error ? error : new Error(String(error)));
+				},
+				complete: () => {
+					sink.complete();
+				},
+			},
+		);
+	});
+}
+
+const sseNetwork = Network.create(executeSSE, executeSSE);
+
 export const RelayEnvironment = new Environment({
 	network,
+	store: new Store(new RecordSource()),
+});
+
+export const RelaySSEEnvironment = new Environment({
+	network: sseNetwork,
 	store: new Store(new RecordSource()),
 });

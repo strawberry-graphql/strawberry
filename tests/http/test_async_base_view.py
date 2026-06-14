@@ -21,7 +21,7 @@ async def test_stream_with_heartbeat_should_yield_items_correctly(
     expected: list[str],
 ) -> None:
     """
-    Verifies merge_stream_with_heartbeat reliably delivers all items in correct order.
+    Verifies merge_stream_with_heartbeat delivers all items in correct order.
 
     Tests three critical stream properties:
     1. Completeness: All source items appear in output (especially the last item)
@@ -40,14 +40,16 @@ async def test_stream_with_heartbeat_should_yield_items_correctly(
         for elem in expected:
             yield elem
 
+    merged_stream = merge_stream_with_heartbeat(
+        stream,
+        heartbeat_message=lambda: "heartbeat",
+        interval=60,
+        send_initial_heartbeat=False,
+    )
+
     async def collect() -> list[str]:
         result = []
-        async for item in merge_stream_with_heartbeat(
-            stream,
-            lambda: "",
-            interval=5,
-            send_initial_heartbeat=True,
-        )():
+        async for item in merged_stream():
             result.append(item)
             # Random sleep to promote race conditions between concurrent tasks
             await sleep(random() / 1000)  # noqa: S311

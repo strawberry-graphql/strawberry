@@ -180,7 +180,7 @@ class GraphQLWSConsumer(
         self, request: GraphQLWSConsumer
     ) -> str | None:
         protocols = request.scope["subprotocols"]
-        intersection = set(protocols) & set(self.protocols)
+        intersection = set(protocols) & set(self.websocket_subprotocols)
         sorted_intersection = sorted(intersection, key=protocols.index)
         return next(iter(sorted_intersection), None)
 

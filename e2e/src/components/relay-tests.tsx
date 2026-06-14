@@ -1,12 +1,21 @@
-import { graphql, useLazyLoadQuery, useFragment } from "react-relay";
+import {
+	graphql,
+	type GraphQLTaggedNode,
+	useLazyLoadQuery,
+	useFragment,
+	useRelayEnvironment,
+} from "react-relay";
+import { requestSubscription } from "relay-runtime";
 import { Button } from "@/components/ui/button";
 import {
+	ErrorBanner,
 	Icons,
 	LoadingRow,
 	ResultBlock,
+	StatusBadge,
 	TestCard,
 } from "@/components/test-ui";
-import { Suspense, useState, Component } from "react";
+import { Suspense, useRef, useState, Component } from "react";
 
 const HELLO_QUERY = graphql`
   query relayTestsHelloQuery($delay: Float = 0) {
@@ -33,13 +42,33 @@ const BLOG_POST_QUERY = graphql`
   }
 `;
 
+const COUNT_SUBSCRIPTION = graphql`
+  subscription relayTestsCountSubscription {
+    count(target: 2)
+  }
+`;
+
+const COUNT_THEN_FAIL_SUBSCRIPTION = graphql`
+  subscription relayTestsCountThenFailSubscription {
+    countThenFail(target: 2)
+  }
+`;
+
 interface RelayQueryWrapperProps {
-	query: typeof HELLO_QUERY;
+	query: GraphQLTaggedNode;
 	// biome-ignore lint/suspicious/noExplicitAny: typing this would be a pain
 	variables?: any;
 	buttonText?: string;
-	fragment?: typeof COMMENTS_FRAGMENT;
+	fragment?: GraphQLTaggedNode;
+	testId?: string;
 }
+
+type RelayQueryOperation = {
+	response: {
+		blogPost?: object;
+	} & Record<string, unknown>;
+	variables: Record<string, unknown>;
+};
 
 const filterData = (obj: unknown): unknown => {
 	if (typeof obj !== "object" || obj === null) return obj;
@@ -51,20 +80,12 @@ const filterData = (obj: unknown): unknown => {
 	);
 };
 
-// Add this type to help with TypeScript
-type BlogPostQuery = {
-	blogPost?: {
-		title: string;
-		content: string;
-	};
-};
-
 function RelayFragmentWrapper({
 	fragment,
 	data,
 	testId,
 }: {
-	fragment: typeof COMMENTS_FRAGMENT;
+	fragment: GraphQLTaggedNode;
 	data: any;
 	testId?: string;
 }) {
@@ -83,7 +104,7 @@ function RelayFetchQuery({
 	fragment,
 	testId,
 }: RelayQueryWrapperProps) {
-	const data = useLazyLoadQuery(query, variables ?? {});
+	const data = useLazyLoadQuery<RelayQueryOperation>(query, variables ?? {});
 	const filteredData = filterData(data);
 
 	return (
@@ -98,13 +119,13 @@ function RelayFetchQuery({
 					</LoadingRow>
 				}
 			>
-				{fragment && data ? (
-					<RelayFragmentWrapper
-						fragment={fragment}
-						data={data.blogPost}
-						testId={`${testId}-comments`}
-					/>
-				) : null}
+					{fragment && data ? (
+						<RelayFragmentWrapper
+							fragment={fragment}
+							data={data.blogPost}
+							testId={`${testId}-comments`}
+						/>
+					) : null}
 			</Suspense>
 		</div>
 	);
@@ -116,7 +137,7 @@ function RelayQueryWrapper({
 	buttonText = "Run Query",
 	fragment,
 	testId,
-}: RelayQueryWrapperProps & { testId?: string }) {
+}: RelayQueryWrapperProps) {
 	const [shouldRun, setShouldRun] = useState(false);
 
 	if (!shouldRun) {
@@ -190,6 +211,87 @@ class ErrorBoundary extends Component<
 	}
 }
 
+type RelaySubscriptionData = {
+	count?: number;
+	countThenFail?: number;
+};
+type RunStatus = "idle" | "loading" | "complete";
+
+function getErrorMessage(error: unknown) {
+	return error instanceof Error ? error.message : String(error);
+}
+
+function RelaySubscriptionTest({
+	title,
+	testId,
+	subscription = COUNT_SUBSCRIPTION,
+}: {
+	title: string;
+	testId: string;
+	subscription?: typeof COUNT_SUBSCRIPTION;
+}) {
+	const environment = useRelayEnvironment();
+	const receivedCount = useRef(0);
+	const [results, setResults] = useState<RelaySubscriptionData[]>([]);
+	const [status, setStatus] = useState<RunStatus>("idle");
+	const [error, setError] = useState<string | null>(null);
+
+	function runSubscription() {
+		receivedCount.current = 0;
+		setResults([]);
+		setError(null);
+		setStatus("loading");
+
+		requestSubscription(environment, {
+			subscription,
+			variables: {},
+			onNext(response) {
+				if (response) {
+					const result = response as RelaySubscriptionData;
+					receivedCount.current += 1;
+					setResults((currentResults) => [...currentResults, result]);
+				}
+			},
+			onError(subscriptionError) {
+				setError(getErrorMessage(subscriptionError));
+				setStatus("idle");
+			},
+			onCompleted() {
+				if (receivedCount.current > 0) {
+					setStatus("complete");
+				} else {
+					setError("No subscription events received");
+					setStatus("idle");
+				}
+			},
+		});
+	}
+
+	return (
+		<TestCard title={title} icon={Icons.stream}>
+			<div className="flex flex-wrap items-center gap-3">
+				<Button
+					onClick={runSubscription}
+					disabled={status === "loading"}
+					data-testid={`${testId}-button`}
+				>
+					Run Subscription
+				</Button>
+				<StatusBadge
+					status={error ? "error" : status}
+					testId={`${testId}-status`}
+				/>
+			</div>
+			{error && <ErrorBanner message={error} testId={`${testId}-error`} />}
+			{results.length > 0 && (
+				<ResultBlock testId={`${testId}-result`} label="count events">
+					{JSON.stringify(results, null, 2)}
+				</ResultBlock>
+			)}
+		</TestCard>
+	);
+}
+
 function RelayTests() {
 	return (
 		<ErrorBoundary>
@@ -229,6 +331,37 @@ function RelayTests() {
 							testId="relay-defer"
 						/>
 					</TestCard>
+				</div>
+			</div>
+		</ErrorBoundary>
+	);
+}
+
+export function RelaySSETests() {
+	return (
+		<ErrorBoundary>
+			<div className="flex flex-col gap-6">
+				<div className="flex items-center gap-2">
+					<h2 className="font-display text-2xl font-bold tracking-tight">
+						Relay
+					</h2>
+					<span className="rounded-full bg-g-50 px-2.5 py-0.5 text-xs font-bold text-g-700">
+						SSE
+					</span>
+				</div>
+				<div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+					<TestCard title="SSE Query" icon={Icons.code}>
+						<RelayQueryWrapper query={HELLO_QUERY} testId="relay-sse-query" />
+					</TestCard>
+					<RelaySubscriptionTest
+						title="SSE Subscription"
+						testId="relay-sse-subscription"
+					/>
+					<RelaySubscriptionTest
+						title="SSE Subscription Error"
+						testId="relay-sse-failing-subscription"
+						subscription={COUNT_THEN_FAIL_SUBSCRIPTION}
+					/>
 				</div>
 			</div>
 		</ErrorBoundary>

@@ -157,6 +157,9 @@ class SyncBaseHTTPView(
         content_type, params = parse_content_type(request.content_type or "")
         transport = self._get_stream_transport_from_headers(request.headers)
 
+        if transport:
+            raise HTTPException(400, transport.sync_not_supported_error)
+
         protocol = transport.protocol if transport else "http"
 
         if request.method == "GET":

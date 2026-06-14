@@ -35,6 +35,9 @@ def process_result(result: ResultType) -> GraphQLHTTPResponse:
     return data
 
 
+GraphQLRequestProtocol = Literal["http", "multipart-subscription", "sse"]
+
+
 @dataclass
 class GraphQLRequestData:
     # query is optional here as it can be added by an extensions
@@ -43,11 +46,12 @@ class GraphQLRequestData:
     variables: dict[str, Any] | None
     operation_name: str | None
     extensions: dict[str, Any] | None
-    protocol: Literal["http", "multipart-subscription"] = "http"
+    protocol: GraphQLRequestProtocol = "http"
 
 
 __all__ = [
     "GraphQLHTTPResponse",
     "GraphQLRequestData",
+    "GraphQLRequestProtocol",
     "process_result",
 ]
