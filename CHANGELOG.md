@@ -1,6 +1,19 @@
 CHANGELOG
 =========
 
+0.317.2 - 2026-06-17
+--------------------
+
+This release fixes schema printing for input object defaults that explicitly set
+nullable fields to `null`.
+
+Strawberry now preserves explicit `None` values in printed nested input
+defaults, including fields set with `strawberry.Some(None)` and fields renamed
+with `strawberry.field(name=...)`, while still omitting fields that were not
+explicitly set.
+
+This release was contributed by [@patrick91](https://github.com/patrick91) in [#4461](https://github.com/strawberry-graphql/strawberry/pull/4461)
+
 0.317.1 - 2026-06-17
 --------------------
 
