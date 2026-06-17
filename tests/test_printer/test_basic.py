@@ -1,11 +1,14 @@
 import textwrap
 from uuid import UUID
 
+import pytest
+
 import strawberry
 from strawberry import UNSET, Maybe, Some
 from strawberry.printer import print_schema
 from strawberry.scalars import JSON
 from strawberry.schema.config import StrawberryConfig
+from strawberry.utils import IS_GQL_32
 from tests.conftest import skip_if_gql_32
 
 
@@ -451,6 +454,69 @@ def test_input_with_maybe_some_none_default():
 
         input QueryInput {
           filter: FilterInput! = { name: null }
+        }
+    """).strip()
+
+    assert sdl == expected
+
+
+def _get_renamed_maybe_some_none_default_sdl() -> str:
+    @strawberry.input
+    class FilterInput:
+        in_: Maybe[str | None] = strawberry.field(name="in", default=Some(None))
+
+    @strawberry.input
+    class QueryInput:
+        filter: FilterInput = strawberry.field(
+            default_factory=lambda: FilterInput(in_=Some(None))
+        )
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def search(self, filter: QueryInput) -> str:
+            return "ok"
+
+    schema = strawberry.Schema(query=Query)
+    return print_schema(schema).strip()
+
+
+@pytest.mark.skipif(not IS_GQL_32, reason="formatting is different in gql 3.3")
+def test_input_with_renamed_maybe_some_none_default_gql_32():
+    sdl = _get_renamed_maybe_some_none_default_sdl()
+
+    expected = textwrap.dedent("""
+        input FilterInput {
+          in: String
+        }
+
+        type Query {
+          search(filter: QueryInput!): String!
+        }
+
+        input QueryInput {
+          filter: FilterInput! = {in: null}
+        }
+    """).strip()
+
+    assert sdl == expected
+
+
+@skip_if_gql_32("formatting is different in gql 3.2")
+def test_input_with_renamed_maybe_some_none_default_gql_33():
+    sdl = _get_renamed_maybe_some_none_default_sdl()
+
+    expected = textwrap.dedent("""
+        input FilterInput {
+          in: String
+        }
+
+        type Query {
+          search(filter: QueryInput!): String!
+        }
+
+        input QueryInput {
+          filter: FilterInput! = { in: null }
         }
     """).strip()
 

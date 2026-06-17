@@ -10,7 +10,7 @@ from typing import (
     overload,
 )
 
-from graphql import GraphQLObjectType, GraphQLSchema, is_union_type
+from graphql import GraphQLInputField, GraphQLObjectType, GraphQLSchema, is_union_type
 from graphql.language.printer import print_ast
 from graphql.type import (
     is_enum_type,
@@ -428,8 +428,12 @@ def _print_interface(type_: Any, schema: BaseSchema, *, extras: PrintExtras) -> 
     )
 
 
-def print_input_value(name: str, arg: GraphQLArgument) -> str:
-    default_ast = ast_from_value(arg.default_value, arg.type)
+def print_input_value(name: str, arg: GraphQLArgument | GraphQLInputField) -> str:
+    default_ast = ast_from_value(
+        arg.default_value,
+        arg.type,
+        isinstance(arg, GraphQLInputField),
+    )
     arg_decl = f"{name}: {arg.type}"
     if default_ast:
         arg_decl += f" = {print_ast(default_ast)}"
