@@ -1,8 +1,10 @@
+import pytest
+
 import strawberry
+from strawberry.utils import IS_GQL_32
 
 
-def test_print_with_snake_case_values():
-
+def _get_snake_case_schema_str() -> str:
     @strawberry.input
     class Bar:
         a: str
@@ -27,9 +29,13 @@ def test_print_with_snake_case_values():
         ) -> str: ...
 
     schema = strawberry.Schema(Query)
+    return schema.as_str()
 
+
+@pytest.mark.skipif(not IS_GQL_32, reason="formatting is different in gql 3.3")
+def test_print_with_snake_case_values_gql_32():
     assert (
-        schema.as_str()
+        _get_snake_case_schema_str()
         == """directive @oneOf on INPUT_OBJECT
 
 input Bar {
@@ -49,8 +55,30 @@ type Query {
     )
 
 
-def test_print_with_camel_case_values():
+@pytest.mark.skipif(IS_GQL_32, reason="formatting is different in gql 3.2")
+def test_print_with_snake_case_values_gql_33():
+    assert (
+        _get_snake_case_schema_str()
+        == """directive @oneOf on INPUT_OBJECT
 
+input Bar {
+  a: String!
+  b: String!
+  someValues: [String!] = null
+}
+
+input Foo @oneOf {
+  bar: Bar
+  c: String
+}
+
+type Query {
+  foobar(foo: Foo! = { bar: { a: "hi", b: "bye", someValues: ["my", "world"] } }): String!
+}"""
+    )
+
+
+def _get_camel_case_schema_str() -> str:
     @strawberry.input
     class Bar:
         a: str
@@ -75,9 +103,13 @@ def test_print_with_camel_case_values():
         ) -> str: ...
 
     schema = strawberry.Schema(Query)
+    return schema.as_str()
 
+
+@pytest.mark.skipif(not IS_GQL_32, reason="formatting is different in gql 3.3")
+def test_print_with_camel_case_values_gql_32():
     assert (
-        schema.as_str()
+        _get_camel_case_schema_str()
         == """directive @oneOf on INPUT_OBJECT
 
 input Bar {
@@ -93,5 +125,28 @@ input Foo @oneOf {
 
 type Query {
   foobar(foo: Foo! = {bar: {a: "hi", b: "bye", someValues: ["my", "world"]}}): String!
+}"""
+    )
+
+
+@pytest.mark.skipif(IS_GQL_32, reason="formatting is different in gql 3.2")
+def test_print_with_camel_case_values_gql_33():
+    assert (
+        _get_camel_case_schema_str()
+        == """directive @oneOf on INPUT_OBJECT
+
+input Bar {
+  a: String!
+  b: String!
+  someValues: [String!] = null
+}
+
+input Foo @oneOf {
+  bar: Bar
+  c: String
+}
+
+type Query {
+  foobar(foo: Foo! = { bar: { a: "hi", b: "bye", someValues: ["my", "world"] } }): String!
 }"""
     )
