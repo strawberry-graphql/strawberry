@@ -9,13 +9,6 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
-    paths:
-      - "strawberry/**"
-      - "tests/**"
-      - "noxfile.py"
-      - "pyproject.toml"
-      - "uv.lock"
-      - ".github/workflows/test.yml"
 
 permissions:
   contents: read
@@ -210,3 +203,23 @@ jobs:
           path: .coverage.windows
           include-hidden-files: true
           if-no-files-found: ignore
+
+  required-ci:
+    name: Required CI
+    if: ${{ always() }}
+    needs:
+      - generate-jobs-tests
+      - unit-tests
+      - unit-tests-on-windows
+      - coverage
+      - benchmarks
+      - lint
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check required jobs
+        env:
+          NEEDS: ${{ toJson(needs) }}
+        run: |
+          echo "$NEEDS" | jq -r 'to_entries[] | "\(.key)=\(.value.result)"'
+          echo "$NEEDS" | jq -e 'to_entries | all(.value.result == "success")'
