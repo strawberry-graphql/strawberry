@@ -810,6 +810,11 @@ class GraphQLCoreConverter:
 
         scalar_definition: ScalarDefinition
 
+        if scalar not in self.scalar_registry:
+            origin = typing.get_origin(scalar)
+            if origin is not None and origin in self.scalar_registry:
+                scalar = origin
+
         if scalar in self.scalar_registry:
             _scalar_definition = self.scalar_registry[scalar]
             # TODO: check why we need the cast and we are not trying with getattr first

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, NewType
+from typing import TYPE_CHECKING, Any, NewType, get_origin
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
@@ -29,6 +29,11 @@ def is_scalar(
     scalar_registry: Mapping[object, ScalarWrapper | ScalarDefinition],
 ) -> bool:
     if annotation in scalar_registry:
+        return True
+
+    # Keep scalar checks consistent for schema generation and argument conversion.
+    origin = get_origin(annotation)
+    if origin is not None and origin in scalar_registry:
         return True
 
     return hasattr(annotation, "_scalar_definition")
