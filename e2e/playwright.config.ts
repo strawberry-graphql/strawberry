@@ -38,9 +38,9 @@ export default defineConfig({
 			reuseExistingServer: !process.env.CI,
 		},
 		{
-			// Strawberry server with GraphiQL
+			// FastAPI server with GraphiQL
 			// In CI, this is started by the workflow; locally we start it here
-			command: `uv run --no-sync strawberry dev app:schema --port ${graphqlPort}`,
+			command: `uv run --no-sync fastapi dev app.py --port ${graphqlPort}`,
 			url: graphqlUrl,
 			reuseExistingServer: true,
 			cwd: dir,
