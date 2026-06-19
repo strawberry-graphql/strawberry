@@ -315,7 +315,7 @@ class GraphQLHTTPConsumer(
         request: ChannelsRequest,
         stream: Callable[[], AsyncGenerator[str, None]],
         sub_response: TemporalResponse,
-        headers: dict[str, str],
+        headers: Mapping[str, str],
     ) -> MultipartChannelsResponse:
         status = sub_response.status_code or 200
 

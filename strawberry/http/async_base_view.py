@@ -43,6 +43,7 @@ from strawberry.types.unset import UNSET, UnsetType
 
 from .base import BaseView
 from .parse_content_type import parse_content_type
+from .streaming import HTTPStreamTransport, MultipartTransport
 from .typevars import (
     Context,
     Request,
@@ -104,6 +105,7 @@ class AsyncBaseHTTPView(
     graphql_ws_handler_class: type[BaseGraphQLWSHandler[Context, RootValue]] = (
         BaseGraphQLWSHandler[Context, RootValue]
     )
+    multipart_transport_class: type[MultipartTransport] = MultipartTransport
 
     @property
     @abc.abstractmethod
@@ -139,7 +141,7 @@ class AsyncBaseHTTPView(
         request: Request,
         stream: Callable[[], AsyncGenerator[str, None]],
         sub_response: SubResponse,
-        headers: dict[str, str],
+        headers: Mapping[str, str],
     ) -> Response:
         raise ValueError("Multipart responses are not supported")
 
@@ -366,22 +368,28 @@ class AsyncBaseHTTPView(
         )
 
         if isinstance(result, SubscriptionExecutionResult):
-            stream = self._get_stream(request, result)
+            if (
+                transport := self._get_stream_transport("multipart-subscription")
+            ) is None:
+                raise RuntimeError(
+                    "No HTTP stream transport configured for multipart-subscription"
+                )
+
+            stream = self._get_stream(request, result, transport)
 
             return await self.create_streaming_response(
                 request,
                 stream,
                 sub_response,
-                headers={
-                    "Content-Type": "multipart/mixed;boundary=graphql;subscriptionSpec=1.0,application/json",
-                },
+                headers=transport.headers,
             )
         if isinstance(result, GraphQLIncrementalExecutionResults):
+            multipart_transport = self.multipart_transport_class()
 
-            async def stream() -> AsyncGenerator[str, None]:
-                yield "---"
-
-                response = await self.process_result(request, result.initial_result)
+            async def data() -> AsyncGenerator[object, None]:
+                response: GraphQLHTTPResponse = await self.process_result(
+                    request, result.initial_result
+                )
 
                 response["hasNext"] = result.initial_result.has_next
                 response["pending"] = [
@@ -389,7 +397,7 @@ class AsyncBaseHTTPView(
                 ]
                 response["extensions"] = result.initial_result.extensions
 
-                yield self.encode_multipart_data(response, "-")
+                yield response
 
                 all_pending = result.initial_result.pending
 
@@ -432,17 +440,13 @@ class AsyncBaseHTTPView(
 
                         response["incremental"] = incremental
 
-                    yield self.encode_multipart_data(response, "-")
-
-                yield "--\r\n"
+                    yield response
 
             return await self.create_streaming_response(
                 request,
-                stream,
+                multipart_transport.stream(data, self.encode_json_string),
                 sub_response,
-                headers={
-                    "Content-Type": 'multipart/mixed; boundary="-"',
-                },
+                headers=multipart_transport.headers,
             )
 
         response_data: GraphQLHTTPResponse | list[GraphQLHTTPResponse]
@@ -466,23 +470,18 @@ class AsyncBaseHTTPView(
             response_data=response_data, sub_response=sub_response
         )
 
-    def encode_multipart_data(self, data: Any, separator: str) -> str:
+    def encode_json_string(self, data: object) -> str:
         encoded_data = self.encode_json(data)
+
         if isinstance(encoded_data, bytes):
-            encoded_data = encoded_data.decode()
-        return "".join(
-            [
-                "\r\n",
-                "Content-Type: application/json; charset=utf-8\r\n",
-                "Content-Length: " + str(len(encoded_data)) + "\r\n",
-                "\r\n",
-                encoded_data,
-                f"\r\n--{separator}",
-            ]
-        )
+            return encoded_data.decode()
+
+        return encoded_data
 
     def _stream_with_heartbeat(
-        self, stream: Callable[[], AsyncGenerator[str, None]], separator: str
+        self,
+        stream: Callable[[], AsyncGenerator[str, None]],
+        transport: HTTPStreamTransport,
     ) -> Callable[[], AsyncGenerator[str, None]]:
         """Add heartbeat messages to a GraphQL stream to prevent connection timeouts.
 
@@ -544,11 +543,14 @@ class AsyncBaseHTTPView(
             await queue.put((False, True, None))  # Always use None with done=True
 
         async def heartbeat() -> None:
+            if not transport.send_initial_heartbeat:
+                await asyncio.sleep(transport.heartbeat_interval)
+
             while True:
-                item = self.encode_multipart_data({}, separator)
+                item = transport.heartbeat_message(self.encode_json_string)
                 await queue.put((False, False, item))
 
-                await asyncio.sleep(5)
+                await asyncio.sleep(transport.heartbeat_interval)
 
         async def merged() -> AsyncGenerator[str, None]:
             heartbeat_task = asyncio.create_task(heartbeat())
@@ -596,16 +598,16 @@ class AsyncBaseHTTPView(
         self,
         request: Request,
         result: SubscriptionExecutionResult,
-        separator: str = "graphql",
+        transport: HTTPStreamTransport,
     ) -> Callable[[], AsyncGenerator[str, None]]:
         async def stream() -> AsyncGenerator[str, None]:
             async for value in result:
                 response = await self.process_result(request, value)
-                yield self.encode_multipart_data({"payload": response}, separator)
+                yield transport.encode_next(response, self.encode_json_string)
 
-            yield f"\r\n--{separator}--\r\n"
+            yield transport.encode_complete()
 
-        return self._stream_with_heartbeat(stream, separator)
+        return self._stream_with_heartbeat(stream, transport)
 
     async def parse_multipart_subscriptions(
         self, request: AsyncHTTPRequestAdapter
@@ -618,14 +620,11 @@ class AsyncBaseHTTPView(
     async def parse_http_body(
         self, request: AsyncHTTPRequestAdapter
     ) -> GraphQLRequestData | list[GraphQLRequestData]:
-        headers = {key.lower(): value for key, value in request.headers.items()}
         content_type, _ = parse_content_type(request.content_type or "")
-        accept = headers.get("accept", "")
+        transport = self._get_stream_transport_from_headers(request.headers)
 
         protocol: Literal["http", "multipart-subscription"] = (
-            "multipart-subscription"
-            if self._is_multipart_subscriptions(*parse_content_type(accept))
-            else "http"
+            transport.protocol if transport else "http"
         )
 
         if request.method == "GET":

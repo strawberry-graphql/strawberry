@@ -37,7 +37,7 @@ from strawberry.http.typevars import (
 from .context import StrawberryDjangoContext
 
 if TYPE_CHECKING:
-    from collections.abc import AsyncIterator, Callable
+    from collections.abc import AsyncIterator, Callable, Mapping
 
     from django.template.response import TemplateResponse
 
@@ -111,7 +111,7 @@ class BaseView:
         request: HttpRequest,
         stream: Callable[[], AsyncIterator[Any]],
         sub_response: TemporalHttpResponse,
-        headers: dict[str, str],
+        headers: Mapping[str, str],
     ) -> HttpResponseBase:
         return StreamingHttpResponse(
             streaming_content=stream(),

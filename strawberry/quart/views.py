@@ -145,7 +145,7 @@ class GraphQLView(
         request: Request,
         stream: Callable[[], AsyncGenerator[str, None]],
         sub_response: Response,
-        headers: dict[str, str],
+        headers: Mapping[str, str],
     ) -> Response:
         return (
             stream(),
