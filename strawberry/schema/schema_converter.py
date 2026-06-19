@@ -187,6 +187,18 @@ def _merge_type_fields(
     return fields
 
 
+def _clear_graphql_type_cached_properties(
+    graphql_type: GraphQLObjectType | GraphQLInputObjectType,
+    *properties: str,
+) -> None:
+    # graphql-core stores resolved thunk values, such as `fields` and `interfaces`,
+    # on the instance via `functools.cached_property`. Extension registration mutates
+    # the definitions captured by those thunks, so clear the cached values to force a
+    # fresh resolve the next time graphql-core reads them.
+    for property_name in properties:
+        graphql_type.__dict__.pop(property_name, None)
+
+
 # graphql-core expects a resolver for an Enum type to return
 # the enum's *value* (not its name or an instance of the enum). We have to
 # subclass the GraphQLEnumType class to enable returning Enum members from
@@ -567,6 +579,7 @@ class GraphQLCoreConverter:
         *,
         base_definition_backref: str,
         extension_definitions_backref: str,
+        cached_properties: tuple[str, ...] = ("fields",),
     ) -> GraphQLObjectOrInputType | None:
         cached_implementation = cached_type.implementation
         if not (
@@ -605,7 +618,10 @@ class GraphQLCoreConverter:
         elif type_definition not in extension_definitions:
             extension_definitions.append(type_definition)
 
-        cached_implementation.__dict__.pop("fields", None)
+        _clear_graphql_type_cached_properties(
+            cached_implementation,
+            *cached_properties,
+        )
         return cached_implementation
 
     def from_input_object(self, object_type: type) -> GraphQLInputObjectType:
@@ -771,6 +787,84 @@ class GraphQLCoreConverter:
 
         return GraphQLList(of_type)
 
+    def get_merged_graphql_interfaces(
+        self,
+        type_definition: StrawberryObjectDefinition,
+        extension_definitions: list[StrawberryObjectDefinition],
+    ) -> list[GraphQLInterfaceType]:
+        interfaces: list[GraphQLInterfaceType] = []
+        seen_interface_names: set[str] = set()
+
+        for definition in (type_definition, *extension_definitions):
+            for interface in definition.interfaces:
+                interface_name = self.config.name_converter.from_type(interface)
+                if interface_name in seen_interface_names:
+                    continue
+
+                seen_interface_names.add(interface_name)
+                interfaces.append(self.from_interface(interface))
+
+        return interfaces
+
+    def _get_object_is_type_of(
+        self,
+        type_definition: StrawberryObjectDefinition,
+        extension_definitions: list[StrawberryObjectDefinition],
+    ) -> Callable[[Any, GraphQLResolveInfo], bool] | None:
+        if type_definition.is_type_of:
+            return type_definition.is_type_of
+
+        interface_definitions = [
+            interface
+            for definition in (type_definition, *extension_definitions)
+            for interface in definition.interfaces
+        ]
+        if not interface_definitions:
+            return None
+
+        # this allows returning interfaces types as well as the actual object type
+        # this is useful in combination with `resolve_type` in interfaces
+        possible_types = (
+            *tuple(interface.origin for interface in interface_definitions),
+            type_definition.origin,
+        )
+
+        def is_type_of(obj: Any, _info: GraphQLResolveInfo) -> bool:
+            if (type_cast := get_strawberry_type_cast(obj)) is not None:
+                return type_cast in possible_types
+
+            if type_definition.concrete_of and (
+                has_object_definition(obj)
+                and obj.__strawberry_definition__.origin
+                is type_definition.concrete_of.origin
+            ):
+                return True
+
+            return isinstance(obj, possible_types)
+
+        return is_type_of
+
+    def _refresh_graphql_object_type(
+        self,
+        graphql_object_type: GraphQLObjectType,
+    ) -> None:
+        primary_definition = cast(
+            "list[StrawberryObjectDefinition]",
+            graphql_object_type.extensions[self.OBJECT_BASE_DEFINITION_BACKREF],
+        )
+        extension_definitions = cast(
+            "list[StrawberryObjectDefinition]",
+            graphql_object_type.extensions[self.OBJECT_EXTENSIONS_BACKREF],
+        )
+        graphql_object_type._interfaces = lambda: self.get_merged_graphql_interfaces(
+            primary_definition[0],
+            extension_definitions,
+        )
+        graphql_object_type.is_type_of = self._get_object_is_type_of(
+            primary_definition[0],
+            extension_definitions,
+        )
+
     def from_object(self, object_type: StrawberryObjectDefinition) -> GraphQLObjectType:
         # TODO: Use StrawberryObjectType when it's implemented in another PR
         object_type_name = self.config.name_converter.from_type(object_type)
@@ -784,8 +878,10 @@ class GraphQLCoreConverter:
                 GraphQLObjectType,
                 base_definition_backref=self.OBJECT_BASE_DEFINITION_BACKREF,
                 extension_definitions_backref=self.OBJECT_EXTENSIONS_BACKREF,
+                cached_properties=("fields", "interfaces"),
             )
             if cached_implementation is not None:
+                self._refresh_graphql_object_type(cached_implementation)
                 return cached_implementation
 
             self.validate_same_type_definition(
@@ -794,35 +890,6 @@ class GraphQLCoreConverter:
             cached_implementation = cached_type.implementation
             assert isinstance(cached_implementation, GraphQLObjectType)  # For mypy
             return cached_implementation
-
-        def _get_is_type_of() -> Callable[[Any, GraphQLResolveInfo], bool] | None:
-            if object_type.is_type_of:
-                return object_type.is_type_of
-
-            if not object_type.interfaces:
-                return None
-
-            # this allows returning interfaces types as well as the actual object type
-            # this is useful in combination with `resolve_type` in interfaces
-            possible_types = (
-                *tuple(interface.origin for interface in object_type.interfaces),
-                object_type.origin,
-            )
-
-            def is_type_of(obj: Any, _info: GraphQLResolveInfo) -> bool:
-                if (type_cast := get_strawberry_type_cast(obj)) is not None:
-                    return type_cast in possible_types
-
-                if object_type.concrete_of and (
-                    has_object_definition(obj)
-                    and obj.__strawberry_definition__.origin
-                    is object_type.concrete_of.origin
-                ):
-                    return True
-
-                return isinstance(obj, possible_types)
-
-            return is_type_of
 
         primary_definition = [object_type]
         extension_definitions: list[StrawberryObjectDefinition] = []
@@ -833,9 +900,15 @@ class GraphQLCoreConverter:
                 primary_definition[0],
                 extension_definitions,
             ),
-            interfaces=list(map(self.from_interface, object_type.interfaces)),
+            interfaces=lambda: self.get_merged_graphql_interfaces(
+                primary_definition[0],
+                extension_definitions,
+            ),
             description=object_type.description,
-            is_type_of=_get_is_type_of(),
+            is_type_of=self._get_object_is_type_of(
+                primary_definition[0],
+                extension_definitions,
+            ),
             extensions={
                 GraphQLCoreConverter.DEFINITION_BACKREF: object_type,
                 GraphQLCoreConverter.OBJECT_BASE_DEFINITION_BACKREF: (
