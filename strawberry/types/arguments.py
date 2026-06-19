@@ -169,6 +169,48 @@ def _is_optional_leaf_type(
     return False
 
 
+def _get_input_value_mapping(value: object) -> Mapping[str, Any]:
+    return cast(
+        "Mapping[str, Any]",
+        getattr(value, "strawberry_input_value", value),
+    )
+
+
+def _get_input_extension_definitions(
+    value: object,
+) -> tuple[StrawberryObjectDefinition, ...]:
+    return cast(
+        "tuple[StrawberryObjectDefinition, ...]",
+        getattr(value, "strawberry_input_extension_definitions", ()),
+    )
+
+
+def _convert_input_field_values(
+    value: Mapping[str, Any],
+    type_definition: StrawberryObjectDefinition,
+    scalar_registry: Mapping[object, ScalarWrapper | ScalarDefinition],
+    config: StrawberryConfig,
+) -> dict[str, object]:
+    converted_values = {}
+
+    for field in type_definition.fields:
+        python_name = field.python_name
+        assert python_name is not None
+
+        graphql_name = config.name_converter.from_field(field)
+        if graphql_name not in value:
+            continue
+
+        converted_values[python_name] = convert_argument(
+            value[graphql_name],
+            field.resolve_type(type_definition=type_definition),
+            scalar_registry,
+            config,
+        )
+
+    return converted_values
+
+
 def convert_argument(
     value: object,
     type_: StrawberryType | type,
@@ -244,39 +286,27 @@ def convert_argument(
         return convert_argument(value, enum_definition, scalar_registry, config)
 
     if has_object_definition(type_):
-        kwargs = {}
-        extension_values = {}
-
+        input_value = _get_input_value_mapping(value)
         type_definition = type_.__strawberry_definition__
-        fields = [(type_definition, field) for field in type_definition.fields]
-        for extension_definition in cast(
-            "Iterable[StrawberryObjectDefinition]",
-            getattr(value, "strawberry_input_extension_definitions", ()),
-        ):
-            fields.extend(
-                (extension_definition, field) for field in extension_definition.fields
-            )
-
-        for field_definition, field in fields:
-            value = cast("Mapping", value)
-            graphql_name = config.name_converter.from_field(field)
-
-            if graphql_name in value:
-                converted_value = convert_argument(
-                    value[graphql_name],
-                    field.resolve_type(type_definition=field_definition),
-                    scalar_registry,
-                    config,
-                )
-                if field_definition is type_definition:
-                    kwargs[field.python_name] = converted_value
-                else:
-                    extension_values[field.python_name] = converted_value
+        kwargs = _convert_input_field_values(
+            input_value,
+            type_definition,
+            scalar_registry,
+            config,
+        )
 
         type_ = cast("type", type_)
         converted = type_(**kwargs)
-        for python_name, converted_value in extension_values.items():
-            setattr(converted, python_name, converted_value)
+
+        for extension_definition in _get_input_extension_definitions(value):
+            extension_values = _convert_input_field_values(
+                input_value,
+                extension_definition,
+                scalar_registry,
+                config,
+            )
+            for python_name, converted_value in extension_values.items():
+                setattr(converted, python_name, converted_value)
 
         return converted
 
