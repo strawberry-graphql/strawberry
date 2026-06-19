@@ -2,7 +2,10 @@ import asyncio  # noqa: INP001
 import random
 from collections.abc import AsyncGenerator
 
+from fastapi import FastAPI
+
 import strawberry
+from strawberry.fastapi import GraphQLRouter
 from strawberry.schema.config import StrawberryConfig
 
 
@@ -83,3 +86,7 @@ schema = strawberry.Schema(
         enable_experimental_incremental_execution=True,
     ),
 )
+
+app = FastAPI()
+app.include_router(GraphQLRouter(schema, path="/"))
+app.include_router(GraphQLRouter(schema), prefix="/graphql")

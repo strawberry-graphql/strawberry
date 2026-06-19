@@ -45,21 +45,21 @@ jobs:
 
       - name: Install Python dependencies
         run: |
-          uv sync --extra cli
+          uv sync
           uv pip install graphql-core==3.3.0a12
 
-      - name: Start Strawberry server
+      - name: Start FastAPI server
         run: |
           cd e2e
           # --no-sync prevents uv from reverting graphql-core to lockfile version
-          uv run --no-sync strawberry dev app:schema --port 8000 &
+          uv run --no-sync fastapi dev app.py --port 8000 &
           echo $! > server.pid
           sleep 5  # Wait for server to start
 
       - name: Check if server is running
         run: |
           curl -f http://localhost:8000/graphql || (echo "Server is not running" && exit 1)
-          echo "GraphQL server is running successfully"
+          echo "FastAPI GraphQL server is running successfully"
 
       - name: Run Playwright tests
         run: |
