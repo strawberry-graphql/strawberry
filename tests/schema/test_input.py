@@ -35,6 +35,71 @@ def test_renaming_input_fields():
     assert result.data["filter"] == "Hello nope"
 
 
+def test_input_extension_prints_extend_input():
+    @strawberry.input(name="UserInput", extend=True)
+    class UserInputExtension:
+        extra: str
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def echo(self, data: UserInputExtension) -> str:
+            return data.extra
+
+    schema = strawberry.Schema(query=Query)
+
+    expected = """
+    type Query {
+      echo(data: UserInput!): String!
+    }
+
+    extend input UserInput {
+      extra: String!
+    }
+    """
+
+    assert print_schema(schema) == textwrap.dedent(expected).strip()
+
+
+def test_input_extension_can_extend_existing_input():
+    @strawberry.input(name="UserInput")
+    class UserInput:
+        name: str
+
+    @strawberry.input(name="UserInput", extend=True)
+    class UserInputExtension:
+        extra: str
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def echo(self, data: UserInput) -> str:
+            return data.name
+
+    schema = strawberry.Schema(query=Query, types=[UserInputExtension])
+
+    expected = """
+    type Query {
+      echo(data: UserInput!): String!
+    }
+
+    input UserInput {
+      name: String!
+    }
+
+    extend input UserInput {
+      extra: String!
+    }
+    """
+
+    assert print_schema(schema) == textwrap.dedent(expected).strip()
+
+    result = schema.execute_sync('{ echo(data: { name: "Ada", extra: "Lovelace" }) }')
+
+    assert not result.errors
+    assert result.data == {"echo": "Ada"}
+
+
 @skip_if_gql_32("formatting is different in gql 3.2")
 def test_input_with_nonscalar_field_default():
     @strawberry.input
