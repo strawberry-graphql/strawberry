@@ -1,6 +1,23 @@
 CHANGELOG
 =========
 
+0.318.0 - 2026-06-19
+--------------------
+
+This release adds a shared internal HTTP stream transport for multipart
+subscription responses.
+
+Application behavior for multipart subscriptions is largely unchanged. The
+shared transport now owns multipart response headers, heartbeat frames,
+completion frames, batching errors, and sync-mode errors, keeping Strawberry's
+built-in HTTP integrations on the same streaming contract.
+
+The one behavioral change is that each multipart part's `Content-Length` is now
+computed from the UTF-8 byte length of the payload instead of its character
+count, fixing the header for responses containing non-ASCII data.
+
+This release was contributed by [@patrick91](https://github.com/patrick91) in [#4469](https://github.com/strawberry-graphql/strawberry/pull/4469)
+
 0.317.2 - 2026-06-17
 --------------------
 
