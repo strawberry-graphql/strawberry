@@ -1,5 +1,5 @@
 ---
-release type: patch
+release type: minor
 ---
 
 This release adds a shared internal HTTP stream transport for multipart
