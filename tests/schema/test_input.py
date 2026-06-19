@@ -143,6 +143,28 @@ def test_input_extension_conversion_is_schema_local():
     assert second_result.data == {"echo": "Grace Hopper"}
 
 
+def test_input_extension_rejects_duplicate_fields():
+    @strawberry.input(name="UserInput")
+    class UserInput:
+        name: str
+
+    @strawberry.input(name="UserInput", extend=True)
+    class UserInputExtension:
+        name: str
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def echo(self, data: UserInput) -> str:
+            return data.name
+
+    with pytest.raises(
+        TypeError,
+        match="Input type UserInput defines duplicate extension field\\(s\\): name",
+    ):
+        strawberry.Schema(query=Query, types=[UserInputExtension])
+
+
 @skip_if_gql_32("formatting is different in gql 3.2")
 def test_input_with_nonscalar_field_default():
     @strawberry.input
