@@ -295,7 +295,7 @@ class GraphQLController(
         request: Request,
         stream: Callable[[], AsyncIterator[str]],
         sub_response: Response,
-        headers: dict[str, str],
+        headers: Mapping[str, str],
     ) -> Response:
         return Stream(
             stream(),

@@ -3,11 +3,12 @@ from asyncio import sleep
 from collections import Counter
 from collections.abc import AsyncGenerator
 from random import random
-from typing import Any, cast
+from typing import cast
 
 import pytest
 
 from strawberry.http.async_base_view import AsyncBaseHTTPView
+from strawberry.http.streaming import MultipartSubscriptionTransport
 
 
 @pytest.mark.parametrize(
@@ -38,10 +39,11 @@ async def test_stream_with_heartbeat_should_yield_items_correctly(
     assert len(set(expected)) == len(expected), "Test requires unique elements"
 
     class MockAsyncBaseHTTPView:
-        def encode_multipart_data(self, *_: Any, **__: Any) -> str:
+        def encode_json_string(self, _data: object) -> str:
             return ""
 
     view = MockAsyncBaseHTTPView()
+    transport = MultipartSubscriptionTransport(separator="")
 
     async def stream() -> AsyncGenerator[str, None]:
         for elem in expected:
@@ -50,7 +52,7 @@ async def test_stream_with_heartbeat_should_yield_items_correctly(
     async def collect() -> list[str]:
         result = []
         async for item in AsyncBaseHTTPView._stream_with_heartbeat(
-            cast("AsyncBaseHTTPView", view), stream, ""
+            cast("AsyncBaseHTTPView", view), stream, transport
         )():
             result.append(item)
             # Random sleep to promote race conditions between concurrent tasks
@@ -78,3 +80,32 @@ async def test_stream_with_heartbeat_should_yield_items_correctly(
                 f"Order incorrect: '{curr}' (at index {item_indices[curr]}) "
                 f"should appear before '{next_item}' (at index {item_indices[next_item]})"
             )
+
+
+async def test_stream_with_heartbeat_uses_transport_heartbeat_message() -> None:
+    class MockAsyncBaseHTTPView:
+        def encode_json_string(self, _data: object) -> str:
+            return ""
+
+    class MockTransport(MultipartSubscriptionTransport):
+        heartbeat_interval = 60
+
+        def heartbeat_message(self, _encode_json: object) -> str:
+            return "heartbeat"
+
+    view = MockAsyncBaseHTTPView()
+    transport = MockTransport()
+
+    async def stream() -> AsyncGenerator[str, None]:
+        await sleep(0)
+        yield "last"
+
+    result = [
+        item
+        async for item in AsyncBaseHTTPView._stream_with_heartbeat(
+            cast("AsyncBaseHTTPView", view), stream, transport
+        )()
+    ]
+
+    assert "heartbeat" in result
+    assert "last" in result

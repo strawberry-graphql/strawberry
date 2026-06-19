@@ -171,7 +171,7 @@ class GraphQLView(
         request: web.Request,
         stream: Callable[[], AsyncGenerator[str, None]],
         sub_response: web.Response,
-        headers: dict[str, str],
+        headers: Mapping[str, str],
     ) -> web.StreamResponse:
         response = web.StreamResponse(
             status=sub_response.status,
