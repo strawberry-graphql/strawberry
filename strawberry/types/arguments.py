@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import dataclasses
 import inspect
 from typing import (
     TYPE_CHECKING,
@@ -211,6 +212,17 @@ def _convert_input_field_values(
     return converted_values
 
 
+def _set_input_extension_value(
+    converted: object,
+    python_name: str,
+    value: object,
+) -> None:
+    try:
+        setattr(converted, python_name, value)
+    except dataclasses.FrozenInstanceError:
+        object.__setattr__(converted, python_name, value)
+
+
 def convert_argument(
     value: object,
     type_: StrawberryType | type,
@@ -306,7 +318,7 @@ def convert_argument(
                 config,
             )
             for python_name, converted_value in extension_values.items():
-                setattr(converted, python_name, converted_value)
+                _set_input_extension_value(converted, python_name, converted_value)
 
         return converted
 

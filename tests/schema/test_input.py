@@ -1,3 +1,4 @@
+import dataclasses
 import re
 import textwrap
 
@@ -141,6 +142,30 @@ def test_input_extension_conversion_is_schema_local():
     assert first_result.data == {"echo": "Ada Lovelace"}
     assert not second_result.errors
     assert second_result.data == {"echo": "Grace Hopper"}
+
+
+def test_input_extension_can_set_fields_on_frozen_input():
+    @strawberry.input(name="UserInput")
+    @dataclasses.dataclass(frozen=True)
+    class UserInput:
+        name: str
+
+    @strawberry.input(name="UserInput", extend=True)
+    class UserInputExtension:
+        extra: str
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def echo(self, data: UserInput) -> str:
+            return f"{data.name} {data.extra}"
+
+    schema = strawberry.Schema(query=Query, types=[UserInputExtension])
+
+    result = schema.execute_sync('{ echo(data: { name: "Ada", extra: "Lovelace" }) }')
+
+    assert not result.errors
+    assert result.data == {"echo": "Ada Lovelace"}
 
 
 def test_input_extension_rejects_duplicate_fields():

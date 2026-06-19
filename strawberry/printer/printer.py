@@ -12,6 +12,7 @@ from typing import (
 
 from graphql import (
     GraphQLInputField,
+    GraphQLInputObjectType,
     GraphQLObjectType,
     GraphQLSchema,
     get_named_type,
@@ -418,7 +419,7 @@ def get_object_type_definitions(type_: Any) -> list[StrawberryObjectDefinition]:
 
 
 def print_extends(
-    type_: GraphQLObjectType,
+    type_: GraphQLObjectType | GraphQLInputObjectType,
     schema: BaseSchema,
     *,
     strawberry_type: StrawberryObjectDefinition | None = None,
@@ -432,7 +433,7 @@ def print_extends(
 
 
 def print_type_directives(
-    type_: GraphQLObjectType,
+    type_: GraphQLObjectType | GraphQLInputObjectType,
     schema: BaseSchema,
     *,
     extras: PrintExtras,
