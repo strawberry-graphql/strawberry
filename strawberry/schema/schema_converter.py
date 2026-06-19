@@ -72,6 +72,7 @@ from strawberry.types.private import is_private
 from strawberry.types.scalar import ScalarWrapper, scalar
 from strawberry.types.union import StrawberryUnion
 from strawberry.types.unset import UNSET
+from strawberry.utils import IS_GQL_32
 from strawberry.utils.await_maybe import await_maybe
 
 from . import compat
@@ -163,6 +164,9 @@ class CustomGraphQLEnumType(GraphQLEnumType):
         self.wrapped_cls = enum.wrapped_cls
 
     def serialize(self, output_value: Any) -> str:
+        return self.coerce_output_value(output_value)
+
+    def coerce_output_value(self, output_value: Any) -> str:
         if isinstance(output_value, self.wrapped_cls):
             for name, value in self.values.items():
                 if output_value.value == value.value:
@@ -172,15 +176,47 @@ class CustomGraphQLEnumType(GraphQLEnumType):
                 f"Invalid value for enum {self.name}: {output_value}"
             )  # pragma: no cover
 
-        return super().serialize(output_value)
+        if IS_GQL_32:
+            return super().serialize(output_value)
 
-    def parse_value(self, input_value: str) -> Any:
-        return self.wrapped_cls(super().parse_value(input_value))
+        return super().coerce_output_value(  # type: ignore[misc]  # pyright: ignore[reportAttributeAccessIssue]
+            output_value
+        )
+
+    def parse_value(self, input_value: str, hide_suggestions: bool = False) -> Any:
+        return self.coerce_input_value(input_value, hide_suggestions)
+
+    def coerce_input_value(
+        self, input_value: str, hide_suggestions: bool = False
+    ) -> Any:
+        if IS_GQL_32:
+            return self.wrapped_cls(super().parse_value(input_value))
+
+        return self.wrapped_cls(
+            super().coerce_input_value(  # type: ignore[misc]  # pyright: ignore[reportAttributeAccessIssue]
+                input_value, hide_suggestions
+            )
+        )
 
     def parse_literal(
-        self, value_node: ValueNode, _variables: dict[str, Any] | None = None
+        self,
+        value_node: ValueNode,
+        _variables: dict[str, Any] | None = None,
+        hide_suggestions: bool = False,
     ) -> Any:
-        return self.wrapped_cls(super().parse_literal(value_node, _variables))
+        return self.coerce_input_literal(value_node, hide_suggestions)
+
+    def coerce_input_literal(
+        self, value_node: ValueNode, hide_suggestions: bool = False
+    ) -> Any:
+        if IS_GQL_32:
+            return self.wrapped_cls(super().parse_literal(value_node, None))
+
+        return self.wrapped_cls(
+            super().coerce_input_literal(  # type: ignore[misc]  # pyright: ignore[reportAttributeAccessIssue]
+                value_node, hide_suggestions
+            )
+        )
 
 
 def get_arguments(
