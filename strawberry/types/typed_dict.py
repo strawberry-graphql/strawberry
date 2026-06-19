@@ -15,6 +15,7 @@ import typing
 from typing import (
     TYPE_CHECKING,
     Any,
+    Optional,
 )
 from typing_extensions import (
     NotRequired,
@@ -292,7 +293,7 @@ def create_typed_dict_definition(
         graphql_type = base_type
 
         if not is_req and not _is_optional(graphql_type):
-            graphql_type = graphql_type | None
+            graphql_type = Optional[graphql_type]  # noqa: UP045
 
         resolver = _make_key_resolver(field_name, is_req)
 

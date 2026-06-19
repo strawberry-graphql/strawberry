@@ -292,8 +292,6 @@ def type(
 
             if field and isinstance(field, StrawberryField) and field.type_annotation:
                 original_type_annotations[field_name] = field.type_annotation.annotation
-        if is_input:
-            _inject_default_for_maybe_annotations(cls, annotations)
 
         if is_typeddict(cls):
             definition = create_typed_dict_definition(
@@ -305,6 +303,9 @@ def type(
             )
             cls.__strawberry_definition__ = definition
             return cls
+
+        if is_input:
+            _inject_default_for_maybe_annotations(cls, annotations)
 
         wrapped = _wrap_dataclass(cls)
 
