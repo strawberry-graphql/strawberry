@@ -112,6 +112,16 @@ class FieldConverterProtocol(Protocol, Generic[FieldType]):
     ) -> FieldType: ...
 
 
+class InputExtensionValue(dict[str, Any]):
+    def __init__(
+        self,
+        value: dict[str, Any],
+        extension_definitions: list[StrawberryObjectDefinition],
+    ) -> None:
+        super().__init__(value)
+        self.strawberry_input_extension_definitions = tuple(extension_definitions)
+
+
 def _get_thunk_mapping(
     type_definition: StrawberryObjectDefinition,
     name_converter: Callable[[StrawberryField], str],
@@ -243,6 +253,8 @@ class GraphQLCoreConverter:
 
     # Extension key used to link a GraphQLType back into the Strawberry definition
     DEFINITION_BACKREF = "strawberry-definition"
+    OBJECT_BASE_DEFINITION_BACKREF = "strawberry-object-base-definition"
+    OBJECT_EXTENSIONS_BACKREF = "strawberry-object-extensions"
     INPUT_BASE_DEFINITION_BACKREF = "strawberry-input-base-definition"
     INPUT_EXTENSIONS_BACKREF = "strawberry-input-extensions"
 
@@ -484,6 +496,27 @@ class GraphQLCoreConverter:
             get_fields=self.get_fields,
         )
 
+    def get_merged_graphql_fields(
+        self,
+        type_definition: StrawberryObjectDefinition,
+        extension_definitions: list[StrawberryObjectDefinition],
+    ) -> dict[str, GraphQLField]:
+        fields = self.get_graphql_fields(type_definition)
+
+        for extension_definition in extension_definitions:
+            extension_fields = self.get_graphql_fields(extension_definition)
+            duplicated_field_names = fields.keys() & extension_fields.keys()
+            if duplicated_field_names:
+                duplicated_fields = ", ".join(sorted(duplicated_field_names))
+                raise TypeError(
+                    f"Type {type_definition.name} defines duplicate "
+                    f"extension field(s): {duplicated_fields}"
+                )
+
+            fields.update(extension_fields)
+
+        return fields
+
     def get_graphql_input_fields(
         self, type_definition: StrawberryObjectDefinition
     ) -> dict[str, GraphQLInputField]:
@@ -523,17 +556,17 @@ class GraphQLCoreConverter:
         # Don't reevaluate known types
         cached_type = self.type_map.get(type_name, None)
         if cached_type:
-            graphql_object_type = self.type_map[type_name].implementation
+            cached_implementation = self.type_map[type_name].implementation
             if (
                 isinstance(cached_type.definition, StrawberryObjectDefinition)
-                and isinstance(graphql_object_type, GraphQLInputObjectType)
+                and isinstance(cached_implementation, GraphQLInputObjectType)
                 and (type_definition.extend or cached_type.definition.extend)
             ):
-                extension_definitions = graphql_object_type.extensions.setdefault(
+                extension_definitions = cached_implementation.extensions.setdefault(
                     self.INPUT_EXTENSIONS_BACKREF,
                     [],
                 )
-                primary_definition = graphql_object_type.extensions.setdefault(
+                primary_definition = cached_implementation.extensions.setdefault(
                     self.INPUT_BASE_DEFINITION_BACKREF,
                     [cached_type.definition],
                 )
@@ -547,20 +580,19 @@ class GraphQLCoreConverter:
 
                     primary_definition[0] = type_definition
                     cached_type.definition = type_definition
-                    graphql_object_type.extensions[self.DEFINITION_BACKREF] = (
+                    cached_implementation.extensions[self.DEFINITION_BACKREF] = (
                         type_definition
                     )
-                    graphql_object_type.description = type_definition.description
+                    cached_implementation.description = type_definition.description
                 elif type_definition not in extension_definitions:
                     extension_definitions.append(type_definition)
 
-                graphql_object_type.__dict__.pop("fields", None)
-                assert isinstance(graphql_object_type, GraphQLInputObjectType)
-                return graphql_object_type
+                cached_implementation.__dict__.pop("fields", None)
+                return cached_implementation
 
             self.validate_same_type_definition(type_name, type_definition, cached_type)
-            assert isinstance(graphql_object_type, GraphQLInputObjectType)  # For mypy
-            return graphql_object_type
+            assert isinstance(cached_implementation, GraphQLInputObjectType)  # For mypy
+            return cached_implementation
 
         def check_one_of(value: dict[str, Any]) -> dict[str, Any]:
             if len(value) != 1:
@@ -586,7 +618,16 @@ class GraphQLCoreConverter:
         primary_definition = [type_definition]
         extension_definitions: list[StrawberryObjectDefinition] = []
 
-        graphql_object_type = GraphQLInputObjectType(
+        def convert_input(value: dict[str, Any]) -> dict[str, Any]:
+            if out_type is not None:
+                value = out_type(value)
+
+            if extension_definitions:
+                return InputExtensionValue(value, extension_definitions)
+
+            return value
+
+        graphql_input_object_type = GraphQLInputObjectType(
             name=type_name,
             fields=lambda: self.get_merged_graphql_input_fields(
                 primary_definition[0],
@@ -600,14 +641,14 @@ class GraphQLCoreConverter:
                 ),
                 GraphQLCoreConverter.INPUT_EXTENSIONS_BACKREF: extension_definitions,
             },
-            out_type=out_type,
+            out_type=convert_input,
         )
 
         self.type_map[type_name] = ConcreteType(
-            definition=type_definition, implementation=graphql_object_type
+            definition=type_definition, implementation=graphql_input_object_type
         )
 
-        return graphql_object_type
+        return cast("GraphQLInputObjectType", graphql_input_object_type)
 
     def from_interface(
         self, interface: StrawberryObjectDefinition
@@ -700,12 +741,45 @@ class GraphQLCoreConverter:
         # Don't reevaluate known types
         cached_type = self.type_map.get(object_type_name, None)
         if cached_type:
+            cached_implementation = self.type_map[object_type_name].implementation
+            if (
+                isinstance(cached_type.definition, StrawberryObjectDefinition)
+                and isinstance(cached_implementation, GraphQLObjectType)
+                and (object_type.extend or cached_type.definition.extend)
+            ):
+                extension_definitions = cached_implementation.extensions.setdefault(
+                    self.OBJECT_EXTENSIONS_BACKREF,
+                    [],
+                )
+                primary_definition = cached_implementation.extensions.setdefault(
+                    self.OBJECT_BASE_DEFINITION_BACKREF,
+                    [cached_type.definition],
+                )
+
+                if not object_type.extend:
+                    if (
+                        primary_definition[0].extend
+                        and primary_definition[0] not in extension_definitions
+                    ):
+                        extension_definitions.insert(0, primary_definition[0])
+
+                    primary_definition[0] = object_type
+                    cached_type.definition = object_type
+                    cached_implementation.extensions[self.DEFINITION_BACKREF] = (
+                        object_type
+                    )
+                    cached_implementation.description = object_type.description
+                elif object_type not in extension_definitions:
+                    extension_definitions.append(object_type)
+
+                cached_implementation.__dict__.pop("fields", None)
+                return cached_implementation
+
             self.validate_same_type_definition(
                 object_type_name, object_type, cached_type
             )
-            graphql_object_type = cached_type.implementation
-            assert isinstance(graphql_object_type, GraphQLObjectType)  # For mypy
-            return graphql_object_type
+            assert isinstance(cached_implementation, GraphQLObjectType)  # For mypy
+            return cached_implementation
 
         def _get_is_type_of() -> Callable[[Any, GraphQLResolveInfo], bool] | None:
             if object_type.is_type_of:
@@ -736,14 +810,24 @@ class GraphQLCoreConverter:
 
             return is_type_of
 
+        primary_definition = [object_type]
+        extension_definitions: list[StrawberryObjectDefinition] = []
+
         graphql_object_type = GraphQLObjectType(
             name=object_type_name,
-            fields=lambda: self.get_graphql_fields(object_type),
+            fields=lambda: self.get_merged_graphql_fields(
+                primary_definition[0],
+                extension_definitions,
+            ),
             interfaces=list(map(self.from_interface, object_type.interfaces)),
             description=object_type.description,
             is_type_of=_get_is_type_of(),
             extensions={
                 GraphQLCoreConverter.DEFINITION_BACKREF: object_type,
+                GraphQLCoreConverter.OBJECT_BASE_DEFINITION_BACKREF: (
+                    primary_definition
+                ),
+                GraphQLCoreConverter.OBJECT_EXTENSIONS_BACKREF: extension_definitions,
             },
         )
 
@@ -751,7 +835,7 @@ class GraphQLCoreConverter:
             definition=object_type, implementation=graphql_object_type
         )
 
-        return graphql_object_type
+        return cast("GraphQLObjectType", graphql_object_type)
 
     def from_resolver(
         self, field: StrawberryField

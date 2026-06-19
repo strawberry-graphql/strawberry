@@ -28,7 +28,7 @@ if TYPE_CHECKING:
     from collections.abc import Iterable, Mapping
 
     from strawberry.schema.config import StrawberryConfig
-    from strawberry.types.base import StrawberryType
+    from strawberry.types.base import StrawberryObjectDefinition, StrawberryType
     from strawberry.types.scalar import ScalarDefinition, ScalarWrapper
 
 
@@ -245,22 +245,40 @@ def convert_argument(
 
     if has_object_definition(type_):
         kwargs = {}
+        extension_values = {}
 
         type_definition = type_.__strawberry_definition__
-        for field in type_definition.fields:
+        fields = [(type_definition, field) for field in type_definition.fields]
+        for extension_definition in cast(
+            "Iterable[StrawberryObjectDefinition]",
+            getattr(value, "strawberry_input_extension_definitions", ()),
+        ):
+            fields.extend(
+                (extension_definition, field) for field in extension_definition.fields
+            )
+
+        for field_definition, field in fields:
             value = cast("Mapping", value)
             graphql_name = config.name_converter.from_field(field)
 
             if graphql_name in value:
-                kwargs[field.python_name] = convert_argument(
+                converted_value = convert_argument(
                     value[graphql_name],
-                    field.resolve_type(type_definition=type_definition),
+                    field.resolve_type(type_definition=field_definition),
                     scalar_registry,
                     config,
                 )
+                if field_definition is type_definition:
+                    kwargs[field.python_name] = converted_value
+                else:
+                    extension_values[field.python_name] = converted_value
 
         type_ = cast("type", type_)
-        return type_(**kwargs)
+        converted = type_(**kwargs)
+        for python_name, converted_value in extension_values.items():
+            setattr(converted, python_name, converted_value)
+
+        return converted
 
     raise UnsupportedTypeError(type_)
 
