@@ -74,7 +74,7 @@ def test_input_extension_can_extend_existing_input():
     class Query:
         @strawberry.field
         def echo(self, data: UserInput) -> str:
-            return data.name
+            return f"{data.name} {data.extra}"
 
     schema = strawberry.Schema(query=Query, types=[UserInputExtension])
 
@@ -97,7 +97,50 @@ def test_input_extension_can_extend_existing_input():
     result = schema.execute_sync('{ echo(data: { name: "Ada", extra: "Lovelace" }) }')
 
     assert not result.errors
-    assert result.data == {"echo": "Ada"}
+    assert result.data == {"echo": "Ada Lovelace"}
+
+
+def test_input_extension_conversion_is_schema_local():
+    @strawberry.input(name="UserInput")
+    class UserInput:
+        name: str
+
+    @strawberry.input(name="UserInput", extend=True)
+    class FirstUserInputExtension:
+        first: str
+
+    @strawberry.input(name="UserInput", extend=True)
+    class SecondUserInputExtension:
+        second: str
+
+    @strawberry.type
+    class FirstQuery:
+        @strawberry.field
+        def echo(self, data: UserInput) -> str:
+            return f"{data.name} {data.first}"
+
+    @strawberry.type
+    class SecondQuery:
+        @strawberry.field
+        def echo(self, data: UserInput) -> str:
+            return f"{data.name} {data.second}"
+
+    first_schema = strawberry.Schema(query=FirstQuery, types=[FirstUserInputExtension])
+    second_schema = strawberry.Schema(
+        query=SecondQuery, types=[SecondUserInputExtension]
+    )
+
+    first_result = first_schema.execute_sync(
+        '{ echo(data: { name: "Ada", first: "Lovelace" }) }'
+    )
+    second_result = second_schema.execute_sync(
+        '{ echo(data: { name: "Grace", second: "Hopper" }) }'
+    )
+
+    assert not first_result.errors
+    assert first_result.data == {"echo": "Ada Lovelace"}
+    assert not second_result.errors
+    assert second_result.data == {"echo": "Grace Hopper"}
 
 
 @skip_if_gql_32("formatting is different in gql 3.2")
