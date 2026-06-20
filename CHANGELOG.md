@@ -1,6 +1,18 @@
 CHANGELOG
 =========
 
+0.318.1 - 2026-06-20
+--------------------
+
+This release fixes compatibility with graphql-core 3.3 release candidates.
+
+Strawberry now handles graphql-core's renamed custom executor hook and nullable
+AST argument and directive collections, so schemas using custom execution
+contexts and `Info.selected_fields` continue to work when testing against
+graphql-core 3.3.
+
+This release was contributed by [@patrick91](https://github.com/patrick91) in [#4470](https://github.com/strawberry-graphql/strawberry/pull/4470)
+
 0.318.0 - 2026-06-19
 --------------------
 
