@@ -71,6 +71,7 @@ from ._graphql_core import (
     GraphQLIncrementalExecutionResults,
     ResultType,
     execute,
+    execution_context_class_kwargs,
     experimental_execute_incrementally,
     incremental_execution_directives,
     subscribe,
@@ -167,6 +168,8 @@ class _OperationContextAwareGraphQLResolveInfo(NamedTuple):  # pyright: ignore
     variable_values: dict[str, Any]
     context: Any
     is_awaitable: Callable[[Any], bool]
+    abort_signal: Any
+    async_helpers: Any
     operation_extensions: dict[str, Any]
 
 
@@ -187,6 +190,11 @@ class StrawberryGraphQLCoreExecutionContext(GraphQLExecutionContext):
             parent_type: GraphQLObjectType,
             path: Path,
         ) -> GraphQLResolveInfo:
+            fragments = getattr(self, "fragment_definitions", self.fragments)
+            variable_values = getattr(
+                self.variable_values, "coerced", self.variable_values
+            )
+
             return _OperationContextAwareGraphQLResolveInfo(  # type: ignore
                 field_nodes[0].name.value,
                 field_nodes,
@@ -194,12 +202,14 @@ class StrawberryGraphQLCoreExecutionContext(GraphQLExecutionContext):
                 parent_type,
                 path,
                 self.schema,
-                self.fragments,
+                fragments,
                 self.root_value,
                 self.operation,
-                self.variable_values,
+                variable_values,
                 self.context_value,
                 self.is_awaitable,
+                getattr(self, "abort_signal", None),
+                getattr(self, "async_helpers", None),
                 self.operation_extensions,
             )
 
@@ -596,16 +606,16 @@ class Schema(BaseSchema):
         extensions_runner = self.create_extensions_runner(execution_context, extensions)
         middleware_manager = self._get_middleware_manager(extensions)
 
-        execute_function = execute
+        execute_function: Callable[..., Any] = execute
 
         if self.config.enable_experimental_incremental_execution:
-            execute_function = experimental_execute_incrementally
-
-            if execute_function is None:
+            if experimental_execute_incrementally is None:
                 raise RuntimeError(
                     "Incremental execution is enabled but experimental_execute_incrementally is not available, "
                     "please install graphql-core>=3.3.0"
                 )
+
+            execute_function = experimental_execute_incrementally
 
         custom_context_kwargs = self._get_custom_context_kwargs(operation_extensions)
 
@@ -635,8 +645,10 @@ class Schema(BaseSchema):
                                 variable_values=execution_context.variables,
                                 operation_name=execution_context.operation_name,
                                 context_value=execution_context.context,
-                                execution_context_class=self.execution_context_class,
                                 is_awaitable=optimized_is_awaitable,
+                                **execution_context_class_kwargs(
+                                    self.execution_context_class
+                                ),
                                 **custom_context_kwargs,
                             )
                         )
@@ -703,16 +715,16 @@ class Schema(BaseSchema):
         extensions_runner = self.create_extensions_runner(execution_context, extensions)
         middleware_manager = self._get_middleware_manager(extensions)
 
-        execute_function = execute
+        execute_function: Callable[..., Any] = execute
 
         if self.config.enable_experimental_incremental_execution:
-            execute_function = experimental_execute_incrementally
-
-            if execute_function is None:
+            if experimental_execute_incrementally is None:
                 raise RuntimeError(
                     "Incremental execution is enabled but experimental_execute_incrementally is not available, "
                     "please install graphql-core>=3.3.0"
                 )
+
+            execute_function = experimental_execute_incrementally
         custom_context_kwargs = self._get_custom_context_kwargs(
             operation_extensions, sync=True
         )
@@ -773,19 +785,21 @@ class Schema(BaseSchema):
                             variable_values=execution_context.variables,
                             operation_name=execution_context.operation_name,
                             context_value=execution_context.context,
-                            execution_context_class=self.execution_context_class,
                             is_awaitable=optimized_is_awaitable,
+                            **execution_context_class_kwargs(
+                                self.execution_context_class
+                            ),
                             **custom_context_kwargs,
                         )
 
                         if isawaitable(result):
-                            result = cast("Awaitable[GraphQLExecutionResult]", result)  # type: ignore[redundant-cast]
+                            result = cast("Awaitable[GraphQLExecutionResult]", result)
                             ensure_future(result).cancel()
                             raise RuntimeError(  # noqa: TRY301
                                 "GraphQL execution failed to complete synchronously."
                             )
 
-                        result = cast("GraphQLExecutionResult", result)  # type: ignore[redundant-cast]
+                        result = cast("GraphQLExecutionResult", result)
                         execution_context.result = result
                         # Also set errors on the context so that it's easier
                         # to access in extensions
@@ -842,8 +856,8 @@ class Schema(BaseSchema):
                     assert execution_context.graphql_document is not None
                     gql_33_kwargs = {
                         "middleware": middleware_manager,
-                        "execution_context_class": execution_context_class,
                         "operation_extensions": operation_extensions,
+                        **execution_context_class_kwargs(execution_context_class),
                     }
                     try:
                         # Might not be awaitable for pre-execution errors.
@@ -855,7 +869,7 @@ class Schema(BaseSchema):
                                 variable_values=execution_context.variables,
                                 operation_name=execution_context.operation_name,
                                 context_value=execution_context.context,
-                                **{} if IS_GQL_32 else gql_33_kwargs,  # type: ignore[arg-type]
+                                **{} if IS_GQL_32 else gql_33_kwargs,
                             )
                         )
                     # graphql-core 3.2 doesn't handle some of the pre-execution errors.

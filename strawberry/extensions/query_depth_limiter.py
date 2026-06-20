@@ -210,7 +210,7 @@ def get_field_arguments(
     node: FieldNode,
 ) -> FieldArgumentsType:
     args_dict: FieldArgumentsType = {}
-    for arg in node.arguments:
+    for arg in node.arguments or ():
         args_dict[arg.name.value] = resolve_field_value(arg.value)
     return args_dict
 

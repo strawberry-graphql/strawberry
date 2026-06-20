@@ -46,7 +46,7 @@ jobs:
       - name: Install Python dependencies
         run: |
           uv sync
-          uv pip install graphql-core==3.3.0a12
+          uv pip install graphql-core==3.3.0rc0
 
       - name: Start FastAPI server
         run: |

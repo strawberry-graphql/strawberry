@@ -11,6 +11,7 @@ from strawberry.extensions import (
     DisableValidation,
     SchemaExtension,
 )
+from strawberry.utils import IS_GQL_32
 
 
 @pytest.mark.parametrize("validate_queries", [True, False])
@@ -146,20 +147,28 @@ async def test_sending_wrong_variables():
         root_value=Query(),
     )
 
-    assert (
-        str(result.errors[0])
-        == textwrap.dedent(
-            """
-            Argument 'value' has invalid value 123.
+    expected_error = (
+        """
+        Argument 'value' has invalid value 123.
 
-            GraphQL request:3:28
-            2 |         query {
-            3 |             example(value: 123)
-              |                            ^
-            4 |         }
-            """
-        ).strip()
+        GraphQL request:3:28
+        2 |         query {
+        3 |             example(value: 123)
+          |                            ^
+        4 |         }
+        """
+        if IS_GQL_32
+        else """
+        Argument 'value' has invalid value: String cannot represent a non string value: 123
+
+        GraphQL request:3:28
+        2 |         query {
+        3 |             example(value: 123)
+          |                            ^
+        4 |         }
+        """
     )
+    assert str(result.errors[0]) == textwrap.dedent(expected_error).strip()
 
 
 @pytest.mark.asyncio

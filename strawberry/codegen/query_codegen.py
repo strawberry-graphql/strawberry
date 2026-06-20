@@ -444,22 +444,22 @@ class QueryCodegen:
         raise ValueError(f"Unsupported type: {type(value)}")  # pragma: no cover
 
     def _convert_arguments(
-        self, arguments: Iterable[ArgumentNode]
+        self, arguments: Iterable[ArgumentNode] | None
     ) -> list[GraphQLArgument]:
         return [
             GraphQLArgument(argument.name.value, self._convert_value(argument.value))
-            for argument in arguments
+            for argument in arguments or ()
         ]
 
     def _convert_directives(
-        self, directives: Iterable[DirectiveNode]
+        self, directives: Iterable[DirectiveNode] | None
     ) -> list[GraphQLDirective]:
         return [
             GraphQLDirective(
                 directive.name.value,
                 self._convert_arguments(directive.arguments),
             )
-            for directive in directives
+            for directive in directives or ()
         ]
 
     def _convert_operation(

@@ -12,6 +12,7 @@ import pytest
 
 import strawberry
 from strawberry.types.execution import PreExecutionError
+from strawberry.utils import IS_GQL_32
 from strawberry.utils.aio import aclosing
 
 
@@ -273,7 +274,10 @@ async def test_wrong_operation_variables():
         result = await sub_result.__anext__()
 
     assert result.errors
-    assert (
-        result.errors[0].message
-        == "Variable '$opVar' of required type 'String!' was not provided."
+    expected_message = (
+        "Variable '$opVar' of required type 'String!' was not provided."
+        if IS_GQL_32
+        else "Variable '$opVar' has invalid value: Expected a value of non-null type "
+        "'String!' to be provided."
     )
+    assert result.errors[0].message == expected_message
