@@ -225,7 +225,7 @@ async def test_missing_query(http_client: HttpClient):
     )
 
     assert response.status_code == 400
-    assert "No GraphQL query found in the request" in response.text
+    assert 'Request data is missing a "query" value' in response.text
 
 
 @pytest.mark.parametrize(

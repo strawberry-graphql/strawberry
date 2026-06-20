@@ -777,8 +777,14 @@ class Schema(BaseSchema):
             MissingQueryError,
             CannotGetOperationTypeError,
             InvalidOperationTypeError,
-        ):
-            raise
+        ) as error:
+            return await self._handle_execution_result(
+                execution_context,
+                PreExecutionError(
+                    data=None, errors=[_coerce_pre_execution_error(error)]
+                ),
+                extensions_runner,
+            )
         except Exception as exc:  # noqa: BLE001
             return await self._handle_execution_result(
                 execution_context,
@@ -877,8 +883,15 @@ class Schema(BaseSchema):
             MissingQueryError,
             CannotGetOperationTypeError,
             InvalidOperationTypeError,
-        ):
-            raise
+        ) as error:
+            errors = [_coerce_pre_execution_error(error)]
+            execution_context.pre_execution_errors = errors
+            self._process_errors(errors, execution_context)
+            return ExecutionResult(
+                data=None,
+                errors=errors,
+                extensions=extensions_runner.get_extensions_results_sync(),
+            )
         except Exception as exc:  # noqa: BLE001
             errors = [_coerce_error(exc)]
             execution_context.pre_execution_errors = errors

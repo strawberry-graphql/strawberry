@@ -267,7 +267,7 @@ async def test_sending_invalid_form_data(enabled_http_client: HttpClient):
     # TODO: consolidate this, it seems only AIOHTTP returns the second error
     # due to validating the boundary
     assert (
-        "No GraphQL query found in the request" in response.text
+        'Request data is missing a "query" value' in response.text
         or "Unable to parse the multipart body" in response.text
     )
 

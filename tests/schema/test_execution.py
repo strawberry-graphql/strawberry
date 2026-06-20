@@ -11,6 +11,7 @@ from strawberry.extensions import (
     DisableValidation,
     SchemaExtension,
 )
+from strawberry.types.graphql import OperationType
 from strawberry.utils import IS_GQL_32
 
 
@@ -101,6 +102,104 @@ async def test_invalid_query_with_validation_enabled():
         "4 |     \n"
         "  |     ^"
     )
+
+
+@pytest.mark.asyncio
+async def test_execute_unknown_operation_name_returns_specific_pre_execution_error():
+    @strawberry.type
+    class Query:
+        example: str | None = None
+
+    schema = strawberry.Schema(query=Query)
+
+    result = await schema.execute(
+        """
+        query First {
+            example
+        }
+
+        query Second {
+            example
+        }
+        """,
+        operation_name="Missing",
+    )
+
+    assert result.data is None
+    assert result.errors
+    assert result.errors[0].message == 'Unknown operation named "Missing".'
+
+
+def test_execute_sync_unknown_operation_name_returns_specific_pre_execution_error():
+    @strawberry.type
+    class Query:
+        example: str | None = None
+
+    schema = strawberry.Schema(query=Query)
+
+    result = schema.execute_sync(
+        """
+        query First {
+            example
+        }
+
+        query Second {
+            example
+        }
+        """,
+        operation_name="Missing",
+    )
+
+    assert result.data is None
+    assert result.errors
+    assert result.errors[0].message == 'Unknown operation named "Missing".'
+
+
+@pytest.mark.asyncio
+async def test_execute_disallowed_operation_returns_specific_pre_execution_error():
+    @strawberry.type
+    class Query:
+        example: str | None = None
+
+    @strawberry.type
+    class Mutation:
+        @strawberry.mutation
+        async def example(self) -> str:
+            return "hi"
+
+    schema = strawberry.Schema(query=Query, mutation=Mutation)
+
+    result = await schema.execute(
+        "mutation { example }",
+        allowed_operation_types=(OperationType.QUERY,),
+    )
+
+    assert result.data is None
+    assert result.errors
+    assert result.errors[0].message == "mutations are not allowed"
+
+
+def test_execute_sync_disallowed_operation_returns_specific_pre_execution_error():
+    @strawberry.type
+    class Query:
+        example: str | None = None
+
+    @strawberry.type
+    class Mutation:
+        @strawberry.mutation
+        def example(self) -> str:
+            return "hi"
+
+    schema = strawberry.Schema(query=Query, mutation=Mutation)
+
+    result = schema.execute_sync(
+        "mutation { example }",
+        allowed_operation_types=(OperationType.QUERY,),
+    )
+
+    assert result.data is None
+    assert result.errors
+    assert result.errors[0].message == "mutations are not allowed"
 
 
 @pytest.mark.asyncio

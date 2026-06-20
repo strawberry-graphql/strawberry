@@ -6,10 +6,16 @@ from typing_extensions import Protocol
 
 from cross_web import HTTPException
 
+from strawberry.exceptions import MissingQueryError
 from strawberry.http import GraphQLRequestData
 from strawberry.http.ides import GraphQL_IDE, get_graphql_ide_html
 from strawberry.http.types import HTTPMethod, QueryParams
 from strawberry.schema.base import BaseSchema
+from strawberry.schema.exceptions import (
+    CannotGetOperationTypeError,
+    InvalidOperationTypeError,
+)
+from strawberry.types import ExecutionResult
 
 from .streaming import HTTPStreamTransport, MultipartSubscriptionTransport
 from .typevars import Request
@@ -130,6 +136,30 @@ class BaseView(Generic[Request]):
 
         if len(request_data) > self.schema.config.batching_config["max_operations"]:
             raise HTTPException(400, "Too many operations")
+
+    def _raise_for_http_pre_execution_error(self, result: object) -> None:
+        if not isinstance(result, ExecutionResult):
+            return
+
+        if result.data is not None or not result.errors or len(result.errors) != 1:
+            return
+
+        error = result.errors[0]
+
+        if error.path is not None:
+            return
+
+        original_error = error.original_error
+
+        if isinstance(
+            original_error,
+            (
+                CannotGetOperationTypeError,
+                InvalidOperationTypeError,
+                MissingQueryError,
+            ),
+        ):
+            raise HTTPException(400, error.message) from original_error
 
 
 __all__ = ["BaseView"]

@@ -316,9 +316,11 @@ async def test_uses_query_missing_operation_if_no_query(datadog_extension, mocke
 
     schema = strawberry.Schema(query=Query, mutation=Mutation, extensions=[extension])
 
-    # A missing query error is expected here, but the extension will run anyways
-    with pytest.raises(strawberry.exceptions.MissingQueryError):
-        await schema.execute(None)
+    # A missing query error result is expected here, but the extension will run anyways
+    result = await schema.execute(None)
+
+    assert result.errors
+    assert result.errors[0].message == 'Request data is missing a "query" value'
 
     mock.tracer.assert_has_calls(
         [

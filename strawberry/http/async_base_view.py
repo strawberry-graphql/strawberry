@@ -15,7 +15,6 @@ from typing import (
 from cross_web import AsyncHTTPRequestAdapter, HTTPException
 from graphql import GraphQLError
 
-from strawberry.exceptions import MissingQueryError
 from strawberry.file_uploads.utils import replace_placeholders_with_files
 from strawberry.http import (
     GraphQLHTTPResponse,
@@ -29,10 +28,6 @@ from strawberry.schema._graphql_core import (
     SubsequentIncrementalExecutionResult,
 )
 from strawberry.schema.base import BaseSchema
-from strawberry.schema.exceptions import (
-    CannotGetOperationTypeError,
-    InvalidOperationTypeError,
-)
 from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
 from strawberry.subscriptions.protocols.graphql_transport_ws.handlers import (
     BaseGraphQLTransportWSHandler,
@@ -240,24 +235,17 @@ class AsyncBaseHTTPView(
         if not self.allow_queries_via_get and request_adapter.method == "GET":
             allowed_operation_types = allowed_operation_types - {OperationType.QUERY}
 
-        try:
-            result = await self.schema.execute(
-                request_data.query,
-                root_value=root_value,
-                variable_values=request_data.variables,
-                context_value=context,
-                operation_name=request_data.operation_name,
-                allowed_operation_types=allowed_operation_types,
-                operation_extensions=request_data.extensions,
-            )
-        except CannotGetOperationTypeError as e:
-            raise HTTPException(400, e.as_http_error_reason()) from e
-        except InvalidOperationTypeError as e:
-            raise HTTPException(
-                400, e.as_http_error_reason(request_adapter.method)
-            ) from e
-        except MissingQueryError as e:
-            raise HTTPException(400, "No GraphQL query found in the request") from e
+        result = await self.schema.execute(
+            request_data.query,
+            root_value=root_value,
+            variable_values=request_data.variables,
+            context_value=context,
+            operation_name=request_data.operation_name,
+            allowed_operation_types=allowed_operation_types,
+            operation_extensions=request_data.extensions,
+        )
+
+        self._raise_for_http_pre_execution_error(result)
 
         return result
 
