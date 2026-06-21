@@ -22,6 +22,7 @@ try:
     )
     from graphql.execution import (  # type: ignore[attr-defined]
         InitialIncrementalExecutionResult,  # pyright: ignore[reportAttributeAccessIssue]
+        SubsequentIncrementalExecutionResult,  # pyright: ignore[reportAttributeAccessIssue]
         experimental_execute_incrementally,  # pyright: ignore[reportAttributeAccessIssue]
     )
     from graphql.type.directives import (  # type: ignore[attr-defined]
@@ -38,9 +39,28 @@ try:
         OriginalGraphQLExecutionResult | InitialIncrementalExecutionResult
     )
 
+    # The individual frames produced when an incremental delivery container
+    # (`@defer`/`@stream`) is expanded into a flat stream of results.
+    GraphQLIncrementalResult: TypeAlias = (
+        InitialIncrementalExecutionResult | SubsequentIncrementalExecutionResult
+    )
+
 except ImportError:
-    GraphQLIncrementalExecutionResults = type(None)
+
+    class GraphQLIncrementalExecutionResults:  # type: ignore[no-redef]
+        pass
+
+    class InitialIncrementalExecutionResult:  # type: ignore[no-redef]
+        pass
+
+    class SubsequentIncrementalExecutionResult:  # type: ignore[no-redef]
+        pass
+
     GraphQLExecutionResult = OriginalGraphQLExecutionResult  # type: ignore
+    # Incremental delivery isn't available on graphql-core < 3.3, so no frame
+    # type exists. Fall back to the (empty) container type so annotations remain
+    # importable at runtime.
+    GraphQLIncrementalResult = GraphQLIncrementalExecutionResults  # type: ignore
 
     incremental_execution_directives = ()  # type: ignore
     experimental_execute_incrementally = None
@@ -66,7 +86,10 @@ __all__ = [
     "GraphQLExecutionContext",
     "GraphQLExecutionResult",
     "GraphQLIncrementalExecutionResults",
+    "GraphQLIncrementalResult",
+    "InitialIncrementalExecutionResult",
     "ResultType",
+    "SubsequentIncrementalExecutionResult",
     "execute",
     "execution_context_class_kwargs",
     "experimental_execute_incrementally",

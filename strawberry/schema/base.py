@@ -12,7 +12,7 @@ if TYPE_CHECKING:
     from graphql import GraphQLError
 
     from strawberry.directive import StrawberryDirective
-    from strawberry.schema.schema import SubscriptionResult
+    from strawberry.schema.schema import StreamResult, SubscriptionResult
     from strawberry.schema.schema_converter import GraphQLCoreConverter
     from strawberry.types import (
         ExecutionContext,
@@ -67,13 +67,26 @@ class BaseSchema(Protocol):
     @abstractmethod
     async def subscribe(
         self,
-        query: str,
+        query: str | None,
         variable_values: dict[str, Any] | None = None,
         context_value: Any | None = None,
         root_value: Any | None = None,
         operation_name: str | None = None,
         operation_extensions: dict[str, Any] | None = None,
     ) -> SubscriptionResult:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def stream(
+        self,
+        query: str | None,
+        variable_values: dict[str, Any] | None = None,
+        context_value: Any | None = None,
+        root_value: Any | None = None,
+        operation_name: str | None = None,
+        operation_extensions: dict[str, Any] | None = None,
+        allowed_operation_types: Iterable[OperationType] | None = None,
+    ) -> StreamResult:
         raise NotImplementedError
 
     @abstractmethod

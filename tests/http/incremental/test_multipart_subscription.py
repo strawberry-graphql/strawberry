@@ -128,6 +128,31 @@ async def test_multipart_subscription_use_the_views_decode_json_method(
     assert spy.call_count == 1
 
 
+async def test_multipart_subscription_returns_error_for_query_operation(
+    http_client: HttpClient,
+):
+    response = await http_client.query(
+        query="{ hello }",
+        headers={
+            "accept": "multipart/mixed;boundary=graphql;subscriptionSpec=1.0,application/json",
+            "content-type": "application/json",
+        },
+    )
+
+    data = [d async for d in response.streaming_json()]
+
+    assert data == [
+        {
+            "payload": {
+                "data": None,
+                "errors": [{"message": "queries are not allowed"}],
+                "extensions": {"example": "example"},
+            }
+        }
+    ]
+    assert response.status_code == 200
+
+
 async def test_returns_error_when_trying_to_use_batching_with_multipart_subscriptions(
     http_client_class: type[HttpClient],
 ):

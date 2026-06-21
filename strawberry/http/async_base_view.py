@@ -1,6 +1,5 @@
 import abc
 import asyncio
-import contextlib
 import json
 from collections.abc import AsyncGenerator, Callable, Mapping
 from datetime import timedelta
@@ -26,6 +25,8 @@ from strawberry.http import (
 from strawberry.http.ides import GraphQL_IDE
 from strawberry.schema._graphql_core import (
     GraphQLIncrementalExecutionResults,
+    InitialIncrementalExecutionResult,
+    SubsequentIncrementalExecutionResult,
 )
 from strawberry.schema.base import BaseSchema
 from strawberry.schema.exceptions import (
@@ -43,7 +44,12 @@ from strawberry.types.unset import UNSET, UnsetType
 
 from .base import BaseView
 from .parse_content_type import parse_content_type
-from .streaming import HTTPStreamTransport, MultipartTransport
+from .streaming import (
+    AsyncTextStream,
+    HTTPStreamTransport,
+    MultipartTransport,
+    merge_stream_with_heartbeat,
+)
 from .typevars import (
     Context,
     Request,
@@ -198,14 +204,17 @@ class AsyncBaseHTTPView(
                 ]
             )
 
-        if request_data.protocol == "multipart-subscription":
-            return await self.schema.subscribe(
+        if transport := self._get_stream_transport(request_data.protocol):
+            return await self.schema.stream(
                 request_data.query,  # type: ignore
                 variable_values=request_data.variables,
                 context_value=context,
                 root_value=root_value,
                 operation_name=request_data.operation_name,
                 operation_extensions=request_data.extensions,
+                allowed_operation_types=transport.allowed_operation_types(
+                    allowed_operation_types
+                ),
             )
 
         return await self.execute_single(
@@ -368,78 +377,27 @@ class AsyncBaseHTTPView(
         )
 
         if isinstance(result, SubscriptionExecutionResult):
-            if (
-                transport := self._get_stream_transport("multipart-subscription")
-            ) is None:
-                raise RuntimeError(
-                    "No HTTP stream transport configured for multipart-subscription"
-                )
-
-            stream = self._get_stream(request, result, transport)
-
-            return await self.create_streaming_response(
-                request,
-                stream,
-                sub_response,
-                headers=transport.headers,
+            return await self._create_streaming_response(
+                request=request,
+                result=result,
+                protocol="multipart-subscription",
+                sub_response=sub_response,
             )
         if isinstance(result, GraphQLIncrementalExecutionResults):
             multipart_transport = self.multipart_transport_class()
 
             async def data() -> AsyncGenerator[object, None]:
-                response: GraphQLHTTPResponse = await self.process_result(
-                    request, result.initial_result
+                all_pending: list[Any] = []
+                response, all_pending = await self._process_stream_result(
+                    request, result.initial_result, all_pending
                 )
-
-                response["hasNext"] = result.initial_result.has_next
-                response["pending"] = [
-                    p.formatted for p in result.initial_result.pending
-                ]
-                response["extensions"] = result.initial_result.extensions
 
                 yield response
 
-                all_pending = result.initial_result.pending
-
                 async for value in result.subsequent_results:
-                    response = {
-                        "hasNext": value.has_next,
-                        "extensions": value.extensions,
-                    }
-
-                    if value.pending:
-                        response["pending"] = [p.formatted for p in value.pending]
-
-                    if value.completed:
-                        response["completed"] = [p.formatted for p in value.completed]
-
-                    if value.incremental:
-                        incremental = []
-
-                        all_pending.extend(value.pending)
-
-                        for incremental_value in value.incremental:
-                            pending_value = next(
-                                (
-                                    v
-                                    for v in all_pending
-                                    if v.id == incremental_value.id
-                                ),
-                                None,
-                            )
-
-                            assert pending_value
-
-                            incremental.append(
-                                {
-                                    **incremental_value.formatted,
-                                    "path": pending_value.path,
-                                    "label": pending_value.label,
-                                }
-                            )
-
-                        response["incremental"] = incremental
-
+                    response, all_pending = await self._process_stream_result(
+                        request, value, all_pending
+                    )
                     yield response
 
             return await self.create_streaming_response(
@@ -478,136 +436,101 @@ class AsyncBaseHTTPView(
 
         return encoded_data
 
-    def _stream_with_heartbeat(
+    async def _create_streaming_response(
         self,
-        stream: Callable[[], AsyncGenerator[str, None]],
-        transport: HTTPStreamTransport,
-    ) -> Callable[[], AsyncGenerator[str, None]]:
-        """Add heartbeat messages to a GraphQL stream to prevent connection timeouts.
+        request: Request,
+        result: SubscriptionExecutionResult,
+        protocol: str,
+        sub_response: SubResponse,
+    ) -> Response:
+        transport = self._get_stream_transport(protocol)
+        if transport is None:
+            raise RuntimeError(f"No HTTP stream transport configured for {protocol}")
 
-        This method wraps an async stream generator with heartbeat functionality by:
-        1. Creating a queue to coordinate between data and heartbeat messages
-        2. Running two concurrent tasks: one for original stream data, one for heartbeats
-        3. Merging both message types into a single output stream
-
-        Messages in the queue are tuples of (raised, done, data) where:
-        - raised (bool): True if this contains an exception to be re-raised
-        - done (bool): True if this is the final signal indicating stream completion
-        - data: The actual message content to yield, or exception if raised=True
-               Note: data is always None when done=True and can be ignored
-
-        Note: This implementation addresses two critical concerns:
-
-        1. Race condition: There's a potential race between checking task.done() and
-           processing the final message. We solve this by having the drain task send
-           an explicit (False, True, None) completion signal as its final action.
-           Without this signal, we might exit before processing the final boundary.
-
-           Since the queue size is 1 and the drain task will only complete after
-           successfully queueing the done signal, task.done() guarantees the done
-           signal is either in the queue or has already been processed. This ensures
-           we never miss the final boundary.
-
-        2. Flow control: The queue has maxsize=1, which is essential because:
-           - It provides natural backpressure between producers and consumer
-           - Prevents heartbeat messages from accumulating when drain is active
-           - Ensures proper task coordination without complex synchronization
-           - Guarantees the done signal is queued before drain task completes
-
-        Heartbeats are sent every 5 seconds when the drain task isn't sending data.
-
-        Note: Due to the asynchronous nature of the heartbeat task, an extra heartbeat
-        message may be sent after the final stream boundary message. This is safe because
-        both the MIME specification (RFC 2046) and Apollo's GraphQL Multipart HTTP protocol
-        require clients to ignore any content after the final boundary marker. Additionally,
-        Apollo's protocol defines heartbeats as empty JSON objects that clients must
-        silently ignore.
-        """
-        queue: asyncio.Queue[tuple[bool, bool, Any]] = asyncio.Queue(
-            maxsize=1,  # Critical: maxsize=1 for flow control.
+        return await self.create_streaming_response(
+            request,
+            self._stream_result(request, result, transport),
+            sub_response,
+            headers=transport.headers,
         )
-        cancelling = False
 
-        async def drain() -> None:
-            try:
-                async for item in stream():
-                    await queue.put((False, False, item))
-            except Exception as e:
-                if not cancelling:
-                    await queue.put((True, False, e))
-                else:
-                    raise
-            # Send completion signal to prevent race conditions. The queue.put()
-            # blocks until space is available (due to maxsize=1), guaranteeing that
-            # when task.done() is True, the final stream message has been dequeued.
-            await queue.put((False, True, None))  # Always use None with done=True
-
-        async def heartbeat() -> None:
-            if not transport.send_initial_heartbeat:
-                await asyncio.sleep(transport.heartbeat_interval)
-
-            while True:
-                item = transport.heartbeat_message(self.encode_json_string)
-                await queue.put((False, False, item))
-
-                await asyncio.sleep(transport.heartbeat_interval)
-
-        async def merged() -> AsyncGenerator[str, None]:
-            heartbeat_task = asyncio.create_task(heartbeat())
-            task = asyncio.create_task(drain())
-
-            async def cancel_tasks() -> None:
-                nonlocal cancelling
-                cancelling = True
-                task.cancel()
-
-                with contextlib.suppress(asyncio.CancelledError):
-                    await task
-
-                heartbeat_task.cancel()
-
-                with contextlib.suppress(asyncio.CancelledError):
-                    await heartbeat_task
-
-            try:
-                # When task.done() is True, the final stream message has been
-                # dequeued due to queue size 1 and the blocking nature of queue.put().
-                while not task.done():
-                    raised, done, data = await queue.get()
-
-                    if done:
-                        # Received done signal (data is None), stream is complete.
-                        # Note that we may not get here because of the race between
-                        # task.done() and queue.get(), but that's OK because if
-                        # task.done() is True, the actual final message (including any
-                        # exception) has been consumed. The only intent here is to
-                        # ensure that data=None is not yielded.
-                        break
-
-                    if raised:
-                        await cancel_tasks()
-                        raise data
-
-                    yield data
-            finally:
-                await cancel_tasks()
-
-        return merged
-
-    def _get_stream(
+    def _stream_result(
         self,
         request: Request,
         result: SubscriptionExecutionResult,
         transport: HTTPStreamTransport,
-    ) -> Callable[[], AsyncGenerator[str, None]]:
+    ) -> AsyncTextStream:
         async def stream() -> AsyncGenerator[str, None]:
+            all_pending: list[Any] = []
+
             async for value in result:
-                response = await self.process_result(request, value)
+                response, all_pending = await self._process_stream_result(
+                    request, value, all_pending
+                )
                 yield transport.encode_next(response, self.encode_json_string)
 
             yield transport.encode_complete()
 
-        return self._stream_with_heartbeat(stream, transport)
+        return merge_stream_with_heartbeat(
+            stream,
+            lambda: transport.heartbeat_message(self.encode_json_string),
+            interval=transport.heartbeat_interval,
+            send_initial_heartbeat=transport.send_initial_heartbeat,
+        )
+
+    async def _process_stream_result(
+        self,
+        request: Request,
+        value: Any,
+        all_pending: list[Any],
+    ) -> tuple[GraphQLHTTPResponse, list[Any]]:
+        if isinstance(value, InitialIncrementalExecutionResult):
+            initial_response = await self.process_result(request, value)
+            initial_response["hasNext"] = value.has_next
+            initial_response["pending"] = [p.formatted for p in value.pending]
+            initial_response["extensions"] = value.extensions
+
+            return initial_response, list(value.pending)
+
+        if isinstance(value, SubsequentIncrementalExecutionResult):
+            subsequent_response: GraphQLHTTPResponse = {
+                "hasNext": value.has_next,
+                "extensions": value.extensions,
+            }
+
+            if value.pending:
+                subsequent_response["pending"] = [p.formatted for p in value.pending]
+
+            if value.completed:
+                subsequent_response["completed"] = [
+                    p.formatted for p in value.completed
+                ]
+
+            if value.incremental:
+                incremental = []
+                all_pending.extend(value.pending)
+
+                for incremental_value in value.incremental:
+                    pending_value = next(
+                        (p for p in all_pending if p.id == incremental_value.id),
+                        None,
+                    )
+
+                    assert pending_value
+
+                    incremental.append(
+                        {
+                            **incremental_value.formatted,
+                            "path": pending_value.path,
+                            "label": pending_value.label,
+                        }
+                    )
+
+                subsequent_response["incremental"] = incremental
+
+            return subsequent_response, all_pending
+
+        return await self.process_result(request, value), all_pending
 
     async def parse_multipart_subscriptions(
         self, request: AsyncHTTPRequestAdapter
