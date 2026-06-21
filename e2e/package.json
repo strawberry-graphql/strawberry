@@ -17,7 +17,7 @@
     "@tailwindcss/vite": "^4.1.11",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
-    "graphql": "^16.11.0",
+    "graphql": "^17.0.1",
     "graphql-http": "^1.22.4",
     "graphql-ws": "^6.0.8",
     "lucide-react": "^1.7.0",
