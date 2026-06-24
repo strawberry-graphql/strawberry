@@ -1107,10 +1107,17 @@ class GraphQLCoreConverter:
             if origin is not None and origin in self.scalar_registry:
                 scalar = origin
             elif hasattr(scalar, "__supertype__"):
-                # NewType fallback: unwrap to the underlying supertype so
-                # the scalar can be resolved via the default registry or
-                # scalar_map entries keyed by Python builtins.
-                scalar = scalar.__supertype__
+                # NewType fallback: walk the __supertype__ chain until
+                # we find a matching registry entry. This mirrors the
+                # recursive is_scalar() behaviour for chained NewTypes.
+                resolved = scalar
+                while hasattr(resolved, "__supertype__"):
+                    resolved = resolved.__supertype__
+                    if resolved in self.scalar_registry:
+                        scalar = resolved
+                        break
+                else:
+                    scalar = scalar.__supertype__
 
         if scalar in self.scalar_registry:
             _scalar_definition = self.scalar_registry[scalar]
