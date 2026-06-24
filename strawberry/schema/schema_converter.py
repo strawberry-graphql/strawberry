@@ -1106,6 +1106,11 @@ class GraphQLCoreConverter:
             origin = typing.get_origin(scalar)
             if origin is not None and origin in self.scalar_registry:
                 scalar = origin
+            elif hasattr(scalar, "__supertype__"):
+                # NewType fallback: unwrap to the underlying supertype so
+                # the scalar can be resolved via the default registry or
+                # scalar_map entries keyed by Python builtins.
+                scalar = scalar.__supertype__
 
         if scalar in self.scalar_registry:
             _scalar_definition = self.scalar_registry[scalar]

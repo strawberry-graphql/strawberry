@@ -211,9 +211,6 @@ class PydanticV2Compat:
             if type_ is None:
                 raise UnsupportedTypeError
 
-        if is_new_type(type_):
-            return new_type_supertype(type_)
-
         return type_
 
     def model_dump(self, model_instance: BaseModel) -> dict[Any, Any]:
@@ -289,9 +286,6 @@ class PydanticV1Compat:
 
             if type_ is None:
                 raise UnsupportedTypeError
-
-        if is_new_type(type_):
-            return new_type_supertype(type_)
 
         return type_
 

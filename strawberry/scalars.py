@@ -36,7 +36,15 @@ def is_scalar(
     if origin is not None and origin in scalar_registry:
         return True
 
-    return hasattr(annotation, "_scalar_definition")
+    if hasattr(annotation, "_scalar_definition"):
+        return True
+
+    # NewType fallback: if the annotation is a NewType not in the registry,
+    # check whether its supertype is a known scalar.
+    if hasattr(annotation, "__supertype__"):
+        return is_scalar(annotation.__supertype__, scalar_registry)
+
+    return False
 
 
 __all__ = [
