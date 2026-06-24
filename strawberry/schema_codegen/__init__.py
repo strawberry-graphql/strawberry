@@ -46,7 +46,8 @@ if TYPE_CHECKING:
 
 
 class HasDirectives(Protocol):
-    directives: tuple[ConstDirectiveNode, ...]
+    @property
+    def directives(self) -> tuple[ConstDirectiveNode, ...] | None: ...
 
 
 _SCALAR_MAP = {
@@ -104,7 +105,7 @@ def _is_federation_link_directive(directive: ConstDirectiveNode) -> bool:
     return next(
         (
             argument.value.value
-            for argument in directive.arguments
+            for argument in directive.arguments or ()
             if argument.name.value == "url"
             if isinstance(argument.value, StringValueNode)
         ),
@@ -404,13 +405,13 @@ def _get_directives(
 ) -> dict[str, list[dict[str, ArgumentValue]]]:
     directives: dict[str, list[dict[str, ArgumentValue]]] = defaultdict(list)
 
-    for directive in definition.directives:
+    for directive in definition.directives or ():
         directive_name = directive.name.value
 
         directives[directive_name].append(
             {
                 argument.name.value: _get_argument_value(argument.value)
-                for argument in directive.arguments
+                for argument in directive.arguments or ()
             }
         )
 
@@ -759,8 +760,11 @@ def _get_scalar_definition(
 
     specified_by_url = None
 
-    for directive in definition.directives:
+    for directive in definition.directives or ():
         if directive.name.value == "specifiedBy":
+            if not directive.arguments:
+                continue
+
             arg = directive.arguments[0]
 
             assert isinstance(arg.value, StringValueNode)
@@ -883,7 +887,7 @@ def codegen(schema: str) -> str:
         elif isinstance(graphql_definition, SchemaExtensionNode):
             is_apollo_federation = any(
                 _is_federation_link_directive(directive)
-                for directive in graphql_definition.directives
+                for directive in graphql_definition.directives or ()
             )
         else:
             raise NotImplementedError(f"Unknown definition {definition}")

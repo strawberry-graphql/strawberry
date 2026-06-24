@@ -49,17 +49,19 @@ def convert_value(info: GraphQLResolveInfo, node: GQLValueNode) -> Any:
 
 
 def convert_arguments(
-    info: GraphQLResolveInfo, nodes: Iterable[GQLArgumentNode]
+    info: GraphQLResolveInfo, nodes: Iterable[GQLArgumentNode] | None
 ) -> Arguments:
     """Return mapping of arguments."""
-    return {node.name.value: convert_value(info, node.value) for node in nodes}
+    return {node.name.value: convert_value(info, node.value) for node in nodes or ()}
 
 
 def convert_directives(
-    info: GraphQLResolveInfo, nodes: Iterable[GQLDirectiveNode]
+    info: GraphQLResolveInfo, nodes: Iterable[GQLDirectiveNode] | None
 ) -> Directives:
     """Return mapping of directives."""
-    return {node.name.value: convert_arguments(info, node.arguments) for node in nodes}
+    return {
+        node.name.value: convert_arguments(info, node.arguments) for node in nodes or ()
+    }
 
 
 def convert_selections(

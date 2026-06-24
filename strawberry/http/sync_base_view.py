@@ -1,10 +1,7 @@
 import abc
 import json
 from collections.abc import Callable
-from typing import (
-    Generic,
-    Literal,
-)
+from typing import Generic
 
 from cross_web import HTTPException, SyncHTTPRequestAdapter
 from graphql import GraphQLError
@@ -157,15 +154,10 @@ class SyncBaseHTTPView(
     def parse_http_body(
         self, request: SyncHTTPRequestAdapter
     ) -> GraphQLRequestData | list[GraphQLRequestData]:
-        headers = {key.lower(): value for key, value in request.headers.items()}
         content_type, params = parse_content_type(request.content_type or "")
-        accept = headers.get("accept", "")
+        transport = self._get_stream_transport_from_headers(request.headers)
 
-        protocol: Literal["http", "multipart-subscription"] = (
-            "multipart-subscription"
-            if self._is_multipart_subscriptions(*parse_content_type(accept))
-            else "http"
-        )
+        protocol = transport.protocol if transport else "http"
 
         if request.method == "GET":
             data = self.parse_query_params(request.query_params)
@@ -174,10 +166,10 @@ class SyncBaseHTTPView(
         # TODO: multipart via get?
         elif self.multipart_uploads_enabled and content_type == "multipart/form-data":
             data = self.parse_multipart(request)
-        elif self._is_multipart_subscriptions(content_type, params):
-            raise HTTPException(
-                400, "Multipart subscriptions are not supported in sync mode"
-            )
+        elif transport := self._get_stream_transport_from_content_type(
+            content_type, params
+        ):
+            raise HTTPException(400, transport.sync_not_supported_error)
         else:
             raise HTTPException(400, "Unsupported content type")
 

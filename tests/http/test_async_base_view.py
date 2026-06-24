@@ -3,11 +3,10 @@ from asyncio import sleep
 from collections import Counter
 from collections.abc import AsyncGenerator
 from random import random
-from typing import Any, cast
 
 import pytest
 
-from strawberry.http.async_base_view import AsyncBaseHTTPView
+from strawberry.http.streaming import merge_stream_with_heartbeat
 
 
 @pytest.mark.parametrize(
@@ -22,7 +21,7 @@ async def test_stream_with_heartbeat_should_yield_items_correctly(
     expected: list[str],
 ) -> None:
     """
-    Verifies _stream_with_heartbeat reliably delivers all items in correct order.
+    Verifies merge_stream_with_heartbeat reliably delivers all items in correct order.
 
     Tests three critical stream properties:
     1. Completeness: All source items appear in output (especially the last item)
@@ -37,20 +36,17 @@ async def test_stream_with_heartbeat_should_yield_items_correctly(
 
     assert len(set(expected)) == len(expected), "Test requires unique elements"
 
-    class MockAsyncBaseHTTPView:
-        def encode_multipart_data(self, *_: Any, **__: Any) -> str:
-            return ""
-
-    view = MockAsyncBaseHTTPView()
-
     async def stream() -> AsyncGenerator[str, None]:
         for elem in expected:
             yield elem
 
     async def collect() -> list[str]:
         result = []
-        async for item in AsyncBaseHTTPView._stream_with_heartbeat(
-            cast("AsyncBaseHTTPView", view), stream, ""
+        async for item in merge_stream_with_heartbeat(
+            stream,
+            lambda: "",
+            interval=5,
+            send_initial_heartbeat=True,
         )():
             result.append(item)
             # Random sleep to promote race conditions between concurrent tasks
@@ -78,3 +74,22 @@ async def test_stream_with_heartbeat_should_yield_items_correctly(
                 f"Order incorrect: '{curr}' (at index {item_indices[curr]}) "
                 f"should appear before '{next_item}' (at index {item_indices[next_item]})"
             )
+
+
+async def test_stream_with_heartbeat_uses_heartbeat_message() -> None:
+    async def stream() -> AsyncGenerator[str, None]:
+        await sleep(0)
+        yield "last"
+
+    result = [
+        item
+        async for item in merge_stream_with_heartbeat(
+            stream,
+            lambda: "heartbeat",
+            interval=60,
+            send_initial_heartbeat=True,
+        )()
+    ]
+
+    assert "heartbeat" in result
+    assert "last" in result

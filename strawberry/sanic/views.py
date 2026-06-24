@@ -18,7 +18,7 @@ from strawberry.http.typevars import (
 )
 
 if TYPE_CHECKING:
-    from collections.abc import AsyncGenerator, Callable
+    from collections.abc import AsyncGenerator, Callable, Mapping
 
     from strawberry.http import GraphQLHTTPResponse
     from strawberry.http.ides import GraphQL_IDE
@@ -125,7 +125,7 @@ class GraphQLView(
         request: Request,
         stream: Callable[[], AsyncGenerator[str, None]],
         sub_response: TemporalResponse,
-        headers: dict[str, str],
+        headers: Mapping[str, str],
     ) -> HTTPResponse:
         response = await self.request.respond(
             status=sub_response.status_code,

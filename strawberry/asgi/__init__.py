@@ -189,7 +189,7 @@ class GraphQL(
         request: Request | WebSocket,
         stream: Callable[[], AsyncIterator[str]],
         sub_response: Response,
-        headers: dict[str, str],
+        headers: Mapping[str, str],
     ) -> Response:
         return StreamingResponse(
             stream(),

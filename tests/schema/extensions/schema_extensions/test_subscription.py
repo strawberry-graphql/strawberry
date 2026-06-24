@@ -160,6 +160,37 @@ async def test_extensions_results_are_cleared_between_subscription_yields(
         res_num += 1
 
 
+async def test_subscription_extension_access_to_operation_extensions(
+    default_query_types_and_query: SchemaHelper,
+) -> None:
+    operation_extensions = None
+
+    class MyExtension(SchemaExtension):
+        async def on_operation(self):
+            nonlocal operation_extensions
+            yield
+            operation_extensions = self.execution_context.operation_extensions
+
+    schema = strawberry.Schema(
+        query=default_query_types_and_query.query_type,
+        subscription=default_query_types_and_query.subscription_type,
+        extensions=[MyExtension],
+    )
+
+    results = [
+        result
+        async for result in assert_agen(
+            await schema.subscribe(
+                default_query_types_and_query.subscription,
+                operation_extensions={"MyExtension": {"enabled": True}},
+            )
+        )
+    ]
+
+    assert [result.data["count"] for result in results] == list(range(5))
+    assert operation_extensions == {"MyExtension": {"enabled": True}}
+
+
 async def test_subscription_catches_extension_errors(
     default_query_types_and_query: SchemaHelper,
 ) -> None:

@@ -1,3 +1,5 @@
+import pytest
+
 import strawberry
 from strawberry.extensions.max_tokens import MaxTokensLimiter
 
@@ -54,6 +56,26 @@ def test_no_errors_exactly_max_number_of_tokens():
     assert result.data
 
 
+@pytest.mark.asyncio
+async def test_async_execute_uses_max_tokens():
+    query = """
+    {
+      matt: user(name: "matt") {
+        name
+        email
+      }
+    }
+    """
+
+    result = await _execute_async_with_max_tokens(query, 13)
+
+    assert len(result.errors) == 1
+    assert (
+        result.errors[0].message
+        == "Syntax Error: Document contains more than 13 tokens. Parsing aborted."
+    )
+
+
 def _execute_with_max_tokens(query: str, max_token_count: int):
     schema = strawberry.Schema(
         Query,
@@ -61,3 +83,12 @@ def _execute_with_max_tokens(query: str, max_token_count: int):
     )
 
     return schema.execute_sync(query)
+
+
+async def _execute_async_with_max_tokens(query: str, max_token_count: int):
+    schema = strawberry.Schema(
+        Query,
+        extensions=[lambda: MaxTokensLimiter(max_token_count=max_token_count)],
+    )
+
+    return await schema.execute(query)

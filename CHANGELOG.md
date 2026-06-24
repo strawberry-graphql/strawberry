@@ -1,6 +1,65 @@
 CHANGELOG
 =========
 
+0.319.0 - 2026-06-21
+--------------------
+
+This release adds `Schema.stream(...)`, a shared execution API for custom
+streaming integrations.
+
+`Schema.stream(...)` accepts queries, mutations and subscriptions and always
+returns an async sequence of results: a single `ExecutionResult` for queries and
+mutations, and the stream of results for subscriptions. This lets streaming
+transports use one schema entry point instead of choosing between `execute` and
+`subscribe` themselves.
+
+Incremental delivery operations (`@defer`/`@stream`) are also supported: their
+initial result is yielded first, followed by each raw graphql-core patch frame,
+which the transport is responsible for formatting.
+
+The schema execution APIs accept either a string or an already-parsed
+`DocumentNode`, so a transport that parsed the document itself (for example to
+inspect the operation type before executing) can pass the node to avoid parsing
+it again.
+
+Strawberry's multipart HTTP transport and `graphql-transport-ws` handler now use
+this path internally.
+
+HTTP multipart response framing now lives in the stream transport layer instead
+of `AsyncBaseHTTPView.encode_multipart_data`. Integrations that customized that
+view method should customize the transport encoding instead.
+
+This release was contributed by [@patrick91](https://github.com/patrick91) in [#4460](https://github.com/strawberry-graphql/strawberry/pull/4460)
+
+0.318.1 - 2026-06-20
+--------------------
+
+This release fixes compatibility with graphql-core 3.3 release candidates.
+
+Strawberry now handles graphql-core's renamed custom executor hook and nullable
+AST argument and directive collections, so schemas using custom execution
+contexts and `Info.selected_fields` continue to work when testing against
+graphql-core 3.3.
+
+This release was contributed by [@patrick91](https://github.com/patrick91) in [#4470](https://github.com/strawberry-graphql/strawberry/pull/4470)
+
+0.318.0 - 2026-06-19
+--------------------
+
+This release adds a shared internal HTTP stream transport for multipart
+subscription responses.
+
+Application behavior for multipart subscriptions is largely unchanged. The
+shared transport now owns multipart response headers, heartbeat frames,
+completion frames, batching errors, and sync-mode errors, keeping Strawberry's
+built-in HTTP integrations on the same streaming contract.
+
+The one behavioral change is that each multipart part's `Content-Length` is now
+computed from the UTF-8 byte length of the payload instead of its character
+count, fixing the header for responses containing non-ASCII data.
+
+This release was contributed by [@patrick91](https://github.com/patrick91) in [#4469](https://github.com/strawberry-graphql/strawberry/pull/4469)
+
 0.317.2 - 2026-06-17
 --------------------
 
