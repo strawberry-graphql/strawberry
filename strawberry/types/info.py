@@ -11,7 +11,6 @@ from typing import (
 from typing_extensions import TypeVar
 
 from graphql import get_argument_values
-from graphql.execution.execute import get_field_def
 
 from .arguments import convert_arguments
 from .nodes import convert_selections
@@ -116,7 +115,7 @@ class Info(Generic[ContextType, RootValueType]):
         """
         raw_info = self._raw_info
         field_node = raw_info.field_nodes[0]
-        field_def = get_field_def(raw_info.schema, raw_info.parent_type, field_node)
+        field_def = raw_info.parent_type.fields[raw_info.field_name]
         raw_args = get_argument_values(field_def, field_node, raw_info.variable_values)
 
         schema_converter = self.schema.schema_converter
