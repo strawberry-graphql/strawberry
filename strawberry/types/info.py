@@ -10,6 +10,10 @@ from typing import (
 )
 from typing_extensions import TypeVar
 
+from graphql import get_argument_values
+from graphql.execution.execute import get_field_def
+
+from .arguments import convert_arguments
 from .nodes import convert_selections
 
 if TYPE_CHECKING:
@@ -101,6 +105,28 @@ class Info(Generic[ContextType, RootValueType]):
         """The fields that were selected on the current field's type."""
         info = self._raw_info
         return convert_selections(info, info.field_nodes)
+
+    @cached_property
+    def field_args(self) -> dict[str, Any]:
+        """The arguments passed to the current field, converted to strawberry types.
+
+        Scalars are coerced and input types are converted to their proper
+        dataclasses, mirroring the values a resolver receives. Arguments that
+        were not provided are omitted.
+        """
+        raw_info = self._raw_info
+        field_node = raw_info.field_nodes[0]
+        field_def = get_field_def(raw_info.schema, raw_info.parent_type, field_node)
+        raw_args = get_argument_values(field_def, field_node, raw_info.variable_values)
+
+        schema_converter = self.schema.schema_converter
+
+        return convert_arguments(
+            value=raw_args,
+            arguments=self._field.arguments,
+            config=schema_converter.config,
+            scalar_registry=schema_converter.scalar_registry,
+        )
 
     @property
     def context(self) -> ContextType:
