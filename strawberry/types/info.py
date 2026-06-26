@@ -135,7 +135,7 @@ class Info(Generic[ContextType, RootValueType]):
             # graphql-core 3.3 expects a ``VariableValues`` wrapper rather than
             # the plain coerced dict exposed on the resolve info.
             from graphql.execution.values import (  # type: ignore[attr-defined]
-                VariableValues,
+                VariableValues,  # pyright: ignore[reportAttributeAccessIssue]
             )
 
             if not isinstance(variable_values, VariableValues):
