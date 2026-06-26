@@ -213,6 +213,40 @@ def test_basic_type_with_nested_model():
     assert result.data["user"]["hobby"]["name"] == "Skii"
 
 
+def test_basic_type_with_newtype_chain_nested_model():
+    from typing import NewType
+
+    class Hobby(pydantic.BaseModel):
+        name: str
+
+    HobbyRef = NewType("HobbyRef", Hobby)
+    WrappedHobbyRef = NewType("WrappedHobbyRef", HobbyRef)
+
+    @strawberry.experimental.pydantic.type(Hobby)
+    class HobbyType:
+        name: strawberry.auto
+
+    class User(pydantic.BaseModel):
+        hobby: WrappedHobbyRef
+
+    @strawberry.experimental.pydantic.type(User)
+    class UserType:
+        hobby: strawberry.auto
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def user(self) -> UserType:
+            return UserType(hobby=HobbyType(name="Skii"))
+
+    schema = strawberry.Schema(query=Query)
+
+    result = schema.execute_sync("{ user { hobby { name } } }")
+
+    assert not result.errors
+    assert result.data["user"]["hobby"]["name"] == "Skii"
+
+
 def test_basic_type_with_list_of_nested_model():
     class Hobby(pydantic.BaseModel):
         name: str

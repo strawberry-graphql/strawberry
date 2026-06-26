@@ -205,14 +205,9 @@ class PydanticV2Compat:
         return get_fields_map_for_v2()
 
     def get_basic_type(self, type_: Any) -> type[Any]:
-        if is_new_type(type_):
-            supertype = new_type_supertype(type_)
-            # Only unwrap when the underlying type is a pydantic model
-            # (needed for replace_pydantic_types detection). For scalar
-            # supertypes, preserve the NewType so scalar_map entries
-            # keyed by NewType identity can intercept.
-            if is_model_class(supertype):
-                return supertype
+        model_supertype = _get_new_type_model_supertype(type_)
+        if model_supertype is not None:
+            return model_supertype
 
         if type_ in self.fields_map:
             type_ = self.fields_map[type_]
@@ -270,10 +265,9 @@ class PydanticV1Compat:
         }
 
     def get_basic_type(self, type_: Any) -> type[Any]:
-        if is_new_type(type_):
-            supertype = new_type_supertype(type_)
-            if is_model_class(supertype):
-                return supertype
+        model_supertype = _get_new_type_model_supertype(type_)
+        if model_supertype is not None:
+            return model_supertype
 
         if IS_PYDANTIC_V1:
             ConstrainedInt = pydantic.ConstrainedInt
@@ -350,6 +344,15 @@ else:
 
 def is_model_class(type_: Any) -> bool:
     return lenient_issubclass(type_, BASE_MODEL_TYPES)
+
+
+def _get_new_type_model_supertype(type_: Any) -> Any | None:
+    while is_new_type(type_):
+        type_ = new_type_supertype(type_)
+        if is_model_class(type_):
+            return type_
+
+    return None
 
 
 def is_model_instance(value: Any) -> bool:

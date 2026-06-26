@@ -625,6 +625,40 @@ def test_scalar_map_with_newtype():
     assert result.data == {"processString": "processed: world"}
 
 
+def test_newtype_chain_to_custom_scalar():
+    """Test chained NewType wrappers resolve to their custom scalar."""
+    from typing import NewType
+
+    BaseScalar = strawberry.scalar(
+        NewType("BaseScalar", str),
+        name="BaseScalar",
+        serialize=lambda v: str(v).upper(),
+        parse_value=lambda v: str(v).lower(),
+    )
+    Alias = NewType("Alias", BaseScalar)
+    WrappedAlias = NewType("WrappedAlias", Alias)
+
+    @strawberry.type
+    class Query:
+        value: WrappedAlias
+
+        @strawberry.field
+        def echo(self, value: WrappedAlias) -> WrappedAlias:
+            return value
+
+    schema = strawberry.Schema(query=Query)
+
+    assert "scalar BaseScalar" in str(schema)
+    assert "value: BaseScalar!" in str(schema)
+
+    result = schema.execute_sync(
+        '{ value echo(value: "WORLD") }', root_value=Query(value=WrappedAlias("hello"))
+    )
+
+    assert not result.errors
+    assert result.data == {"value": "HELLO", "echo": "WORLD"}
+
+
 def test_scalar_map_override_builtin():
     """Test scalar_map can override built-in scalars."""
     from strawberry.schema.config import StrawberryConfig

@@ -1113,11 +1113,13 @@ class GraphQLCoreConverter:
                 resolved = scalar
                 while hasattr(resolved, "__supertype__"):
                     resolved = resolved.__supertype__
-                    if resolved in self.scalar_registry:
+                    if resolved in self.scalar_registry or hasattr(
+                        resolved, "_scalar_definition"
+                    ):
                         scalar = resolved
                         break
                 else:
-                    scalar = scalar.__supertype__
+                    scalar = resolved
 
         if scalar in self.scalar_registry:
             _scalar_definition = self.scalar_registry[scalar]
