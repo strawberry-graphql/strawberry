@@ -12,6 +12,8 @@ from typing_extensions import TypeVar
 
 from graphql import get_argument_values
 
+from strawberry.utils import IS_GQL_33
+
 from .arguments import convert_arguments
 from .nodes import convert_selections
 
@@ -128,7 +130,16 @@ class Info(Generic[ContextType, RootValueType]):
         if field_def is None:
             return {}
 
-        raw_args = get_argument_values(field_def, field_node, raw_info.variable_values)
+        variable_values = raw_info.variable_values
+        if IS_GQL_33:
+            # graphql-core 3.3 expects a ``VariableValues`` wrapper rather than
+            # the plain coerced dict exposed on the resolve info.
+            from graphql.execution.values import VariableValues
+
+            if not isinstance(variable_values, VariableValues):
+                variable_values = VariableValues(sources={}, coerced=variable_values)
+
+        raw_args = get_argument_values(field_def, field_node, variable_values)
 
         schema_converter = self.schema.schema_converter
 
