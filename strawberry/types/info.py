@@ -110,12 +110,24 @@ class Info(Generic[ContextType, RootValueType]):
         """The arguments passed to the current field, converted to strawberry types.
 
         Scalars are coerced and input types are converted to their proper
-        dataclasses, mirroring the values a resolver receives. Arguments that
-        were not provided are omitted.
+        dataclasses, mirroring the values a resolver receives. Arguments with a
+        default value that were not provided in the query are included with that
+        default; arguments without a default that were not provided are omitted.
+
+        The arguments are read from the first field node; when a field is
+        selected multiple times (for example through fragments) GraphQL requires
+        the arguments to be identical, so the first node is representative.
+
+        Returns an empty dict if the field definition cannot be resolved (for
+        example for introspection fields), since those carry no strawberry
+        arguments.
         """
         raw_info = self._raw_info
         field_node = raw_info.field_nodes[0]
-        field_def = raw_info.parent_type.fields[raw_info.field_name]
+        field_def = raw_info.parent_type.fields.get(raw_info.field_name)
+        if field_def is None:
+            return {}
+
         raw_args = get_argument_values(field_def, field_node, raw_info.variable_values)
 
         schema_converter = self.schema.schema_converter
