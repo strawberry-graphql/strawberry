@@ -28,48 +28,14 @@ app = GraphQL(
 )
 ```
 
-Clients then request a stream by sending a normal GraphQL request with
-`Accept: text/event-stream`. Strawberry sends each result as a `next` event and
-a `complete` event when the operation finishes, with comment heartbeats on idle
-streams. Queries, mutations, subscriptions, and `@defer`/`@stream` are all
-supported. It works on the async streaming-capable integrations (ASGI, FastAPI,
-AIOHTTP, Litestar, Quart, Sanic, async Django, and async Channels).
-
-SSE uses normal HTTP requests, so reconnection is handled in userland: read the
-client's `Last-Event-ID` header from the request (available in the context) and
-resume from it in your resolver. Strawberry never buffers or replays results
-itself.
-
-Because each subscription holds open one HTTP response, prefer HTTP/2 in
-production. Browsers cap concurrent HTTP/1.1 connections per origin, and servers
-like `uvicorn` only speak HTTP/1.1 unless a reverse proxy terminates HTTP/2 in
-front. See the
+Clients request a stream with `Accept: text/event-stream`. Queries, mutations,
+subscriptions, and `@defer`/`@stream` are all supported on the async
+streaming-capable integrations (ASGI, FastAPI, AIOHTTP, Litestar, Quart, Sanic,
+async Django, and async Channels). See the
 [SSE subscriptions docs](https://strawberry.rocks/docs/general/subscriptions#using-sse-subscriptions)
-for details.
+for client setup, reconnection, and deployment notes (prefer HTTP/2).
 
 **Breaking change: multipart subscriptions are now opt-in.** Streaming
 transports are selected from `subscription_protocols`, so multipart
-subscriptions — previously served for any `Accept: multipart/mixed` request
-regardless of configuration — now require `MULTIPART_SUBSCRIPTION_PROTOCOL` to
-be listed explicitly:
-
-```python
-from strawberry.subscriptions import (
-    GRAPHQL_TRANSPORT_WS_PROTOCOL,
-    GRAPHQL_WS_PROTOCOL,
-    MULTIPART_SUBSCRIPTION_PROTOCOL,
-)
-
-app = GraphQL(
-    schema,
-    subscription_protocols=[
-        GRAPHQL_TRANSPORT_WS_PROTOCOL,
-        GRAPHQL_WS_PROTOCOL,
-        MULTIPART_SUBSCRIPTION_PROTOCOL,
-    ],
-)
-```
-
-Enabling SSE also no longer leaks `graphql-sse` into WebSocket subprotocol
-negotiation: the WebSocket handshake only advertises the WebSocket subprotocols
-from `subscription_protocols`.
+subscriptions — previously served for any `Accept: multipart/mixed` request —
+now require `MULTIPART_SUBSCRIPTION_PROTOCOL` to be listed there explicitly.

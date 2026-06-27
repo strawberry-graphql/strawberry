@@ -448,6 +448,39 @@ async def test_sse_query_permission_errors(http_client: HttpClient):
     assert events[1] == ("complete", "")
 
 
+async def test_sse_calls_handle_errors(http_client: HttpClient, mocker):
+    """Errors delivered over an SSE stream must still reach the view-level
+    ``_handle_errors`` hook (used by integrations such as Sentry), the same way
+    they do for a normal HTTP response."""
+    async_mock = mocker.patch(
+        "strawberry.http.async_base_view.AsyncBaseHTTPView._handle_errors"
+    )
+
+    response = await http_client.query(
+        query="{ hey }",
+        headers={
+            "accept": "text/event-stream",
+            "content-type": "application/json",
+        },
+    )
+
+    assert_sse_response(response)
+    events = parse_sse_events(await get_response_text(response))
+    event, payload = events[0]
+    assert event == "next"
+    assert isinstance(payload, dict)
+    assert (
+        payload["errors"][0]["message"] == "Cannot query field 'hey' on type 'Query'."
+    )
+
+    assert async_mock.called
+    errors, response_data = async_mock.call_args[0]
+    assert errors[0].message == "Cannot query field 'hey' on type 'Query'."
+    assert response_data["errors"][0]["message"] == (
+        "Cannot query field 'hey' on type 'Query'."
+    )
+
+
 async def test_sse_subscription_resolver_exception_completes_stream(
     http_client: HttpClient,
 ):

@@ -512,6 +512,9 @@ class AsyncBaseHTTPView(
             initial_response["pending"] = [p.formatted for p in value.pending]
             initial_response["extensions"] = value.extensions
 
+            if value.errors:
+                self._handle_errors(value.errors, initial_response)
+
             return initial_response, list(value.pending)
 
         if isinstance(value, SubsequentIncrementalExecutionResult):
@@ -552,7 +555,12 @@ class AsyncBaseHTTPView(
 
             return subsequent_response, all_pending
 
-        return await self.process_result(request, value), all_pending
+        processed_result = await self.process_result(request, value)
+
+        if value.errors:
+            self._handle_errors(value.errors, processed_result)
+
+        return processed_result, all_pending
 
     async def parse_multipart_subscriptions(
         self, request: AsyncHTTPRequestAdapter
