@@ -162,8 +162,9 @@ class SSETransport(HTTPStreamTransport):
     headers: ClassVar[Mapping[str, str]] = {
         # SSE streams are identified by this media type.
         "Content-Type": "text/event-stream",
-        # Avoid serving a cached response for a long-lived event stream.
-        "Cache-Control": "no-cache",
+        # Avoid serving a cached response for a long-lived event stream, and
+        # stop intermediaries from compressing or otherwise transforming it.
+        "Cache-Control": "no-cache, no-transform",
         # Ask Nginx not to buffer SSE chunks so heartbeats flush promptly.
         "X-Accel-Buffering": "no",
     }

@@ -248,6 +248,14 @@ Strawberry also sends SSE comment heartbeats on idle streams. SSE clients ignore
 comment lines, but they keep intermediaries from closing long-lived connections
 that have not produced a GraphQL result recently.
 
+SSE responses are sent with `Cache-Control: no-cache, no-transform` and
+`X-Accel-Buffering: no` so that Nginx and similar proxies do not buffer or
+compress the stream. Response-compression middleware running inside your own
+application — such as Starlette/FastAPI's `GZipMiddleware` or a brotli
+middleware — buffers the response before it reaches those proxies and will break
+real-time delivery and heartbeats regardless of these headers. Exclude your
+GraphQL/SSE routes from such middleware.
+
 ### Limitations
 
 <Note>

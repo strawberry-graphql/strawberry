@@ -160,8 +160,6 @@ class SyncBaseHTTPView(
         if transport:
             raise HTTPException(400, transport.sync_not_supported_error)
 
-        protocol = transport.protocol if transport else "http"
-
         if request.method == "GET":
             data = self.parse_query_params(request.query_params)
         elif "application/json" in content_type:
@@ -177,7 +175,8 @@ class SyncBaseHTTPView(
             raise HTTPException(400, "Unsupported content type")
 
         if isinstance(data, list):
-            self._validate_batch_request(data, protocol=protocol)
+            # Sync views never stream, so any batch is always plain HTTP.
+            self._validate_batch_request(data, protocol="http")
             return [
                 GraphQLRequestData(
                     query=item.get("query"),

@@ -192,7 +192,7 @@ async def test_sse_subscription(
 
     assert response.status_code == 200
     assert response.headers["content-type"].startswith("text/event-stream")
-    assert response.headers["cache-control"] == "no-cache"
+    assert response.headers["cache-control"] == "no-cache, no-transform"
     assert response.headers["x-accel-buffering"] == "no"
     assert parse_sse_events(await get_response_text(response)) == [
         (
