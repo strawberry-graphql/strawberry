@@ -30,7 +30,6 @@ Multipart subscriptions are opt-in. Enable them by including
 from strawberry.fastapi import GraphQLRouter
 from strawberry.subscriptions import (
     GRAPHQL_TRANSPORT_WS_PROTOCOL,
-    GRAPHQL_WS_PROTOCOL,
     MULTIPART_SUBSCRIPTION_PROTOCOL,
 )
 
@@ -40,7 +39,6 @@ graphql_router = GraphQLRouter(
     schema,
     subscription_protocols=[
         GRAPHQL_TRANSPORT_WS_PROTOCOL,
-        GRAPHQL_WS_PROTOCOL,
         MULTIPART_SUBSCRIPTION_PROTOCOL,
     ],
 )
