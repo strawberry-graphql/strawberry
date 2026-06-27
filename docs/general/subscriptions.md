@@ -228,11 +228,21 @@ const dispose = client.subscribe(
 dispose();
 ```
 
-Strawberry uses one SSE response per operation. When browsers connect over
-HTTP/1.x, they usually allow only a small number of concurrent connections to
-the same origin, so multiple long-lived subscriptions across tabs can exhaust
-that limit. Prefer HTTP/2 for SSE deployments that need several concurrent
-streams, or use websockets when HTTP/2 is not available.
+<Note>
+
+**Prefer HTTP/2 for SSE.** Strawberry uses one SSE response per operation. When
+browsers connect over HTTP/1.x they allow only a small number of concurrent
+connections to the same origin (commonly six), so multiple long-lived
+subscriptions — across tabs, or alongside other requests to the same origin —
+can exhaust that limit and stall the page. HTTP/2 multiplexes many streams over
+a single connection and removes this bottleneck.
+
+Most ASGI servers, including `uvicorn`, serve HTTP/1.1 only, so HTTP/2 is
+typically provided by a reverse proxy (such as Nginx, Caddy, or a cloud load
+balancer) terminating in front of your app. If you cannot run HTTP/2, prefer
+websockets for subscriptions that need several concurrent streams.
+
+</Note>
 
 Strawberry also sends SSE comment heartbeats on idle streams. SSE clients ignore
 comment lines, but they keep intermediaries from closing long-lived connections
