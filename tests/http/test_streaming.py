@@ -6,6 +6,7 @@ from strawberry.http.streaming import (
     MultipartSubscriptionTransport,
     MultipartTransport,
 )
+from strawberry.subscriptions import MULTIPART_SUBSCRIPTION_PROTOCOL
 
 
 def test_multipart_transport_encode_multipart_data_uses_utf8_byte_length() -> None:
@@ -86,8 +87,9 @@ def test_base_view_caches_stream_transport_map() -> None:
             type(self).calls += 1
 
     class MockView(BaseView[object]):
-        stream_transport_classes = {
-            MockTransport.protocol: MockTransport,
+        protocols = (MULTIPART_SUBSCRIPTION_PROTOCOL,)
+        stream_transport_classes_by_protocol = {
+            MULTIPART_SUBSCRIPTION_PROTOCOL: MockTransport,
         }
 
     view = MockView()
@@ -106,3 +108,32 @@ def test_base_view_caches_stream_transport_map() -> None:
         {"boundary": "graphql", "subscriptionspec": "1.0,application/json"},
     )
     assert MockTransport.calls == 1
+
+
+def test_base_view_only_instantiates_enabled_stream_transports() -> None:
+    class MockTransport(MultipartSubscriptionTransport):
+        calls = 0
+
+        def __init__(self) -> None:
+            super().__init__()
+            type(self).calls += 1
+
+    class MockView(BaseView[object]):
+        stream_transport_classes_by_protocol = {
+            MULTIPART_SUBSCRIPTION_PROTOCOL: MockTransport,
+        }
+
+    view = MockView()
+
+    assert view._get_stream_transport("multipart-subscription") is None
+    assert (
+        view._get_stream_transport_from_headers(
+            {
+                "Accept": (
+                    "multipart/mixed;boundary=graphql;subscriptionSpec=1.0,application/json"
+                )
+            }
+        )
+        is None
+    )
+    assert MockTransport.calls == 0

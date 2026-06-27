@@ -155,9 +155,15 @@ class SyncBaseHTTPView(
         self, request: SyncHTTPRequestAdapter
     ) -> GraphQLRequestData | list[GraphQLRequestData]:
         content_type, params = parse_content_type(request.content_type or "")
+
+        # A streaming subscription request (SSE or multipart, identified by its
+        # `Accept` header) needs a streaming response, which sync integrations
+        # cannot produce, so reject it up front instead of silently serving a
+        # non-streaming reply.
         transport = self._get_stream_transport_from_headers(request.headers)
 
-        protocol = transport.protocol if transport else "http"
+        if transport:
+            raise HTTPException(400, transport.sync_not_supported_error)
 
         if request.method == "GET":
             data = self.parse_query_params(request.query_params)
@@ -166,6 +172,8 @@ class SyncBaseHTTPView(
         # TODO: multipart via get?
         elif self.multipart_uploads_enabled and content_type == "multipart/form-data":
             data = self.parse_multipart(request)
+        # Same rejection as above, for a streaming request identified by its
+        # request `Content-Type` rather than its `Accept` header.
         elif transport := self._get_stream_transport_from_content_type(
             content_type, params
         ):
@@ -174,7 +182,8 @@ class SyncBaseHTTPView(
             raise HTTPException(400, "Unsupported content type")
 
         if isinstance(data, list):
-            self._validate_batch_request(data, protocol=protocol)
+            # Sync views never stream, so any batch is always plain HTTP.
+            self._validate_batch_request(data, protocol="http")
             return [
                 GraphQLRequestData(
                     query=item.get("query"),

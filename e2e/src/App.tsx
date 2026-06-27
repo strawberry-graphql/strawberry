@@ -4,11 +4,12 @@ import { ApolloProvider } from "@apollo/client/react";
 import ApolloTests from "@/components/apollo-tests";
 import {
 	MultipartTests,
+	SSETests,
 	WebSocketTests,
 } from "@/components/subscription-tests";
 import { RelayEnvironmentProvider } from "react-relay";
-import RelayTests from "./components/relay-tests";
-import { RelayEnvironment } from "./RelayEnvironment";
+import RelayTests, { RelaySSETests } from "./components/relay-tests";
+import { RelayEnvironment, RelaySSEEnvironment } from "./RelayEnvironment";
 
 const client = new ApolloClient({
 	link: new HttpLink({ uri: "/graphql" }),
@@ -20,6 +21,7 @@ const client = new ApolloClient({
 const NAV_ITEMS = [
 	{ href: "/", label: "Home", testId: "home-link" },
 	{ href: "/multipart", label: "Multipart", testId: "multipart-link" },
+	{ href: "/sse", label: "SSE", testId: "sse-link" },
 	{ href: "/ws", label: "WS", testId: "websocket-link" },
 ] as const;
 
@@ -31,6 +33,10 @@ const PAGE_META: Record<string, { title: string; subtitle: string }> = {
 	"/multipart": {
 		title: "Multipart subscriptions",
 		subtitle: "Streaming results over multipart HTTP responses.",
+	},
+	"/sse": {
+		title: "SSE subscriptions",
+		subtitle: "Streaming results over Server-Sent Events.",
 	},
 	"/ws": {
 		title: "WebSocket subscriptions",
@@ -50,11 +56,25 @@ function HomePage() {
 	);
 }
 
+function SSEPage() {
+	return (
+		<div className="flex flex-col gap-10">
+			<SSETests />
+
+			<RelayEnvironmentProvider environment={RelaySSEEnvironment}>
+				<RelaySSETests />
+			</RelayEnvironmentProvider>
+		</div>
+	);
+}
+
 function App() {
 	const path = window.location.pathname;
 	const page =
 		path === "/multipart" ? (
 			<MultipartTests />
+		) : path === "/sse" ? (
+			<SSEPage />
 		) : path === "/ws" ? (
 			<WebSocketTests />
 		) : (

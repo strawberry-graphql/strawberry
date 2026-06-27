@@ -19,6 +19,7 @@
     "clsx": "^2.1.1",
     "graphql": "^17.0.1",
     "graphql-http": "^1.22.4",
+    "graphql-sse": "^2.6.0",
     "graphql-ws": "^6.0.8",
     "lucide-react": "^1.7.0",
     "react": "^19.1.0",

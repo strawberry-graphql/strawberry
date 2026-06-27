@@ -6,12 +6,14 @@ import pytest
 import strawberry
 from strawberry.http.base import BaseView
 from strawberry.schema.config import StrawberryConfig
+from strawberry.subscriptions import MULTIPART_SUBSCRIPTION_PROTOCOL
 from tests.http.clients.base import HttpClient
 from tests.views.schema import Mutation, MyExtension, Query, Subscription, schema
 
 
-@pytest.fixture
-def http_client(http_client_class: type[HttpClient]) -> HttpClient:
+def skip_if_multipart_subscriptions_not_supported(
+    http_client_class: type[HttpClient],
+) -> None:
     with contextlib.suppress(ImportError):
         import django
 
@@ -56,7 +58,15 @@ def http_client(http_client_class: type[HttpClient]) -> HttpClient:
                 reason="ChaliceHttpClient doesn't support multipart subscriptions"
             )
 
-    return http_client_class(schema=schema)
+
+@pytest.fixture
+def http_client(http_client_class: type[HttpClient]) -> HttpClient:
+    skip_if_multipart_subscriptions_not_supported(http_client_class)
+
+    return http_client_class(
+        schema=schema,
+        subscription_protocols=(MULTIPART_SUBSCRIPTION_PROTOCOL,),
+    )
 
 
 @pytest.mark.parametrize("method", ["get", "post"])
@@ -156,6 +166,8 @@ async def test_multipart_subscription_returns_error_for_query_operation(
 async def test_returns_error_when_trying_to_use_batching_with_multipart_subscriptions(
     http_client_class: type[HttpClient],
 ):
+    skip_if_multipart_subscriptions_not_supported(http_client_class)
+
     http_client = http_client_class(
         schema=strawberry.Schema(
             query=Query,
@@ -163,7 +175,8 @@ async def test_returns_error_when_trying_to_use_batching_with_multipart_subscrip
             subscription=Subscription,
             extensions=[MyExtension],
             config=StrawberryConfig(batching_config={"max_operations": 10}),
-        )
+        ),
+        subscription_protocols=(MULTIPART_SUBSCRIPTION_PROTOCOL,),
     )
 
     response = await http_client.post(

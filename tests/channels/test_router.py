@@ -2,6 +2,11 @@ from unittest import mock
 
 import pytest
 
+from strawberry.subscriptions import (
+    GRAPHQL_SSE_PROTOCOL,
+    GRAPHQL_TRANSPORT_WS_PROTOCOL,
+    GRAPHQL_WS_PROTOCOL,
+)
 from tests.views.schema import schema
 
 
@@ -21,8 +26,25 @@ def test_included_paths(ws_asgi: mock.Mock, http_asgi: mock.Mock, pattern: str):
     ws_ret = _fake_asgi()
     ws_asgi.return_value = ws_ret
 
-    router = GraphQLProtocolTypeRouter(schema, url_pattern=pattern)
+    protocols = (
+        GRAPHQL_TRANSPORT_WS_PROTOCOL,
+        GRAPHQL_WS_PROTOCOL,
+        GRAPHQL_SSE_PROTOCOL,
+    )
+    router = GraphQLProtocolTypeRouter(
+        schema,
+        url_pattern=pattern,
+        subscription_protocols=protocols,
+    )
     assert set(router.application_mapping) == {"http", "websocket"}
+    http_asgi.assert_called_once_with(
+        schema=schema,
+        subscription_protocols=protocols,
+    )
+    ws_asgi.assert_called_once_with(
+        schema=schema,
+        subscription_protocols=protocols,
+    )
 
     assert len(router.application_mapping["http"].routes) == 1
     http_route = router.application_mapping["http"].routes[0]
@@ -52,12 +74,26 @@ def test_included_paths_with_django_app(
     ws_asgi.return_value = ws_ret
 
     django_app = _fake_asgi()
+    protocols = (
+        GRAPHQL_TRANSPORT_WS_PROTOCOL,
+        GRAPHQL_WS_PROTOCOL,
+        GRAPHQL_SSE_PROTOCOL,
+    )
     router = GraphQLProtocolTypeRouter(
         schema,
         django_application=django_app,
         url_pattern=pattern,
+        subscription_protocols=protocols,
     )
     assert set(router.application_mapping) == {"http", "websocket"}
+    http_asgi.assert_called_once_with(
+        schema=schema,
+        subscription_protocols=protocols,
+    )
+    ws_asgi.assert_called_once_with(
+        schema=schema,
+        subscription_protocols=protocols,
+    )
 
     assert len(router.application_mapping["http"].routes) == 2
     http_route = router.application_mapping["http"].routes[0]
