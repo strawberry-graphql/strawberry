@@ -8,7 +8,6 @@ import pytest
 
 import strawberry
 from strawberry.exceptions import ConnectionRejectionError
-from strawberry.http.async_base_view import AsyncBaseHTTPView
 from strawberry.http.base import BaseView
 from strawberry.http.streaming import SSETransport
 from strawberry.schema.config import StrawberryConfig

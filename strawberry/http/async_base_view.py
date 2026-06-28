@@ -669,7 +669,8 @@ class AsyncBaseHTTPView(
     ) -> None:
         """Populate ``connection_params`` on the context from the SSE request's
         ``Authorization`` header, so SSE resolvers can reuse WebSocket auth code
-        that reads ``context["connection_params"]["authorization"]``."""
+        that reads ``context["connection_params"]["authorization"]``.
+        """
         headers = {k.lower(): v for k, v in request_adapter.headers.items()}
         connection_params: dict[str, Any] = {}
 

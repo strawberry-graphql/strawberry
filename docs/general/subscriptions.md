@@ -158,19 +158,13 @@ server-to-client streaming. SSE is opt-in; enable it by including
 
 ```python
 from strawberry.asgi import GraphQL
-from strawberry.subscriptions import (
-    GRAPHQL_SSE_PROTOCOL,
-    GRAPHQL_TRANSPORT_WS_PROTOCOL
-)
+from strawberry.subscriptions import GRAPHQL_SSE_PROTOCOL, GRAPHQL_TRANSPORT_WS_PROTOCOL
 
 from api.schema import schema
 
 app = GraphQL(
     schema,
-    subscription_protocols=[
-        GRAPHQL_TRANSPORT_WS_PROTOCOL,
-        GRAPHQL_SSE_PROTOCOL
-    ],
+    subscription_protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_SSE_PROTOCOL],
 )
 ```
 
@@ -291,8 +285,8 @@ authentication in the browser.
 
 Use your integration's `get_context` hook for SSE authentication, like you would
 for queries and mutations. Strawberry also mirrors the `Authorization` header
-into `context["connection_params"]["authorization"]` for parity with
-WebSocket subscriptions, so a single resolver can serve both transports:
+into `context["connection_params"]["authorization"]` for parity with WebSocket
+subscriptions, so a single resolver can serve both transports:
 
 ```python
 from starlette.requests import Request
@@ -574,18 +568,12 @@ accepted. Multipart subscriptions and SSE are opt-in.
 
 ```python
 from strawberry.aiohttp.views import GraphQLView
-from strawberry.subscriptions import (
-    GRAPHQL_SSE_PROTOCOL,
-    GRAPHQL_TRANSPORT_WS_PROTOCOL
-)
+from strawberry.subscriptions import GRAPHQL_SSE_PROTOCOL, GRAPHQL_TRANSPORT_WS_PROTOCOL
 from api.schema import schema
 
 view = GraphQLView(
     schema,
-    subscription_protocols=[
-        GRAPHQL_TRANSPORT_WS_PROTOCOL,
-        GRAPHQL_SSE_PROTOCOL
-    ],
+    subscription_protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_SSE_PROTOCOL],
 )
 ```
 
@@ -615,10 +603,7 @@ import os
 
 from django.core.asgi import get_asgi_application
 from strawberry.channels import GraphQLProtocolTypeRouter
-from strawberry.subscriptions import (
-    GRAPHQL_SSE_PROTOCOL,
-    GRAPHQL_TRANSPORT_WS_PROTOCOL
-)
+from strawberry.subscriptions import GRAPHQL_SSE_PROTOCOL, GRAPHQL_TRANSPORT_WS_PROTOCOL
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "mysite.settings")
 django_asgi_app = get_asgi_application()
@@ -648,7 +633,6 @@ from strawberry.fastapi import GraphQLRouter
 from strawberry.subscriptions import (
     GRAPHQL_SSE_PROTOCOL,
     GRAPHQL_TRANSPORT_WS_PROTOCOL,
-
 )
 from fastapi import FastAPI
 from api.schema import schema
