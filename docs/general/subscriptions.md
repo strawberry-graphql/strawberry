@@ -160,8 +160,7 @@ server-to-client streaming. SSE is opt-in; enable it by including
 from strawberry.asgi import GraphQL
 from strawberry.subscriptions import (
     GRAPHQL_SSE_PROTOCOL,
-    GRAPHQL_TRANSPORT_WS_PROTOCOL,
-    GRAPHQL_WS_PROTOCOL,
+    GRAPHQL_TRANSPORT_WS_PROTOCOL
 )
 
 from api.schema import schema
@@ -170,8 +169,7 @@ app = GraphQL(
     schema,
     subscription_protocols=[
         GRAPHQL_TRANSPORT_WS_PROTOCOL,
-        GRAPHQL_WS_PROTOCOL,
-        GRAPHQL_SSE_PROTOCOL,
+        GRAPHQL_SSE_PROTOCOL
     ],
 )
 ```
@@ -292,7 +290,9 @@ parameters, or a `fetch`-based GraphQL SSE client when you need header-based
 authentication in the browser.
 
 Use your integration's `get_context` hook for SSE authentication, like you would
-for queries and mutations:
+for queries and mutations. Strawberry also mirrors the `Authorization` header
+into `context["connection_params"]["authorization"]` for parity with
+WebSocket subscriptions, so a single resolver can serve both transports:
 
 ```python
 from starlette.requests import Request
@@ -327,7 +327,8 @@ class Subscription:
     async def count(
         self, info: strawberry.Info, target: int = 100
     ) -> AsyncGenerator[int, None]:
-        token = info.context["token"]
+        # Works for both WebSocket and SSE subscriptions
+        token = info.context["connection_params"]["authorization"]
         if not authenticate_token(token):
             raise Exception("Forbidden!")
 
@@ -336,9 +337,23 @@ class Subscription:
             await asyncio.sleep(0.5)
 ```
 
-`on_ws_connect` and `connection_params` are websocket-specific APIs. SSE does
-not have a separate connection initialisation message, so Strawberry does not
-call a separate SSE connect hook.
+To accept or reject an SSE connection at the transport level, override the
+`on_sse_connect` hook on your view. Raise `ConnectionRejectionError` to reject;
+the client receives an SSE `error` event followed by `complete`:
+
+```python
+from strawberry.exceptions import ConnectionRejectionError
+from strawberry.asgi import GraphQL
+
+
+class AuthenticatedGraphQL(GraphQL):
+    async def on_sse_connect(self, context):
+        token = context["connection_params"].get("authorization")
+        if not authenticate_token(token):
+            raise ConnectionRejectionError(
+                {"message": "Invalid token", "code": "INVALID_TOKEN"}
+            )
+```
 
 ### Resuming after a reconnect
 
@@ -561,8 +576,7 @@ accepted. Multipart subscriptions and SSE are opt-in.
 from strawberry.aiohttp.views import GraphQLView
 from strawberry.subscriptions import (
     GRAPHQL_SSE_PROTOCOL,
-    GRAPHQL_TRANSPORT_WS_PROTOCOL,
-    GRAPHQL_WS_PROTOCOL,
+    GRAPHQL_TRANSPORT_WS_PROTOCOL
 )
 from api.schema import schema
 
@@ -570,8 +584,7 @@ view = GraphQLView(
     schema,
     subscription_protocols=[
         GRAPHQL_TRANSPORT_WS_PROTOCOL,
-        GRAPHQL_WS_PROTOCOL,
-        GRAPHQL_SSE_PROTOCOL,
+        GRAPHQL_SSE_PROTOCOL
     ],
 )
 ```
@@ -583,7 +596,6 @@ from strawberry.asgi import GraphQL
 from strawberry.subscriptions import (
     GRAPHQL_SSE_PROTOCOL,
     GRAPHQL_TRANSPORT_WS_PROTOCOL,
-    GRAPHQL_WS_PROTOCOL,
 )
 from api.schema import schema
 
@@ -591,7 +603,6 @@ app = GraphQL(
     schema,
     subscription_protocols=[
         GRAPHQL_TRANSPORT_WS_PROTOCOL,
-        GRAPHQL_WS_PROTOCOL,
         GRAPHQL_SSE_PROTOCOL,
     ],
 )
@@ -606,8 +617,7 @@ from django.core.asgi import get_asgi_application
 from strawberry.channels import GraphQLProtocolTypeRouter
 from strawberry.subscriptions import (
     GRAPHQL_SSE_PROTOCOL,
-    GRAPHQL_TRANSPORT_WS_PROTOCOL,
-    GRAPHQL_WS_PROTOCOL,
+    GRAPHQL_TRANSPORT_WS_PROTOCOL
 )
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "mysite.settings")
@@ -623,7 +633,6 @@ application = GraphQLProtocolTypeRouter(
     django_application=django_asgi_app,
     subscription_protocols=[
         GRAPHQL_TRANSPORT_WS_PROTOCOL,
-        GRAPHQL_WS_PROTOCOL,
         GRAPHQL_SSE_PROTOCOL,
     ],
 )
@@ -639,7 +648,7 @@ from strawberry.fastapi import GraphQLRouter
 from strawberry.subscriptions import (
     GRAPHQL_SSE_PROTOCOL,
     GRAPHQL_TRANSPORT_WS_PROTOCOL,
-    GRAPHQL_WS_PROTOCOL,
+
 )
 from fastapi import FastAPI
 from api.schema import schema
@@ -648,7 +657,6 @@ graphql_router = GraphQLRouter(
     schema,
     subscription_protocols=[
         GRAPHQL_TRANSPORT_WS_PROTOCOL,
-        GRAPHQL_WS_PROTOCOL,
         GRAPHQL_SSE_PROTOCOL,
     ],
 )
@@ -664,7 +672,6 @@ from strawberry.quart.views import GraphQLView
 from strawberry.subscriptions import (
     GRAPHQL_SSE_PROTOCOL,
     GRAPHQL_TRANSPORT_WS_PROTOCOL,
-    GRAPHQL_WS_PROTOCOL,
 )
 from quart import Quart
 from api.schema import schema
@@ -674,7 +681,6 @@ view = GraphQLView.as_view(
     schema=schema,
     subscription_protocols=[
         GRAPHQL_TRANSPORT_WS_PROTOCOL,
-        GRAPHQL_WS_PROTOCOL,
         GRAPHQL_SSE_PROTOCOL,
     ],
 )

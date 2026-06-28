@@ -7,6 +7,8 @@ from typing import Literal
 import pytest
 
 import strawberry
+from strawberry.exceptions import ConnectionRejectionError
+from strawberry.http.async_base_view import AsyncBaseHTTPView
 from strawberry.http.base import BaseView
 from strawberry.http.streaming import SSETransport
 from strawberry.schema.config import StrawberryConfig
@@ -887,3 +889,161 @@ async def test_sse_stream_directive(http_client: HttpClient):
         },
     )
     assert events[-1] == ("complete", "")
+
+
+async def test_sse_injects_authorization_header_as_connection_params(
+    http_client: HttpClient,
+):
+    """The ``Authorization`` header is mirrored into
+    ``context["connection_params"]["authorization"]`` so SSE resolvers can reuse
+    WebSocket auth code."""
+    response = await http_client.query(
+        query="subscription { connectionParams }",
+        headers={
+            "accept": "text/event-stream",
+            "content-type": "application/json",
+            "Authorization": "Bearer strawberry",
+        },
+    )
+
+    assert_sse_response(response)
+    assert parse_sse_events(await get_response_text(response)) == [
+        (
+            "next",
+            {
+                "data": {"connectionParams": {"authorization": "Bearer strawberry"}},
+                "extensions": {"example": "example"},
+            },
+        ),
+        ("complete", ""),
+    ]
+
+
+async def test_sse_connection_params_empty_without_authorization_header(
+    http_client: HttpClient,
+):
+    """When no ``Authorization`` header is present, ``connection_params`` is an
+    empty dict rather than absent."""
+    response = await http_client.query(
+        query="subscription { connectionParams }",
+        headers={
+            "accept": "text/event-stream",
+            "content-type": "application/json",
+        },
+    )
+
+    assert_sse_response(response)
+    assert parse_sse_events(await get_response_text(response)) == [
+        (
+            "next",
+            {
+                "data": {"connectionParams": {}},
+                "extensions": {"example": "example"},
+            },
+        ),
+        ("complete", ""),
+    ]
+
+
+async def test_sse_connect_rejection_returns_error_event(
+    http_client: HttpClient, mocker
+):
+    """Raising ``ConnectionRejectionError`` from ``on_sse_connect`` emits an SSE
+    ``error`` event followed by ``complete``."""
+
+    async def reject(self, context: object) -> None:
+        raise ConnectionRejectionError
+
+    mocker.patch(
+        "strawberry.http.async_base_view.AsyncBaseHTTPView.on_sse_connect", reject
+    )
+
+    response = await http_client.query(
+        query="subscription { connectionParams }",
+        headers={
+            "accept": "text/event-stream",
+            "content-type": "application/json",
+        },
+    )
+
+    assert_sse_response(response)
+    events = parse_sse_events(await get_response_text(response))
+    assert len(events) == 2
+
+    event, payload = events[0]
+    assert event == "error"
+    assert isinstance(payload, list)
+    assert payload[0]["message"] == "Forbidden"
+    assert payload[0]["extensions"]["code"] == "FORBIDDEN"
+    assert events[1] == ("complete", "")
+
+
+async def test_sse_connect_with_custom_rejection_payload(
+    http_client: HttpClient, mocker
+):
+    """A ``ConnectionRejectionError`` with a custom payload surfaces its message
+    and code in the error event."""
+
+    async def reject(self, context: object) -> None:
+        raise ConnectionRejectionError(
+            {"message": "Token expired", "code": "TOKEN_EXPIRED"}
+        )
+
+    mocker.patch(
+        "strawberry.http.async_base_view.AsyncBaseHTTPView.on_sse_connect", reject
+    )
+
+    response = await http_client.query(
+        query="subscription { connectionParams }",
+        headers={
+            "accept": "text/event-stream",
+            "content-type": "application/json",
+        },
+    )
+
+    assert_sse_response(response)
+    events = parse_sse_events(await get_response_text(response))
+    assert len(events) == 2
+
+    event, payload = events[0]
+    assert event == "error"
+    assert isinstance(payload, list)
+    assert payload[0]["message"] == "Token expired"
+    assert payload[0]["extensions"]["code"] == "TOKEN_EXPIRED"
+    assert events[1] == ("complete", "")
+
+
+async def test_sse_connect_acceptance_proceeds_normally(
+    http_client: HttpClient, mocker
+):
+    """When ``on_sse_connect`` returns without raising, the stream proceeds as
+    normal."""
+    hook_calls: list[object] = []
+
+    async def accept(self, context: object) -> None:
+        hook_calls.append(context)
+
+    mocker.patch(
+        "strawberry.http.async_base_view.AsyncBaseHTTPView.on_sse_connect", accept
+    )
+
+    response = await http_client.query(
+        query='subscription { echo(message: "Hello world") }',
+        headers={
+            "accept": "text/event-stream",
+            "content-type": "application/json",
+        },
+    )
+
+    assert_sse_response(response)
+    assert parse_sse_events(await get_response_text(response)) == [
+        (
+            "next",
+            {
+                "data": {"echo": "Hello world"},
+                "extensions": {"example": "example"},
+            },
+        ),
+        ("complete", ""),
+    ]
+    assert len(hook_calls) == 1

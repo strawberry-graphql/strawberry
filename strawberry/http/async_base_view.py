@@ -14,7 +14,7 @@ from typing import (
 from cross_web import AsyncHTTPRequestAdapter, HTTPException
 from graphql import GraphQLError
 
-from strawberry.exceptions import MissingQueryError
+from strawberry.exceptions import ConnectionRejectionError, MissingQueryError
 from strawberry.file_uploads.utils import replace_placeholders_with_files
 from strawberry.http import (
     GraphQLHTTPResponse,
@@ -48,6 +48,7 @@ from .streaming import (
     AsyncTextStream,
     HTTPStreamTransport,
     MultipartTransport,
+    SSETransport,
     merge_stream_with_heartbeat,
 )
 from .typevars import (
@@ -399,6 +400,24 @@ class AsyncBaseHTTPView(
             # Only single (non-batch) operations stream; a batch with a
             # streaming transport is rejected while parsing.
             assert isinstance(request_data, GraphQLRequestData)
+
+            if request_data.protocol == "sse":
+                self._inject_sse_connection_params(context, request_adapter)
+
+                try:
+                    await self.on_sse_connect(context)
+                except ConnectionRejectionError as e:
+                    payload = e.payload or {
+                        "message": "Forbidden",
+                        "code": "FORBIDDEN",
+                    }
+                    return await self._create_sse_error_response(
+                        request=request,
+                        sub_response=sub_response,
+                        message=str(payload.get("message", "Forbidden")),
+                        code=str(payload.get("code", "FORBIDDEN")),
+                    )
+
             return await self._create_streaming_response(
                 request=request,
                 result=result,
@@ -637,6 +656,56 @@ class AsyncBaseHTTPView(
         self, context: Context
     ) -> UnsetType | None | dict[str, object]:
         return UNSET
+
+    async def on_sse_connect(
+        self, context: Context
+    ) -> UnsetType | None | dict[str, object]:
+        return UNSET
+
+    def _inject_sse_connection_params(
+        self,
+        context: Context,
+        request_adapter: AsyncHTTPRequestAdapter,
+    ) -> None:
+        """Populate ``connection_params`` on the context from the SSE request's
+        ``Authorization`` header, so SSE resolvers can reuse WebSocket auth code
+        that reads ``context["connection_params"]["authorization"]``."""
+        headers = {k.lower(): v for k, v in request_adapter.headers.items()}
+        connection_params: dict[str, Any] = {}
+
+        if "authorization" in headers:
+            connection_params["authorization"] = headers["authorization"]
+
+        if isinstance(context, dict):
+            context["connection_params"] = connection_params
+        elif hasattr(context, "connection_params"):
+            context.connection_params = connection_params
+
+    async def _create_sse_error_response(
+        self,
+        request: Request,
+        sub_response: SubResponse,
+        *,
+        message: str,
+        code: str,
+    ) -> Response:
+        transport = self._get_stream_transport("sse")
+        assert isinstance(transport, SSETransport)
+
+        encoded_errors = self.encode_json_string(
+            [{"message": message, "extensions": {"code": code}}]
+        )
+
+        async def error_stream() -> AsyncGenerator[str, None]:
+            yield transport.encode_event("error", encoded_errors)
+            yield transport.encode_complete()
+
+        return await self.create_streaming_response(
+            request,
+            error_stream,
+            sub_response,
+            headers=transport.headers,
+        )
 
 
 __all__ = ["AsyncBaseHTTPView"]
