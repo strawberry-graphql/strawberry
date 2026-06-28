@@ -161,10 +161,10 @@ release type: patch
 social_messages:
   x: >-
     {project_name} {version} is out! This release fixes schema printing for
-    nullable input defaults. https://strawberry.rocks/release/{version}
+    nullable input defaults. 🍓 https://strawberry.rocks/release/{version}
   linkedin: >-
     {project_name} {version} is out. This release fixes schema printing for
-    nullable input defaults so generated SDL now keeps explicit null values.
+    nullable input defaults, so generated SDL now keeps explicit null values.
 ---
 
 This release fixes schema printing for nullable input defaults.
@@ -180,5 +180,7 @@ doubt feel free to ask.
 Release notes should start with `This release adds ...` or
 `This release fixes ...` and should explain the user-visible behavior first.
 Include social messages for X and LinkedIn so the release announcement reads
-well on each platform. X messages must include the website release URL template:
+well on each platform. They should read like natural release announcements,
+start with `{project_name} {version} is out`, and explain what changed and who
+benefits. X messages must include the website release URL template:
 `https://strawberry.rocks/release/{version}`.
