@@ -1,6 +1,7 @@
 import abc
 import asyncio
 import json
+import warnings
 from collections.abc import AsyncGenerator, Callable, Mapping, Sequence
 from datetime import timedelta
 from typing import (
@@ -657,20 +658,19 @@ class AsyncBaseHTTPView(
     ) -> UnsetType | None | dict[str, object]:
         return UNSET
 
-    async def on_sse_connect(
-        self, context: Context
-    ) -> UnsetType | None | dict[str, object]:
-        return UNSET
+    async def on_sse_connect(self, context: Context) -> None:
+        """Override to perform validation before an SSE stream begins.
+
+        Raise :exc:`~strawberry.exceptions.ConnectionRejectionError` to reject
+        the connection. The return value is ignored.
+        """
+        return
 
     def _inject_sse_connection_params(
         self,
         context: Context,
         request_adapter: AsyncHTTPRequestAdapter,
     ) -> None:
-        """Populate ``connection_params`` on the context from the SSE request's
-        ``Authorization`` header, so SSE resolvers can reuse WebSocket auth code
-        that reads ``context["connection_params"]["authorization"]``.
-        """
         headers = {k.lower(): v for k, v in request_adapter.headers.items()}
         connection_params: dict[str, Any] = {}
 
@@ -681,6 +681,12 @@ class AsyncBaseHTTPView(
             context["connection_params"] = connection_params
         elif hasattr(context, "connection_params"):
             context.connection_params = connection_params
+        else:
+            warnings.warn(
+                "SSE connection_params injection skipped: context is neither "
+                "a dict nor does it have a connection_params attribute.",
+                stacklevel=2,
+            )
 
     async def _create_sse_error_response(
         self,

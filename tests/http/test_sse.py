@@ -1020,7 +1020,11 @@ async def test_sse_connect_acceptance_proceeds_normally(
     hook_calls: list[object] = []
 
     async def accept(self, context: object) -> None:
+        # Record the context passed to the hook so we can assert on it after the SSE call.
         hook_calls.append(context)
+        # Strengthen the test by validating that SSE auth injection populates connection_params.
+        assert isinstance(context, dict)
+        assert "connection_params" in context
 
     mocker.patch(
         "strawberry.http.async_base_view.AsyncBaseHTTPView.on_sse_connect", accept
@@ -1031,6 +1035,7 @@ async def test_sse_connect_acceptance_proceeds_normally(
         headers={
             "accept": "text/event-stream",
             "content-type": "application/json",
+            "authorization": "Bearer strawberry",
         },
     )
 
@@ -1046,3 +1051,7 @@ async def test_sse_connect_acceptance_proceeds_normally(
         ("complete", ""),
     ]
     assert len(hook_calls) == 1
+    context = hook_calls[0]
+    assert isinstance(context, dict)
+    assert "connection_params" in context
+    assert context["connection_params"]["authorization"] == "Bearer strawberry"
