@@ -36,6 +36,11 @@ jobs:
         uses: anthropics/claude-code-action@a92e7c70a4da9793dc164451d829089dc057a464 # v1.0.159
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          # Use the workflow's built-in token to post the review comment.
+          # Avoids the OIDC -> Claude-app-token exchange, which 401s here
+          # because the org's pre-existing Claude app install isn't linked
+          # to the account behind CLAUDE_CODE_OAUTH_TOKEN.
+          github_token: ${{ secrets.GITHUB_TOKEN }}
           label_trigger: release-copy-review
           use_sticky_comment: true
           include_fix_links: false
