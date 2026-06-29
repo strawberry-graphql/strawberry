@@ -1,52 +1,85 @@
-name: Claude Code
+name: Claude release copy review
 
 on:
-  issue_comment:
-    types: [created]
-  pull_request_review_comment:
-    types: [created]
-  issues:
-    types: [opened, assigned]
-  pull_request_review:
-    types: [submitted]
+  # zizmor: ignore[dangerous-triggers] this workflow only runs after a
+  # maintainer-applied label, checks out the base branch, and gives Claude
+  # read-only tools so PR-controlled code is not executed with secrets.
+  pull_request_target:
+    types: [labeled, synchronize, reopened, ready_for_review]
+    branches:
+      - main
+
+permissions:
+  contents: read
 
 jobs:
-  claude:
+  release-copy-review:
+    name: Claude release copy review
     if: |
-      (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@claude')) ||
-      (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@claude')) ||
-      (github.event_name == 'pull_request_review' && contains(github.event.review.body, '@claude')) ||
-      (github.event_name == 'issues' && (contains(github.event.issue.body, '@claude') || contains(github.event.issue.title, '@claude')))
+      github.event.pull_request.user.type != 'Bot' &&
+      contains(github.event.pull_request.labels.*.name, 'release-copy-review')
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      pull-requests: read
-      issues: read
+      pull-requests: write
+      issues: write
       id-token: write
-      actions: read # Required for Claude to read CI results on PRs
+
     steps:
-      - name: Checkout repository
+      - name: Checkout base branch
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           fetch-depth: 1
           persist-credentials: false
 
-      - name: Run Claude Code
-        id: claude
-        uses: anthropics/claude-code-action@v1
+      - name: Review release copy
+        uses: anthropics/claude-code-action@a92e7c70a4da9793dc164451d829089dc057a464 # v1.0.159
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          label_trigger: release-copy-review
+          use_sticky_comment: true
+          include_fix_links: false
+          prompt: |
+            You are reviewing release communication for Strawberry GraphQL.
 
-          # This is an optional setting that allows Claude to read CI results on PRs
-          additional_permissions: |
-            actions: read
+            Repository: ${{ github.repository }}
+            Pull request: #${{ github.event.pull_request.number }}
+            Base branch: ${{ github.event.pull_request.base.ref }}
+            Head SHA: ${{ github.event.pull_request.head.sha }}
 
-          # Optional: Give a custom prompt to Claude. If this is not specified, Claude will perform the instructions specified in the comment that tagged it.
-          # prompt: 'Update the pull request description to include a summary of changes.'
+            Review only the release note and social announcement copy. Do not
+            review implementation correctness except to check whether the copy
+            makes unsupported claims. Do not modify files, create commits, push
+            branches, or open pull requests.
 
-          allowed_tools: |
-            Bash(pytest:*)
-            Bash(ruff:*)
-            Bash(mypy:*)
-            Bash(python:*)
-            Bash(uv:*)
+            Inspect the PR metadata and diff. Pay special attention to
+            RELEASE.md if it exists. If there is no RELEASE.md, say whether
+            that seems appropriate for this PR based on the changed files.
+
+            Check the release note against Strawberry's style:
+            - frontmatter uses "release type: patch", "minor", or "major"
+            - the body starts with "This release adds ..." or
+              "This release fixes ..."
+            - it leads with user-visible behavior rather than implementation
+              detail
+            - it avoids vague wording such as "improves support" unless the
+              exact behavior follows immediately
+
+            Check social copy when present:
+            - social_messages includes useful x and linkedin entries
+            - the X copy is no longer than 280 characters after template
+              variables are considered
+            - LinkedIn copy is clear as a standalone post
+            - neither post leaks raw Markdown link syntax like [label](url)
+
+            Leave one concise PR comment with:
+            - Status: Looks good, Needs edits, or No RELEASE.md
+            - Required edits, if any
+            - Suggested replacement snippets, only when useful
+
+            Keep the review practical and short. Do not ask maintainers to run
+            tests.
+          claude_args: |
+            --max-turns 8
+            --allowedTools Read,Bash(gh pr view:*),Bash(gh pr diff:*),Bash(gh api:*)
+            --disallowedTools Edit,Write,MultiEdit,NotebookEdit
