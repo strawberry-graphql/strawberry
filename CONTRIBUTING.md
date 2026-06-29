@@ -148,16 +148,35 @@ present, your code will not be merged.
 
 ##### RELEASE.md files
 
-When you submit a PR, make sure to include a RELEASE.md file. We use that to automatically do releases here on GitHub and, most importantly, to PyPI!
+When you submit a PR, make sure to include a RELEASE.md file. We use that to
+automatically do releases here on GitHub and, most importantly, to PyPI.
 
-So as soon as your PR is merged, a release will be made.
+As soon as your PR is merged, a release will be made.
 
 Here's an example of RELEASE.md:
 
-```text
-Release type: patch
+```markdown
+---
+release type: patch
+social_messages:
+  x: >-
+    {project_name} {version} fixes schema printing for nullable input defaults.
+  linkedin: >-
+    {project_name} {version} fixes schema printing for nullable input defaults
+    so generated SDL now keeps explicit null values.
+---
 
-Description of the changes, ideally with some examples, if adding a new feature.
+This release fixes schema printing for nullable input defaults.
+
+Strawberry now preserves explicit `None` values in printed nested input
+defaults, including fields set with `strawberry.Some(None)`.
 ```
 
-Release type can be one of patch, minor or major. We use [semver](https://semver.org/), so make sure to pick the appropriate type. If in doubt feel free to ask :)
+Release type can be one of patch, minor or major. We use
+[semver](https://semver.org/), so make sure to pick the appropriate type. If in
+doubt feel free to ask.
+
+Release notes should start with `This release adds ...` or
+`This release fixes ...` and should explain the user-visible behavior first.
+Include social messages for X and LinkedIn so the release announcement reads
+well on each platform.

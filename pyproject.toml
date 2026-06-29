@@ -188,6 +188,9 @@ plugins = [
 project-name = "Strawberry GraphQL"
 platforms = ["x", "linkedin", "bluesky", "mastodon"]
 publish-mode = "next-free-slot"
+require-social-message = true
+required-social-platforms = ["x", "linkedin"]
+require-release-note-lead = true
 
 [tool.pyright]
 # include = ["strawberry"]
