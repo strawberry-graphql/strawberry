@@ -102,5 +102,5 @@ jobs:
             tests.
           claude_args: |
             --max-turns 20
-            --allowedTools Read,Bash(gh pr view:*),Bash(gh pr diff:*),Bash(gh api:*),Bash(gh pr comment:*)
-            --disallowedTools Edit,Write,MultiEdit,NotebookEdit
+            --allowedTools "Read,Bash(gh pr view:*),Bash(gh pr diff:*),Bash(gh api:*),Bash(gh pr comment:*)"
+            --disallowedTools "Edit,Write,MultiEdit,NotebookEdit"
