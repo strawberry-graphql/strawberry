@@ -5,7 +5,7 @@ on:
   # maintainer-applied label, checks out the base branch, and gives Claude
   # read-only tools so PR-controlled code is not executed with secrets.
   pull_request_target:
-    types: [labeled, synchronize, reopened, ready_for_review]
+    types: [labeled, reopened, ready_for_review]
     branches:
       - main
 
@@ -30,6 +30,22 @@ jobs:
         with:
           fetch-depth: 1
           persist-credentials: false
+
+      - name: Clear previous inline review suggestions
+        # Release-copy reviews leave inline suggestions on RELEASE.md, which
+        # GitHub does not dedupe across runs. Delete the bot's prior ones so a
+        # re-review replaces them instead of stacking duplicates. The sticky
+        # summary is an issue comment (a different endpoint) and is untouched.
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          gh api "repos/$REPO/pulls/$PR/comments" --paginate \
+            --jq '.[] | select(.user.login == "github-actions[bot]" and .path == "RELEASE.md") | .id' \
+          | while read -r id; do
+              [ -n "$id" ] && gh api -X DELETE "repos/$REPO/pulls/comments/$id" && echo "deleted $id"
+            done
 
       - name: Review release copy
         uses: anthropics/claude-code-action@a92e7c70a4da9793dc164451d829089dc057a464 # v1.0.159
