@@ -77,30 +77,44 @@ jobs:
             - LinkedIn copy is clear as a standalone post
             - neither post leaks raw Markdown link syntax like [label](url)
 
-            Publish your review as ONE sticky PR comment. You must actually
-            post it to the PR using the tools below - do not just return it as
-            your reply, since a returned-only reply is never shown to
-            maintainers.
+            Deliver the review in up to three ways:
 
-            The comment must:
-            - start with this exact marker line: <!-- release-copy-review -->
-            - then give Status: Looks good, Needs edits, or No RELEASE.md
-            - then list required edits, if any
-            - then suggested replacement snippets, only when useful
+            1. Inline suggestions (only when RELEASE.md exists and a specific
+               line should change). Use the create_inline_comment tool to leave
+               a GitHub suggestion on the exact RELEASE.md line(s). Put the
+               replacement inside a ```suggestion block - it REPLACES the whole
+               targeted line range, so it must be a valid drop-in. RELEASE.md is
+               an added file, so comment on side RIGHT using the line numbers
+               from `gh pr diff` (the added file is numbered from 1). Prefer a
+               small suggestion over describing the change in prose.
 
-            To keep it sticky, first look for an existing review comment:
-                gh api repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments \
-                  --jq 'first(.[] | select(.body | startswith("<!-- release-copy-review -->")) | .id)'
-            If that prints an id, update that comment in place with
-            `gh api -X PATCH repos/${{ github.repository }}/issues/comments/<id> -F body=@-`;
-            otherwise create a new one with
-            `gh pr comment ${{ github.event.pull_request.number }} --body-file -`.
-            Pass the body on stdin with a quoted heredoc (<<'EOF' ... EOF) so
-            backticks, quotes, and $ in the copy survive unchanged.
+            2. One sticky summary comment (always). Publish an overall summary
+               as a single PR comment - actually post it, do not just return it
+               as your reply, since a returned-only reply is never shown to
+               maintainers. The comment must:
+               - start with this exact marker line: <!-- release-copy-review -->
+               - then give Status: Looks good, Needs edits, or No RELEASE.md
+               - then list any edits not already covered by inline suggestions
+
+               Keep it sticky: first look for an existing one with
+                   gh api repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments \
+                     --jq 'first(.[] | select(.body | startswith("<!-- release-copy-review -->")) | .id)'
+               If that prints an id, update it in place with
+               `gh api -X PATCH repos/${{ github.repository }}/issues/comments/<id> -F body=@-`;
+               otherwise create one with
+               `gh pr comment ${{ github.event.pull_request.number }} --body-file -`.
+               Pass the body on stdin with a quoted heredoc (<<'EOF' ... EOF) so
+               backticks, quotes, and $ in the copy survive unchanged.
+
+            3. No RELEASE.md but this PR warrants one. You cannot leave an
+               inline suggestion (there is no line to attach to), so include a
+               complete proposed RELEASE.md inside the sticky comment as a
+               fenced ```markdown block, ready to copy into a new RELEASE.md at
+               the repo root, following the style rules above.
 
             Keep the review practical and short. Do not ask maintainers to run
             tests.
           claude_args: |
             --max-turns 20
-            --allowedTools "Read,Bash(gh pr view:*),Bash(gh pr diff:*),Bash(gh api:*),Bash(gh pr comment:*)"
+            --allowedTools "mcp__github_inline_comment__create_inline_comment,Read,Bash(gh pr view:*),Bash(gh pr diff:*),Bash(gh api:*),Bash(gh pr comment:*)"
             --disallowedTools "Edit,Write,MultiEdit,NotebookEdit"
