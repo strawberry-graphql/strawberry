@@ -23,7 +23,6 @@ jobs:
       contents: read
       pull-requests: write
       issues: write
-      id-token: write
 
     steps:
       - name: Checkout base branch
@@ -42,7 +41,6 @@ jobs:
           # to the account behind CLAUDE_CODE_OAUTH_TOKEN.
           github_token: ${{ secrets.GITHUB_TOKEN }}
           label_trigger: release-copy-review
-          use_sticky_comment: true
           include_fix_links: false
           prompt: |
             You are reviewing release communication for Strawberry GraphQL.
@@ -91,10 +89,20 @@ jobs:
             2. One sticky summary comment (always). Publish an overall summary
                as a single PR comment - actually post it, do not just return it
                as your reply, since a returned-only reply is never shown to
-               maintainers. The comment must:
-               - start with this exact marker line: <!-- release-copy-review -->
-               - then give Status: Looks good, Needs edits, or No RELEASE.md
-               - then list any edits not already covered by inline suggestions
+               maintainers. Format the comment as:
+               - first line, exactly: <!-- release-copy-review -->
+               - then the heading: ### 🍓 Release copy review
+               - then a bold status line, exactly one of:
+                 **Status:** ✅ Looks good
+                 **Status:** ⚠️ Needs edits
+                 **Status:** 📝 No RELEASE.md
+               - then short sections under bold labels such as **RELEASE.md**
+                 and **Social copy**, each only a sentence or two; skip a
+                 section when you have nothing useful to add, and do not repeat
+                 edits already filed as inline suggestions
+               - wrap any long proposed snippet in a collapsed
+                 `<details><summary>...</summary>` block so the comment stays
+                 compact
 
                Keep it sticky: first look for an existing one with
                    gh api repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments \
