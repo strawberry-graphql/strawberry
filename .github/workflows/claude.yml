@@ -85,6 +85,6 @@ jobs:
             Keep the review practical and short. Do not ask maintainers to run
             tests.
           claude_args: |
-            --max-turns 8
+            --max-turns 20
             --allowedTools Read,Bash(gh pr view:*),Bash(gh pr diff:*),Bash(gh api:*)
             --disallowedTools Edit,Write,MultiEdit,NotebookEdit
