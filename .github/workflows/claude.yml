@@ -86,6 +86,23 @@ jobs:
                from `gh pr diff` (the added file is numbered from 1). Prefer a
                small suggestion over describing the change in prose.
 
+               Adding social_messages: when RELEASE.md exists but has no
+               social_messages block and a release announcement is warranted,
+               add one as an acceptable suggestion rather than only quoting it.
+               social_messages belongs INSIDE the `---` frontmatter, right after
+               the `release type:` line. Anchor a single-line suggestion on the
+               `release type:` line, and make the suggestion body repeat that
+               same line and then add the block, so accepting it inserts a valid
+               frontmatter. The suggestion body looks like:
+                   release type: <the existing value>
+                   social_messages:
+                     x: >-
+                       {project_name} {version} <one concise sentence>
+                     linkedin: >-
+                       {project_name} {version} <one or two clear sentences>
+               Use the {project_name} and {version} placeholders verbatim, and
+               keep the x copy under 280 characters once they are filled in.
+
             2. One sticky summary comment (always). Publish an overall summary
                as a single PR comment - actually post it, do not just return it
                as your reply, since a returned-only reply is never shown to
