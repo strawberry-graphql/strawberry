@@ -102,7 +102,10 @@ jobs:
                  edits already filed as inline suggestions
                - wrap any long proposed snippet in a collapsed
                  `<details><summary>...</summary>` block so the comment stays
-                 compact
+                 compact. Never nest triple-backtick fences: if a wrapped
+                 snippet itself contains a ``` code block, use `~~~` tildes for
+                 the outer fence (or no outer fence at all) so the inner block
+                 still renders instead of leaking `</details>` as plain text
 
                Keep it sticky: first look for an existing one with
                    gh api repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments \
