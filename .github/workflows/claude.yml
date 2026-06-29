@@ -77,14 +77,30 @@ jobs:
             - LinkedIn copy is clear as a standalone post
             - neither post leaks raw Markdown link syntax like [label](url)
 
-            Leave one concise PR comment with:
-            - Status: Looks good, Needs edits, or No RELEASE.md
-            - Required edits, if any
-            - Suggested replacement snippets, only when useful
+            Publish your review as ONE sticky PR comment. You must actually
+            post it to the PR using the tools below - do not just return it as
+            your reply, since a returned-only reply is never shown to
+            maintainers.
+
+            The comment must:
+            - start with this exact marker line: <!-- release-copy-review -->
+            - then give Status: Looks good, Needs edits, or No RELEASE.md
+            - then list required edits, if any
+            - then suggested replacement snippets, only when useful
+
+            To keep it sticky, first look for an existing review comment:
+                gh api repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments \
+                  --jq 'first(.[] | select(.body | startswith("<!-- release-copy-review -->")) | .id)'
+            If that prints an id, update that comment in place with
+            `gh api -X PATCH repos/${{ github.repository }}/issues/comments/<id> -F body=@-`;
+            otherwise create a new one with
+            `gh pr comment ${{ github.event.pull_request.number }} --body-file -`.
+            Pass the body on stdin with a quoted heredoc (<<'EOF' ... EOF) so
+            backticks, quotes, and $ in the copy survive unchanged.
 
             Keep the review practical and short. Do not ask maintainers to run
             tests.
           claude_args: |
             --max-turns 20
-            --allowedTools Read,Bash(gh pr view:*),Bash(gh pr diff:*),Bash(gh api:*)
+            --allowedTools Read,Bash(gh pr view:*),Bash(gh pr diff:*),Bash(gh api:*),Bash(gh pr comment:*)
             --disallowedTools Edit,Write,MultiEdit,NotebookEdit
