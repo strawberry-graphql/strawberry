@@ -9,6 +9,7 @@ on:
     branches:
       - main
     paths:
+      - "RELEASE.md"
       - "strawberry/**"
       - "pyproject.toml"
 
@@ -42,4 +43,4 @@ jobs:
           command: check
           autopub-version: "1.0.0a58"
           fail-on-missing: "true"
-          extra-plugins: strawberry-autopub-plugins
+          extra-plugins: "strawberry-autopub-plugins>=0.2.0"
