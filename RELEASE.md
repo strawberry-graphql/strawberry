@@ -1,4 +1,9 @@
-Release type: minor
+release type: minor
+social_messages:
+  x: >-
+    {project_name} {version} removes the long-deprecated `info.field_nodes` property. Migrate to `info.selected_fields` before upgrading.
+  linkedin: >-
+    {project_name} {version} removes the `info.field_nodes` property that was deprecated since v0.73.1. Update your resolvers to use `info.selected_fields` instead.
 
 Remove deprecated `info.field_nodes` property, deprecated since [0.73.1](https://github.com/strawberry-graphql/strawberry/releases/tag/0.73.1).
 
