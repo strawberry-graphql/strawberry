@@ -90,7 +90,7 @@ def _process_scalar(
 ) -> ScalarWrapper:
     from strawberry.exceptions.handler import should_use_rich_exceptions
 
-    name = name or to_camel_case(cls.__name__)  # type: ignore[union-attr]
+    name = name or to_camel_case(cls.__name__)
 
     _source_file = None
     _source_line = None

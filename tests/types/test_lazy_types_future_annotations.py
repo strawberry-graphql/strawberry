@@ -10,6 +10,13 @@ if TYPE_CHECKING:
     from tests.schema.test_lazy.type_c import TypeC
 
 
+# Module-level Annotated alias. With `from __future__ import annotations`,
+# field annotations are strings, so a field typed as `LazyTypeC` is resolved
+# by name through the module globals. The alias must live here (not inside
+# the test) for that lookup to find it.
+LazyTypeC = Annotated["TypeC", strawberry.lazy("tests.schema.test_lazy.type_c")]
+
+
 def test_optional_lazy_type_using_or_operator():
 
     global SomeType, AnotherType
@@ -169,3 +176,69 @@ def test_or_none_lazy_type_with_type_checking_guard():
         assert str(schema).strip() == textwrap.dedent(expected).strip()
     finally:
         del OrNoneLazyType
+
+
+def test_module_level_lazy_alias():
+    """Module-level Annotated alias resolves under `from __future__ import annotations`."""
+    global AliasedLazyType
+
+    try:
+
+        @strawberry.type
+        class AliasedLazyType:
+            child: LazyTypeC
+
+        @strawberry.type
+        class Query:
+            my_type: AliasedLazyType
+
+        schema = strawberry.Schema(query=Query)
+        expected = """\
+        type AliasedLazyType {
+          child: TypeC!
+        }
+
+        type Query {
+          myType: AliasedLazyType!
+        }
+
+        type TypeC {
+          name: String!
+        }
+        """
+        assert str(schema).strip() == textwrap.dedent(expected).strip()
+    finally:
+        del AliasedLazyType
+
+
+def test_module_level_lazy_alias_in_list():
+    """Module-level Annotated alias wrapped in `list[...]` resolves correctly."""
+    global AliasedListLazyType
+
+    try:
+
+        @strawberry.type
+        class AliasedListLazyType:
+            children: list[LazyTypeC]
+
+        @strawberry.type
+        class Query:
+            my_type: AliasedListLazyType
+
+        schema = strawberry.Schema(query=Query)
+        expected = """\
+        type AliasedListLazyType {
+          children: [TypeC!]!
+        }
+
+        type Query {
+          myType: AliasedListLazyType!
+        }
+
+        type TypeC {
+          name: String!
+        }
+        """
+        assert str(schema).strip() == textwrap.dedent(expected).strip()
+    finally:
+        del AliasedListLazyType

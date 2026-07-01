@@ -82,9 +82,14 @@ class ApolloTracingStats:
 
 
 class ApolloTracingExtension(SchemaExtension):
-    def __init__(self, execution_context: ExecutionContext) -> None:
+    def __init__(self, *, execution_context: ExecutionContext | None = None) -> None:
+        super().__init__(execution_context=execution_context)
+        # ``execution_context`` is set by the schema right after construction;
+        # the parameter exists for the legacy ``cls(execution_context=...)``
+        # call shape only.
+        if execution_context is not None:
+            self.execution_context = execution_context
         self._resolver_stats: list[ApolloResolverStats] = []
-        self.execution_context = execution_context
         now = self.now()
         self.start_timestamp: int = now
         self.end_timestamp: int = now

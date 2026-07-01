@@ -1,6 +1,7 @@
 from typing import Any, Optional
 
 import strawberry
+from strawberry.extensions.tracing import ApolloFederationTracingExtension
 from strawberry.schema_directive import Location
 
 # ------- data -------
@@ -309,5 +310,10 @@ class Query:
 
 
 schema = strawberry.federation.Schema(
-    query=Query, types=[Inventory], federation_version="2.7"
+    query=Query,
+    types=[Inventory],
+    federation_version="2.7",
+    extensions=[
+        ApolloFederationTracingExtension,
+    ],
 )

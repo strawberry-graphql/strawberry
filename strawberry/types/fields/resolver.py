@@ -64,6 +64,8 @@ class ReservedParameterSpecification(Protocol):
     ) -> inspect.Parameter | None:
         """Finds the reserved parameter from ``parameters``."""
 
+    def __hash__(self) -> int: ...
+
 
 class ReservedName(NamedTuple):
     name: str

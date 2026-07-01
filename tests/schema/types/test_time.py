@@ -5,6 +5,7 @@ from graphql import GraphQLError
 
 import strawberry
 from strawberry.types.execution import ExecutionResult
+from strawberry.utils import IS_GQL_32
 
 
 def test_serialization():
@@ -112,7 +113,13 @@ def test_serialization_error_message_for_incorrect_time_string():
     """
     result = execute_mutation("25:00")
     assert result.errors
-    assert result.errors[0].message.startswith(
+    expected_message = (
         "Variable '$value' got invalid value '25:00'; Value cannot represent a "
         'Time: "25:00". hour must be in 0..23'
+        if IS_GQL_32
+        else "Variable '$value' has invalid value: Value cannot represent a "
+        'Time: "25:00". hour must be in 0..23'
+    )
+    assert result.errors[0].message.startswith(
+        expected_message,
     )

@@ -64,13 +64,13 @@ def test_federation_type():
             ),
             Result(
                 type="note",
-                message='Revealed type is "def (*, name: builtins.str) -> mypy_test.User"',
+                message='Revealed type is "def (*, name: str) -> mypy_test.User"',
                 line=18,
                 column=13,
             ),
             Result(
                 type="note",
-                message='Revealed type is "def (self: mypy_test.User, *, name: builtins.str)"',
+                message='Revealed type is "def (self: mypy_test.User, *, name: str)"',
                 line=19,
                 column=13,
             ),
@@ -160,13 +160,13 @@ def test_federation_interface():
             ),
             Result(
                 type="note",
-                message='Revealed type is "def (*, name: builtins.str, age: builtins.int) -> mypy_test.User"',
+                message='Revealed type is "def (*, name: str, age: int) -> mypy_test.User"',
                 line=14,
                 column=13,
             ),
             Result(
                 type="note",
-                message='Revealed type is "def (self: mypy_test.User, *, name: builtins.str, age: builtins.int)"',
+                message='Revealed type is "def (self: mypy_test.User, *, name: str, age: int)"',
                 line=15,
                 column=13,
             ),
@@ -254,13 +254,13 @@ def test_federation_input():
             ),
             Result(
                 type="note",
-                message='Revealed type is "def (*, name: builtins.str) -> mypy_test.User"',
+                message='Revealed type is "def (*, name: str) -> mypy_test.User"',
                 line=12,
                 column=13,
             ),
             Result(
                 type="note",
-                message='Revealed type is "def (self: mypy_test.User, *, name: builtins.str)"',
+                message='Revealed type is "def (self: mypy_test.User, *, name: str)"',
                 line=13,
                 column=13,
             ),

@@ -9,13 +9,20 @@ on:
       - "e2e/**"
       - ".github/workflows/e2e-tests.yml"
 
+permissions:
+  contents: read
+
 jobs:
   e2e-tests:
     name: 🎭 Run E2E Tests
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
 
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+        with:
+          persist-credentials: false
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
@@ -30,41 +37,36 @@ jobs:
           cd e2e
           bunx playwright install --with-deps
 
-      - name: Setup Python
-        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+      - name: Install uv
+        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39 # v8.2.0
         with:
+          enable-cache: true
           python-version: "3.12"
-
-      - name: Install Poetry
-        uses: snok/install-poetry@76e04a911780d5b312d89783f7b1cd627778900a # v1
-        with:
-          version: latest
-          virtualenvs-create: true
-          virtualenvs-in-project: true
 
       - name: Install Python dependencies
         run: |
-          poetry install --extras cli
-          poetry run pip install graphql-core==3.3.0a12
+          uv sync
+          uv pip install graphql-core==3.3.0rc0
 
-      - name: Start Strawberry server
+      - name: Start FastAPI server
         run: |
           cd e2e
-          poetry run strawberry dev app:schema --port 8000 &
+          # --no-sync prevents uv from reverting graphql-core to lockfile version
+          uv run --no-sync fastapi dev app.py --port 8000 &
           echo $! > server.pid
           sleep 5  # Wait for server to start
 
       - name: Check if server is running
         run: |
           curl -f http://localhost:8000/graphql || (echo "Server is not running" && exit 1)
-          echo "GraphQL server is running successfully"
+          echo "FastAPI GraphQL server is running successfully"
 
       - name: Run Playwright tests
         run: |
           cd e2e
           bunx playwright test
 
-      - uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: always()
         with:
           name: playwright-report

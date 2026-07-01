@@ -65,6 +65,7 @@ class LitestarHttpClient(HttpClient):
         connection_init_wait_timeout: timedelta = timedelta(minutes=1),
         result_override: ResultOverrideFunction = None,
         multipart_uploads_enabled: bool = False,
+        max_subscriptions_per_connection: int | None = 100,
     ):
         BaseGraphQLController = make_graphql_controller(
             schema=schema,
@@ -75,6 +76,7 @@ class LitestarHttpClient(HttpClient):
             subscription_protocols=subscription_protocols,
             connection_init_wait_timeout=connection_init_wait_timeout,
             multipart_uploads_enabled=multipart_uploads_enabled,
+            max_subscriptions_per_connection=max_subscriptions_per_connection,
             path="/graphql",
             context_getter=litestar_get_context,
             root_value_getter=get_root_value,

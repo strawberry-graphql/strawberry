@@ -38,6 +38,7 @@ if TYPE_CHECKING:
         AsyncIterator,
         Awaitable,
         Callable,
+        Mapping,
         Sequence,
     )
     from enum import Enum
@@ -131,6 +132,7 @@ class GraphQLRouter(
             GRAPHQL_WS_PROTOCOL,
         ),
         connection_init_wait_timeout: timedelta = timedelta(minutes=1),
+        max_subscriptions_per_connection: int | None = 100,
         prefix: str = "",
         tags: list[str | Enum] | None = None,
         dependencies: Sequence[params.Depends] | None = None,
@@ -184,6 +186,7 @@ class GraphQLRouter(
         )
         self.protocols = subscription_protocols
         self.connection_init_wait_timeout = connection_init_wait_timeout
+        self.max_subscriptions_per_connection = max_subscriptions_per_connection
         self.multipart_uploads_enabled = multipart_uploads_enabled
         self.graphql_ide = graphql_ide
 
@@ -283,7 +286,7 @@ class GraphQLRouter(
         request: Request,
         stream: Callable[[], AsyncIterator[str]],
         sub_response: Response,
-        headers: dict[str, str],
+        headers: Mapping[str, str],
     ) -> Response:
         return StreamingResponse(
             stream(),
@@ -301,7 +304,7 @@ class GraphQLRouter(
 
     async def pick_websocket_subprotocol(self, request: WebSocket) -> str | None:
         protocols = request["subprotocols"]
-        intersection = set(protocols) & set(self.protocols)
+        intersection = set(protocols) & set(self.websocket_subprotocols)
         sorted_intersection = sorted(intersection, key=protocols.index)
         return next(iter(sorted_intersection), None)
 

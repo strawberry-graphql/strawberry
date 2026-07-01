@@ -24,12 +24,13 @@ from strawberry.http.async_base_view import AsyncBaseHTTPView
 from strawberry.http.sync_base_view import SyncBaseHTTPView
 from strawberry.http.temporal_response import TemporalResponse
 from strawberry.http.typevars import Context, RootValue
+from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
 from strawberry.types.unset import UNSET
 
 from .base import ChannelsConsumer
 
 if TYPE_CHECKING:
-    from collections.abc import AsyncGenerator, Callable, Mapping
+    from collections.abc import AsyncGenerator, Callable, Mapping, Sequence
 
     from strawberry.http import GraphQLHTTPResponse
     from strawberry.http.ides import GraphQL_IDE
@@ -68,6 +69,12 @@ class ChannelsRequest:
             query_params[key] = value[0]
 
         return query_params
+
+    @property
+    def path_params(self) -> Mapping[str, Any]:
+        url_route = self.consumer.scope.get("url_route", {})
+
+        return url_route.get("kwargs", {})
 
     @property
     def headers(self) -> Mapping[str, str]:
@@ -152,8 +159,17 @@ class BaseChannelsRequestAdapter:
                     cookies[key.strip()] = value.strip()
         return cookies
 
+    @property
+    def path_params(self) -> Mapping[str, Any]:
+        url_route = self.request.consumer.scope.get("url_route", {})
+        return url_route.get("kwargs", {})
+
 
 class ChannelsRequestAdapter(BaseChannelsRequestAdapter, AsyncHTTPRequestAdapter):
+    @property
+    def path_params(self) -> Mapping[str, Any]:
+        return self.request.path_params
+
     async def get_body(self) -> bytes:
         return self.request.body
 
@@ -162,6 +178,10 @@ class ChannelsRequestAdapter(BaseChannelsRequestAdapter, AsyncHTTPRequestAdapter
 
 
 class SyncChannelsRequestAdapter(BaseChannelsRequestAdapter, SyncHTTPRequestAdapter):
+    @property
+    def path_params(self) -> Mapping[str, Any]:
+        return self.request.path_params
+
     @property
     def body(self) -> bytes:
         return self.request.body
@@ -188,11 +208,16 @@ class BaseGraphQLHTTPConsumer(ChannelsConsumer, AsyncHttpConsumer):
         graphql_ide: GraphQL_IDE | None = "graphiql",
         allow_queries_via_get: bool = True,
         multipart_uploads_enabled: bool = False,
+        subscription_protocols: Sequence[str] = (
+            GRAPHQL_TRANSPORT_WS_PROTOCOL,
+            GRAPHQL_WS_PROTOCOL,
+        ),
         **kwargs: Any,
     ) -> None:
         self.schema = schema
         self.allow_queries_via_get = allow_queries_via_get
         self.multipart_uploads_enabled = multipart_uploads_enabled
+        self.protocols = subscription_protocols
         self.graphql_ide = graphql_ide
 
         super().__init__(**kwargs)
@@ -296,7 +321,7 @@ class GraphQLHTTPConsumer(
         request: ChannelsRequest,
         stream: Callable[[], AsyncGenerator[str, None]],
         sub_response: TemporalResponse,
-        headers: dict[str, str],
+        headers: Mapping[str, str],
     ) -> MultipartChannelsResponse:
         status = sub_response.status_code or 200
 

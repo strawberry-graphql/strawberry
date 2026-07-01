@@ -93,14 +93,16 @@ class GraphQLView(
         ),
         connection_init_wait_timeout: timedelta = timedelta(minutes=1),
         multipart_uploads_enabled: bool = False,
+        max_subscriptions_per_connection: int | None = 100,
     ) -> None:
         self.schema = schema
         self.allow_queries_via_get = allow_queries_via_get
         self.keep_alive = keep_alive
         self.keep_alive_interval = keep_alive_interval
-        self.subscription_protocols = subscription_protocols
+        self.protocols = subscription_protocols
         self.connection_init_wait_timeout = connection_init_wait_timeout
         self.multipart_uploads_enabled = multipart_uploads_enabled
+        self.max_subscriptions_per_connection = max_subscriptions_per_connection
         self.graphql_ide = graphql_ide
 
     async def render_graphql_ide(self, request: Request) -> Response:
@@ -143,7 +145,7 @@ class GraphQLView(
         request: Request,
         stream: Callable[[], AsyncGenerator[str, None]],
         sub_response: Response,
-        headers: dict[str, str],
+        headers: Mapping[str, str],
     ) -> Response:
         return (
             stream(),
@@ -161,7 +163,7 @@ class GraphQLView(
 
     async def pick_websocket_subprotocol(self, request: Websocket) -> str | None:
         protocols = request.requested_subprotocols
-        intersection = set(protocols) & set(self.subscription_protocols)
+        intersection = set(protocols) & set(self.websocket_subprotocols)
         sorted_intersection = sorted(intersection, key=protocols.index)
         return next(iter(sorted_intersection), None)
 

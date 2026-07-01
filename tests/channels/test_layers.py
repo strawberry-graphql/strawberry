@@ -57,6 +57,75 @@ async def test_no_layers():
             pass
 
 
+async def test_listen_to_channel_generator_delivers_messages():
+    """_listen_to_channel_generator yields messages placed on its queue."""
+    from strawberry.channels.handlers.base import ChannelsConsumer
+
+    consumer = ChannelsConsumer()
+    queue: asyncio.Queue = asyncio.Queue()
+    gen = consumer._listen_to_channel_generator(queue, timeout=None)
+
+    queue.put_nowait({"type": "broadcast", "text": "hello"})
+    queue.put_nowait({"type": "broadcast", "text": "world"})
+
+    assert await gen.__anext__() == {"type": "broadcast", "text": "hello"}
+    assert await gen.__anext__() == {"type": "broadcast", "text": "world"}
+
+    await gen.aclose()
+
+
+async def test_listen_to_channel_generator_timeout():
+    """_listen_to_channel_generator returns on timeout when no message arrives."""
+    from strawberry.channels.handlers.base import ChannelsConsumer
+
+    consumer = ChannelsConsumer()
+    queue: asyncio.Queue = asyncio.Queue()
+    gen = consumer._listen_to_channel_generator(queue, timeout=0.05)
+
+    # No message on the queue — generator should time out and stop
+    with pytest.raises(StopAsyncIteration):
+        await gen.__anext__()
+
+
+async def test_listen_to_channel_generator_aclose_is_clean():
+    """Closing the generator after receiving a message must not raise."""
+    from strawberry.channels.handlers.base import ChannelsConsumer
+
+    consumer = ChannelsConsumer()
+    queue: asyncio.Queue = asyncio.Queue()
+    gen = consumer._listen_to_channel_generator(queue, timeout=None)
+
+    queue.put_nowait({"type": "broadcast", "text": "msg"})
+    await gen.__anext__()
+
+    # Generator is now suspended after yielding. Close it cleanly.
+    await gen.aclose()
+
+
+async def test_listen_to_channel_generator_throw_timeout_at_yield_propagates():
+    """TimeoutError thrown while the generator is suspended at its yield
+    must propagate, not be swallowed by the internal timeout handler.
+
+    Before the fix, ``yield await awaitable`` was a compound expression
+    whose ``yield`` fell inside the ``try/except asyncio.TimeoutError``
+    block (per the bytecode exception table). A ``TimeoutError`` thrown
+    at the yield point was therefore incorrectly caught, silently
+    stopping the generator instead of letting the caller handle it.
+    """
+    from strawberry.channels.handlers.base import ChannelsConsumer
+
+    consumer = ChannelsConsumer()
+    queue: asyncio.Queue = asyncio.Queue()
+    gen = consumer._listen_to_channel_generator(queue, timeout=None)
+
+    queue.put_nowait({"type": "broadcast", "text": "msg"})
+    await gen.__anext__()  # generator is now suspended at its yield
+
+    # Throw TimeoutError — it should propagate, not be caught internally
+    with pytest.raises(asyncio.TimeoutError):
+        await gen.athrow(asyncio.TimeoutError())
+
+
 @pytest.mark.django_db
 async def test_listen_to_channel_timeout(ws: WebsocketCommunicator):
     from channels.layers import get_channel_layer

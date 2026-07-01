@@ -1,53 +1,164 @@
-name: Claude Code
+name: Claude release copy review
 
 on:
-  issue_comment:
-    types: [created]
-  pull_request_review_comment:
-    types: [created]
-  issues:
-    types: [opened, assigned]
-  pull_request_review:
-    types: [submitted]
+  # zizmor: ignore[dangerous-triggers] this workflow only runs after a
+  # maintainer-applied label, checks out the base branch, and gives Claude
+  # read-only tools so PR-controlled code is not executed with secrets.
+  pull_request_target:
+    types: [labeled, reopened, ready_for_review]
+    branches:
+      - main
+
+permissions:
+  contents: read
 
 jobs:
-  claude:
+  release-copy-review:
+    name: Claude release copy review
     if: |
-      (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@claude')) ||
-      (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@claude')) ||
-      (github.event_name == 'pull_request_review' && contains(github.event.review.body, '@claude')) ||
-      (github.event_name == 'issues' && (contains(github.event.issue.body, '@claude') || contains(github.event.issue.title, '@claude')))
+      github.event.pull_request.user.type != 'Bot' &&
+      contains(github.event.pull_request.labels.*.name, 'release-copy-review')
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      pull-requests: read
-      issues: read
-      id-token: write
-      actions: read # Required for Claude to read CI results on PRs
+      pull-requests: write
+      issues: write
+
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Checkout base branch
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           fetch-depth: 1
           persist-credentials: false
 
-      - name: Run Claude Code
-        id: claude
-        uses: anthropics/claude-code-action@v1
+      - name: Clear previous inline review suggestions
+        # Release-copy reviews leave inline suggestions on RELEASE.md, which
+        # GitHub does not dedupe across runs. Delete the bot's prior ones so a
+        # re-review replaces them instead of stacking duplicates. The sticky
+        # summary is an issue comment (a different endpoint) and is untouched.
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          gh api "repos/$REPO/pulls/$PR/comments" --paginate \
+            --jq '.[] | select(.user.login == "github-actions[bot]" and .path == "RELEASE.md") | .id' \
+          | while read -r id; do
+              [ -n "$id" ] && gh api -X DELETE "repos/$REPO/pulls/comments/$id" && echo "deleted $id"
+            done
+
+      - name: Review release copy
+        uses: anthropics/claude-code-action@a92e7c70a4da9793dc164451d829089dc057a464 # v1.0.159
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          # Use the workflow's built-in token to post the review comment.
+          # Avoids the OIDC -> Claude-app-token exchange, which 401s here
+          # because the org's pre-existing Claude app install isn't linked
+          # to the account behind CLAUDE_CODE_OAUTH_TOKEN.
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          label_trigger: release-copy-review
+          include_fix_links: false
+          prompt: |
+            You are reviewing release communication for Strawberry GraphQL.
 
-          # This is an optional setting that allows Claude to read CI results on PRs
-          additional_permissions: |
-            actions: read
+            Repository: ${{ github.repository }}
+            Pull request: #${{ github.event.pull_request.number }}
+            Base branch: ${{ github.event.pull_request.base.ref }}
+            Head SHA: ${{ github.event.pull_request.head.sha }}
 
-          # Optional: Give a custom prompt to Claude. If this is not specified, Claude will perform the instructions specified in the comment that tagged it.
-          # prompt: 'Update the pull request description to include a summary of changes.'
+            Review only the release note and social announcement copy. Do not
+            review implementation correctness except to check whether the copy
+            makes unsupported claims. Do not modify files, create commits, push
+            branches, or open pull requests.
 
-          allowed_tools: |
-            Bash(pytest:*)
-            Bash(ruff:*)
-            Bash(mypy:*)
-            Bash(python:*)
-            Bash(uv:*)
-            Bash(poetry:*)
+            Inspect the PR metadata and diff. Pay special attention to
+            RELEASE.md if it exists. If there is no RELEASE.md, say whether
+            that seems appropriate for this PR based on the changed files.
+
+            Check the release note against Strawberry's style:
+            - frontmatter uses "release type: patch", "minor", or "major"
+            - the body starts with "This release adds ..." or
+              "This release fixes ..."
+            - it leads with user-visible behavior rather than implementation
+              detail
+            - it avoids vague wording such as "improves support" unless the
+              exact behavior follows immediately
+
+            Check social copy when present:
+            - social_messages includes useful x and linkedin entries
+            - the X copy is no longer than 280 characters after template
+              variables are considered
+            - LinkedIn copy is clear as a standalone post
+            - neither post leaks raw Markdown link syntax like [label](url)
+
+            Deliver the review in up to three ways:
+
+            1. Inline suggestions (only when RELEASE.md exists and a specific
+               line should change). Use the create_inline_comment tool to leave
+               a GitHub suggestion on the exact RELEASE.md line(s). Put the
+               replacement inside a ```suggestion block - it REPLACES the whole
+               targeted line range, so it must be a valid drop-in. RELEASE.md is
+               an added file, so comment on side RIGHT using the line numbers
+               from `gh pr diff` (the added file is numbered from 1). Prefer a
+               small suggestion over describing the change in prose.
+
+               Adding social_messages: when RELEASE.md exists but has no
+               social_messages block and a release announcement is warranted,
+               add one as an acceptable suggestion rather than only quoting it.
+               social_messages belongs INSIDE the `---` frontmatter, right after
+               the `release type:` line. Anchor a single-line suggestion on the
+               `release type:` line, and make the suggestion body repeat that
+               same line and then add the block, so accepting it inserts a valid
+               frontmatter. The suggestion body looks like:
+                   release type: <the existing value>
+                   social_messages:
+                     x: >-
+                       {project_name} {version} <one concise sentence>
+                     linkedin: >-
+                       {project_name} {version} <one or two clear sentences>
+               Use the {project_name} and {version} placeholders verbatim, and
+               keep the x copy under 280 characters once they are filled in.
+
+            2. One sticky summary comment (always). Publish an overall summary
+               as a single PR comment - actually post it, do not just return it
+               as your reply, since a returned-only reply is never shown to
+               maintainers. Format the comment as:
+               - first line, exactly: <!-- release-copy-review -->
+               - then the heading: ### 🍓 Release copy review
+               - then a bold status line, exactly one of:
+                 **Status:** ✅ Looks good
+                 **Status:** ⚠️ Needs edits
+                 **Status:** 📝 No RELEASE.md
+               - then short sections under bold labels such as **RELEASE.md**
+                 and **Social copy**, each only a sentence or two; skip a
+                 section when you have nothing useful to add, and do not repeat
+                 edits already filed as inline suggestions
+               - wrap any long proposed snippet in a collapsed
+                 `<details><summary>...</summary>` block so the comment stays
+                 compact. Never nest triple-backtick fences: if a wrapped
+                 snippet itself contains a ``` code block, use `~~~` tildes for
+                 the outer fence (or no outer fence at all) so the inner block
+                 still renders instead of leaking `</details>` as plain text
+
+               Keep it sticky: first look for an existing one with
+                   gh api repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments \
+                     --jq 'first(.[] | select(.body | startswith("<!-- release-copy-review -->")) | .id)'
+               If that prints an id, update it in place with
+               `gh api -X PATCH repos/${{ github.repository }}/issues/comments/<id> -F body=@-`;
+               otherwise create one with
+               `gh pr comment ${{ github.event.pull_request.number }} --body-file -`.
+               Pass the body on stdin with a quoted heredoc (<<'EOF' ... EOF) so
+               backticks, quotes, and $ in the copy survive unchanged.
+
+            3. No RELEASE.md but this PR warrants one. You cannot leave an
+               inline suggestion (there is no line to attach to), so include a
+               complete proposed RELEASE.md inside the sticky comment as a
+               fenced ```markdown block, ready to copy into a new RELEASE.md at
+               the repo root, following the style rules above.
+
+            Keep the review practical and short. Do not ask maintainers to run
+            tests.
+          claude_args: |
+            --max-turns 20
+            --allowedTools "mcp__github_inline_comment__create_inline_comment,Read,Bash(gh pr view:*),Bash(gh pr diff:*),Bash(gh api:*),Bash(gh pr comment:*)"
+            --disallowedTools "Edit,Write,MultiEdit,NotebookEdit"

@@ -406,6 +406,148 @@ async def test_cancelled_future_with_failing_loader():
 
 
 @pytest.mark.asyncio
+async def test_all_futures_cancelled_skips_load_fn():
+    """When all futures in a batch are cancelled before dispatch, the load_fn
+    should not be called at all.  This prevents wasted work like database
+    queries whose results no one is waiting for.
+    """
+    call_count = 0
+
+    async def counting_loader(keys: list[int]) -> list[int]:
+        nonlocal call_count
+        call_count += 1
+        return keys
+
+    loader = DataLoader(load_fn=counting_loader, cache=False)
+
+    future_a = cast("Future[Any]", loader.load(1))
+    future_b = cast("Future[Any]", loader.load(2))
+
+    # Cancel all futures before the batch dispatches
+    future_a.cancel()
+    future_b.cancel()
+
+    # Let the event loop dispatch (call_soon → create_task → dispatch_batch)
+    await asyncio.sleep(0)
+    await asyncio.sleep(0)
+
+    assert future_a.cancelled()
+    assert future_b.cancelled()
+    assert call_count == 0, "load_fn should not have been called"
+
+
+@pytest.mark.asyncio
+async def test_cancelled_futures_cancel_dispatch_task():
+    """When all futures in a batch are cancelled, the underlying dispatch
+    task should also be cancelled.  This is important for resource cleanup
+    when using asyncio.TaskGroup or similar structured concurrency patterns.
+    """
+
+    async def slow_loader(keys: list[int]) -> list[int]:
+        await asyncio.sleep(10)
+        return keys
+
+    loader = DataLoader(load_fn=slow_loader, cache=False)
+
+    future_a = cast("Future[Any]", loader.load(1))
+    future_b = cast("Future[Any]", loader.load(2))
+
+    # Let call_soon fire so the dispatch task is created
+    await asyncio.sleep(0)
+    # Let the task start and suspend inside slow_loader's asyncio.sleep(10)
+    await asyncio.sleep(0)
+
+    assert loader.batch is not None
+    dispatch_task = loader.batch._dispatch_task
+    assert dispatch_task is not None
+    assert not dispatch_task.done()
+
+    # Cancel all futures — this should cascade to the dispatch task
+    future_a.cancel()
+    future_b.cancel()
+
+    # Give the event loop a chance to run _on_future_done callbacks
+    # and propagate CancelledError to the dispatch task
+    await asyncio.sleep(0)
+    await asyncio.sleep(0)
+
+    assert dispatch_task.cancelled()
+
+
+@pytest.mark.asyncio
+async def test_cancelled_futures_cancel_running_dispatch():
+    """When all futures are cancelled after load_fn has already started,
+    the dispatch task should still be cancelled, interrupting the in-progress
+    load_fn via CancelledError.
+    """
+    load_started = asyncio.Event()
+
+    async def slow_loader(keys: list[int]) -> list[int]:
+        load_started.set()
+        # Block until cancelled
+        await asyncio.sleep(10)
+        return keys
+
+    loader = DataLoader(load_fn=slow_loader, cache=False)
+
+    future_a = cast("Future[Any]", loader.load(1))
+    future_b = cast("Future[Any]", loader.load(2))
+
+    # Let call_soon fire and dispatch_batch start running
+    await asyncio.sleep(0)
+    await asyncio.sleep(0)
+    await load_started.wait()
+
+    assert loader.batch is not None
+    dispatch_task = loader.batch._dispatch_task
+    assert dispatch_task is not None
+    assert not dispatch_task.done()
+
+    # Cancel all futures while load_fn is in progress
+    future_a.cancel()
+    future_b.cancel()
+
+    # Give the event loop a chance to propagate cancellation
+    await asyncio.sleep(0)
+    await asyncio.sleep(0)
+
+    assert future_a.cancelled()
+    assert future_b.cancelled()
+    assert dispatch_task.done()
+
+
+@pytest.mark.asyncio
+async def test_partial_cancellation_still_dispatches():
+    """When only some futures in a batch are cancelled, the batch should
+    still dispatch and deliver results for the non-cancelled futures.
+    """
+    call_count = 0
+
+    async def counting_loader(keys: list[int]) -> list[int]:
+        nonlocal call_count
+        call_count += 1
+        return keys
+
+    loader = DataLoader(load_fn=counting_loader, cache=False)
+
+    future_a = cast("Future[Any]", loader.load(1))
+    future_b = cast("Future[Any]", loader.load(2))
+    future_c = cast("Future[Any]", loader.load(3))
+
+    # Cancel only one future
+    future_b.cancel()
+
+    # Let the batch dispatch
+    await asyncio.sleep(0)
+    await asyncio.sleep(0)
+
+    assert future_a.result() == 1
+    assert future_b.cancelled()
+    assert future_c.result() == 3
+    assert call_count == 1, "load_fn should still be called for non-cancelled futures"
+
+
+@pytest.mark.asyncio
 async def test_cache_override():
     class TestCache(AbstractCache[int, int]):
         def __init__(self):

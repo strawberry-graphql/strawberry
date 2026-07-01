@@ -95,7 +95,7 @@ class ChannelsConsumer(AsyncConsumer):
             groups:
                 An optional sequence of groups to receive messages from.
                 When passing this parameter, the groups will be registered
-                using `self.channel_layer.group_add` at the beggining of the
+                using `self.channel_layer.group_add` at the beginning of the
                 execution and then discarded using `self.channel_layer.group_discard`
                 at the end of the execution.
         """
@@ -132,7 +132,7 @@ class ChannelsConsumer(AsyncConsumer):
     ) -> AsyncGenerator[Any, None]:
         """Generator for listen_to_channel method.
 
-        Seperated to allow user code to be run after subscribing to channels
+        Separated to allow user code to be run after subscribing to channels
         and before blocking to wait for incoming channel messages.
         """
         while True:
@@ -140,10 +140,15 @@ class ChannelsConsumer(AsyncConsumer):
             if timeout is not None:
                 awaitable = asyncio.wait_for(awaitable, timeout)
             try:
-                yield await awaitable
+                result = await awaitable
             except asyncio.TimeoutError:
                 # TODO: shall we add log here and maybe in the suppress below?
                 return
+            # WARNING: do not refactor back to ``yield await awaitable``.
+            # That compound form places the yield inside the try block's
+            # bytecode exception table, so a throw at the yield point is
+            # routed through the except handler instead of propagating.
+            yield result
 
 
 class ChannelsWSConsumer(ChannelsConsumer, AsyncWebsocketConsumer):

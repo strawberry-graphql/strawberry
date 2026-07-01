@@ -24,6 +24,42 @@ from strawberry.extensions.tracing import ApolloTracingExtensionSync
 schema = strawberry.Schema(query=Query, extensions=[ApolloTracingExtensionSync])
 ```
 
+## Apollo Federation (FTV1)
+
+For [Apollo Federation](https://www.apollographql.com/docs/federation/)
+subgraphs, you can use the ApolloFederationTracingExtension to provide inline
+tracing data. When a gateway sends the `apollo-federation-include-trace: ftv1`
+header, the extension includes trace data in the response.
+
+> **Security:** any client can send the `apollo-federation-include-trace: ftv1`
+> header unless you restrict it. Tracing payloads expose resolver timing
+> details, so make sure only a trusted Apollo Gateway (or other internal
+> traffic) can request traces — for example by enforcing authentication, network
+> policy, or stripping the header from public requests at the edge.
+
+You need to install the extras for apollo-federation by doing:
+
+```shell
+pip install 'strawberry-graphql[apollo-federation]'
+```
+
+```python
+from strawberry.extensions.tracing import ApolloFederationTracingExtension
+
+schema = strawberry.Schema(query=Query, extensions=[ApolloFederationTracingExtension])
+```
+
+Note that if you're not running under ASGI you'd need to use the sync version of
+ApolloFederationTracingExtension:
+
+```python
+from strawberry.extensions.tracing import ApolloFederationTracingExtensionSync
+
+schema = strawberry.Schema(
+    query=Query, extensions=[ApolloFederationTracingExtensionSync]
+)
+```
+
 ## Datadog
 
 In addition to Apollo Tracing we also support tracing with

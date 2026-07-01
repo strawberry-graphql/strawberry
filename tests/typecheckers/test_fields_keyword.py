@@ -50,7 +50,7 @@ def test():
             ),
             Result(
                 type="note",
-                message='Revealed type is "def (self: mypy_test.User, *, name: builtins.str)"',
+                message='Revealed type is "def (self: mypy_test.User, *, name: str)"',
                 line=12,
                 column=13,
             ),

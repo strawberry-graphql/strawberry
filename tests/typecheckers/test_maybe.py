@@ -48,13 +48,13 @@ def test_maybe() -> None:
         [
             Result(
                 type="note",
-                message='Revealed type is "strawberry.types.maybe.Some[builtins.str] | None"',
+                message='Revealed type is "strawberry.types.maybe.Some[str] | None"',
                 line=12,
                 column=13,
             ),
             Result(
                 type="note",
-                message='Revealed type is "strawberry.types.maybe.Some[builtins.str]"',
+                message='Revealed type is "strawberry.types.maybe.Some[str]"',
                 line=15,
                 column=17,
             ),

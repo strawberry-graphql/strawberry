@@ -11,9 +11,15 @@ from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 import pytest_asyncio
+from graphql import parse
 from pytest_mock import MockerFixture
 
+from strawberry.extensions import ParserCache
+from strawberry.extensions import parser_cache as parser_cache_module
 from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL
+from strawberry.subscriptions.protocols.graphql_transport_ws import (
+    handlers as transport_handlers,
+)
 from strawberry.subscriptions.protocols.graphql_transport_ws.types import (
     CompleteMessage,
     ConnectionAckMessage,
@@ -25,7 +31,7 @@ from strawberry.subscriptions.protocols.graphql_transport_ws.types import (
     SubscribeMessage,
 )
 from tests.http.clients.base import DebuggableGraphQLTransportWSHandler
-from tests.views.schema import MyExtension, Schema, Subscription, schema
+from tests.views.schema import MyExtension, Query, Schema, Subscription, schema
 
 if TYPE_CHECKING:
     from tests.http.clients.base import HttpClient, WebSocketClient
@@ -469,6 +475,75 @@ async def test_simple_subscription(ws: WebSocketClient):
     await ws.send_message({"id": "sub1", "type": "complete"})
 
 
+async def test_document_is_parsed_by_schema_once(
+    ws: WebSocketClient, mocker: MockerFixture
+):
+    from strawberry.schema import schema as schema_module
+
+    parse_spy = mocker.spy(schema_module, "parse")
+
+    await ws.send_message(
+        {
+            "id": "sub1",
+            "type": "subscribe",
+            "payload": {"query": 'subscription { echo(message: "Hi") }'},
+        }
+    )
+
+    next_message: NextMessage = await ws.receive_json()
+    assert_next(next_message, "sub1", {"echo": "Hi"})
+    await ws.send_message({"id": "sub1", "type": "complete"})
+
+    parse_spy.assert_called_once()
+
+
+async def test_document_parsing_uses_schema_extensions(
+    http_client_class: type[HttpClient],
+):
+    from strawberry.schema import schema as schema_module
+
+    parser_cache_module._get_parse_cache.cache_clear()
+    cached_schema = Schema(
+        query=Query,
+        subscription=Subscription,
+        extensions=[ParserCache],
+    )
+    test_client = http_client_class(cached_schema)
+
+    with (
+        patch.object(
+            transport_handlers,
+            "parse",
+            side_effect=AssertionError("transport should not parse GraphQL documents"),
+            create=True,
+        ),
+        patch("strawberry.extensions.parser_cache.parse", wraps=parse) as cache_parse,
+        patch.object(schema_module, "parse", wraps=schema_module.parse) as schema_parse,
+    ):
+        async with test_client.ws_connect(
+            "/graphql", protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL]
+        ) as ws:
+            await ws.send_message({"type": "connection_init"})
+            connection_ack_message: ConnectionAckMessage = await ws.receive_json()
+            assert connection_ack_message == {"type": "connection_ack"}
+
+            await ws.send_message(
+                {
+                    "id": "sub1",
+                    "type": "subscribe",
+                    "payload": {"query": 'subscription { echo(message: "Hi") }'},
+                }
+            )
+
+            next_message: NextMessage = await ws.receive_json()
+            assert_next(next_message, "sub1", {"echo": "Hi"})
+            await ws.send_message({"id": "sub1", "type": "complete"})
+
+    cache_parse.assert_called_once_with('subscription { echo(message: "Hi") }')
+    schema_parse.assert_not_called()
+    parser_cache_module._get_parse_cache.cache_clear()
+
+
 @pytest.mark.parametrize(
     ("extra_payload", "expected_message"),
     [
@@ -586,6 +661,56 @@ async def test_subscription_field_errors(ws: WebSocketClient):
         )
 
         process_errors.assert_called_once()
+
+
+async def test_incremental_delivery_frames_are_rejected(ws: WebSocketClient):
+    """``stream`` expands incremental delivery (``@defer``/``@stream``) into raw
+    graphql-core frames, which the graphql-transport-ws ``next`` message cannot
+    represent. The handler must reject such an operation with an ``error`` rather
+    than crash or emit a malformed payload.
+
+    A synthetic frame is injected so the behaviour is exercised regardless of the
+    installed graphql-core version (incremental delivery needs >= 3.3).
+    """
+
+    class FakeIncrementalFrame:
+        # Mimics a graphql-core incremental frame: notably NOT a strawberry
+        # ``ExecutionResult`` and missing ``data``/``errors`` accessors.
+        has_next = True
+        incremental = ()
+
+    stream_closed = asyncio.Event()
+
+    async def fake_stream(
+        self, *args: object, **kwargs: object
+    ) -> AsyncGenerator[FakeIncrementalFrame, None]:
+        async def frames() -> AsyncGenerator[FakeIncrementalFrame, None]:
+            try:
+                yield FakeIncrementalFrame()
+                await asyncio.sleep(999)
+            finally:
+                stream_closed.set()
+
+        return frames()
+
+    with patch.object(Schema, "stream", fake_stream):
+        await ws.send_message(
+            {
+                "id": "sub1",
+                "type": "subscribe",
+                "payload": {"query": 'subscription { echo(message: "Hi") }'},
+            }
+        )
+
+        error_message: ErrorMessage = await ws.receive_json()
+        assert error_message["type"] == "error"
+        assert error_message["id"] == "sub1"
+        assert len(error_message["payload"]) == 1
+        assert (
+            "Incremental delivery is not supported"
+            in error_message["payload"][0]["message"]
+        )
+        await asyncio.wait_for(stream_closed.wait(), timeout=2)
 
 
 async def test_subscription_cancellation(ws: WebSocketClient):
@@ -1216,3 +1341,409 @@ async def test_unexpected_client_disconnects_are_gracefully_handled(
 
         assert not process_errors.called
         assert Subscription.active_infinity_subscriptions == 0
+
+
+async def test_max_subscriptions_per_connection(http_client_class: type[HttpClient]):
+    """Test that subscriptions beyond the limit are rejected with an error."""
+    test_client = http_client_class(schema, max_subscriptions_per_connection=2)
+
+    async with test_client.ws_connect(
+        "/graphql", protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL]
+    ) as ws:
+        await ws.send_message({"type": "connection_init"})
+        connection_ack_message: ConnectionAckMessage = await ws.receive_json()
+        assert connection_ack_message == {"type": "connection_ack"}
+
+        # First two subscriptions should succeed
+        await ws.send_message(
+            {
+                "id": "sub1",
+                "type": "subscribe",
+                "payload": {"query": 'subscription { infinity(message: "Hi") }'},
+            }
+        )
+        next_message: NextMessage = await ws.receive_json()
+        assert next_message["type"] == "next"
+        assert next_message["id"] == "sub1"
+
+        await ws.send_message(
+            {
+                "id": "sub2",
+                "type": "subscribe",
+                "payload": {"query": 'subscription { infinity(message: "Hi") }'},
+            }
+        )
+        next_message = await ws.receive_json()
+        assert next_message["type"] == "next"
+        assert next_message["id"] == "sub2"
+
+        # Third subscription should be rejected
+        await ws.send_message(
+            {
+                "id": "sub3",
+                "type": "subscribe",
+                "payload": {"query": 'subscription { infinity(message: "Hi") }'},
+            }
+        )
+        error_message: ErrorMessage = await ws.receive_json()
+        assert error_message["type"] == "error"
+        assert error_message["id"] == "sub3"
+        assert error_message["payload"] == [{"message": "Subscription limit reached"}]
+
+        # Completing one should free a slot
+        await ws.send_message({"id": "sub1", "type": "complete"})
+
+        await ws.send_message(
+            {
+                "id": "sub4",
+                "type": "subscribe",
+                "payload": {"query": 'subscription { infinity(message: "Hi") }'},
+            }
+        )
+        next_message = await ws.receive_json()
+        assert next_message["type"] == "next"
+        assert next_message["id"] == "sub4"
+
+        await ws.send_message({"id": "sub2", "type": "complete"})
+        await ws.send_message({"id": "sub4", "type": "complete"})
+        await ws.close()
+
+
+async def test_max_subscriptions_per_connection_disabled(
+    http_client_class: type[HttpClient],
+):
+    """Test that setting max_subscriptions_per_connection to None disables the limit."""
+    test_client = http_client_class(schema, max_subscriptions_per_connection=None)
+
+    async with test_client.ws_connect(
+        "/graphql", protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL]
+    ) as ws:
+        await ws.send_message({"type": "connection_init"})
+        connection_ack_message: ConnectionAckMessage = await ws.receive_json()
+        assert connection_ack_message == {"type": "connection_ack"}
+
+        # Should be able to create many subscriptions without limit
+        for i in range(5):
+            await ws.send_message(
+                {
+                    "id": f"sub{i}",
+                    "type": "subscribe",
+                    "payload": {"query": 'subscription { infinity(message: "Hi") }'},
+                }
+            )
+            next_message: NextMessage = await ws.receive_json()
+            assert next_message["type"] == "next"
+            assert next_message["id"] == f"sub{i}"
+
+        for i in range(5):
+            await ws.send_message({"id": f"sub{i}", "type": "complete"})
+        await ws.close()
+
+
+async def test_task_done_callback_fires_for_completed_operations(
+    http_client: HttpClient,
+):
+    """The done callback fires for each completed operation task."""
+    handler = None
+    callback_count = 0
+    all_callbacks_fired = asyncio.Event()
+    expected_callbacks = 6  # 1 timeout task + 5 operations
+
+    def on_init(_handler):
+        nonlocal handler
+        handler = _handler
+        original_task_done = _handler._task_done
+
+        def tracking_task_done(task):
+            nonlocal callback_count
+            original_task_done(task)
+            callback_count += 1
+            if callback_count >= expected_callbacks:
+                all_callbacks_fired.set()
+
+        _handler._task_done = tracking_task_done
+
+    with patch.object(DebuggableGraphQLTransportWSHandler, "on_init", on_init):
+        async with http_client.ws_connect(
+            "/graphql", protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL]
+        ) as ws:
+            await ws.send_message({"type": "connection_init"})
+            await ws.receive_json()  # ack
+
+            for i in range(5):
+                sub_id = f"sub{i}"
+                await ws.send_message(
+                    {
+                        "id": sub_id,
+                        "type": "subscribe",
+                        "payload": {
+                            "query": f'subscription {{ echo(message: "msg{i}") }}'
+                        },
+                    }
+                )
+                await ws.receive_json()  # next
+                complete = await ws.receive_json()  # complete
+                assert complete["type"] == "complete"
+
+            await asyncio.wait_for(all_callbacks_fired.wait(), timeout=2)
+            await ws.close()
+
+    assert callback_count == expected_callbacks
+
+
+async def test_done_callback_fires_for_cancelled_subscription(
+    http_client: HttpClient,
+):
+    """The done callback fires for a cancelled subscription task."""
+    handler = None
+    cancelled_callback_fired = asyncio.Event()
+
+    def on_init(_handler):
+        nonlocal handler
+        handler = _handler
+        original_task_done = _handler._task_done
+
+        def tracking_task_done(task):
+            original_task_done(task)
+            if task.cancelled():
+                cancelled_callback_fired.set()
+
+        _handler._task_done = tracking_task_done
+
+    with patch.object(DebuggableGraphQLTransportWSHandler, "on_init", on_init):
+        async with http_client.ws_connect(
+            "/graphql", protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL]
+        ) as ws:
+            await ws.send_message({"type": "connection_init"})
+            await ws.receive_json()  # ack
+
+            await ws.send_message(
+                {
+                    "id": "sub1",
+                    "type": "subscribe",
+                    "payload": {
+                        "query": 'subscription { echo(message: "Hi", delay: 99) }'
+                    },
+                }
+            )
+
+            await ws.send_message({"id": "sub1", "type": "complete"})
+
+            await asyncio.wait_for(cancelled_callback_fired.wait(), timeout=2)
+            await ws.close()
+
+
+async def test_shutdown_with_multiple_in_flight_operations(
+    http_client: HttpClient,
+):
+    """Closing a connection with in-flight subscriptions cancels all tasks cleanly."""
+    handler = None
+    shutdown_callbacks = 0
+    all_shutdown = asyncio.Event()
+
+    def on_init(_handler):
+        nonlocal handler
+        handler = _handler
+        original_task_done = _handler._task_done
+
+        def tracking_task_done(task):
+            nonlocal shutdown_callbacks
+            original_task_done(task)
+            if task.cancelled():
+                shutdown_callbacks += 1
+                if shutdown_callbacks >= 3:  # 3 operation tasks
+                    all_shutdown.set()
+
+        _handler._task_done = tracking_task_done
+
+    with patch.object(DebuggableGraphQLTransportWSHandler, "on_init", on_init):
+        async with http_client.ws_connect(
+            "/graphql", protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL]
+        ) as ws:
+            await ws.send_message({"type": "connection_init"})
+            await ws.receive_json()  # ack
+
+            for i in range(3):
+                await ws.send_message(
+                    {
+                        "id": f"sub{i}",
+                        "type": "subscribe",
+                        "payload": {
+                            "query": 'subscription { infinity(message: "Hi") }'
+                        },
+                    }
+                )
+                next_message: NextMessage = await ws.receive_json()
+                assert next_message["type"] == "next"
+
+            assert handler is not None
+            assert len(handler.operations) == 3
+
+            await ws.close()
+
+        await asyncio.wait_for(all_shutdown.wait(), timeout=2)
+        # 3 operation tasks + possibly the connection_init_timeout_task
+        assert shutdown_callbacks >= 3
+
+
+async def test_task_done_callback_retrieves_exception(
+    http_client: HttpClient,
+):
+    """The done callback retrieves unhandled exceptions from the timeout task.
+
+    Makes handle_task_exception re-raise so the exception escapes the
+    coroutine's except block, then verifies the callback retrieved it.
+    """
+    handler = None
+    callback_fired = asyncio.Event()
+
+    def on_init(_handler):
+        nonlocal handler
+        handler = _handler
+        # Break the timeout attribute to cause an AttributeError
+        handler.connection_init_wait_timeout = None
+
+        # Make handle_task_exception re-raise so the exception escapes
+        async def reraise(error):
+            raise error
+
+        handler.handle_task_exception = reraise
+
+        original_task_done = _handler._task_done
+
+        def tracking_task_done(task):
+            original_task_done(task)
+            callback_fired.set()
+
+        _handler._task_done = tracking_task_done
+
+    with patch.object(DebuggableGraphQLTransportWSHandler, "on_init", on_init):
+        async with http_client.ws_connect(
+            "/graphql", protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL]
+        ) as ws:
+            # Wait for the timeout task to fail and the callback to fire
+            await asyncio.wait_for(callback_fired.wait(), timeout=2)
+
+            assert handler is not None
+            assert handler.connection_init_timeout_task is not None
+            assert handler.connection_init_timeout_task.done()
+            assert not handler.connection_init_timeout_task.cancelled()
+            # The exception escaped the coroutine and was retrieved by _task_done
+            assert isinstance(
+                handler.connection_init_timeout_task.exception(), AttributeError
+            )
+
+            # Clear the timeout task so shutdown() doesn't re-raise
+            # when awaiting the already-failed task
+            handler.connection_init_timeout_task = None
+
+            await ws.send_message({"type": "connection_init"})
+            connection_ack_message: ConnectionAckMessage = await ws.receive_json()
+            assert connection_ack_message == {"type": "connection_ack"}
+            await ws.close()
+
+
+async def test_task_done_callback_on_unhandled_operation_exception(
+    http_client: HttpClient,
+):
+    """The done callback retrieves unhandled exceptions from operation tasks.
+
+    Patches run_operation to raise, bypassing the internal except block,
+    and verifies the callback fires and retrieves the exception.
+    """
+    handler = None
+    failed_task_exception: list[BaseException] = []
+    callback_fired = asyncio.Event()
+
+    def on_init(_handler):
+        nonlocal handler
+        handler = _handler
+        original_task_done = _handler._task_done
+
+        def tracking_task_done(task):
+            original_task_done(task)
+            if not task.cancelled() and task.exception() is not None:
+                failed_task_exception.append(task.exception())
+                callback_fired.set()
+
+        _handler._task_done = tracking_task_done
+
+    with patch.object(DebuggableGraphQLTransportWSHandler, "on_init", on_init):
+        async with http_client.ws_connect(
+            "/graphql", protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL]
+        ) as ws:
+            await ws.send_message({"type": "connection_init"})
+            await ws.receive_json()  # ack
+
+            assert handler is not None
+
+            async def failing_run(operation):
+                raise RuntimeError("simulated crash")
+
+            handler.run_operation = failing_run
+
+            await ws.send_message(
+                {
+                    "id": "sub1",
+                    "type": "subscribe",
+                    "payload": {"query": 'subscription { echo(message: "Hi") }'},
+                }
+            )
+
+            await asyncio.wait_for(callback_fired.wait(), timeout=2)
+            await ws.close()
+
+    assert len(failed_task_exception) == 1
+    assert isinstance(failed_task_exception[0], RuntimeError)
+
+
+async def test_shutdown_awaits_cancelled_subscription_tasks(
+    http_client: HttpClient,
+):
+    """Shutdown must await cancelled subscription tasks so their finally-blocks
+    complete before shared resources are torn down.
+
+    Regression test for https://github.com/strawberry-graphql/strawberry/issues/4284
+    """
+    cleanup_done_at_shutdown_end: bool = False
+    shutdown_done = asyncio.Event()
+
+    def on_init(_handler):
+        original_shutdown = _handler.shutdown
+
+        async def tracked_shutdown():
+            nonlocal cleanup_done_at_shutdown_end
+            await original_shutdown()
+            cleanup_done_at_shutdown_end = (
+                Subscription.active_infinity_subscriptions == 0
+            )
+            shutdown_done.set()
+
+        _handler.shutdown = tracked_shutdown
+
+    try:
+        with patch.object(DebuggableGraphQLTransportWSHandler, "on_init", on_init):
+            async with http_client.ws_connect(
+                "/graphql", protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL]
+            ) as ws:
+                await ws.send_message({"type": "connection_init"})
+                await ws.receive_json()
+
+                await ws.send_message(
+                    {
+                        "id": "sub1",
+                        "type": "subscribe",
+                        "payload": {
+                            "query": 'subscription { infinity(message: "Hi") }'
+                        },
+                    }
+                )
+                await ws.receive(timeout=2)
+                assert Subscription.active_infinity_subscriptions == 1
+
+                await ws.close()
+                await asyncio.wait_for(shutdown_done.wait(), timeout=5)
+
+        assert cleanup_done_at_shutdown_end is True
+    except AttributeError:
+        pytest.skip("Can't patch on_init for this client")

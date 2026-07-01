@@ -9,10 +9,9 @@ Strawberry supports subscription over multipart responses. This is an
 created by [Apollo](https://www.apollographql.com/) to support subscriptions
 over HTTP, and it is supported by default by Apollo Client.
 
-# Support
+## Support
 
-We support multipart subscriptions out of the box in the following HTTP
-libraries:
+We support multipart subscriptions in the following HTTP libraries:
 
 - Django (only in the Async view)
 - ASGI
@@ -21,7 +20,28 @@ libraries:
 - AioHTTP
 - Quart
 
-# Usage
+## Usage
 
-Multipart subscriptions are automatically enabled when using Subscription, so no
-additional configuration is required.
+Multipart subscriptions are opt-in. Enable them by including
+`MULTIPART_SUBSCRIPTION_PROTOCOL` in your integration's
+`subscription_protocols`:
+
+```python
+from strawberry.fastapi import GraphQLRouter
+from strawberry.subscriptions import (
+    GRAPHQL_TRANSPORT_WS_PROTOCOL,
+    GRAPHQL_WS_PROTOCOL,
+    MULTIPART_SUBSCRIPTION_PROTOCOL,
+)
+
+from api.schema import schema
+
+graphql_router = GraphQLRouter(
+    schema,
+    subscription_protocols=[
+        GRAPHQL_TRANSPORT_WS_PROTOCOL,
+        GRAPHQL_WS_PROTOCOL,
+        MULTIPART_SUBSCRIPTION_PROTOCOL,
+    ],
+)
+```

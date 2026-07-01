@@ -14,7 +14,7 @@ def test_mask_all_errors():
         def hidden_error(self) -> str:
             raise KeyError("This error is not visible")
 
-    schema = strawberry.Schema(query=Query, extensions=[MaskErrors()])
+    schema = strawberry.Schema(query=Query, extensions=[MaskErrors])
 
     query = "query { hiddenError }"
 
@@ -38,7 +38,7 @@ async def test_mask_all_errors_async():
         def hidden_error(self) -> str:
             raise KeyError("This error is not visible")
 
-    schema = strawberry.Schema(query=Query, extensions=[MaskErrors()])
+    schema = strawberry.Schema(query=Query, extensions=[MaskErrors])
 
     query = "query { hiddenError }"
 
@@ -73,7 +73,8 @@ def test_mask_some_errors():
         return not (original_error and isinstance(original_error, VisibleError))
 
     schema = strawberry.Schema(
-        query=Query, extensions=[MaskErrors(should_mask_error=should_mask_error)]
+        query=Query,
+        extensions=[lambda: MaskErrors(should_mask_error=should_mask_error)],
     )
 
     query = "query { hiddenError }"
@@ -117,7 +118,7 @@ def test_process_errors_original_error():
             for error in errors:
                 mock_process_error(error)
 
-    schema = CustomSchema(query=Query, extensions=[MaskErrors()])
+    schema = CustomSchema(query=Query, extensions=[MaskErrors])
 
     query = "query { hiddenError }"
 
@@ -145,7 +146,7 @@ def test_graphql_error_masking():
         def graphql_error(self) -> str:
             return None  # type: ignore
 
-    schema = strawberry.Schema(query=Query, extensions=[MaskErrors()])
+    schema = strawberry.Schema(query=Query, extensions=[MaskErrors])
 
     query = "query { graphqlError }"
 
@@ -171,7 +172,7 @@ async def test_mask_errors_with_strawberry_execution_result_async():
         def test_field(self) -> str:
             raise ValueError("Original error message")
 
-    schema = strawberry.Schema(query=Query, extensions=[MaskErrors()])
+    schema = strawberry.Schema(query=Query, extensions=[MaskErrors])
 
     query = "query { testField }"
 
@@ -210,7 +211,8 @@ async def test_mask_errors_selective_async():
         return not (original_error and isinstance(original_error, VisibleError))
 
     schema = strawberry.Schema(
-        query=Query, extensions=[MaskErrors(should_mask_error=should_mask_error)]
+        query=Query,
+        extensions=[lambda: MaskErrors(should_mask_error=should_mask_error)],
     )
 
     # Test hidden error

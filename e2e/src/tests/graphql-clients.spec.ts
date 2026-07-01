@@ -17,6 +17,42 @@ test.describe("GraphQL Client Tests", () => {
 			await expect(result).toContainText('"hello": "Hello, world!"');
 		});
 
+		test("query over GET works", async ({ page }: { page: Page }) => {
+			const getRequest = page.waitForRequest(
+				(request) =>
+					request.url().includes("/graphql") && request.method() === "GET",
+			);
+
+			const button = page.getByTestId("apollo-get-query-button");
+			await button.scrollIntoViewIfNeeded();
+			await button.click();
+
+			// the client actually sends the query as a GET request
+			await getRequest;
+
+			const result = page.getByTestId("apollo-get-query-result");
+			await expect(result).toContainText('"hello": "Hello, world!"');
+		});
+
+		test("mutation works", async ({ page }: { page: Page }) => {
+			const button = page.getByTestId("apollo-mutation-button");
+			await button.scrollIntoViewIfNeeded();
+			await button.click();
+
+			const result = page.getByTestId("apollo-mutation-result");
+			await expect(result).toContainText('"echo": "hello there"');
+		});
+
+		test("renders GraphQL errors", async ({ page }: { page: Page }) => {
+			const button = page.getByTestId("apollo-error-query-button");
+			await button.scrollIntoViewIfNeeded();
+			await button.click();
+
+			await expect(page.getByTestId("apollo-error-query-error")).toContainText(
+				"Query failed",
+			);
+		});
+
 		test("delayed query works", async ({ page }: { page: Page }) => {
 			const button = page.getByTestId("apollo-delayed-query-button");
 			await button.scrollIntoViewIfNeeded();

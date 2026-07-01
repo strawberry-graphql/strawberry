@@ -42,7 +42,7 @@ def test():
         [
             Result(
                 type="note",
-                message='Revealed type is "strawberry.directive.StrawberryDirective[builtins.int]"',
+                message='Revealed type is "strawberry.directive.StrawberryDirective[int]"',
                 line=16,
                 column=13,
             )

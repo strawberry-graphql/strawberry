@@ -1,5 +1,5 @@
 from collections import defaultdict
-from collections.abc import Iterable, Mapping
+from collections.abc import Callable, Iterable, Mapping
 from functools import cached_property
 from itertools import chain
 from typing import (
@@ -53,7 +53,9 @@ class Schema(BaseSchema):
         # TODO: we should update directives' type in the main schema
         directives: Iterable[type] = (),
         types: Iterable[type] = (),
-        extensions: Iterable[Union[type["SchemaExtension"], "SchemaExtension"]] = (),
+        extensions: Iterable[
+            type["SchemaExtension"] | Callable[[], "SchemaExtension"]
+        ] = (),
         execution_context_class: type["GraphQLExecutionContext"] | None = None,
         config: Optional["StrawberryConfig"] = None,
         scalar_overrides: dict[object, Union[type, "ScalarWrapper", "ScalarDefinition"]]
@@ -206,7 +208,7 @@ class Schema(BaseSchema):
                     kwargs["info"] = info  # type: ignore[index]
 
                 try:
-                    result = resolve_reference(**kwargs)
+                    result = resolve_reference(**kwargs)  # type: ignore[arg-type]
                 except Exception as e:  # noqa: BLE001
                     result = e
             else:

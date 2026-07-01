@@ -1,6 +1,516 @@
 CHANGELOG
 =========
 
+0.320.0 - 2026-06-27
+--------------------
+
+This release adds support for GraphQL subscriptions over Server-Sent Events
+(SSE), following the
+[GraphQL over SSE](https://github.com/enisdenjo/graphql-sse/blob/master/PROTOCOL.md)
+protocol in "distinct connections mode".
+
+SSE is opt-in. Enable it by including `GRAPHQL_SSE_PROTOCOL` in your
+integration's `subscription_protocols`:
+
+```python
+from strawberry.asgi import GraphQL
+from strawberry.subscriptions import (
+    GRAPHQL_SSE_PROTOCOL,
+    GRAPHQL_TRANSPORT_WS_PROTOCOL,
+    GRAPHQL_WS_PROTOCOL,
+)
+
+app = GraphQL(
+    schema,
+    subscription_protocols=[
+        GRAPHQL_TRANSPORT_WS_PROTOCOL,
+        GRAPHQL_WS_PROTOCOL,
+        GRAPHQL_SSE_PROTOCOL,
+    ],
+)
+```
+
+Clients request a stream with `Accept: text/event-stream`. Queries, mutations,
+subscriptions, and `@defer`/`@stream` are all supported on the async
+streaming-capable integrations (ASGI, FastAPI, AIOHTTP, Litestar, Quart, Sanic,
+async Django, and async Channels). See the
+[SSE subscriptions docs](https://strawberry.rocks/docs/general/subscriptions#using-sse-subscriptions)
+for client setup, reconnection, and deployment notes (prefer HTTP/2).
+
+**Breaking change: multipart subscriptions are now opt-in.** Streaming
+transports are selected from `subscription_protocols`, so multipart
+subscriptions — previously served for any `Accept: multipart/mixed` request —
+now require `MULTIPART_SUBSCRIPTION_PROTOCOL` to be listed there explicitly.
+
+This release was contributed by [@patrick91](https://github.com/patrick91) in [#4466](https://github.com/strawberry-graphql/strawberry/pull/4466)
+
+0.319.0 - 2026-06-21
+--------------------
+
+This release adds `Schema.stream(...)`, a shared execution API for custom
+streaming integrations.
+
+`Schema.stream(...)` accepts queries, mutations and subscriptions and always
+returns an async sequence of results: a single `ExecutionResult` for queries and
+mutations, and the stream of results for subscriptions. This lets streaming
+transports use one schema entry point instead of choosing between `execute` and
+`subscribe` themselves.
+
+Incremental delivery operations (`@defer`/`@stream`) are also supported: their
+initial result is yielded first, followed by each raw graphql-core patch frame,
+which the transport is responsible for formatting.
+
+The schema execution APIs accept either a string or an already-parsed
+`DocumentNode`, so a transport that parsed the document itself (for example to
+inspect the operation type before executing) can pass the node to avoid parsing
+it again.
+
+Strawberry's multipart HTTP transport and `graphql-transport-ws` handler now use
+this path internally.
+
+HTTP multipart response framing now lives in the stream transport layer instead
+of `AsyncBaseHTTPView.encode_multipart_data`. Integrations that customized that
+view method should customize the transport encoding instead.
+
+This release was contributed by [@patrick91](https://github.com/patrick91) in [#4460](https://github.com/strawberry-graphql/strawberry/pull/4460)
+
+0.318.1 - 2026-06-20
+--------------------
+
+This release fixes compatibility with graphql-core 3.3 release candidates.
+
+Strawberry now handles graphql-core's renamed custom executor hook and nullable
+AST argument and directive collections, so schemas using custom execution
+contexts and `Info.selected_fields` continue to work when testing against
+graphql-core 3.3.
+
+This release was contributed by [@patrick91](https://github.com/patrick91) in [#4470](https://github.com/strawberry-graphql/strawberry/pull/4470)
+
+0.318.0 - 2026-06-19
+--------------------
+
+This release adds a shared internal HTTP stream transport for multipart
+subscription responses.
+
+Application behavior for multipart subscriptions is largely unchanged. The
+shared transport now owns multipart response headers, heartbeat frames,
+completion frames, batching errors, and sync-mode errors, keeping Strawberry's
+built-in HTTP integrations on the same streaming contract.
+
+The one behavioral change is that each multipart part's `Content-Length` is now
+computed from the UTF-8 byte length of the payload instead of its character
+count, fixing the header for responses containing non-ASCII data.
+
+This release was contributed by [@patrick91](https://github.com/patrick91) in [#4469](https://github.com/strawberry-graphql/strawberry/pull/4469)
+
+0.317.2 - 2026-06-17
+--------------------
+
+This release fixes schema printing for input object defaults that explicitly set
+nullable fields to `null`.
+
+Strawberry now preserves explicit `None` values in printed nested input
+defaults, including fields set with `strawberry.Some(None)` and fields renamed
+with `strawberry.field(name=...)`, while still omitting fields that were not
+explicitly set.
+
+This release was contributed by [@patrick91](https://github.com/patrick91) in [#4461](https://github.com/strawberry-graphql/strawberry/pull/4461)
+
+0.317.1 - 2026-06-17
+--------------------
+
+Previously attributes which were not camelCase would be removed from field arguments for queries:
+```python
+import strawberry
+
+
+@strawberry.input
+class Bar:
+    a: str
+    b: str
+    some_values: list[str] | None = None
+
+
+@strawberry.input(one_of=True)
+class Foo:
+    bar: strawberry.Maybe[Bar]
+    c: strawberry.Maybe[str]
+
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    async def foobar(
+        self,
+        info: strawberry.Info,
+        foo: Foo = Foo(
+            bar=strawberry.Some(Bar(a="hi", b="bye", some_values=["my", "world"])),
+            c=None,
+        ),
+    ) -> str: ...
+
+
+schema = strawberry.Schema(Query)
+```
+
+Once printed the output would look like the following with the some_values removed.
+```graphql
+directive @oneOf on INPUT_OBJECT
+
+input Bar {
+  a: String!
+  b: String!
+  someValues: [String!] = null
+}
+
+input Foo @oneOf {
+  bar: Bar
+  c: String
+}
+
+type Query {
+  foobar(foo: Foo! = {bar: {a: "hi", b: "bye"}}): String!
+}
+```
+
+After this fix, the value will be reflected in the print statement:
+```graphql
+directive @oneOf on INPUT_OBJECT
+
+input Bar {
+  a: String!
+  b: String!
+  someValues: [String!] = null
+}
+
+input Foo @oneOf {
+  bar: Bar
+  c: String
+}
+
+type Query {
+  foobar(foo: Foo! = {bar: {a: "hi", b: "bye", someValues: ["my", "world"]}}): String!
+}
+```
+
+This release was contributed by [@plyte](https://github.com/plyte) in [#4391](https://github.com/strawberry-graphql/strawberry/pull/4391)
+
+Additional contributors: [@pre-commit-ci[bot]](https://github.com/pre-commit-ci[bot])
+
+0.317.0 - 2026-06-17
+--------------------
+
+`scalar_overrides` now matches generic `dict` annotations by their origin as a
+fallback, so registering a bare `dict` covers every `dict[K, V]`
+parameterization instead of needing one entry per variant.
+
+Before, registering only the unparameterized origin (`dict`) did not match
+parameterized annotations like `dict[str, int]`. You had to register the exact
+annotation, and any other shape such as `dict[str, list[int]]` raised
+`Unexpected type`:
+
+```python
+from typing import Any
+
+import strawberry
+from strawberry.scalars import JSON
+
+
+@strawberry.type
+class Query:
+    settings: dict[str, Any]
+    metadata: dict[str, list[int]]
+
+
+schema = strawberry.Schema(
+    query=Query,
+    scalar_overrides={dict[str, Any]: JSON},
+)
+```
+
+Now registering the unparameterized `dict` covers all of its parameterizations,
+including resolver and mutation arguments typed with `dict[...]`. This is
+especially useful for `strawberry.experimental.pydantic` models with typed
+dictionary fields. Lookup still tries an exact match first, so existing overrides
+keep working unchanged.
+
+This release was contributed by [@Vansh-Sharma27](https://github.com/Vansh-Sharma27) in [#4440](https://github.com/strawberry-graphql/strawberry/pull/4440)
+
+Additional contributors: [@pre-commit-ci[bot]](https://github.com/pre-commit-ci[bot])
+
+0.316.0 - 2026-05-19
+--------------------
+
+`Schema(extensions=...)` now accepts a class or a zero-arg factory and
+builds a fresh extension per request. This fixes a race where shared
+instances leaked `ExecutionContext` across concurrent requests, which
+also produced mixed traces in `ApolloTracingExtension`,
+`ApolloFederationTracingExtension`, `DatadogTracingExtension`, and
+`OpenTelemetryExtension`.
+
+```python
+schema = strawberry.Schema(
+    Query,
+    extensions=[
+        MaxTokensLimiter,
+        lambda: MyExtension(arg=...),
+    ],
+)
+```
+
+Passing an instance is now deprecated. `extensions` no longer accepts
+`SchemaExtension` instances in the type signature, so mypy and pyright
+will flag existing call sites. Instances still work at runtime for
+backwards compatibility, but the same object is reused for every
+request, so concurrent requests can see each other's
+`ExecutionContext`. Switch to the class or a factory for per-request
+isolation and to silence the warning.
+
+This release was contributed by [@bellini666](https://github.com/bellini666) in [#4392](https://github.com/strawberry-graphql/strawberry/pull/4392)
+
+0.315.7 - 2026-05-19
+--------------------
+
+This release fixes validation of fragment spreads in `QueryDepthLimiter` and
+`MaxAliasesLimiter`.
+
+`QueryDepthLimiter` now tracks visited fragments while calculating operation depth,
+preventing circular fragment references from causing unbounded recursion.
+
+`MaxAliasesLimiter` now expands fragment spreads when counting aliases, so aliases
+declared inside fragments are counted each time the fragment is used.
+
+This release was contributed by [@patrick91](https://github.com/patrick91) in [#4421](https://github.com/strawberry-graphql/strawberry/pull/4421)
+
+Additional contributors: [@pre-commit-ci[bot]](https://github.com/pre-commit-ci[bot])
+
+0.315.6 - 2026-05-19
+--------------------
+
+Fix `UnresolvedFieldTypeError` when using `from __future__ import annotations` together with a module-level `Annotated[..., strawberry.lazy(...)]` alias. The aliased form now resolves the same as inlining `Annotated[...]` on the field.
+
+```python
+from __future__ import annotations
+from typing import TYPE_CHECKING, Annotated
+import strawberry
+
+if TYPE_CHECKING:
+    from .user import User
+
+LazyUser = Annotated["User", strawberry.lazy(".user")]
+
+
+@strawberry.type
+class Post:
+    user: LazyUser  # previously failed
+```
+
+0.315.5 - 2026-05-14
+--------------------
+
+The `types.field.resolver.ReservedParameterSpecification` protocol now requires classes to have `__hash__` as well,
+because instances of those classes are to be used as dictionary keys.
+
+This release was contributed by [@jonathandung](https://github.com/jonathandung) in [#4411](https://github.com/strawberry-graphql/strawberry/pull/4411)
+
+Additional contributors: [@pre-commit-ci[bot]](https://github.com/pre-commit-ci[bot])
+
+0.315.4 - 2026-05-12
+--------------------
+
+This release fixes an issue in the bundled GraphiQL template where editing HTTP
+headers, including `Authorization` headers, wrote those values into the browser
+URL.
+
+GraphiQL still supports loading headers from existing `headers` URL parameters,
+but newly edited headers are no longer added to the URL. Query and variables URL
+sharing is unchanged.
+
+This release was contributed by [@patrick91](https://github.com/patrick91) in [#4409](https://github.com/strawberry-graphql/strawberry/pull/4409)
+
+0.315.3 - 2026-04-29
+--------------------
+
+This release fixes the Channels integration when using `cross-web` 0.6.0 or newer.
+
+`cross-web` now requires request adapters to expose `path_params`, so Strawberry's
+Channels HTTP adapters now read them from the Channels `url_route` scope.
+
+This release was contributed by [@patrick91](https://github.com/patrick91) in [#4390](https://github.com/strawberry-graphql/strawberry/pull/4390)
+
+0.315.2 - 2026-04-26
+--------------------
+
+Await cancelled subscription tasks during WebSocket shutdown so their `finally` blocks run before shared state (DB pools, event loop) is torn down.
+
+This release was contributed by [@Flamefork](https://github.com/Flamefork) in [#4319](https://github.com/strawberry-graphql/strawberry/pull/4319)
+
+0.315.1 - 2026-04-25
+--------------------
+
+Raise `MissingFieldAnnotationError` instead of `MissingReturnAnnotationError` when a field using `strawberry.field(resolver=...)` is missing both a type annotation and a resolver return type.
+
+This release was contributed by [@youngjaekwon](https://github.com/youngjaekwon) in [#4360](https://github.com/strawberry-graphql/strawberry/pull/4360)
+
+Additional contributors: [@pre-commit-ci[bot]](https://github.com/pre-commit-ci[bot])
+
+0.315.0 - 2026-04-24
+--------------------
+
+Cancel DataLoader dispatch task when all futures are cancelled.
+
+Previously, the background task created by `dispatch()` was fire-and-forget — its
+reference was never stored, so it couldn't be cancelled even when no caller was
+waiting for the results. This caused wasted work (e.g. database queries against
+closed sessions) when using `asyncio.TaskGroup` or similar structured concurrency
+patterns that cancel futures on failure.
+
+The dispatch task is now tracked in `Batch._dispatch_task` and automatically
+cancelled when all futures in the batch are cancelled.
+
+This release was contributed by [@ChihebBENCHEIKH1](https://github.com/ChihebBENCHEIKH1) in [#4379](https://github.com/strawberry-graphql/strawberry/pull/4379)
+
+0.314.3 - 2026-04-08
+--------------------
+
+Fix `deprecation_reason` not being copied from arguments to auto-generated input type fields in `InputMutationExtension`.
+
+This release was contributed by [@youngjaekwon](https://github.com/youngjaekwon) in [#4353](https://github.com/strawberry-graphql/strawberry/pull/4353)
+
+0.314.2 - 2026-04-08
+--------------------
+
+This release fixes a bug in `_listen_to_channel_generator` where `yield await
+awaitable` inside `try/except asyncio.TimeoutError` caused the `yield` to fall
+within the `try` block's bytecode exception table range.
+
+This meant that a `TimeoutError` thrown into the generator at the `yield` point
+(i.e. when the generator is suspended after delivering a value) was incorrectly
+caught by the internal timeout handler, silently stopping the generator instead
+of propagating to the caller. In production, this could manifest as
+`RuntimeError: cannot reuse already awaited coroutine` during WebSocket
+disconnect cleanup.
+
+The fix splits `yield await awaitable` into `result = await awaitable` followed
+by `yield result`, so the `yield` is outside the `try` block and exceptions
+thrown at the yield point propagate correctly.
+
+This release was contributed by [@ben-xo](https://github.com/ben-xo) in [#4352](https://github.com/strawberry-graphql/strawberry/pull/4352)
+
+0.314.1 - 2026-04-08
+--------------------
+
+This release attaches error details to Apollo Federation inline tracing (FTV1) trace nodes. This was missing in the original FTV1 addition made in [0.314.0](https://github.com/strawberry-graphql/strawberry/releases/tag/0.314.0).
+
+When a resolver raises an exception, the error message, location, and path are now included in the corresponding trace node, allowing Apollo Studio to display error information alongside timing data.
+
+This release was contributed by [@FineAndDanD](https://github.com/FineAndDanD) in [#4351](https://github.com/strawberry-graphql/strawberry/pull/4351)
+
+Additional contributors: [@bellini666](https://github.com/bellini666)
+
+0.314.0 - 2026-04-07
+--------------------
+
+This release adds support for Apollo Federation inline tracing (FTV1).
+
+When a request includes the `apollo-federation-include-trace: ftv1` header, Strawberry now records per-resolver timing information and includes it in the response under `extensions.ftv1` as a base64-encoded protobuf message, following the [Apollo Federation trace format](https://www.apollographql.com/docs/federation/metrics/). This allows an Apollo Gateway to aggregate subgraph traces and report them to Apollo Studio.
+
+Install the new optional extra to pull in the required `protobuf` dependency:
+
+```shell
+pip install 'strawberry-graphql[apollo-federation]'
+```
+
+Use the async extension for async schemas:
+
+```python
+import strawberry
+from strawberry.extensions.tracing import ApolloFederationTracingExtension
+
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def hello(self) -> str:
+        return "Hello, world!"
+
+
+schema = strawberry.Schema(
+    query=Query,
+    extensions=[ApolloFederationTracingExtension],
+)
+```
+
+Or the sync version when running outside of an async context:
+
+```python
+from strawberry.extensions.tracing import ApolloFederationTracingExtensionSync
+
+schema = strawberry.Schema(
+    query=Query,
+    extensions=[ApolloFederationTracingExtensionSync],
+)
+```
+
+> **Security:** any client can send the `apollo-federation-include-trace: ftv1` header unless you restrict it. Tracing payloads expose resolver timing details, so make sure only a trusted Apollo Gateway (or other internal traffic) can request traces — for example by enforcing authentication, network policy, or stripping the header from public requests at the edge.
+
+Contributed by [Thiago Bellini Ribeiro](https://github.com/bellini666) via [PR #4136](https://github.com/strawberry-graphql/strawberry/pull/4136/)
+
+0.313.0 - 2026-04-06
+--------------------
+
+Add PydanticErrorExtension to format validation errors into structured GraphQL error extensions.
+
+Includes:
+- Structured validation_errors output
+- Support for Pydantic v1 and v2
+
+Contributed by [Peehu Kandwal](https://github.com/peehu-k) via [PR #4342](https://github.com/strawberry-graphql/strawberry/pull/4342/)
+
+
+0.312.4 - 2026-04-05
+--------------------
+
+Fix a memory leak in the `graphql-transport-ws` WebSocket handler where completed
+task objects would accumulate in a list between messages. Task cleanup now uses
+`asyncio.Task.add_done_callback` for immediate cleanup instead of deferred reaping.
+
+Contributed by [Thiago Bellini Ribeiro](https://github.com/bellini666) via [PR #4345](https://github.com/strawberry-graphql/strawberry/pull/4345/)
+
+
+0.312.3 - 2026-04-04
+--------------------
+
+This release fixes two security vulnerabilities in the WebSocket subscription
+handlers (CVE-2026-35526, CVE-2026-35523).
+
+**CVE-2026-35526 - Authentication bypass in `graphql-ws`**: The legacy
+`graphql-ws` protocol handler didn't verify that the `connection_init`
+handshake was completed before accepting `start` messages, allowing clients
+to bypass any authentication logic in `on_ws_connect`. The connection is now
+closed with `4401 Unauthorized` if the handshake hasn't been completed.
+
+**CVE-2026-35523 - Unbounded subscriptions per connection**: Both WebSocket
+protocol handlers allowed unlimited concurrent subscriptions on a single
+connection, making it possible for a malicious client to exhaust server
+resources. A new `max_subscriptions_per_connection` parameter has been added
+to all views (default: `100`). Set it to `None` to disable the limit.
+
+Example:
+
+```python
+import strawberry
+from strawberry.fastapi import GraphQLRouter
+
+schema = strawberry.Schema(query=Query, subscription=Subscription)
+
+# default is 100, set to None to disable the limit
+graphql_app = GraphQLRouter(schema, max_subscriptions_per_connection=50)
+```
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #4344](https://github.com/strawberry-graphql/strawberry/pull/4344/)
+
+
 0.312.2 - 2026-03-25
 --------------------
 

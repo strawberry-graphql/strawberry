@@ -16,9 +16,10 @@ from strawberry.http.typevars import (
     Context,
     RootValue,
 )
+from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
 
 if TYPE_CHECKING:
-    from collections.abc import AsyncGenerator, Callable
+    from collections.abc import AsyncGenerator, Callable, Mapping, Sequence
 
     from strawberry.http import GraphQLHTTPResponse
     from strawberry.http.ides import GraphQL_IDE
@@ -63,10 +64,15 @@ class GraphQLView(
         graphql_ide: GraphQL_IDE | None = "graphiql",
         allow_queries_via_get: bool = True,
         multipart_uploads_enabled: bool = False,
+        subscription_protocols: Sequence[str] = (
+            GRAPHQL_TRANSPORT_WS_PROTOCOL,
+            GRAPHQL_WS_PROTOCOL,
+        ),
     ) -> None:
         self.schema = schema
         self.allow_queries_via_get = allow_queries_via_get
         self.multipart_uploads_enabled = multipart_uploads_enabled
+        self.protocols = subscription_protocols
 
         self.graphql_ide = graphql_ide
 
@@ -125,7 +131,7 @@ class GraphQLView(
         request: Request,
         stream: Callable[[], AsyncGenerator[str, None]],
         sub_response: TemporalResponse,
-        headers: dict[str, str],
+        headers: Mapping[str, str],
     ) -> HTTPResponse:
         response = await self.request.respond(
             status=sub_response.status_code,

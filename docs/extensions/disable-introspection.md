@@ -1,14 +1,26 @@
 ---
 title: Disable Introspection
-summary: Disable all introspection queries.
+summary: Disable standard GraphQL introspection queries.
 tags: security,validation
 ---
 
 # `DisableIntrospection`
 
-The `DisableIntrospection` extension disables all introspection queries for the
-schema. This can be useful to prevent clients from discovering unreleased or
-internal features of the API.
+The `DisableIntrospection` extension disables standard GraphQL introspection
+queries for the schema. It blocks fields such as `__schema` and `__type`.
+
+This can be useful to prevent clients from discovering unreleased or internal
+features of the API through GraphQL introspection.
+
+<Warning>
+
+`DisableIntrospection` does not block non-introspection fields that may expose
+schema information. For example, Apollo Federation schemas expose `_service` and
+its `sdl` field so gateways and routers can compose federated services. If you
+use `strawberry.federation.Schema`, protect federated endpoints from untrusted
+clients with your own authentication, authorization, or network controls.
+
+</Warning>
 
 ## Usage example:
 
