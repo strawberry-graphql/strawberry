@@ -10,11 +10,28 @@ if typing.TYPE_CHECKING:
     from strawberry.extensions.tracing.datadog import DatadogTracingExtension
 
 
+def _simulate_context_manager(tracer_mock) -> None:
+    """Make the tracer mock behave like a context manager.
+
+    Entering the context returns the span. And exiting the context
+    calls `finish()` on the span.
+    """
+    span = tracer_mock.trace.return_value
+    span.__enter__.return_value = span
+
+    def _exit(*args: object, **kwargs: Any):
+        span.finish()
+        return False
+
+    span.__exit__.side_effect = _exit
+
+
 @pytest.fixture
 def ddtrace_version_2(mocker):
     ddtrace_mock = mocker.MagicMock()
     ddtrace_mock.__version__ = "2.20.0"
     mocker.patch.dict("sys.modules", ddtrace=ddtrace_mock)
+    _simulate_context_manager(ddtrace_mock.tracer)
     return ddtrace_mock
 
 
@@ -26,6 +43,7 @@ def ddtrace_version_3(mocker):
 
     trace_mock = mocker.MagicMock()
     mocker.patch.dict("sys.modules", {"ddtrace.trace": trace_mock})
+    _simulate_context_manager(trace_mock.tracer)
     return trace_mock
 
 
@@ -114,21 +132,18 @@ async def test_datadog_tracer(datadog_extension, mocker):
             mocker.call.trace().set_tag("graphql.operation_name", None),
             mocker.call.trace().set_tag("graphql.operation_type", "query"),
             mocker.call.trace("Parsing", span_type="graphql"),
-            mocker.call.trace().finish(),
+            mocker.call.trace().finish(),  # on_parse
             mocker.call.trace("Validation", span_type="graphql"),
-            mocker.call.trace().finish(),
+            mocker.call.trace().finish(),  # on_validate
             mocker.call.trace("Resolving: Query.personAsync", span_type="graphql"),
-            mocker.call.trace().__enter__(),
-            mocker.call.trace()
-            .__enter__()
-            .set_tag("graphql.field_name", "personAsync"),
-            mocker.call.trace().__enter__().set_tag("graphql.parent_type", "Query"),
-            mocker.call.trace()
-            .__enter__()
-            .set_tag("graphql.field_path", "Query.personAsync"),
-            mocker.call.trace().__enter__().set_tag("graphql.path", "personAsync"),
-            mocker.call.trace().__exit__(None, None, None),
-            mocker.call.trace().finish(),
+            mocker.call.trace().__enter__(),  # resolve
+            mocker.call.trace().set_tag("graphql.field_name", "personAsync"),
+            mocker.call.trace().set_tag("graphql.parent_type", "Query"),
+            mocker.call.trace().set_tag("graphql.field_path", "Query.personAsync"),
+            mocker.call.trace().set_tag("graphql.path", "personAsync"),
+            mocker.call.trace().__exit__(None, None, None),  # resolve
+            mocker.call.trace().finish(),  # resolve
+            mocker.call.trace().finish(),  # on_operation
         ]
     )
 
@@ -216,19 +231,18 @@ def test_datadog_tracer_sync(datadog_extension_sync, mocker):
             mocker.call.trace().set_tag("graphql.operation_name", None),
             mocker.call.trace().set_tag("graphql.operation_type", "query"),
             mocker.call.trace("Parsing", span_type="graphql"),
-            mocker.call.trace().finish(),
+            mocker.call.trace().finish(),  # on_parse
             mocker.call.trace("Validation", span_type="graphql"),
-            mocker.call.trace().finish(),
+            mocker.call.trace().finish(),  # on_validate
             mocker.call.trace("Resolving: Query.person", span_type="graphql"),
-            mocker.call.trace().__enter__(),
-            mocker.call.trace().__enter__().set_tag("graphql.field_name", "person"),
-            mocker.call.trace().__enter__().set_tag("graphql.parent_type", "Query"),
-            mocker.call.trace()
-            .__enter__()
-            .set_tag("graphql.field_path", "Query.person"),
-            mocker.call.trace().__enter__().set_tag("graphql.path", "person"),
-            mocker.call.trace().__exit__(None, None, None),
-            mocker.call.trace().finish(),
+            mocker.call.trace().__enter__(),  # resolve
+            mocker.call.trace().set_tag("graphql.field_name", "person"),
+            mocker.call.trace().set_tag("graphql.parent_type", "Query"),
+            mocker.call.trace().set_tag("graphql.field_path", "Query.person"),
+            mocker.call.trace().set_tag("graphql.path", "person"),
+            mocker.call.trace().__exit__(None, None, None),  # resolve
+            mocker.call.trace().finish(),  # resolve
+            mocker.call.trace().finish(),  # on_operation
         ]
     )
 
