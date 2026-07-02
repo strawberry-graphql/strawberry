@@ -1,6 +1,18 @@
 CHANGELOG
 =========
 
+0.320.1 - 2026-07-02
+--------------------
+
+This release fixes a bug in the Datadog extension where spans could be left open indefinitely when a GraphQL operation raised an exception.
+
+Strawberry now makes sure that the Datadog extension always closes spans,
+also in the case of exceptions.
+
+This release was contributed by [@tsauerwein](https://github.com/tsauerwein) in [#4498](https://github.com/strawberry-graphql/strawberry/pull/4498)
+
+Additional contributors: [@github-actions[bot]](https://github.com/github-actions[bot]), [@patrick91](https://github.com/patrick91)
+
 0.320.0 - 2026-06-27
 --------------------
 
