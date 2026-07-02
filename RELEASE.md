@@ -1,30 +1,13 @@
-release type: minor
+---
+release type: patch
 social_messages:
   x: >-
-    {project_name} {version} removes the long-deprecated `info.field_nodes` property. Migrate to `info.selected_fields` before upgrading.
+    {project_name} {version} fixes a bug where Datadog spans could be left open when an operation raised an exception.
   linkedin: >-
-    {project_name} {version} removes the `info.field_nodes` property that was deprecated since v0.73.1. Update your resolvers to use `info.selected_fields` instead.
+    {project_name} {version} fixes a bug in the Datadog tracing extension where spans could be left open indefinitely when a GraphQL operation raised an exception. Upgrade to get correct span lifecycle management in all error paths.
+---
 
-This release removes the deprecated `info.field_nodes` property from `strawberry.Info` (deprecated since [0.73.1](https://github.com/strawberry-graphql/strawberry/releases/tag/0.73.1)).
+This release fixes a bug in the Datadog extension where spans could be left open indefinitely when a GraphQL operation raised an exception.
 
-### Migration guide
-
-**Before (deprecated):**
-```python
-@strawberry.type
-class Query:
-    @strawberry.field
-    def example(self, info: strawberry.Info) -> str:
-        field_nodes = info.field_nodes
-        ...
-```
-
-**After:**
-```python
-@strawberry.type
-class Query:
-    @strawberry.field
-    def example(self, info: strawberry.Info) -> str:
-        selected_fields = info.selected_fields
-        ...
-```
+Strawberry now makes sure that the Datadog extension always closes spans,
+also in the case of exceptions.
