@@ -16,6 +16,7 @@ from strawberry.types.base import (
 )
 from strawberry.types.enum import StrawberryEnumDefinition
 from strawberry.types.union import StrawberryUnion
+from tests.experimental.pydantic.utils import needs_pydantic_v2
 
 
 def test_basic_type_all_fields():
@@ -939,3 +940,35 @@ def test_nested_annotated():
     assert isinstance(field_b.type, StrawberryOptional)
     assert isinstance(field_b.type.of_type, StrawberryList)
     assert field_b.type.of_type.of_type is int
+
+
+@needs_pydantic_v2
+def test_annotated_none_in_union_is_optional():
+    # https://github.com/strawberry-graphql/strawberry/issues/3992
+    # ``SkipJsonSchema[None]`` produces ``Annotated[None, SkipJsonSchema()]``.
+    # The annotated None must be treated as None so ``str | SkipJsonSchema[None]``
+    # becomes an optional instead of a (invalid) GraphQL union of ``str`` and None.
+    from pydantic.json_schema import SkipJsonSchema
+
+    class ModelA(pydantic.BaseModel):
+        field_a: str | SkipJsonSchema[None] = None
+
+    @strawberry.experimental.pydantic.type(model=ModelA, all_fields=True)
+    class TypeA:
+        pass
+
+    definition: StrawberryObjectDefinition = TypeA.__strawberry_definition__
+    [field] = definition.fields
+    assert field.python_name == "field_a"
+    assert isinstance(field.type, StrawberryOptional)
+    assert field.type.of_type is str
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def example(self) -> TypeA:  # pragma: no cover
+            return TypeA()
+
+    # Schema generation used to raise InvalidUnionTypeError here.
+    schema = strawberry.Schema(query=Query)
+    assert "fieldA: String" in schema.as_str()

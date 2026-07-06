@@ -52,7 +52,14 @@ def replace_types_recursively(
 
     # TODO: investigate if we could move the check for annotated to the top
     if origin is Annotated and converted:
-        converted = (converted[0],)
+        # Drop the annotation metadata and keep only the underlying type.
+        # copy_with() would re-wrap the type in Annotated, preserving the
+        # metadata; when the wrapped type is None (e.g. pydantic's
+        # ``SkipJsonSchema[None]`` produces ``Annotated[None, SkipJsonSchema()]``)
+        # the leftover Annotated is not recognised as None, so ``str |
+        # SkipJsonSchema[None]`` is treated as a real union instead of an
+        # optional and schema generation fails. See #3992.
+        return converted[0]
 
     replaced_type = replaced_type.copy_with(converted)
 
