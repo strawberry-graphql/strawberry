@@ -419,6 +419,59 @@ def test_prints_with_enum():
     assert print_schema(schema) == textwrap.dedent(expected_output).strip()
 
 
+def test_prints_with_enum_used_elsewhere_does_not_duplicate():
+    @strawberry.enum
+    class Reason(str, Enum):
+        EXAMPLE = "example"
+
+        __slots__ = ()
+
+    @strawberry.schema_directive(locations=[Location.FIELD_DEFINITION])
+    class Sensitive:
+        reason: Reason
+
+    @strawberry.type
+    class Query:
+        first_name: str = strawberry.field(
+            directives=[Sensitive(reason=Reason.EXAMPLE)]
+        )
+
+    @strawberry.type
+    class Mutation:
+        @strawberry.mutation
+        def set_reason(self, reason: Reason) -> bool:
+            return True
+
+    expected_output = """
+    directive @sensitive(reason: Reason!) on FIELD_DEFINITION
+
+    schema {
+      query: Query
+      mutation: Mutation
+    }
+
+    type Mutation {
+      setReason(reason: Reason!): Boolean!
+    }
+
+    type Query {
+      firstName: String! @sensitive(reason: EXAMPLE)
+    }
+
+    enum Reason {
+      EXAMPLE
+    }
+    """
+
+    schema = strawberry.Schema(
+        query=Query,
+        mutation=Mutation,
+        schema_directives=[Sensitive],
+    )
+
+    assert print_schema(schema) == textwrap.dedent(expected_output).strip()
+
+
 def test_does_not_print_definition():
     @strawberry.schema_directive(
         locations=[Location.FIELD_DEFINITION], print_definition=False

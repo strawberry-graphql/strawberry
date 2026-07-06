@@ -647,6 +647,7 @@ def print_schema(schema: BaseSchema) -> str:
                 )
                 # Make sure extra types are ordered for predictive printing
                 for type_ in sorted(extras.types, key=_name_getter)
+                if _name_getter(type_) not in type_map
             ),
         )
     )
