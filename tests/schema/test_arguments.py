@@ -235,3 +235,32 @@ def test_argument_parse_order():
 
     assert str(schema_a) == str(schema_b)
     assert str(schema_a) == textwrap.dedent(expected).strip()
+
+
+def test_input_object_argument_default_value():
+    # https://github.com/strawberry-graphql/strawberry/issues/4070
+    # An input-object argument with a constructed instance as its default used to
+    # crash ("... is not a container or iterable") when the argument was omitted,
+    # because the default instance reached convert_argument as a non-mapping.
+    @strawberry.input
+    class Pagination:
+        limit: int = 10
+        offset: int = 0
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def items(self, pagination: Pagination = Pagination(limit=10, offset=0)) -> str:
+            return f"limit={pagination.limit} offset={pagination.offset}"
+
+    schema = strawberry.Schema(query=Query)
+
+    # Argument omitted -> the Python default instance is used, no crash.
+    result = schema.execute_sync("{ items }")
+    assert result.errors is None
+    assert result.data == {"items": "limit=10 offset=0"}
+
+    # Argument provided -> the mapping path still converts to the input type.
+    result = schema.execute_sync("{ items(pagination: { limit: 5, offset: 2 }) }")
+    assert result.errors is None
+    assert result.data == {"items": "limit=5 offset=2"}

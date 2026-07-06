@@ -244,6 +244,13 @@ def convert_argument(
         return convert_argument(value, enum_definition, scalar_registry, config)
 
     if has_object_definition(type_):
+        # A default value declared in Python (e.g. ``arg: Input = Input(...)``)
+        # is supplied by graphql-core already constructed, rather than as a
+        # mapping of field values. Pass it through unchanged instead of trying
+        # to index it like a mapping. See #4070.
+        if isinstance(type_, type) and isinstance(value, type_):
+            return value
+
         kwargs = {}
 
         type_definition = type_.__strawberry_definition__
