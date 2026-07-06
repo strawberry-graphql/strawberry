@@ -23,6 +23,7 @@ class Pagination:
     limit: int = 10
     offset: int = 0
 
+
 @strawberry.type
 class Query:
     @strawberry.field
