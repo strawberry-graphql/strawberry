@@ -43,12 +43,13 @@ from strawberry.types.unset import UNSET
 from .ast_from_value import ast_from_value
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    from collections.abc import Callable, Iterable
 
     from graphql import (
         GraphQLArgument,
         GraphQLEnumType,
         GraphQLEnumValue,
+        GraphQLNamedType,
         GraphQLScalarType,
         GraphQLUnionType,
     )
@@ -635,19 +636,28 @@ def print_schema(schema: BaseSchema) -> str:
             return type_._scalar_definition.name
         return type_.__name__
 
+    def _print_extra_types() -> Iterable[str]:
+        # Make sure extra types are ordered for predictive printing
+        for type_ in sorted(extras.types, key=_name_getter):
+            graphql_type = cast(
+                "GraphQLNamedType", schema.schema_converter.from_type(type_)
+            )
+
+            # Skip types that are already part of the schema's type map, otherwise
+            # they'd be printed twice (e.g. an enum used both as a regular type and
+            # as a schema directive field), producing invalid SDL.
+            if graphql_type.name in type_map:
+                continue
+
+            yield _print_type(graphql_type, schema, extras=extras)
+
     return "\n\n".join(
         chain(
             sorted(extras.directives),
             filter(None, [schema_definition]),
             directives,
             types_printed,
-            (
-                _print_type(
-                    schema.schema_converter.from_type(type_), schema, extras=extras
-                )
-                # Make sure extra types are ordered for predictive printing
-                for type_ in sorted(extras.types, key=_name_getter)
-            ),
+            _print_extra_types(),
         )
     )
 
