@@ -1,6 +1,46 @@
 CHANGELOG
 =========
 
+0.320.2 - 2026-07-06
+--------------------
+
+This release fixes a bug where `print_schema` would emit a type definition
+twice when the same type (for example an enum) was referenced both as a schema
+directive field and elsewhere in the schema. The duplicated definition produced
+invalid SDL that violates the GraphQL spec and is rejected by `graphql-core`'s
+`build_schema`.
+
+For example, the following schema now prints `enum Role` only once:
+
+```python
+import enum
+
+import strawberry
+from strawberry.schema_directive import Location
+
+
+@strawberry.enum
+class Role(enum.Enum):
+    EDITOR = "editor"
+    VIEWER = "viewer"
+
+
+@strawberry.schema_directive(locations=[Location.FIELD_DEFINITION])
+class RequiresRole:
+    roles: list[Role]
+
+
+@strawberry.type
+class Query:
+    secret: str = strawberry.field(directives=[RequiresRole(roles=[Role.EDITOR])])
+
+    @strawberry.field
+    def assign(self, role: Role) -> bool:
+        return True
+```
+
+This release was contributed by [@patrick91](https://github.com/patrick91) in [#4504](https://github.com/strawberry-graphql/strawberry/pull/4504)
+
 0.320.1 - 2026-07-02
 --------------------
 
