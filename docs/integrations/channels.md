@@ -520,6 +520,10 @@ GraphQLWebsocketCommunicator(
   to disable it by passing `None`.
 - `allow_queries_via_get`: optional, defaults to `True`, whether to enable
   queries via `GET` requests
+- `subscription_protocols`: optional, defaults to
+  `(GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL)`, the enabled
+  subscription protocols. Include `MULTIPART_SUBSCRIPTION_PROTOCOL` to enable
+  multipart subscriptions or `GRAPHQL_SSE_PROTOCOL` to enable SSE.
 - `multipart_uploads_enabled`: optional, defaults to `False`, controls whether
   to enable multipart uploads. Please make sure to consider the
   [security implications mentioned in the GraphQL Multipart Request Specification](https://github.com/jaydenseric/graphql-multipart-request-spec/blob/master/readme.md#security)
@@ -580,6 +584,9 @@ class MyGraphQLHTTPConsumer(GraphQLHTTPConsumer):
   for websockets.
 - `keep_alive_interval`: optional, defaults to `1`, the interval in seconds for
   keep alive messages.
+- `subscription_protocols`: optional, defaults to
+  `(GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL)`, the allowed WebSocket
+  subscription protocols.
 
 ### Extending the consumer
 

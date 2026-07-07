@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import warnings
 from asyncio import ensure_future
 from collections.abc import AsyncGenerator, AsyncIterator, Awaitable, Callable, Iterable
@@ -69,8 +70,10 @@ from . import compat
 from ._graphql_core import (
     GraphQLExecutionContext,
     GraphQLIncrementalExecutionResults,
+    GraphQLIncrementalResult,
     ResultType,
     execute,
+    execution_context_class_kwargs,
     experimental_execute_incrementally,
     incremental_execution_directives,
     subscribe,
@@ -98,6 +101,14 @@ if TYPE_CHECKING:
 
 SubscriptionResult: TypeAlias = AsyncGenerator[
     PreExecutionError | ExecutionResult, None
+]
+
+# Unlike a pure subscription, ``stream`` can also run queries and mutations, and
+# expands incremental delivery (``@defer``/``@stream``) into its initial result
+# followed by raw graphql-core patch frames. Its element type is therefore wider
+# than ``SubscriptionResult``.
+StreamResult: TypeAlias = AsyncGenerator[
+    PreExecutionError | ExecutionResult | GraphQLIncrementalResult, None
 ]
 
 OriginSubscriptionResult: TypeAlias = (
@@ -148,10 +159,38 @@ def _run_validation(execution_context: ExecutionContext) -> None:
         )
 
 
+def _parse_operation_document(execution_context: ExecutionContext) -> None:
+    if execution_context.graphql_document is not None:
+        return
+
+    if not execution_context.query:
+        raise MissingQueryError
+
+    execution_context.graphql_document = parse(
+        execution_context.query,
+        **execution_context.parse_options,
+    )
+
+
 def _coerce_error(error: GraphQLError | Exception) -> GraphQLError:
     if isinstance(error, GraphQLError):
         return error
     return GraphQLError(str(error), original_error=error)
+
+
+def _coerce_pre_execution_error(error: Exception) -> GraphQLError:
+    if isinstance(error, CannotGetOperationTypeError):
+        return GraphQLError(error.as_http_error_reason(), original_error=error)
+
+    if isinstance(error, InvalidOperationTypeError):
+        operation_type = {
+            OperationType.QUERY: "queries",
+            OperationType.MUTATION: "mutations",
+            OperationType.SUBSCRIPTION: "subscriptions",
+        }[error.operation_type]
+        return GraphQLError(f"{operation_type} are not allowed", original_error=error)
+
+    return _coerce_error(error)
 
 
 class _OperationContextAwareGraphQLResolveInfo(NamedTuple):  # pyright: ignore
@@ -167,6 +206,8 @@ class _OperationContextAwareGraphQLResolveInfo(NamedTuple):  # pyright: ignore
     variable_values: dict[str, Any]
     context: Any
     is_awaitable: Callable[[Any], bool]
+    abort_signal: Any
+    async_helpers: Any
     operation_extensions: dict[str, Any]
 
 
@@ -187,6 +228,11 @@ class StrawberryGraphQLCoreExecutionContext(GraphQLExecutionContext):
             parent_type: GraphQLObjectType,
             path: Path,
         ) -> GraphQLResolveInfo:
+            fragments = getattr(self, "fragment_definitions", self.fragments)
+            variable_values = getattr(
+                self.variable_values, "coerced", self.variable_values
+            )
+
             return _OperationContextAwareGraphQLResolveInfo(  # type: ignore
                 field_nodes[0].name.value,
                 field_nodes,
@@ -194,12 +240,14 @@ class StrawberryGraphQLCoreExecutionContext(GraphQLExecutionContext):
                 parent_type,
                 path,
                 self.schema,
-                self.fragments,
+                fragments,
                 self.root_value,
                 self.operation,
-                self.variable_values,
+                variable_values,
                 self.context_value,
                 self.is_awaitable,
+                getattr(self, "abort_signal", None),
+                getattr(self, "async_helpers", None),
                 self.operation_extensions,
             )
 
@@ -238,7 +286,7 @@ class Schema(BaseSchema):
             mutation: The entry point for mutations.
             subscription: The entry point for subscriptions.
             directives: A list of operation directives that clients can use.
-                The bult-in `@include` and `@skip` are included by default.
+                The built-in `@include` and `@skip` are included by default.
             types: A list of additional types that will be included in the schema.
             extensions: A list of Strawberry extensions.
             execution_context_class: The execution context class.
@@ -503,16 +551,16 @@ class Schema(BaseSchema):
     ) -> list[StrawberryField]:
         return type_definition.fields
 
-    async def _parse_and_validate_async(
+    async def _prepare_operation_async(
         self, context: ExecutionContext, extensions_runner: SchemaExtensionsRunner
     ) -> PreExecutionError | None:
-        if not context.query:
+        """Parse, check the operation type, and validate before execution."""
+        if not context.query and context.graphql_document is None:
             raise MissingQueryError
 
         async with extensions_runner.parsing():
             try:
-                if not context.graphql_document:
-                    context.graphql_document = parse(context.query)
+                _parse_operation_document(context)
 
             except GraphQLError as error:
                 context.pre_execution_errors = [error]
@@ -541,6 +589,46 @@ class Schema(BaseSchema):
 
         return None
 
+    def _prepare_operation_sync(
+        self, context: ExecutionContext, extensions_runner: SchemaExtensionsRunner
+    ) -> ExecutionResult | None:
+        """Parse, check the operation type, and validate before execution."""
+        if not context.query and context.graphql_document is None:
+            raise MissingQueryError
+
+        with extensions_runner.parsing():
+            try:
+                _parse_operation_document(context)
+
+            except GraphQLError as error:
+                context.pre_execution_errors = [error]
+                self._process_errors([error], context)
+                return ExecutionResult(
+                    data=None,
+                    errors=[error],
+                    extensions=extensions_runner.get_extensions_results_sync(),
+                )
+
+        try:
+            operation_type = context.operation_type
+        except RuntimeError as error:
+            raise CannotGetOperationTypeError(context.operation_name) from error
+
+        if operation_type not in context.allowed_operations:
+            raise InvalidOperationTypeError(operation_type)
+
+        with extensions_runner.validation():
+            _run_validation(context)
+            if context.pre_execution_errors:
+                self._process_errors(context.pre_execution_errors, context)
+                return ExecutionResult(
+                    data=None,
+                    errors=context.pre_execution_errors,
+                    extensions=extensions_runner.get_extensions_results_sync(),
+                )
+
+        return None
+
     async def _handle_execution_result(
         self,
         context: ExecutionContext,
@@ -564,6 +652,68 @@ class Schema(BaseSchema):
             result = ExecutionResult(data=result.data, errors=result.errors)
         result.extensions = await extensions_runner.get_extensions_results(context)
         context.result = result
+        return result
+
+    def _get_execute_function(self) -> Callable[..., Any]:
+        """Return the graphql-core execution function for the current config.
+
+        Uses ``experimental_execute_incrementally`` when incremental execution is
+        enabled, falling back to ``execute`` otherwise. Single-sourced so the
+        graphql-core version guard cannot drift between execution paths.
+        """
+        if self.config.enable_experimental_incremental_execution:
+            if experimental_execute_incrementally is None:
+                raise RuntimeError(
+                    "Incremental execution is enabled but experimental_execute_incrementally is not available, "
+                    "please install graphql-core>=3.3.0"
+                )
+            return experimental_execute_incrementally
+        return execute
+
+    async def _execute_operation(
+        self,
+        execution_context: ExecutionContext,
+        extensions_runner: SchemaExtensionsRunner,
+        middleware_manager: MiddlewareManager,
+        execute_function: Callable[..., Any],
+        custom_context_kwargs: dict[str, Any],
+    ) -> ResultType:
+        assert execution_context.graphql_document is not None
+
+        async with extensions_runner.executing():
+            if not execution_context.result:
+                result = await await_maybe(
+                    execute_function(
+                        self._schema,
+                        execution_context.graphql_document,
+                        root_value=execution_context.root_value,
+                        middleware=middleware_manager,
+                        variable_values=execution_context.variables,
+                        operation_name=execution_context.operation_name,
+                        context_value=execution_context.context,
+                        is_awaitable=optimized_is_awaitable,
+                        **execution_context_class_kwargs(self.execution_context_class),
+                        **custom_context_kwargs,
+                    )
+                )
+                execution_context.result = result
+            else:
+                result = execution_context.result
+
+            # Also set errors on the execution_context so that it's easier
+            # to access in extensions.
+            #
+            # TODO: maybe here use the first result from incremental execution
+            # if it exists.
+            if isinstance(result, GraphQLExecutionResult) and result.errors:
+                execution_context.pre_execution_errors = result.errors
+
+                # Run the `Schema.process_errors` function here before
+                # extensions have a chance to modify them (see the MaskErrors
+                # extension). That way we can log the original errors but
+                # only return a sanitised version to the client.
+                self._process_errors(result.errors, execution_context)
+
         return result
 
     async def execute(
@@ -596,16 +746,7 @@ class Schema(BaseSchema):
         extensions_runner = self.create_extensions_runner(execution_context, extensions)
         middleware_manager = self._get_middleware_manager(extensions)
 
-        execute_function = execute
-
-        if self.config.enable_experimental_incremental_execution:
-            execute_function = experimental_execute_incrementally
-
-            if execute_function is None:
-                raise RuntimeError(
-                    "Incremental execution is enabled but experimental_execute_incrementally is not available, "
-                    "please install graphql-core>=3.3.0"
-                )
+        execute_function = self._get_execute_function()
 
         custom_context_kwargs = self._get_custom_context_kwargs(operation_extensions)
 
@@ -614,7 +755,7 @@ class Schema(BaseSchema):
                 # Note: In graphql-core the schema would be validated here but in
                 # Strawberry we are validating it at initialisation time instead
 
-                if errors := await self._parse_and_validate_async(
+                if errors := await self._prepare_operation_async(
                     execution_context, extensions_runner
                 ):
                     return await self._handle_execution_result(
@@ -624,37 +765,13 @@ class Schema(BaseSchema):
                     )
 
                 assert execution_context.graphql_document
-                async with extensions_runner.executing():
-                    if not execution_context.result:
-                        result = await await_maybe(
-                            execute_function(
-                                self._schema,
-                                execution_context.graphql_document,
-                                root_value=execution_context.root_value,
-                                middleware=middleware_manager,
-                                variable_values=execution_context.variables,
-                                operation_name=execution_context.operation_name,
-                                context_value=execution_context.context,
-                                execution_context_class=self.execution_context_class,
-                                is_awaitable=optimized_is_awaitable,
-                                **custom_context_kwargs,
-                            )
-                        )
-                        execution_context.result = result
-                    else:
-                        result = execution_context.result
-                    # Also set errors on the execution_context so that it's easier
-                    # to access in extensions
-
-                    # TODO: maybe here use the first result from incremental execution if it exists
-                    if isinstance(result, GraphQLExecutionResult) and result.errors:
-                        execution_context.pre_execution_errors = result.errors
-
-                        # Run the `Schema.process_errors` function here before
-                        # extensions have a chance to modify them (see the MaskErrors
-                        # extension). That way we can log the original errors but
-                        # only return a sanitised version to the client.
-                        self._process_errors(result.errors, execution_context)
+                result = await self._execute_operation(
+                    execution_context,
+                    extensions_runner,
+                    middleware_manager,
+                    execute_function,
+                    custom_context_kwargs,
+                )
 
         except (
             MissingQueryError,
@@ -703,16 +820,7 @@ class Schema(BaseSchema):
         extensions_runner = self.create_extensions_runner(execution_context, extensions)
         middleware_manager = self._get_middleware_manager(extensions)
 
-        execute_function = execute
-
-        if self.config.enable_experimental_incremental_execution:
-            execute_function = experimental_execute_incrementally
-
-            if execute_function is None:
-                raise RuntimeError(
-                    "Incremental execution is enabled but experimental_execute_incrementally is not available, "
-                    "please install graphql-core>=3.3.0"
-                )
+        execute_function = self._get_execute_function()
         custom_context_kwargs = self._get_custom_context_kwargs(
             operation_extensions, sync=True
         )
@@ -721,48 +829,14 @@ class Schema(BaseSchema):
             with extensions_runner.operation():
                 # Note: In graphql-core the schema would be validated here but in
                 # Strawberry we are validating it at initialisation time instead
-                if not execution_context.query:
-                    raise MissingQueryError  # noqa: TRY301
+                if (
+                    pre_execution_result := self._prepare_operation_sync(
+                        execution_context, extensions_runner
+                    )
+                ) is not None:
+                    return pre_execution_result
 
-                with extensions_runner.parsing():
-                    try:
-                        if not execution_context.graphql_document:
-                            execution_context.graphql_document = parse(
-                                execution_context.query,
-                                **execution_context.parse_options,
-                            )
-
-                    except GraphQLError as error:
-                        execution_context.pre_execution_errors = [error]
-                        self._process_errors([error], execution_context)
-                        return ExecutionResult(
-                            data=None,
-                            errors=[error],
-                            extensions=extensions_runner.get_extensions_results_sync(),
-                        )
-
-                try:
-                    operation_type = execution_context.operation_type
-                except RuntimeError as error:
-                    raise CannotGetOperationTypeError(
-                        execution_context.operation_name
-                    ) from error
-
-                if operation_type not in execution_context.allowed_operations:
-                    raise InvalidOperationTypeError(operation_type)  # noqa: TRY301
-
-                with extensions_runner.validation():
-                    _run_validation(execution_context)
-                    if execution_context.pre_execution_errors:
-                        self._process_errors(
-                            execution_context.pre_execution_errors, execution_context
-                        )
-                        return ExecutionResult(
-                            data=None,
-                            errors=execution_context.pre_execution_errors,
-                            extensions=extensions_runner.get_extensions_results_sync(),
-                        )
-
+                assert execution_context.graphql_document is not None
                 with extensions_runner.executing():
                     if not execution_context.result:
                         result = execute_function(
@@ -773,19 +847,21 @@ class Schema(BaseSchema):
                             variable_values=execution_context.variables,
                             operation_name=execution_context.operation_name,
                             context_value=execution_context.context,
-                            execution_context_class=self.execution_context_class,
                             is_awaitable=optimized_is_awaitable,
+                            **execution_context_class_kwargs(
+                                self.execution_context_class
+                            ),
                             **custom_context_kwargs,
                         )
 
                         if isawaitable(result):
-                            result = cast("Awaitable[GraphQLExecutionResult]", result)  # type: ignore[redundant-cast]
+                            result = cast("Awaitable[GraphQLExecutionResult]", result)
                             ensure_future(result).cancel()
                             raise RuntimeError(  # noqa: TRY301
                                 "GraphQL execution failed to complete synchronously."
                             )
 
-                        result = cast("GraphQLExecutionResult", result)  # type: ignore[redundant-cast]
+                        result = cast("GraphQLExecutionResult", result)
                         execution_context.result = result
                         # Also set errors on the context so that it's easier
                         # to access in extensions
@@ -818,32 +894,61 @@ class Schema(BaseSchema):
             extensions=extensions_runner.get_extensions_results_sync(),
         )
 
-    async def _subscribe(
+    async def _stream(
         self,
         execution_context: ExecutionContext,
         extensions_runner: SchemaExtensionsRunner,
         middleware_manager: MiddlewareManager,
         execution_context_class: type[GraphQLExecutionContext] | None = None,
         operation_extensions: dict[str, Any] | None = None,
-    ) -> AsyncGenerator[ExecutionResult, None]:
+    ) -> StreamResult:
         async with extensions_runner.operation():
-            if initial_error := await self._parse_and_validate_async(
-                context=execution_context,
-                extensions_runner=extensions_runner,
-            ):
+            try:
+                initial_error = await self._prepare_operation_async(
+                    context=execution_context,
+                    extensions_runner=extensions_runner,
+                )
+            except (
+                MissingQueryError,
+                CannotGetOperationTypeError,
+                InvalidOperationTypeError,
+            ) as error:
+                initial_error = PreExecutionError(
+                    data=None, errors=[_coerce_pre_execution_error(error)]
+                )
+
+            if initial_error:
                 initial_error.extensions = (
                     await extensions_runner.get_extensions_results(execution_context)
                 )
                 yield await self._handle_execution_result(
                     execution_context, initial_error, extensions_runner
                 )
+                return
+
+            assert execution_context.graphql_document is not None
+
+            # Queries and mutations executed over a streaming transport yield a
+            # single result and then the stream completes. Only subscriptions
+            # produce an async generator of multiple results.
+            if execution_context.operation_type is not OperationType.SUBSCRIPTION:
+                result_source = self._stream_non_subscription(
+                    execution_context,
+                    extensions_runner,
+                    middleware_manager,
+                    operation_extensions,
+                )
+                async with aclosing(result_source):
+                    async for result in result_source:
+                        yield result
+                return
+
             try:
                 async with extensions_runner.executing():
-                    assert execution_context.graphql_document is not None
                     gql_33_kwargs = {
                         "middleware": middleware_manager,
-                        "execution_context_class": execution_context_class,
                         "operation_extensions": operation_extensions,
+                        **execution_context_class_kwargs(execution_context_class),
                     }
                     try:
                         # Might not be awaitable for pre-execution errors.
@@ -855,7 +960,7 @@ class Schema(BaseSchema):
                                 variable_values=execution_context.variables,
                                 operation_name=execution_context.operation_name,
                                 context_value=execution_context.context,
-                                **{} if IS_GQL_32 else gql_33_kwargs,  # type: ignore[arg-type]
+                                **{} if IS_GQL_32 else gql_33_kwargs,
                             )
                         )
                     # graphql-core 3.2 doesn't handle some of the pre-execution errors.
@@ -901,6 +1006,64 @@ class Schema(BaseSchema):
                     extensions_runner,
                 )
 
+    async def _stream_non_subscription(
+        self,
+        execution_context: ExecutionContext,
+        extensions_runner: SchemaExtensionsRunner,
+        middleware_manager: MiddlewareManager,
+        operation_extensions: dict[str, Any] | None = None,
+    ) -> StreamResult:
+        """Run a query/mutation over a streaming transport.
+
+        Yields a single ``ExecutionResult`` for an ordinary operation. For
+        incremental delivery (``@defer``/``@stream``) the result is a container,
+        which is expanded into its initial frame followed by each subsequent
+        patch so callers see one flat sequence of frames.
+        """
+        execute_function = self._get_execute_function()
+
+        custom_context_kwargs = self._get_custom_context_kwargs(operation_extensions)
+
+        assert execution_context.graphql_document is not None
+
+        try:
+            result = await self._execute_operation(
+                execution_context,
+                extensions_runner,
+                middleware_manager,
+                execute_function,
+                custom_context_kwargs,
+            )
+        except asyncio.CancelledError:
+            raise
+        except Exception as exc:  # noqa: BLE001
+            yield await self._handle_execution_result(
+                execution_context,
+                PreExecutionError(data=None, errors=[_coerce_error(exc)]),
+                extensions_runner,
+            )
+            return
+
+        # Incremental delivery (`@defer`/`@stream`) produces a container rather
+        # than a single result. Normalize the initial result through Strawberry's
+        # result handling, then yield subsequent graphql-core patch frames as-is:
+        # their errors are nested inside incremental payloads and transport
+        # formatting is responsible for those frame shapes.
+        if isinstance(result, GraphQLIncrementalExecutionResults):
+            yield await self._handle_execution_result(
+                execution_context,
+                result.initial_result,
+                extensions_runner,
+            )
+            async with aclosing(result.subsequent_results) as subsequent_results:
+                async for incremental_result in subsequent_results:
+                    yield incremental_result
+            return
+
+        yield await self._handle_execution_result(
+            execution_context, result, extensions_runner, skip_process_errors=True
+        )
+
     async def subscribe(
         self,
         query: str | None,
@@ -910,20 +1073,71 @@ class Schema(BaseSchema):
         operation_name: str | None = None,
         operation_extensions: dict[str, Any] | None = None,
     ) -> SubscriptionResult:
+        """Execute a subscription and stream its results.
+
+        Thin wrapper around :meth:`stream` restricted to subscriptions. New
+        streaming transports should prefer :meth:`stream`, which can also run
+        queries and mutations.
+        """
+        # Subscriptions never produce incremental-delivery frames, so the result
+        # is always a ``SubscriptionResult`` even though ``stream`` is wider.
+        return cast(
+            "SubscriptionResult",
+            await self.stream(
+                query=query,
+                variable_values=variable_values,
+                context_value=context_value,
+                root_value=root_value,
+                operation_name=operation_name,
+                operation_extensions=operation_extensions,
+                allowed_operation_types=(OperationType.SUBSCRIPTION,),
+            ),
+        )
+
+    async def stream(
+        self,
+        query: str | None,
+        variable_values: dict[str, Any] | None = None,
+        context_value: Any | None = None,
+        root_value: Any | None = None,
+        operation_name: str | None = None,
+        operation_extensions: dict[str, Any] | None = None,
+        allowed_operation_types: Iterable[OperationType] | None = None,
+    ) -> StreamResult:
+        """Execute an operation and stream its result(s).
+
+        Parses the document once, inside the extension lifecycle, and dispatches
+        on the operation type: subscriptions stream their results, while queries
+        and mutations yield a single result and then complete. This lets a
+        streaming transport (SSE, multipart, WebSocket) run any operation without
+        having to parse and route on the operation type itself.
+
+        The yielded element is a strawberry :class:`ExecutionResult` (or
+        :class:`PreExecutionError`) for queries, mutations and subscriptions. For
+        incremental delivery (``@defer``/``@stream``) the raw graphql-core frames
+        are yielded instead, which the caller must format for its transport.
+
+        Custom parsing or parser caching should be implemented with an
+        ``on_parse`` extension that populates ``execution_context.graphql_document``.
+        """
+        if allowed_operation_types is None:
+            allowed_operation_types = DEFAULT_ALLOWED_OPERATION_TYPES
+
         execution_context = self._create_execution_context(
             query=query,
-            allowed_operation_types=(OperationType.SUBSCRIPTION,),
+            allowed_operation_types=allowed_operation_types,
             variable_values=variable_values,
             context_value=context_value,
             root_value=root_value,
             operation_name=operation_name,
+            operation_extensions=operation_extensions,
         )
         extensions = self.get_extensions()
         # TODO (#3571): remove this when we implement execution context as parameter.
         for extension in extensions:
             extension.execution_context = execution_context
 
-        return self._subscribe(
+        return self._stream(
             execution_context,
             extensions_runner=self.create_extensions_runner(
                 execution_context, extensions

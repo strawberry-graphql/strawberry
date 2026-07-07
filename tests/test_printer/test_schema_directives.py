@@ -419,6 +419,86 @@ def test_prints_with_enum():
     assert print_schema(schema) == textwrap.dedent(expected_output).strip()
 
 
+def test_does_not_duplicate_enum_used_as_type_and_directive_field():
+    # https://github.com/strawberry-graphql/strawberry/issues/4502
+    # an enum referenced both as a regular schema type and as a schema directive
+    # field must only be printed once, otherwise the SDL is invalid.
+    @strawberry.enum
+    class Role(Enum):
+        EDITOR = "editor"
+        VIEWER = "viewer"
+
+    @strawberry.schema_directive(locations=[Location.FIELD_DEFINITION])
+    class RequiresRole:
+        roles: list[Role]
+
+    @strawberry.type
+    class Query:
+        secret: str = strawberry.field(directives=[RequiresRole(roles=[Role.EDITOR])])
+
+        @strawberry.field
+        def assign(self, role: Role) -> bool:
+            return True
+
+    expected_output = """
+    directive @requiresRole(roles: [Role!]!) on FIELD_DEFINITION
+
+    type Query {
+      secret: String! @requiresRole(roles: [EDITOR])
+      assign(role: Role!): Boolean!
+    }
+
+    enum Role {
+      EDITOR
+      VIEWER
+    }
+    """
+
+    schema = strawberry.Schema(query=Query)
+
+    assert print_schema(schema) == textwrap.dedent(expected_output).strip()
+
+
+def test_does_not_duplicate_renamed_type_used_as_type_and_directive_field():
+    # https://github.com/strawberry-graphql/strawberry/issues/4502
+    # dedup must resolve the *GraphQL* name (not the Python class name), otherwise
+    # a type with a `name=` override used both as a regular type and as a schema
+    # directive field would still be printed twice. An empty list is used as the
+    # directive value to keep the output stable across graphql-core versions.
+    @strawberry.input(name="RenamedInput")
+    class Config:
+        key: str
+
+    @strawberry.schema_directive(locations=[Location.FIELD_DEFINITION])
+    class WithConfig:
+        configs: list[Config]
+
+    @strawberry.type
+    class Query:
+        secret: str = strawberry.field(directives=[WithConfig(configs=[])])
+
+        @strawberry.field
+        def run(self, config: Config) -> bool:
+            return True
+
+    expected_output = """
+    directive @withConfig(configs: [RenamedInput!]!) on FIELD_DEFINITION
+
+    type Query {
+      secret: String! @withConfig(configs: [])
+      run(config: RenamedInput!): Boolean!
+    }
+
+    input RenamedInput {
+      key: String!
+    }
+    """
+
+    schema = strawberry.Schema(query=Query)
+
+    assert print_schema(schema) == textwrap.dedent(expected_output).strip()
+
+
 def test_does_not_print_definition():
     @strawberry.schema_directive(
         locations=[Location.FIELD_DEFINITION], print_definition=False

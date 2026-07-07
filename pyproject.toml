@@ -1,6 +1,6 @@
 [project]
 name = "strawberry-graphql"
-version = "0.316.0"
+version = "0.320.2"
 description = "A library for creating GraphQL APIs"
 authors = [{ name = "Patrick Arminio", email = "patrick.arminio@gmail.com" }]
 license = "MIT"
@@ -76,8 +76,8 @@ dev = [
   "opentelemetry-sdk<2",
   "pygments>=2.3,<3.0",
   "pyinstrument>=4.0.0",
-  "pytest~=9.0.2",
-  "pytest-asyncio~=1.3.0",
+  "pytest>=9.0.2,<9.2.0",
+  "pytest-asyncio>=1.3,<1.5",
   "pytest-codspeed>=4.2.0",
   "pytest-cov>=7.0,<7.2",
   "pytest-emoji>=0.2.0,<0.3.0",
@@ -97,7 +97,7 @@ dev = [
   "types-typed-ast>=1.5.8,<2.0.0",
   "types-ujson>=5.10.0.20250326,<6.0.0.0",
   "types-protobuf>=6.32.1.20251210,<7.34.2.0",
-  "inline-snapshot>=0.31.1,<0.33.0",
+  "inline-snapshot>=0.31.1,<0.35.0",
   "types-deprecated>=1.2.15.20241117,<2.0.0.0",
   "types-six>=1.17.0.20250403,<2.0.0.0",
   "types-pyyaml>=6.0.12.20240917,<7.0.0.0",
@@ -112,7 +112,7 @@ integrations = [
   "chalice>=1.22,<2.0",
   "channels>=3.0.5,<5.0.0",
   "django>=3.2",
-  "fastapi>=0.65.0",
+  "fastapi[standard-no-fastapi-cloud-cli]>=0.116.0",
   "flask>=1.1",
   "quart>=0.19.3",
   "pydantic>=2.0",
@@ -188,6 +188,9 @@ plugins = [
 project-name = "Strawberry GraphQL"
 platforms = ["x", "linkedin", "bluesky", "mastodon"]
 publish-mode = "next-free-slot"
+require-social-message = true
+required-social-platforms = ["x", "linkedin"]
+require-release-note-lead = true
 
 [tool.pyright]
 # include = ["strawberry"]

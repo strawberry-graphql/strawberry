@@ -20,7 +20,7 @@ jobs:
       contents: read
 
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
         with:
           persist-credentials: false
 
@@ -38,28 +38,28 @@ jobs:
           bunx playwright install --with-deps
 
       - name: Install uv
-        uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39 # v8.2.0
         with:
           enable-cache: true
           python-version: "3.12"
 
       - name: Install Python dependencies
         run: |
-          uv sync --extra cli
-          uv pip install graphql-core==3.3.0a12
+          uv sync
+          uv pip install graphql-core==3.3.0rc0
 
-      - name: Start Strawberry server
+      - name: Start FastAPI server
         run: |
           cd e2e
           # --no-sync prevents uv from reverting graphql-core to lockfile version
-          uv run --no-sync strawberry dev app:schema --port 8000 &
+          uv run --no-sync fastapi dev app.py --port 8000 &
           echo $! > server.pid
           sleep 5  # Wait for server to start
 
       - name: Check if server is running
         run: |
           curl -f http://localhost:8000/graphql || (echo "Server is not running" && exit 1)
-          echo "GraphQL server is running successfully"
+          echo "FastAPI GraphQL server is running successfully"
 
       - name: Run Playwright tests
         run: |

@@ -189,7 +189,7 @@ class GraphQL(
         request: Request | WebSocket,
         stream: Callable[[], AsyncIterator[str]],
         sub_response: Response,
-        headers: dict[str, str],
+        headers: Mapping[str, str],
     ) -> Response:
         return StreamingResponse(
             stream(),
@@ -207,7 +207,7 @@ class GraphQL(
 
     async def pick_websocket_subprotocol(self, request: WebSocket) -> str | None:
         protocols = request["subprotocols"]
-        intersection = set(protocols) & set(self.protocols)
+        intersection = set(protocols) & set(self.websocket_subprotocols)
         sorted_intersection = sorted(intersection, key=protocols.index)
         return next(iter(sorted_intersection), None)
 

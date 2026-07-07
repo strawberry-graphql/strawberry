@@ -1,6 +1,295 @@
 CHANGELOG
 =========
 
+0.320.2 - 2026-07-06
+--------------------
+
+This release fixes a bug where `print_schema` would emit a type definition
+twice when the same type (for example an enum) was referenced both as a schema
+directive field and elsewhere in the schema. The duplicated definition produced
+invalid SDL that violates the GraphQL spec and is rejected by `graphql-core`'s
+`build_schema`.
+
+For example, the following schema now prints `enum Role` only once:
+
+```python
+import enum
+
+import strawberry
+from strawberry.schema_directive import Location
+
+
+@strawberry.enum
+class Role(enum.Enum):
+    EDITOR = "editor"
+    VIEWER = "viewer"
+
+
+@strawberry.schema_directive(locations=[Location.FIELD_DEFINITION])
+class RequiresRole:
+    roles: list[Role]
+
+
+@strawberry.type
+class Query:
+    secret: str = strawberry.field(directives=[RequiresRole(roles=[Role.EDITOR])])
+
+    @strawberry.field
+    def assign(self, role: Role) -> bool:
+        return True
+```
+
+This release was contributed by [@patrick91](https://github.com/patrick91) in [#4504](https://github.com/strawberry-graphql/strawberry/pull/4504)
+
+0.320.1 - 2026-07-02
+--------------------
+
+This release fixes a bug in the Datadog extension where spans could be left open indefinitely when a GraphQL operation raised an exception.
+
+Strawberry now makes sure that the Datadog extension always closes spans,
+also in the case of exceptions.
+
+This release was contributed by [@tsauerwein](https://github.com/tsauerwein) in [#4498](https://github.com/strawberry-graphql/strawberry/pull/4498)
+
+Additional contributors: [@github-actions[bot]](https://github.com/github-actions[bot]), [@patrick91](https://github.com/patrick91)
+
+0.320.0 - 2026-06-27
+--------------------
+
+This release adds support for GraphQL subscriptions over Server-Sent Events
+(SSE), following the
+[GraphQL over SSE](https://github.com/enisdenjo/graphql-sse/blob/master/PROTOCOL.md)
+protocol in "distinct connections mode".
+
+SSE is opt-in. Enable it by including `GRAPHQL_SSE_PROTOCOL` in your
+integration's `subscription_protocols`:
+
+```python
+from strawberry.asgi import GraphQL
+from strawberry.subscriptions import (
+    GRAPHQL_SSE_PROTOCOL,
+    GRAPHQL_TRANSPORT_WS_PROTOCOL,
+    GRAPHQL_WS_PROTOCOL,
+)
+
+app = GraphQL(
+    schema,
+    subscription_protocols=[
+        GRAPHQL_TRANSPORT_WS_PROTOCOL,
+        GRAPHQL_WS_PROTOCOL,
+        GRAPHQL_SSE_PROTOCOL,
+    ],
+)
+```
+
+Clients request a stream with `Accept: text/event-stream`. Queries, mutations,
+subscriptions, and `@defer`/`@stream` are all supported on the async
+streaming-capable integrations (ASGI, FastAPI, AIOHTTP, Litestar, Quart, Sanic,
+async Django, and async Channels). See the
+[SSE subscriptions docs](https://strawberry.rocks/docs/general/subscriptions#using-sse-subscriptions)
+for client setup, reconnection, and deployment notes (prefer HTTP/2).
+
+**Breaking change: multipart subscriptions are now opt-in.** Streaming
+transports are selected from `subscription_protocols`, so multipart
+subscriptions — previously served for any `Accept: multipart/mixed` request —
+now require `MULTIPART_SUBSCRIPTION_PROTOCOL` to be listed there explicitly.
+
+This release was contributed by [@patrick91](https://github.com/patrick91) in [#4466](https://github.com/strawberry-graphql/strawberry/pull/4466)
+
+0.319.0 - 2026-06-21
+--------------------
+
+This release adds `Schema.stream(...)`, a shared execution API for custom
+streaming integrations.
+
+`Schema.stream(...)` accepts queries, mutations and subscriptions and always
+returns an async sequence of results: a single `ExecutionResult` for queries and
+mutations, and the stream of results for subscriptions. This lets streaming
+transports use one schema entry point instead of choosing between `execute` and
+`subscribe` themselves.
+
+Incremental delivery operations (`@defer`/`@stream`) are also supported: their
+initial result is yielded first, followed by each raw graphql-core patch frame,
+which the transport is responsible for formatting.
+
+The schema execution APIs accept either a string or an already-parsed
+`DocumentNode`, so a transport that parsed the document itself (for example to
+inspect the operation type before executing) can pass the node to avoid parsing
+it again.
+
+Strawberry's multipart HTTP transport and `graphql-transport-ws` handler now use
+this path internally.
+
+HTTP multipart response framing now lives in the stream transport layer instead
+of `AsyncBaseHTTPView.encode_multipart_data`. Integrations that customized that
+view method should customize the transport encoding instead.
+
+This release was contributed by [@patrick91](https://github.com/patrick91) in [#4460](https://github.com/strawberry-graphql/strawberry/pull/4460)
+
+0.318.1 - 2026-06-20
+--------------------
+
+This release fixes compatibility with graphql-core 3.3 release candidates.
+
+Strawberry now handles graphql-core's renamed custom executor hook and nullable
+AST argument and directive collections, so schemas using custom execution
+contexts and `Info.selected_fields` continue to work when testing against
+graphql-core 3.3.
+
+This release was contributed by [@patrick91](https://github.com/patrick91) in [#4470](https://github.com/strawberry-graphql/strawberry/pull/4470)
+
+0.318.0 - 2026-06-19
+--------------------
+
+This release adds a shared internal HTTP stream transport for multipart
+subscription responses.
+
+Application behavior for multipart subscriptions is largely unchanged. The
+shared transport now owns multipart response headers, heartbeat frames,
+completion frames, batching errors, and sync-mode errors, keeping Strawberry's
+built-in HTTP integrations on the same streaming contract.
+
+The one behavioral change is that each multipart part's `Content-Length` is now
+computed from the UTF-8 byte length of the payload instead of its character
+count, fixing the header for responses containing non-ASCII data.
+
+This release was contributed by [@patrick91](https://github.com/patrick91) in [#4469](https://github.com/strawberry-graphql/strawberry/pull/4469)
+
+0.317.2 - 2026-06-17
+--------------------
+
+This release fixes schema printing for input object defaults that explicitly set
+nullable fields to `null`.
+
+Strawberry now preserves explicit `None` values in printed nested input
+defaults, including fields set with `strawberry.Some(None)` and fields renamed
+with `strawberry.field(name=...)`, while still omitting fields that were not
+explicitly set.
+
+This release was contributed by [@patrick91](https://github.com/patrick91) in [#4461](https://github.com/strawberry-graphql/strawberry/pull/4461)
+
+0.317.1 - 2026-06-17
+--------------------
+
+Previously attributes which were not camelCase would be removed from field arguments for queries:
+```python
+import strawberry
+
+
+@strawberry.input
+class Bar:
+    a: str
+    b: str
+    some_values: list[str] | None = None
+
+
+@strawberry.input(one_of=True)
+class Foo:
+    bar: strawberry.Maybe[Bar]
+    c: strawberry.Maybe[str]
+
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    async def foobar(
+        self,
+        info: strawberry.Info,
+        foo: Foo = Foo(
+            bar=strawberry.Some(Bar(a="hi", b="bye", some_values=["my", "world"])),
+            c=None,
+        ),
+    ) -> str: ...
+
+
+schema = strawberry.Schema(Query)
+```
+
+Once printed the output would look like the following with the some_values removed.
+```graphql
+directive @oneOf on INPUT_OBJECT
+
+input Bar {
+  a: String!
+  b: String!
+  someValues: [String!] = null
+}
+
+input Foo @oneOf {
+  bar: Bar
+  c: String
+}
+
+type Query {
+  foobar(foo: Foo! = {bar: {a: "hi", b: "bye"}}): String!
+}
+```
+
+After this fix, the value will be reflected in the print statement:
+```graphql
+directive @oneOf on INPUT_OBJECT
+
+input Bar {
+  a: String!
+  b: String!
+  someValues: [String!] = null
+}
+
+input Foo @oneOf {
+  bar: Bar
+  c: String
+}
+
+type Query {
+  foobar(foo: Foo! = {bar: {a: "hi", b: "bye", someValues: ["my", "world"]}}): String!
+}
+```
+
+This release was contributed by [@plyte](https://github.com/plyte) in [#4391](https://github.com/strawberry-graphql/strawberry/pull/4391)
+
+Additional contributors: [@pre-commit-ci[bot]](https://github.com/pre-commit-ci[bot])
+
+0.317.0 - 2026-06-17
+--------------------
+
+`scalar_overrides` now matches generic `dict` annotations by their origin as a
+fallback, so registering a bare `dict` covers every `dict[K, V]`
+parameterization instead of needing one entry per variant.
+
+Before, registering only the unparameterized origin (`dict`) did not match
+parameterized annotations like `dict[str, int]`. You had to register the exact
+annotation, and any other shape such as `dict[str, list[int]]` raised
+`Unexpected type`:
+
+```python
+from typing import Any
+
+import strawberry
+from strawberry.scalars import JSON
+
+
+@strawberry.type
+class Query:
+    settings: dict[str, Any]
+    metadata: dict[str, list[int]]
+
+
+schema = strawberry.Schema(
+    query=Query,
+    scalar_overrides={dict[str, Any]: JSON},
+)
+```
+
+Now registering the unparameterized `dict` covers all of its parameterizations,
+including resolver and mutation arguments typed with `dict[...]`. This is
+especially useful for `strawberry.experimental.pydantic` models with typed
+dictionary fields. Lookup still tries an exact match first, so existing overrides
+keep working unchanged.
+
+This release was contributed by [@Vansh-Sharma27](https://github.com/Vansh-Sharma27) in [#4440](https://github.com/strawberry-graphql/strawberry/pull/4440)
+
+Additional contributors: [@pre-commit-ci[bot]](https://github.com/pre-commit-ci[bot])
+
 0.316.0 - 2026-05-19
 --------------------
 

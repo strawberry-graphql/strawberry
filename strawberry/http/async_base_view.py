@@ -1,13 +1,11 @@
 import abc
 import asyncio
-import contextlib
 import json
-from collections.abc import AsyncGenerator, Callable, Mapping
+from collections.abc import AsyncGenerator, Callable, Mapping, Sequence
 from datetime import timedelta
 from typing import (
     Any,
     Generic,
-    Literal,
     TypeGuard,
     cast,
     overload,
@@ -21,11 +19,14 @@ from strawberry.file_uploads.utils import replace_placeholders_with_files
 from strawberry.http import (
     GraphQLHTTPResponse,
     GraphQLRequestData,
+    GraphQLRequestProtocol,
     process_result,
 )
 from strawberry.http.ides import GraphQL_IDE
 from strawberry.schema._graphql_core import (
     GraphQLIncrementalExecutionResults,
+    InitialIncrementalExecutionResult,
+    SubsequentIncrementalExecutionResult,
 )
 from strawberry.schema.base import BaseSchema
 from strawberry.schema.exceptions import (
@@ -43,6 +44,12 @@ from strawberry.types.unset import UNSET, UnsetType
 
 from .base import BaseView
 from .parse_content_type import parse_content_type
+from .streaming import (
+    AsyncTextStream,
+    HTTPStreamTransport,
+    MultipartTransport,
+    merge_stream_with_heartbeat,
+)
 from .typevars import (
     Context,
     Request,
@@ -89,6 +96,10 @@ class AsyncBaseHTTPView(
     keep_alive_interval: float | None = None
     connection_init_wait_timeout: timedelta = timedelta(minutes=1)
     max_subscriptions_per_connection: int | None = 100
+    protocols: Sequence[str] = (
+        GRAPHQL_TRANSPORT_WS_PROTOCOL,
+        GRAPHQL_WS_PROTOCOL,
+    )
     request_adapter_class: Callable[[Request], AsyncHTTPRequestAdapter]
     websocket_adapter_class: Callable[
         [
@@ -104,6 +115,7 @@ class AsyncBaseHTTPView(
     graphql_ws_handler_class: type[BaseGraphQLWSHandler[Context, RootValue]] = (
         BaseGraphQLWSHandler[Context, RootValue]
     )
+    multipart_transport_class: type[MultipartTransport] = MultipartTransport
 
     @property
     @abc.abstractmethod
@@ -139,7 +151,7 @@ class AsyncBaseHTTPView(
         request: Request,
         stream: Callable[[], AsyncGenerator[str, None]],
         sub_response: SubResponse,
-        headers: dict[str, str],
+        headers: Mapping[str, str],
     ) -> Response:
         raise ValueError("Multipart responses are not supported")
 
@@ -158,23 +170,29 @@ class AsyncBaseHTTPView(
         self, request: WebSocketRequest, subprotocol: str | None
     ) -> WebSocketResponse: ...
 
+    @property
+    def websocket_subprotocols(self) -> list[str]:
+        """WebSocket subprotocols to advertise during the handshake.
+
+        Derived from ``protocols`` by dropping any non-WebSocket entries (such
+        as ``graphql-sse``), so enabling SSE through ``subscription_protocols``
+        does not leak a non-WebSocket token into WebSocket negotiation.
+        """
+        return [
+            protocol
+            for protocol in self.protocols
+            if protocol in (GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL)
+        ]
+
     async def execute_operation(
         self,
         request: Request,
+        request_adapter: AsyncHTTPRequestAdapter,
+        request_data: GraphQLRequestData | list[GraphQLRequestData],
         context: Context,
         root_value: RootValue | None,
         sub_response: SubResponse,
     ) -> ExecutionResult | list[ExecutionResult] | SubscriptionExecutionResult:
-        request_adapter = self.request_adapter_class(request)
-
-        try:
-            request_data = await self.parse_http_body(request_adapter)
-        except json.decoder.JSONDecodeError as e:
-            raise HTTPException(400, "Unable to parse request body as JSON") from e
-            # DO this only when doing files
-        except KeyError as e:
-            raise HTTPException(400, "File(s) missing in form data") from e
-
         allowed_operation_types = OperationType.from_http(request_adapter.method)
 
         if not self.allow_queries_via_get and request_adapter.method == "GET":
@@ -196,14 +214,17 @@ class AsyncBaseHTTPView(
                 ]
             )
 
-        if request_data.protocol == "multipart-subscription":
-            return await self.schema.subscribe(
+        if transport := self._get_stream_transport(request_data.protocol):
+            return await self.schema.stream(
                 request_data.query,  # type: ignore
                 variable_values=request_data.variables,
                 context_value=context,
                 root_value=root_value,
                 operation_name=request_data.operation_name,
                 operation_extensions=request_data.extensions,
+                allowed_operation_types=transport.allowed_operation_types(
+                    allowed_operation_types
+                ),
             )
 
         return await self.execute_single(
@@ -358,91 +379,54 @@ class AsyncBaseHTTPView(
                 return await self.render_graphql_ide(request)
             raise HTTPException(404, "Not Found")
 
+        try:
+            request_data = await self.parse_http_body(request_adapter)
+        except json.decoder.JSONDecodeError as e:
+            raise HTTPException(400, "Unable to parse request body as JSON") from e
+        except KeyError as e:
+            raise HTTPException(400, "File(s) missing in form data") from e
+
         result = await self.execute_operation(
             request=request,
+            request_adapter=request_adapter,
+            request_data=request_data,
             context=context,
             root_value=root_value,
             sub_response=sub_response,
         )
 
         if isinstance(result, SubscriptionExecutionResult):
-            stream = self._get_stream(request, result)
-
-            return await self.create_streaming_response(
-                request,
-                stream,
-                sub_response,
-                headers={
-                    "Content-Type": "multipart/mixed;boundary=graphql;subscriptionSpec=1.0,application/json",
-                },
+            # Only single (non-batch) operations stream; a batch with a
+            # streaming transport is rejected while parsing.
+            assert isinstance(request_data, GraphQLRequestData)
+            return await self._create_streaming_response(
+                request=request,
+                result=result,
+                protocol=request_data.protocol,
+                sub_response=sub_response,
             )
         if isinstance(result, GraphQLIncrementalExecutionResults):
+            multipart_transport = self.multipart_transport_class()
 
-            async def stream() -> AsyncGenerator[str, None]:
-                yield "---"
+            async def data() -> AsyncGenerator[object, None]:
+                all_pending: list[Any] = []
+                response, all_pending = await self._process_stream_result(
+                    request, result.initial_result, all_pending
+                )
 
-                response = await self.process_result(request, result.initial_result)
-
-                response["hasNext"] = result.initial_result.has_next
-                response["pending"] = [
-                    p.formatted for p in result.initial_result.pending
-                ]
-                response["extensions"] = result.initial_result.extensions
-
-                yield self.encode_multipart_data(response, "-")
-
-                all_pending = result.initial_result.pending
+                yield response
 
                 async for value in result.subsequent_results:
-                    response = {
-                        "hasNext": value.has_next,
-                        "extensions": value.extensions,
-                    }
-
-                    if value.pending:
-                        response["pending"] = [p.formatted for p in value.pending]
-
-                    if value.completed:
-                        response["completed"] = [p.formatted for p in value.completed]
-
-                    if value.incremental:
-                        incremental = []
-
-                        all_pending.extend(value.pending)
-
-                        for incremental_value in value.incremental:
-                            pending_value = next(
-                                (
-                                    v
-                                    for v in all_pending
-                                    if v.id == incremental_value.id
-                                ),
-                                None,
-                            )
-
-                            assert pending_value
-
-                            incremental.append(
-                                {
-                                    **incremental_value.formatted,
-                                    "path": pending_value.path,
-                                    "label": pending_value.label,
-                                }
-                            )
-
-                        response["incremental"] = incremental
-
-                    yield self.encode_multipart_data(response, "-")
-
-                yield "--\r\n"
+                    response, all_pending = await self._process_stream_result(
+                        request, value, all_pending
+                    )
+                    yield response
 
             return await self.create_streaming_response(
                 request,
-                stream,
+                multipart_transport.stream(data, self.encode_json_string),
                 sub_response,
-                headers={
-                    "Content-Type": 'multipart/mixed; boundary="-"',
-                },
+                headers=multipart_transport.headers,
             )
 
         response_data: GraphQLHTTPResponse | list[GraphQLHTTPResponse]
@@ -466,146 +450,117 @@ class AsyncBaseHTTPView(
             response_data=response_data, sub_response=sub_response
         )
 
-    def encode_multipart_data(self, data: Any, separator: str) -> str:
+    def encode_json_string(self, data: object) -> str:
         encoded_data = self.encode_json(data)
+
         if isinstance(encoded_data, bytes):
-            encoded_data = encoded_data.decode()
-        return "".join(
-            [
-                "\r\n",
-                "Content-Type: application/json; charset=utf-8\r\n",
-                "Content-Length: " + str(len(encoded_data)) + "\r\n",
-                "\r\n",
-                encoded_data,
-                f"\r\n--{separator}",
-            ]
-        )
+            return encoded_data.decode()
 
-    def _stream_with_heartbeat(
-        self, stream: Callable[[], AsyncGenerator[str, None]], separator: str
-    ) -> Callable[[], AsyncGenerator[str, None]]:
-        """Add heartbeat messages to a GraphQL stream to prevent connection timeouts.
+        return encoded_data
 
-        This method wraps an async stream generator with heartbeat functionality by:
-        1. Creating a queue to coordinate between data and heartbeat messages
-        2. Running two concurrent tasks: one for original stream data, one for heartbeats
-        3. Merging both message types into a single output stream
-
-        Messages in the queue are tuples of (raised, done, data) where:
-        - raised (bool): True if this contains an exception to be re-raised
-        - done (bool): True if this is the final signal indicating stream completion
-        - data: The actual message content to yield, or exception if raised=True
-               Note: data is always None when done=True and can be ignored
-
-        Note: This implementation addresses two critical concerns:
-
-        1. Race condition: There's a potential race between checking task.done() and
-           processing the final message. We solve this by having the drain task send
-           an explicit (False, True, None) completion signal as its final action.
-           Without this signal, we might exit before processing the final boundary.
-
-           Since the queue size is 1 and the drain task will only complete after
-           successfully queueing the done signal, task.done() guarantees the done
-           signal is either in the queue or has already been processed. This ensures
-           we never miss the final boundary.
-
-        2. Flow control: The queue has maxsize=1, which is essential because:
-           - It provides natural backpressure between producers and consumer
-           - Prevents heartbeat messages from accumulating when drain is active
-           - Ensures proper task coordination without complex synchronization
-           - Guarantees the done signal is queued before drain task completes
-
-        Heartbeats are sent every 5 seconds when the drain task isn't sending data.
-
-        Note: Due to the asynchronous nature of the heartbeat task, an extra heartbeat
-        message may be sent after the final stream boundary message. This is safe because
-        both the MIME specification (RFC 2046) and Apollo's GraphQL Multipart HTTP protocol
-        require clients to ignore any content after the final boundary marker. Additionally,
-        Apollo's protocol defines heartbeats as empty JSON objects that clients must
-        silently ignore.
-        """
-        queue: asyncio.Queue[tuple[bool, bool, Any]] = asyncio.Queue(
-            maxsize=1,  # Critical: maxsize=1 for flow control.
-        )
-        cancelling = False
-
-        async def drain() -> None:
-            try:
-                async for item in stream():
-                    await queue.put((False, False, item))
-            except Exception as e:
-                if not cancelling:
-                    await queue.put((True, False, e))
-                else:
-                    raise
-            # Send completion signal to prevent race conditions. The queue.put()
-            # blocks until space is available (due to maxsize=1), guaranteeing that
-            # when task.done() is True, the final stream message has been dequeued.
-            await queue.put((False, True, None))  # Always use None with done=True
-
-        async def heartbeat() -> None:
-            while True:
-                item = self.encode_multipart_data({}, separator)
-                await queue.put((False, False, item))
-
-                await asyncio.sleep(5)
-
-        async def merged() -> AsyncGenerator[str, None]:
-            heartbeat_task = asyncio.create_task(heartbeat())
-            task = asyncio.create_task(drain())
-
-            async def cancel_tasks() -> None:
-                nonlocal cancelling
-                cancelling = True
-                task.cancel()
-
-                with contextlib.suppress(asyncio.CancelledError):
-                    await task
-
-                heartbeat_task.cancel()
-
-                with contextlib.suppress(asyncio.CancelledError):
-                    await heartbeat_task
-
-            try:
-                # When task.done() is True, the final stream message has been
-                # dequeued due to queue size 1 and the blocking nature of queue.put().
-                while not task.done():
-                    raised, done, data = await queue.get()
-
-                    if done:
-                        # Received done signal (data is None), stream is complete.
-                        # Note that we may not get here because of the race between
-                        # task.done() and queue.get(), but that's OK because if
-                        # task.done() is True, the actual final message (including any
-                        # exception) has been consumed. The only intent here is to
-                        # ensure that data=None is not yielded.
-                        break
-
-                    if raised:
-                        await cancel_tasks()
-                        raise data
-
-                    yield data
-            finally:
-                await cancel_tasks()
-
-        return merged
-
-    def _get_stream(
+    async def _create_streaming_response(
         self,
         request: Request,
         result: SubscriptionExecutionResult,
-        separator: str = "graphql",
-    ) -> Callable[[], AsyncGenerator[str, None]]:
+        protocol: GraphQLRequestProtocol,
+        sub_response: SubResponse,
+    ) -> Response:
+        transport = self._get_stream_transport(protocol)
+        if transport is None:
+            raise RuntimeError(f"No HTTP stream transport configured for {protocol}")
+
+        return await self.create_streaming_response(
+            request,
+            self._stream_result(request, result, transport),
+            sub_response,
+            headers=transport.headers,
+        )
+
+    def _stream_result(
+        self,
+        request: Request,
+        result: SubscriptionExecutionResult,
+        transport: HTTPStreamTransport,
+    ) -> AsyncTextStream:
         async def stream() -> AsyncGenerator[str, None]:
+            all_pending: list[Any] = []
+
             async for value in result:
-                response = await self.process_result(request, value)
-                yield self.encode_multipart_data({"payload": response}, separator)
+                response, all_pending = await self._process_stream_result(
+                    request, value, all_pending
+                )
+                yield transport.encode_next(response, self.encode_json_string)
 
-            yield f"\r\n--{separator}--\r\n"
+            yield transport.encode_complete()
 
-        return self._stream_with_heartbeat(stream, separator)
+        return merge_stream_with_heartbeat(
+            stream,
+            lambda: transport.heartbeat_message(self.encode_json_string),
+            interval=transport.heartbeat_interval,
+            send_initial_heartbeat=transport.send_initial_heartbeat,
+        )
+
+    async def _process_stream_result(
+        self,
+        request: Request,
+        value: Any,
+        all_pending: list[Any],
+    ) -> tuple[GraphQLHTTPResponse, list[Any]]:
+        if isinstance(value, InitialIncrementalExecutionResult):
+            initial_response = await self.process_result(request, value)
+            initial_response["hasNext"] = value.has_next
+            initial_response["pending"] = [p.formatted for p in value.pending]
+            initial_response["extensions"] = value.extensions
+
+            if value.errors:
+                self._handle_errors(value.errors, initial_response)
+
+            return initial_response, list(value.pending)
+
+        if isinstance(value, SubsequentIncrementalExecutionResult):
+            subsequent_response: GraphQLHTTPResponse = {
+                "hasNext": value.has_next,
+                "extensions": value.extensions,
+            }
+
+            if value.pending:
+                subsequent_response["pending"] = [p.formatted for p in value.pending]
+
+            if value.completed:
+                subsequent_response["completed"] = [
+                    p.formatted for p in value.completed
+                ]
+
+            if value.incremental:
+                incremental = []
+                all_pending.extend(value.pending)
+
+                for incremental_value in value.incremental:
+                    pending_value = next(
+                        (p for p in all_pending if p.id == incremental_value.id),
+                        None,
+                    )
+
+                    assert pending_value
+
+                    incremental.append(
+                        {
+                            **incremental_value.formatted,
+                            "path": pending_value.path,
+                            "label": pending_value.label,
+                        }
+                    )
+
+                subsequent_response["incremental"] = incremental
+
+            return subsequent_response, all_pending
+
+        processed_result = await self.process_result(request, value)
+
+        if value.errors:
+            self._handle_errors(value.errors, processed_result)
+
+        return processed_result, all_pending
 
     async def parse_multipart_subscriptions(
         self, request: AsyncHTTPRequestAdapter
@@ -618,15 +573,9 @@ class AsyncBaseHTTPView(
     async def parse_http_body(
         self, request: AsyncHTTPRequestAdapter
     ) -> GraphQLRequestData | list[GraphQLRequestData]:
-        headers = {key.lower(): value for key, value in request.headers.items()}
         content_type, _ = parse_content_type(request.content_type or "")
-        accept = headers.get("accept", "")
-
-        protocol: Literal["http", "multipart-subscription"] = (
-            "multipart-subscription"
-            if self._is_multipart_subscriptions(*parse_content_type(accept))
-            else "http"
-        )
+        transport = self._get_stream_transport_from_headers(request.headers)
+        protocol: GraphQLRequestProtocol = transport.protocol if transport else "http"
 
         if request.method == "GET":
             data = self.parse_query_params(request.query_params)

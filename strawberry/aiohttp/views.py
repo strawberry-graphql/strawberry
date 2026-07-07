@@ -108,7 +108,7 @@ class GraphQLView(
         self.allow_queries_via_get = allow_queries_via_get
         self.keep_alive = keep_alive
         self.keep_alive_interval = keep_alive_interval
-        self.subscription_protocols = subscription_protocols
+        self.protocols = subscription_protocols
         self.connection_init_wait_timeout = connection_init_wait_timeout
         self.multipart_uploads_enabled = multipart_uploads_enabled
         self.max_subscriptions_per_connection = max_subscriptions_per_connection
@@ -121,11 +121,11 @@ class GraphQLView(
         return web.Response()
 
     def is_websocket_request(self, request: web.Request) -> TypeGuard[web.Request]:
-        ws = web.WebSocketResponse(protocols=self.subscription_protocols)
+        ws = web.WebSocketResponse(protocols=self.websocket_subprotocols)
         return ws.can_prepare(request).ok
 
     async def pick_websocket_subprotocol(self, request: web.Request) -> str | None:
-        ws = web.WebSocketResponse(protocols=self.subscription_protocols)
+        ws = web.WebSocketResponse(protocols=self.websocket_subprotocols)
         return ws.can_prepare(request).protocol
 
     async def create_websocket_response(
@@ -171,7 +171,7 @@ class GraphQLView(
         request: web.Request,
         stream: Callable[[], AsyncGenerator[str, None]],
         sub_response: web.Response,
-        headers: dict[str, str],
+        headers: Mapping[str, str],
     ) -> web.StreamResponse:
         response = web.StreamResponse(
             status=sub_response.status,
