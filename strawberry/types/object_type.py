@@ -221,6 +221,9 @@ def type(
 ) -> Callable[[T], T]: ...
 
 
+@dataclass_transform(
+    order_default=True, kw_only_default=True, field_specifiers=(field, StrawberryField)
+)
 def type(
     cls: T | None = None,
     *,
@@ -339,6 +342,9 @@ def input(
 ) -> Callable[[T], T]: ...
 
 
+@dataclass_transform(
+    order_default=True, kw_only_default=True, field_specifiers=(field, StrawberryField)
+)
 def input(
     cls: T | None = None,
     *,

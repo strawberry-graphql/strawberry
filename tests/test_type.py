@@ -6,6 +6,8 @@ import pytest
 
 import strawberry
 from strawberry.types.base import StrawberryObjectDefinition, get_object_definition
+from strawberry.types.field import StrawberryField
+from strawberry.types.object_type import field
 
 
 def test_get_object_definition():
@@ -47,3 +49,18 @@ def test_get_object_definition_strict():
         match=r".* does not have a StrawberryObjectDefinition",
     ):
         get_object_definition(OtherFruit, strict=True)
+
+
+def test_public_decorators_have_dataclass_transform():
+    expected = {
+        "eq_default": True,
+        "order_default": True,
+        "kw_only_default": True,
+        "frozen_default": False,
+        "field_specifiers": (field, StrawberryField),
+        "kwargs": {},
+    }
+
+    assert strawberry.type.__dataclass_transform__ == expected
+    assert strawberry.input.__dataclass_transform__ == expected
+    assert strawberry.interface.__dataclass_transform__ == expected
