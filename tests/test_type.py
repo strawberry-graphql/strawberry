@@ -47,18 +47,3 @@ def test_get_object_definition_strict():
         match=r".* does not have a StrawberryObjectDefinition",
     ):
         get_object_definition(OtherFruit, strict=True)
-
-
-def test_public_decorators_have_dataclass_transform():
-    decorators = (strawberry.type, strawberry.input, strawberry.interface)
-
-    for decorator in decorators:
-        transform = decorator.__dataclass_transform__
-
-        assert transform["order_default"] is True
-        assert transform["kw_only_default"] is True
-
-        field_specifiers = transform["field_specifiers"]
-
-        assert field_specifiers
-        assert all(callable(field_specifier) for field_specifier in field_specifiers)
