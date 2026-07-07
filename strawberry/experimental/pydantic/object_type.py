@@ -244,6 +244,24 @@ def type(
         if hasattr(cls, "resolve_reference"):
             namespace["resolve_reference"] = cls.resolve_reference
 
+        dataclass_fields = [field.to_tuple() for field in all_model_fields]
+        field_names = {field_tuple[0] for field_tuple in dataclass_fields}
+
+        # `make_dataclass` below builds a brand new class from `cls.__bases__`
+        # rather than from `cls` itself, so any attribute defined directly on the
+        # decorated class body that is not a field — a regular/static/class method
+        # or a property — would otherwise be dropped and become inaccessible at
+        # runtime. Carry those over so user-defined methods keep working (#3601).
+        for attr_name, attr_value in cls.__dict__.items():
+            if attr_name.startswith("__"):
+                continue
+            if attr_name in namespace or attr_name in field_names:
+                continue
+            if isinstance(
+                attr_value, (staticmethod, classmethod, property)
+            ) or callable(attr_value):
+                namespace[attr_name] = attr_value
+
         kwargs: dict[str, object] = {}
 
         # Python 3.10.1 introduces the kw_only param to `make_dataclass`.
@@ -256,7 +274,7 @@ def type(
 
         cls = dataclasses.make_dataclass(
             cls.__name__,
-            [field.to_tuple() for field in all_model_fields],
+            dataclass_fields,
             bases=cls.__bases__,
             namespace=namespace,
             **kwargs,  # type: ignore

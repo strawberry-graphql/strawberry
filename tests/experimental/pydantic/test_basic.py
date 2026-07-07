@@ -126,6 +126,42 @@ def test_auto_fields_other_sentinel():
     assert field3.type is OtherSentinel
 
 
+def test_preserves_user_defined_methods():
+    # https://github.com/strawberry-graphql/strawberry/issues/3601
+    # Methods defined on the decorated class (other than from_pydantic /
+    # to_pydantic) used to be stripped because the type is rebuilt with
+    # make_dataclass from the original bases, so calling them raised
+    # AttributeError. They must remain accessible at runtime.
+    class Foo(pydantic.BaseModel):
+        bar: int
+
+    @strawberry.experimental.pydantic.type(model=Foo)
+    class FooType:
+        bar: strawberry.auto
+
+        @staticmethod
+        def do_something() -> str:
+            return "static"
+
+        @classmethod
+        def build(cls) -> str:
+            return "class"
+
+        def describe(self) -> str:
+            return "instance"
+
+        @property
+        def label(self) -> str:
+            return "property"
+
+    assert FooType.do_something() == "static"
+    assert FooType.build() == "class"
+
+    instance = FooType(bar=1)
+    assert instance.describe() == "instance"
+    assert instance.label == "property"
+
+
 def test_referencing_other_models_fails_when_not_registered():
     class Group(pydantic.BaseModel):
         name: str
