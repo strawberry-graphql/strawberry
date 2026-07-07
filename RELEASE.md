@@ -29,4 +29,4 @@ class FooType:
 FooType.do_something()  # used to raise AttributeError
 ```
 
-These members are now carried over and remain accessible at runtime.
+These members are now carried over and keep working at runtime.
