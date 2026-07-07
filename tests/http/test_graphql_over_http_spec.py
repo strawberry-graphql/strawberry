@@ -166,7 +166,7 @@ async def test_9c48(http_client):
 )
 async def test_9abe(http_client):
     """
-    MAY respond with 4xx status code if content-type is not supplied on POST requests
+    SHOULD respond with 4xx status code if content-type is not supplied on POST requests
     """
     response = await http_client.post(
         url="/graphql",
