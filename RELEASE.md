@@ -8,8 +8,8 @@ social_messages:
     static, class, and instance methods (and properties) from the decorated class body.
 ---
 
-Fix `strawberry.experimental.pydantic.type` (and `.input` / `.interface`) stripping
-user-defined methods from the decorated class.
+This release fixes `strawberry.experimental.pydantic.type` (and `.input` /
+`.interface`) stripping user-defined methods from the decorated class.
 
 Previously any `staticmethod`, `classmethod`, regular method, or `property` defined on
 the class body — other than `from_pydantic` / `to_pydantic` — was dropped, because the
