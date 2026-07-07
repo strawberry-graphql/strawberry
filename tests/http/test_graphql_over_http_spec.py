@@ -438,6 +438,8 @@ async def test_d6d5(http_client):
         headers={"Accept": "application/graphql-response+json"},
     )
     assert response.status_code == 200
+    assert isinstance(response.json, dict)
+    assert "errors" not in response.json
 
 
 async def test_6a70(http_client):
