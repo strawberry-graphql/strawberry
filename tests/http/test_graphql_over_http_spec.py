@@ -517,23 +517,35 @@ async def test_1b7a(http_client):
 
 async def test_b6dc(http_client):
     """
-    MAY use 4xx or 5xx status codes on JSON parsing failure
+    MAY use 2xx, 4xx, or 5xx status codes on JSON parsing failure when accepting application/json
     """
     response = await http_client.post(
         url="/graphql",
-        headers={"Content-Type": "application/json"},
+        headers={
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+        },
         data=b'{ "not a JSON',
     )
-    assert 400 <= response.status_code <= 599
+    assert any(
+        [
+            200 <= response.status_code <= 299,
+            400 <= response.status_code <= 499,
+            500 <= response.status_code <= 599,
+        ]
+    )
 
 
 async def test_bcf8(http_client):
     """
-    MAY use 400 status code on JSON parsing failure
+    SHOULD use 400 status code on JSON parsing failure when accepting application/json
     """
     response = await http_client.post(
         url="/graphql",
-        headers={"Content-Type": "application/json"},
+        headers={
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+        },
         data=b'{ "not a JSON',
     )
     assert response.status_code == 400
