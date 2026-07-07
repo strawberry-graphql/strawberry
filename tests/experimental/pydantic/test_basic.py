@@ -971,4 +971,10 @@ def test_annotated_none_in_union_is_optional():
 
     # Schema generation used to raise InvalidUnionTypeError here.
     schema = strawberry.Schema(query=Query)
-    assert "fieldA: String" in schema.as_str()
+    schema_str = schema.as_str()
+    # The field must be nullable (``String``), not ``String!``. A plain
+    # ``"fieldA: String" in ...`` check would also pass for the non-null form
+    # since it is a substring, so assert the exact nullable line and the
+    # absence of the non-null one.
+    assert "fieldA: String\n" in schema_str
+    assert "fieldA: String!" not in schema_str
