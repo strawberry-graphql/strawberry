@@ -2,7 +2,7 @@
 release type: patch
 social_messages:
   x: >-
-    {project_name} {version} fixes `InputMutationExtension` — permission classes and other extensions on input-mutation fields now receive individual arguments instead of the wrapping input object.
+    {project_name} {version} fixes InputMutationExtension — permission classes and other extensions on input-mutation fields now receive individual arguments instead of the wrapping input object.
   linkedin: >-
     {project_name} {version} fixes InputMutationExtension: permission classes and field extensions on input-mutation fields now receive the resolver's individual arguments (e.g. name, color) instead of the wrapping input object.
 ---
