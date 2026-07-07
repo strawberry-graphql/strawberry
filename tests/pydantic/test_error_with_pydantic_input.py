@@ -220,7 +220,13 @@ union UserResultError = UserResult | Error\
     )
 
 
-def test_permission_runs_before_pydantic_validation_error_conversion():
+def test_pydantic_input_validation_error_is_mapped_before_permissions_run():
+    # Argument conversion (where pydantic input validation runs) happens before
+    # the field-extension chain, so a validation error is mapped to the union
+    # result directly and the permission never runs. Mirrors the core
+    # ``test_argument_conversion_error_is_mapped_before_permissions_run``.
+    permission_ran = False
+
     @strawberry.pydantic.input
     class CreateUserInput(pydantic.BaseModel):
         name: pydantic.constr(min_length=2)
@@ -233,6 +239,8 @@ def test_permission_runs_before_pydantic_validation_error_conversion():
         message = "denied"
 
         def has_permission(self, source, info, **kwargs):  # noqa: ANN003
+            nonlocal permission_ran
+            permission_ran = True
             return False
 
     @strawberry.type
@@ -270,6 +278,6 @@ def test_permission_runs_before_pydantic_validation_error_conversion():
         """
     )
 
-    assert result.errors is not None
-    assert result.errors[0].message == "denied"
-    assert result.data is None
+    assert result.errors is None
+    assert result.data == {"createUser": {"errors": [{"type": "string_too_short"}]}}
+    assert permission_ran is False

@@ -71,10 +71,12 @@ class Error:
 
 
 class PydanticValidationErrorHandler:
-    exception_types = _get_validation_error_types()
-    error_types = (Error,)
+    # ``exception_type`` accepts a single type or a tuple; the GraphQL error
+    # type is a single type, so ``error_type`` must be ``Error``, not a tuple.
+    exception_type = _get_validation_error_types()
+    error_type = Error
 
-    def handle_exception(
+    def handle(
         self,
         exception: Exception,
         *,
