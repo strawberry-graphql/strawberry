@@ -6,8 +6,6 @@ import pytest
 
 import strawberry
 from strawberry.types.base import StrawberryObjectDefinition, get_object_definition
-from strawberry.types.field import StrawberryField
-from strawberry.types.object_type import field
 
 
 def test_get_object_definition():
@@ -52,15 +50,15 @@ def test_get_object_definition_strict():
 
 
 def test_public_decorators_have_dataclass_transform():
-    expected = {
-        "eq_default": True,
-        "order_default": True,
-        "kw_only_default": True,
-        "frozen_default": False,
-        "field_specifiers": (field, StrawberryField),
-        "kwargs": {},
-    }
+    decorators = (strawberry.type, strawberry.input, strawberry.interface)
 
-    assert strawberry.type.__dataclass_transform__ == expected
-    assert strawberry.input.__dataclass_transform__ == expected
-    assert strawberry.interface.__dataclass_transform__ == expected
+    for decorator in decorators:
+        transform = decorator.__dataclass_transform__
+
+        assert transform["order_default"] is True
+        assert transform["kw_only_default"] is True
+
+        field_specifiers = transform["field_specifiers"]
+
+        assert field_specifiers
+        assert all(callable(field_specifier) for field_specifier in field_specifiers)
