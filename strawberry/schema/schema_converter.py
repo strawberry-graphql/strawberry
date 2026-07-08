@@ -3,6 +3,7 @@ from __future__ import annotations
 import dataclasses
 import sys
 import typing
+from collections.abc import Mapping
 from functools import partial, reduce
 from typing import (
     TYPE_CHECKING,
@@ -79,7 +80,7 @@ from . import compat
 from .types.concrete_type import ConcreteType
 
 if TYPE_CHECKING:
-    from collections.abc import Awaitable, Callable, Mapping
+    from collections.abc import Awaitable, Callable
 
     from graphql import (
         GraphQLInputType,
@@ -594,6 +595,17 @@ class GraphQLCoreConverter:
             def resolve_type(
                 obj: Any, info: GraphQLResolveInfo, abstract_type: GraphQLAbstractType
             ) -> Awaitable[str | None] | str | None:
+                # A resolver may return a mapping rather than an instance of the
+                # type - e.g. when a custom ``default_resolver`` reads fields off a
+                # dict. Such a value can't be matched by ``isinstance`` below or by
+                # the members' ``is_type_of``, so honor an explicit ``__typename``
+                # to pick the concrete type, matching how non-interface fields
+                # already resolve dicts via the default resolver (#3715).
+                if isinstance(obj, Mapping):
+                    typename = obj.get("__typename")
+                    if typename is not None:
+                        return typename
+
                 if isinstance(obj, interface.origin):
                     type_definition = get_object_definition(obj, strict=True)
 
@@ -686,6 +698,12 @@ class GraphQLCoreConverter:
             def is_type_of(obj: Any, _info: GraphQLResolveInfo) -> bool:
                 if (type_cast := get_strawberry_type_cast(obj)) is not None:
                     return type_cast in possible_types
+
+                # A mapping (e.g. a dict returned through a custom
+                # ``default_resolver``) is not an instance of the type, so match
+                # it by its explicit ``__typename`` instead (#3715).
+                if isinstance(obj, Mapping):
+                    return obj.get("__typename") == object_type_name
 
                 if object_type.concrete_of and (
                     has_object_definition(obj)

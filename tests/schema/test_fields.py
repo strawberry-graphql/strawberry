@@ -74,6 +74,48 @@ def test_can_change_default_resolver():
     assert result.data["user"]["name"] == "Patrick"
 
 
+def test_default_resolver_works_for_interface_field_with_typename():
+    # A field typed as an interface that returns a mapping (via a custom
+    # default_resolver) resolves to the concrete type named by ``__typename``.
+    # Regression test for #3715.
+    @strawberry.interface
+    class UserInterface:
+        name: str
+
+    @strawberry.type
+    class Client(UserInterface):
+        company_name: str
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def user(self) -> UserInterface:
+            return {  # type: ignore
+                "name": "Patrick",
+                "company_name": "company",
+                "__typename": "Client",
+            }
+
+    schema = strawberry.Schema(
+        query=Query,
+        types=[Client],
+        config=StrawberryConfig(default_resolver=getitem),
+    )
+
+    result = schema.execute_sync(
+        "{ user { name __typename ... on Client { companyName } } }"
+    )
+
+    assert not result.errors
+    assert result.data == {
+        "user": {
+            "name": "Patrick",
+            "__typename": "Client",
+            "companyName": "company",
+        }
+    }
+
+
 def test_field_metadata():
     @strawberry.type
     class Query:
