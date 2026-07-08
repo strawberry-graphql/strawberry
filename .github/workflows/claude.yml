@@ -86,9 +86,23 @@ jobs:
 
             Check social copy when present:
             - social_messages includes useful x and linkedin entries
+            - the X copy starts naturally, preferably with
+              "{project_name} {version} is out!"
+            - the LinkedIn copy starts naturally, preferably with
+              "{project_name} {version} is out."
+            - each post reads like a release announcement, not a compressed
+              changelog entry or implementation-first summary
+            - if the change is mainly useful for integration or framework
+              authors, the copy says that instead of implying every Strawberry
+              application needs to adopt it
             - the X copy is no longer than 280 characters after template
               variables are considered
+            - the X copy includes the website release URL template
+              `https://strawberry.rocks/release/{version}`
             - LinkedIn copy is clear as a standalone post
+            - detailed semantics, ordering rules, warnings, and edge cases stay
+              in the release note or docs unless they are the central
+              user-facing change
             - neither post leaks raw Markdown link syntax like [label](url)
 
             Deliver the review in up to three ways:
@@ -113,11 +127,17 @@ jobs:
                    release type: <the existing value>
                    social_messages:
                      x: >-
-                       {project_name} {version} <one concise sentence>
+                       {project_name} {version} is out! <one natural sentence
+                       about the user-facing change>. 🍓
+                       https://strawberry.rocks/release/{version}
                      linkedin: >-
-                       {project_name} {version} <one or two clear sentences>
-               Use the {project_name} and {version} placeholders verbatim, and
-               keep the x copy under 280 characters once they are filled in.
+                       {project_name} {version} is out. <one or two natural
+                       sentences about what changed, who benefits, and why it
+                       matters.>
+               Use the {project_name} and {version} placeholders verbatim. Use
+               the exact X URL template
+               `https://strawberry.rocks/release/{version}`, and keep the x
+               copy under 280 characters once placeholders are filled in.
 
             2. One sticky summary comment (always). Publish an overall summary
                as a single PR comment - actually post it, do not just return it
