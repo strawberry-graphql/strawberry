@@ -43,4 +43,4 @@ jobs:
           command: check
           autopub-version: "1.0.0a58"
           fail-on-missing: "true"
-          extra-plugins: "strawberry-autopub-plugins>=0.2.0"
+          extra-plugins: "strawberry-autopub-plugins>=0.3.0"
