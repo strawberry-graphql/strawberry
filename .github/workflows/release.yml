@@ -30,7 +30,7 @@ jobs:
         uses: autopub/autopub-action@5fdc82e84c048a82303de6b5c5a9d027665e73cf # v1.1.1
         with:
           command: check
-          autopub-version: "1.0.0a58"
+          autopub-version: "1.0.0a59"
           github-token: ${{ secrets.BOT_TOKEN }}
           extra-plugins: "strawberry-autopub-plugins>=0.3.0"
 
@@ -53,21 +53,21 @@ jobs:
         uses: autopub/autopub-action@5fdc82e84c048a82303de6b5c5a9d027665e73cf # v1.1.1
         with:
           command: prepare
-          autopub-version: "1.0.0a58"
+          autopub-version: "1.0.0a59"
           extra-plugins: "strawberry-autopub-plugins>=0.3.0"
 
       - name: Build package
         uses: autopub/autopub-action@5fdc82e84c048a82303de6b5c5a9d027665e73cf # v1.1.1
         with:
           command: build
-          autopub-version: "1.0.0a58"
+          autopub-version: "1.0.0a59"
           extra-plugins: "strawberry-autopub-plugins>=0.3.0"
 
       - name: Publish to PyPI
         uses: autopub/autopub-action@5fdc82e84c048a82303de6b5c5a9d027665e73cf # v1.1.1
         with:
           command: publish
-          autopub-version: "1.0.0a58"
+          autopub-version: "1.0.0a59"
           extra-plugins: "strawberry-autopub-plugins>=0.3.0"
           github-token: ${{ secrets.BOT_TOKEN }}
           git-username: botberry
