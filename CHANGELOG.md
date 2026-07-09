@@ -1,6 +1,46 @@
 CHANGELOG
 =========
 
+0.320.3 - 2026-07-07
+--------------------
+
+This release fixes `InputMutationExtension` to unpack its generated `input`
+object into the resolver's individual keyword arguments before permission
+classes and other field extensions run.
+
+Previously, permission classes and field extensions on an input-mutation field
+received the wrapping `input` object; they now receive the individual arguments
+(for example `name` and `color`).
+
+```python
+import strawberry
+from strawberry.field_extensions import InputMutationExtension
+from strawberry.permission import BasePermission
+
+
+class IsAuthenticated(BasePermission):
+    message = "Not authenticated"
+
+    def has_permission(self, source, info, **kwargs) -> bool:
+        # Previously: kwargs == {"input": CreateFruitInput(name=..., color=...)}
+        # Now:        kwargs == {"name": ..., "color": ...}
+        return True
+
+
+@strawberry.type
+class Mutation:
+    @strawberry.mutation(
+        extensions=[InputMutationExtension()],
+        permission_classes=[IsAuthenticated],
+    )
+    def create_fruit(self, name: str, color: str) -> Fruit:
+        return Fruit(name=name, color=color)
+```
+
+This release was contributed by [@patrick91](https://github.com/patrick91) in [#4510](https://github.com/strawberry-graphql/strawberry/pull/4510)
+
+Additional contributors: [@github-actions[bot]](https://github.com/github-actions[bot])
+
 0.320.2 - 2026-07-06
 --------------------
 

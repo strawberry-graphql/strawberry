@@ -34,6 +34,17 @@ class FieldExtension:
             "Async Resolve is not supported for this Field Extension"
         )
 
+    def map_arguments(self, kwargs: dict[str, Any]) -> dict[str, Any]:
+        """Reshape the resolver's keyword arguments after they are converted.
+
+        Called during argument conversion, before the resolver (and the resolve
+        chain) runs, and only when conversion succeeds. Extensions that change a
+        field's argument shape (e.g. ``InputMutationExtension``) use this instead
+        of a resolve wrapper, so they never see the un-converted arguments passed
+        along the argument-conversion-error path.
+        """
+        return kwargs
+
     @cached_property
     def supports_sync(self) -> bool:
         return type(self).resolve is not FieldExtension.resolve
@@ -41,6 +52,15 @@ class FieldExtension:
     @cached_property
     def supports_async(self) -> bool:
         return type(self).resolve_async is not FieldExtension.resolve_async
+
+    @cached_property
+    def has_resolver(self) -> bool:
+        """Whether the extension takes part in the resolve chain.
+
+        Extensions that implement neither ``resolve`` nor ``resolve_async`` only
+        hook into ``apply``/``map_arguments`` and are left out of the chain.
+        """
+        return self.supports_sync or self.supports_async
 
 
 class SyncToAsyncExtension(FieldExtension):
@@ -84,8 +104,14 @@ def build_field_extension_resolvers(
     if not field.extensions:
         return []  # pragma: no cover
 
+    # Extensions that only hook into ``apply``/``map_arguments`` (no ``resolve``
+    # or ``resolve_async``) take no part in the resolve chain, so leave them out.
+    extensions = [extension for extension in field.extensions if extension.has_resolver]
+    if not extensions:
+        return []
+
     non_async_extensions = [
-        extension for extension in field.extensions if not extension.supports_async
+        extension for extension in extensions if not extension.supports_async
     ]
     non_async_extension_names = ",".join(
         [extension.__class__.__name__ for extension in non_async_extensions]
@@ -98,19 +124,19 @@ def build_field_extension_resolvers(
                 f"to the async resolver of Field {field.name}. "
                 f"Please add a resolve_async method to the extension(s)."
             )
-        return _get_async_resolvers(field.extensions)
+        return _get_async_resolvers(extensions)
     # Try to wrap all sync resolvers in async so that we can use async extensions
     # on sync fields. This is not possible the other way around since
     # the result of an async resolver would have to be awaited before calling
     # the sync extension, making it impossible for the extension to modify
     # any arguments.
     non_sync_extensions = [
-        extension for extension in field.extensions if not extension.supports_sync
+        extension for extension in extensions if not extension.supports_sync
     ]
 
     if len(non_sync_extensions) == 0:
         # Resolve everything sync
-        return _get_sync_resolvers(field.extensions)
+        return _get_sync_resolvers(extensions)
 
     # We have async-only extensions and need to wrap the resolver
     # That means we can't have sync-only extensions after the first async one
@@ -122,7 +148,7 @@ def build_field_extension_resolvers(
 
     # All sync only extensions must be found before the first async-only one
     found_sync_only_extensions = 0
-    for extension in field.extensions:
+    for extension in extensions:
         # ...A, abort
         if extension in non_sync_extensions:
             break
@@ -137,9 +163,9 @@ def build_field_extension_resolvers(
         # Prepend sync to async extension to field extensions
         return list(
             itertools.chain(
-                _get_sync_resolvers(field.extensions[:found_sync_extensions]),
+                _get_sync_resolvers(extensions[:found_sync_extensions]),
                 [SyncToAsyncExtension().resolve_async],
-                _get_async_resolvers(field.extensions[found_sync_extensions:]),
+                _get_async_resolvers(extensions[found_sync_extensions:]),
             )
         )
 

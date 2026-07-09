@@ -228,27 +228,20 @@ def get_arguments(
     config: StrawberryConfig,
     scalar_registry: Mapping[object, ScalarWrapper | ScalarDefinition],
 ) -> tuple[list[Any], dict[str, Any]]:
-    # TODO: An extension might have changed the resolver arguments,
-    # but we need them here since we are calling it.
-    # This is a bit of a hack, but it's the easiest way to get the arguments
-    # This happens in mutation.InputMutationExtension
-    field_arguments = field.arguments[:]
-    if field.base_resolver:
-        existing = {arg.python_name for arg in field_arguments}
-        field_arguments.extend(
-            [
-                arg
-                for arg in field.base_resolver.arguments
-                if arg.python_name not in existing
-            ]
-        )
-
     kwargs = convert_arguments(
         kwargs,
-        field_arguments,
+        field.arguments,
         scalar_registry=scalar_registry,
         config=config,
     )
+
+    # Let field extensions reshape the converted arguments before the resolver
+    # is called (e.g. ``InputMutationExtension`` unpacks its ``input`` object
+    # into the resolver's individual keyword arguments). This only runs when
+    # conversion succeeds; on the conversion-error path the resolver is never
+    # called and the extensions run with the raw arguments instead.
+    for extension in field.extensions:
+        kwargs = extension.map_arguments(kwargs)
 
     # the following code allows to omit info and root arguments
     # by inspecting the original resolver arguments,

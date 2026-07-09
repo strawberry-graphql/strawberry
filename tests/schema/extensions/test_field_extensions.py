@@ -411,3 +411,50 @@ def test_extension_has_custom_info_class():
     result = schema.execute_sync(query)
     assert result.data, result.errors
     assert result.data["string"] == "This is a test!!"
+
+
+class DoublingExtension(FieldExtension):
+    """Transparent extension: only ``apply``/``map_arguments``, no resolve."""
+
+    def __init__(self) -> None:
+        self.applied = False
+
+    def apply(self, field: Any) -> None:
+        self.applied = True
+
+    def map_arguments(self, kwargs: dict[str, Any]) -> dict[str, Any]:
+        return {**kwargs, "value": kwargs["value"] * 2}
+
+
+def test_extension_without_resolve_is_transparent():
+    # An extension implementing neither resolve nor resolve_async takes no part
+    # in the resolve chain, but its apply() and map_arguments() still run.
+    extension = DoublingExtension()
+
+    @strawberry.type
+    class Query:
+        @strawberry.field(extensions=[extension])
+        def echo(self, value: int) -> int:
+            return value
+
+    schema = strawberry.Schema(query=Query)
+    assert extension.applied
+
+    result = schema.execute_sync("query { echo(value: 3) }")
+    assert result.errors is None
+    assert result.data == {"echo": 6}
+
+
+async def test_extension_without_resolve_is_transparent_on_async_field():
+    # The same extension must work on an async field: a transparent extension
+    # imposes no sync/async constraint on the resolve chain.
+    @strawberry.type
+    class Query:
+        @strawberry.field(extensions=[DoublingExtension()])
+        async def echo(self, value: int) -> int:
+            return value
+
+    schema = strawberry.Schema(query=Query)
+    result = await schema.execute("query { echo(value: 4) }")
+    assert result.errors is None
+    assert result.data == {"echo": 8}

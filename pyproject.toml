@@ -1,6 +1,6 @@
 [project]
 name = "strawberry-graphql"
-version = "0.320.2"
+version = "0.320.3"
 description = "A library for creating GraphQL APIs"
 authors = [{ name = "Patrick Arminio", email = "patrick.arminio@gmail.com" }]
 license = "MIT"
@@ -190,6 +190,9 @@ platforms = ["x", "linkedin", "bluesky", "mastodon"]
 publish-mode = "next-free-slot"
 require-social-message = true
 required-social-platforms = ["x", "linkedin"]
+required-message-substrings = { x = [
+  "https://strawberry.rocks/release/{version}",
+] }
 require-release-note-lead = true
 
 [tool.pyright]
