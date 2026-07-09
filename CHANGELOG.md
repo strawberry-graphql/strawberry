@@ -1,6 +1,15 @@
 CHANGELOG
 =========
 
+0.320.4 - 2026-07-09
+--------------------
+
+This release fixes a PyCharm false positive where classes decorated with `@strawberry.type` and `@strawberry.input` reported "Unexpected argument" on their generated keyword constructors.
+
+This release was contributed by [@Speedy1991](https://github.com/Speedy1991) in [#4508](https://github.com/strawberry-graphql/strawberry/pull/4508)
+
+Additional contributors: [@patrick91](https://github.com/patrick91), [@github-actions[bot]](https://github.com/github-actions[bot])
+
 0.320.3 - 2026-07-07
 --------------------
 
