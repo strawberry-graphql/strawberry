@@ -194,6 +194,12 @@ def test_get_slice_metadata(
         # `after` establishes the true start; `before` bounds the end; `first`
         # must only shrink that window from the end, never move `start`.
         (20, 5, 3, SliceMetadata(start=6, end=9, expected=3)),
+        # `first=0` boundary: an empty slice anchored at the start of the
+        # `before`-bounded window (position 0 here, since there is no `after`).
+        (15, None, 0, SliceMetadata(start=0, end=0, expected=0)),
+        # `first=0` with `after` set: still an empty slice, but anchored at the
+        # `after`-derived start (position 6), not reset to 0.
+        (15, 5, 0, SliceMetadata(start=6, end=6, expected=0)),
     ],
 )
 def test_get_slice_metadata_first_with_before(
