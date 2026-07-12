@@ -140,7 +140,7 @@ jobs:
       - run: uv sync
 
       - name: Run benchmarks
-        uses: CodSpeedHQ/action@63f3e98b61959fe67f146a3ff022e4136fe9bb9c # v4.17.6
+        uses: CodSpeedHQ/action@f99becdce5e5d51fd556489ebef684f4ecfd6286 # v4.18.5
         with:
           mode: simulation
           run: uv run pytest tests/benchmarks --codspeed -p no:codeflash-benchmark
