@@ -498,38 +498,6 @@ class CreateUserInput(BaseModel):
     ]
 ```
 
-### Discriminated Unions
-
-Pydantic discriminated unions using `Literal` types work seamlessly with
-Strawberry's union type resolution:
-
-```python
-from typing import Literal, Union
-from pydantic import Field
-
-
-@strawberry.pydantic.type
-class Cat(BaseModel):
-    pet_type: Literal["cat"]
-    meow_volume: int
-
-
-@strawberry.pydantic.type
-class Dog(BaseModel):
-    pet_type: Literal["dog"]
-    bark_volume: int
-
-
-@strawberry.type
-class Query:
-    @strawberry.field
-    def pet(self) -> Cat | Dog:
-        return Cat(pet_type="cat", meow_volume=10)
-```
-
-The `Literal` fields are converted to the appropriate GraphQL scalar type
-(String, Int, Boolean) and work as discriminators for union type resolution.
-
 ### TypeAdapter and RootModel
 
 Pydantic's `TypeAdapter` and `RootModel` can be used in resolvers for additional
