@@ -1,6 +1,6 @@
 [project]
 name = "strawberry-graphql"
-version = "0.320.4"
+version = "0.321.0"
 description = "A library for creating GraphQL APIs"
 authors = [{ name = "Patrick Arminio", email = "patrick.arminio@gmail.com" }]
 license = "MIT"

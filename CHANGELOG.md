@@ -1,6 +1,71 @@
 CHANGELOG
 =========
 
+0.321.0 - 2026-07-13
+--------------------
+
+This release adds configurable exception handlers that map Python exceptions to
+typed GraphQL union results.
+
+Most applications do not need to adopt this directly. It is primarily useful for
+integrations and framework-level helpers: for example, catching validation
+exceptions from a library such as Pydantic and exposing them as an explicit
+GraphQL error type, without requiring every resolver to catch and convert those
+exceptions manually.
+
+Handlers are passed to `strawberry.Schema` (and `strawberry.federation.Schema`):
+
+```python
+import strawberry
+from strawberry.types.field import StrawberryField
+
+
+class ValidationProblem(Exception):
+    pass
+
+
+@strawberry.type
+class ValidationError:
+    message: str
+
+
+class ValidationErrorHandler(
+    strawberry.ExceptionHandler[ValidationProblem, ValidationError]
+):
+    def handle(
+        self,
+        exception: ValidationProblem,
+        *,
+        field: StrawberryField,
+        info: strawberry.Info,
+    ) -> ValidationError:
+        return ValidationError(message=str(exception))
+
+
+schema = strawberry.Schema(
+    query=Query,
+    mutation=Mutation,
+    exception_handlers=[ValidationErrorHandler()],
+)
+```
+
+Handlers can alternatively declare `exception_type` and `error_type` class
+attributes instead of type parameters, which also covers types that are only
+known at runtime. Declaring both a type parameter and a conflicting attribute
+for the same slot raises an error at schema creation.
+
+Strawberry only converts the exception when the field return type includes the
+handler's GraphQL error type. Other fields continue to raise normal GraphQL
+errors, so applications can opt in one field at a time. Exceptions raised by
+the resolver, during argument conversion, or by field extensions are all
+covered.
+
+Exception handlers apply to query and mutation fields. Subscriptions are not
+covered: exceptions raised while establishing a subscription are not converted
+into union results.
+
+This release was contributed by [@patrick91](https://github.com/patrick91) in [#4492](https://github.com/strawberry-graphql/strawberry/pull/4492)
+
 0.320.4 - 2026-07-09
 --------------------
 
