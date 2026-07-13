@@ -18,24 +18,20 @@ from typing_extensions import Protocol
 from graphql import (
     GraphQLAbstractType,
     GraphQLArgument,
-    GraphQLBoolean,
     GraphQLDirective,
     GraphQLEnumType,
     GraphQLEnumValue,
     GraphQLError,
     GraphQLField,
-    GraphQLFloat,
     GraphQLID,
     GraphQLInputField,
     GraphQLInputObjectType,
-    GraphQLInt,
     GraphQLInterfaceType,
     GraphQLList,
     GraphQLNamedType,
     GraphQLNonNull,
     GraphQLObjectType,
     GraphQLScalarType,
-    GraphQLString,
     GraphQLType,
     GraphQLUnionType,
     Undefined,
@@ -220,11 +216,6 @@ def field_contains_type(field: StrawberryField, type_: Any) -> bool:
         target_type = StrawberryAnnotation(target_type).resolve()
 
     return any(is_same_type(union_type, target_type) for union_type in field_type.types)
-
-
-def _is_literal_type(type_: Any) -> bool:
-    """Check if a type is a Literal type (e.g., Literal["cat"])."""
-    return typing.get_origin(type_) is typing.Literal
 
 
 FieldType = TypeVar(
@@ -515,45 +506,6 @@ class GraphQLCoreConverter:
             extensions={
                 GraphQLCoreConverter.DEFINITION_BACKREF: enum_value,
             },
-        )
-
-    def from_literal(self, literal_type: type) -> GraphQLScalarType:
-        """Convert a Literal type to the appropriate GraphQL scalar type.
-
-        Literal types are commonly used in Pydantic discriminated unions to identify
-        which union member a value belongs to. For example:
-            Literal["cat"] -> String (value "cat")
-            Literal[1] -> Int
-            Literal[True] -> Boolean
-
-        We use scalar types rather than enums because:
-        1. Different union members may have different Literal values for the same field
-        2. GraphQL requires fields with the same name to have the same type in unions
-        3. Scalars allow the discriminator pattern to work naturally
-
-        Raises:
-            TypeError: If the Literal contains values that cannot be converted.
-        """
-        args = typing.get_args(literal_type)
-        if not args:
-            raise TypeError("Literal type must have at least one value")
-
-        # Get the type of the first argument to determine the scalar type
-        first_arg = args[0]
-
-        if isinstance(first_arg, str):
-            return GraphQLString
-        if isinstance(first_arg, bool):
-            # bool must come before int since bool is a subclass of int in Python
-            return GraphQLBoolean
-        if isinstance(first_arg, int):
-            return GraphQLInt
-        if isinstance(first_arg, float):
-            return GraphQLFloat
-
-        raise TypeError(
-            f"Unsupported Literal type: {args}. "
-            "Only string, int, float, and bool Literals are supported."
         )
 
     def from_directive(self, directive: StrawberryDirective) -> GraphQLDirective:
@@ -1248,11 +1200,6 @@ class GraphQLCoreConverter:
             type_, self.scalar_registry
         ):  # TODO: Replace with StrawberryScalar
             return self.from_scalar(type_)
-
-        # Handle Literal types (e.g., Literal["cat"], Literal[1])
-        # These are commonly used in Pydantic discriminated unions
-        if _is_literal_type(type_):
-            return self.from_literal(type_)
 
         raise TypeError(f"Unexpected type '{type_}'")
 
