@@ -14,6 +14,24 @@ social_messages:
 This release adds support for using `typing.Literal` annotations in Strawberry
 fields and arguments.
 
+```python
+from typing import Literal
+
+import strawberry
+
+
+@strawberry.type
+class Query:
+    status: Literal["ready"] = "ready"
+
+    @strawberry.field
+    def echo_priority(self, priority: Literal[1, 2, 3]) -> int:
+        return priority
+
+
+schema = strawberry.Schema(query=Query)
+```
+
 Homogeneous string, integer, and boolean literals map to their underlying
 GraphQL scalar type. Strawberry validates input values against the allowed
 literal values before calling the resolver, including literals nested inside
