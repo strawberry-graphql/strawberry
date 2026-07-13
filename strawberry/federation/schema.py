@@ -36,6 +36,7 @@ if TYPE_CHECKING:
     from strawberry.extensions import SchemaExtension
     from strawberry.federation.schema_directives import ComposeDirective
     from strawberry.schema.config import StrawberryConfig
+    from strawberry.schema.exception_handlers import ExceptionHandler
     from strawberry.schema_directive import StrawberrySchemaDirective
     from strawberry.types.enum import StrawberryEnumDefinition
 
@@ -75,6 +76,7 @@ class Schema(BaseSchema):
             "2.10",
             "2.11",
         ] = "2.11",
+        exception_handlers: Iterable["ExceptionHandler[Any]"] = (),
     ) -> None:
         # Convert version string (e.g., "2.5") to version tuple (e.g., (2, 5))
         self.federation_version = parse_version(federation_version)
@@ -110,6 +112,7 @@ class Schema(BaseSchema):
             config=config,
             scalar_overrides=federation_scalar_overrides,
             schema_directives=schema_directives,
+            exception_handlers=exception_handlers,
         )
 
         self.schema_directives = list(schema_directives)

@@ -92,6 +92,7 @@ if TYPE_CHECKING:
     from graphql.validation import ASTValidationRule
 
     from strawberry.directive import StrawberryDirective
+    from strawberry.schema.exception_handlers import ExceptionHandler
     from strawberry.types.base import StrawberryType
     from strawberry.types.enum import StrawberryEnumDefinition
     from strawberry.types.field import StrawberryField
@@ -271,6 +272,7 @@ class Schema(BaseSchema):
             Mapping[object, type | ScalarWrapper | ScalarDefinition] | None
         ) = None,
         schema_directives: Iterable[object] = (),
+        exception_handlers: Iterable[ExceptionHandler[Any]] = (),
     ) -> None:
         """Default Schema to be used in a Strawberry application.
 
@@ -293,6 +295,8 @@ class Schema(BaseSchema):
             config: The configuration for the schema.
             scalar_overrides: A dictionary of overrides for scalars.
             schema_directives: A list of schema directives for the schema.
+            exception_handlers: A list of handlers that can convert Python
+                exceptions into explicit GraphQL union return values.
 
         Example:
         ```python
@@ -332,12 +336,14 @@ class Schema(BaseSchema):
             execution_context_class or StrawberryGraphQLCoreExecutionContext
         )
         self.config = config or StrawberryConfig()
+        self.exception_handlers = tuple(exception_handlers)
 
         self.schema_converter = GraphQLCoreConverter(
             self.config,
             scalar_overrides=scalar_overrides or {},  # type: ignore
             scalar_map=self.config.scalar_map,
             get_fields=self.get_fields,
+            exception_handlers=self.exception_handlers,
         )
 
         self.directives = directives
