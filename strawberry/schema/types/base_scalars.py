@@ -15,18 +15,26 @@ def wrap_parser(
     type_: str,
     exceptions: tuple[type[Exception], ...] = (ValueError,),
     include_error: bool = True,
+    accept_non_string: bool = False,
 ) -> Callable[[object], object]:
     """Wrap a string parser so any invalid input becomes a clean coercion error.
 
-    The value is stringified before parsing so that non-string input (e.g. a
-    numeric id sent by a client) takes the same ``GraphQLError`` path as a
-    malformed string, instead of raising ``AttributeError``/``TypeError``
-    inside the parser and surfacing as a server-side crash.
+    Non-string input is rejected up front so the parser can never crash with
+    ``AttributeError``/``TypeError`` on unexpected value types and surface as
+    a server-side error. ``accept_non_string`` stringifies non-string input
+    instead of rejecting it, for scalars that accept it by design (``Decimal``
+    accepts numeric input this way).
     """
 
     def inner(value: object) -> object:
+        if not isinstance(value, str):
+            if not accept_non_string:
+                raise GraphQLError(
+                    f'Value cannot represent a {type_}: "{value}". Expected a string.'
+                )
+            value = str(value)
         try:
-            return parser(str(value))
+            return parser(value)
         except exceptions as e:
             detail = f" {e}" if include_error else ""
             raise GraphQLError(
@@ -79,6 +87,7 @@ DecimalDefinition: ScalarDefinition = ScalarDefinition(
         "Decimal",
         exceptions=(decimal.DecimalException,),
         include_error=False,
+        accept_non_string=True,
     ),
     parse_literal=None,
     origin=decimal.Decimal,

@@ -134,4 +134,7 @@ def test_parsing_of_non_string_value(value):
     result = execute_mutation(value)
     assert result.errors
     assert isinstance(result.errors[0], GraphQLError)
-    assert f'Value cannot represent a Date: "{value}".' in result.errors[0].message
+    assert (
+        f'Value cannot represent a Date: "{value}". Expected a string.'
+        in result.errors[0].message
+    )

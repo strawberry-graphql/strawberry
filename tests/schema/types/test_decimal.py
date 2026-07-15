@@ -110,3 +110,6 @@ def test_parsing_of_non_decimal_value():
         'Decimal: "True".'
     )
     assert result.errors[0].message == expected_message
+    original_error = result.errors[0].original_error
+    assert isinstance(original_error, GraphQLError)
+    assert original_error.original_error is None

@@ -1,5 +1,6 @@
 import uuid
 
+import pytest
 from graphql import GraphQLError
 
 import strawberry
@@ -74,9 +75,20 @@ def test_serialization_of_incorrect_uuid_string():
     assert result.errors[0].message == expected_message
 
 
-def test_parsing_of_non_string_value():
+@pytest.mark.parametrize(
+    "value",
+    [
+        469610.0,
+        # would stringify into 32 valid hexadecimal characters, so it must be
+        # rejected by type, not by parsing
+        10000000000000000000000000000000,
+        True,
+    ],
+)
+def test_parsing_of_non_string_value(value):
     """Test GraphQLError is raised for a non-string value.
-    The parser must not leak an AttributeError from ``uuid.UUID``.
+    The parser must not leak an AttributeError from ``uuid.UUID``, and the
+    string form of the value must not be accepted either.
     """
 
     @strawberry.type
@@ -97,16 +109,14 @@ def test_parsing_of_non_string_value():
                 uuidInput(uuidInput: $value)
             }
         """,
-        variable_values={"value": 469610.0},
+        variable_values={"value": value},
     )
 
     assert result.errors
-    assert isinstance(result.errors[0], GraphQLError)
-    expected_message = (
-        "Variable '$value' got invalid value 469610.0; Value cannot represent a "
-        'UUID: "469610.0". badly formed hexadecimal UUID string'
-        if IS_GQL_32
-        else "Variable '$value' has invalid value: Value cannot represent a "
-        'UUID: "469610.0". badly formed hexadecimal UUID string'
+    error = result.errors[0]
+    assert isinstance(error, GraphQLError)
+    assert (
+        f'Value cannot represent a UUID: "{value}". Expected a string.' in error.message
     )
-    assert result.errors[0].message == expected_message
+    assert isinstance(error.original_error, GraphQLError)
+    assert error.original_error.original_error is None
