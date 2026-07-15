@@ -10,23 +10,30 @@ from graphql import GraphQLError
 from strawberry.types.scalar import ScalarDefinition
 
 
-def wrap_parser(parser: Callable, type_: str) -> Callable:
-    def inner(value: str) -> object:
+def wrap_parser(
+    parser: Callable[[str], object],
+    type_: str,
+    exceptions: tuple[type[Exception], ...] = (ValueError,),
+    include_error: bool = True,
+) -> Callable[[object], object]:
+    """Wrap a string parser so any invalid input becomes a clean coercion error.
+
+    The value is stringified before parsing so that non-string input (e.g. a
+    numeric id sent by a client) takes the same ``GraphQLError`` path as a
+    malformed string, instead of raising ``AttributeError``/``TypeError``
+    inside the parser and surfacing as a server-side crash.
+    """
+
+    def inner(value: object) -> object:
         try:
-            return parser(value)
-        except ValueError as e:
-            raise GraphQLError(  # noqa: B904
-                f'Value cannot represent a {type_}: "{value}". {e}'
-            )
+            return parser(str(value))
+        except exceptions as e:
+            detail = f" {e}" if include_error else ""
+            raise GraphQLError(
+                f'Value cannot represent a {type_}: "{value}".{detail}'
+            ) from None
 
     return inner
-
-
-def parse_decimal(value: object) -> decimal.Decimal:
-    try:
-        return decimal.Decimal(str(value))
-    except decimal.DecimalException:
-        raise GraphQLError(f'Value cannot represent a Decimal: "{value}".')  # noqa: B904
 
 
 isoformat = methodcaller("isoformat")
@@ -67,7 +74,12 @@ DecimalDefinition: ScalarDefinition = ScalarDefinition(
     description="Decimal (fixed-point)",
     specified_by_url=None,
     serialize=str,
-    parse_value=parse_decimal,
+    parse_value=wrap_parser(
+        decimal.Decimal,
+        "Decimal",
+        exceptions=(decimal.DecimalException,),
+        include_error=False,
+    ),
     parse_literal=None,
     origin=decimal.Decimal,
 )

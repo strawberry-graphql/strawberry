@@ -72,3 +72,41 @@ def test_serialization_of_incorrect_uuid_string():
         'UUID: "fail". badly formed hexadecimal UUID string'
     )
     assert result.errors[0].message == expected_message
+
+
+def test_parsing_of_non_string_value():
+    """Test GraphQLError is raised for a non-string value.
+    The parser must not leak an AttributeError from ``uuid.UUID``.
+    """
+
+    @strawberry.type
+    class Query:
+        ok: bool
+
+    @strawberry.type
+    class Mutation:
+        @strawberry.mutation
+        def uuid_input(self, uuid_input: uuid.UUID) -> uuid.UUID:
+            return uuid_input
+
+    schema = strawberry.Schema(query=Query, mutation=Mutation)
+
+    result = schema.execute_sync(
+        """
+            mutation uuidInput($value: UUID!) {
+                uuidInput(uuidInput: $value)
+            }
+        """,
+        variable_values={"value": 469610.0},
+    )
+
+    assert result.errors
+    assert isinstance(result.errors[0], GraphQLError)
+    expected_message = (
+        "Variable '$value' got invalid value 469610.0; Value cannot represent a "
+        'UUID: "469610.0". badly formed hexadecimal UUID string'
+        if IS_GQL_32
+        else "Variable '$value' has invalid value: Value cannot represent a "
+        'UUID: "469610.0". badly formed hexadecimal UUID string'
+    )
+    assert result.errors[0].message == expected_message

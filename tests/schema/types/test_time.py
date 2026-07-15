@@ -123,3 +123,14 @@ def test_serialization_error_message_for_incorrect_time_string():
     assert result.errors[0].message.startswith(
         expected_message,
     )
+
+
+@pytest.mark.parametrize("value", [1.5, 99, True])
+def test_parsing_of_non_string_value(value):
+    """Test GraphQLError is raised for a non-string value.
+    The parser must not leak a TypeError from ``fromisoformat``.
+    """
+    result = execute_mutation(value)
+    assert result.errors
+    assert isinstance(result.errors[0], GraphQLError)
+    assert f'Value cannot represent a Time: "{value}".' in result.errors[0].message
