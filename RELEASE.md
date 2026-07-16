@@ -3,6 +3,7 @@ release type: patch
 social_messages:
   x: >-
     {project_name} {version} keeps user-defined methods on experimental Pydantic types.
+    🍓 https://strawberry.rocks/release/{version}
   linkedin: >-
     {project_name} {version} fixes experimental Pydantic types dropping user-defined
     static, class, and instance methods (and properties) from the decorated class body.
