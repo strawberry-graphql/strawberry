@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import dataclasses
+import inspect
 import sys
 import typing
 from collections.abc import Mapping
@@ -51,6 +52,10 @@ from strawberry.exceptions import (
 )
 from strawberry.extensions.field_extension import build_field_extension_resolvers
 from strawberry.relay.types import GlobalID
+from strawberry.schema.exception_handlers import (
+    get_error_type,
+    get_exception_types,
+)
 from strawberry.schema.types.scalar import (
     DEFAULT_SCALAR_REGISTRY,
     _make_scalar_type,
@@ -80,7 +85,7 @@ from . import compat
 from .types.concrete_type import ConcreteType
 
 if TYPE_CHECKING:
-    from collections.abc import Awaitable, Callable
+    from collections.abc import Awaitable, Callable, Iterable
 
     from graphql import (
         GraphQLInputType,
@@ -91,11 +96,127 @@ if TYPE_CHECKING:
 
     from strawberry.directive import StrawberryDirective
     from strawberry.schema.config import StrawberryConfig
+    from strawberry.schema.exception_handlers import ExceptionHandler
     from strawberry.schema_directive import StrawberrySchemaDirective
     from strawberry.types.enum import EnumValue
     from strawberry.types.field import StrawberryField
     from strawberry.types.info import Info
     from strawberry.types.scalar import ScalarDefinition
+
+
+UNHANDLED = object()
+
+
+def resolve_lazy_type(type_: object) -> object:
+    if isinstance(type_, LazyType):
+        return type_.resolve_type()
+
+    if isinstance(type_, StrawberryOptional) and isinstance(type_.of_type, LazyType):
+        return StrawberryOptional(type_.of_type.resolve_type())
+
+    return type_
+
+
+def is_same_type(left: object, right: object) -> bool:
+    left = resolve_lazy_type(left)
+    right = resolve_lazy_type(right)
+
+    if left is right:
+        return True
+
+    left_definition = get_object_definition(left)
+    right_definition = get_object_definition(right)
+
+    if left_definition is None or right_definition is None:
+        return False
+
+    return is_same_type_definition(left_definition, right_definition)
+
+
+def is_same_type_definition(
+    first_type_definition: StrawberryObjectDefinition | StrawberryType,
+    second_type_definition: StrawberryObjectDefinition | StrawberryType,
+) -> bool:
+    # TODO: maybe move this on the StrawberryType class
+    if not isinstance(
+        first_type_definition, StrawberryObjectDefinition
+    ) or not isinstance(second_type_definition, StrawberryObjectDefinition):
+        return False
+
+    if first_type_definition.origin is second_type_definition.origin:
+        return True
+
+    # When sys.modules is cleared (e.g. by test runners or Django reloaders)
+    # and a module is reimported, Python creates brand-new class objects.
+    # The identity check above fails, so fall back to comparing the
+    # fully-qualified class name which survives reimports.
+    first_origin = first_type_definition.origin
+    second_origin = second_type_definition.origin
+    if (
+        first_origin.__qualname__ == second_origin.__qualname__
+        and first_origin.__module__ == second_origin.__module__
+    ):
+        return True
+
+    if (
+        first_type_definition.concrete_of is None
+        or first_type_definition.concrete_of != second_type_definition.concrete_of
+        or (
+            first_type_definition.type_var_map.keys()
+            != second_type_definition.type_var_map.keys()
+        )
+    ):
+        return False
+
+    for type_var, type1 in first_type_definition.type_var_map.items():
+        type2 = second_type_definition.type_var_map[type_var]
+
+        resolved_type1 = resolve_lazy_type(type1)
+        resolved_type2 = resolve_lazy_type(type2)
+
+        same_type = resolved_type1 == resolved_type2
+        # If both types have object definitions, we are handling a nested generic
+        # type like `Foo[Foo[int]]`, meaning we need to compare their type definitions
+        # as they will actually be different instances of the type.
+        if (
+            not same_type
+            and has_object_definition(resolved_type1)
+            and has_object_definition(resolved_type2)
+        ):
+            same_type = is_same_type_definition(
+                resolved_type1.__strawberry_definition__,
+                resolved_type2.__strawberry_definition__,
+            )
+
+        if not same_type:
+            return False
+
+    return True
+
+
+def field_contains_type(field: StrawberryField, type_: Any) -> bool:
+    field_type = resolve_lazy_type(field.type)
+
+    if typing.get_origin(field_type) is Annotated:
+        field_type = StrawberryAnnotation(field_type).resolve()
+
+    if isinstance(field_type, StrawberryOptional):
+        field_type = resolve_lazy_type(field_type.of_type)
+        if typing.get_origin(field_type) is Annotated:
+            field_type = StrawberryAnnotation(field_type).resolve()
+
+    if not isinstance(field_type, StrawberryUnion):
+        return False
+
+    # Resolve the target the same way the union members were resolved at schema
+    # build time. A concrete generic error type (e.g. ``Error[int]``) otherwise
+    # collapses to the bare generic definition and silently never matches the
+    # ``Error[int]`` member of the union.
+    target_type = resolve_lazy_type(type_)
+    if typing.get_origin(target_type) is not None:
+        target_type = StrawberryAnnotation(target_type).resolve()
+
+    return any(is_same_type(union_type, target_type) for union_type in field_type.types)
 
 
 FieldType = TypeVar(
@@ -280,11 +401,22 @@ class GraphQLCoreConverter:
         scalar_overrides: Mapping[object, ScalarWrapper | ScalarDefinition],
         scalar_map: Mapping[object, ScalarDefinition],
         get_fields: Callable[[StrawberryObjectDefinition], list[StrawberryField]],
+        exception_handlers: Iterable[ExceptionHandler[Any]] = (),
     ) -> None:
         self.type_map: dict[str, ConcreteType] = {}
         self.config = config
         self.scalar_registry = self._get_scalar_registry(scalar_overrides, scalar_map)
         self.get_fields = get_fields
+        self.exception_handlers = tuple(exception_handlers)
+        # Resolving the exception and error types validates each handler, so a
+        # misconfigured one fails at schema creation instead of silently never
+        # matching.
+        self._exception_handler_specs: tuple[
+            tuple[tuple[type[Exception], ...], Any, ExceptionHandler[Any]], ...
+        ] = tuple(
+            (get_exception_types(handler), get_error_type(handler), handler)
+            for handler in self.exception_handlers
+        )
 
     def _get_scalar_registry(
         self,
@@ -733,12 +865,47 @@ class GraphQLCoreConverter:
 
         return graphql_object_type
 
+    def _get_field_exception_handlers(
+        self, field: StrawberryField
+    ) -> tuple[tuple[tuple[type[Exception], ...], ExceptionHandler[Any]], ...]:
+        """Handlers that can apply to ``field``, resolved once at build time.
+
+        Each entry pairs a handler with its pre-computed exception-type tuple so
+        the request path only needs an ``isinstance`` check. Subscriptions never
+        convert exceptions into union results.
+        """
+        if not self._exception_handler_specs or field.is_subscription:
+            return ()
+
+        return tuple(
+            (exception_types, handler)
+            for exception_types, error_type, handler in self._exception_handler_specs
+            if field_contains_type(field, error_type)
+        )
+
     def from_resolver(
         self, field: StrawberryField
     ) -> Callable:  # TODO: Take StrawberryResolver
         field.default_resolver = self.config.default_resolver
 
-        if field.is_basic_field:
+        # Apply field extensions before anything reads ``field.type``. An
+        # extension's ``apply`` may change the return type (for example widening
+        # ``Success`` to ``Success | ErrorPayload``), and both the
+        # exception-handler matching below and the SDL type resolved by
+        # ``from_field`` must see that final type — otherwise a handler whose
+        # error type the extension just added would be silently skipped.
+        for extension in field.extensions:
+            extension.apply(field)
+
+        # Handlers whose ``error_type`` is part of this field's return union,
+        # computed once at schema-build time. ``field_contains_type`` only
+        # depends on the field type and the handler, so the request path is left
+        # with the cheap ``isinstance`` check below. When this is empty (no
+        # handler can ever apply — including for subscriptions) the resolver
+        # takes the pre-feature fast paths, so existing schemas pay no overhead.
+        field_exception_handlers = self._get_field_exception_handlers(field)
+
+        if field.is_basic_field and not field_exception_handlers:
 
             def _get_basic_result(_source: Any, *args: str, **kwargs: Any) -> Any:
                 # Call `get_result` without an info object or any args or
@@ -765,11 +932,82 @@ class GraphQLCoreConverter:
                 _source, info=info, args=field_args, kwargs=field_kwargs
             )
 
+        def _find_handler(exc: Exception) -> ExceptionHandler[Any] | None:
+            for exception_types, handler in field_exception_handlers:
+                if isinstance(exc, exception_types):
+                    return handler
+
+            return None
+
+        def _handle_exception(exc: Exception, info: Info) -> Any:
+            handler = _find_handler(exc)
+            if handler is None:
+                return UNHANDLED
+
+            return handler.handle(exc, field=field, info=info)
+
+        def _deliver_handled(handled: Any, exc: Exception) -> Any:
+            # Deliver a handler result with the same sync/async shape the
+            # resolver would have produced. The outer async resolver awaits the
+            # result below, which is also where an async ``handle`` implementation
+            # is awaited.
+            #
+            # A handler may decline an individual exception by returning ``None``
+            # (or an awaitable resolving to ``None``). Declining re-raises the
+            # original exception so it propagates as a normal GraphQL error,
+            # exactly as if no handler had matched.
+            if field.is_async:
+
+                async def _resolve_handled() -> Any:
+                    resolved = await await_maybe(handled)
+                    if resolved is None:
+                        raise exc
+                    return resolved
+
+                return _resolve_handled()
+
+            if handled is None:
+                raise exc
+
+            return handled
+
+        def _call_with_exception_handling(
+            info: Info, get_result: Callable[[], Any]
+        ) -> Any:
+            try:
+                result = get_result()
+            except Exception as exc:
+                handled = _handle_exception(exc, info)
+                if handled is UNHANDLED:
+                    raise
+                return _deliver_handled(handled, exc)
+
+            if inspect.isawaitable(result):
+
+                async def await_result(result: Any) -> Any:
+                    try:
+                        return await result
+                    except Exception as exc:
+                        handled = _handle_exception(exc, info)
+                        if handled is UNHANDLED:
+                            raise
+                        # A handler may decline by returning ``None`` (or an
+                        # awaitable resolving to ``None``); re-raise the original
+                        # exception so it propagates as a normal GraphQL error.
+                        resolved = await await_maybe(handled)
+                        if resolved is None:
+                            raise
+                        return resolved
+
+                return await_result(result)
+
+            return result
+
         def wrap_field_extensions() -> Callable[..., Any]:
             """Wrap the provided field resolver with the middleware."""
-            for extension in field.extensions:
-                extension.apply(field)
-
+            # ``extension.apply`` already ran at the top of ``from_resolver`` so
+            # that type-changing extensions are reflected before handlers are
+            # matched; here we only need to build the resolver chain.
             extension_functions = build_field_extension_resolvers(field)
 
             def extension_resolver(
@@ -799,13 +1037,16 @@ class GraphQLCoreConverter:
                 # separate arguments so we have to wrap the function so that we
                 # can pass them in
                 def wrapped_get_result(_source: Any, info: Info, **kwargs: Any) -> Any:
-                    # if the resolver function requested the info object info
+                    # if the resolver function requested the info object
                     # then put it back in the kwargs dictionary
                     if resolver_requested_info:
                         kwargs["info"] = info
 
                     return _get_result(
-                        _source, info, field_args=field_args, field_kwargs=kwargs
+                        _source,
+                        info,
+                        field_args=field_args,
+                        field_kwargs=kwargs,
                     )
 
                 # combine all the extension resolvers
@@ -822,10 +1063,20 @@ class GraphQLCoreConverter:
         def _resolver(_source: Any, info: GraphQLResolveInfo, **kwargs: Any) -> Any:
             strawberry_info = _strawberry_info_from_graphql(info)
 
-            return _get_result_with_extensions(
-                _source,
+            if not field_exception_handlers:
+                return _get_result_with_extensions(
+                    _source,
+                    strawberry_info,
+                    **kwargs,
+                )
+
+            return _call_with_exception_handling(
                 strawberry_info,
-                **kwargs,
+                lambda: _get_result_with_extensions(
+                    _source,
+                    strawberry_info,
+                    **kwargs,
+                ),
             )
 
         async def _async_resolver(
@@ -833,11 +1084,23 @@ class GraphQLCoreConverter:
         ) -> Any:
             strawberry_info = _strawberry_info_from_graphql(info)
 
+            if not field_exception_handlers:
+                return await await_maybe(
+                    _get_result_with_extensions(
+                        _source,
+                        strawberry_info,
+                        **kwargs,
+                    )
+                )
+
             return await await_maybe(
-                _get_result_with_extensions(
-                    _source,
+                _call_with_exception_handling(
                     strawberry_info,
-                    **kwargs,
+                    lambda: _get_result_with_extensions(
+                        _source,
+                        strawberry_info,
+                        **kwargs,
+                    ),
                 )
             )
 
@@ -1069,7 +1332,7 @@ class GraphQLCoreConverter:
         first_type_definition = cached_type.definition
         second_type_definition = type_definition
 
-        if self.is_same_type_definition(
+        if is_same_type_definition(
             first_type_definition,
             second_type_definition,
         ):
@@ -1090,82 +1353,6 @@ class GraphQLCoreConverter:
             second_origin = None
 
         raise DuplicatedTypeName(first_origin, second_origin, name)
-
-    def is_same_type_definition(
-        self,
-        first_type_definition: StrawberryObjectDefinition | StrawberryType,
-        second_type_definition: StrawberryObjectDefinition | StrawberryType,
-    ) -> bool:
-        # TODO: maybe move this on the StrawberryType class
-        if not isinstance(
-            first_type_definition, StrawberryObjectDefinition
-        ) or not isinstance(second_type_definition, StrawberryObjectDefinition):
-            return False
-
-        if first_type_definition.origin is second_type_definition.origin:
-            return True
-
-        # When sys.modules is cleared (e.g. by test runners or Django reloaders)
-        # and a module is reimported, Python creates brand-new class objects.
-        # The identity check above fails, so fall back to comparing the
-        # fully-qualified class name which survives reimports.
-        first_origin = first_type_definition.origin
-        second_origin = second_type_definition.origin
-        if (
-            first_origin.__qualname__ == second_origin.__qualname__
-            and first_origin.__module__ == second_origin.__module__
-        ):
-            return True
-
-        if (
-            first_type_definition.concrete_of is None
-            or first_type_definition.concrete_of != second_type_definition.concrete_of
-            or (
-                first_type_definition.type_var_map.keys()
-                != second_type_definition.type_var_map.keys()
-            )
-        ):
-            return False
-
-        # manually compare type_var_maps while resolving any lazy types
-        # so that they're considered equal to the actual types they're referencing
-        for type_var, type1 in first_type_definition.type_var_map.items():
-            type2 = second_type_definition.type_var_map[type_var]
-
-            # both lazy types are always resolved because two different lazy types
-            # may be referencing the same actual type
-            if isinstance(type1, LazyType):
-                type1 = type1.resolve_type()  # noqa: PLW2901
-            elif isinstance(type1, StrawberryOptional) and isinstance(
-                type1.of_type, LazyType
-            ):
-                type1.of_type = type1.of_type.resolve_type()
-
-            if isinstance(type2, LazyType):
-                type2 = type2.resolve_type()
-            elif isinstance(type2, StrawberryOptional) and isinstance(
-                type2.of_type, LazyType
-            ):
-                type2.of_type = type2.of_type.resolve_type()
-
-            same_type = type1 == type2
-            # If both types have object definitions, we are handling a nested generic
-            # type like `Foo[Foo[int]]`, meaning we need to compare their type definitions
-            # as they will actually be different instances of the type
-            if (
-                not same_type
-                and has_object_definition(type1)
-                and has_object_definition(type2)
-            ):
-                same_type = self.is_same_type_definition(
-                    type1.__strawberry_definition__,
-                    type2.__strawberry_definition__,
-                )
-
-            if not same_type:
-                return False
-
-        return True
 
 
 __all__ = ["GraphQLCoreConverter"]

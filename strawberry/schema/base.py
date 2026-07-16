@@ -12,6 +12,7 @@ if TYPE_CHECKING:
     from graphql import GraphQLError
 
     from strawberry.directive import StrawberryDirective
+    from strawberry.schema.exception_handlers import ExceptionHandler
     from strawberry.schema.schema import StreamResult, SubscriptionResult
     from strawberry.schema.schema_converter import GraphQLCoreConverter
     from strawberry.types import (
@@ -37,6 +38,7 @@ class BaseSchema(Protocol):
     mutation: type[WithStrawberryObjectDefinition] | None
     subscription: type[WithStrawberryObjectDefinition] | None
     schema_directives: list[object]
+    exception_handlers: tuple[ExceptionHandler[Any], ...]
 
     @abstractmethod
     async def execute(
