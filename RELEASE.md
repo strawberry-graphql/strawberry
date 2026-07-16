@@ -3,7 +3,8 @@ release type: patch
 social_messages:
   x: >-
     {project_name} {version} applies a custom default_resolver to interface fields
-    that return a mapping, picking the concrete type from __typename.
+    that return a mapping, picking the concrete type from __typename. 🍓
+    https://strawberry.rocks/release/{version}
   linkedin: >-
     {project_name} {version} fixes a custom default_resolver not being applied to
     fields typed as an interface: a mapping returned for such a field is now
