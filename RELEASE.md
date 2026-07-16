@@ -4,7 +4,7 @@ social_messages:
   x: >-
     {project_name} {version} fixes a crash when a resolver argument of an input
     type used a constructed instance as its default value and the argument was
-    omitted.
+    omitted. 🍓 https://strawberry.rocks/release/{version}
   linkedin: >-
     {project_name} {version} fixes a `TypeError` crash that happened when a
     resolver argument of an input type used a constructed instance (e.g.
