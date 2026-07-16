@@ -4,7 +4,7 @@ social_messages:
   x: >-
     {project_name} {version} fixes schema generation crashing when a Pydantic
     field uses `SkipJsonSchema[None]` in a union — the field is now correctly an
-    optional.
+    optional. 🍓 https://strawberry.rocks/release/{version}
   linkedin: >-
     {project_name} {version} fixes a bug where a Pydantic model field using
     `SkipJsonSchema[None]` in a union (e.g. `str | SkipJsonSchema[None]`)
