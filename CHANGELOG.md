@@ -1,6 +1,17 @@
 CHANGELOG
 =========
 
+0.321.1 - 2026-07-17
+--------------------
+
+This release adds precise type annotations for custom scalars: `serialize`,
+`parse_value` and `parse_literal` are now typed with graphql-core's
+`GraphQLScalarSerializer`, `GraphQLScalarValueParser` and
+`GraphQLScalarLiteralParser` aliases instead of bare `Callable`, so
+`strawberry.scalar(...)` calls type-check cleanly under strict type checkers.
+
+This release was contributed by [@Flamefork](https://github.com/Flamefork) in [#4527](https://github.com/strawberry-graphql/strawberry/pull/4527)
+
 0.321.0 - 2026-07-13
 --------------------
 
