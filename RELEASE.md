@@ -20,6 +20,8 @@ standard library's own message, such as `'float' object has no attribute
 'replace'`. Error trackers then recorded plain invalid input as a crash
 fingerprinted on stdlib frames.
 
-Values are now coerced with `str()` before parsing, the same way `Decimal`
-already did, so an unparseable value raises a `ValueError` that the wrapper
-reports as a normal coercion error.
+A non-string value is now reported as an ordinary coercion error:
+
+```
+Value cannot represent a UUID: "469610.0".
+```

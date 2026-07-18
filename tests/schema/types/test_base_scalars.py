@@ -64,6 +64,52 @@ def test_non_string_variable_is_reported_as_invalid_input(field, type_name, valu
 
 
 @pytest.mark.parametrize(
+    ("field", "type_name", "value"),
+    [
+        # Each of these stringifies to something the parser would happily
+        # accept, so coercing rather than rejecting would quietly widen the
+        # scalar: 20230517 as a Date, 1200 and even 12 as a Time.
+        ("dateField", "Date", 20230517),
+        ("dateField", "Date", 20230517.0),
+        ("timeField", "Time", 1200),
+        ("timeField", "Time", 12),
+    ],
+)
+def test_number_is_not_accepted_as_a_temporal_scalar(field, type_name, value):
+    result = schema.execute_sync(
+        f"query ($value: {type_name}!) {{ {field}(value: $value) }}",
+        variable_values={"value": value},
+    )
+
+    assert result.errors
+    assert (
+        f'Value cannot represent a {type_name}: "{value}".' in result.errors[0].message
+    )
+
+
+@pytest.mark.parametrize(
+    ("field", "type_name"),
+    [
+        ("uuidField", "UUID"),
+        ("dateField", "Date"),
+        ("timeField", "Time"),
+        ("datetimeField", "DateTime"),
+    ],
+)
+def test_null_is_rejected_by_the_non_null_wrapper(field, type_name):
+    """`null` never reaches the parser, so it is reported by graphql-core."""
+    result = schema.execute_sync(
+        f"query ($value: {type_name}!) {{ {field}(value: $value) }}",
+        variable_values={"value": None},
+    )
+
+    assert result.errors
+    error = result.errors[0]
+    assert "must not be null" in error.message
+    assert not isinstance(error.original_error, (AttributeError, TypeError))
+
+
+@pytest.mark.parametrize(
     ("field", "type_name", "value", "expected"),
     [
         (

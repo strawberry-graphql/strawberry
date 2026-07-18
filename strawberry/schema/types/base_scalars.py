@@ -14,11 +14,18 @@ def wrap_parser(parser: Callable, type_: str) -> Callable:
     def inner(value: object) -> object:
         # These parsers only accept a string, and raise AttributeError or
         # TypeError on anything else. That escapes the except below and reaches
-        # the client as a server error complete with a stdlib traceback, even
-        # though it is just invalid input. Coercing first, the way parse_decimal
-        # does, keeps every rejection a ValueError we can report cleanly.
+        # the client as a server error carrying a stdlib traceback, even though
+        # it is only invalid input. Reject it here instead.
+        #
+        # Deliberately not coerced with str(): these scalars are serialised as
+        # strings, and stringifying would start accepting values the grammar was
+        # never meant to take, such as the number 20230517 as a Date or 1200 as
+        # a Time.
+        if not isinstance(value, str):
+            raise GraphQLError(f'Value cannot represent a {type_}: "{value}".')
+
         try:
-            return parser(str(value))
+            return parser(value)
         except ValueError as e:
             raise GraphQLError(  # noqa: B904
                 f'Value cannot represent a {type_}: "{value}". {e}'
