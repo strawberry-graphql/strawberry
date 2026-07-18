@@ -418,8 +418,11 @@ class Query:
     def sync_bool(self) -> bool:
         return True
 
-    @strawberry.field(graphql_type=JSON)
-    def sync_none(self) -> None:
+    # A nullable JSON field needs `| None` on the graphql_type itself; a plain
+    # `-> None` with `graphql_type=JSON` would produce a non-null `JSON!`
+    # field that errors at runtime when the resolver returns None.
+    @strawberry.field(graphql_type=JSON | None)
+    def sync_none(self) -> dict | None:
         return None
 
 
@@ -440,7 +443,7 @@ def test_graphql_type_workaround_for_plain_json_values():
             Result(
                 type="information",
                 message='Type of "schema" is "Schema"',
-                line=42,
+                line=45,
                 column=13,
             ),
         ]
@@ -450,7 +453,7 @@ def test_graphql_type_workaround_for_plain_json_values():
             Result(
                 type="note",
                 message='Revealed type is "strawberry.schema.schema.Schema"',
-                line=43,
+                line=46,
                 column=13,
             ),
         ]
@@ -460,7 +463,7 @@ def test_graphql_type_workaround_for_plain_json_values():
             Result(
                 type="information",
                 message="Revealed type: `Schema`",
-                line=43,
+                line=46,
                 column=13,
             ),
         ]

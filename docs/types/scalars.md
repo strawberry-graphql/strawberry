@@ -381,6 +381,22 @@ Both produce `JSON!` in the schema while keeping strict type checking on the
 Python side. `JSON(value)` is still supported when you want a value typed as
 `JSON` directly.
 
+If the field can be `null`, put `| None` on the `graphql_type` so the schema
+field is nullable. A plain `graphql_type=JSON` produces a non-null `JSON!`
+field, and returning `None` from it fails at runtime even though it type-checks:
+
+```python
+import strawberry
+from strawberry.scalars import JSON
+
+
+@strawberry.type
+class Query:
+    @strawberry.field(graphql_type=JSON | None)
+    async def json_value(self) -> dict[str, int] | None:
+        return None  # schema: jsonValue: JSON (nullable), no runtime error
+```
+
 ## Overriding built-in scalars
 
 To override the behaviour of the built-in scalars, you can pass a `scalar_map`

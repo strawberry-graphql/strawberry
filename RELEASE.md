@@ -19,9 +19,11 @@ social_messages:
 The `JSON` scalar documentation now shows how to use ordinary Python types
 (`dict`, `list`, `str`, `int`, `float`, `bool`, `None`) with the `JSON` scalar
 via the existing `graphql_type` override, covering both resolver return values
-and input arguments. This lets resolvers type-check cleanly under mypy, pyright,
-and ty while still exposing the `JSON` scalar in the schema, without changing
-the `JSON` declaration or breaking `JSON(value)` constructor usage.
+and input arguments, including the nullable form (`graphql_type=JSON | None`)
+for fields that may return `null`. This lets resolvers type-check cleanly under
+mypy, pyright, and ty while still exposing the `JSON` scalar in the schema,
+without changing the `JSON` declaration or breaking `JSON(value)` constructor
+usage.
 
 The scalar's mapping description was also corrected from "Python's `dict`" to
 "ordinary JSON-compatible Python values" to match the identity serialize/parse
