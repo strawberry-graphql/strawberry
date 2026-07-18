@@ -323,9 +323,9 @@ from strawberry.scalars import JSON
 ### Using `JSON` with ordinary Python types
 
 `JSON` is a `NewType` so that type checkers recognise it as a distinct scalar
-type. Because of that, returning a plain `dict`, `list`, or primitive from a
-resolver annotated as `JSON` is nominally rejected by mypy and pyright, even
-though the scalar serialises and parses values as-is at runtime:
+type. Because of that, returning a plain `dict`, `list`, or other JSON value
+from a resolver annotated as `JSON` is nominally rejected by mypy and pyright,
+even though the scalar serialises and parses values as-is at runtime:
 
 ```python
 import strawberry
@@ -378,7 +378,7 @@ class Query:
 ```
 
 Both produce `JSON!` in the schema while keeping strict type checking on the
-Python side. `JSON(value)` remains supported when you want a value typed as
+Python side. `JSON(value)` is still supported when you want a value typed as
 `JSON` directly.
 
 ## Overriding built-in scalars

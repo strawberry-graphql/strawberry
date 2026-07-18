@@ -368,15 +368,21 @@ def test_newtype_scalar_usage():
 
 
 # Regression for https://github.com/strawberry-graphql/strawberry/issues/4092
-# `JSON` is a NewType over object, so returning a plain dict/list/primitive
-# from a resolver annotated as `JSON` is nominally rejected by type checkers
-# (by design: NewType is nominal). The documented way to return ordinary
+# `JSON` is a NewType over object, so returning a plain dict/list/value from
+# a resolver annotated as `JSON` is nominally rejected by type checkers (by
+# design: NewType is nominal). The documented way to return ordinary
 # JSON-compatible Python values while still exposing the `JSON` GraphQL scalar
 # is to override the schema type with `graphql_type=strawberry.scalars.JSON`
 # and annotate the resolver with the concrete Python type. This test guards
 # that workaround under all three checkers so it keeps working as the scalar
 # machinery evolves. See docs/types/scalars.md and the `graphql_type` note in
 # docs/general/queries.md.
+#
+# The snippet ends with `reveal_type(schema)` so every checker emits at least
+# one diagnostic line (the mypy harness in tests/typecheckers/utils/mypy.py
+# raises on empty stdout, which happens when a snippet has zero errors and no
+# reveal_type calls). The snapshot containing only the reveal information
+# (no error-type results) is the proof that the workaround typechecks.
 CODE_GRAPHQL_TYPE_WORKAROUND = """
 import strawberry
 from strawberry.scalars import JSON
@@ -418,15 +424,47 @@ class Query:
 
 
 schema = strawberry.Schema(query=Query)
+
+reveal_type(schema)
 """
 
 
 def test_graphql_type_workaround_for_plain_json_values():
     results = typecheck(CODE_GRAPHQL_TYPE_WORKAROUND, strict=False)
 
-    assert results.pyright == snapshot([])
-    assert results.mypy == snapshot([])
-    assert results.ty == snapshot([])
+    # Each checker reports only the reveal_type information for `schema`; no
+    # return-value errors, which proves the graphql_type workaround lets
+    # ordinary Python types be returned from JSON GraphQL fields.
+    assert results.pyright == snapshot(
+        [
+            Result(
+                type="information",
+                message='Type of "schema" is "Schema"',
+                line=42,
+                column=13,
+            ),
+        ]
+    )
+    assert results.mypy == snapshot(
+        [
+            Result(
+                type="note",
+                message='Revealed type is "strawberry.schema.schema.Schema"',
+                line=43,
+                column=13,
+            ),
+        ]
+    )
+    assert results.ty == snapshot(
+        [
+            Result(
+                type="information",
+                message="Revealed type: `Schema`",
+                line=43,
+                column=13,
+            ),
+        ]
+    )
 
 
 # `JSON(value)` must remain a supported static constructor. The scalar is a
