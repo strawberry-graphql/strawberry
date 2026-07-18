@@ -11,9 +11,14 @@ from strawberry.types.scalar import ScalarDefinition
 
 
 def wrap_parser(parser: Callable, type_: str) -> Callable:
-    def inner(value: str) -> object:
+    def inner(value: object) -> object:
+        # These parsers only accept a string, and raise AttributeError or
+        # TypeError on anything else. That escapes the except below and reaches
+        # the client as a server error complete with a stdlib traceback, even
+        # though it is just invalid input. Coercing first, the way parse_decimal
+        # does, keeps every rejection a ValueError we can report cleanly.
         try:
-            return parser(value)
+            return parser(str(value))
         except ValueError as e:
             raise GraphQLError(  # noqa: B904
                 f'Value cannot represent a {type_}: "{value}". {e}'
