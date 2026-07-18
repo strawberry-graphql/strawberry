@@ -365,3 +365,138 @@ def test_newtype_scalar_usage():
             ),
         ]
     )
+
+
+# Regression for https://github.com/strawberry-graphql/strawberry/issues/4092
+# `JSON` is a NewType over object, so returning a plain dict/list/primitive
+# from a resolver annotated as `JSON` is nominally rejected by type checkers
+# (by design: NewType is nominal). The documented way to return ordinary
+# JSON-compatible Python values while still exposing the `JSON` GraphQL scalar
+# is to override the schema type with `graphql_type=strawberry.scalars.JSON`
+# and annotate the resolver with the concrete Python type. This test guards
+# that workaround under all three checkers so it keeps working as the scalar
+# machinery evolves. See docs/types/scalars.md and the `graphql_type` note in
+# docs/general/queries.md.
+CODE_GRAPHQL_TYPE_WORKAROUND = """
+import strawberry
+from strawberry.scalars import JSON
+
+
+@strawberry.type
+class Query:
+    @strawberry.field(graphql_type=JSON)
+    def sync_dict(self) -> dict[str, int]:
+        return {"a": 1}
+
+    @strawberry.field(graphql_type=JSON)
+    async def async_dict(self) -> dict[str, int]:
+        return {"a": 1}
+
+    @strawberry.field(graphql_type=JSON)
+    def sync_list(self) -> list[int]:
+        return [1, 2, 3]
+
+    @strawberry.field(graphql_type=JSON)
+    def sync_str(self) -> str:
+        return "hello"
+
+    @strawberry.field(graphql_type=JSON)
+    def sync_int(self) -> int:
+        return 42
+
+    @strawberry.field(graphql_type=JSON)
+    def sync_float(self) -> float:
+        return 3.14
+
+    @strawberry.field(graphql_type=JSON)
+    def sync_bool(self) -> bool:
+        return True
+
+    @strawberry.field(graphql_type=JSON)
+    def sync_none(self) -> None:
+        return None
+
+
+schema = strawberry.Schema(query=Query)
+"""
+
+
+def test_graphql_type_workaround_for_plain_json_values():
+    results = typecheck(CODE_GRAPHQL_TYPE_WORKAROUND, strict=False)
+
+    assert results.pyright == snapshot([])
+    assert results.mypy == snapshot([])
+    assert results.ty == snapshot([])
+
+
+# `JSON(value)` must remain a supported static constructor. The scalar is a
+# NewType and calling it is the documented way to produce a value typed as
+# JSON (used by the core scalar test above and by user code). This guards that
+# contract so a future change to the JSON declaration does not silently break
+# constructor usage under any checker.
+CODE_JSON_CONSTRUCTOR = """
+import strawberry
+from strawberry.scalars import JSON
+
+json_val: JSON = JSON({"key": "value"})
+
+reveal_type(json_val)
+"""
+
+
+def test_json_constructor_remains_valid():
+    results = typecheck(CODE_JSON_CONSTRUCTOR, strict=False)
+
+    assert results.pyright == snapshot(
+        [
+            Result(
+                type="information",
+                message='Type of "json_val" is "JSON"',
+                line=6,
+                column=13,
+            ),
+        ]
+    )
+    assert results.mypy == snapshot(
+        [
+            Result(
+                type="note",
+                message='Revealed type is "strawberry.scalars.JSON"',
+                line=7,
+                column=13,
+            ),
+        ]
+    )
+    assert results.ty == snapshot(
+        [
+            Result(
+                type="information",
+                message="Revealed type: `JSON`",
+                line=7,
+                column=13,
+            ),
+        ]
+    )
+
+
+# Negative control: an unrelated NewType stays nominal. Returning a plain str
+# from a function annotated with a distinct NewType over str must still be
+# rejected by every checker. This proves the JSON `graphql_type` workaround
+# above is not passing by globally silencing checker diagnostics.
+CODE_UNRELATED_NEWTYPE_NOMINAL = """
+from typing import NewType
+
+OtherType = NewType("OtherType", str)
+
+
+def returns_plain_str() -> OtherType:
+    return "not OtherType"
+"""
+
+
+def test_unrelated_newtype_stays_nominal():
+    results = typecheck(CODE_UNRELATED_NEWTYPE_NOMINAL, strict=False)
+
+    assert any(r.type == "error" for r in results.pyright)
+    assert any(r.type == "error" for r in results.mypy)
+    assert any(r.type == "error" for r in results.ty)

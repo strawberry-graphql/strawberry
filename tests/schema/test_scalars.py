@@ -223,6 +223,106 @@ def test_json():
     }
 
 
+def test_json_accepts_plain_python_values():
+    # Regression for https://github.com/strawberry-graphql/strawberry/issues/4092
+    # The JSON scalar uses identity serialize/parse, so resolvers can return
+    # ordinary Python values (dict, list, primitives) and have them round-trip
+    # without any wrapping. This guards the runtime contract that the
+    # documented `graphql_type` workaround relies on.
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def dict_value(self) -> JSON:
+            return {"a": 1, "b": [True, None, 2.5]}
+
+        @strawberry.field
+        def list_value(self) -> JSON:
+            return [1, "two", False]
+
+        @strawberry.field
+        def str_value(self) -> JSON:
+            return "hello"
+
+        @strawberry.field
+        def int_value(self) -> JSON:
+            return 42
+
+    schema = strawberry.Schema(query=Query)
+
+    result = schema.execute_sync("{ dictValue listValue strValue intValue }")
+    assert not result.errors
+    assert result.data == {
+        "dictValue": {"a": 1, "b": [True, None, 2.5]},
+        "listValue": [1, "two", False],
+        "strValue": "hello",
+        "intValue": 42,
+    }
+
+
+@pytest.mark.asyncio
+async def test_json_accepts_plain_python_values_async():
+    # Regression for https://github.com/strawberry-graphql/strawberry/issues/4092
+    # The reported case is an async resolver returning a plain dict.
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        async def async_dict_value(self) -> JSON:
+            return {"a": 1}
+
+    schema = strawberry.Schema(query=Query)
+
+    result = await schema.execute("{ asyncDictValue }")
+    assert not result.errors
+    assert result.data == {"asyncDictValue": {"a": 1}}
+
+
+def test_any_field_is_not_treated_as_json():
+    # Regression guard for the JSON scalar typing: the runtime JSON registry
+    # key is the distinct NewType, so a field annotated with Any must not be
+    # silently exposed as the JSON scalar. It should fail to resolve a schema
+    # type instead.
+    from typing import Any
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def any_field(self) -> Any:
+            return {"a": 1}
+
+    with pytest.raises(TypeError):
+        strawberry.Schema(query=Query)
+
+
+def test_json_argument_workaround_accepts_plain_dict():
+    # Regression for https://github.com/strawberry-graphql/strawberry/issues/4092
+    # The documented `graphql_type` workaround must also work for JSON input
+    # arguments (Annotated[dict, strawberry.argument(graphql_type=JSON)]), not
+    # only for return values. Guards both literal and variable input paths.
+    from typing import Annotated
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def echo_json(
+            self,
+            data: Annotated[dict, strawberry.argument(graphql_type=JSON)],
+        ) -> JSON:
+            return JSON(data)
+
+    schema = strawberry.Schema(query=Query)
+
+    result = schema.execute_sync("{ echoJson(data: {a: 1, b: [true, null]}) }")
+    assert not result.errors
+    assert result.data == {"echoJson": {"a": 1, "b": [True, None]}}
+
+    result = schema.execute_sync(
+        "query($v: JSON!) { echoJson(data: $v) }",
+        variable_values={"v": {"x": [1, 2, {"y": "z"}]}},
+    )
+    assert not result.errors
+    assert result.data == {"echoJson": {"x": [1, 2, {"y": "z"}]}}
+
+
 def test_base16():
     @strawberry.type
     class Query:

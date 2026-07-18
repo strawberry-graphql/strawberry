@@ -53,7 +53,8 @@ There are several built-in scalars, and you can define custom scalars too.
 - `Void`, always null, maps to Python’s `None`
 - `JSON`, a JSON value as specified in
   [ECMA-404](https://ecma-international.org/publications-and-standards/standards/ecma-404/)
-  standard, maps to Python’s `dict`
+  standard, maps to ordinary JSON-compatible Python values (`dict`, `list`,
+  `str`, `int`, `float`, `bool`, `None`)
 - `Base16`, `Base32`, `Base64`, represents hexadecimal strings encoded with
   `Base16`/`Base32`/`Base64`. As specified in
   [RFC4648](https://datatracker.ietf.org/doc/html/rfc4648.html). Maps to
@@ -318,6 +319,67 @@ from strawberry.scalars import JSON
 ```
 
 </Note>
+
+### Using `JSON` with ordinary Python types
+
+`JSON` is a `NewType` so that type checkers recognise it as a distinct scalar
+type. Because of that, returning a plain `dict`, `list`, or primitive from a
+resolver annotated as `JSON` is nominally rejected by mypy and pyright, even
+though the scalar serialises and parses values as-is at runtime:
+
+```python
+import strawberry
+from strawberry.scalars import JSON
+
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    async def json_value(self) -> JSON:  # mypy/pyright: incompatible return
+        return {}
+```
+
+To use ordinary Python types while still exposing the `JSON` scalar in the
+schema, override the GraphQL type with `graphql_type` and annotate the resolver
+with the concrete Python type you actually return or accept. This is the same
+mechanism documented in [Queries](/docs/general/queries) for mismatched types.
+
+For a return value:
+
+```python
+import strawberry
+from strawberry.scalars import JSON
+
+
+@strawberry.type
+class Query:
+    @strawberry.field(graphql_type=JSON)
+    async def json_value(self) -> dict[str, int]:
+        return {"a": 1}
+```
+
+For an argument, use `strawberry.argument` inside `Annotated`:
+
+```python
+from typing import Annotated
+
+import strawberry
+from strawberry.scalars import JSON
+
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def echo_json(
+        self,
+        data: Annotated[dict, strawberry.argument(graphql_type=JSON)],
+    ) -> JSON:
+        return JSON(data)
+```
+
+Both produce `JSON!` in the schema while keeping strict type checking on the
+Python side. `JSON(value)` remains supported when you want a value typed as
+`JSON` directly.
 
 ## Overriding built-in scalars
 
