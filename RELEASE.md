@@ -1,3 +1,4 @@
+---
 release type: minor
 social_messages:
   x: >-
@@ -8,8 +9,12 @@ social_messages:
     {project_name} {version} is out. This release removes the deprecated
     `Extension` import alias from `strawberry.extensions`, completing a
     deprecation that started in 0.160.0 — use `SchemaExtension` instead.
+---
 
-This release removes the deprecated `Extension` import alias from `strawberry.extensions`, deprecated since [0.160.0](https://github.com/strawberry-graphql/strawberry/releases/tag/0.160.0). Use `SchemaExtension` instead.
+This release adds a cleaner extension API by removing the deprecated `Extension`
+import alias from `strawberry.extensions`. The alias was deprecated in
+[0.160.0](https://github.com/strawberry-graphql/strawberry/releases/tag/0.160.0);
+import `SchemaExtension` instead.
 
 ### Migration guide
 
