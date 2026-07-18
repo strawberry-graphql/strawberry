@@ -1,6 +1,36 @@
 CHANGELOG
 =========
 
+0.322.0 - 2026-07-18
+--------------------
+
+This release adds a cleaner extension API by removing the deprecated `Extension`
+import alias from `strawberry.extensions`. The alias was deprecated in
+[0.160.0](https://github.com/strawberry-graphql/strawberry/releases/tag/0.160.0);
+import `SchemaExtension` instead.
+
+### Migration guide
+
+**Before (deprecated):**
+```python
+from strawberry.extensions import Extension
+
+
+class MyExtension(Extension): ...
+```
+
+**After:**
+```python
+from strawberry.extensions import SchemaExtension
+
+
+class MyExtension(SchemaExtension): ...
+```
+
+This release was contributed by [@Ckk3](https://github.com/Ckk3) in [#4210](https://github.com/strawberry-graphql/strawberry/pull/4210)
+
+Additional contributors: [@github-actions[bot]](https://github.com/github-actions[bot]), [@patrick91](https://github.com/patrick91)
+
 0.321.1 - 2026-07-17
 --------------------
 
