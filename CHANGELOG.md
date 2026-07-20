@@ -1,6 +1,13 @@
 CHANGELOG
 =========
 
+0.322.2 - 2026-07-20
+--------------------
+
+This release fixes a bug in Relay connection pagination where combining `first` with `before` returned the wrong slice of items — walking backward from the `before` cursor instead of taking the first `first` items among those before it, per the Relay Cursor Connections spec.
+
+This release was contributed by [@ritsth](https://github.com/ritsth) in [#4516](https://github.com/strawberry-graphql/strawberry/pull/4516)
+
 0.322.1 - 2026-07-20
 --------------------
 
