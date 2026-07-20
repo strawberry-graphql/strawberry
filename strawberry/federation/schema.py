@@ -39,6 +39,7 @@ if TYPE_CHECKING:
     from strawberry.schema.exception_handlers import ExceptionHandler
     from strawberry.schema_directive import StrawberrySchemaDirective
     from strawberry.types.enum import StrawberryEnumDefinition
+    from strawberry.utils.logging import StrawberryLoggerProtocol
 
 
 FederationAny = NewType("FederationAny", object)
@@ -77,6 +78,7 @@ class Schema(BaseSchema):
             "2.11",
         ] = "2.11",
         exception_handlers: Iterable["ExceptionHandler[Any]"] = (),
+        logger: "StrawberryLoggerProtocol | None" = None,
     ) -> None:
         # Convert version string (e.g., "2.5") to version tuple (e.g., (2, 5))
         self.federation_version = parse_version(federation_version)
@@ -113,6 +115,7 @@ class Schema(BaseSchema):
             scalar_overrides=federation_scalar_overrides,
             schema_directives=schema_directives,
             exception_handlers=exception_handlers,
+            logger=logger,
         )
 
         self.schema_directives = list(schema_directives)

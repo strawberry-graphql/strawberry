@@ -4,8 +4,6 @@ from abc import abstractmethod
 from typing import TYPE_CHECKING, Any
 from typing_extensions import Protocol
 
-from strawberry.utils.logging import StrawberryLogger
-
 if TYPE_CHECKING:
     from collections.abc import Iterable
 
@@ -27,6 +25,7 @@ if TYPE_CHECKING:
     from strawberry.types.graphql import OperationType
     from strawberry.types.scalar import ScalarDefinition
     from strawberry.types.union import StrawberryUnion
+    from strawberry.utils.logging import StrawberryLoggerProtocol
 
     from .config import StrawberryConfig
 
@@ -39,6 +38,7 @@ class BaseSchema(Protocol):
     subscription: type[WithStrawberryObjectDefinition] | None
     schema_directives: list[object]
     exception_handlers: tuple[ExceptionHandler[Any], ...]
+    logger: StrawberryLoggerProtocol
 
     @abstractmethod
     async def execute(
@@ -136,7 +136,7 @@ class BaseSchema(Protocol):
         execution_context: ExecutionContext | None = None,
     ) -> None:
         for error in errors:
-            StrawberryLogger.error(error, execution_context)
+            self.logger.error(error, execution_context)
 
 
 __all__ = ["BaseSchema"]
