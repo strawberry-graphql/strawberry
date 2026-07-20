@@ -52,12 +52,13 @@ class SchemaExtension:
         """Called before and after the execution step."""
         yield None
 
-    def on_subscription_result(  # type: ignore
+    def on_stream_result(  # type: ignore
         self, result: ExecutionResult
     ) -> AsyncIteratorOrIterator[None]:  # pragma: no cover
-        """Called before and after each event/result yielded by a GraphQL subscription.
+        """Called before and after each execution result yielded by ``Schema.stream``.
 
-        Extensions can mutate the `result` object directly (e.g., masking errors).
+        Extensions can mutate ``result`` before yielding to change the response sent
+        by streaming transports. Raw incremental-delivery patch frames are excluded.
         """
         yield None
 
@@ -90,7 +91,7 @@ HOOK_METHODS: set[str] = {
     SchemaExtension.on_validate.__name__,
     SchemaExtension.on_parse.__name__,
     SchemaExtension.on_execute.__name__,
-    SchemaExtension.on_subscription_result.__name__,
+    SchemaExtension.on_stream_result.__name__,
 }
 
 __all__ = ["HOOK_METHODS", "Hook", "LifecycleStep", "SchemaExtension"]

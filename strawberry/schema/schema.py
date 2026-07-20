@@ -930,21 +930,7 @@ class Schema(BaseSchema):
                 execution_result = await self._handle_execution_result(
                     execution_context, initial_error, extensions_runner
                 )
-                try:
-                    is_subscription = (
-                        execution_context.operation_type is OperationType.SUBSCRIPTION
-                    )
-                except RuntimeError:
-                    is_subscription = set(execution_context.allowed_operations) == {
-                        OperationType.SUBSCRIPTION
-                    }
-
-                if is_subscription:
-                    async with extensions_runner.on_subscription_result(
-                        execution_result
-                    ):
-                        yield execution_result
-                else:
+                async with extensions_runner.on_stream_result(execution_result):
                     yield execution_result
                 return
 
@@ -962,7 +948,11 @@ class Schema(BaseSchema):
                 )
                 async with aclosing(result_source):
                     async for result in result_source:
-                        yield result
+                        if isinstance(result, ExecutionResult):
+                            async with extensions_runner.on_stream_result(result):
+                                yield result
+                        else:
+                            yield result
                 return
 
             try:
@@ -999,9 +989,7 @@ class Schema(BaseSchema):
                         PreExecutionError(data=None, errors=aiter_or_result.errors),
                         extensions_runner,
                     )
-                    async with extensions_runner.on_subscription_result(
-                        execution_result
-                    ):
+                    async with extensions_runner.on_stream_result(execution_result):
                         yield execution_result
                 else:
                     try:
@@ -1013,7 +1001,7 @@ class Schema(BaseSchema):
                                     extensions_runner,
                                 )
 
-                                async with extensions_runner.on_subscription_result(
+                                async with extensions_runner.on_stream_result(
                                     extension_result
                                 ):
                                     yield extension_result
@@ -1026,9 +1014,7 @@ class Schema(BaseSchema):
                             ),
                             extensions_runner,
                         )
-                        async with extensions_runner.on_subscription_result(
-                            execution_result
-                        ):
+                        async with extensions_runner.on_stream_result(execution_result):
                             yield execution_result
             # catch exceptions raised in `on_execute` hook.
             except Exception as exc:  # noqa: BLE001
@@ -1040,7 +1026,7 @@ class Schema(BaseSchema):
                     origin_result,
                     extensions_runner,
                 )
-                async with extensions_runner.on_subscription_result(execution_result):
+                async with extensions_runner.on_stream_result(execution_result):
                     yield execution_result
 
     async def _stream_non_subscription(

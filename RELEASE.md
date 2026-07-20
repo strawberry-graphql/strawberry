@@ -1,7 +1,27 @@
-Release type: minor
+---
+release type: minor
+social_messages:
+  x: >-
+    {project_name} {version} is out! Streaming transports now apply extensions
+    before sending GraphQL results, so MaskErrors protects WebSocket, SSE, and
+    multipart responses. 🍓
+    https://strawberry.rocks/release/{version}
+  linkedin: >-
+    {project_name} {version} is out. This release adds an on_stream_result hook
+    for extension authors who need to inspect or mutate GraphQL results before
+    WebSocket, SSE, or multipart transports send them. Strawberry's MaskErrors
+    extension now uses it to mask streamed query, mutation, and subscription
+    errors consistently.
+---
 
-Adds a new `on_subscription_result` hook to `SchemaExtension` that allows extensions to interact with and mutate the stream of events yielded by GraphQL subscriptions.
+This release adds an `on_stream_result` hook to `SchemaExtension` for extension
+authors who need to inspect or mutate GraphQL results before they reach a
+streaming transport.
 
-Previously, extensions were only triggered during the initial setup phase of a subscription, meaning transport layers (like WebSockets) bypassed them during the actual data streaming phase. This new hook solves this by executing right before each result is yielded to the client.
+The hook wraps each Strawberry `ExecutionResult` yielded by `Schema.stream`,
+including subscription events and queries or mutations sent over WebSockets,
+SSE, or multipart responses. Raw incremental-delivery patch frames are excluded.
 
-As part of this architectural update, the built-in `MaskErrors` extension has been updated to use this new hook, ensuring that sensitive exceptions are now correctly masked during WebSocket subscriptions.
+Strawberry's built-in `MaskErrors` extension now uses the hook so streamed query,
+mutation, subscription, and pre-execution errors are masked before being sent to
+clients.

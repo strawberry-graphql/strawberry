@@ -158,8 +158,8 @@ class ExecutingContextManager(ExtensionContextManagerBase):
     HOOK_NAME = SchemaExtension.on_execute.__name__
 
 
-class SubscriptionResultContextManager(ExtensionContextManagerBase):
-    HOOK_NAME = SchemaExtension.on_subscription_result.__name__
+class StreamResultContextManager(ExtensionContextManagerBase):
+    HOOK_NAME = SchemaExtension.on_stream_result.__name__
 
     def __init__(
         self, extensions: list[SchemaExtension], result: ExecutionResult

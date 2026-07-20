@@ -6,7 +6,6 @@ from graphql.execution.execute import ExecutionResult as GraphQLExecutionResult
 
 from strawberry.extensions.base_extension import SchemaExtension
 from strawberry.types.execution import ExecutionResult as StrawberryExecutionResult
-from strawberry.types.graphql import OperationType
 
 
 def default_should_mask_error(_: GraphQLError) -> bool:
@@ -25,6 +24,7 @@ class MaskErrors(SchemaExtension):
     ) -> None:
         self.should_mask_error = should_mask_error
         self.error_message = error_message
+        self._stream_result_processed = False
 
     def anonymise_error(self, error: GraphQLError) -> GraphQLError:
         return GraphQLError(
@@ -52,17 +52,13 @@ class MaskErrors(SchemaExtension):
         result.errors = processed_errors
 
     def on_operation(self) -> Iterator[None]:
+        self._stream_result_processed = False
         yield
 
-        # Subscriptions are handled event-by-event in on_subscription_result
-        try:
-            if self.execution_context.operation_type == OperationType.SUBSCRIPTION:
-                return
-        except RuntimeError:
-            # If the query fails to parse early on, operation_type throws a RuntimeError.
-            # We must PASS here to ensure standard Queries/Mutations get masked,
-            # even if it means a malformed Subscription gets double-masked.
-            pass
+        # Streaming operations are handled result-by-result before each frame is
+        # yielded. Avoid processing the last result again when the stream closes.
+        if self._stream_result_processed:
+            return
 
         result = self.execution_context.result
 
@@ -71,9 +67,8 @@ class MaskErrors(SchemaExtension):
         elif result:
             self._process_result(result.initial_result)
 
-    def on_subscription_result(
-        self, result: StrawberryExecutionResult
-    ) -> Iterator[None]:
-        """Mask errors on streaming subscription results."""
+    def on_stream_result(self, result: StrawberryExecutionResult) -> Iterator[None]:
+        """Mask errors before a streamed execution result reaches the client."""
+        self._stream_result_processed = True
         self._process_result(result)
         yield None
