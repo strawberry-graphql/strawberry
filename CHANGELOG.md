@@ -1,6 +1,20 @@
 CHANGELOG
 =========
 
+0.322.1 - 2026-07-20
+--------------------
+
+This release fixes the built-in `UUID`, `Date`, `DateTime`, and `Time` scalars
+to reject non-string variable values with a standard coercion error instead of
+raising an unhandled `AttributeError`/`TypeError` inside the parser.
+
+Previously a value like `{"id": 469610.0}` sent into a `UUID` position crashed
+with `'float' object has no attribute 'replace'` and surfaced in error
+trackers as a server-side exception. The `Decimal` scalar keeps accepting
+numeric input by stringifying it, as before.
+
+This release was contributed by [@simonline](https://github.com/simonline) in [#4525](https://github.com/strawberry-graphql/strawberry/pull/4525)
+
 0.322.0 - 2026-07-18
 --------------------
 
