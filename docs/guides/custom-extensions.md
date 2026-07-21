@@ -215,9 +215,10 @@ execution, it also wraps the delivery frames produced by `@defer` or `@stream`.
 It can inspect or mutate a result before the transport sends it and run cleanup
 after the transport consumes it.
 
-`Schema.subscribe` delegates to `Schema.stream`, so subscription results use
-this hook too. When experimental incremental execution is enabled, the result
-can also be a graphql-core initial or subsequent incremental result.
+`Schema.subscribe` uses the same streaming path, so this hook runs for every
+subscription event. With experimental incremental execution enabled, it also
+runs for every `@defer` or `@stream` response frame: an initial result followed
+by subsequent patches.
 
 ```python
 from collections.abc import Iterator
