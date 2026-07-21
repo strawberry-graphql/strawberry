@@ -111,15 +111,57 @@
 	--color-sidebar-ring: var(--sidebar-ring);
 }
 
+@theme {
+	--font-sans: "Satoshi", ui-sans-serif, system-ui, sans-serif;
+	--font-display: "Ranade", ui-sans-serif, system-ui, sans-serif;
+	--font-mono: "JetBrains Mono", ui-monospace, monospace;
+
+	/* Strawberry brand palette (strawberry.rocks) */
+	--color-strawberry: #f7393d;
+	--color-magenta: #ee0a78;
+	--color-orange: #fe620a;
+	--color-green: #1eb589;
+	--color-ink: #0d0e12;
+	--color-g-900: #1f1f1f;
+	--color-g-700: #515254;
+	--color-g-500: #8b8b8d;
+	--color-g-400: #c5c5c6;
+	--color-g-100: #e2e2e3;
+	--color-g-50: #f0f1f1;
+}
+
 @layer base {
 	* {
 		@apply border-border outline-ring/50;
 	}
 	body {
-		@apply bg-background text-foreground;
+		@apply bg-background text-foreground font-sans antialiased;
+		min-height: 100vh;
+		/* Warm strawberry glow, fading into white — echoes the website hero */
+		background-color: #fff;
+		background-image:
+			radial-gradient(
+				60rem 32rem at 85% -8%,
+				rgba(247, 57, 61, 0.12),
+				transparent 60%
+			),
+			radial-gradient(
+				48rem 28rem at 5% -10%,
+				rgba(238, 10, 120, 0.08),
+				transparent 55%
+			);
+		background-repeat: no-repeat;
+		background-attachment: fixed;
 	}
 }
 
-@theme {
-	--font-mono: "Space Mono", "monospace";
+@utility gradient-text {
+	background-image: linear-gradient(
+		to right,
+		var(--color-magenta),
+		var(--color-orange)
+	);
+	background-clip: text;
+	-webkit-background-clip: text;
+	color: transparent;
 }

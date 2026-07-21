@@ -29,7 +29,7 @@ from strawberry.types.base import (
     get_object_definition,
     has_object_definition,
 )
-from strawberry.types.enum import StrawberryEnumDefinition
+from strawberry.types.enum import EnumAnnotation, StrawberryEnumDefinition
 from strawberry.types.enum import enum as strawberry_enum
 from strawberry.types.lazy_type import LazyType
 from strawberry.types.maybe import _annotation_is_maybe
@@ -189,9 +189,9 @@ class StrawberryAnnotation:
         # Everything remaining should be a raw annotation that needs to be turned into
         # a StrawberryType
         if self._is_enum(evaled_type):
-            return self.create_enum(evaled_type)
+            return self.create_enum(evaled_type, args)
         if self._is_optional(evaled_type, args):
-            return self.create_optional(evaled_type)
+            return self.create_optional(evaled_type, args)
         if self._is_union(evaled_type, args):
             return self.create_union(evaled_type, args)
         if is_type_var(evaled_type) or evaled_type is Self:
@@ -215,10 +215,20 @@ class StrawberryAnnotation:
             return evaled_type.__strawberry_definition__.resolve_generic(evaled_type)
         raise ValueError(f"Not supported {evaled_type}")
 
-    def create_enum(self, evaled_type: Any) -> StrawberryEnumDefinition:
+    def create_enum(
+        self, evaled_type: Any, args: list[Any] | None = None
+    ) -> StrawberryEnumDefinition:
+        enum_annotation: EnumAnnotation | None = None
+        if args:
+            enum_annotation = next(
+                (a for a in args if isinstance(a, EnumAnnotation)), None
+            )
+
         try:
             return evaled_type.__strawberry_definition__
         except AttributeError:
+            if enum_annotation is not None:
+                return enum_annotation(evaled_type).__strawberry_definition__
             return strawberry_enum(evaled_type).__strawberry_definition__
 
     def create_list(self, evaled_type: Any) -> StrawberryList:
@@ -230,13 +240,15 @@ class StrawberryAnnotation:
 
         return StrawberryList(of_type)
 
-    def create_optional(self, evaled_type: Any) -> StrawberryOptional:
+    def create_optional(
+        self, evaled_type: Any, args: list[Any] | None = None
+    ) -> StrawberryOptional:
         types = get_args(evaled_type)
         non_optional_types = tuple(
             filter(
-                lambda x: x is not type(None)
-                and x is not type(UNSET)
-                and x != type[UNSET],
+                lambda x: (
+                    x is not type(None) and x is not type(UNSET) and x != type[UNSET]
+                ),
                 types,
             )
         )
@@ -246,8 +258,15 @@ class StrawberryAnnotation:
         # passed as we can safely use `Union` for both optional types
         # (e.g. `Optional[str]`) and optional unions (e.g.
         # `Optional[Union[TypeA, TypeB]]`)
+
+        # Rebuild the inner union/child type without the None/UNSET parts
         child_type = Union[non_optional_types]  # type: ignore  # noqa: UP007
 
+        # If this optional had Annotated metadata (collected into `args` by
+        # _get_type_with_args), re-apply it to the rebuilt child_type so metadata
+        # (e.g. strawberry.union(...)) is preserved.
+        if args and len(non_optional_types) > 1:
+            child_type = Annotated[(child_type, *args)]  # type: ignore
         of_type = StrawberryAnnotation(
             annotation=child_type,
             namespace=self.namespace,

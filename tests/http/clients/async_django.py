@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import AsyncIterable
+from collections.abc import AsyncIterable, Sequence
 
 from django.core.exceptions import BadRequest, SuspiciousOperation
 from django.http import Http404, HttpRequest, HttpResponse, StreamingHttpResponse
@@ -9,6 +9,10 @@ from strawberry.django.views import AsyncGraphQLView as BaseAsyncGraphQLView
 from strawberry.http import GraphQLHTTPResponse
 from strawberry.http.ides import GraphQL_IDE
 from strawberry.schema import Schema
+from strawberry.subscriptions import (
+    GRAPHQL_TRANSPORT_WS_PROTOCOL,
+    GRAPHQL_WS_PROTOCOL,
+)
 from strawberry.types import ExecutionResult
 from tests.http.context import get_context
 from tests.views.schema import Query
@@ -44,19 +48,22 @@ class AsyncDjangoHttpClient(DjangoHttpClient):
     def __init__(
         self,
         schema: Schema,
-        graphiql: bool | None = None,
         graphql_ide: GraphQL_IDE | None = "graphiql",
         allow_queries_via_get: bool = True,
         result_override: ResultOverrideFunction = None,
         multipart_uploads_enabled: bool = False,
+        subscription_protocols: Sequence[str] = (
+            GRAPHQL_TRANSPORT_WS_PROTOCOL,
+            GRAPHQL_WS_PROTOCOL,
+        ),
     ):
         self.view = AsyncGraphQLView.as_view(
             schema=schema,
-            graphiql=graphiql,
             graphql_ide=graphql_ide,
             allow_queries_via_get=allow_queries_via_get,
             result_override=result_override,
             multipart_uploads_enabled=multipart_uploads_enabled,
+            subscription_protocols=subscription_protocols,
         )
 
     async def _do_request(self, request: HttpRequest) -> Response:

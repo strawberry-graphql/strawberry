@@ -1,4 +1,5 @@
 import dataclasses
+import warnings
 from enum import Enum
 from typing import Annotated, Any
 
@@ -15,32 +16,6 @@ from strawberry.types.base import (
 )
 from strawberry.types.enum import StrawberryEnumDefinition
 from strawberry.types.union import StrawberryUnion
-
-
-def test_basic_type_field_list():
-    class User(pydantic.BaseModel):
-        age: int
-        password: str | None
-
-    with pytest.deprecated_call():
-
-        @strawberry.experimental.pydantic.type(User, fields=["age", "password"])
-        class UserType:
-            pass
-
-    definition: StrawberryObjectDefinition = UserType.__strawberry_definition__
-    assert definition.name == "UserType"
-
-    [field1, field2] = definition.fields
-
-    assert field1.python_name == "age"
-    assert field1.graphql_name is None
-    assert field1.type is int
-
-    assert field2.python_name == "password"
-    assert field2.graphql_name is None
-    assert isinstance(field2.type, StrawberryOptional)
-    assert field2.type.of_type is str
 
 
 def test_basic_type_all_fields():
@@ -67,20 +42,28 @@ def test_basic_type_all_fields():
     assert field2.type.of_type is str
 
 
-@pytest.mark.filterwarnings("error")
-def test_basic_type_all_fields_warn():
+def test_basic_type_all_fields_respects_explicit_definitions():
     class User(pydantic.BaseModel):
         age: int
         password: str | None
 
-    with pytest.raises(
-        UserWarning,
-        match="Using all_fields overrides any explicitly defined fields",
-    ):
+    # Should NOT produce a warning - explicit definitions are now respected
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
 
         @strawberry.experimental.pydantic.type(User, all_fields=True)
         class UserType:
             age: strawberry.auto
+
+        relevant_warnings = [
+            warning for warning in w if "all_fields overrides" in str(warning.message)
+        ]
+        assert len(relevant_warnings) == 0
+
+    # Verify the type was created correctly with both fields
+    definition = UserType.__strawberry_definition__
+    field_names = {f.name for f in definition.fields}
+    assert field_names == {"age", "password"}
 
 
 def test_basic_type_auto_fields():

@@ -6,7 +6,12 @@ import pytest
 from graphql import GraphQLError, ValidationRule, validate
 
 import strawberry
-from strawberry.extensions import AddValidationRules, DisableValidation
+from strawberry.extensions import (
+    AddValidationRules,
+    DisableValidation,
+    SchemaExtension,
+)
+from strawberry.utils import IS_GQL_32
 
 
 @pytest.mark.parametrize("validate_queries", [True, False])
@@ -16,9 +21,9 @@ def test_enabling_query_validation_sync(mock_validate, validate_queries):
     class Query:
         example: str | None = None
 
-    extensions = []
+    extensions: list[type[SchemaExtension]] = []
     if validate_queries is False:
-        extensions.append(DisableValidation())
+        extensions.append(DisableValidation)
 
     schema = strawberry.Schema(
         query=Query,
@@ -48,9 +53,9 @@ async def test_enabling_query_validation(validate_queries):
     class Query:
         example: str | None = None
 
-    extensions = []
+    extensions: list[type[SchemaExtension]] = []
     if validate_queries is False:
-        extensions.append(DisableValidation())
+        extensions.append(DisableValidation)
 
     schema = strawberry.Schema(
         query=Query,
@@ -104,7 +109,7 @@ async def test_asking_for_wrong_field():
     class Query:
         example: str | None = None
 
-    schema = strawberry.Schema(query=Query, extensions=[DisableValidation()])
+    schema = strawberry.Schema(query=Query, extensions=[DisableValidation])
 
     query = """
         query {
@@ -129,7 +134,7 @@ async def test_sending_wrong_variables():
         def example(self, value: str) -> int:
             return 1
 
-    schema = strawberry.Schema(query=Query, extensions=[DisableValidation()])
+    schema = strawberry.Schema(query=Query, extensions=[DisableValidation])
 
     query = """
         query {
@@ -142,20 +147,28 @@ async def test_sending_wrong_variables():
         root_value=Query(),
     )
 
-    assert (
-        str(result.errors[0])
-        == textwrap.dedent(
-            """
-            Argument 'value' has invalid value 123.
+    expected_error = (
+        """
+        Argument 'value' has invalid value 123.
 
-            GraphQL request:3:28
-            2 |         query {
-            3 |             example(value: 123)
-              |                            ^
-            4 |         }
-            """
-        ).strip()
+        GraphQL request:3:28
+        2 |         query {
+        3 |             example(value: 123)
+          |                            ^
+        4 |         }
+        """
+        if IS_GQL_32
+        else """
+        Argument 'value' has invalid value: String cannot represent a non string value: 123
+
+        GraphQL request:3:28
+        2 |         query {
+        3 |             example(value: 123)
+          |                            ^
+        4 |         }
+        """
     )
+    assert str(result.errors[0]) == textwrap.dedent(expected_error).strip()
 
 
 @pytest.mark.asyncio
@@ -430,7 +443,7 @@ def test_adding_custom_validation_rules():
     schema = strawberry.Schema(
         query=Query,
         extensions=[
-            AddValidationRules([CustomRule]),
+            lambda: AddValidationRules([CustomRule]),
         ],
     )
 

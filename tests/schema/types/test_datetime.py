@@ -6,6 +6,7 @@ from graphql import GraphQLError
 
 import strawberry
 from strawberry.types.execution import ExecutionResult
+from strawberry.utils import IS_GQL_32
 
 
 @pytest.mark.parametrize(
@@ -163,7 +164,27 @@ def test_serialization_error_message_for_incorrect_datetime_string():
     """
     result = execute_mutation("2021-13-01T09:00:00")
     assert result.errors
-    assert result.errors[0].message.startswith(
+    expected_message = (
         "Variable '$value' got invalid value '2021-13-01T09:00:00'; Value cannot "
         'represent a DateTime: "2021-13-01T09:00:00". month must be in 1..12'
+        if IS_GQL_32
+        else "Variable '$value' has invalid value: Value cannot represent a "
+        'DateTime: "2021-13-01T09:00:00". month must be in 1..12'
+    )
+    assert result.errors[0].message.startswith(
+        expected_message,
+    )
+
+
+@pytest.mark.parametrize("value", [1.5, 10, True])
+def test_parsing_of_non_string_value(value):
+    """Test GraphQLError is raised for a non-string value.
+    The parser must not leak a TypeError from ``dateutil``.
+    """
+    result = execute_mutation(value)
+    assert result.errors
+    assert isinstance(result.errors[0], GraphQLError)
+    assert (
+        f'Value cannot represent a DateTime: "{value}". Expected a string.'
+        in result.errors[0].message
     )

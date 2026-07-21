@@ -83,9 +83,9 @@ class Model(pydantic.BaseModel):
     field: pydantic.Json
 
 
-@strawberry.experimental.pydantic.type(Model, fields=["field"])
+@strawberry.experimental.pydantic.type(Model)
 class Type:
-    pass
+    field: strawberry.auto
 ```
 
 ### WrongNumberOfResultsReturned

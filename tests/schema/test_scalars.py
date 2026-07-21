@@ -1,6 +1,7 @@
 from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal
 from textwrap import dedent
+from typing import Any
 from uuid import UUID
 
 import pytest
@@ -365,6 +366,113 @@ def test_override_unknown_scalars():
     assert result.data == {"duration": 10}
 
 
+def test_override_generic_container_by_origin():
+    # Registering the bare ``dict`` should cover every ``dict[K, V]``
+    # parameterization instead of requiring one override entry per variant.
+    JSONScalar = scalar(
+        dict,
+        name="JSON",
+        serialize=lambda value: value,
+        parse_value=lambda value: value,
+    )
+
+    @strawberry.type
+    class Query:
+        ints: dict[str, int]
+        nested: dict[str, list[int]]
+
+    @strawberry.type
+    class Mutation:
+        @strawberry.mutation
+        def echo(self, value: dict[str, int]) -> dict[str, int]:
+            return value
+
+        @strawberry.mutation
+        def echo_optional(
+            self, value: dict[str, int] | None = None
+        ) -> dict[str, int] | None:
+            return value
+
+        @strawberry.mutation
+        def echo_list(self, value: list[dict[str, int]]) -> list[dict[str, int]]:
+            return value
+
+    schema = strawberry.Schema(
+        Query,
+        mutation=Mutation,
+        scalar_overrides={dict: JSONScalar},
+    )
+
+    assert "ints: JSON!" in str(schema)
+    assert "nested: JSON!" in str(schema)
+
+    result = schema.execute_sync(
+        "{ ints nested }",
+        root_value=Query(ints={"a": 1}, nested={"b": [2]}),
+    )
+
+    assert not result.errors
+    assert result.data == {"ints": {"a": 1}, "nested": {"b": [2]}}
+
+    result = schema.execute_sync(
+        "mutation($value: JSON!) { echo(value: $value) }",
+        variable_values={"value": {"a": 1}},
+    )
+
+    assert not result.errors
+    assert result.data == {"echo": {"a": 1}}
+
+    result = schema.execute_sync(
+        "mutation($value: JSON) { echoOptional(value: $value) }",
+        variable_values={"value": {"b": 2}},
+    )
+
+    assert not result.errors
+    assert result.data == {"echoOptional": {"b": 2}}
+
+    result = schema.execute_sync(
+        "mutation($value: [JSON!]!) { echoList(value: $value) }",
+        variable_values={"value": [{"c": 3}]},
+    )
+
+    assert not result.errors
+    assert result.data == {"echoList": [{"c": 3}]}
+
+
+def test_override_exact_generic_key_still_matches():
+    JSONScalar = scalar(
+        dict,
+        name="JSON",
+        serialize=lambda value: value,
+        parse_value=lambda value: value,
+    )
+
+    @strawberry.type
+    class Query:
+        settings: dict[str, Any]
+
+    schema = strawberry.Schema(Query, scalar_overrides={dict[str, Any]: JSONScalar})
+
+    assert "settings: JSON!" in str(schema)
+
+
+def test_override_exact_generic_key_does_not_match_other_parameterizations():
+    JSONScalar = scalar(
+        dict,
+        name="JSON",
+        serialize=lambda value: value,
+        parse_value=lambda value: value,
+    )
+
+    @strawberry.type
+    class Query:
+        settings: dict[str, Any]
+        other: dict[str, int]
+
+    with pytest.raises(TypeError, match="Unexpected type 'dict\\[str, int\\]'"):
+        strawberry.Schema(Query, scalar_overrides={dict[str, Any]: JSONScalar})
+
+
 def test_decimal():
     @strawberry.type
     class Query:
@@ -630,8 +738,8 @@ def test_scalar_definition_direct_creation():
     definition = strawberry.scalar(
         name="TestScalar",
         description="A test scalar",
-        serialize=lambda v: str(v),
-        parse_value=lambda v: int(v),
+        serialize=str,
+        parse_value=int,
     )
 
     assert definition.name == "TestScalar"

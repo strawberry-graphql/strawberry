@@ -311,6 +311,152 @@ This approach allows you to express the possible error states in the schema and
 so provide a robust interface for your client to account for all the potential
 outcomes from a mutation.
 
+### Mapping expected exceptions to union results
+
+If your application or integration already raises a specific exception for an
+expected failure, you can map that exception to one of the GraphQL error types
+in the field's return union by passing `exception_handlers` to
+`strawberry.Schema`.
+
+```python
+import strawberry
+from strawberry.types import Info
+from strawberry.types.field import StrawberryField
+
+
+class UsernameAlreadyExists(Exception):
+    def __init__(self, username: str):
+        self.username = username
+
+
+@strawberry.type
+class RegisterUserSuccess:
+    user: User
+
+
+@strawberry.type
+class UsernameAlreadyExistsError:
+    username: str
+
+
+class UsernameAlreadyExistsHandler(
+    strawberry.ExceptionHandler[UsernameAlreadyExists, UsernameAlreadyExistsError]
+):
+    def handle(
+        self,
+        exception: UsernameAlreadyExists,
+        *,
+        field: StrawberryField,
+        info: Info,
+    ) -> UsernameAlreadyExistsError:
+        return UsernameAlreadyExistsError(username=exception.username)
+
+
+@strawberry.type
+class Mutation:
+    @strawberry.mutation
+    def register_user(
+        self, username: str, password: str
+    ) -> RegisterUserSuccess | UsernameAlreadyExistsError:
+        # create_user may raise UsernameAlreadyExists
+        user = create_user(username, password)
+        return RegisterUserSuccess(user=user)
+
+
+schema = strawberry.Schema(
+    query=Query,
+    mutation=Mutation,
+    exception_handlers=[UsernameAlreadyExistsHandler()],
+)
+```
+
+Strawberry only converts exceptions when both of these are true:
+
+- the exception is an instance of the handler's declared exception type
+- the field return type is a union, or nullable union, containing the handler's
+  declared error type
+
+The two type parameters — the exception type the handler receives and the
+GraphQL error type it returns — are the single source of truth: they drive the
+matching at runtime, and type checkers use them to verify the signature of
+`handle` against the declared types.
+
+To map several Python exception classes to the same GraphQL error type,
+parameterize the handler with their union, e.g.
+`strawberry.ExceptionHandler[ErrorA | ErrorB, MyErrorType]`.
+
+If you prefer explicit class attributes — or you are not using a type checker —
+the same handler can declare its types with `exception_type` and `error_type`
+attributes instead of type parameters:
+
+```python
+class UsernameAlreadyExistsHandler(strawberry.ExceptionHandler):
+    exception_type = UsernameAlreadyExists
+    error_type = UsernameAlreadyExistsError
+
+    def handle(self, exception, *, field, info):
+        return UsernameAlreadyExistsError(username=exception.username)
+```
+
+With this style `exception_type` accepts a single exception type or a tuple of
+them, and the attributes also cover types that are only known at runtime. You
+can mix the styles — for example parameterize the exception and supply a
+runtime-only `error_type` as an attribute — but declaring both a type parameter
+and a conflicting attribute for the same slot raises a `TypeError` at schema
+creation. Note that type checkers will not verify the signature of `handle` when
+you use attributes.
+
+Handlers cover exceptions raised by the resolver, during argument conversion,
+and by field extensions (for example a permission or validation extension
+wrapping the field). Argument conversion runs before the field-extension chain,
+so a conversion error is mapped directly and bypasses the field extensions —
+matching how conversion errors have always been raised before permissions run.
+Field extensions may catch or transform resolver exceptions before the handler
+sees the final exception leaving the extension chain.
+
+If multiple handlers match, Strawberry uses the first matching handler from the
+`exception_handlers` list. Handlers do not apply to subscription fields or to
+list fields such as `list[Success | UsernameAlreadyExistsError]`.
+
+A handler can decline an individual exception by returning `None` (or an
+awaitable resolving to `None`). Declining re-raises the original exception, so
+it propagates as a normal GraphQL error as if no handler had matched. This lets
+`handle` act as a per-instance filter — match a broad exception type, but only
+convert the instances you recognize:
+
+```python
+class ValidationErrorHandler(
+    strawberry.ExceptionHandler[ValidationProblem, ValidationError]
+):
+    def handle(
+        self,
+        exception: ValidationProblem,
+        *,
+        field: StrawberryField,
+        info: Info,
+    ) -> ValidationError | None:
+        if exception.is_user_facing:
+            return ValidationError(message=str(exception))
+        # Not one we want to expose — let it propagate as a normal error.
+        return None
+```
+
+When the error type is generic, parameterize the handler with the concrete
+instantiation that appears in the union (for example
+`strawberry.ExceptionHandler[MyError, ValidationError[int]]`), rather than the
+bare generic (`ValidationError`), so it matches the correct member of the union.
+
+Converted exceptions are treated as expected GraphQL results. They are not added
+to the response's top-level `errors` list and are not passed to
+`Schema.process_errors`, so avoid using broad exception types such as
+`Exception` unless every matching error is safe to expose as a typed result.
+
+On a synchronously executed field, `handle` must return its result
+synchronously. An `async` handler returns a coroutine, which fails the same way
+an `async` resolver does on a sync field: `execute_sync` returns an
+`ExecutionResult` whose `errors` contain a `GraphQLError` stating that execution
+could not complete synchronously.
+
 ---
 
 ## Additional resources:

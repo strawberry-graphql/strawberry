@@ -88,7 +88,6 @@ class QuartHttpClient(HttpClient):
     def __init__(
         self,
         schema: Schema,
-        graphiql: bool | None = None,
         graphql_ide: GraphQL_IDE | None = "graphiql",
         allow_queries_via_get: bool = True,
         keep_alive: bool = False,
@@ -100,6 +99,7 @@ class QuartHttpClient(HttpClient):
         connection_init_wait_timeout: timedelta = timedelta(minutes=1),
         result_override: ResultOverrideFunction = None,
         multipart_uploads_enabled: bool = False,
+        max_subscriptions_per_connection: int | None = 100,
     ):
         self.app = Quart(__name__)
         self.app.debug = True
@@ -107,7 +107,6 @@ class QuartHttpClient(HttpClient):
         view = GraphQLView.as_view(
             "graphql_view",
             schema=schema,
-            graphiql=graphiql,
             graphql_ide=graphql_ide,
             allow_queries_via_get=allow_queries_via_get,
             result_override=result_override,
@@ -116,6 +115,7 @@ class QuartHttpClient(HttpClient):
             subscription_protocols=subscription_protocols,
             connection_init_wait_timeout=connection_init_wait_timeout,
             multipart_uploads_enabled=multipart_uploads_enabled,
+            max_subscriptions_per_connection=max_subscriptions_per_connection,
         )
 
         self.app.add_url_rule(

@@ -26,6 +26,7 @@ def test_codegen_object_type():
 
     expected = textwrap.dedent(
         """
+        from __future__ import annotations
         import strawberry
 
         @strawberry.type
@@ -64,6 +65,7 @@ def test_supports_descriptions():
 
     expected = textwrap.dedent(
         """
+        from __future__ import annotations
         import strawberry
 
         @strawberry.type(description="Example description")
@@ -90,6 +92,7 @@ def test_supports_interfaces():
 
     expected = textwrap.dedent(
         """
+        from __future__ import annotations
         import strawberry
 
         @strawberry.interface

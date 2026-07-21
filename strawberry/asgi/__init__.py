@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import warnings
 from datetime import timedelta
 from json import JSONDecodeError
 from typing import (
@@ -105,7 +104,6 @@ class GraphQL(
     def __init__(
         self,
         schema: BaseSchema,
-        graphiql: bool | None = None,
         graphql_ide: GraphQL_IDE | None = "graphiql",
         allow_queries_via_get: bool = True,
         keep_alive: bool = False,
@@ -116,6 +114,7 @@ class GraphQL(
         ),
         connection_init_wait_timeout: timedelta = timedelta(minutes=1),
         multipart_uploads_enabled: bool = False,
+        max_subscriptions_per_connection: int | None = 100,
     ) -> None:
         self.schema = schema
         self.allow_queries_via_get = allow_queries_via_get
@@ -124,16 +123,8 @@ class GraphQL(
         self.protocols = subscription_protocols
         self.connection_init_wait_timeout = connection_init_wait_timeout
         self.multipart_uploads_enabled = multipart_uploads_enabled
-
-        if graphiql is not None:
-            warnings.warn(
-                "The `graphiql` argument is deprecated in favor of `graphql_ide`",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-            self.graphql_ide = "graphiql" if graphiql else None
-        else:
-            self.graphql_ide = graphql_ide
+        self.max_subscriptions_per_connection = max_subscriptions_per_connection
+        self.graphql_ide = graphql_ide
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         if scope["type"] == "http":
@@ -198,7 +189,7 @@ class GraphQL(
         request: Request | WebSocket,
         stream: Callable[[], AsyncIterator[str]],
         sub_response: Response,
-        headers: dict[str, str],
+        headers: Mapping[str, str],
     ) -> Response:
         return StreamingResponse(
             stream(),
@@ -216,7 +207,7 @@ class GraphQL(
 
     async def pick_websocket_subprotocol(self, request: WebSocket) -> str | None:
         protocols = request["subprotocols"]
-        intersection = set(protocols) & set(self.protocols)
+        intersection = set(protocols) & set(self.websocket_subprotocols)
         sorted_intersection = sorted(intersection, key=protocols.index)
         return next(iter(sorted_intersection), None)
 

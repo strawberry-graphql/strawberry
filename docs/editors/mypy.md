@@ -4,33 +4,58 @@ title: Mypy
 
 # Mypy
 
-Strawberry comes with support for
-[Mypy](https://mypy.readthedocs.io/en/stable/), a popular static type checker
-for Python.
+Strawberry works with [Mypy](https://mypy.readthedocs.io/en/stable/) out of the
+box thanks to
+[`dataclass_transform`](https://typing.readthedocs.io/en/latest/spec/dataclasses.html#dataclass-transform).
+No plugin is needed for standard Strawberry types, inputs, interfaces, enums,
+scalars, or unions.
 
-This guide will explain how to configure Mypy to work with Strawberry.
+## Pydantic integration
 
-## Install Mypy
-
-The first thing we need to do is to install
-[Mypy](https://mypy.readthedocs.io/en/stable/), this is the tool that will
-perform the type checking.
-
-Once the tool is installed, we need to configure it to enable type checking and
-use the Strawberry plugin. To do so we need to create a `mypy.ini` file in the
-root of our project and add the following settings:
+If you use `strawberry.experimental.pydantic`, add **both** the pydantic and
+strawberry plugins to your mypy configuration:
 
 ```ini
 [mypy]
-plugins = strawberry.ext.mypy_plugin
+plugins = pydantic.mypy, strawberry.ext.mypy_plugin
 ```
 
-You can also configure Mypy inside the `pyproject.toml` file, like so:
+Or in `pyproject.toml`:
 
 ```toml
 [tool.mypy]
-plugins = ["strawberry.ext.mypy_plugin"]
+plugins = ["pydantic.mypy", "strawberry.ext.mypy_plugin"]
 ```
 
-Once you have configured the settings, you can run `mypy` and you should be
-getting type checking errors.
+The strawberry plugin synthesises `__init__`, `to_pydantic()` and
+`from_pydantic()` on pydantic-decorated classes so that mypy can see them.
+
+## Enums
+
+The preferred way to register an enum is with the decorator:
+
+```python
+from enum import Enum
+import strawberry
+
+
+@strawberry.enum
+class IceCreamFlavour(Enum):
+    VANILLA = "vanilla"
+    STRAWBERRY = "strawberry"
+```
+
+If you need to expose an existing enum under a different name or alias, use
+`Annotated` instead of assigning `strawberry.enum(IceCreamFlavour)` to a
+variable — mypy treats the latter as a value, not a type, so it cannot be used
+in annotations.
+
+```python
+from typing import Annotated
+import strawberry
+
+MyIceCreamFlavour = Annotated[IceCreamFlavour, strawberry.enum(description="...")]
+```
+
+`MyIceCreamFlavour` is a proper type alias that mypy and Pyright accept in
+annotations.

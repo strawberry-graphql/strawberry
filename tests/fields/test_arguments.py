@@ -355,6 +355,32 @@ def test_annotated_argument_with_rename():
     assert argument.default == "Patrick"
 
 
+def test_annotated_argument_with_graphql_type_override():
+    BigInt = strawberry.scalar(int, name="BigInt", serialize=str, parse_value=int)
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def name(
+            self,
+            arg: Annotated[
+                list[int],
+                strawberry.argument(graphql_type=list[BigInt]),
+            ],
+        ) -> str:  # pragma: no cover
+            return "Name"
+
+    definition = Query.__strawberry_definition__
+
+    assert definition.name == "Query"
+
+    [argument] = definition.fields[0].arguments
+
+    assert argument.python_name == "arg"
+    assert isinstance(argument.type, StrawberryList)
+    assert argument.type.of_type is BigInt
+
+
 @pytest.mark.xfail(reason="Can't get field name from argument")
 def test_multiple_annotated_arguments_exception():
     with pytest.raises(MultipleStrawberryArgumentsError) as error:
@@ -477,29 +503,3 @@ def test_resolver_with_invalid_field_argument_type():
     @strawberry.type
     class Mutation:
         add_adjective: bool = strawberry.field(resolver=add_adjective_resolver)
-
-
-def test_unset_deprecation_warning():
-    with pytest.deprecated_call():
-        from strawberry.types.arguments import UNSET  # noqa: F401
-    with pytest.deprecated_call():
-        from strawberry.types.arguments import is_unset  # noqa: F401
-
-
-def test_deprecated_unset():
-    warning = "`is_unset` is deprecated use `value is UNSET` instead"
-
-    with pytest.deprecated_call(match=warning):
-        from strawberry.types.unset import is_unset
-
-    with pytest.deprecated_call(match=warning):
-        assert is_unset(UNSET)
-
-    with pytest.deprecated_call(match=warning):
-        assert not is_unset(None)
-
-    with pytest.deprecated_call(match=warning):
-        assert not is_unset(False)
-
-    with pytest.deprecated_call(match=warning):
-        assert not is_unset("hello world")

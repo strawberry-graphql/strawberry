@@ -61,6 +61,7 @@ def test_can_convert_descriptions_with_quotes():
 
     expected_output = textwrap.dedent(
         """
+        from __future__ import annotations
         import strawberry
 
         @strawberry.type(description='A type of person or character within the "Star Wars" Universe.')

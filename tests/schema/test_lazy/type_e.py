@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Generic, TypeVar
+from typing import Annotated, Generic, TypeVar
 
 import strawberry
 
@@ -16,10 +16,7 @@ class ValueContainer(Generic[T]):
     value: T
 
 
-UnionValue = strawberry.union(
-    "UnionValue",
-    types=(
-        ValueContainer[int],
-        ValueContainer[MyEnum],
-    ),
-)
+UnionValue = Annotated[
+    ValueContainer[int] | ValueContainer[MyEnum],
+    strawberry.union("UnionValue"),
+]

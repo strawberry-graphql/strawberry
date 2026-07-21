@@ -4,16 +4,24 @@ import warnings
 from typing import Any
 
 
-class DEPRECATION_MESSAGES:  # noqa: N801
-    _TYPE_DEFINITION = (
-        "_type_definition is deprecated, use __strawberry_definition__ instead"
-    )
-    _ENUM_DEFINITION = (
-        "_enum_definition is deprecated, use __strawberry_definition__ instead"
-    )
-
-
 class DeprecatedDescriptor:
+    """A descriptor that emits a deprecation warning when accessed.
+
+    Used to create deprecated attribute aliases that point to new attributes.
+
+    Example:
+        >>> @strawberry.type
+        ... class MyType:
+        ...     __strawberry_definition__ = SomeDefinition()
+        ...
+        >>> DeprecatedDescriptor(
+        ...     "_old_attr is deprecated, use __strawberry_definition__ instead",
+        ...     MyType.__strawberry_definition__,
+        ...     "_old_attr",
+        ... ).inject(MyType)
+        >>> # Now accessing MyType._old_attr will warn and return __strawberry_definition__
+    """
+
     def __init__(self, msg: str, alias: object, attr_name: str) -> None:
         self.msg = msg
         self.alias = alias
@@ -30,4 +38,4 @@ class DeprecatedDescriptor:
         setattr(klass, self.attr_name, self)
 
 
-__all__ = ["DEPRECATION_MESSAGES", "DeprecatedDescriptor"]
+__all__ = ["DeprecatedDescriptor"]

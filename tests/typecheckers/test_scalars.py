@@ -149,7 +149,7 @@ def test():
 
 CODE_SCHEMA_OVERRIDES = """
 import strawberry
-from datetime import datetime, timezone
+from datetime import datetime
 
 EpochDateTime = strawberry.scalar(
     datetime,
@@ -168,15 +168,14 @@ reveal_type(EpochDateTime)
 
 
 def test_schema_overrides():
-    # TODO: change strict to true when we improve type hints for scalar
-    results = typecheck(CODE_SCHEMA_OVERRIDES, strict=False)
+    results = typecheck(CODE_SCHEMA_OVERRIDES)
 
     assert results.pyright == snapshot(
         [
             Result(
                 type="information",
                 message='Type of "EpochDateTime" is "type[datetime]"',
-                line=16,
+                line=17,
                 column=13,
             )
         ]
@@ -185,7 +184,7 @@ def test_schema_overrides():
         [
             Result(
                 type="note",
-                message='Revealed type is "def (year: typing.SupportsIndex, month: typing.SupportsIndex, day: typing.SupportsIndex, hour: typing.SupportsIndex =, minute: typing.SupportsIndex =, second: typing.SupportsIndex =, microsecond: typing.SupportsIndex =, tzinfo: datetime.tzinfo | None =, *, fold: builtins.int =) -> datetime.datetime"',
+                message='Revealed type is "def (year: typing.SupportsIndex, month: typing.SupportsIndex, day: typing.SupportsIndex, hour: typing.SupportsIndex =, minute: typing.SupportsIndex =, second: typing.SupportsIndex =, microsecond: typing.SupportsIndex =, tzinfo: datetime.tzinfo | None =, *, fold: int =) -> datetime.datetime"',
                 line=17,
                 column=13,
             )
@@ -232,20 +231,20 @@ reveal_type(MyString("test"))
 
 
 def test_scalar_map():
-    results = typecheck(CODE_SCALAR_MAP, strict=False)
+    results = typecheck(CODE_SCALAR_MAP)
 
     assert results.pyright == snapshot(
         [
             Result(
                 type="information",
                 message='Type of "MyString" is "type[MyString]"',
-                line=23,
+                line=24,
                 column=13,
             ),
             Result(
                 type="information",
                 message='Type of "MyString("test")" is "MyString"',
-                line=24,
+                line=25,
                 column=13,
             ),
         ]
@@ -254,7 +253,7 @@ def test_scalar_map():
         [
             Result(
                 type="note",
-                message='Revealed type is "def (item: builtins.str) -> mypy_test.MyString"',
+                message='Revealed type is "def (item: str) -> mypy_test.MyString"',
                 line=24,
                 column=13,
             ),

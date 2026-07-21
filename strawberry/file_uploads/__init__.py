@@ -1,3 +1,3 @@
-from .scalars import Upload
+from .scalars import Upload, UploadDefinition
 
-__all__ = ["Upload"]
+__all__ = ["Upload", "UploadDefinition"]

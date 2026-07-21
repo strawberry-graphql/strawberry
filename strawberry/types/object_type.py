@@ -1,4 +1,5 @@
 import builtins
+import copy
 import dataclasses
 import inspect
 import types
@@ -17,8 +18,8 @@ from strawberry.exceptions import (
     ObjectIsNotClassError,
 )
 from strawberry.types.base import get_object_definition
-from strawberry.types.maybe import _annotation_is_maybe
-from strawberry.utils.deprecations import DEPRECATION_MESSAGES, DeprecatedDescriptor
+from strawberry.types.maybe import Some, _annotation_is_maybe
+from strawberry.types.unset import UNSET
 from strawberry.utils.str_converters import to_camel_case
 
 from .base import StrawberryObjectDefinition
@@ -77,6 +78,13 @@ def _check_field_annotations(cls: builtins.type[Any]) -> None:
                 # TODO: Maybe check this immediately when adding resolver to
                 #       field
                 if field_.base_resolver.type_annotation is None:
+                    # Distinguish @strawberry.field decorator from explicit
+                    # strawberry.field(resolver=fn) assignment.
+                    resolver_qualname = getattr(
+                        field_.base_resolver.wrapped_func, "__qualname__", ""
+                    )
+                    if resolver_qualname != f"{cls.__qualname__}.{field_name}":
+                        raise MissingFieldAnnotationError(field_name, cls)
                     raise MissingReturnAnnotationError(
                         field_name, resolver=field_.base_resolver
                     )
@@ -157,12 +165,6 @@ def _process_type(
         is_type_of=is_type_of,
         resolve_type=resolve_type,
     )
-    # TODO: remove when deprecating _type_definition
-    DeprecatedDescriptor(
-        DEPRECATION_MESSAGES._TYPE_DEFINITION,
-        cls.__strawberry_definition__,  # type: ignore[attr-defined]
-        "_type_definition",
-    ).inject(cls)
 
     # dataclasses removes attributes from the class here:
     # https://github.com/python/cpython/blob/577d7c4e/Lib/dataclasses.py#L873-L880
@@ -219,6 +221,9 @@ def type(
 ) -> Callable[[T], T]: ...
 
 
+@dataclass_transform(
+    order_default=True, kw_only_default=True, field_specifiers=(field, StrawberryField)
+)
 def type(
     cls: T | None = None,
     *,
@@ -337,6 +342,9 @@ def input(
 ) -> Callable[[T], T]: ...
 
 
+@dataclass_transform(
+    order_default=True, kw_only_default=True, field_specifiers=(field, StrawberryField)
+)
 def input(
     cls: T | None = None,
     *,
@@ -462,10 +470,60 @@ def interface(
     )
 
 
+def _prepare(obj: Any) -> Any:
+    """Recursively unwrap Some() instances so dataclasses.asdict can process the result."""
+    if isinstance(obj, Some):
+        # Unwrap that Some container
+        return _prepare(obj.value)
+
+    if dataclasses.is_dataclass(obj) and not isinstance(obj, builtins.type):
+        hints = get_annotations(builtins.type(obj))
+        # Intentionally avoiding the similar `dataclasses.replace` here,
+        # which calls `__init__` (and therefore `__post_init__`).
+        # That may trigger unintended side effects, and it rejects `init=False` fields
+        # in its changes dict. A shallow `copy.copy` sidesteps both issues:
+        # it duplicates the instance without invoking any initialisation logic.
+        obj_copy = copy.copy(obj)
+        for f in dataclasses.fields(obj):
+            value = getattr(obj, f.name)
+            if value is None and _annotation_is_maybe(hints.get(f.name)):
+                value = UNSET
+            else:
+                value = _prepare(value)
+            # `object.__setattr__` bypasses the frozen dataclass override of
+            # `__setattr__` (which raises `FrozenInstanceError`), writing
+            # directly to the instance. This is the same approach used by
+            # `dataclasses.replace` internally.
+            object.__setattr__(obj_copy, f.name, value)
+        return obj_copy
+
+    # Recurse into lists, tuples, namedtuples, and dicts to prepare their values.
+    # Defensively filter out the `UNSET` value at each level, as well.
+    if isinstance(obj, (list, tuple)):
+        # NOTE namedtuples are also included in this case.
+        # If more specific handling is needed for a namedtuple, check for
+        # `hasattr(obj, "_fields")` later.
+        return builtins.type(obj)(_prepare(v) for v in obj if v is not UNSET)
+    if isinstance(obj, dict):
+        return {k: _prepare(v) for k, v in obj.items() if v is not UNSET}
+
+    # obj is none of the above instances -> return unchanged
+    return obj
+
+
+def _asdict_dict_factory(items: list[tuple[str, Any]]) -> dict[str, Any]:
+    """dict_factory for dataclasses.asdict that excludes UNSET values."""
+    return {k: v for k, v in items if v is not UNSET}
+
+
 def asdict(obj: Any) -> dict[str, object]:
     """Convert a strawberry object into a dictionary.
 
-    This wraps the dataclasses.asdict function to strawberry.
+    This wraps the ``dataclasses.asdict`` function to strawberry,
+    while handling some special cases that ``dataclasses.asdict`` does not:
+
+    - ``UNSET`` fields are excluded.
+    - ``Some(value)`` containers are unwrapped, returning their ``value`` only.
 
     Args:
         obj: The object to convert into a dictionary.
@@ -486,7 +544,7 @@ def asdict(obj: Any) -> dict[str, object]:
     # {"name": "Lorem", "age": 25}
     ```
     """
-    return dataclasses.asdict(obj)
+    return dataclasses.asdict(_prepare(obj), dict_factory=_asdict_dict_factory)
 
 
 __all__ = [

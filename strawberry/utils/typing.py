@@ -186,10 +186,10 @@ def _get_namespace_from_ast(
     expr: ast.Expr | ast.expr,
     globalns: dict | None = None,
     localns: dict | None = None,
-) -> dict[str, type]:
+) -> dict[str, Any]:
     from strawberry.types.lazy_type import StrawberryLazyReference
 
-    extra = {}
+    extra: dict[str, Any] = {}
 
     if isinstance(expr, ast.Expr) and isinstance(
         expr.value, (ast.BinOp, ast.Subscript)
@@ -238,10 +238,25 @@ def _get_namespace_from_ast(
         # type directly and then adding it to extra namespace, so that _eval_type
         # can properly resolve it later
         type_name = args[0].strip(" '\"\n")
+        already_resolved = (globalns and type_name in globalns) or (
+            localns and type_name in localns
+        )
         for arg in args[1:]:
             evaled_arg = eval(arg, globalns, localns)  # noqa: S307
-            if isinstance(evaled_arg, StrawberryLazyReference):
+            if isinstance(evaled_arg, StrawberryLazyReference) and not already_resolved:
                 extra[type_name] = evaled_arg.resolve_forward_ref(ForwardRef(type_name))
+
+    elif isinstance(expr, ast.Subscript):
+        if hasattr(ast, "Index") and isinstance(expr.slice, ast.Index):
+            expr_slice = cast("Any", expr.slice).value
+        else:
+            expr_slice = expr.slice
+
+        if isinstance(expr_slice, ast.Tuple):
+            for elt in expr_slice.elts:
+                extra.update(_get_namespace_from_ast(elt, globalns, localns))
+        else:
+            extra.update(_get_namespace_from_ast(expr_slice, globalns, localns))
 
     return extra
 
@@ -272,7 +287,23 @@ def eval_type(
         if sys.version_info >= (3, 13):
             extra = {"type_params": None}
 
-        return _eval_type(type_, globalns, localns, **extra)
+        type_ = _eval_type(type_, globalns, localns, **extra)
+
+        # The forward ref may have resolved to a module-level alias such as
+        # `Annotated[ForwardRef("User"), StrawberryLazyReference(...)]`. The
+        # inner ForwardRef won't be resolved by `_eval_type` because its
+        # target only exists under `TYPE_CHECKING`; use the lazy reference
+        # to convert it into a LazyType, preserving the Annotated wrapper.
+        if (
+            get_origin(type_) is Annotated
+            and (args := get_args(type_))
+            and isinstance(args[0], ForwardRef)
+        ):
+            for arg in args[1:]:
+                if isinstance(arg, StrawberryLazyReference):
+                    return Annotated[(arg.resolve_forward_ref(args[0]), *args[1:])]
+
+        return type_
 
     origin = get_origin(type_)
     if origin is not None:

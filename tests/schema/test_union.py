@@ -343,6 +343,77 @@ def test_can_use_union_in_optional():
     assert result.data["ab"] is None
 
 
+def test_optional_annotated_union_preserves_metadata():
+    @strawberry.type
+    class A:
+        a: int
+
+    @strawberry.type
+    class B:
+        b: int
+
+    Result = Annotated[A | B | None, strawberry.union(name="Result")]
+
+    @strawberry.type
+    class Query:
+        ab: Result = None
+
+    schema = strawberry.Schema(query=Query)
+
+    query = """
+    {
+        __type(name: "Result") {
+            kind
+            possibleTypes {
+                name
+            }
+        }
+
+        __schema {
+            queryType {
+                fields {
+                    name
+                    type {
+                        kind
+                        name
+                        ofType {
+                            name
+                        }
+                    }
+                }
+            }
+        }
+    }
+    """
+
+    result = schema.execute_sync(query)
+
+    assert not result.errors
+
+    # Check the union exists with the correct name
+    union_type = result.data["__type"]
+    assert union_type is not None, (
+        "Expected introspection to return a type for 'Result'"
+    )
+    assert union_type["kind"] == "UNION"
+
+    # Check union members are correct (A and B)
+    possible_types = {t["name"] for t in union_type["possibleTypes"]}
+    assert possible_types == {"A", "B"}
+
+    # Check the field "ab" uses the correct union type
+    fields = result.data["__schema"]["queryType"]["fields"]
+    ab_field = next(f for f in fields if f["name"] == "ab")
+
+    # Because it's Optional, GraphQL type is nullable -> no NON_NULL wrapper
+    field_type = ab_field["type"]
+
+    # The field is Optional, so it must NOT be NON_NULL
+    assert field_type["kind"] != "NON_NULL"
+
+    assert field_type["name"] == "Result"
+
+
 def test_multiple_unions():
     @strawberry.type
     class CoolType:
@@ -1317,3 +1388,55 @@ def test_union_used_inside_generic():
     """
         ).strip()
     )
+
+
+def test_annotated_union_inside_generic_subclass():
+    T = TypeVar("T")
+
+    @strawberry.type
+    class Dog:
+        name: str
+
+    @strawberry.type
+    class Cat:
+        name: str
+
+    DogCat = Annotated[Union[Dog, Cat], strawberry.union("DogCat")]
+
+    @strawberry.type
+    class Listing(Generic[T]):
+        items: list[T]
+
+    @strawberry.type
+    class Items(Listing[DogCat]):
+        pass
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def items(self) -> Items:
+            return Items(items=[Dog(name="Fido"), Cat(name="Whiskers")])
+
+    schema = strawberry.Schema(query=Query)
+
+    result = schema.execute_sync("""
+        {
+            items {
+                items {
+                    __typename
+                    ... on Dog { name }
+                    ... on Cat { name }
+                }
+            }
+        }
+    """)
+
+    assert not result.errors
+    assert result.data == {
+        "items": {
+            "items": [
+                {"__typename": "Dog", "name": "Fido"},
+                {"__typename": "Cat", "name": "Whiskers"},
+            ]
+        }
+    }

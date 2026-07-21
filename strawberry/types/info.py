@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import dataclasses
-import warnings
 from functools import cached_property
 from typing import (
     TYPE_CHECKING,
@@ -14,7 +13,6 @@ from .nodes import convert_selections
 
 if TYPE_CHECKING:
     from graphql import GraphQLResolveInfo, OperationDefinitionNode
-    from graphql.language import FieldNode
     from graphql.pyutils.path import Path
 
     from strawberry.schema import Schema
@@ -86,16 +84,6 @@ class Info(Generic[ContextType, RootValueType]):
         """The schema of the current execution."""
         return self._raw_info.schema._strawberry_schema  # type: ignore
 
-    @property
-    def field_nodes(self) -> list[FieldNode]:  # deprecated
-        warnings.warn(
-            "`info.field_nodes` is deprecated, use `selected_fields` instead",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-
-        return self._raw_info.field_nodes
-
     @cached_property
     def selected_fields(self) -> list[Selection]:
         """The fields that were selected on the current field's type."""
@@ -139,6 +127,14 @@ class Info(Generic[ContextType, RootValueType]):
     def operation(self) -> OperationDefinitionNode:
         """The operation being executed."""
         return self._raw_info.operation
+
+    @property
+    def query(self) -> str | None:
+        """The full GraphQL document string sent in the request."""
+        operation = self.operation
+        if operation.loc is not None:
+            return operation.loc.source.body
+        return None
 
     @property
     def path(self) -> Path:

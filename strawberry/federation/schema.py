@@ -1,5 +1,5 @@
 from collections import defaultdict
-from collections.abc import Iterable, Mapping
+from collections.abc import Callable, Iterable, Mapping
 from functools import cached_property
 from itertools import chain
 from typing import (
@@ -36,6 +36,7 @@ if TYPE_CHECKING:
     from strawberry.extensions import SchemaExtension
     from strawberry.federation.schema_directives import ComposeDirective
     from strawberry.schema.config import StrawberryConfig
+    from strawberry.schema.exception_handlers import ExceptionHandler
     from strawberry.schema_directive import StrawberrySchemaDirective
     from strawberry.types.enum import StrawberryEnumDefinition
 
@@ -53,7 +54,9 @@ class Schema(BaseSchema):
         # TODO: we should update directives' type in the main schema
         directives: Iterable[type] = (),
         types: Iterable[type] = (),
-        extensions: Iterable[Union[type["SchemaExtension"], "SchemaExtension"]] = (),
+        extensions: Iterable[
+            type["SchemaExtension"] | Callable[[], "SchemaExtension"]
+        ] = (),
         execution_context_class: type["GraphQLExecutionContext"] | None = None,
         config: Optional["StrawberryConfig"] = None,
         scalar_overrides: dict[object, Union[type, "ScalarWrapper", "ScalarDefinition"]]
@@ -73,6 +76,7 @@ class Schema(BaseSchema):
             "2.10",
             "2.11",
         ] = "2.11",
+        exception_handlers: Iterable["ExceptionHandler[Any]"] = (),
     ) -> None:
         # Convert version string (e.g., "2.5") to version tuple (e.g., (2, 5))
         self.federation_version = parse_version(federation_version)
@@ -108,6 +112,7 @@ class Schema(BaseSchema):
             config=config,
             scalar_overrides=federation_scalar_overrides,
             schema_directives=schema_directives,
+            exception_handlers=exception_handlers,
         )
 
         self.schema_directives = list(schema_directives)
@@ -206,7 +211,7 @@ class Schema(BaseSchema):
                     kwargs["info"] = info  # type: ignore[index]
 
                 try:
-                    result = resolve_reference(**kwargs)
+                    result = resolve_reference(**kwargs)  # type: ignore[arg-type]
                 except Exception as e:  # noqa: BLE001
                     result = e
             else:

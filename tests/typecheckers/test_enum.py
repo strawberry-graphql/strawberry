@@ -44,7 +44,7 @@ def test_enum_with_decorator():
         [
             Result(
                 type="note",
-                message='Revealed type is "def (value: builtins.object) -> mypy_test.IceCreamFlavour"',
+                message='Revealed type is "def (value: object) -> mypy_test.IceCreamFlavour"',
                 line=12,
                 column=13,
             ),
@@ -113,7 +113,7 @@ def test_enum_with_decorator_and_name():
         [
             Result(
                 type="note",
-                message='Revealed type is "def (value: builtins.object) -> mypy_test.Flavour"',
+                message='Revealed type is "def (value: object) -> mypy_test.Flavour"',
                 line=12,
                 column=13,
             ),
@@ -181,7 +181,7 @@ def test_enum_with_manual_decorator():
         [
             Result(
                 type="note",
-                message='Revealed type is "def (value: builtins.object) -> mypy_test.IceCreamFlavour"',
+                message='Revealed type is "def (value: object) -> mypy_test.IceCreamFlavour"',
                 line=11,
                 column=13,
             ),
@@ -249,7 +249,7 @@ def test_enum_with_manual_decorator_and_name():
         [
             Result(
                 type="note",
-                message='Revealed type is "def (value: builtins.object) -> mypy_test.Flavour"',
+                message='Revealed type is "def (value: object) -> mypy_test.Flavour"',
                 line=11,
                 column=13,
             ),
@@ -265,14 +265,67 @@ def test_enum_with_manual_decorator_and_name():
         [
             Result(
                 type="information",
-                message="Revealed type: `Unknown`",
+                message="Revealed type: `<class 'Flavour'>`",
                 line=11,
                 column=13,
             ),
             Result(
                 type="information",
-                message="Revealed type: `Unknown`",
+                message="Revealed type: `Literal[Flavour.VANILLA]`",
                 line=12,
+                column=13,
+            ),
+        ]
+    )
+
+
+CODE_WITH_ANNOTATED = """
+from enum import Enum
+from typing import Annotated
+
+import strawberry
+
+class IceCreamFlavour(Enum):
+    VANILLA = "vanilla"
+    STRAWBERRY = "strawberry"
+    CHOCOLATE = "chocolate"
+
+MyIceCreamFlavour = Annotated[IceCreamFlavour, strawberry.enum(description="Flavours")]
+
+x: MyIceCreamFlavour = IceCreamFlavour.VANILLA
+reveal_type(x)
+"""
+
+
+def test_enum_with_annotated():
+    results = typecheck(CODE_WITH_ANNOTATED)
+
+    assert results.pyright == snapshot(
+        [
+            Result(
+                type="information",
+                message='Type of "x" is "Literal[IceCreamFlavour.VANILLA]"',
+                line=15,
+                column=13,
+            ),
+        ]
+    )
+    assert results.mypy == snapshot(
+        [
+            Result(
+                type="note",
+                message='Revealed type is "mypy_test.IceCreamFlavour"',
+                line=15,
+                column=13,
+            ),
+        ]
+    )
+    assert results.ty == snapshot(
+        [
+            Result(
+                type="information",
+                message="Revealed type: `Literal[IceCreamFlavour.VANILLA]`",
+                line=15,
                 column=13,
             ),
         ]
@@ -320,7 +373,7 @@ def test_enum_deprecated():
         [
             Result(
                 type="note",
-                message='Revealed type is "def (value: builtins.object) -> mypy_test.IceCreamFlavour"',
+                message='Revealed type is "def (value: object) -> mypy_test.IceCreamFlavour"',
                 line=14,
                 column=13,
             ),

@@ -6,7 +6,7 @@ from typing import (
     Any,
     runtime_checkable,
 )
-from typing_extensions import Protocol, TypedDict, deprecated
+from typing_extensions import NotRequired, Protocol, TypedDict
 
 from graphql import specified_rules
 
@@ -26,6 +26,10 @@ if TYPE_CHECKING:
     from .graphql import OperationType
 
 
+class ParseOptions(TypedDict):
+    max_tokens: NotRequired[int]
+
+
 @dataclasses.dataclass
 class ExecutionContext:
     query: str | None
@@ -33,9 +37,7 @@ class ExecutionContext:
     allowed_operations: Iterable[OperationType]
     context: Any = None
     variables: dict[str, Any] | None = None
-    parse_options: ParseOptions = dataclasses.field(
-        default_factory=lambda: ParseOptions()
-    )
+    parse_options: ParseOptions = dataclasses.field(default_factory=ParseOptions)
     root_value: Any | None = None
     validation_rules: tuple[type[ASTValidationRule], ...] = dataclasses.field(
         default_factory=lambda: tuple(specified_rules)
@@ -85,12 +87,6 @@ class ExecutionContext:
 
         return get_first_operation(graphql_document)
 
-    @property
-    @deprecated("Use 'pre_execution_errors' instead")
-    def errors(self) -> list[GraphQLError] | None:
-        """Deprecated: Use pre_execution_errors instead."""
-        return self.pre_execution_errors
-
 
 @dataclasses.dataclass
 class ExecutionResult:
@@ -109,10 +105,6 @@ class PreExecutionError(ExecutionResult):
     These errors are required by `graphql-ws-transport` protocol in order to close the operation
     right away once the error is encountered.
     """
-
-
-class ParseOptions(TypedDict):
-    max_tokens: NotRequired[int]
 
 
 @runtime_checkable

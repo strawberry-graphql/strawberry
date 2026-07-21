@@ -10,7 +10,7 @@ from typing import (
     overload,
 )
 
-from graphql import GraphQLObjectType, GraphQLSchema, is_union_type
+from graphql import GraphQLInputField, GraphQLObjectType, GraphQLSchema, is_union_type
 from graphql.language.printer import print_ast
 from graphql.type import (
     is_enum_type,
@@ -43,12 +43,13 @@ from strawberry.types.unset import UNSET
 from .ast_from_value import ast_from_value
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    from collections.abc import Callable, Iterable
 
     from graphql import (
         GraphQLArgument,
         GraphQLEnumType,
         GraphQLEnumValue,
+        GraphQLNamedType,
         GraphQLScalarType,
         GraphQLUnionType,
     )
@@ -428,8 +429,12 @@ def _print_interface(type_: Any, schema: BaseSchema, *, extras: PrintExtras) -> 
     )
 
 
-def print_input_value(name: str, arg: GraphQLArgument) -> str:
-    default_ast = ast_from_value(arg.default_value, arg.type)
+def print_input_value(name: str, arg: GraphQLArgument | GraphQLInputField) -> str:
+    default_ast = ast_from_value(
+        arg.default_value,
+        arg.type,
+        isinstance(arg, GraphQLInputField),
+    )
     arg_decl = f"{name}: {arg.type}"
     if default_ast:
         arg_decl += f" = {print_ast(default_ast)}"
@@ -508,7 +513,7 @@ def print_schema_directives(schema: BaseSchema, *, extras: PrintExtras) -> str:
         directive
         for directive in schema.schema_directives
         if any(
-            location in [Location.SCHEMA]
+            location == Location.SCHEMA
             for location in directive.__strawberry_directive__.locations  # type: ignore
         )
     )
@@ -631,19 +636,28 @@ def print_schema(schema: BaseSchema) -> str:
             return type_._scalar_definition.name
         return type_.__name__
 
+    def _print_extra_types() -> Iterable[str]:
+        # Make sure extra types are ordered for predictive printing
+        for type_ in sorted(extras.types, key=_name_getter):
+            graphql_type = cast(
+                "GraphQLNamedType", schema.schema_converter.from_type(type_)
+            )
+
+            # Skip types that are already part of the schema's type map, otherwise
+            # they'd be printed twice (e.g. an enum used both as a regular type and
+            # as a schema directive field), producing invalid SDL.
+            if graphql_type.name in type_map:
+                continue
+
+            yield _print_type(graphql_type, schema, extras=extras)
+
     return "\n\n".join(
         chain(
             sorted(extras.directives),
             filter(None, [schema_definition]),
             directives,
             types_printed,
-            (
-                _print_type(
-                    schema.schema_converter.from_type(type_), schema, extras=extras
-                )
-                # Make sure extra types are ordered for predictive printing
-                for type_ in sorted(extras.types, key=_name_getter)
-            ),
+            _print_extra_types(),
         )
     )
 

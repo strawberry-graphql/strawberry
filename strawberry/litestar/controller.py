@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-import warnings
 from datetime import timedelta
 from typing import (
     TYPE_CHECKING,
@@ -225,6 +224,7 @@ class GraphQLController(
     )
     keep_alive: bool = False
     keep_alive_interval: float = 1
+    max_subscriptions_per_connection: int | None = 100
 
     def is_websocket_request(
         self, request: Request | WebSocket
@@ -233,7 +233,7 @@ class GraphQLController(
 
     async def pick_websocket_subprotocol(self, request: WebSocket) -> str | None:
         subprotocols = request.scope["subprotocols"]
-        intersection = set(subprotocols) & set(self.protocols)
+        intersection = set(subprotocols) & set(self.websocket_subprotocols)
         sorted_intersection = sorted(intersection, key=subprotocols.index)
         return next(iter(sorted_intersection), None)
 
@@ -295,7 +295,7 @@ class GraphQLController(
         request: Request,
         stream: Callable[[], AsyncIterator[str]],
         sub_response: Response,
-        headers: dict[str, str],
+        headers: Mapping[str, str],
     ) -> Response:
         return Stream(
             stream(),
@@ -372,7 +372,6 @@ class GraphQLController(
 def make_graphql_controller(
     schema: BaseSchema,
     path: str = "",
-    graphiql: bool | None = None,
     graphql_ide: GraphQL_IDE | None = "graphiql",
     allow_queries_via_get: bool = True,
     keep_alive: bool = False,
@@ -387,6 +386,7 @@ def make_graphql_controller(
     ),
     connection_init_wait_timeout: timedelta = timedelta(minutes=1),
     multipart_uploads_enabled: bool = False,
+    max_subscriptions_per_connection: int | None = 100,
 ) -> type[GraphQLController]:  # sourcery skip: move-assign
     if context_getter is None:
         custom_context_getter_ = _none_custom_context_getter
@@ -400,17 +400,7 @@ def make_graphql_controller(
 
     schema_: BaseSchema = schema
     allow_queries_via_get_: bool = allow_queries_via_get
-    graphql_ide_: GraphQL_IDE | None
-
-    if graphiql is not None:
-        warnings.warn(
-            "The `graphiql` argument is deprecated in favor of `graphql_ide`",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        graphql_ide_ = "graphiql" if graphiql else None
-    else:
-        graphql_ide_ = graphql_ide
+    graphql_ide_: GraphQL_IDE | None = graphql_ide
 
     routes_path: str = path
 
@@ -433,6 +423,9 @@ def make_graphql_controller(
     _GraphQLController.allow_queries_via_get = allow_queries_via_get_
     _GraphQLController.graphql_ide = graphql_ide_
     _GraphQLController.multipart_uploads_enabled = multipart_uploads_enabled
+    _GraphQLController.max_subscriptions_per_connection = (
+        max_subscriptions_per_connection
+    )
 
     return _GraphQLController
 

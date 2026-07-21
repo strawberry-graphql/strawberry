@@ -1,8 +1,10 @@
 import uuid
 
+import pytest
 from graphql import GraphQLError
 
 import strawberry
+from strawberry.utils import IS_GQL_32
 
 
 def test_uuid():
@@ -63,7 +65,58 @@ def test_serialization_of_incorrect_uuid_string():
 
     assert result.errors
     assert isinstance(result.errors[0], GraphQLError)
-    assert result.errors[0].message == (
+    expected_message = (
         "Variable '$value' got invalid value 'fail'; Value cannot represent a "
         'UUID: "fail". badly formed hexadecimal UUID string'
+        if IS_GQL_32
+        else "Variable '$value' has invalid value: Value cannot represent a "
+        'UUID: "fail". badly formed hexadecimal UUID string'
     )
+    assert result.errors[0].message == expected_message
+
+
+@pytest.mark.parametrize(
+    "value",
+    [
+        469610.0,
+        # would stringify into 32 valid hexadecimal characters, so it must be
+        # rejected by type, not by parsing
+        10000000000000000000000000000000,
+        True,
+    ],
+)
+def test_parsing_of_non_string_value(value):
+    """Test GraphQLError is raised for a non-string value.
+    The parser must not leak an AttributeError from ``uuid.UUID``, and the
+    string form of the value must not be accepted either.
+    """
+
+    @strawberry.type
+    class Query:
+        ok: bool
+
+    @strawberry.type
+    class Mutation:
+        @strawberry.mutation
+        def uuid_input(self, uuid_input: uuid.UUID) -> uuid.UUID:
+            return uuid_input
+
+    schema = strawberry.Schema(query=Query, mutation=Mutation)
+
+    result = schema.execute_sync(
+        """
+            mutation uuidInput($value: UUID!) {
+                uuidInput(uuidInput: $value)
+            }
+        """,
+        variable_values={"value": value},
+    )
+
+    assert result.errors
+    error = result.errors[0]
+    assert isinstance(error, GraphQLError)
+    assert (
+        f'Value cannot represent a UUID: "{value}". Expected a string.' in error.message
+    )
+    assert isinstance(error.original_error, GraphQLError)
+    assert error.original_error.original_error is None

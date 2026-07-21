@@ -337,25 +337,6 @@ def test_return_type_from_field():
     assert result.data["field"] == 0
 
 
-def test_field_nodes_deprecation():
-    def resolver(info: strawberry.Info):
-        info.field_nodes
-        return 0
-
-    @strawberry.type
-    class Query:
-        field: int = strawberry.field(resolver=resolver)
-
-    schema = strawberry.Schema(query=Query)
-
-    with pytest.deprecated_call():
-        result = schema.execute_sync("{ field }")
-
-    assert not result.errors
-    assert result.data
-    assert result.data["field"] == 0
-
-
 def test_get_argument_defintion_helper():
     @strawberry.input
     class TestInput:

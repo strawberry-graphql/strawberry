@@ -7,7 +7,6 @@ import strawberry
 from strawberry.schema.config import StrawberryConfig
 from strawberry.types.base import StrawberryList, StrawberryOptional
 from strawberry.types.enum import StrawberryEnumDefinition
-from strawberry.types.lazy_type import LazyType
 from strawberry.types.union import StrawberryUnion
 
 T = TypeVar("T")
@@ -41,10 +40,6 @@ class TypeB:
         ([TypeA], "TypeAExample"),
         ([CustomInt], "CustomIntExample"),
         ([TypeA, TypeB], "TypeATypeBExample"),
-        (
-            [TypeA, LazyType["TypeB", "tests.objects.generics.test_names"]],
-            "TypeATypeBExample",
-        ),  # type: ignore
         (
             [
                 TypeA,

@@ -33,7 +33,7 @@ class DirectivesExtension(SchemaExtension):
 
         nodes = list(info.field_nodes)
 
-        for directive in nodes[0].directives:
+        for directive in nodes[0].directives or ():
             if directive.name.value in SPECIFIED_DIRECTIVES:
                 continue
             strawberry_directive, arguments = process_directive(directive, value, info)
@@ -55,7 +55,7 @@ class DirectivesExtensionSync(SchemaExtension):
 
         nodes = list(info.field_nodes)
 
-        for directive in nodes[0].directives:
+        for directive in nodes[0].directives or ():
             if directive.name.value in SPECIFIED_DIRECTIVES:
                 continue
             strawberry_directive, arguments = process_directive(directive, value, info)

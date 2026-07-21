@@ -16,10 +16,14 @@ class TypecheckResult:
     ty: list[Result]
 
 
-def typecheck(code: str, strict: bool = True) -> TypecheckResult:
+def typecheck(
+    code: str, strict: bool = True, mypy_plugins: list[str] | None = None
+) -> TypecheckResult:
     with concurrent.futures.ThreadPoolExecutor() as executor:
         pyright_future = executor.submit(run_pyright, code, strict=strict)
-        mypy_future = executor.submit(run_mypy, code, strict=strict)
+        mypy_future = executor.submit(
+            run_mypy, code, strict=strict, mypy_plugins=mypy_plugins
+        )
         ty_future = executor.submit(run_ty, code, strict=strict)
 
         pyright_results = pyright_future.result()

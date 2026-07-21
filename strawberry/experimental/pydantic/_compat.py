@@ -1,4 +1,5 @@
 import dataclasses
+import sys
 from collections.abc import Callable
 from dataclasses import dataclass
 from decimal import Decimal
@@ -17,6 +18,26 @@ if TYPE_CHECKING:
 
 IS_PYDANTIC_V2: bool = PYDANTIC_VERSION.startswith("2.")
 IS_PYDANTIC_V1: bool = not IS_PYDANTIC_V2
+
+
+def _get_base_model_types() -> tuple[type[Any], ...]:
+    model_types: list[type[Any]] = [BaseModel]
+
+    if sys.version_info >= (3, 14):
+        return tuple(model_types)
+
+    try:
+        from pydantic.v1 import BaseModel as BaseModelV1
+    except ImportError:
+        return tuple(model_types)
+
+    if BaseModelV1 not in model_types:
+        model_types.append(BaseModelV1)
+
+    return tuple(model_types)
+
+
+BASE_MODEL_TYPES = _get_base_model_types()
 
 
 @dataclass
@@ -318,10 +339,21 @@ else:
         smart_deepcopy,
     )
 
+
+def is_model_class(type_: Any) -> bool:
+    return lenient_issubclass(type_, BASE_MODEL_TYPES)
+
+
+def is_model_instance(value: Any) -> bool:
+    return isinstance(value, BASE_MODEL_TYPES)
+
+
 __all__ = [
     "PydanticCompat",
     "get_args",
     "get_origin",
+    "is_model_class",
+    "is_model_instance",
     "is_new_type",
     "lenient_issubclass",
     "new_type_supertype",

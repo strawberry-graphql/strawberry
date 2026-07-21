@@ -64,13 +64,13 @@ def test_federation_type():
             ),
             Result(
                 type="note",
-                message='Revealed type is "def (*, name: builtins.str) -> mypy_test.User"',
+                message='Revealed type is "def (*, name: str) -> mypy_test.User"',
                 line=18,
                 column=13,
             ),
             Result(
                 type="note",
-                message='Revealed type is "def (self: mypy_test.User, *, name: builtins.str)"',
+                message='Revealed type is "def (self: mypy_test.User, *, name: str)"',
                 line=19,
                 column=13,
             ),
@@ -160,13 +160,13 @@ def test_federation_interface():
             ),
             Result(
                 type="note",
-                message='Revealed type is "def (*, name: builtins.str, age: builtins.int) -> mypy_test.User"',
+                message='Revealed type is "def (*, name: str, age: int) -> mypy_test.User"',
                 line=14,
                 column=13,
             ),
             Result(
                 type="note",
-                message='Revealed type is "def (self: mypy_test.User, *, name: builtins.str, age: builtins.int)"',
+                message='Revealed type is "def (self: mypy_test.User, *, name: str, age: int)"',
                 line=15,
                 column=13,
             ),
@@ -254,13 +254,13 @@ def test_federation_input():
             ),
             Result(
                 type="note",
-                message='Revealed type is "def (*, name: builtins.str) -> mypy_test.User"',
+                message='Revealed type is "def (*, name: str) -> mypy_test.User"',
                 line=12,
                 column=13,
             ),
             Result(
                 type="note",
-                message='Revealed type is "def (self: mypy_test.User, *, name: builtins.str)"',
+                message='Revealed type is "def (self: mypy_test.User, *, name: str)"',
                 line=13,
                 column=13,
             ),
@@ -292,5 +292,63 @@ def test_federation_input():
                 line=13,
                 column=13,
             ),
+        ]
+    )
+
+
+CODE_SCALAR = """
+import strawberry
+from datetime import datetime
+from graphql.language import ast
+
+def parse_epoch_literal(
+    node: ast.ValueNode, variables: dict[str, object] | None = None
+) -> datetime:
+    assert isinstance(node, ast.IntValueNode)
+    return datetime.fromtimestamp(int(node.value))
+
+EpochDateTime = strawberry.federation.scalar(
+    datetime,
+    name="EpochDateTime",
+    serialize=lambda value: int(value.timestamp()),
+    parse_value=lambda value: datetime.fromtimestamp(int(value)),
+    parse_literal=parse_epoch_literal,
+)
+
+reveal_type(EpochDateTime)
+"""
+
+
+def test_federation_scalar():
+    results = typecheck(CODE_SCALAR)
+
+    assert results.pyright == snapshot(
+        [
+            Result(
+                type="information",
+                message='Type of "EpochDateTime" is "type[datetime]"',
+                line=20,
+                column=13,
+            )
+        ]
+    )
+    assert results.mypy == snapshot(
+        [
+            Result(
+                type="note",
+                message='Revealed type is "def (year: typing.SupportsIndex, month: typing.SupportsIndex, day: typing.SupportsIndex, hour: typing.SupportsIndex =, minute: typing.SupportsIndex =, second: typing.SupportsIndex =, microsecond: typing.SupportsIndex =, tzinfo: datetime.tzinfo | None =, *, fold: int =) -> datetime.datetime"',
+                line=20,
+                column=13,
+            )
+        ]
+    )
+    assert results.ty == snapshot(
+        [
+            Result(
+                type="information",
+                message="Revealed type: `<class 'datetime'>`",
+                line=20,
+                column=13,
+            )
         ]
     )

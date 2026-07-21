@@ -12,7 +12,7 @@ from graphql import (
     GraphQLString,
 )
 
-from strawberry.file_uploads.scalars import Upload
+from strawberry.file_uploads.scalars import Upload, UploadDefinition
 from strawberry.scalars import ID, JSON, Base16, Base32, Base64
 from strawberry.schema.types import base_scalars
 from strawberry.types.scalar import ScalarDefinition, scalar
@@ -54,12 +54,7 @@ DEFAULT_SCALAR_REGISTRY: dict[object, ScalarDefinition] = {
     bool: _make_scalar_definition(GraphQLBoolean),
     ID: _make_scalar_definition(GraphQLID),
     UUID: base_scalars.UUIDDefinition,
-    Upload: scalar(
-        name="Upload",
-        description="Represents a file upload.",
-        serialize=lambda v: v,
-        parse_value=lambda v: v,
-    ),
+    Upload: UploadDefinition,
     datetime.date: base_scalars.DateDefinition,
     datetime.datetime: base_scalars.DateTimeDefinition,
     datetime.time: base_scalars.TimeDefinition,

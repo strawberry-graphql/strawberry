@@ -201,7 +201,8 @@ async def test_tracing_filter_kwargs(global_tracer_mock, mocker):
             return f"Hi {name}"
 
     schema = strawberry.Schema(
-        query=Query, extensions=[OpenTelemetryExtension(arg_filter=arg_filter)]
+        query=Query,
+        extensions=[lambda: OpenTelemetryExtension(arg_filter=arg_filter)],
     )
 
     query = """

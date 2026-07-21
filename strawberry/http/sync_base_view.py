@@ -1,10 +1,7 @@
 import abc
 import json
 from collections.abc import Callable
-from typing import (
-    Generic,
-    Literal,
-)
+from typing import Generic
 
 from cross_web import HTTPException, SyncHTTPRequestAdapter
 from graphql import GraphQLError
@@ -37,7 +34,6 @@ class SyncBaseHTTPView(
     Generic[Request, Response, SubResponse, Context, RootValue],
 ):
     schema: BaseSchema
-    graphiql: bool | None
     graphql_ide: GraphQL_IDE | None
     request_adapter_class: Callable[[Request], SyncHTTPRequestAdapter]
 
@@ -158,15 +154,16 @@ class SyncBaseHTTPView(
     def parse_http_body(
         self, request: SyncHTTPRequestAdapter
     ) -> GraphQLRequestData | list[GraphQLRequestData]:
-        headers = {key.lower(): value for key, value in request.headers.items()}
         content_type, params = parse_content_type(request.content_type or "")
-        accept = headers.get("accept", "")
 
-        protocol: Literal["http", "multipart-subscription"] = (
-            "multipart-subscription"
-            if self._is_multipart_subscriptions(*parse_content_type(accept))
-            else "http"
-        )
+        # A streaming subscription request (SSE or multipart, identified by its
+        # `Accept` header) needs a streaming response, which sync integrations
+        # cannot produce, so reject it up front instead of silently serving a
+        # non-streaming reply.
+        transport = self._get_stream_transport_from_headers(request.headers)
+
+        if transport:
+            raise HTTPException(400, transport.sync_not_supported_error)
 
         if request.method == "GET":
             data = self.parse_query_params(request.query_params)
@@ -175,15 +172,18 @@ class SyncBaseHTTPView(
         # TODO: multipart via get?
         elif self.multipart_uploads_enabled and content_type == "multipart/form-data":
             data = self.parse_multipart(request)
-        elif self._is_multipart_subscriptions(content_type, params):
-            raise HTTPException(
-                400, "Multipart subcriptions are not supported in sync mode"
-            )
+        # Same rejection as above, for a streaming request identified by its
+        # request `Content-Type` rather than its `Accept` header.
+        elif transport := self._get_stream_transport_from_content_type(
+            content_type, params
+        ):
+            raise HTTPException(400, transport.sync_not_supported_error)
         else:
             raise HTTPException(400, "Unsupported content type")
 
         if isinstance(data, list):
-            self._validate_batch_request(data, protocol=protocol)
+            # Sync views never stream, so any batch is always plain HTTP.
+            self._validate_batch_request(data, protocol="http")
             return [
                 GraphQLRequestData(
                     query=item.get("query"),

@@ -5,6 +5,7 @@ from graphql import GraphQLError
 
 import strawberry
 from strawberry.types.execution import ExecutionResult
+from strawberry.utils import IS_GQL_32
 
 
 def test_serialization():
@@ -112,7 +113,27 @@ def test_serialization_error_message_for_incorrect_time_string():
     """
     result = execute_mutation("25:00")
     assert result.errors
-    assert result.errors[0].message.startswith(
+    expected_message = (
         "Variable '$value' got invalid value '25:00'; Value cannot represent a "
         'Time: "25:00". hour must be in 0..23'
+        if IS_GQL_32
+        else "Variable '$value' has invalid value: Value cannot represent a "
+        'Time: "25:00". hour must be in 0..23'
+    )
+    assert result.errors[0].message.startswith(
+        expected_message,
+    )
+
+
+@pytest.mark.parametrize("value", [1.5, 10, True])
+def test_parsing_of_non_string_value(value):
+    """Test GraphQLError is raised for a non-string value.
+    The parser must not leak a TypeError from ``fromisoformat``.
+    """
+    result = execute_mutation(value)
+    assert result.errors
+    assert isinstance(result.errors[0], GraphQLError)
+    assert (
+        f'Value cannot represent a Time: "{value}". Expected a string.'
+        in result.errors[0].message
     )

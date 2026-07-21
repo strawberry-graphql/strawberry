@@ -4,11 +4,7 @@ from typing import Any
 
 import strawberry
 from strawberry.annotation import StrawberryAnnotation
-from strawberry.extensions.field_extension import (
-    AsyncExtensionResolver,
-    FieldExtension,
-    SyncExtensionResolver,
-)
+from strawberry.extensions.field_extension import FieldExtension
 from strawberry.types.arguments import StrawberryArgument
 from strawberry.types.field import StrawberryField
 from strawberry.utils.str_converters import capitalize_first, to_camel_case
@@ -31,6 +27,7 @@ class InputMutationExtension(FieldExtension):
                 python_name=arg.python_name,
                 graphql_name=arg.graphql_name,
                 description=arg.description,
+                deprecation_reason=arg.deprecation_reason,
                 default=arg.default,
                 type_annotation=arg.type_annotation,
                 directives=tuple(arg.directives),
@@ -54,35 +51,11 @@ class InputMutationExtension(FieldExtension):
             )
         ]
 
-    def resolve(
-        self,
-        next_: SyncExtensionResolver,
-        source: Any,
-        info: strawberry.Info,
-        **kwargs: Any,
-    ) -> Any:
+    def map_arguments(self, kwargs: dict[str, Any]) -> dict[str, Any]:
+        # Unpack the generated ``input`` object into the resolver's individual
+        # keyword arguments, so the resolver keeps its original signature.
         input_args = kwargs.pop("input")
-        return next_(
-            source,
-            info,
-            **kwargs,
-            **vars(input_args),
-        )
-
-    async def resolve_async(
-        self,
-        next_: AsyncExtensionResolver,
-        source: Any,
-        info: strawberry.Info,
-        **kwargs: Any,
-    ) -> Any:
-        input_args = kwargs.pop("input")
-        return await next_(
-            source,
-            info,
-            **kwargs,
-            **vars(input_args),
-        )
+        return {**kwargs, **vars(input_args)}
 
 
 __all__ = ["InputMutationExtension"]

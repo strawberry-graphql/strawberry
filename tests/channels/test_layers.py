@@ -52,159 +52,82 @@ async def test_no_layers():
         "Check https://channels.readthedocs.io/en/stable/topics/channel_layers.html "
         "for more information"
     )
-    with (
-        pytest.deprecated_call(match="Use listen_to_channel instead"),
-        pytest.raises(RuntimeError, match=msg),
-    ):
-        await consumer.channel_listen("foobar").__anext__()
-
     with pytest.raises(RuntimeError, match=msg):
         async with consumer.listen_to_channel("foobar"):
             pass
 
 
-@pytest.mark.django_db
-async def test_channel_listen(ws: WebsocketCommunicator):
-    from channels.layers import get_channel_layer
+async def test_listen_to_channel_generator_delivers_messages():
+    """_listen_to_channel_generator yields messages placed on its queue."""
+    from strawberry.channels.handlers.base import ChannelsConsumer
 
-    await ws.send_json_to(ConnectionInitMessage({"type": "connection_init"}))
+    consumer = ChannelsConsumer()
+    queue: asyncio.Queue = asyncio.Queue()
+    gen = consumer._listen_to_channel_generator(queue, timeout=None)
 
-    connection_ack_message: ConnectionAckMessage = await ws.receive_json_from()
-    assert connection_ack_message == {"type": "connection_ack"}
+    queue.put_nowait({"type": "broadcast", "text": "hello"})
+    queue.put_nowait({"type": "broadcast", "text": "world"})
 
-    await ws.send_json_to(
-        SubscribeMessage(
-            {
-                "id": "sub1",
-                "type": "subscribe",
-                "payload": {
-                    "query": "subscription { listener }",
-                },
-            }
-        )
-    )
+    assert await gen.__anext__() == {"type": "broadcast", "text": "hello"}
+    assert await gen.__anext__() == {"type": "broadcast", "text": "world"}
 
-    channel_layer = get_channel_layer()
-    assert channel_layer
-
-    next_message1: NextMessage = await ws.receive_json_from()
-    assert "data" in next_message1["payload"]
-    assert next_message1["payload"]["data"] is not None
-    channel_name = next_message1["payload"]["data"]["listener"]
-
-    await channel_layer.send(
-        channel_name,
-        {
-            "type": "test.message",
-            "text": "Hello there!",
-        },
-    )
-
-    next_message2: NextMessage = await ws.receive_json_from()
-    assert next_message2 == {
-        "id": "sub1",
-        "type": "next",
-        "payload": {
-            "data": {"listener": "Hello there!"},
-            "extensions": {"example": "example"},
-        },
-    }
-
-    await ws.send_json_to(CompleteMessage({"id": "sub1", "type": "complete"}))
+    await gen.aclose()
 
 
-@pytest.mark.django_db
-async def test_channel_listen_with_confirmation(ws: WebsocketCommunicator):
-    from channels.layers import get_channel_layer
+async def test_listen_to_channel_generator_timeout():
+    """_listen_to_channel_generator returns on timeout when no message arrives."""
+    from strawberry.channels.handlers.base import ChannelsConsumer
 
-    await ws.send_json_to(ConnectionInitMessage({"type": "connection_init"}))
+    consumer = ChannelsConsumer()
+    queue: asyncio.Queue = asyncio.Queue()
+    gen = consumer._listen_to_channel_generator(queue, timeout=0.05)
 
-    connection_ack_message: ConnectionAckMessage = await ws.receive_json_from()
-    assert connection_ack_message == {"type": "connection_ack"}
+    # No message on the queue — generator should time out and stop
+    with pytest.raises(StopAsyncIteration):
+        await gen.__anext__()
 
-    await ws.send_json_to(
-        SubscribeMessage(
-            {
-                "id": "sub1",
-                "type": "subscribe",
-                "payload": {
-                    "query": "subscription { listenerWithConfirmation }",
-                },
-            }
-        )
-    )
 
-    channel_layer = get_channel_layer()
-    assert channel_layer
+async def test_listen_to_channel_generator_aclose_is_clean():
+    """Closing the generator after receiving a message must not raise."""
+    from strawberry.channels.handlers.base import ChannelsConsumer
 
-    next_message1: NextMessage = await ws.receive_json_from()
-    assert "data" in next_message1["payload"]
-    assert next_message1["payload"]["data"] is not None
-    confirmation = next_message1["payload"]["data"]["listenerWithConfirmation"]
-    assert confirmation is None
+    consumer = ChannelsConsumer()
+    queue: asyncio.Queue = asyncio.Queue()
+    gen = consumer._listen_to_channel_generator(queue, timeout=None)
 
-    next_message2: NextMessage = await ws.receive_json_from()
-    assert "data" in next_message2["payload"]
-    assert next_message2["payload"]["data"] is not None
-    channel_name = next_message2["payload"]["data"]["listenerWithConfirmation"]
+    queue.put_nowait({"type": "broadcast", "text": "msg"})
+    await gen.__anext__()
 
-    await channel_layer.send(
-        channel_name,
-        {
-            "type": "test.message",
-            "text": "Hello there!",
-        },
-    )
+    # Generator is now suspended after yielding. Close it cleanly.
+    await gen.aclose()
 
-    next_message3: NextMessage = await ws.receive_json_from()
-    assert next_message3 == {
-        "id": "sub1",
-        "type": "next",
-        "payload": {
-            "data": {"listenerWithConfirmation": "Hello there!"},
-            "extensions": {"example": "example"},
-        },
-    }
 
-    await ws.send_json_to(CompleteMessage({"id": "sub1", "type": "complete"}))
+async def test_listen_to_channel_generator_throw_timeout_at_yield_propagates():
+    """TimeoutError thrown while the generator is suspended at its yield
+    must propagate, not be swallowed by the internal timeout handler.
+
+    Before the fix, ``yield await awaitable`` was a compound expression
+    whose ``yield`` fell inside the ``try/except asyncio.TimeoutError``
+    block (per the bytecode exception table). A ``TimeoutError`` thrown
+    at the yield point was therefore incorrectly caught, silently
+    stopping the generator instead of letting the caller handle it.
+    """
+    from strawberry.channels.handlers.base import ChannelsConsumer
+
+    consumer = ChannelsConsumer()
+    queue: asyncio.Queue = asyncio.Queue()
+    gen = consumer._listen_to_channel_generator(queue, timeout=None)
+
+    queue.put_nowait({"type": "broadcast", "text": "msg"})
+    await gen.__anext__()  # generator is now suspended at its yield
+
+    # Throw TimeoutError — it should propagate, not be caught internally
+    with pytest.raises(asyncio.TimeoutError):
+        await gen.athrow(asyncio.TimeoutError())
 
 
 @pytest.mark.django_db
-async def test_channel_listen_timeout(ws: WebsocketCommunicator):
-    from channels.layers import get_channel_layer
-
-    await ws.send_json_to(ConnectionInitMessage({"type": "connection_init"}))
-
-    connection_ack_message: ConnectionAckMessage = await ws.receive_json_from()
-    assert connection_ack_message == {"type": "connection_ack"}
-
-    await ws.send_json_to(
-        SubscribeMessage(
-            {
-                "id": "sub1",
-                "type": "subscribe",
-                "payload": {
-                    "query": "subscription { listener(timeout: 0.5) }",
-                },
-            }
-        )
-    )
-
-    channel_layer = get_channel_layer()
-    assert channel_layer
-
-    next_message: NextMessage = await ws.receive_json_from()
-    assert "data" in next_message["payload"]
-    assert next_message["payload"]["data"] is not None
-    channel_name = next_message["payload"]["data"]["listener"]
-    assert channel_name
-
-    complete_message = await ws.receive_json_from()
-    assert complete_message == {"id": "sub1", "type": "complete"}
-
-
-@pytest.mark.django_db
-async def test_channel_listen_timeout_cm(ws: WebsocketCommunicator):
+async def test_listen_to_channel_timeout(ws: WebsocketCommunicator):
     from channels.layers import get_channel_layer
 
     await ws.send_json_to(ConnectionInitMessage({"type": "connection_init"}))
@@ -244,49 +167,7 @@ async def test_channel_listen_timeout_cm(ws: WebsocketCommunicator):
 
 
 @pytest.mark.django_db
-async def test_channel_listen_no_message_on_channel(ws: WebsocketCommunicator):
-    from channels.layers import get_channel_layer
-
-    await ws.send_json_to(ConnectionInitMessage({"type": "connection_init"}))
-
-    connection_ack_message: ConnectionAckMessage = await ws.receive_json_from()
-    assert connection_ack_message == {"type": "connection_ack"}
-
-    await ws.send_json_to(
-        SubscribeMessage(
-            {
-                "id": "sub1",
-                "type": "subscribe",
-                "payload": {
-                    "query": "subscription { listener(timeout: 0.5) }",
-                },
-            }
-        )
-    )
-
-    channel_layer = get_channel_layer()
-    assert channel_layer
-
-    next_message: NextMessage = await ws.receive_json_from()
-    assert "data" in next_message["payload"]
-    assert next_message["payload"]["data"] is not None
-    channel_name = next_message["payload"]["data"]["listener"]
-    assert channel_name
-
-    await channel_layer.send(
-        "totally-not-out-channel",
-        {
-            "type": "test.message",
-            "text": "Hello there!",
-        },
-    )
-
-    complete_message: CompleteMessage = await ws.receive_json_from()
-    assert complete_message == {"id": "sub1", "type": "complete"}
-
-
-@pytest.mark.django_db
-async def test_channel_listen_no_message_on_channel_cm(ws: WebsocketCommunicator):
+async def test_listen_to_channel_no_message_on_channel(ws: WebsocketCommunicator):
     from channels.layers import get_channel_layer
 
     await ws.send_json_to(ConnectionInitMessage({"type": "connection_init"}))
@@ -334,76 +215,7 @@ async def test_channel_listen_no_message_on_channel_cm(ws: WebsocketCommunicator
 
 
 @pytest.mark.django_db
-async def test_channel_listen_group(ws: WebsocketCommunicator):
-    from channels.layers import get_channel_layer
-
-    await ws.send_json_to(ConnectionInitMessage({"type": "connection_init"}))
-
-    connection_ack_message: ConnectionAckMessage = await ws.receive_json_from()
-    assert connection_ack_message == {"type": "connection_ack"}
-
-    await ws.send_json_to(
-        SubscribeMessage(
-            {
-                "id": "sub1",
-                "type": "subscribe",
-                "payload": {
-                    "query": 'subscription { listener(group: "foobar") }',
-                },
-            }
-        )
-    )
-
-    channel_layer = get_channel_layer()
-    assert channel_layer
-
-    next_message1 = await ws.receive_json_from()
-    assert "data" in next_message1["payload"]
-    assert next_message1["payload"]["data"] is not None
-    channel_name = next_message1["payload"]["data"]["listener"]
-
-    # Sent at least once to the consumer to make sure the groups were registered
-    await channel_layer.send(
-        channel_name,
-        {
-            "type": "test.message",
-            "text": "Hello there!",
-        },
-    )
-
-    next_message2: NextMessage = await ws.receive_json_from()
-    assert next_message2 == {
-        "id": "sub1",
-        "type": "next",
-        "payload": {
-            "data": {"listener": "Hello there!"},
-            "extensions": {"example": "example"},
-        },
-    }
-
-    await channel_layer.group_send(
-        "foobar",
-        {
-            "type": "test.message",
-            "text": "Hello there!",
-        },
-    )
-
-    next_message3: NextMessage = await ws.receive_json_from()
-    assert next_message3 == {
-        "id": "sub1",
-        "type": "next",
-        "payload": {
-            "data": {"listener": "Hello there!"},
-            "extensions": {"example": "example"},
-        },
-    }
-
-    await ws.send_json_to(CompleteMessage({"id": "sub1", "type": "complete"}))
-
-
-@pytest.mark.django_db
-async def test_channel_listen_group_cm(ws: WebsocketCommunicator):
+async def test_listen_to_channel_group(ws: WebsocketCommunicator):
     from channels.layers import get_channel_layer
 
     await ws.send_json_to(ConnectionInitMessage({"type": "connection_init"}))
@@ -478,121 +290,7 @@ async def test_channel_listen_group_cm(ws: WebsocketCommunicator):
 
 
 @pytest.mark.django_db
-async def test_channel_listen_group_twice(ws: WebsocketCommunicator):
-    from channels.layers import get_channel_layer
-
-    await ws.send_json_to(ConnectionInitMessage({"type": "connection_init"}))
-
-    connection_ack_message: ConnectionAckMessage = await ws.receive_json_from()
-    assert connection_ack_message == {"type": "connection_ack"}
-
-    await ws.send_json_to(
-        SubscribeMessage(
-            {
-                "id": "sub1",
-                "type": "subscribe",
-                "payload": {
-                    "query": 'subscription { listener(group: "group1") }',
-                },
-            }
-        )
-    )
-
-    await ws.send_json_to(
-        SubscribeMessage(
-            {
-                "id": "sub2",
-                "type": "subscribe",
-                "payload": {
-                    "query": 'subscription { listener(group: "group2") }',
-                },
-            }
-        )
-    )
-
-    channel_layer = get_channel_layer()
-    assert channel_layer
-
-    # Wait for channel subscriptions to start
-    next_message1: NextMessage = await ws.receive_json_from()
-    next_message2: NextMessage = await ws.receive_json_from()
-    assert {"sub1", "sub2"} == {next_message1["id"], next_message2["id"]}
-
-    assert "data" in next_message1["payload"]
-    assert next_message1["payload"]["data"] is not None
-    channel_name = next_message1["payload"]["data"]["listener"]
-
-    # Sent at least once to the consumer to make sure the groups were registered
-    await channel_layer.send(
-        channel_name,
-        {
-            "type": "test.message",
-            "text": "Hello there!",
-        },
-    )
-
-    next_message3: NextMessage = await ws.receive_json_from()
-    next_message4: NextMessage = await ws.receive_json_from()
-    assert {"sub1", "sub2"} == {next_message3["id"], next_message4["id"]}
-
-    assert "data" in next_message3["payload"]
-    assert next_message3["payload"]["data"] is not None
-    assert next_message3["payload"]["data"]["listener"] == "Hello there!"
-
-    assert "data" in next_message4["payload"]
-    assert next_message4["payload"]["data"] is not None
-    assert next_message4["payload"]["data"]["listener"] == "Hello there!"
-
-    # We now have two channel_listen AsyncGenerators waiting, one for id="sub1"
-    # and one for id="sub2". This group message will be received by both of them
-    # as they are both running on the same ChannelsConsumer instance so even
-    # though "sub2" was initialised with "group2" as the argument, it will receive
-    # this message for "group1"
-    await channel_layer.group_send(
-        "group1",
-        {
-            "type": "test.message",
-            "text": "Hello group 1!",
-        },
-    )
-
-    next_message5: NextMessage = await ws.receive_json_from()
-    next_message6: NextMessage = await ws.receive_json_from()
-    assert {"sub1", "sub2"} == {next_message5["id"], next_message6["id"]}
-
-    assert "data" in next_message5["payload"]
-    assert next_message5["payload"]["data"] is not None
-    assert next_message5["payload"]["data"]["listener"] == "Hello group 1!"
-
-    assert "data" in next_message6["payload"]
-    assert next_message6["payload"]["data"] is not None
-    assert next_message6["payload"]["data"]["listener"] == "Hello group 1!"
-
-    await channel_layer.group_send(
-        "group2",
-        {
-            "type": "test.message",
-            "text": "Hello group 2!",
-        },
-    )
-
-    next_message7: NextMessage = await ws.receive_json_from()
-    next_message8: NextMessage = await ws.receive_json_from()
-    assert {"sub1", "sub2"} == {next_message7["id"], next_message8["id"]}
-
-    assert "data" in next_message7["payload"]
-    assert next_message7["payload"]["data"] is not None
-    assert next_message7["payload"]["data"]["listener"] == "Hello group 2!"
-
-    assert "data" in next_message8["payload"]
-    assert next_message8["payload"]["data"] is not None
-    assert next_message8["payload"]["data"]["listener"] == "Hello group 2!"
-
-    await ws.send_json_to(CompleteMessage({"id": "sub1", "type": "complete"}))
-    await ws.send_json_to(CompleteMessage({"id": "sub2", "type": "complete"}))
-
-
-async def test_channel_listen_group_twice_cm(ws: WebsocketCommunicator):
+async def test_listen_to_channel_group_twice(ws: WebsocketCommunicator):
     from channels.layers import get_channel_layer
 
     await ws.send_json_to(ConnectionInitMessage({"type": "connection_init"}))
@@ -685,7 +383,7 @@ async def test_channel_listen_group_twice_cm(ws: WebsocketCommunicator):
         next_message2["payload"]["data"]["listenerWithConfirmation"] == "Hello there!"
     )
 
-    # We now have two channel_listen AsyncGenerators waiting, one for id="sub1"
+    # We now have two listen_to_channel AsyncGenerators waiting, one for id="sub1"
     # and one for id="sub2". This group message will be received by both of them
     # as they are both running on the same ChannelsConsumer instance so even
     # though "sub2" was initialised with "group2" as the argument, it will receive

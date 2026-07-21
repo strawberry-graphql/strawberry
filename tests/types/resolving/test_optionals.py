@@ -63,14 +63,14 @@ def test_optional_list():
 
 def test_optional_optional():
     """Optional[Optional[...]] is squashed by Python to just Optional[...]"""
-    annotation = StrawberryAnnotation(Optional[bool | None])
+    annotation = StrawberryAnnotation(None | bool)
     resolved = annotation.resolve()
 
     assert isinstance(resolved, StrawberryOptional)
     assert resolved.of_type is bool
 
     assert resolved == StrawberryOptional(of_type=bool)
-    assert resolved == Optional[bool | None]
+    assert resolved == None | bool
     assert resolved == Optional[bool]
 
 

@@ -1,7 +1,7 @@
 import dataclasses
 from collections.abc import Callable, Iterable, Mapping
 from enum import EnumMeta
-from typing import TYPE_CHECKING, Any, Literal, TypeGuard, TypeVar, overload
+from typing import Any, Literal, TypeGuard, TypeVar, overload
 
 from strawberry.exceptions import ObjectIsNotAnEnumError
 from strawberry.types.base import (
@@ -9,7 +9,6 @@ from strawberry.types.base import (
     WithStrawberryDefinition,
     has_strawberry_definition,
 )
-from strawberry.utils.deprecations import DEPRECATION_MESSAGES, DeprecatedDescriptor
 
 
 @dataclasses.dataclass
@@ -106,6 +105,23 @@ EnumType = TypeVar("EnumType", bound=EnumMeta)
 GraphqlEnumNameFrom = Literal["key", "value"]
 
 
+@dataclasses.dataclass(frozen=True)
+class EnumAnnotation:
+    name: str | None = None
+    description: str | None = None
+    directives: Iterable[object] = ()
+    graphql_name_from: GraphqlEnumNameFrom = "key"
+
+    def __call__(self, cls: EnumType) -> EnumType:
+        return _process_enum(
+            cls,
+            self.name,
+            self.description,
+            directives=self.directives,
+            graphql_name_from=self.graphql_name_from,
+        )
+
+
 def _process_enum(
     cls: EnumType,
     name: str | None = None,
@@ -165,13 +181,6 @@ def _process_enum(
         description=description,
         directives=directives,
     )
-
-    # TODO: remove when deprecating _enum_definition
-    DeprecatedDescriptor(
-        DEPRECATION_MESSAGES._ENUM_DEFINITION,
-        cls.__strawberry_definition__,  # type: ignore[attr-defined]
-        "_enum_definition",
-    ).inject(cls)
 
     return cls
 
@@ -246,31 +255,18 @@ def enum(
     If name is passed, the name of the GraphQL type will be
     the value passed of name instead of the Enum class name.
     """
-
-    def wrap(cls: EnumType) -> EnumType:
-        return _process_enum(
-            cls,
-            name,
-            description,
-            directives=directives,
-            graphql_name_from=graphql_name_from,
-        )
+    wrapper = EnumAnnotation(
+        name=name,
+        description=description,
+        directives=directives,
+        graphql_name_from=graphql_name_from,
+    )
 
     if not cls:
-        return wrap
+        return wrapper
 
-    return wrap(cls)
+    return wrapper(cls)
 
-
-# TODO: remove when deprecating _enum_definition
-if TYPE_CHECKING:
-    from typing_extensions import deprecated
-
-    @deprecated("Use StrawberryEnumDefinition instead")
-    class EnumDefinition(StrawberryEnumDefinition): ...
-
-else:
-    EnumDefinition = StrawberryEnumDefinition
 
 WithStrawberryEnumDefinition = WithStrawberryDefinition["StrawberryEnumDefinition"]
 
@@ -283,7 +279,7 @@ def has_enum_definition(obj: Any) -> TypeGuard[type[WithStrawberryEnumDefinition
 
 
 __all__ = [
-    "EnumDefinition",
+    "EnumAnnotation",
     "EnumValue",
     "EnumValueDefinition",
     "StrawberryEnumDefinition",

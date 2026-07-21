@@ -1,5 +1,4 @@
 import asyncio
-import warnings
 from collections.abc import AsyncGenerator, Callable, Mapping, Sequence
 from datetime import timedelta
 from json.decoder import JSONDecodeError
@@ -84,7 +83,6 @@ class GraphQLView(
     def __init__(
         self,
         schema: "BaseSchema",
-        graphiql: bool | None = None,
         graphql_ide: GraphQL_IDE | None = "graphiql",
         allow_queries_via_get: bool = True,
         keep_alive: bool = True,
@@ -95,24 +93,17 @@ class GraphQLView(
         ),
         connection_init_wait_timeout: timedelta = timedelta(minutes=1),
         multipart_uploads_enabled: bool = False,
+        max_subscriptions_per_connection: int | None = 100,
     ) -> None:
         self.schema = schema
         self.allow_queries_via_get = allow_queries_via_get
         self.keep_alive = keep_alive
         self.keep_alive_interval = keep_alive_interval
-        self.subscription_protocols = subscription_protocols
+        self.protocols = subscription_protocols
         self.connection_init_wait_timeout = connection_init_wait_timeout
         self.multipart_uploads_enabled = multipart_uploads_enabled
-
-        if graphiql is not None:
-            warnings.warn(
-                "The `graphiql` argument is deprecated in favor of `graphql_ide`",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-            self.graphql_ide = "graphiql" if graphiql else None
-        else:
-            self.graphql_ide = graphql_ide
+        self.max_subscriptions_per_connection = max_subscriptions_per_connection
+        self.graphql_ide = graphql_ide
 
     async def render_graphql_ide(self, request: Request) -> Response:
         return Response(self.graphql_ide_html)
@@ -154,7 +145,7 @@ class GraphQLView(
         request: Request,
         stream: Callable[[], AsyncGenerator[str, None]],
         sub_response: Response,
-        headers: dict[str, str],
+        headers: Mapping[str, str],
     ) -> Response:
         return (
             stream(),
@@ -172,7 +163,7 @@ class GraphQLView(
 
     async def pick_websocket_subprotocol(self, request: Websocket) -> str | None:
         protocols = request.requested_subprotocols
-        intersection = set(protocols) & set(self.subscription_protocols)
+        intersection = set(protocols) & set(self.websocket_subprotocols)
         sorted_intersection = sorted(intersection, key=protocols.index)
         return next(iter(sorted_intersection), None)
 

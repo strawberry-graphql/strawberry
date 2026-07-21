@@ -7,13 +7,11 @@ from typing import (
 )
 from typing import GenericAlias as TypingGenericAlias  # type: ignore
 
-from pydantic import BaseModel
-
 from strawberry.experimental.pydantic._compat import (
     PydanticCompat,
     get_args,
     get_origin,
-    lenient_issubclass,
+    is_model_class,
 )
 from strawberry.experimental.pydantic.exceptions import (
     UnregisteredTypeException,
@@ -22,7 +20,7 @@ from strawberry.types.base import StrawberryObjectDefinition
 
 
 def replace_pydantic_types(type_: Any, is_input: bool) -> Any:
-    if lenient_issubclass(type_, BaseModel):
+    if is_model_class(type_):
         attr = "_strawberry_input_type" if is_input else "_strawberry_type"
         if hasattr(type_, attr):
             return getattr(type_, attr)

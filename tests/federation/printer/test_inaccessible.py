@@ -2,6 +2,8 @@ import textwrap
 from enum import Enum
 from typing import Annotated
 
+import pytest
+
 import strawberry
 
 
@@ -280,3 +282,35 @@ def test_field_tag_printed_correctly_on_union():
     """
 
     assert schema.as_str() == textwrap.dedent(expected).strip()
+
+
+@pytest.mark.parametrize("inaccessible", [True, False])
+def test_inaccessible_on_type_and_interface(inaccessible: bool):
+    """Test that inaccessible correctly adds/omits @inaccessible on types and interfaces."""
+
+    @strawberry.federation.type(inaccessible=inaccessible)
+    class SomeType:
+        id: strawberry.ID
+
+    @strawberry.federation.interface(inaccessible=inaccessible)
+    class SomeInterface:
+        id: strawberry.ID
+
+    @strawberry.federation.type
+    class Query:
+        @strawberry.field
+        def some(self) -> SomeType:  # pragma: no cover
+            return SomeType(id=strawberry.ID("1"))
+
+    schema = strawberry.federation.Schema(
+        query=Query,
+        types=[SomeInterface],
+    )
+
+    schema_str = schema.as_str()
+    if inaccessible:
+        assert "SomeType @inaccessible" in schema_str
+        assert "SomeInterface @inaccessible" in schema_str
+    else:
+        assert "SomeType @inaccessible" not in schema_str
+        assert "SomeInterface @inaccessible" not in schema_str

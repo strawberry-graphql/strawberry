@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import warnings
 from typing import (
     TYPE_CHECKING,
     ClassVar,
@@ -18,8 +17,11 @@ from flask.views import View
 from strawberry.http.async_base_view import AsyncBaseHTTPView
 from strawberry.http.sync_base_view import SyncBaseHTTPView
 from strawberry.http.typevars import Context, RootValue
+from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
     from flask.typing import ResponseReturnValue
 
     from strawberry.http import GraphQLHTTPResponse
@@ -33,25 +35,19 @@ class BaseGraphQLView:
     def __init__(
         self,
         schema: BaseSchema,
-        graphiql: bool | None = None,
         graphql_ide: GraphQL_IDE | None = "graphiql",
         allow_queries_via_get: bool = True,
         multipart_uploads_enabled: bool = False,
+        subscription_protocols: Sequence[str] = (
+            GRAPHQL_TRANSPORT_WS_PROTOCOL,
+            GRAPHQL_WS_PROTOCOL,
+        ),
     ) -> None:
         self.schema = schema
-        self.graphiql = graphiql
         self.allow_queries_via_get = allow_queries_via_get
         self.multipart_uploads_enabled = multipart_uploads_enabled
-
-        if graphiql is not None:
-            warnings.warn(
-                "The `graphiql` argument is deprecated in favor of `graphql_ide`",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-            self.graphql_ide = "graphiql" if graphiql else None
-        else:
-            self.graphql_ide = graphql_ide
+        self.protocols = subscription_protocols
+        self.graphql_ide = graphql_ide
 
     def create_response(
         self,

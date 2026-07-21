@@ -157,10 +157,7 @@ class SliceMetadata:
                     f"Argument 'first' cannot be higher than {max_results}."
                 )
 
-            if end is not None:
-                start = max(0, end - 1)
-
-            end = start + first
+            end = min(end, start + first) if end is not None else start + first
         if isinstance(last, int):
             if last < 0:
                 raise ValueError("Argument 'last' must be a non-negative integer.")

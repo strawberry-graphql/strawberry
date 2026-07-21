@@ -5,8 +5,8 @@ title: Subscriptions
 # Subscriptions
 
 In GraphQL you can use subscriptions to stream data from a server. To enable
-this with Strawberry your server must support ASGI and websockets or use the
-AIOHTTP integration.
+this with Strawberry, use an integration that supports a streaming transport
+such as websockets, multipart HTTP, or Server-Sent Events (SSE).
 
 This is how you define a subscription-capable resolver:
 
@@ -149,6 +149,231 @@ is free to send any valid JSON object as the initial message of the websocket
 connection, which is abstracted as `connectionParams` in Apollo-client, and it
 will be successfully injected into the `info.context` object. It is then up to
 you to handle it correctly!
+
+## Using SSE Subscriptions
+
+Server-Sent Events (SSE) are an HTTP-based alternative to websockets for
+server-to-client streaming. SSE is opt-in; enable it by including
+`GRAPHQL_SSE_PROTOCOL` in your integration's `subscription_protocols`:
+
+```python
+from strawberry.asgi import GraphQL
+from strawberry.subscriptions import (
+    GRAPHQL_SSE_PROTOCOL,
+    GRAPHQL_TRANSPORT_WS_PROTOCOL,
+    GRAPHQL_WS_PROTOCOL,
+)
+
+from api.schema import schema
+
+app = GraphQL(
+    schema,
+    subscription_protocols=[
+        GRAPHQL_TRANSPORT_WS_PROTOCOL,
+        GRAPHQL_WS_PROTOCOL,
+        GRAPHQL_SSE_PROTOCOL,
+    ],
+)
+```
+
+Then request an SSE response by sending a normal GraphQL HTTP request with
+`Accept: text/event-stream`:
+
+```http
+POST /graphql
+Accept: text/event-stream
+Content-Type: application/json
+
+{"query": "subscription { count(target: 5) }"}
+```
+
+Strawberry sends each execution result as a `next` event and sends a `complete`
+event when the operation finishes:
+
+```text
+event: next
+data: {"data": {"count": 0}}
+
+event: complete
+data:
+```
+
+Most applications should use a GraphQL SSE client rather than parsing the event
+stream directly. For example, with
+[`graphql-sse`](https://github.com/enisdenjo/graphql-sse):
+
+```javascript
+import { createClient } from "graphql-sse";
+
+const client = createClient({
+  url: "http://localhost:8000/graphql",
+});
+
+const dispose = client.subscribe(
+  {
+    query: "subscription { count(target: 5) }",
+  },
+  {
+    next: (result) => {
+      console.log(result.data);
+    },
+    error: console.error,
+    complete: () => {
+      console.log("done");
+    },
+  },
+);
+
+// Call this when the UI no longer needs the subscription.
+dispose();
+```
+
+<Note>
+
+**Prefer HTTP/2 for SSE.** Strawberry uses one SSE response per operation. When
+browsers connect over HTTP/1.x they allow only a small number of concurrent
+connections to the same origin (commonly six), so multiple long-lived
+subscriptions — across tabs, or alongside other requests to the same origin —
+can exhaust that limit and stall the page. HTTP/2 multiplexes many streams over
+a single connection and removes this bottleneck.
+
+Most ASGI servers, including `uvicorn`, serve HTTP/1.1 only, so HTTP/2 is
+typically provided by a reverse proxy (such as Nginx, Caddy, or a cloud load
+balancer) terminating in front of your app. If you cannot run HTTP/2, prefer
+websockets for subscriptions that need several concurrent streams.
+
+</Note>
+
+Strawberry also sends SSE comment heartbeats on idle streams. SSE clients ignore
+comment lines, but they keep intermediaries from closing long-lived connections
+that have not produced a GraphQL result recently.
+
+SSE responses are sent with `Cache-Control: no-cache, no-transform` and
+`X-Accel-Buffering: no` so that Nginx and similar proxies do not buffer or
+compress the stream. Response-compression middleware running inside your own
+application — such as Starlette/FastAPI's `GZipMiddleware` or a brotli
+middleware — buffers the response before it reaches those proxies and will break
+real-time delivery and heartbeats regardless of these headers. Exclude your
+GraphQL/SSE routes from such middleware.
+
+### Limitations
+
+<Note>
+
+**Distinct connections mode only.** The
+[GraphQL over SSE protocol](https://github.com/enisdenjo/graphql-sse/blob/master/PROTOCOL.md)
+defines two modes. Strawberry implements the
+["distinct connections mode"](https://github.com/enisdenjo/graphql-sse/blob/master/PROTOCOL.md#distinct-connections-mode),
+where each operation gets its own SSE response. This is the default for the
+`graphql-sse` client; the multiplexed
+["single connection mode"](https://github.com/enisdenjo/graphql-sse/blob/master/PROTOCOL.md#single-connection-mode)
+(`createClient({ singleConnection: true })`, which reserves a token over `PUT`
+and routes operations through one stream) is **not** supported.
+
+</Note>
+
+SSE responses are streamed and therefore require an async integration that
+supports streaming responses: ASGI, FastAPI, AIOHTTP, Litestar, Quart, Sanic,
+async Django, and async Channels. The Flask (sync and async), Chalice, sync
+Django, and sync Channels integrations cannot stream SSE.
+
+By default Strawberry does not set an `id` field on events, so a dropped
+connection means starting a new subscription operation. If your event source is
+resumable, you can opt into reconnection support — see
+[Resuming after a reconnect](#resuming-after-a-reconnect).
+
+### Authenticating SSE subscriptions
+
+SSE subscriptions use normal HTTP requests. Unlike websockets, browser SSE
+clients can send HTTP authentication data such as cookies, query parameters,
+and, when using a client based on `fetch`, custom headers like `Authorization`.
+Native `EventSource` does not allow custom headers, so use cookies, query
+parameters, or a `fetch`-based GraphQL SSE client when you need header-based
+authentication in the browser.
+
+Use your integration's `get_context` hook for SSE authentication, like you would
+for queries and mutations:
+
+```python
+from starlette.requests import Request
+from starlette.responses import Response
+
+from strawberry.asgi import GraphQL
+
+
+class AuthenticatedGraphQL(GraphQL):
+    async def get_context(self, request: Request, response: Response):
+        return {
+            "request": request,
+            "response": response,
+            "token": request.headers.get("Authorization"),
+        }
+```
+
+Then read the value from `info.context` in your resolver:
+
+```python
+import asyncio
+from typing import AsyncGenerator
+
+import strawberry
+
+from .auth import authenticate_token
+
+
+@strawberry.type
+class Subscription:
+    @strawberry.subscription
+    async def count(
+        self, info: strawberry.Info, target: int = 100
+    ) -> AsyncGenerator[int, None]:
+        token = info.context["token"]
+        if not authenticate_token(token):
+            raise Exception("Forbidden!")
+
+        for i in range(target):
+            yield i
+            await asyncio.sleep(0.5)
+```
+
+`on_ws_connect` and `connection_params` are websocket-specific APIs. SSE does
+not have a separate connection initialisation message, so Strawberry does not
+call a separate SSE connect hook.
+
+### Resuming after a reconnect
+
+Strawberry never buffers or replays past results, but if your event source is
+resumable (a message broker with offsets, a database cursor, and so on) you can
+let clients resume after a dropped connection.
+
+A reconnecting client sends the id of the last event it received in the
+`Last-Event-ID` request header. Since SSE is a normal HTTP request, read that
+header from the request — which integrations already place in the context — and
+resume from it:
+
+```python
+@strawberry.type
+class Subscription:
+    @strawberry.subscription
+    async def notifications(
+        self, info: strawberry.Info
+    ) -> AsyncGenerator[Notification, None]:
+        request = info.context["request"]
+        cursor = request.headers.get("last-event-id")  # None on first connect
+
+        async for notification in stream_notifications(after=cursor):
+            yield notification
+```
+
+<Note>
+
+Like the [`graphql-sse`](https://github.com/enisdenjo/graphql-sse) reference
+implementation, Strawberry does not emit SSE `id:` lines, so the native browser
+`EventSource` (which resends `Last-Event-ID` only from server-sent `id:` lines)
+will not resume automatically. This is for clients that carry a cursor in the
+GraphQL data itself and set `Last-Event-ID` on reconnect.
+
+</Note>
 
 ## Advanced Subscription Patterns
 
@@ -303,13 +528,14 @@ class Subscription:
             del event_messages[subscription_id]
 ```
 
-## GraphQL over WebSocket protocols
+## Subscription Protocols
 
-Strawberry support both the legacy
+Strawberry supports both the legacy
 [graphql-ws](https://github.com/apollographql/subscriptions-transport-ws) and
 the newer recommended
 [graphql-transport-ws](https://github.com/enisdenjo/graphql-ws) WebSocket
-sub-protocols.
+sub-protocols. Strawberry also supports GraphQL over SSE through
+`GRAPHQL_SSE_PROTOCOL`.
 
 <Note>
 
@@ -326,17 +552,27 @@ to learn more about why the newer protocol is preferred.
 
 Strawberry allows you to choose which protocols you want to accept. All
 integrations supporting subscriptions can be configured with a list of
-`subscription_protocols` to accept. By default, all protocols are accepted.
+`subscription_protocols` to accept. By default, the websocket protocols are
+accepted. Multipart subscriptions and SSE are opt-in.
 
 ### AIOHTTP
 
 ```python
 from strawberry.aiohttp.views import GraphQLView
-from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
+from strawberry.subscriptions import (
+    GRAPHQL_SSE_PROTOCOL,
+    GRAPHQL_TRANSPORT_WS_PROTOCOL,
+    GRAPHQL_WS_PROTOCOL,
+)
 from api.schema import schema
 
 view = GraphQLView(
-    schema, subscription_protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL]
+    schema,
+    subscription_protocols=[
+        GRAPHQL_TRANSPORT_WS_PROTOCOL,
+        GRAPHQL_WS_PROTOCOL,
+        GRAPHQL_SSE_PROTOCOL,
+    ],
 )
 ```
 
@@ -344,7 +580,11 @@ view = GraphQLView(
 
 ```python
 from strawberry.asgi import GraphQL
-from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
+from strawberry.subscriptions import (
+    GRAPHQL_SSE_PROTOCOL,
+    GRAPHQL_TRANSPORT_WS_PROTOCOL,
+    GRAPHQL_WS_PROTOCOL,
+)
 from api.schema import schema
 
 app = GraphQL(
@@ -352,6 +592,7 @@ app = GraphQL(
     subscription_protocols=[
         GRAPHQL_TRANSPORT_WS_PROTOCOL,
         GRAPHQL_WS_PROTOCOL,
+        GRAPHQL_SSE_PROTOCOL,
     ],
 )
 ```
@@ -363,6 +604,11 @@ import os
 
 from django.core.asgi import get_asgi_application
 from strawberry.channels import GraphQLProtocolTypeRouter
+from strawberry.subscriptions import (
+    GRAPHQL_SSE_PROTOCOL,
+    GRAPHQL_TRANSPORT_WS_PROTOCOL,
+    GRAPHQL_WS_PROTOCOL,
+)
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "mysite.settings")
 django_asgi_app = get_asgi_application()
@@ -375,6 +621,11 @@ from mysite.graphql import schema
 application = GraphQLProtocolTypeRouter(
     schema,
     django_application=django_asgi_app,
+    subscription_protocols=[
+        GRAPHQL_TRANSPORT_WS_PROTOCOL,
+        GRAPHQL_WS_PROTOCOL,
+        GRAPHQL_SSE_PROTOCOL,
+    ],
 )
 ```
 
@@ -385,7 +636,11 @@ information regarding it.
 
 ```python
 from strawberry.fastapi import GraphQLRouter
-from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
+from strawberry.subscriptions import (
+    GRAPHQL_SSE_PROTOCOL,
+    GRAPHQL_TRANSPORT_WS_PROTOCOL,
+    GRAPHQL_WS_PROTOCOL,
+)
 from fastapi import FastAPI
 from api.schema import schema
 
@@ -394,6 +649,7 @@ graphql_router = GraphQLRouter(
     subscription_protocols=[
         GRAPHQL_TRANSPORT_WS_PROTOCOL,
         GRAPHQL_WS_PROTOCOL,
+        GRAPHQL_SSE_PROTOCOL,
     ],
 )
 
@@ -405,7 +661,11 @@ app.include_router(graphql_router, prefix="/graphql")
 
 ```python
 from strawberry.quart.views import GraphQLView
-from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
+from strawberry.subscriptions import (
+    GRAPHQL_SSE_PROTOCOL,
+    GRAPHQL_TRANSPORT_WS_PROTOCOL,
+    GRAPHQL_WS_PROTOCOL,
+)
 from quart import Quart
 from api.schema import schema
 
@@ -415,6 +675,7 @@ view = GraphQLView.as_view(
     subscription_protocols=[
         GRAPHQL_TRANSPORT_WS_PROTOCOL,
         GRAPHQL_WS_PROTOCOL,
+        GRAPHQL_SSE_PROTOCOL,
     ],
 )
 

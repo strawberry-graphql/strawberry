@@ -1,5 +1,7 @@
+import importlib
 import sys
 import textwrap
+import warnings
 
 import pytest
 
@@ -87,3 +89,64 @@ def test_can_use_both_pydantic_1_and_2():
 
     assert not result.errors
     assert result.data == {"user": {"__typename": "LegacyUser", "name": "legacy"}}
+
+
+@pytest.mark.skipif(
+    sys.version_info >= (3, 14),
+    reason="Pydantic v1 is not compatible with Python 3.14+",
+)
+@needs_pydantic_v2
+def test_can_use_nested_pydantic_v1_models():
+    from pydantic import v1 as pydantic_v1
+
+    class Book(pydantic_v1.BaseModel):
+        title: str
+
+    class Library(pydantic_v1.BaseModel):
+        books: list[Book]
+
+    @strawberry.experimental.pydantic.type(model=Book, all_fields=True)
+    class BookType:
+        pass
+
+    @strawberry.experimental.pydantic.type(model=Library, all_fields=True)
+    class LibraryType:
+        pass
+
+    @strawberry.type
+    class Query:
+        library: LibraryType
+
+    schema = strawberry.Schema(query=Query)
+
+    expected_schema = """
+    type BookType {
+      title: String!
+    }
+
+    type LibraryType {
+      books: [BookType!]!
+    }
+
+    type Query {
+      library: LibraryType!
+    }
+    """
+
+    assert str(schema) == textwrap.dedent(expected_schema).strip()
+
+
+@pytest.mark.skipif(
+    sys.version_info < (3, 14),
+    reason="This test is only relevant on Python 3.14+",
+)
+@needs_pydantic_v2
+def test_no_pydantic_v1_warning_on_python_314():
+    import strawberry.experimental.pydantic._compat as compat_module
+
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        importlib.reload(compat_module)
+
+    pydantic_v1_warnings = [w for w in caught if "Pydantic V1" in str(w.message)]
+    assert pydantic_v1_warnings == []

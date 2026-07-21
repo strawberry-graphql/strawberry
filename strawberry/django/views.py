@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-import warnings
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -34,11 +33,12 @@ from strawberry.http.typevars import (
     Context,
     RootValue,
 )
+from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
 
 from .context import StrawberryDjangoContext
 
 if TYPE_CHECKING:
-    from collections.abc import AsyncIterator, Callable
+    from collections.abc import AsyncIterator, Callable, Mapping, Sequence
 
     from django.template.response import TemplateResponse
 
@@ -68,29 +68,28 @@ class TemporalHttpResponse(JsonResponse):
 
 class BaseView:
     graphql_ide_html: str
+    subscription_protocols: Sequence[str] = (
+        GRAPHQL_TRANSPORT_WS_PROTOCOL,
+        GRAPHQL_WS_PROTOCOL,
+    )
 
     def __init__(
         self,
         schema: BaseSchema,
-        graphiql: str | None = None,
         graphql_ide: GraphQL_IDE | None = "graphiql",
         allow_queries_via_get: bool = True,
         multipart_uploads_enabled: bool = False,
+        subscription_protocols: Sequence[str] = (
+            GRAPHQL_TRANSPORT_WS_PROTOCOL,
+            GRAPHQL_WS_PROTOCOL,
+        ),
         **kwargs: Any,
     ) -> None:
         self.schema = schema
         self.allow_queries_via_get = allow_queries_via_get
         self.multipart_uploads_enabled = multipart_uploads_enabled
-
-        if graphiql is not None:
-            warnings.warn(
-                "The `graphiql` argument is deprecated in favor of `graphql_ide`",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-            self.graphql_ide = "graphiql" if graphiql else None
-        else:
-            self.graphql_ide = graphql_ide
+        self.protocols = subscription_protocols
+        self.graphql_ide = graphql_ide
 
         super().__init__(**kwargs)
 
@@ -122,7 +121,7 @@ class BaseView:
         request: HttpRequest,
         stream: Callable[[], AsyncIterator[Any]],
         sub_response: TemporalHttpResponse,
-        headers: dict[str, str],
+        headers: Mapping[str, str],
     ) -> HttpResponseBase:
         return StreamingHttpResponse(
             streaming_content=stream(),
@@ -144,7 +143,6 @@ class GraphQLView(
     ],
     View,
 ):
-    graphiql: bool | None = None
     graphql_ide: GraphQL_IDE | None = "graphiql"
     allow_queries_via_get = True
     schema: BaseSchema = None  # type: ignore
@@ -193,7 +191,6 @@ class AsyncGraphQLView(
     ],
     View,
 ):
-    graphiql: bool | None = None
     graphql_ide: GraphQL_IDE | None = "graphiql"
     allow_queries_via_get = True
     schema: BaseSchema = None  # type: ignore

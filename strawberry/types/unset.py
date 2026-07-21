@@ -1,10 +1,5 @@
-import warnings
 from typing import Any
 from typing_extensions import Self
-
-DEPRECATED_NAMES: dict[str, str] = {
-    "is_unset": "`is_unset` is deprecated use `value is UNSET` instead",
-}
 
 
 class UnsetType:
@@ -48,19 +43,6 @@ In the example above, if `name` or `age` are not provided when creating a `UserI
 object, they will be set to `UNSET` instead of `None`. Use `is UNSET` to check
 whether a value is unset.
 """
-
-
-def _deprecated_is_unset(value: Any) -> bool:
-    warnings.warn(DEPRECATED_NAMES["is_unset"], DeprecationWarning, stacklevel=2)
-    return value is UNSET
-
-
-def __getattr__(name: str) -> Any:
-    if name in DEPRECATED_NAMES:
-        warnings.warn(DEPRECATED_NAMES[name], DeprecationWarning, stacklevel=2)
-        return globals()[f"_deprecated_{name}"]
-    raise AttributeError(f"module {__name__} has no attribute {name}")
-
 
 __all__ = [
     "UNSET",

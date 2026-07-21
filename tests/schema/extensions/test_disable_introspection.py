@@ -9,7 +9,7 @@ def test_disables_introspection():
 
     schema = strawberry.Schema(
         query=Query,
-        extensions=[DisableIntrospection()],
+        extensions=[DisableIntrospection],
     )
 
     result = schema.execute_sync("query { __schema { __typename } }")
@@ -32,7 +32,7 @@ def test_does_not_affect_non_introspection_queries():
 
     schema = strawberry.Schema(
         query=Query,
-        extensions=[DisableIntrospection()],
+        extensions=[DisableIntrospection],
     )
 
     result = schema.execute_sync("query { __typename }")
