@@ -1,11 +1,14 @@
 from collections.abc import Callable, Iterator
 from typing import Any
 
+from graphql import ExecutionResult as GraphQLExecutionResult
 from graphql.error import GraphQLError
-from graphql.execution.execute import ExecutionResult as GraphQLExecutionResult
 
 from strawberry.extensions.base_extension import SchemaExtension
-from strawberry.types.execution import ExecutionResult as StrawberryExecutionResult
+from strawberry.types.execution import (
+    ExecutionResult as StrawberryExecutionResult,
+)
+from strawberry.types.execution import StreamExecutionResult
 
 
 def default_should_mask_error(_: GraphQLError) -> bool:
@@ -38,18 +41,28 @@ class MaskErrors(SchemaExtension):
 
     # TODO: proper typing
     def _process_result(self, result: Any) -> None:
-        if not result.errors:
+        errors = getattr(result, "errors", None)
+        if not errors:
             return
 
         processed_errors: list[GraphQLError] = []
 
-        for error in result.errors:
+        for error in errors:
             if self.should_mask_error(error):
                 processed_errors.append(self.anonymise_error(error))
             else:
                 processed_errors.append(error)
 
         result.errors = processed_errors
+
+    def _process_stream_result(self, result: StreamExecutionResult) -> None:
+        self._process_result(result)
+
+        for incremental_result in getattr(result, "incremental", None) or ():
+            self._process_result(incremental_result)
+
+        for completed_result in getattr(result, "completed", None) or ():
+            self._process_result(completed_result)
 
     def on_operation(self) -> Iterator[None]:
         self._stream_result_processed = False
@@ -64,11 +77,11 @@ class MaskErrors(SchemaExtension):
 
         if isinstance(result, (GraphQLExecutionResult, StrawberryExecutionResult)):
             self._process_result(result)
-        elif result:
-            self._process_result(result.initial_result)
+        elif initial_result := getattr(result, "initial_result", None):
+            self._process_result(initial_result)
 
-    def on_stream_result(self, result: StrawberryExecutionResult) -> Iterator[None]:
+    def on_stream_result(self, result: StreamExecutionResult) -> Iterator[None]:
         """Mask errors before a streamed execution result reaches the client."""
         self._stream_result_processed = True
-        self._process_result(result)
+        self._process_stream_result(result)
         yield None

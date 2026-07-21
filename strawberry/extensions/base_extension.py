@@ -4,7 +4,7 @@ from collections.abc import Callable
 from enum import Enum
 from typing import TYPE_CHECKING, Any
 
-from strawberry.types import ExecutionResult
+from strawberry.types import StreamExecutionResult
 from strawberry.utils.await_maybe import AsyncIteratorOrIterator, AwaitableOrValue
 
 if TYPE_CHECKING:
@@ -53,12 +53,12 @@ class SchemaExtension:
         yield None
 
     def on_stream_result(  # type: ignore
-        self, result: ExecutionResult
+        self, result: StreamExecutionResult
     ) -> AsyncIteratorOrIterator[None]:  # pragma: no cover
-        """Called before and after each execution result yielded by ``Schema.stream``.
+        """Called before and after each result yielded by ``Schema.stream``.
 
         Extensions can mutate ``result`` before yielding to change the response sent
-        by streaming transports. Raw incremental-delivery patch frames are excluded.
+        by streaming transports. Incremental-delivery frames are included.
         """
         yield None
 
@@ -83,7 +83,7 @@ class SchemaExtension:
 
 Hook = (
     Callable[[SchemaExtension], AsyncIteratorOrIterator[None]]
-    | Callable[[SchemaExtension, ExecutionResult], AsyncIteratorOrIterator[None]]
+    | Callable[[SchemaExtension, StreamExecutionResult], AsyncIteratorOrIterator[None]]
 )
 
 HOOK_METHODS: set[str] = {

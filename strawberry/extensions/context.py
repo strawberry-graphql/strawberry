@@ -17,7 +17,7 @@ if TYPE_CHECKING:
     from types import TracebackType
 
     from strawberry.extensions.base_extension import Hook
-    from strawberry.types import ExecutionResult
+    from strawberry.types import StreamExecutionResult
     from strawberry.utils.await_maybe import AwaitableOrValue
 
 
@@ -162,7 +162,7 @@ class StreamResultContextManager(ExtensionContextManagerBase):
     HOOK_NAME = SchemaExtension.on_stream_result.__name__
 
     def __init__(
-        self, extensions: list[SchemaExtension], result: ExecutionResult
+        self, extensions: list[SchemaExtension], result: StreamExecutionResult
     ) -> None:
         self.result = result
         super().__init__(extensions)
@@ -175,14 +175,16 @@ class StreamResultContextManager(ExtensionContextManagerBase):
         if iscoroutinefunction(func):
 
             @contextlib.asynccontextmanager
-            async def async_iterator(result: ExecutionResult) -> AsyncIterator[None]:
+            async def async_iterator(
+                result: StreamExecutionResult,
+            ) -> AsyncIterator[None]:
                 await func(extension, result)
                 yield
 
             return WrappedHook(extension=extension, hook=async_iterator, is_async=True)
 
         @contextlib.contextmanager
-        def sync_iterator(result: ExecutionResult) -> Iterator[None]:
+        def sync_iterator(result: StreamExecutionResult) -> Iterator[None]:
             func(extension, result)
             yield
 

@@ -948,10 +948,7 @@ class Schema(BaseSchema):
                 )
                 async with aclosing(result_source):
                     async for result in result_source:
-                        if isinstance(result, ExecutionResult):
-                            async with extensions_runner.on_stream_result(result):
-                                yield result
-                        else:
+                        async with extensions_runner.on_stream_result(result):
                             yield result
                 return
 
