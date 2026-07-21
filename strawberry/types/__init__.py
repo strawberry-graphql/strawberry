@@ -1,5 +1,10 @@
 from .base import get_object_definition, has_object_definition
-from .execution import ExecutionContext, ExecutionResult, SubscriptionExecutionResult
+from .execution import (
+    ExecutionContext,
+    ExecutionResult,
+    StreamExecutionResult,
+    SubscriptionExecutionResult,
+)
 from .info import Info
 
 __all__ = [
@@ -7,6 +12,7 @@ __all__ = [
     "ExecutionResult",
     "Info",
     "Info",
+    "StreamExecutionResult",
     "SubscriptionExecutionResult",
     "get_object_definition",
     "has_object_definition",

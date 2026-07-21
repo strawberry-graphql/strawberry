@@ -206,6 +206,34 @@ class MyExtension(SchemaExtension):
         print("GraphQL execution end")
 ```
 
+- Stream result
+
+`on_stream_result` wraps each result yielded by `Schema.stream`, including
+subscription events, queries or mutations executed over WebSockets, SSE, or
+multipart responses. On transports that support experimental incremental
+execution, it also wraps the delivery frames produced by `@defer` or `@stream`.
+It can inspect or mutate a result before the transport sends it and run cleanup
+after the transport consumes it.
+
+`Schema.subscribe` uses the same streaming path, so this hook runs for every
+subscription event. With experimental incremental execution enabled, it also
+runs for every `@defer` or `@stream` response frame: an initial result followed
+by subsequent patches.
+
+```python
+from collections.abc import Iterator
+
+from strawberry.extensions import SchemaExtension
+from strawberry.types import StreamExecutionResult
+
+
+class MyExtension(SchemaExtension):
+    def on_stream_result(self, result: StreamExecutionResult) -> Iterator[None]:
+        print("GraphQL stream result ready", result)
+        yield
+        print("GraphQL stream result consumed", result)
+```
+
 #### Examples:
 
 <details>
