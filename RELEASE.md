@@ -11,8 +11,8 @@ social_messages:
     error details.
 ---
 
-This release fixes `MaskErrors` leaking parsing and validation error details
-during synchronous execution.
+This release fixes an issue where `MaskErrors` leaked parsing and validation
+error details during synchronous execution.
 
 Synchronous execution now masks pre-execution errors consistently with
 asynchronous execution, including when `ValidationCache` is enabled.

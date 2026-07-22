@@ -28,6 +28,7 @@ def test_mask_pre_execution_errors_sync(query: str):
 
     result = schema.execute_sync(query)
 
+    assert result.data is None
     assert result.errors is not None
     assert [error.message for error in result.errors] == ["Unexpected error."]
 
@@ -48,6 +49,7 @@ def test_mask_cached_validation_errors_sync():
     results = (schema.execute_sync(query), schema.execute_sync(query))
 
     for result in results:
+        assert result.data is None
         assert result.errors is not None
         assert [error.message for error in result.errors] == ["Unexpected error."]
 
@@ -74,6 +76,7 @@ async def test_mask_pre_execution_errors_async(query: str):
 
     result = await schema.execute(query)
 
+    assert result.data is None
     assert result.errors is not None
     assert [error.message for error in result.errors] == ["Unexpected error."]
 
