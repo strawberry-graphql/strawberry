@@ -83,11 +83,6 @@ class MaskErrors(SchemaExtension):
             self._process_result(result)
         elif initial_result := getattr(result, "initial_result", None):
             self._process_result(initial_result)
-        # Synchronous parsing and validation failures don't populate `result`.
-        elif pre_execution_errors := self.execution_context.pre_execution_errors:
-            self.execution_context.pre_execution_errors = self._process_errors(
-                pre_execution_errors
-            )
 
     def on_stream_result(self, result: StreamExecutionResult) -> Iterator[None]:
         """Mask errors before a streamed execution result reaches the client."""

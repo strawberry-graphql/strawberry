@@ -32,6 +32,32 @@ def test_mask_pre_execution_errors_sync(query: str):
     assert [error.message for error in result.errors] == ["Unexpected error."]
 
 
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "query",
+    [
+        "query { testField( }",
+        "query { missingField }",
+    ],
+)
+async def test_mask_pre_execution_errors_async(query: str):
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def test_field(self) -> str:
+            return "TestField"
+
+    schema = strawberry.Schema(
+        query=Query,
+        extensions=[ValidationCache, MaskErrors],
+    )
+
+    result = await schema.execute(query)
+
+    assert result.errors is not None
+    assert [error.message for error in result.errors] == ["Unexpected error."]
+
+
 def test_mask_all_errors():
     @strawberry.type
     class Query:
