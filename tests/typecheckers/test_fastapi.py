@@ -72,6 +72,76 @@ def test_router_with_context():
     )
 
 
+CODE_ROUTER_SUBCLASS_WITH_CONTEXT = """
+import strawberry
+
+from fastapi import Depends
+from strawberry.fastapi import GraphQLRouter, BaseContext
+
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def hello(self) -> str:
+        return "Hello World"
+
+
+class Context(BaseContext):
+    pass
+
+
+class CustomGraphQLRouter(GraphQLRouter):
+    pass
+
+
+def get_context(context: Context = Depends(Context)) -> Context:
+    return context
+
+
+router: GraphQLRouter = CustomGraphQLRouter(
+    strawberry.Schema(query=Query),
+    context_getter=get_context,
+)
+
+reveal_type(router)
+"""
+
+
+def test_router_subclass_with_context():
+    results = typecheck(CODE_ROUTER_SUBCLASS_WITH_CONTEXT)
+
+    assert results.pyright == snapshot(
+        [
+            Result(
+                type="information",
+                message='Type of "router" is "CustomGraphQLRouter"',
+                line=32,
+                column=13,
+            )
+        ]
+    )
+    assert results.mypy == snapshot(
+        [
+            Result(
+                type="note",
+                message='Revealed type is "strawberry.fastapi.router.GraphQLRouter[strawberry.fastapi.context.BaseContext | dict[str, Any], None]"',
+                line=32,
+                column=13,
+            )
+        ]
+    )
+    assert results.ty == snapshot(
+        [
+            Result(
+                type="information",
+                message="Revealed type: `CustomGraphQLRouter`",
+                line=32,
+                column=13,
+            )
+        ]
+    )
+
+
 CODE_ROUTER_WITH_ASYNC_CONTEXT = """
 import strawberry
 
