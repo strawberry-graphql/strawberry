@@ -1,6 +1,22 @@
 CHANGELOG
 =========
 
+0.323.1 - 2026-07-22
+--------------------
+
+This release fixes type checking for FastAPI `GraphQLRouter` subclasses that
+provide a custom context getter without explicit generic parameters.
+
+Bare subclasses now default to the context types supported by the FastAPI
+integration, so valid context getters are accepted by type checkers. Explicitly
+using `GraphQLRouter[MyContext]` is still available when the precise context
+type needs to be preserved on the subclass.
+
+The minimum supported `typing-extensions` version is now 4.14.0, ensuring these
+default generic parameters work across Strawberry's supported Python versions.
+
+This release was contributed by [@patrick91](https://github.com/patrick91) in [#4540](https://github.com/strawberry-graphql/strawberry/pull/4540)
+
 0.323.0 - 2026-07-21
 --------------------
 
