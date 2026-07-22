@@ -8,6 +8,7 @@ from typing import (
     TypeGuard,
     cast,
 )
+from typing_extensions import TypeVar
 
 from cross_web import HTTPException, StarletteRequestAdapter
 from fastapi import APIRouter, Depends, params
@@ -30,8 +31,10 @@ from strawberry.asgi import ASGIWebSocketAdapter
 from strawberry.exceptions import InvalidCustomContext
 from strawberry.fastapi.context import BaseContext, CustomContext
 from strawberry.http.async_base_view import AsyncBaseHTTPView
-from strawberry.http.typevars import Context, RootValue
+from strawberry.http.typevars import RootValue
 from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
+
+Context = TypeVar("Context", default=CustomContext)
 
 if TYPE_CHECKING:
     from collections.abc import (
