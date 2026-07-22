@@ -831,54 +831,63 @@ class Schema(BaseSchema):
             operation_extensions, sync=True
         )
 
+        pre_execution_result: ExecutionResult | None = None
+
         try:
             with extensions_runner.operation():
                 # Note: In graphql-core the schema would be validated here but in
                 # Strawberry we are validating it at initialisation time instead
-                if (
-                    pre_execution_result := self._prepare_operation_sync(
-                        execution_context, extensions_runner
-                    )
-                ) is not None:
-                    return pre_execution_result
+                pre_execution_result = self._prepare_operation_sync(
+                    execution_context, extensions_runner
+                )
 
-                assert execution_context.graphql_document is not None
-                with extensions_runner.executing():
-                    if not execution_context.result:
-                        result = execute_function(
-                            self._schema,
-                            execution_context.graphql_document,
-                            root_value=execution_context.root_value,
-                            middleware=middleware_manager,
-                            variable_values=execution_context.variables,
-                            operation_name=execution_context.operation_name,
-                            context_value=execution_context.context,
-                            is_awaitable=optimized_is_awaitable,
-                            **execution_context_class_kwargs(
-                                self.execution_context_class
-                            ),
-                            **custom_context_kwargs,
-                        )
-
-                        if isawaitable(result):
-                            result = cast("Awaitable[GraphQLExecutionResult]", result)
-                            ensure_future(result).cancel()
-                            raise RuntimeError(  # noqa: TRY301
-                                "GraphQL execution failed to complete synchronously."
+                if pre_execution_result is None:
+                    assert execution_context.graphql_document is not None
+                    with extensions_runner.executing():
+                        if not execution_context.result:
+                            result = execute_function(
+                                self._schema,
+                                execution_context.graphql_document,
+                                root_value=execution_context.root_value,
+                                middleware=middleware_manager,
+                                variable_values=execution_context.variables,
+                                operation_name=execution_context.operation_name,
+                                context_value=execution_context.context,
+                                is_awaitable=optimized_is_awaitable,
+                                **execution_context_class_kwargs(
+                                    self.execution_context_class
+                                ),
+                                **custom_context_kwargs,
                             )
 
-                        result = cast("GraphQLExecutionResult", result)
-                        execution_context.result = result
-                        # Also set errors on the context so that it's easier
-                        # to access in extensions
-                        if result.errors:
-                            execution_context.pre_execution_errors = result.errors
+                            if isawaitable(result):
+                                result = cast(
+                                    "Awaitable[GraphQLExecutionResult]", result
+                                )
+                                ensure_future(result).cancel()
+                                raise RuntimeError(  # noqa: TRY301
+                                    "GraphQL execution failed to complete synchronously."
+                                )
 
-                            # Run the `Schema.process_errors` function here before
-                            # extensions have a chance to modify them (see the MaskErrors
-                            # extension). That way we can log the original errors but
-                            # only return a sanitised version to the client.
-                            self._process_errors(result.errors, execution_context)
+                            result = cast("GraphQLExecutionResult", result)
+                            execution_context.result = result
+                            # Also set errors on the context so that it's easier
+                            # to access in extensions
+                            if result.errors:
+                                execution_context.pre_execution_errors = result.errors
+
+                                # Run the `Schema.process_errors` function here before
+                                # extensions have a chance to modify them (see the
+                                # MaskErrors extension). That way we can log the original
+                                # errors but only return a sanitised version to the client.
+                                self._process_errors(result.errors, execution_context)
+
+            if pre_execution_result is not None:
+                # Operation hooks may replace pre-execution errors (for example,
+                # MaskErrors anonymises them), so finalise the returned result only
+                # after those hooks have completed.
+                pre_execution_result.errors = execution_context.pre_execution_errors
+                return pre_execution_result
         except (
             MissingQueryError,
             CannotGetOperationTypeError,
@@ -894,6 +903,8 @@ class Schema(BaseSchema):
                 errors=errors,
                 extensions=extensions_runner.get_extensions_results_sync(),
             )
+
+        assert execution_context.result is not None
         return ExecutionResult(
             data=execution_context.result.data,
             errors=execution_context.result.errors,

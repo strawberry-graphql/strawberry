@@ -39,12 +39,7 @@ class MaskErrors(SchemaExtension):
             original_error=None,
         )
 
-    # TODO: proper typing
-    def _process_result(self, result: Any) -> None:
-        errors = getattr(result, "errors", None)
-        if not errors:
-            return
-
+    def _process_errors(self, errors: list[GraphQLError]) -> list[GraphQLError]:
         processed_errors: list[GraphQLError] = []
 
         for error in errors:
@@ -53,7 +48,13 @@ class MaskErrors(SchemaExtension):
             else:
                 processed_errors.append(error)
 
-        result.errors = processed_errors
+        return processed_errors
+
+    # TODO: proper typing
+    def _process_result(self, result: Any) -> None:
+        errors = getattr(result, "errors", None)
+        if errors:
+            result.errors = self._process_errors(errors)
 
     def _process_stream_result(self, result: StreamExecutionResult) -> None:
         self._process_result(result)
@@ -79,6 +80,11 @@ class MaskErrors(SchemaExtension):
             self._process_result(result)
         elif initial_result := getattr(result, "initial_result", None):
             self._process_result(initial_result)
+        # Synchronous parsing and validation failures don't populate `result`.
+        elif pre_execution_errors := self.execution_context.pre_execution_errors:
+            self.execution_context.pre_execution_errors = self._process_errors(
+                pre_execution_errors
+            )
 
     def on_stream_result(self, result: StreamExecutionResult) -> Iterator[None]:
         """Mask errors before a streamed execution result reaches the client."""
