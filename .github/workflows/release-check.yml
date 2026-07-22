@@ -42,6 +42,6 @@ jobs:
         uses: autopub/autopub-action@5fdc82e84c048a82303de6b5c5a9d027665e73cf # v1.1.1
         with:
           command: check
-          autopub-version: "1.0.0a59"
+          autopub-version: "1.0.0a61"
           fail-on-missing: "true"
           extra-plugins: "strawberry-autopub-plugins>=0.3.0"
