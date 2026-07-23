@@ -146,6 +146,25 @@ present, your code will not be merged.
 - If your changes warrant a documentation change, the pull request must also
   update the documentation.
 
+##### AI-assisted contributions
+
+You are welcome to use AI and other automated tools when contributing. However,
+every contribution must include meaningful human judgment and be work that you
+understand, have reviewed, and can explain.
+
+Please do not submit generated code, descriptions, or comments without carefully
+checking them. If reviewing a contribution would require more maintainer effort
+than the contributor put into understanding and validating it, it is not ready
+to be submitted.
+
+Maintainers may apply the `maybe-ai` label to pull requests that appear to be
+substantially generated and lack that human ownership. The pull request will be
+closed automatically. If the label was applied in error, comment with additional
+context about your approach, validation, and understanding of the change so a
+maintainer can reconsider it.
+
+Repeated low-effort or automated submissions may be treated as spam.
+
 ##### RELEASE.md files
 
 When you submit a PR, make sure to include a RELEASE.md file. We use that to

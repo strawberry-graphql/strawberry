@@ -9,18 +9,20 @@ on:
   issues:
     types:
       - labeled
-  # `pull_request_target` would make this workflow run with elevated privileges
-  # on PR events, which `zizmor` correctly flags as unsafe. PRs are still
-  # handled on the daily schedule and whenever new comments are added.
+  pull_request_target: # zizmor: ignore[dangerous-triggers]
+    types:
+      - labeled
   workflow_dispatch:
 
-permissions:
-  issues: write
-  pull-requests: write
+permissions: {}
 
 jobs:
   issue-manager:
+    if: github.repository_owner == 'strawberry-graphql'
     runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      pull-requests: write
     steps:
       - uses: tiangolo/issue-manager@dc846170c36eb62fb434b3d943b36399fe240fb5 # 0.8.1
         with:
@@ -30,5 +32,9 @@ jobs:
               "info-needed": {
                 "delay": "P14D",
                 "message": "Hi, this issue requires extra info to be actionable. We're closing this issue because it has not been actionable for a while now. Feel free to provide the requested information and we'll happily open it again! 😊"
+              },
+              "maybe-ai": {
+                "delay": 0,
+                "message": "This was marked as potentially AI generated and will be closed now. If this is an error, please provide additional details, make sure to read the docs about contributing and AI."
               }
             }
