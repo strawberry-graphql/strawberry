@@ -1093,11 +1093,7 @@ class GraphQLCoreConverter:
         _resolver._is_default = not field.base_resolver  # type: ignore
         return _resolver
 
-    def from_scalar(
-        self,
-        scalar: object,
-        scalar_definition: ScalarDefinition | None = None,
-    ) -> GraphQLScalarType:
+    def from_scalar(self, scalar: object) -> GraphQLScalarType:
         from strawberry.relay.types import GlobalID
 
         if not self.config.relay_use_legacy_global_id and scalar is GlobalID:
@@ -1105,9 +1101,7 @@ class GraphQLCoreConverter:
 
             return self.from_scalar(ID)
 
-        if scalar_definition is None:
-            scalar_definition = _get_scalar_definition(scalar, self.scalar_registry)
-
+        scalar_definition = _get_scalar_definition(scalar, self.scalar_registry)
         if scalar_definition is None:
             raise TypeError(f"Unexpected scalar '{scalar}'")
 
@@ -1189,10 +1183,10 @@ class GraphQLCoreConverter:
             if typing.get_origin(resolved) is Annotated:
                 return self.from_type(StrawberryAnnotation(resolved).resolve())
             return self.from_type(resolved)
-        if (
-            scalar_definition := _get_scalar_definition(type_, self.scalar_registry)
-        ) is not None:  # TODO: Replace with StrawberryScalar
-            return self.from_scalar(type_, scalar_definition)
+        if compat.is_scalar(
+            type_, self.scalar_registry
+        ):  # TODO: Replace with StrawberryScalar
+            return self.from_scalar(type_)
         if isinstance(type_, typing.NewType):
             return self.from_type(cast("StrawberryType | type", type_.__supertype__))
 
