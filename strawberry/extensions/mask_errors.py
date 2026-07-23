@@ -1,5 +1,5 @@
 from collections.abc import Callable, Iterator
-from typing import Any
+from typing import Protocol, runtime_checkable
 
 from graphql import ExecutionResult as GraphQLExecutionResult
 from graphql.error import GraphQLError
@@ -9,6 +9,11 @@ from strawberry.types.execution import (
     ExecutionResult as StrawberryExecutionResult,
 )
 from strawberry.types.execution import StreamExecutionResult
+
+
+@runtime_checkable
+class _ResultWithErrors(Protocol):
+    errors: list[GraphQLError] | None
 
 
 def default_should_mask_error(_: GraphQLError) -> bool:
@@ -39,12 +44,7 @@ class MaskErrors(SchemaExtension):
             original_error=None,
         )
 
-    # TODO: proper typing
-    def _process_result(self, result: Any) -> None:
-        errors = getattr(result, "errors", None)
-        if not errors:
-            return
-
+    def _process_errors(self, errors: list[GraphQLError]) -> list[GraphQLError]:
         processed_errors: list[GraphQLError] = []
 
         for error in errors:
@@ -53,7 +53,11 @@ class MaskErrors(SchemaExtension):
             else:
                 processed_errors.append(error)
 
-        result.errors = processed_errors
+        return processed_errors
+
+    def _process_result(self, result: object) -> None:
+        if isinstance(result, _ResultWithErrors) and result.errors:
+            result.errors = self._process_errors(result.errors)
 
     def _process_stream_result(self, result: StreamExecutionResult) -> None:
         self._process_result(result)

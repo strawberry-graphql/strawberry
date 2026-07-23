@@ -840,6 +840,9 @@ class Schema(BaseSchema):
                         execution_context, extensions_runner
                     )
                 ) is not None:
+                    # Match the async path by exposing pre-execution results to
+                    # operation extensions before their hooks unwind.
+                    execution_context.result = pre_execution_result
                     return pre_execution_result
 
                 assert execution_context.graphql_document is not None
