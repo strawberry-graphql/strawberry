@@ -1,6 +1,19 @@
 CHANGELOG
 =========
 
+0.323.2 - 2026-07-23
+--------------------
+
+This release fixes an issue where `MaskErrors` leaked parsing and validation
+error details during synchronous execution.
+
+Synchronous execution now masks pre-execution errors consistently with
+asynchronous execution, including when `ValidationCache` is enabled.
+
+This release was contributed by [@dextermb](https://github.com/dextermb) in [#3968](https://github.com/strawberry-graphql/strawberry/pull/3968)
+
+Additional contributors: [@patrick91](https://github.com/patrick91)
+
 0.323.1 - 2026-07-22
 --------------------
 
