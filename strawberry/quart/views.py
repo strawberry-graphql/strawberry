@@ -84,6 +84,7 @@ class GraphQLView(
         self,
         schema: "BaseSchema",
         graphql_ide: GraphQL_IDE | None = "graphiql",
+        subscription_url: str | None = None,
         allow_queries_via_get: bool = True,
         keep_alive: bool = True,
         keep_alive_interval: float = 1,
@@ -104,6 +105,7 @@ class GraphQLView(
         self.multipart_uploads_enabled = multipart_uploads_enabled
         self.max_subscriptions_per_connection = max_subscriptions_per_connection
         self.graphql_ide = graphql_ide
+        self.subscription_url = subscription_url
 
     async def render_graphql_ide(self, request: Request) -> Response:
         return Response(self.graphql_ide_html)

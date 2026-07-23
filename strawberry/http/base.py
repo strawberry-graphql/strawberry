@@ -32,6 +32,7 @@ class BaseRequestProtocol(Protocol):
 
 class BaseView(Generic[Request]):
     graphql_ide: GraphQL_IDE | None
+    subscription_url: str | None = None
     multipart_uploads_enabled: bool = False
     protocols: Sequence[str] = ()
     schema: BaseSchema
@@ -84,7 +85,10 @@ class BaseView(Generic[Request]):
 
     @property
     def graphql_ide_html(self) -> str:
-        return get_graphql_ide_html(graphql_ide=self.graphql_ide)
+        return get_graphql_ide_html(
+            graphql_ide=self.graphql_ide,
+            subscription_url=self.subscription_url,
+        )
 
     @cached_property
     def _stream_transport_map(self) -> dict[str, HTTPStreamTransport]:
