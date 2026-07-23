@@ -1106,12 +1106,12 @@ class GraphQLCoreConverter:
             origin = typing.get_origin(scalar)
             if origin is not None and origin in self.scalar_registry:
                 scalar = origin
-            elif hasattr(scalar, "__supertype__"):
+            elif isinstance(scalar, typing.NewType):
                 # NewType fallback: walk the __supertype__ chain until
                 # we find a matching registry entry. This mirrors the
                 # recursive is_scalar() behaviour for chained NewTypes.
                 resolved = scalar
-                while hasattr(resolved, "__supertype__"):
+                while isinstance(resolved, typing.NewType):
                     resolved = resolved.__supertype__
                     if resolved in self.scalar_registry or hasattr(
                         resolved, "_scalar_definition"
@@ -1213,6 +1213,8 @@ class GraphQLCoreConverter:
             type_, self.scalar_registry
         ):  # TODO: Replace with StrawberryScalar
             return self.from_scalar(type_)
+        if isinstance(type_, typing.NewType):
+            return self.from_type(cast("StrawberryType | type", type_.__supertype__))
 
         raise TypeError(f"Unexpected type '{type_}'")
 

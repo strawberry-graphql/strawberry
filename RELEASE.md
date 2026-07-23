@@ -1,17 +1,20 @@
 ---
 release type: patch
+social_messages:
+  x: >-
+    {project_name} {version} is out! Pydantic fields now keep their NewType
+    scalar mappings when Strawberry builds the GraphQL schema. 🍓
+    https://strawberry.rocks/release/{version}
+  linkedin: >-
+    {project_name} {version} is out. Pydantic fields annotated with NewType now
+    respect StrawberryConfig scalar mappings during schema generation, keeping
+    the generated GraphQL scalar consistent with runtime conversion.
 ---
 
-Fix `scalar_map` not being applied to pydantic model fields during schema
-generation. Previously, `NewType` wrappers on pydantic fields were
-unconditionally unwrapped to their underlying type (e.g. `str`) during
-pydantic type resolution, which destroyed the type identity before the
-`scalar_map` from `StrawberryConfig` could intercept it at schema
-construction time.
+This release fixes `StrawberryConfig.scalar_map` being ignored for Pydantic
+fields annotated with `NewType`.
 
-This change removes the early `NewType` unwrapping in the pydantic compat
-layer and instead adds `__supertype__` fallback logic to `is_scalar()` and
-`from_scalar()`, so that:
-- `NewType` annotations in `scalar_map` are matched correctly (the fix)
-- `NewType` fields without a `scalar_map` entry still resolve to their
-  underlying type via the new fallback (backward compatible)
+Strawberry now preserves the annotation until schema scalar resolution, so the
+generated GraphQL type and runtime scalar conversion use the same configured
+scalar. Unmapped `NewType` annotations continue to resolve through their
+underlying type.

@@ -213,6 +213,63 @@ def test_basic_type_with_nested_model():
     assert result.data["user"]["hobby"]["name"] == "Skii"
 
 
+def test_basic_type_with_newtype_scalar_map():
+    from typing import NewType
+
+    from strawberry.schema.config import StrawberryConfig
+
+    UserID = NewType("UserID", str)
+
+    class RemoveUserInputModel(pydantic.BaseModel):
+        id: UserID
+
+    @strawberry.experimental.pydantic.input(RemoveUserInputModel, all_fields=True)
+    class RemoveUserInput:
+        pass
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def echo(self, data: RemoveUserInput) -> UserID:
+            return data.id
+
+    unmapped_schema = strawberry.Schema(query=Query)
+
+    assert "id: String!" in str(unmapped_schema)
+
+    schema = strawberry.Schema(
+        query=Query,
+        config=StrawberryConfig(
+            scalar_map={
+                UserID: strawberry.scalar(
+                    name="UserID",
+                    serialize=str,
+                    parse_value=lambda value: UserID(f"parsed:{value}"),
+                )
+            }
+        ),
+    )
+
+    expected_schema = """
+    type Query {
+      echo(data: RemoveUserInput!): UserID!
+    }
+
+    input RemoveUserInput {
+      id: UserID!
+    }
+
+    scalar UserID
+    """
+
+    assert str(schema) == textwrap.dedent(expected_schema).strip()
+
+    result = schema.execute_sync('{ echo(data: {id: "123"}) }')
+
+    assert not result.errors
+    assert result.data == {"echo": "parsed:123"}
+
+
 def test_basic_type_with_newtype_chain_nested_model():
     from typing import NewType
 
@@ -245,6 +302,45 @@ def test_basic_type_with_newtype_chain_nested_model():
 
     assert not result.errors
     assert result.data["user"]["hobby"]["name"] == "Skii"
+
+
+def test_basic_type_with_newtype_enum():
+    from typing import NewType
+
+    @strawberry.enum
+    class Status(Enum):
+        ACTIVE = "active"
+
+    StatusAlias = NewType("StatusAlias", Status)
+
+    class UserModel(pydantic.BaseModel):
+        status: StatusAlias
+
+    @strawberry.experimental.pydantic.type(UserModel, all_fields=True)
+    class User:
+        pass
+
+    @strawberry.type
+    class Query:
+        user: User
+
+    schema = strawberry.Schema(query=Query)
+
+    expected_schema = """
+    type Query {
+      user: User!
+    }
+
+    enum Status {
+      ACTIVE
+    }
+
+    type User {
+      status: Status!
+    }
+    """
+
+    assert str(schema) == textwrap.dedent(expected_schema).strip()
 
 
 def test_basic_type_with_list_of_nested_model():

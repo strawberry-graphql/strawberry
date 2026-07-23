@@ -39,10 +39,11 @@ def is_scalar(
     if hasattr(annotation, "_scalar_definition"):
         return True
 
-    # NewType fallback: if the annotation is a NewType not in the registry,
-    # check whether its supertype is a known scalar.
-    if hasattr(annotation, "__supertype__"):
-        return is_scalar(annotation.__supertype__, scalar_registry)
+    while isinstance(annotation, NewType):
+        annotation = annotation.__supertype__
+
+        if annotation in scalar_registry or hasattr(annotation, "_scalar_definition"):
+            return True
 
     return False
 
