@@ -9,7 +9,7 @@ from typing import (
     TypeVar,
     overload,
 )
-from typing_extensions import dataclass_transform, get_annotations
+from typing_extensions import dataclass_transform, get_annotations, is_typeddict
 
 from strawberry.exceptions import (
     InvalidSuperclassInterfaceError,
@@ -19,6 +19,7 @@ from strawberry.exceptions import (
 )
 from strawberry.types.base import get_object_definition
 from strawberry.types.maybe import Some, _annotation_is_maybe
+from strawberry.types.typed_dict import create_typed_dict_definition
 from strawberry.types.unset import UNSET
 from strawberry.utils.str_converters import to_camel_case
 
@@ -294,8 +295,21 @@ def type(
 
             if field and isinstance(field, StrawberryField) and field.type_annotation:
                 original_type_annotations[field_name] = field.type_annotation.annotation
+
+        if is_typeddict(cls):
+            definition = create_typed_dict_definition(
+                cls,
+                name=name,
+                description=description,
+                directives=directives,
+                is_input=is_input,
+            )
+            cls.__strawberry_definition__ = definition
+            return cls
+
         if is_input:
             _inject_default_for_maybe_annotations(cls, annotations)
+
         wrapped = _wrap_dataclass(cls)
 
         return _process_type(  # type: ignore
