@@ -51,6 +51,7 @@ from strawberry.exceptions import (
 )
 from strawberry.extensions.field_extension import build_field_extension_resolvers
 from strawberry.relay.types import GlobalID
+from strawberry.scalars import _get_scalar_definition
 from strawberry.schema.exception_handlers import (
     get_error_type,
     get_exception_types,
@@ -1092,7 +1093,11 @@ class GraphQLCoreConverter:
         _resolver._is_default = not field.base_resolver  # type: ignore
         return _resolver
 
-    def from_scalar(self, scalar: type) -> GraphQLScalarType:
+    def from_scalar(
+        self,
+        scalar: object,
+        scalar_definition: ScalarDefinition | None = None,
+    ) -> GraphQLScalarType:
         from strawberry.relay.types import GlobalID
 
         if not self.config.relay_use_legacy_global_id and scalar is GlobalID:
@@ -1100,36 +1105,11 @@ class GraphQLCoreConverter:
 
             return self.from_scalar(ID)
 
-        scalar_definition: ScalarDefinition
+        if scalar_definition is None:
+            scalar_definition = _get_scalar_definition(scalar, self.scalar_registry)
 
-        if scalar not in self.scalar_registry:
-            origin = typing.get_origin(scalar)
-            if origin is not None and origin in self.scalar_registry:
-                scalar = origin
-            elif isinstance(scalar, typing.NewType):
-                # NewType fallback: walk the __supertype__ chain until
-                # we find a matching registry entry. This mirrors the
-                # recursive is_scalar() behaviour for chained NewTypes.
-                resolved = scalar
-                while isinstance(resolved, typing.NewType):
-                    resolved = resolved.__supertype__
-                    if resolved in self.scalar_registry or hasattr(
-                        resolved, "_scalar_definition"
-                    ):
-                        scalar = resolved
-                        break
-                else:
-                    scalar = resolved
-
-        if scalar in self.scalar_registry:
-            _scalar_definition = self.scalar_registry[scalar]
-            # TODO: check why we need the cast and we are not trying with getattr first
-            if isinstance(_scalar_definition, ScalarWrapper):
-                scalar_definition = _scalar_definition._scalar_definition
-            else:
-                scalar_definition = _scalar_definition
-        else:
-            scalar_definition = scalar._scalar_definition  # type: ignore[attr-defined]
+        if scalar_definition is None:
+            raise TypeError(f"Unexpected scalar '{scalar}'")
 
         scalar_name = self.config.name_converter.from_type(scalar_definition)
 
@@ -1209,10 +1189,10 @@ class GraphQLCoreConverter:
             if typing.get_origin(resolved) is Annotated:
                 return self.from_type(StrawberryAnnotation(resolved).resolve())
             return self.from_type(resolved)
-        if compat.is_scalar(
-            type_, self.scalar_registry
-        ):  # TODO: Replace with StrawberryScalar
-            return self.from_scalar(type_)
+        if (
+            scalar_definition := _get_scalar_definition(type_, self.scalar_registry)
+        ) is not None:  # TODO: Replace with StrawberryScalar
+            return self.from_scalar(type_, scalar_definition)
         if isinstance(type_, typing.NewType):
             return self.from_type(cast("StrawberryType | type", type_.__supertype__))
 
