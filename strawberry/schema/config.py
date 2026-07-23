@@ -30,6 +30,9 @@ class StrawberryConfig:
         disable_field_suggestions: Disable field suggestions in error messages.
         info_class: Custom Info class to use.
         enable_experimental_incremental_execution: Enable @defer/@stream support.
+        sort_schema: Whether to lexicographically sort the schema when printing.
+            When enabled, types, fields, arguments, and enum values are sorted
+            alphabetically using graphql-core's lexicographicSortSchema.
         scalar_map: A mapping of types to their scalar definitions. This allows
             any type (including NewType) to be used as a GraphQL scalar with
             proper type checking support.
@@ -44,6 +47,7 @@ class StrawberryConfig:
     disable_field_suggestions: bool = False
     info_class: type[Info] = Info
     enable_experimental_incremental_execution: bool = False
+    sort_schema: bool = False
     _unsafe_disable_same_type_validation: bool = False
     scalar_map: Mapping[object, ScalarDefinition] = field(default_factory=dict)
     batching_config: BatchingConfig | None = None

@@ -597,6 +597,12 @@ def print_schema(schema: BaseSchema) -> str:
         "GraphQLSchema",
         schema._schema,  # type: ignore
     )
+
+    if getattr(schema.config, "sort_schema", False):
+        from graphql.utilities import lexicographic_sort_schema
+
+        graphql_core_schema = lexicographic_sort_schema(graphql_core_schema)
+
     extras = PrintExtras()
 
     filtered_directives = [

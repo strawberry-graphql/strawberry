@@ -521,3 +521,48 @@ def test_input_with_renamed_maybe_some_none_default_gql_33():
     """).strip()
 
     assert sdl == expected
+
+
+def test_sort_schema_lexicographic():
+    """Test that sort_schema config option lexicographically sorts the schema."""
+
+    @strawberry.type
+    class Query:
+        zebra_field: str
+        alpha_field: str
+        middle_field: str
+
+    schema = strawberry.Schema(
+        query=Query,
+        config=StrawberryConfig(sort_schema=True),
+    )
+
+    sdl = print_schema(schema)
+
+    # Fields should be sorted alphabetically
+    lines = sdl.split("\n")
+    field_lines = [line.strip() for line in lines if "_field" in line]
+    field_names = [line.split(":")[0] for line in field_lines if ":" in line]
+
+    assert field_names == sorted(field_names), (
+        f"Fields not sorted: {field_names}"
+    )
+
+
+def test_sort_schema_disabled_by_default():
+    """Test that sort_schema is disabled by default (fields keep definition order)."""
+
+    @strawberry.type
+    class Query:
+        zebra_field: str
+        alpha_field: str
+        middle_field: str
+
+    schema = strawberry.Schema(query=Query)
+
+    sdl = print_schema(schema)
+
+    # Without sort_schema, fields should be in definition order
+    assert "zebra_field" in sdl
+    assert "alpha_field" in sdl
+    assert "middle_field" in sdl
