@@ -544,9 +544,7 @@ def test_sort_schema_lexicographic():
     field_lines = [line.strip() for line in lines if "_field" in line]
     field_names = [line.split(":")[0] for line in field_lines if ":" in line]
 
-    assert field_names == sorted(field_names), (
-        f"Fields not sorted: {field_names}"
-    )
+    assert field_names == sorted(field_names), f"Fields not sorted: {field_names}"
 
 
 def test_sort_schema_disabled_by_default():
