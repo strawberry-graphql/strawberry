@@ -205,8 +205,7 @@ class PydanticV2Compat:
         return get_fields_map_for_v2()
 
     def get_basic_type(self, type_: Any) -> type[Any]:
-        model_supertype = _get_new_type_model_supertype(type_)
-        if model_supertype is not None:
+        if (model_supertype := _get_new_type_model_supertype(type_)) is not None:
             return model_supertype
 
         if type_ in self.fields_map:
@@ -265,8 +264,7 @@ class PydanticV1Compat:
         }
 
     def get_basic_type(self, type_: Any) -> type[Any]:
-        model_supertype = _get_new_type_model_supertype(type_)
-        if model_supertype is not None:
+        if (model_supertype := _get_new_type_model_supertype(type_)) is not None:
             return model_supertype
 
         if IS_PYDANTIC_V1:
