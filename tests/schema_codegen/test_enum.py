@@ -55,6 +55,36 @@ def test_handles_keyword_enum_values(name: str):
     assert codegen(schema).strip() == expected
 
 
+def test_mixed_keyword_and_non_keyword_enum_values():
+    # Only keyword values are aliased; non-keyword values are left as-is and the
+    # original ordering is preserved.
+    schema = """
+    enum Example {
+        RED
+        class
+        BLUE
+        import
+    }
+    """
+
+    expected = textwrap.dedent(
+        """
+        from __future__ import annotations
+        import strawberry
+        from enum import Enum
+
+        @strawberry.enum
+        class Example(Enum):
+            RED = "RED"
+            class_ = strawberry.enum_value("class", name="class")
+            BLUE = "BLUE"
+            import_ = strawberry.enum_value("import", name="import")
+        """
+    ).strip()
+
+    assert codegen(schema).strip() == expected
+
+
 def test_keyword_enum_value_alias_does_not_collide():
     # An enum can contain both a keyword value and its underscore-suffixed
     # counterpart; the generated aliases must stay unique so the generated

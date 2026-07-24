@@ -11,8 +11,8 @@ social_messages:
     generate valid Python instead of code that fails to import.
 ---
 
-This release fixes schema codegen generating invalid Python when a GraphQL enum
-value is a Python keyword.
+This release fixes schema codegen that generated invalid Python when a GraphQL
+enum value is a Python keyword.
 
 Previously, an enum such as:
 
