@@ -55,6 +55,33 @@ def test_handles_keyword_enum_values(name: str):
     assert codegen(schema).strip() == expected
 
 
+def test_keyword_enum_value_alias_does_not_collide():
+    # An enum can contain both a keyword value and its underscore-suffixed
+    # counterpart; the generated aliases must stay unique so the generated
+    # Enum can be imported.
+    schema = """
+    enum Example {
+        class
+        class_
+    }
+    """
+
+    expected = textwrap.dedent(
+        """
+        from __future__ import annotations
+        import strawberry
+        from enum import Enum
+
+        @strawberry.enum
+        class Example(Enum):
+            class_ = strawberry.enum_value("class", name="class")
+            class__ = strawberry.enum_value("class_", name="class_")
+        """
+    ).strip()
+
+    assert codegen(schema).strip() == expected
+
+
 # TODO: descriptions
 def test_multiple_enums_single_import():
     schema = """
