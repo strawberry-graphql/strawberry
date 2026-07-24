@@ -594,6 +594,27 @@ def _get_class_definition(
 def _get_enum_value(enum_value: EnumValueDefinitionNode) -> cst.SimpleStatementLine:
     name = enum_value.name.value
 
+    if keyword.iskeyword(name):
+        # A Python keyword can't be used as an enum member name, so alias the
+        # member and keep the original GraphQL name via `strawberry.enum_value`.
+        return cst.SimpleStatementLine(
+            body=[
+                cst.Assign(
+                    targets=[cst.AssignTarget(cst.Name(f"{name}_"))],
+                    value=cst.Call(
+                        func=cst.Attribute(
+                            value=cst.Name("strawberry"),
+                            attr=cst.Name("enum_value"),
+                        ),
+                        args=[
+                            cst.Arg(cst.SimpleString(f'"{name}"')),
+                            _get_argument("name", name),
+                        ],
+                    ),
+                )
+            ]
+        )
+
     return cst.SimpleStatementLine(
         body=[
             cst.Assign(
