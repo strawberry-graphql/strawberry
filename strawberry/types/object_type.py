@@ -192,7 +192,7 @@ def _process_type(
 
 @overload
 @dataclass_transform(
-    order_default=True, kw_only_default=True, field_specifiers=(field, StrawberryField)
+    order_default=False, kw_only_default=True, field_specifiers=(field, StrawberryField)
 )
 def type(
     cls: T,
@@ -208,7 +208,7 @@ def type(
 
 @overload
 @dataclass_transform(
-    order_default=True, kw_only_default=True, field_specifiers=(field, StrawberryField)
+    order_default=False, kw_only_default=True, field_specifiers=(field, StrawberryField)
 )
 def type(
     *,
@@ -222,7 +222,7 @@ def type(
 
 
 @dataclass_transform(
-    order_default=True, kw_only_default=True, field_specifiers=(field, StrawberryField)
+    order_default=False, kw_only_default=True, field_specifiers=(field, StrawberryField)
 )
 def type(
     cls: T | None = None,
@@ -317,7 +317,7 @@ def type(
 
 @overload
 @dataclass_transform(
-    order_default=True, kw_only_default=True, field_specifiers=(field, StrawberryField)
+    order_default=False, kw_only_default=True, field_specifiers=(field, StrawberryField)
 )
 def input(
     cls: T,
@@ -331,7 +331,7 @@ def input(
 
 @overload
 @dataclass_transform(
-    order_default=True, kw_only_default=True, field_specifiers=(field, StrawberryField)
+    order_default=False, kw_only_default=True, field_specifiers=(field, StrawberryField)
 )
 def input(
     *,
@@ -343,7 +343,7 @@ def input(
 
 
 @dataclass_transform(
-    order_default=True, kw_only_default=True, field_specifiers=(field, StrawberryField)
+    order_default=False, kw_only_default=True, field_specifiers=(field, StrawberryField)
 )
 def input(
     cls: T | None = None,
@@ -399,7 +399,7 @@ def input(
 
 @overload
 @dataclass_transform(
-    order_default=True, kw_only_default=True, field_specifiers=(field, StrawberryField)
+    order_default=False, kw_only_default=True, field_specifiers=(field, StrawberryField)
 )
 def interface(
     cls: T,
@@ -412,7 +412,7 @@ def interface(
 
 @overload
 @dataclass_transform(
-    order_default=True, kw_only_default=True, field_specifiers=(field, StrawberryField)
+    order_default=False, kw_only_default=True, field_specifiers=(field, StrawberryField)
 )
 def interface(
     *,
@@ -423,7 +423,7 @@ def interface(
 
 
 @dataclass_transform(
-    order_default=True, kw_only_default=True, field_specifiers=(field, StrawberryField)
+    order_default=False, kw_only_default=True, field_specifiers=(field, StrawberryField)
 )
 def interface(
     cls: T | None = None,

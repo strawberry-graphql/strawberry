@@ -81,6 +81,9 @@ def run_mypy(
 
         try:
             for line in full_output.split("\n"):
+                # mypy emits nothing when a snippet has no diagnostics.
+                if not line.strip():
+                    continue
                 mypy_result = json.loads(line)
 
                 results.append(
