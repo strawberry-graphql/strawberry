@@ -332,6 +332,21 @@ def _get_field_value(
     return None
 
 
+def _make_unique_name(name: str, used_names: set[str]) -> str:
+    """Return a variant of *name* not in *used_names*, and reserve it.
+
+    Two GraphQL names can convert to the same Python name (e.g. `someField` and
+    `some_field`); appending underscores stops the later one from silently
+    overwriting the earlier one.
+    """
+    while name in used_names:
+        name += "_"
+
+    used_names.add(name)
+
+    return name
+
+
 def _get_field(
     field: FieldDefinitionNode | InputValueDefinitionNode,
     is_apollo_federation: bool,
@@ -346,12 +361,7 @@ def _get_field(
     if keyword.iskeyword(name):
         name = f"{name}_"
 
-    # Two GraphQL names can convert to the same Python name (e.g. `someField`
-    # and `some_field`), which would silently overwrite the previous field.
-    while name in used_names:
-        name += "_"
-
-    used_names.add(name)
+    name = _make_unique_name(name, used_names)
 
     # Strawberry derives the GraphQL name by camel-casing the Python name, so an
     # explicit alias is needed whenever that would not give the original name
