@@ -72,7 +72,7 @@ class GraphQLRouter(
     @staticmethod
     def __get_context_getter(
         custom_getter: Callable[
-            ..., CustomContext | None | Awaitable[CustomContext | None]
+            ..., CustomContext | Awaitable[CustomContext | None] | None
         ],
     ) -> Callable[..., Awaitable[CustomContext]]:
         async def dependency(
@@ -128,7 +128,7 @@ class GraphQLRouter(
         keep_alive: bool = False,
         keep_alive_interval: float = 1,
         root_value_getter: Callable[[], RootValue] | None = None,
-        context_getter: Callable[..., Context | None | Awaitable[Context | None]]
+        context_getter: Callable[..., Context | Awaitable[Context | None] | None]
         | None = None,
         subscription_protocols: Sequence[str] = (
             GRAPHQL_TRANSPORT_WS_PROTOCOL,

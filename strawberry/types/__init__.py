@@ -11,7 +11,6 @@ __all__ = [
     "ExecutionContext",
     "ExecutionResult",
     "Info",
-    "Info",
     "StreamExecutionResult",
     "SubscriptionExecutionResult",
     "get_object_definition",
