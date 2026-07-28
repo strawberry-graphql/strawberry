@@ -5,12 +5,47 @@ from collections.abc import Awaitable, Callable, Iterable, Iterator
 from functools import partial
 from typing import TypeAlias
 
-from strawberry.types.base import StrawberryObjectDefinition, get_object_definition
+from strawberry.types.base import (
+    StrawberryContainer,
+    StrawberryObjectDefinition,
+    StrawberryType,
+    get_object_definition,
+)
 from strawberry.types.maybe import Some
 from strawberry.utils.await_maybe import await_maybe
 
 CleanOperation: TypeAlias = Callable[[], object]
 MaybeAwaitable: TypeAlias = Awaitable[None] | None
+
+
+def type_has_input_clean_method(type_: StrawberryType | type) -> bool:
+    """Return whether an input type graph contains a `clean` method.
+
+    This runs while creating a schema so regular resolvers do not pay for input
+    traversal when none of their declared input types supports lifecycle hooks.
+    """
+    return _type_has_input_clean_method(type_, set())
+
+
+def _type_has_input_clean_method(
+    type_: StrawberryType | type,
+    visited: set[StrawberryObjectDefinition],
+) -> bool:
+    if isinstance(type_, StrawberryContainer):
+        return _type_has_input_clean_method(type_.of_type, visited)
+
+    definition = get_object_definition(type_)
+    if definition is None or not definition.is_input or definition in visited:
+        return False
+
+    visited.add(definition)
+
+    if callable(getattr(definition.origin, "clean", None)):
+        return True
+
+    return any(
+        _type_has_input_clean_method(field.type, visited) for field in definition.fields
+    )
 
 
 def run_input_clean_methods(values: Iterable[object], info: object) -> MaybeAwaitable:

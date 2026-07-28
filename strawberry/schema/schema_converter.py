@@ -75,7 +75,10 @@ from strawberry.types.base import (
 from strawberry.types.cast import get_strawberry_type_cast
 from strawberry.types.enum import StrawberryEnumDefinition, has_enum_definition
 from strawberry.types.field import UNRESOLVED
-from strawberry.types.input import run_input_clean_methods
+from strawberry.types.input import (
+    run_input_clean_methods,
+    type_has_input_clean_method,
+)
 from strawberry.types.lazy_type import LazyType
 from strawberry.types.private import is_private
 from strawberry.types.scalar import ScalarWrapper, scalar
@@ -995,6 +998,10 @@ class GraphQLCoreConverter:
             # that type-changing extensions are reflected before handlers are
             # matched; here we only need to build the resolver chain.
             extension_functions = build_field_extension_resolvers(field)
+            has_input_clean_methods = any(
+                type_has_input_clean_method(argument.type)
+                for argument in field.arguments
+            )
 
             def extension_resolver(
                 _source: Any,
@@ -1019,8 +1026,10 @@ class GraphQLCoreConverter:
                     # explicitly to the extensions
                     field_kwargs.pop("info")
 
-                input_clean_methods = run_input_clean_methods(
-                    [*field_args, *field_kwargs.values()], info
+                input_clean_methods = (
+                    run_input_clean_methods([*field_args, *field_kwargs.values()], info)
+                    if has_input_clean_methods
+                    else None
                 )
 
                 # `_get_result` expects `field_args` and `field_kwargs` as

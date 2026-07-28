@@ -8,6 +8,7 @@ import strawberry
 from strawberry.dataloader import DataLoader
 from strawberry.exceptions import InvalidSuperclassInterfaceError
 from strawberry.printer import print_schema
+from strawberry.schema import schema_converter
 from strawberry.types import Info
 from tests.conftest import skip_if_gql_32
 
@@ -191,6 +192,32 @@ def test_input_clean_runs_after_coercion_and_before_resolver():
         call.parent_clean("ONE", "TWO"),
         call.resolver("ONE", "TWO"),
     ]
+
+
+def test_input_without_clean_skips_input_clean_traversal(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    run_input_clean_methods = Mock(wraps=schema_converter.run_input_clean_methods)
+    monkeypatch.setattr(
+        schema_converter, "run_input_clean_methods", run_input_clean_methods
+    )
+
+    @strawberry.input
+    class Input:
+        value: str
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def value(self, data: Input) -> str:
+            return data.value
+
+    schema = strawberry.Schema(query=Query)
+    result = schema.execute_sync('query { value(data: { value: "project" }) }')
+
+    assert result.errors is None
+    assert result.data == {"value": "project"}
+    run_input_clean_methods.assert_not_called()
 
 
 async def test_input_async_clean_runs_before_containing_clean_and_resolver():
