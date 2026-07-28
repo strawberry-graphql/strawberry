@@ -1,5 +1,16 @@
 ---
 release type: patch
+social_messages:
+  x: >-
+    {project_name} {version} is out! This release makes federation @key,
+    @requires and @provides field sets follow the schema's name converter,
+    fixing subgraph composition for snake_case fields. 🍓
+    https://strawberry.rocks/release/{version}
+  linkedin: >-
+    {project_name} {version} is out. Federation @key, @requires and @provides
+    field sets and resolve_reference keyword arguments now follow the schema's
+    configured name converter, fixing Apollo Federation subgraph composition
+    for snake_case fields.
 ---
 
 This release fixes federation `@key`, `@requires` and `@provides` directives
