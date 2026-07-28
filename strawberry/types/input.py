@@ -35,10 +35,10 @@ def _run_clean_operations(operations: Iterable[CleanOperation]) -> MaybeAwaitabl
 
 
 async def _await_remaining(
-    first: Awaitable[object], remaining: Iterator[CleanOperation]
+    pending: Awaitable[object], remaining: Iterator[CleanOperation]
 ) -> None:
     """Await clean operations sequentially to preserve child-before-parent order."""
-    await first
+    await pending
     for operation in remaining:
         await await_maybe(operation())
 
