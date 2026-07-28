@@ -78,3 +78,52 @@ def test_fields_requires_are_printed_correctly():
     assert schema.as_str() == textwrap.dedent(expected).strip()
 
     del Review
+
+
+def test_fields_requires_use_the_name_converter_for_field_names():
+    # Same underlying bug as https://github.com/strawberry-graphql/strawberry/issues/591,
+    # but for @requires instead of @key.
+    @strawberry.federation.type(keys=["upc"], extend=True)
+    class Product:
+        upc: str = strawberry.federation.field(external=True)
+        the_field: str = strawberry.federation.field(external=True)
+
+        @strawberry.federation.field(requires=["the_field"])
+        def computed(self) -> str:  # pragma: no cover
+            return ""
+
+    @strawberry.federation.type
+    class Query:
+        @strawberry.field
+        def top_products(self, first: int) -> list[Product]:  # pragma: no cover
+            return []
+
+    schema = strawberry.federation.Schema(query=Query)
+
+    expected = """
+        schema @link(url: "https://specs.apollo.dev/federation/v2.11", import: ["@external", "@key", "@requires"]) {
+          query: Query
+        }
+
+        extend type Product @key(fields: "upc") {
+          upc: String! @external
+          theField: String! @external
+          computed: String! @requires(fields: "theField")
+        }
+
+        type Query {
+          _entities(representations: [_Any!]!): [_Entity]!
+          _service: _Service!
+          topProducts(first: Int!): [Product!]!
+        }
+
+        scalar _Any
+
+        union _Entity = Product
+
+        type _Service {
+          sdl: String!
+        }
+    """
+
+    assert schema.as_str() == textwrap.dedent(expected).strip()

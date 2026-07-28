@@ -26,6 +26,7 @@ from strawberry.types.scalar import ScalarDefinition, ScalarWrapper, scalar
 from strawberry.types.union import StrawberryUnion
 from strawberry.utils.inspect import get_func_args
 
+from .field_set import apply_name_converter as apply_name_converter_to_field_set
 from .schema_directive import StrawberryFederationSchemaDirective
 from .types import FieldSet, LinkImport
 from .versions import format_version, parse_version
@@ -93,7 +94,11 @@ class Schema(BaseSchema):
             FederationAny: scalar(
                 name="_Any", serialize=lambda v: v, parse_value=lambda v: v
             ),
-            FieldSet: scalar(name="_FieldSet", serialize=lambda v: v, parse_value=str),
+            FieldSet: scalar(
+                name="_FieldSet",
+                serialize=self._serialize_field_set,
+                parse_value=str,
+            ),
             LinkImport: scalar(
                 name="link__Import", serialize=lambda v: v, parse_value=lambda v: v
             ),
@@ -122,6 +127,16 @@ class Schema(BaseSchema):
 
         composed_directives = self._add_compose_directives()
         self._add_link_directives(composed_directives)  # type: ignore
+
+    def _serialize_field_set(self, value: str) -> str:
+        # FieldSet values (used by @key, @requires and @provides) are given
+        # as plain strings, so they don't go through the same field-renaming
+        # applied to the rest of the schema. Run them through the schema's
+        # name converter here so the field names they reference line up with
+        # the field names actually printed in the SDL.
+        return apply_name_converter_to_field_set(
+            value, self.config.name_converter.apply_naming_config
+        )
 
     def _get_federation_query_type(
         self,
@@ -204,14 +219,22 @@ class Schema(BaseSchema):
                 resolve_reference = definition.origin.resolve_reference
 
                 func_args = get_func_args(resolve_reference)
-                kwargs = representation
 
-                # TODO: use the same logic we use for other resolvers
+                # `representation` is keyed by GraphQL field name (e.g. the
+                # camelCased name a name converter produces), but
+                # `resolve_reference` is a plain Python callable, so its
+                # keyword arguments are expected to match the field's Python
+                # name instead.
+                kwargs: dict[str, Any] = {}
+                for key, value in representation.items():  # type: ignore[attr-defined]
+                    field = self.get_field_for_type(key, type_name)
+                    kwargs[field.python_name if field is not None else key] = value
+
                 if "info" in func_args:
-                    kwargs["info"] = info  # type: ignore[index]
+                    kwargs["info"] = info
 
                 try:
-                    result = resolve_reference(**kwargs)  # type: ignore[arg-type]
+                    result = resolve_reference(**kwargs)
                 except Exception as e:  # noqa: BLE001
                     result = e
             else:

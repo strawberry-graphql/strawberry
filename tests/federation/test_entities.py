@@ -43,6 +43,49 @@ def test_fetch_entities():
     assert result.data == {"_entities": [{"upc": "B00005N5PF"}]}
 
 
+def test_resolve_reference_receives_python_field_names():
+    # https://github.com/strawberry-graphql/strawberry/issues/591
+    # The representation sent by the router is keyed by GraphQL field name
+    # (myKey), but resolve_reference is a plain Python callable, so its
+    # keyword arguments should match the field's Python name (my_key).
+    @strawberry.federation.type(keys=["my_key"])
+    class Product:
+        my_key: str
+
+        @classmethod
+        def resolve_reference(cls, my_key: str) -> "Product":
+            return Product(my_key=my_key)
+
+    @strawberry.federation.type(extend=True)
+    class Query:
+        @strawberry.field
+        def top_products(self, first: int) -> list[Product]:  # pragma: no cover
+            return []
+
+    schema = strawberry.federation.Schema(query=Query)
+
+    query = """
+        query ($representations: [_Any!]!) {
+            _entities(representations: $representations) {
+                ... on Product {
+                    myKey
+                }
+            }
+        }
+    """
+
+    result = schema.execute_sync(
+        query,
+        variable_values={
+            "representations": [{"__typename": "Product", "myKey": "B00005N5PF"}]
+        },
+    )
+
+    assert not result.errors
+
+    assert result.data == {"_entities": [{"myKey": "B00005N5PF"}]}
+
+
 def test_info_param_in_resolve_reference():
     @strawberry.federation.type(keys=["upc"])
     class Product:
