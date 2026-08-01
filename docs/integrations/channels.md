@@ -774,7 +774,7 @@ async def listen_to_channel(
     type: str,
     *,
     timeout: float | None = None,
-    groups: Sequence[str] | None = None
+    groups: Sequence[str] | None = None,
 ) -> AsyncGenerator[Any, None]: ...
 ```
 

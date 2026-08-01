@@ -137,7 +137,7 @@ class GraphQLBoolValue:
 class GraphQLNullValue:
     """A class that represents a GraphQLNull value."""
 
-    value: None | UnsetType = None
+    value: UnsetType | None = None
 
 
 @dataclass

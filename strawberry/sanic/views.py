@@ -150,7 +150,7 @@ class GraphQLView(
         # to the client, so we return None to avoid that, and we ignore the type
         # error mostly so we don't have to update the types everywhere for this
         # corner case
-        return None  # type: ignore
+        return None  # type: ignore[return-value]
 
     def is_websocket_request(self, request: Request) -> TypeGuard[Request]:
         return False

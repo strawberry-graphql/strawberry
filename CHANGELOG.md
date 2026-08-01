@@ -2063,7 +2063,8 @@ You must migrate to Federation v2. See the [breaking changes documentation](http
 
 ```python
 schema = strawberry.federation.Schema(
-    query=Query, federation_version="2.5"  # Specify a specific version if needed
+    query=Query,
+    federation_version="2.5",  # Specify a specific version if needed
 )
 ```
 
@@ -7555,7 +7556,7 @@ class UpperCaseExtension(FieldExtension):
         next: Callable[..., Awaitable[Any]],
         source: Any,
         info: strawberry.Info,
-        **kwargs
+        **kwargs,
     ):
         result = await next(source, info, **kwargs)
         return str(result).upper()
