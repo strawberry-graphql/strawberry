@@ -110,7 +110,7 @@ def _wrap_dataclass(cls: T) -> T:
     """Wrap a strawberry.type class with a dataclass and check for any issues before doing so."""
     # Ensure all Fields have been properly type-annotated
     _check_field_annotations(cls)
-    return cast(T, dataclasses.dataclass(kw_only=True)(cls))
+    return cast("T", dataclasses.dataclass(kw_only=True)(cls))
 
 
 def _inject_default_for_maybe_annotations(cls: T, annotations: dict[str, Any]) -> None:
