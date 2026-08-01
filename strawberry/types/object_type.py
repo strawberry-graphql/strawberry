@@ -27,7 +27,7 @@ from .base import StrawberryObjectDefinition
 from .field import StrawberryField, field
 from .type_resolver import _get_fields
 
-T = TypeVar("T", bound=builtins.type)
+T = TypeVar("T")
 
 
 def _get_interfaces(cls: builtins.type[Any]) -> list[StrawberryObjectDefinition]:
@@ -106,14 +106,16 @@ def _check_field_annotations(cls: builtins.type[Any]) -> None:
             raise MissingFieldAnnotationError(field_name, cls)
 
 
-def _wrap_dataclass(cls: T) -> T:
+def _wrap_dataclass(cls: type[T]) -> type[T]:
     """Wrap a strawberry.type class with a dataclass and check for any issues before doing so."""
     # Ensure all Fields have been properly type-annotated
     _check_field_annotations(cls)
-    return cast(T, dataclasses.dataclass(kw_only=True)(cls))
+    return cast(type[T], dataclasses.dataclass(kw_only=True)(cls))
 
 
-def _inject_default_for_maybe_annotations(cls: T, annotations: dict[str, Any]) -> None:
+def _inject_default_for_maybe_annotations(
+    cls: type[T], annotations: dict[str, Any]
+) -> None:
     """Inject `= None` for fields with `Maybe` annotations and no default value."""
     for name, annotation in annotations.copy().items():
         if _annotation_is_maybe(annotation):
@@ -128,7 +130,7 @@ def _inject_default_for_maybe_annotations(cls: T, annotations: dict[str, Any]) -
 
 
 def _process_type(
-    cls: T,
+    cls: type[T],
     *,
     name: str | None = None,
     is_input: bool = False,
@@ -137,7 +139,7 @@ def _process_type(
     directives: Sequence[object] | None = (),
     extend: bool = False,
     original_type_annotations: dict[str, Any] | None = None,
-) -> T:
+) -> type[T]:
     name = name or to_camel_case(cls.__name__)
     original_type_annotations = original_type_annotations or {}
 
@@ -194,7 +196,7 @@ def _process_type(
     order_default=True, kw_only_default=True, field_specifiers=(field, StrawberryField)
 )
 def type(
-    cls: T,
+    cls: type[T],
     *,
     name: str | None = None,
     is_input: bool = False,
@@ -202,7 +204,7 @@ def type(
     description: str | None = None,
     directives: Sequence[object] | None = (),
     extend: bool = False,
-) -> T: ...
+) -> type[T]: ...
 
 
 @overload
@@ -217,14 +219,14 @@ def type(
     description: str | None = None,
     directives: Sequence[object] | None = (),
     extend: bool = False,
-) -> Callable[[T], T]: ...
+) -> Callable[[type[T]], type[T]]: ...
 
 
 @dataclass_transform(
     order_default=True, kw_only_default=True, field_specifiers=(field, StrawberryField)
 )
 def type(
-    cls: T | None = None,
+    cls: type[T] | None = None,
     *,
     name: str | None = None,
     is_input: bool = False,
@@ -232,7 +234,7 @@ def type(
     description: str | None = None,
     directives: Sequence[object] | None = (),
     extend: bool = False,
-) -> T | Callable[[T], T]:
+) -> type[T] | Callable[[type[T]], type[T]]:
     """Annotates a class as a GraphQL type.
 
     Similar to `dataclasses.dataclass`, but with additional functionality for
@@ -267,7 +269,7 @@ def type(
     ```
     """
 
-    def wrap(cls: T) -> T:
+    def wrap(cls: type[T]) -> type[T]:
         if not inspect.isclass(cls):
             if is_input:
                 exc = ObjectIsNotClassError.input
@@ -297,7 +299,7 @@ def type(
             _inject_default_for_maybe_annotations(cls, annotations)
         wrapped = _wrap_dataclass(cls)
 
-        return _process_type(  # type: ignore
+        return _process_type(
             wrapped,
             name=name,
             is_input=is_input,
@@ -319,13 +321,13 @@ def type(
     order_default=True, kw_only_default=True, field_specifiers=(field, StrawberryField)
 )
 def input(
-    cls: T,
+    cls: type[T],
     *,
     name: str | None = None,
     one_of: bool | None = None,
     description: str | None = None,
     directives: Sequence[object] | None = (),
-) -> T: ...
+) -> type[T]: ...
 
 
 @overload
@@ -338,20 +340,20 @@ def input(
     one_of: bool | None = None,
     description: str | None = None,
     directives: Sequence[object] | None = (),
-) -> Callable[[T], T]: ...
+) -> Callable[[type[T]], type[T]]: ...
 
 
 @dataclass_transform(
     order_default=True, kw_only_default=True, field_specifiers=(field, StrawberryField)
 )
 def input(
-    cls: T | None = None,
+    cls: type[T] | None = None,
     *,
     name: str | None = None,
     one_of: bool | None = None,
     description: str | None = None,
     directives: Sequence[object] | None = (),
-):
+) -> type[T] | Callable[[type[T]], type[T]]:
     """Annotates a class as a GraphQL Input type.
 
     Similar to `@strawberry.type`, but for input types.
@@ -401,12 +403,12 @@ def input(
     order_default=True, kw_only_default=True, field_specifiers=(field, StrawberryField)
 )
 def interface(
-    cls: T,
+    cls: type[T],
     *,
     name: str | None = None,
     description: str | None = None,
     directives: Sequence[object] | None = (),
-) -> T: ...
+) -> type[T]: ...
 
 
 @overload
@@ -418,19 +420,19 @@ def interface(
     name: str | None = None,
     description: str | None = None,
     directives: Sequence[object] | None = (),
-) -> Callable[[T], T]: ...
+) -> Callable[[type[T]], type[T]]: ...
 
 
 @dataclass_transform(
     order_default=True, kw_only_default=True, field_specifiers=(field, StrawberryField)
 )
 def interface(
-    cls: T | None = None,
+    cls: type[T] | None = None,
     *,
     name: str | None = None,
     description: str | None = None,
     directives: Sequence[object] | None = (),
-):
+) -> type[T] | Callable[[type[T]], type[T]]:
     """Annotates a class as a GraphQL Interface.
 
     Similar to `@strawberry.type`, but for interfaces.
