@@ -113,9 +113,7 @@ def _wrap_dataclass(cls: T) -> T:
     return cast(T, dataclasses.dataclass(kw_only=True)(cls))
 
 
-def _inject_default_for_maybe_annotations(
-    cls: T, annotations: dict[str, Any]
-) -> None:
+def _inject_default_for_maybe_annotations(cls: T, annotations: dict[str, Any]) -> None:
     """Inject `= None` for fields with `Maybe` annotations and no default value."""
     for name, annotation in annotations.copy().items():
         if _annotation_is_maybe(annotation):
