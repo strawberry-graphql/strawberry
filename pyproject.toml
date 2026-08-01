@@ -279,6 +279,9 @@ ignore = [
   "PLR0912",
   "PLR0911",
 
+  # Copyright notice
+  "CPY001",
+
   # Do not force adding _co to covariant typevars
   "PLC0105",
 
