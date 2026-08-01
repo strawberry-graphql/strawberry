@@ -1,4 +1,3 @@
-
 import pytest
 import strawberry
 from strawberry.utils.inspect import get_specialized_type_var_map
