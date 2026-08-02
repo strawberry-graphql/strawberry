@@ -288,6 +288,10 @@ async def test_clear():
 
     assert await loader.load_many([1, 2, 3]) == [(1, 4), (2, 4), (3, 4)]
 
+    loader.clear(-1)
+
+    assert await loader.load_many([1, 2, 3]) == [(1, 4), (2, 4), (3, 4)]
+
 
 @pytest.mark.asyncio
 async def test_clear_nocache():
@@ -314,6 +318,10 @@ async def test_clear_nocache():
     loader.clear_all()
 
     assert await loader.load_many([1, 2, 3]) == [(1, 4), (2, 4), (3, 4)]
+
+    loader.clear(-1)
+
+    assert await loader.load_many([1, 2, 3]) == [(1, 5), (2, 5), (3, 5)]
 
 
 @pytest.mark.asyncio
