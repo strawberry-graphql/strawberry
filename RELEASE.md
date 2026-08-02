@@ -1,6 +1,20 @@
-Release type: minor
+---
+release type: minor
+social_messages:
+  x: >-
+    {project_name} {version} is out! Object and input types can now be declared
+    with `extend=True` alongside a base type of the same name, so separate
+    modules can contribute fields to one GraphQL type. 🍓
+    https://strawberry.rocks/release/{version}
+  linkedin: >-
+    {project_name} {version} is out. This release adds GraphQL object and input
+    object type extensions: several Python classes can now share a single
+    GraphQL type name with `extend=True`, letting independent modules each
+    contribute fields to the same type. The generated SDL prints the extensions
+    as `extend type` and `extend input`.
+---
 
-Add support for GraphQL object and input object type extensions.
+This release adds support for GraphQL object and input object type extensions.
 
 `@strawberry.type(..., extend=True)` and `@strawberry.input(..., extend=True)`
 can now be registered alongside a base type with the same GraphQL name. The
