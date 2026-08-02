@@ -1,14 +1,10 @@
-# ruff: noqa: F821
-
 import sys
-import warnings
 import textwrap
+import warnings
 from enum import Enum
-from typing import Any, Optional, Union
-from typing_extensions import Self
+from typing import Any, Self
 
 import pytest
-
 import strawberry
 
 pytestmark = pytest.mark.skipif(
@@ -328,7 +324,7 @@ def test_supports_optional():
 
     @strawberry.type
     class Edge[T]:
-        node: Optional[T] = None
+        node: T | None = None
 
     @strawberry.type
     class Query:
@@ -392,7 +388,7 @@ def test_supports_lists_of_optionals():
 
     @strawberry.type
     class Edge[T]:
-        nodes: list[Optional[T]]
+        nodes: list[T | None]
 
     @strawberry.type
     class Query:
@@ -482,7 +478,7 @@ def test_supports_generic_in_unions():
     @strawberry.type
     class Query:
         @strawberry.field
-        def example(self) -> Union[Fallback, Edge[int]]:
+        def example(self) -> Fallback | Edge[int]:
             return Edge(cursor=strawberry.ID("1"), node=1)
 
     schema = strawberry.Schema(query=Query)
@@ -523,7 +519,7 @@ def test_generic_with_enum_as_param_of_type_inside_unions():
     @strawberry.type
     class Query:
         @strawberry.field
-        def result(self) -> Union[Pet, ErrorNode[Codes]]:
+        def result(self) -> Pet | ErrorNode[Codes]:
             return ErrorNode(code=Codes.a)
 
     schema = strawberry.Schema(query=Query)
@@ -557,7 +553,7 @@ def test_generic_with_enum():
     @strawberry.type
     class Query:
         @strawberry.field
-        def estimated_value(self) -> Optional[EstimatedValue[int]]:
+        def estimated_value(self) -> EstimatedValue[int] | None:
             return EstimatedValue(value=1, type=EstimatedValueEnum.test)
 
     schema = strawberry.Schema(query=Query)
@@ -595,7 +591,7 @@ def test_supports_generic_in_unions_multiple_vars():
     @strawberry.type
     class Query:
         @strawberry.field
-        def example(self) -> Union[Fallback, Edge[int, str]]:
+        def example(self) -> Fallback | Edge[int, str]:
             return Edge(node="string", info=1)
 
     schema = strawberry.Schema(query=Query)
@@ -639,7 +635,7 @@ def test_supports_generic_in_unions_with_nesting():
     @strawberry.type
     class Query:
         @strawberry.field
-        def users(self) -> Union[Connection[User], Fallback]:
+        def users(self) -> Connection[User] | Fallback:
             return Connection(edge=Edge(node=User(name="Patrick")))
 
     schema = strawberry.Schema(query=Query)
@@ -678,7 +674,7 @@ def test_supports_multiple_generics_in_union():
     @strawberry.type
     class Query:
         @strawberry.field
-        def example(self) -> list[Union[Edge[int], Edge[str]]]:
+        def example(self) -> list[Edge[int] | Edge[str]]:
             return [
                 Edge(cursor=strawberry.ID("1"), node=1),
                 Edge(cursor=strawberry.ID("2"), node="string"),
@@ -787,7 +783,7 @@ def test_supports_lists_within_unions():
     @strawberry.type
     class Query:
         @strawberry.field
-        def user(self) -> Union[User, Edge[User]]:
+        def user(self) -> User | Edge[User]:
             return Edge(nodes=[User(name="P")])
 
     schema = strawberry.Schema(query=Query)
@@ -822,7 +818,7 @@ def test_supports_lists_within_unions_empty_list():
     @strawberry.type
     class Query:
         @strawberry.field
-        def user(self) -> Union[User, Edge[User]]:
+        def user(self) -> User | Edge[User]:
             return Edge(nodes=[])
 
     schema = strawberry.Schema(query=Query)
@@ -858,7 +854,7 @@ def test_raises_error_when_unable_to_find_type():
     @strawberry.type
     class Query:
         @strawberry.field
-        def user(self) -> Union[User, Edge[User]]:
+        def user(self) -> User | Edge[User]:
             return Edge(nodes=["bad example"])  # type: ignore
 
     schema = strawberry.Schema(query=Query)
@@ -985,7 +981,7 @@ def test_generic_extending_with_type_var():
     class Node[T]:
         id: strawberry.ID
 
-        def _resolve(self) -> Optional[T]:
+        def _resolve(self) -> T | None:
             return None
 
     @strawberry.type
@@ -1021,7 +1017,7 @@ def test_generic_extending_with_type_var():
 def test_self():
     @strawberry.interface
     class INode:
-        field: Optional[Self]
+        field: Self | None
         fields: list[Self]
 
     @strawberry.type
@@ -1189,7 +1185,7 @@ def test_generics_via_anonymous_union():
 
     @strawberry.type
     class Query:
-        entities: Connection[Union[Entity1, Entity2]]
+        entities: Connection[Entity1 | Entity2]
 
     schema = strawberry.Schema(query=Query)
 

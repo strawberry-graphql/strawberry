@@ -1,17 +1,21 @@
 import json
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from functools import cached_property
 from typing import Any, Generic
 from typing_extensions import Protocol
 
 from cross_web import HTTPException
 
-from strawberry.http import GraphQLRequestData
+from strawberry.http import GraphQLRequestData, GraphQLRequestProtocol
 from strawberry.http.ides import GraphQL_IDE, get_graphql_ide_html
 from strawberry.http.types import HTTPMethod, QueryParams
 from strawberry.schema.base import BaseSchema
+from strawberry.subscriptions import (
+    GRAPHQL_SSE_PROTOCOL,
+    MULTIPART_SUBSCRIPTION_PROTOCOL,
+)
 
-from .streaming import HTTPStreamTransport, MultipartSubscriptionTransport
+from .streaming import HTTPStreamTransport, MultipartSubscriptionTransport, SSETransport
 from .typevars import Request
 
 
@@ -29,9 +33,11 @@ class BaseRequestProtocol(Protocol):
 class BaseView(Generic[Request]):
     graphql_ide: GraphQL_IDE | None
     multipart_uploads_enabled: bool = False
+    protocols: Sequence[str] = ()
     schema: BaseSchema
-    stream_transport_classes: Mapping[str, type[HTTPStreamTransport]] = {
-        MultipartSubscriptionTransport.protocol: MultipartSubscriptionTransport,
+    stream_transport_classes_by_protocol: Mapping[str, type[HTTPStreamTransport]] = {
+        MULTIPART_SUBSCRIPTION_PROTOCOL: MultipartSubscriptionTransport,
+        GRAPHQL_SSE_PROTOCOL: SSETransport,
     }
 
     def should_render_graphql_ide(self, request: BaseRequestProtocol) -> bool:
@@ -83,8 +89,13 @@ class BaseView(Generic[Request]):
     @cached_property
     def _stream_transport_map(self) -> dict[str, HTTPStreamTransport]:
         return {
-            protocol: transport_class()
-            for protocol, transport_class in self.stream_transport_classes.items()
+            transport_class.protocol: transport_class()
+            for protocol in self.protocols
+            if (
+                transport_class := self.stream_transport_classes_by_protocol.get(
+                    protocol
+                )
+            )
         }
 
     def _get_stream_transport(self, protocol: str) -> HTTPStreamTransport | None:
@@ -120,7 +131,7 @@ class BaseView(Generic[Request]):
         )
 
     def _validate_batch_request(
-        self, request_data: list[GraphQLRequestData], protocol: str
+        self, request_data: list[GraphQLRequestData], protocol: GraphQLRequestProtocol
     ) -> None:
         if self.schema.config.batching_config is None:
             raise HTTPException(400, "Batching is not enabled")

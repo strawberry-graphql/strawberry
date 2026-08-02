@@ -92,6 +92,7 @@ if TYPE_CHECKING:
     from graphql.validation import ASTValidationRule
 
     from strawberry.directive import StrawberryDirective
+    from strawberry.schema.exception_handlers import ExceptionHandler
     from strawberry.types.base import StrawberryType
     from strawberry.types.enum import StrawberryEnumDefinition
     from strawberry.types.field import StrawberryField
@@ -271,6 +272,7 @@ class Schema(BaseSchema):
             Mapping[object, type | ScalarWrapper | ScalarDefinition] | None
         ) = None,
         schema_directives: Iterable[object] = (),
+        exception_handlers: Iterable[ExceptionHandler[Any]] = (),
     ) -> None:
         """Default Schema to be used in a Strawberry application.
 
@@ -293,6 +295,8 @@ class Schema(BaseSchema):
             config: The configuration for the schema.
             scalar_overrides: A dictionary of overrides for scalars.
             schema_directives: A list of schema directives for the schema.
+            exception_handlers: A list of handlers that can convert Python
+                exceptions into explicit GraphQL union return values.
 
         Example:
         ```python
@@ -332,12 +336,14 @@ class Schema(BaseSchema):
             execution_context_class or StrawberryGraphQLCoreExecutionContext
         )
         self.config = config or StrawberryConfig()
+        self.exception_handlers = tuple(exception_handlers)
 
         self.schema_converter = GraphQLCoreConverter(
             self.config,
             scalar_overrides=scalar_overrides or {},  # type: ignore
             scalar_map=self.config.scalar_map,
             get_fields=self.get_fields,
+            exception_handlers=self.exception_handlers,
         )
 
         self.directives = directives
@@ -834,6 +840,9 @@ class Schema(BaseSchema):
                         execution_context, extensions_runner
                     )
                 ) is not None:
+                    # Match the async path by exposing pre-execution results to
+                    # operation extensions before their hooks unwind.
+                    execution_context.result = pre_execution_result
                     return pre_execution_result
 
                 assert execution_context.graphql_document is not None
@@ -921,9 +930,11 @@ class Schema(BaseSchema):
                 initial_error.extensions = (
                     await extensions_runner.get_extensions_results(execution_context)
                 )
-                yield await self._handle_execution_result(
+                execution_result = await self._handle_execution_result(
                     execution_context, initial_error, extensions_runner
                 )
+                async with extensions_runner.on_stream_result(execution_result):
+                    yield execution_result
                 return
 
             assert execution_context.graphql_document is not None
@@ -940,7 +951,8 @@ class Schema(BaseSchema):
                 )
                 async with aclosing(result_source):
                     async for result in result_source:
-                        yield result
+                        async with extensions_runner.on_stream_result(result):
+                            yield result
                 return
 
             try:
@@ -972,39 +984,50 @@ class Schema(BaseSchema):
 
                 # Handle pre-execution errors.
                 if isinstance(aiter_or_result, OriginalExecutionResult):
-                    yield await self._handle_execution_result(
+                    execution_result = await self._handle_execution_result(
                         execution_context,
                         PreExecutionError(data=None, errors=aiter_or_result.errors),
                         extensions_runner,
                     )
+                    async with extensions_runner.on_stream_result(execution_result):
+                        yield execution_result
                 else:
                     try:
                         async with aclosing(aiter_or_result):
                             async for result in aiter_or_result:
-                                yield await self._handle_execution_result(
+                                extension_result = await self._handle_execution_result(
                                     execution_context,
                                     result,
                                     extensions_runner,
                                 )
+
+                                async with extensions_runner.on_stream_result(
+                                    extension_result
+                                ):
+                                    yield extension_result
                     # graphql-core doesn't handle exceptions raised while executing.
                     except Exception as exc:  # noqa: BLE001
-                        yield await self._handle_execution_result(
+                        execution_result = await self._handle_execution_result(
                             execution_context,
                             OriginalExecutionResult(
                                 data=None, errors=[_coerce_error(exc)]
                             ),
                             extensions_runner,
                         )
+                        async with extensions_runner.on_stream_result(execution_result):
+                            yield execution_result
             # catch exceptions raised in `on_execute` hook.
             except Exception as exc:  # noqa: BLE001
                 origin_result = OriginalExecutionResult(
                     data=None, errors=[_coerce_error(exc)]
                 )
-                yield await self._handle_execution_result(
+                execution_result = await self._handle_execution_result(
                     execution_context,
                     origin_result,
                     extensions_runner,
                 )
+                async with extensions_runner.on_stream_result(execution_result):
+                    yield execution_result
 
     async def _stream_non_subscription(
         self,

@@ -1,12 +1,11 @@
 import abc
 import asyncio
 import json
-from collections.abc import AsyncGenerator, Callable, Mapping
+from collections.abc import AsyncGenerator, Callable, Mapping, Sequence
 from datetime import timedelta
 from typing import (
     Any,
     Generic,
-    Literal,
     TypeGuard,
     cast,
     overload,
@@ -20,6 +19,7 @@ from strawberry.file_uploads.utils import replace_placeholders_with_files
 from strawberry.http import (
     GraphQLHTTPResponse,
     GraphQLRequestData,
+    GraphQLRequestProtocol,
     process_result,
 )
 from strawberry.http.ides import GraphQL_IDE
@@ -96,6 +96,10 @@ class AsyncBaseHTTPView(
     keep_alive_interval: float | None = None
     connection_init_wait_timeout: timedelta = timedelta(minutes=1)
     max_subscriptions_per_connection: int | None = 100
+    protocols: Sequence[str] = (
+        GRAPHQL_TRANSPORT_WS_PROTOCOL,
+        GRAPHQL_WS_PROTOCOL,
+    )
     request_adapter_class: Callable[[Request], AsyncHTTPRequestAdapter]
     websocket_adapter_class: Callable[
         [
@@ -166,23 +170,29 @@ class AsyncBaseHTTPView(
         self, request: WebSocketRequest, subprotocol: str | None
     ) -> WebSocketResponse: ...
 
+    @property
+    def websocket_subprotocols(self) -> list[str]:
+        """WebSocket subprotocols to advertise during the handshake.
+
+        Derived from ``protocols`` by dropping any non-WebSocket entries (such
+        as ``graphql-sse``), so enabling SSE through ``subscription_protocols``
+        does not leak a non-WebSocket token into WebSocket negotiation.
+        """
+        return [
+            protocol
+            for protocol in self.protocols
+            if protocol in (GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL)
+        ]
+
     async def execute_operation(
         self,
         request: Request,
+        request_adapter: AsyncHTTPRequestAdapter,
+        request_data: GraphQLRequestData | list[GraphQLRequestData],
         context: Context,
         root_value: RootValue | None,
         sub_response: SubResponse,
     ) -> ExecutionResult | list[ExecutionResult] | SubscriptionExecutionResult:
-        request_adapter = self.request_adapter_class(request)
-
-        try:
-            request_data = await self.parse_http_body(request_adapter)
-        except json.decoder.JSONDecodeError as e:
-            raise HTTPException(400, "Unable to parse request body as JSON") from e
-            # DO this only when doing files
-        except KeyError as e:
-            raise HTTPException(400, "File(s) missing in form data") from e
-
         allowed_operation_types = OperationType.from_http(request_adapter.method)
 
         if not self.allow_queries_via_get and request_adapter.method == "GET":
@@ -369,18 +379,30 @@ class AsyncBaseHTTPView(
                 return await self.render_graphql_ide(request)
             raise HTTPException(404, "Not Found")
 
+        try:
+            request_data = await self.parse_http_body(request_adapter)
+        except json.decoder.JSONDecodeError as e:
+            raise HTTPException(400, "Unable to parse request body as JSON") from e
+        except KeyError as e:
+            raise HTTPException(400, "File(s) missing in form data") from e
+
         result = await self.execute_operation(
             request=request,
+            request_adapter=request_adapter,
+            request_data=request_data,
             context=context,
             root_value=root_value,
             sub_response=sub_response,
         )
 
         if isinstance(result, SubscriptionExecutionResult):
+            # Only single (non-batch) operations stream; a batch with a
+            # streaming transport is rejected while parsing.
+            assert isinstance(request_data, GraphQLRequestData)
             return await self._create_streaming_response(
                 request=request,
                 result=result,
-                protocol="multipart-subscription",
+                protocol=request_data.protocol,
                 sub_response=sub_response,
             )
         if isinstance(result, GraphQLIncrementalExecutionResults):
@@ -440,7 +462,7 @@ class AsyncBaseHTTPView(
         self,
         request: Request,
         result: SubscriptionExecutionResult,
-        protocol: str,
+        protocol: GraphQLRequestProtocol,
         sub_response: SubResponse,
     ) -> Response:
         transport = self._get_stream_transport(protocol)
@@ -490,6 +512,9 @@ class AsyncBaseHTTPView(
             initial_response["pending"] = [p.formatted for p in value.pending]
             initial_response["extensions"] = value.extensions
 
+            if value.errors:
+                self._handle_errors(value.errors, initial_response)
+
             return initial_response, list(value.pending)
 
         if isinstance(value, SubsequentIncrementalExecutionResult):
@@ -530,7 +555,12 @@ class AsyncBaseHTTPView(
 
             return subsequent_response, all_pending
 
-        return await self.process_result(request, value), all_pending
+        processed_result = await self.process_result(request, value)
+
+        if value.errors:
+            self._handle_errors(value.errors, processed_result)
+
+        return processed_result, all_pending
 
     async def parse_multipart_subscriptions(
         self, request: AsyncHTTPRequestAdapter
@@ -545,10 +575,7 @@ class AsyncBaseHTTPView(
     ) -> GraphQLRequestData | list[GraphQLRequestData]:
         content_type, _ = parse_content_type(request.content_type or "")
         transport = self._get_stream_transport_from_headers(request.headers)
-
-        protocol: Literal["http", "multipart-subscription"] = (
-            transport.protocol if transport else "http"
-        )
+        protocol: GraphQLRequestProtocol = transport.protocol if transport else "http"
 
         if request.method == "GET":
             data = self.parse_query_params(request.query_params)

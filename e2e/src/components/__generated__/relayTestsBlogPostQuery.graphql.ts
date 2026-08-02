@@ -1,7 +1,6 @@
 /**
- * @generated SignedSource<<b06582eaa8d094fa625c521f1d21c9b9>>
+ * @generated SignedSource<<1ae11baa131ab863ac725bd917a7de38>>
  * @lightSyntaxTransform
- * @nogrep
  */
 
 /* tslint:disable */
@@ -69,21 +68,21 @@ v4 = {
 };
 return {
   "fragment": {
-    "argumentDefinitions": (v0/*: any*/),
+    "argumentDefinitions": (v0/*:: as any*/),
     "kind": "Fragment",
     "metadata": null,
     "name": "relayTestsBlogPostQuery",
     "selections": [
       {
         "alias": null,
-        "args": (v1/*: any*/),
+        "args": (v1/*:: as any*/),
         "concreteType": "BlogPost",
         "kind": "LinkedField",
         "name": "blogPost",
         "plural": false,
         "selections": [
-          (v2/*: any*/),
-          (v3/*: any*/),
+          (v2/*:: as any*/),
+          (v3/*:: as any*/),
           {
             "kind": "Defer",
             "selections": [
@@ -103,20 +102,20 @@ return {
   },
   "kind": "Request",
   "operation": {
-    "argumentDefinitions": (v0/*: any*/),
+    "argumentDefinitions": (v0/*:: as any*/),
     "kind": "Operation",
     "name": "relayTestsBlogPostQuery",
     "selections": [
       {
         "alias": null,
-        "args": (v1/*: any*/),
+        "args": (v1/*:: as any*/),
         "concreteType": "BlogPost",
         "kind": "LinkedField",
         "name": "blogPost",
         "plural": false,
         "selections": [
-          (v2/*: any*/),
-          (v3/*: any*/),
+          (v2/*:: as any*/),
+          (v3/*:: as any*/),
           {
             "if": "shouldDefer",
             "kind": "Defer",
@@ -130,14 +129,14 @@ return {
                 "name": "comments",
                 "plural": true,
                 "selections": [
-                  (v4/*: any*/),
-                  (v3/*: any*/)
+                  (v4/*:: as any*/),
+                  (v3/*:: as any*/)
                 ],
                 "storageKey": null
               }
             ]
           },
-          (v4/*: any*/)
+          (v4/*:: as any*/)
         ],
         "storageKey": null
       }

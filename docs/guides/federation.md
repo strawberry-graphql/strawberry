@@ -95,7 +95,8 @@ if needed:
 
 ```python
 schema = strawberry.federation.Schema(
-    query=Query, federation_version="2.5"  # Specify a specific version if needed
+    query=Query,
+    federation_version="2.5",  # Specify a specific version if needed
 )
 ```
 

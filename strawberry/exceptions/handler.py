@@ -10,7 +10,10 @@ from .exception import StrawberryException, UnableToFindExceptionSource
 original_threading_exception_hook = threading.excepthook
 
 
-ExceptionHandler = Callable[
+# Signature of ``sys.excepthook`` / ``threading.excepthook`` handlers. Named
+# ``ExcepthookHandler`` (not ``ExceptionHandler``) to avoid colliding with the
+# public ``strawberry.ExceptionHandler`` schema protocol.
+ExcepthookHandler = Callable[
     [type[BaseException], BaseException, TracebackType | None], None
 ]
 
@@ -21,7 +24,7 @@ def should_use_rich_exceptions() -> bool:
     return errors_disabled.lower() not in ["true", "1", "yes"]
 
 
-def _get_handler(exception_type: type[BaseException]) -> ExceptionHandler:
+def _get_handler(exception_type: type[BaseException]) -> ExcepthookHandler:
     if issubclass(exception_type, StrawberryException):
         try:
             import rich

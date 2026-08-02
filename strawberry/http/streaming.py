@@ -4,12 +4,12 @@ import abc
 import asyncio
 import contextlib
 from collections.abc import AsyncGenerator, Callable, Iterable, Mapping
-from typing import TYPE_CHECKING, Any, ClassVar, Literal
+from typing import TYPE_CHECKING, Any, ClassVar
 
 from strawberry.types.graphql import OperationType
 
 if TYPE_CHECKING:
-    from strawberry.http import GraphQLHTTPResponse
+    from strawberry.http import GraphQLHTTPResponse, GraphQLRequestProtocol
 
 from .parse_content_type import parse_content_type
 
@@ -19,7 +19,7 @@ JSONEncoder = Callable[[object], str]
 MULTIPART_SUBSCRIPTION_BOUNDARY = "graphql"
 MULTIPART_SUBSCRIPTION_HEARTBEAT_INTERVAL = 5
 MULTIPART_INCREMENTAL_BOUNDARY = "-"
-HTTPStreamProtocol = Literal["multipart-subscription"]
+SSE_HEARTBEAT_INTERVAL = 15
 MultipartDataStream = Callable[[], AsyncGenerator[object, None]]
 MultipartTextStream = Callable[[], AsyncGenerator[str, None]]
 
@@ -71,12 +71,12 @@ class MultipartTransport:
 
 
 class HTTPStreamTransport(abc.ABC):
-    protocol: ClassVar[HTTPStreamProtocol]
+    protocol: ClassVar[GraphQLRequestProtocol]
     batching_error: ClassVar[str]
     sync_not_supported_error: ClassVar[str] = (
         "Streaming responses are not supported in sync mode"
     )
-    heartbeat_interval: ClassVar[float]
+    heartbeat_interval: float
     send_initial_heartbeat: ClassVar[bool]
 
     @property
@@ -107,14 +107,14 @@ class HTTPStreamTransport(abc.ABC):
 
 
 class MultipartSubscriptionTransport(MultipartTransport, HTTPStreamTransport):
-    protocol: ClassVar[HTTPStreamProtocol] = "multipart-subscription"
+    protocol: ClassVar[GraphQLRequestProtocol] = "multipart-subscription"
     batching_error: ClassVar[str] = (
         "Batching is not supported for multipart subscriptions"
     )
     sync_not_supported_error: ClassVar[str] = (
         "Multipart subscriptions are not supported in sync mode"
     )
-    heartbeat_interval: ClassVar[float] = MULTIPART_SUBSCRIPTION_HEARTBEAT_INTERVAL
+    heartbeat_interval: float = MULTIPART_SUBSCRIPTION_HEARTBEAT_INTERVAL
     send_initial_heartbeat: ClassVar[bool] = True
 
     def __init__(self, separator: str = MULTIPART_SUBSCRIPTION_BOUNDARY) -> None:
@@ -154,6 +154,58 @@ class MultipartSubscriptionTransport(MultipartTransport, HTTPStreamTransport):
 
     def heartbeat_message(self, encode_json: JSONEncoder) -> str:
         return self.encode_multipart_data({}, encode_json)
+
+
+class SSETransport(HTTPStreamTransport):
+    protocol: ClassVar[GraphQLRequestProtocol] = "sse"
+    batching_error: ClassVar[str] = "Batching is not supported for SSE"
+    headers: ClassVar[Mapping[str, str]] = {
+        # SSE streams are identified by this media type.
+        "Content-Type": "text/event-stream",
+        # Avoid serving a cached response for a long-lived event stream, and
+        # stop intermediaries from compressing or otherwise transforming it.
+        "Cache-Control": "no-cache, no-transform",
+        # Ask Nginx not to buffer SSE chunks so heartbeats flush promptly.
+        "X-Accel-Buffering": "no",
+    }
+    heartbeat_interval: float = SSE_HEARTBEAT_INTERVAL
+    send_initial_heartbeat: ClassVar[bool] = False
+
+    def __init__(self, heartbeat_interval: float = SSE_HEARTBEAT_INTERVAL) -> None:
+        self.heartbeat_interval = heartbeat_interval
+
+    def accepts(self, accept: str) -> bool:
+        return any(
+            part.split(";", 1)[0].strip().lower() == "text/event-stream"
+            for part in accept.split(",")
+        )
+
+    def encode_next(
+        self, response: GraphQLHTTPResponse, encode_json: JSONEncoder
+    ) -> str:
+        return self.encode_event("next", encode_json(response))
+
+    def encode_complete(self) -> str:
+        return self.encode_event("complete")
+
+    def heartbeat_message(self, encode_json: JSONEncoder) -> str:
+        return self.encode_comment("ping")
+
+    def encode_event(self, event: str, data: str | None = None) -> str:
+        """Encode one SSE event from already-encoded ``data``.
+
+        ``data`` must be a single line: SSE cannot carry a value with newlines in
+        one field, so a multi-line ``encode_json`` output is rejected rather than
+        silently reframed.
+        """
+        if data and ("\r" in data or "\n" in data):
+            raise ValueError("SSE event data must not contain newlines")
+
+        # Browsers discard SSE events without a data field, so always send one.
+        return f"event: {event}\r\ndata: {data or ''}\r\n\r\n"
+
+    def encode_comment(self, comment: str) -> str:
+        return f": {comment}\r\n\r\n"
 
 
 def merge_stream_with_heartbeat(
@@ -235,5 +287,6 @@ __all__ = [
     "HTTPStreamTransport",
     "MultipartSubscriptionTransport",
     "MultipartTransport",
+    "SSETransport",
     "merge_stream_with_heartbeat",
 ]

@@ -233,7 +233,7 @@ class GraphQLController(
 
     async def pick_websocket_subprotocol(self, request: WebSocket) -> str | None:
         subprotocols = request.scope["subprotocols"]
-        intersection = set(subprotocols) & set(self.protocols)
+        intersection = set(subprotocols) & set(self.websocket_subprotocols)
         sorted_intersection = sorted(intersection, key=subprotocols.index)
         return next(iter(sorted_intersection), None)
 

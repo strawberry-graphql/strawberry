@@ -54,9 +54,10 @@ The `make_graphql_controller` function accepts the following options:
   for websockets.
 - `keep_alive_interval`: optional, defaults to `1`, the interval in seconds for
   keep alive messages.
-- `subscription_protocols` optional, defaults to
+- `subscription_protocols`: optional, defaults to
   `(GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL)`, the allowed
-  subscription protocols
+  subscription protocols. Include `MULTIPART_SUBSCRIPTION_PROTOCOL` to enable
+  multipart subscriptions or `GRAPHQL_SSE_PROTOCOL` to enable SSE.
 - `connection_init_wait_timeout` optional, default to `timedelta(minutes=1)`,
   the maximum time to wait for the connection initialization message when using
   `graphql-transport-ws`

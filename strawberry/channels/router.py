@@ -12,10 +12,14 @@ from typing import TYPE_CHECKING
 from channels.routing import ProtocolTypeRouter, URLRouter
 from django.urls import re_path
 
+from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
+
 from .handlers.http_handler import GraphQLHTTPConsumer
 from .handlers.ws_handler import GraphQLWSConsumer
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
     from strawberry.schema import BaseSchema
 
 
@@ -48,8 +52,20 @@ class GraphQLProtocolTypeRouter(ProtocolTypeRouter):
         schema: BaseSchema,
         django_application: str | None = None,
         url_pattern: str = "^graphql",
+        subscription_protocols: Sequence[str] = (
+            GRAPHQL_TRANSPORT_WS_PROTOCOL,
+            GRAPHQL_WS_PROTOCOL,
+        ),
     ) -> None:
-        http_urls = [re_path(url_pattern, GraphQLHTTPConsumer.as_asgi(schema=schema))]
+        http_urls = [
+            re_path(
+                url_pattern,
+                GraphQLHTTPConsumer.as_asgi(
+                    schema=schema,
+                    subscription_protocols=subscription_protocols,
+                ),
+            )
+        ]
         if django_application is not None:
             http_urls.append(re_path("^", django_application))
 
@@ -58,7 +74,13 @@ class GraphQLProtocolTypeRouter(ProtocolTypeRouter):
                 "http": URLRouter(http_urls),
                 "websocket": URLRouter(
                     [
-                        re_path(url_pattern, GraphQLWSConsumer.as_asgi(schema=schema)),
+                        re_path(
+                            url_pattern,
+                            GraphQLWSConsumer.as_asgi(
+                                schema=schema,
+                                subscription_protocols=subscription_protocols,
+                            ),
+                        ),
                     ]
                 ),
             }

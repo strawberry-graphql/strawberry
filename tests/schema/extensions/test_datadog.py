@@ -5,9 +5,27 @@ from typing import Any
 import pytest
 
 import strawberry
+from strawberry.schema.exceptions import InvalidOperationTypeError
+from strawberry.types.graphql import OperationType
 
 if typing.TYPE_CHECKING:
     from strawberry.extensions.tracing.datadog import DatadogTracingExtension
+
+
+def _simulate_context_manager(tracer_mock) -> None:
+    """Make the tracer mock behave like a context manager.
+
+    Entering the context returns the span. And exiting the context
+    calls `finish()` on the span.
+    """
+    span = tracer_mock.trace.return_value
+    span.__enter__.return_value = span
+
+    def _exit(*args: object, **kwargs: Any):
+        span.finish()
+        return False
+
+    span.__exit__.side_effect = _exit
 
 
 @pytest.fixture
@@ -15,6 +33,7 @@ def ddtrace_version_2(mocker):
     ddtrace_mock = mocker.MagicMock()
     ddtrace_mock.__version__ = "2.20.0"
     mocker.patch.dict("sys.modules", ddtrace=ddtrace_mock)
+    _simulate_context_manager(ddtrace_mock.tracer)
     return ddtrace_mock
 
 
@@ -26,6 +45,7 @@ def ddtrace_version_3(mocker):
 
     trace_mock = mocker.MagicMock()
     mocker.patch.dict("sys.modules", {"ddtrace.trace": trace_mock})
+    _simulate_context_manager(trace_mock.tracer)
     return trace_mock
 
 
@@ -111,24 +131,27 @@ async def test_datadog_tracer(datadog_extension, mocker):
                 span_type="graphql",
                 service="strawberry",
             ),
+            mocker.call.trace().__enter__(),  # on_operation
             mocker.call.trace().set_tag("graphql.operation_name", None),
             mocker.call.trace().set_tag("graphql.operation_type", "query"),
             mocker.call.trace("Parsing", span_type="graphql"),
-            mocker.call.trace().finish(),
+            mocker.call.trace().__enter__(),  # on_parse
+            mocker.call.trace().__exit__(None, None, None),  # on_parse
+            mocker.call.trace().finish(),  # on_parse
             mocker.call.trace("Validation", span_type="graphql"),
-            mocker.call.trace().finish(),
+            mocker.call.trace().__enter__(),  # on_validate
+            mocker.call.trace().__exit__(None, None, None),  # on_validate
+            mocker.call.trace().finish(),  # on_validate
             mocker.call.trace("Resolving: Query.personAsync", span_type="graphql"),
-            mocker.call.trace().__enter__(),
-            mocker.call.trace()
-            .__enter__()
-            .set_tag("graphql.field_name", "personAsync"),
-            mocker.call.trace().__enter__().set_tag("graphql.parent_type", "Query"),
-            mocker.call.trace()
-            .__enter__()
-            .set_tag("graphql.field_path", "Query.personAsync"),
-            mocker.call.trace().__enter__().set_tag("graphql.path", "personAsync"),
-            mocker.call.trace().__exit__(None, None, None),
-            mocker.call.trace().finish(),
+            mocker.call.trace().__enter__(),  # resolve
+            mocker.call.trace().set_tag("graphql.field_name", "personAsync"),
+            mocker.call.trace().set_tag("graphql.parent_type", "Query"),
+            mocker.call.trace().set_tag("graphql.field_path", "Query.personAsync"),
+            mocker.call.trace().set_tag("graphql.path", "personAsync"),
+            mocker.call.trace().__exit__(None, None, None),  # resolve
+            mocker.call.trace().finish(),  # resolve
+            mocker.call.trace().__exit__(None, None, None),  # on_operation
+            mocker.call.trace().finish(),  # on_operation
         ]
     )
 
@@ -213,22 +236,27 @@ def test_datadog_tracer_sync(datadog_extension_sync, mocker):
                 span_type="graphql",
                 service="strawberry",
             ),
+            mocker.call.trace().__enter__(),  # on_operation
             mocker.call.trace().set_tag("graphql.operation_name", None),
             mocker.call.trace().set_tag("graphql.operation_type", "query"),
             mocker.call.trace("Parsing", span_type="graphql"),
-            mocker.call.trace().finish(),
+            mocker.call.trace().__enter__(),  # on_parse
+            mocker.call.trace().__exit__(None, None, None),  # on_parse
+            mocker.call.trace().finish(),  # on_parse
             mocker.call.trace("Validation", span_type="graphql"),
-            mocker.call.trace().finish(),
+            mocker.call.trace().__enter__(),  # on_validate
+            mocker.call.trace().__exit__(None, None, None),  # on_validate
+            mocker.call.trace().finish(),  # on_validate
             mocker.call.trace("Resolving: Query.person", span_type="graphql"),
-            mocker.call.trace().__enter__(),
-            mocker.call.trace().__enter__().set_tag("graphql.field_name", "person"),
-            mocker.call.trace().__enter__().set_tag("graphql.parent_type", "Query"),
-            mocker.call.trace()
-            .__enter__()
-            .set_tag("graphql.field_path", "Query.person"),
-            mocker.call.trace().__enter__().set_tag("graphql.path", "person"),
-            mocker.call.trace().__exit__(None, None, None),
-            mocker.call.trace().finish(),
+            mocker.call.trace().__enter__(),  # resolve
+            mocker.call.trace().set_tag("graphql.field_name", "person"),
+            mocker.call.trace().set_tag("graphql.parent_type", "Query"),
+            mocker.call.trace().set_tag("graphql.field_path", "Query.person"),
+            mocker.call.trace().set_tag("graphql.path", "person"),
+            mocker.call.trace().__exit__(None, None, None),  # resolve
+            mocker.call.trace().finish(),  # resolve
+            mocker.call.trace().__exit__(None, None, None),  # on_operation
+            mocker.call.trace().finish(),  # on_operation
         ]
     )
 
@@ -328,7 +356,58 @@ async def test_uses_query_missing_operation_if_no_query(datadog_extension, mocke
                 span_type="graphql",
                 service="strawberry",
             ),
+            mocker.call.trace().__enter__(),  # on_operation
             mocker.call.trace().set_tag("graphql.operation_name", None),
             mocker.call.trace().set_tag("graphql.operation_type", "query_missing"),
+            mocker.call.trace().__exit__(
+                strawberry.exceptions.MissingQueryError, mocker.ANY, mocker.ANY
+            ),  # on_operation
+            mocker.call.trace().finish(),  # on_operation
+        ]
+    )
+
+
+def test_datadog_spans_are_closed_on_exception(datadog_extension_sync, mocker):
+    """Test that Datadog spans are also closed when an exception is raised while an
+    operation is processed.
+    """
+    extension, mock = datadog_extension_sync
+
+    schema = strawberry.Schema(query=Query, mutation=Mutation, extensions=[extension])
+
+    query = """
+        mutation MyMutation {
+            sayHi
+        }
+    """
+
+    with pytest.raises(InvalidOperationTypeError):
+        # calling a mutation when only queries are allowed will raise an InvalidOperationTypeError
+        schema.execute_sync(
+            query,
+            operation_name="MyMutation",
+            allowed_operation_types=[OperationType.QUERY],
+        )
+
+    mock.tracer.assert_has_calls(
+        [
+            mocker.call.trace(
+                "MyMutation",
+                resource=mocker.ANY,
+                span_type="graphql",
+                service="strawberry",
+            ),
+            mocker.call.trace().__enter__(),  # on_operation
+            mocker.call.trace().set_tag("graphql.operation_name", "MyMutation"),
+            mocker.call.trace().set_tag("graphql.operation_type", "mutation"),
+            mocker.call.trace("Parsing", span_type="graphql"),
+            mocker.call.trace().__enter__(),  # on_parse
+            mocker.call.trace().__exit__(None, None, None),  # on_parse
+            mocker.call.trace().finish(),  # on_parse
+            mocker.call.trace().__exit__(
+                InvalidOperationTypeError, mocker.ANY, mocker.ANY
+            ),  # on_operation
+            # finish is called on the span
+            mocker.call.trace().finish(),  # on_operation
         ]
     )

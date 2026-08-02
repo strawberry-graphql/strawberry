@@ -60,7 +60,7 @@ class QuartWebSocketAdapter(AsyncWebSocketAdapter):
         try:
             # Raises asyncio.CancelledError when the connection is closed.
             # https://quart.palletsprojects.com/en/latest/how_to_guides/websockets.html#detecting-disconnection
-            await self.ws.send(self.view.encode_json(message))  # type:ignore
+            await self.ws.send(self.view.encode_json(message))  # type: ignore[type-var]
             # quart is misusing AnyStr, leading to type errors for unions, see https://github.com/pallets/quart/issues/451
         except asyncio.CancelledError as exc:
             raise WebSocketDisconnected from exc
@@ -99,7 +99,7 @@ class GraphQLView(
         self.allow_queries_via_get = allow_queries_via_get
         self.keep_alive = keep_alive
         self.keep_alive_interval = keep_alive_interval
-        self.subscription_protocols = subscription_protocols
+        self.protocols = subscription_protocols
         self.connection_init_wait_timeout = connection_init_wait_timeout
         self.multipart_uploads_enabled = multipart_uploads_enabled
         self.max_subscriptions_per_connection = max_subscriptions_per_connection
@@ -147,10 +147,10 @@ class GraphQLView(
         sub_response: Response,
         headers: Mapping[str, str],
     ) -> Response:
-        return (
+        return (  # type: ignore[return-value]
             stream(),
             sub_response.status_code,
-            {  # type: ignore
+            {
                 **sub_response.headers,
                 **headers,
             },
@@ -163,7 +163,7 @@ class GraphQLView(
 
     async def pick_websocket_subprotocol(self, request: Websocket) -> str | None:
         protocols = request.requested_subprotocols
-        intersection = set(protocols) & set(self.subscription_protocols)
+        intersection = set(protocols) & set(self.websocket_subprotocols)
         sorted_intersection = sorted(intersection, key=protocols.index)
         return next(iter(sorted_intersection), None)
 

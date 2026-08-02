@@ -90,14 +90,14 @@ class NodeExtension(FieldExtension):
 
     def get_node_resolver(
         self, field: StrawberryField
-    ) -> Callable[[strawberry.Info, GlobalID], Node | None | Awaitable[Node | None]]:
+    ) -> Callable[[strawberry.Info, GlobalID], Node | Awaitable[Node | None] | None]:
         type_ = field.type
         is_optional = isinstance(type_, StrawberryOptional)
 
         def resolver(
             info: strawberry.Info,
             id: Annotated[GlobalID, argument(description="The ID of the object.")],
-        ) -> Node | None | Awaitable[Node | None]:
+        ) -> Node | Awaitable[Node | None] | None:
             node_type = id.resolve_type(info)
             resolved_node = node_type.resolve_node(
                 id.node_id,

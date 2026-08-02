@@ -1,7 +1,18 @@
-import { ApolloClient, gql, InMemoryCache } from "@apollo/client/core";
+import {
+	ApolloClient,
+	ApolloLink,
+	gql,
+	InMemoryCache,
+	Observable,
+} from "@apollo/client/core";
 import { GraphQLWsLink } from "@apollo/client/link/subscriptions";
 import { useLazyQuery, useSubscription } from "@apollo/client/react";
-import type { DocumentNode } from "graphql";
+import { print, type DocumentNode } from "graphql";
+import {
+	type Client as GraphQLSSEClient,
+	type ClientOptions as GraphQLSSEClientOptions,
+	createClient as createSSEClient,
+} from "graphql-sse";
 import { createClient as createWsClient } from "graphql-ws";
 import { type ReactNode, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -44,6 +55,33 @@ function getWebsocketGraphqlUrl() {
 	return url.toString();
 }
 
+class SSELink extends ApolloLink {
+	private readonly client: GraphQLSSEClient;
+
+	constructor(options: GraphQLSSEClientOptions) {
+		super();
+		this.client = createSSEClient(options);
+	}
+
+	override request(operation: ApolloLink.Operation) {
+		return new Observable<ApolloLink.Result>((sink) => {
+			return this.client.subscribe(
+				{
+					operationName: operation.operationName,
+					query: print(operation.query),
+					variables: operation.variables,
+					extensions: operation.extensions,
+				},
+				{
+					next: (result) => sink.next(result as ApolloLink.Result),
+					error: (error) => sink.error(error),
+					complete: () => sink.complete(),
+				},
+			);
+		});
+	}
+}
+
 const websocketApolloClient = new ApolloClient({
 	link: new GraphQLWsLink(
 		createWsClient({
@@ -51,6 +89,14 @@ const websocketApolloClient = new ApolloClient({
 			retryAttempts: 0,
 		}),
 	),
+	cache: new InMemoryCache(),
+});
+
+const sseApolloClient = new ApolloClient({
+	link: new SSELink({
+		url: GRAPHQL_URL,
+		retryAttempts: 0,
+	}),
 	cache: new InMemoryCache(),
 });
 
@@ -138,39 +184,89 @@ function ApolloSubscriptionTest({
 }
 
 function WebSocketQueryTest() {
+	return (
+		<SubscriptionQueryTest
+			title="WebSocket Query"
+			testId="ws-query"
+			client={websocketApolloClient}
+			icon={Icons.code}
+		/>
+	);
+}
+
+function SubscriptionQueryTest({
+	title,
+	testId,
+	client,
+	icon,
+}: {
+	title: string;
+	testId: string;
+	client: ApolloClient;
+	icon?: ReactNode;
+}) {
 	const [runQuery, { data, loading, error }] = useLazyQuery<HelloData>(
 		HELLO_QUERY,
 		{
-			client: websocketApolloClient,
+			client,
 			fetchPolicy: "no-cache",
 		},
 	);
 	const status: RunStatus = loading ? "loading" : data ? "complete" : "idle";
 
 	return (
-		<TestCard title="WebSocket Query" icon={Icons.code}>
+		<TestCard title={title} icon={icon}>
 			<div className="flex flex-wrap items-center gap-3">
 				<Button
 					onClick={() => void runQuery()}
 					disabled={loading}
-					data-testid="ws-query-button"
+					data-testid={`${testId}-button`}
 				>
 					Run Query
 				</Button>
 				<StatusBadge
 					status={error ? "error" : status}
-					testId="ws-query-status"
+					testId={`${testId}-status`}
 				/>
 			</div>
 			{error && (
-				<ErrorBanner message={getErrorMessage(error)} testId="ws-query-error" />
+				<ErrorBanner
+					message={getErrorMessage(error)}
+					testId={`${testId}-error`}
+				/>
 			)}
 			{data && (
-				<ResultBlock testId="ws-query-result" label="hello">
+				<ResultBlock testId={`${testId}-result`} label="hello">
 					{JSON.stringify(data, null, 2)}
 				</ResultBlock>
 			)}
 		</TestCard>
+	);
+}
+
+export function SSETests() {
+	return (
+		<div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+			<ApolloSubscriptionTest
+				title="SSE Subscription"
+				testId="sse-subscription"
+				client={sseApolloClient}
+				icon={Icons.stream}
+			/>
+			<SubscriptionQueryTest
+				title="SSE Query"
+				testId="sse-query"
+				client={sseApolloClient}
+				icon={Icons.code}
+			/>
+			<ApolloSubscriptionTest
+				title="SSE Subscription Error"
+				testId="sse-failing-subscription"
+				subscription={COUNT_THEN_FAIL_SUBSCRIPTION}
+				client={sseApolloClient}
+				icon={Icons.signal}
+			/>
+		</div>
 	);
 }
 

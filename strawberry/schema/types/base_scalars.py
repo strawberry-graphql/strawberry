@@ -10,23 +10,38 @@ from graphql import GraphQLError
 from strawberry.types.scalar import ScalarDefinition
 
 
-def wrap_parser(parser: Callable, type_: str) -> Callable:
-    def inner(value: str) -> object:
+def wrap_parser(
+    parser: Callable[[str], object],
+    type_: str,
+    exceptions: tuple[type[Exception], ...] = (ValueError,),
+    include_error: bool = True,
+    accept_non_string: bool = False,
+) -> Callable[[object], object]:
+    """Wrap a string parser so any invalid input becomes a clean coercion error.
+
+    Non-string input is rejected up front so the parser can never crash with
+    ``AttributeError``/``TypeError`` on unexpected value types and surface as
+    a server-side error. ``accept_non_string`` stringifies non-string input
+    instead of rejecting it, for scalars that accept it by design (``Decimal``
+    accepts numeric input this way).
+    """
+
+    def inner(value: object) -> object:
+        if not isinstance(value, str):
+            if not accept_non_string:
+                raise GraphQLError(
+                    f'Value cannot represent a {type_}: "{value}". Expected a string.'
+                )
+            value = str(value)
         try:
             return parser(value)
-        except ValueError as e:
-            raise GraphQLError(  # noqa: B904
-                f'Value cannot represent a {type_}: "{value}". {e}'
-            )
+        except exceptions as e:
+            detail = f" {e}" if include_error else ""
+            raise GraphQLError(
+                f'Value cannot represent a {type_}: "{value}".{detail}'
+            ) from None
 
     return inner
-
-
-def parse_decimal(value: object) -> decimal.Decimal:
-    try:
-        return decimal.Decimal(str(value))
-    except decimal.DecimalException:
-        raise GraphQLError(f'Value cannot represent a Decimal: "{value}".')  # noqa: B904
 
 
 isoformat = methodcaller("isoformat")
@@ -67,7 +82,13 @@ DecimalDefinition: ScalarDefinition = ScalarDefinition(
     description="Decimal (fixed-point)",
     specified_by_url=None,
     serialize=str,
-    parse_value=parse_decimal,
+    parse_value=wrap_parser(
+        decimal.Decimal,
+        "Decimal",
+        exceptions=(decimal.DecimalException,),
+        include_error=False,
+        accept_non_string=True,
+    ),
     parse_literal=None,
     origin=decimal.Decimal,
 )

@@ -144,8 +144,8 @@ def test_to_base64_with_invalid_type(value: Any):
             10,
             None,
             100,
-            SliceMetadata(start=14, end=24, expected=10),
-            25,
+            SliceMetadata(start=0, end=10, expected=10),
+            11,
         ),
         (
             None,
@@ -178,3 +178,47 @@ def test_get_slice_metadata(
     )
     assert slice_metadata == expected
     assert slice_metadata.overfetch == expected_overfetch
+
+
+@pytest.mark.parametrize(
+    ("before", "after", "first", "expected"),
+    [
+        # `before=15, first=10`: the Relay spec's reference algorithm applies
+        # `before` first (keep edges strictly before it, i.e. positions 0..14),
+        # then `first` takes the first N of *that* filtered slice. The result
+        # must stay anchored at 0, not jump forward to just before `before`.
+        (15, None, 10, SliceMetadata(start=0, end=10, expected=10)),
+        # Fewer edges exist before the cursor than `first` asks for: the
+        # window is bounded by `before`, not padded out to `first` items.
+        (5, None, 10, SliceMetadata(start=0, end=5, expected=5)),
+        # `after` establishes the true start; `before` bounds the end; `first`
+        # must only shrink that window from the end, never move `start`.
+        (20, 5, 3, SliceMetadata(start=6, end=9, expected=3)),
+        # `first=0` boundary: an empty slice anchored at the start of the
+        # `before`-bounded window (position 0 here, since there is no `after`).
+        (15, None, 0, SliceMetadata(start=0, end=0, expected=0)),
+        # `first=0` with `after` set: still an empty slice, but anchored at the
+        # `after`-derived start (position 6), not reset to 0.
+        (15, 5, 0, SliceMetadata(start=6, end=6, expected=0)),
+    ],
+)
+def test_get_slice_metadata_first_with_before(
+    before: int,
+    after: int | None,
+    first: int,
+    expected: SliceMetadata,
+):
+    """Regression test: `first` combined with `before` must paginate forward
+    from the existing `start` (0, or wherever `after` put it), capping `end`
+    at `start + first` -- not discard `start` and walk backward from `before`.
+    """
+    info = mock.Mock()
+    info.schema.config = StrawberryConfig(relay_max_results=100)
+    slice_metadata = SliceMetadata.from_arguments(
+        info,
+        before=to_base64(PREFIX, before),
+        after=after and to_base64(PREFIX, after),
+        first=first,
+        last=None,
+    )
+    assert slice_metadata == expected

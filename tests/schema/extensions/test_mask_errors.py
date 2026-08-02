@@ -4,7 +4,81 @@ import pytest
 from graphql.error import GraphQLError
 
 import strawberry
-from strawberry.extensions import MaskErrors
+from strawberry.extensions import MaskErrors, ValidationCache
+
+
+@pytest.mark.parametrize(
+    "query",
+    [
+        "query { testField( }",
+        "query { missingField }",
+    ],
+)
+def test_mask_pre_execution_errors_sync(query: str):
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def test_field(self) -> str:
+            return "TestField"
+
+    schema = strawberry.Schema(
+        query=Query,
+        extensions=[ValidationCache, MaskErrors],
+    )
+
+    result = schema.execute_sync(query)
+
+    assert result.data is None
+    assert result.errors is not None
+    assert [error.message for error in result.errors] == ["Unexpected error."]
+
+
+def test_mask_cached_validation_errors_sync():
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def test_field(self) -> str:
+            return "TestField"
+
+    schema = strawberry.Schema(
+        query=Query,
+        extensions=[ValidationCache, MaskErrors],
+    )
+
+    query = "query { missingField }"
+    results = (schema.execute_sync(query), schema.execute_sync(query))
+
+    for result in results:
+        assert result.data is None
+        assert result.errors is not None
+        assert [error.message for error in result.errors] == ["Unexpected error."]
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "query",
+    [
+        "query { testField( }",
+        "query { missingField }",
+    ],
+)
+async def test_mask_pre_execution_errors_async(query: str):
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def test_field(self) -> str:
+            return "TestField"
+
+    schema = strawberry.Schema(
+        query=Query,
+        extensions=[ValidationCache, MaskErrors],
+    )
+
+    result = await schema.execute(query)
+
+    assert result.data is None
+    assert result.errors is not None
+    assert [error.message for error in result.errors] == ["Unexpected error."]
 
 
 def test_mask_all_errors():

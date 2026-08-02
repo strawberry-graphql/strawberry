@@ -16,9 +16,10 @@ from strawberry.http.typevars import (
     Context,
     RootValue,
 )
+from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
 
 if TYPE_CHECKING:
-    from collections.abc import AsyncGenerator, Callable, Mapping
+    from collections.abc import AsyncGenerator, Callable, Mapping, Sequence
 
     from strawberry.http import GraphQLHTTPResponse
     from strawberry.http.ides import GraphQL_IDE
@@ -63,10 +64,15 @@ class GraphQLView(
         graphql_ide: GraphQL_IDE | None = "graphiql",
         allow_queries_via_get: bool = True,
         multipart_uploads_enabled: bool = False,
+        subscription_protocols: Sequence[str] = (
+            GRAPHQL_TRANSPORT_WS_PROTOCOL,
+            GRAPHQL_WS_PROTOCOL,
+        ),
     ) -> None:
         self.schema = schema
         self.allow_queries_via_get = allow_queries_via_get
         self.multipart_uploads_enabled = multipart_uploads_enabled
+        self.protocols = subscription_protocols
 
         self.graphql_ide = graphql_ide
 
@@ -144,7 +150,7 @@ class GraphQLView(
         # to the client, so we return None to avoid that, and we ignore the type
         # error mostly so we don't have to update the types everywhere for this
         # corner case
-        return None  # type: ignore
+        return None  # type: ignore[return-value]
 
     def is_websocket_request(self, request: Request) -> TypeGuard[Request]:
         return False

@@ -294,3 +294,61 @@ def test_federation_input():
             ),
         ]
     )
+
+
+CODE_SCALAR = """
+import strawberry
+from datetime import datetime
+from graphql.language import ast
+
+def parse_epoch_literal(
+    node: ast.ValueNode, variables: dict[str, object] | None = None
+) -> datetime:
+    assert isinstance(node, ast.IntValueNode)
+    return datetime.fromtimestamp(int(node.value))
+
+EpochDateTime = strawberry.federation.scalar(
+    datetime,
+    name="EpochDateTime",
+    serialize=lambda value: int(value.timestamp()),
+    parse_value=lambda value: datetime.fromtimestamp(int(value)),
+    parse_literal=parse_epoch_literal,
+)
+
+reveal_type(EpochDateTime)
+"""
+
+
+def test_federation_scalar():
+    results = typecheck(CODE_SCALAR)
+
+    assert results.pyright == snapshot(
+        [
+            Result(
+                type="information",
+                message='Type of "EpochDateTime" is "type[datetime]"',
+                line=20,
+                column=13,
+            )
+        ]
+    )
+    assert results.mypy == snapshot(
+        [
+            Result(
+                type="note",
+                message='Revealed type is "def (year: typing.SupportsIndex, month: typing.SupportsIndex, day: typing.SupportsIndex, hour: typing.SupportsIndex =, minute: typing.SupportsIndex =, second: typing.SupportsIndex =, microsecond: typing.SupportsIndex =, tzinfo: datetime.tzinfo | None =, *, fold: int =) -> datetime.datetime"',
+                line=20,
+                column=13,
+            )
+        ]
+    )
+    assert results.ty == snapshot(
+        [
+            Result(
+                type="information",
+                message="Revealed type: `<class 'datetime'>`",
+                line=20,
+                column=13,
+            )
+        ]
+    )

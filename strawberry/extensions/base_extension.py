@@ -4,6 +4,7 @@ from collections.abc import Callable
 from enum import Enum
 from typing import TYPE_CHECKING, Any
 
+from strawberry.types import StreamExecutionResult
 from strawberry.utils.await_maybe import AsyncIteratorOrIterator, AwaitableOrValue
 
 if TYPE_CHECKING:
@@ -51,6 +52,16 @@ class SchemaExtension:
         """Called before and after the execution step."""
         yield None
 
+    def on_stream_result(  # type: ignore
+        self, result: StreamExecutionResult
+    ) -> AsyncIteratorOrIterator[None]:  # pragma: no cover
+        """Called before and after each result yielded by ``Schema.stream``.
+
+        Extensions can mutate ``result`` before yielding to change the response sent
+        by streaming transports. Incremental-delivery frames are included.
+        """
+        yield None
+
     def resolve(
         self,
         _next: Callable,
@@ -70,13 +81,17 @@ class SchemaExtension:
         return cls.resolve is not SchemaExtension.resolve
 
 
-Hook = Callable[[SchemaExtension], AsyncIteratorOrIterator[None]]
+Hook = (
+    Callable[[SchemaExtension], AsyncIteratorOrIterator[None]]
+    | Callable[[SchemaExtension, StreamExecutionResult], AsyncIteratorOrIterator[None]]
+)
 
 HOOK_METHODS: set[str] = {
     SchemaExtension.on_operation.__name__,
     SchemaExtension.on_validate.__name__,
     SchemaExtension.on_parse.__name__,
     SchemaExtension.on_execute.__name__,
+    SchemaExtension.on_stream_result.__name__,
 }
 
 __all__ = ["HOOK_METHODS", "Hook", "LifecycleStep", "SchemaExtension"]
