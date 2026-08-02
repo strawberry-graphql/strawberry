@@ -90,6 +90,45 @@ type Book {
 
 </CodeGrid>
 
+## Using TypedDicts
+
+If you prefer your resolvers to return standard Python dictionaries instead of
+Strawberry object classes, you can use the `@strawberry.typed_dict` decorator to
+define your object types using `typing.TypedDict`.
+
+<CodeGrid>
+
+```python
+import strawberry
+from typing import TypedDict
+
+
+@strawberry.typed_dict
+class CharacterDict(TypedDict):
+    name: str
+    age: int
+
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def character(self) -> CharacterDict:
+        return {"name": "Luke", "age": 19}
+```
+
+```graphql
+type CharacterDict {
+  name: String!
+  age: Int!
+}
+
+type Query {
+  character: CharacterDict!
+}
+```
+
+</CodeGrid>
+
 ## API
 
 `@strawberry.type(name: str = None, description: str = None)`
