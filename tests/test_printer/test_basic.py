@@ -265,6 +265,33 @@ def test_input_defaults_scalars():
     assert print_schema(schema) == textwrap.dedent(expected_type).strip()
 
 
+def test_input_defaults_scalars_with_lists():
+    # Regression: a list-valued custom-scalar (JSON) default — at the top level or
+    # nested inside a dict — used to raise TypeError when printing the schema, because
+    # ast_from_leaf_type had branches for dict/str/int/... but none for list/tuple.
+    # (List *literal* formatting is stable across graphql-core versions, unlike the
+    # ObjectValueNode spacing that gates test_input_defaults_scalars, so this asserts
+    # on substrings rather than an exact SDL match.)
+    @strawberry.input
+    class MyInput:
+        j: JSON = strawberry.field(default_factory=lambda: [1, 2, 3])
+        j2: JSON = strawberry.field(default_factory=lambda: {"tags": ["a", "b"]})
+        j3: JSON = strawberry.field(default_factory=lambda: [{"x": 1}, {"y": 2}])
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def search(self, input: MyInput) -> JSON:
+            return input.j
+
+    # The regression is a crash; getting a string back at all (having also printed the
+    # list-of-dicts default j3) is the core assertion. The two substrings below use only
+    # list-literal formatting, which is stable across graphql-core versions.
+    printed = print_schema(strawberry.Schema(query=Query))
+    assert "j: JSON! = [1, 2, 3]" in printed
+    assert '["a", "b"]' in printed  # list nested inside a dict default
+
+
 @skip_if_gql_32("formatting is different in gql 3.2")
 def test_arguments_scalar():
     @strawberry.input
