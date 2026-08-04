@@ -114,6 +114,11 @@ List of handlers that convert expected Python exceptions into typed GraphQL
 union results. See
 [dealing with expected errors](/docs/guides/errors#mapping-expected-exceptions-to-union-results).
 
+#### `logger: Optional[StrawberryLoggerProtocol] = None`
+
+A custom logger for GraphQL execution errors. See
+[handling execution errors](#handling-execution-errors).
+
 #### `scalar_overrides: Optional[Dict[object, ScalarWrapper]] = None`
 
 Override the implementation of the built in scalars.
@@ -189,9 +194,30 @@ operation in the document will be executed.
 
 ## Handling execution errors
 
-By default Strawberry will log any errors encountered during a query execution
-to a `strawberry.execution` logger. This behaviour can be changed by overriding
-the `process_errors` function on the `strawberry.Schema` class.
+By default Strawberry logs errors encountered during query execution to the
+`strawberry.execution` logger. You can provide a custom logger when creating the
+schema. The logger must define an `error` method that accepts the GraphQL error
+and optional execution context:
+
+```python
+import strawberry
+from graphql import GraphQLError
+from strawberry.types import ExecutionContext
+
+
+class CustomLogger:
+    def error(
+        self,
+        error: GraphQLError,
+        execution_context: ExecutionContext | None = None,
+    ) -> None: ...
+
+
+schema = strawberry.Schema(query=Query, logger=CustomLogger())
+```
+
+For more extensive customisation, you can still subclass `strawberry.Schema` and
+override its `process_errors` method.
 
 The default functionality looks like this:
 
@@ -199,19 +225,17 @@ The default functionality looks like this:
 # strawberry/schema/base.py
 from strawberry.types import ExecutionContext
 
-logger = logging.getLogger("strawberry.execution")
-
 
 class BaseSchema:
     ...
 
     def process_errors(
         self,
-        errors: List[GraphQLError],
-        execution_context: Optional[ExecutionContext] = None,
+        errors: list[GraphQLError],
+        execution_context: ExecutionContext | None = None,
     ) -> None:
         for error in errors:
-            StrawberryLogger.error(error, execution_context)
+            self.logger.error(error, execution_context)
 ```
 
 ```python
@@ -226,16 +250,10 @@ class StrawberryLogger:
     def error(
         cls,
         error: GraphQLError,
-        execution_context: Optional[ExecutionContext] = None,
+        execution_context: ExecutionContext | None = None,
         # https://www.python.org/dev/peps/pep-0484/#arbitrary-argument-lists-and-default-argument-values
         **logger_kwargs: Any,
     ) -> None:
-        # "stack_info" is a boolean; check for None explicitly
-        if logger_kwargs.get("stack_info") is None:
-            logger_kwargs["stack_info"] = True
-
-        logger_kwargs["stacklevel"] = 3
-
         cls.logger.error(error, exc_info=error.original_error, **logger_kwargs)
 ```
 

@@ -65,6 +65,7 @@ from strawberry.types.graphql import OperationType
 from strawberry.utils import IS_GQL_32, IS_GQL_33
 from strawberry.utils.aio import aclosing
 from strawberry.utils.await_maybe import await_maybe
+from strawberry.utils.logging import StrawberryLogger
 
 from . import compat
 from ._graphql_core import (
@@ -98,6 +99,7 @@ if TYPE_CHECKING:
     from strawberry.types.field import StrawberryField
     from strawberry.types.scalar import ScalarDefinition, ScalarWrapper
     from strawberry.types.union import StrawberryUnion
+    from strawberry.utils.logging import StrawberryLoggerProtocol
 
 
 SubscriptionResult: TypeAlias = AsyncGenerator[
@@ -273,6 +275,7 @@ class Schema(BaseSchema):
         ) = None,
         schema_directives: Iterable[object] = (),
         exception_handlers: Iterable[ExceptionHandler[Any]] = (),
+        logger: StrawberryLoggerProtocol | None = None,
     ) -> None:
         """Default Schema to be used in a Strawberry application.
 
@@ -297,6 +300,7 @@ class Schema(BaseSchema):
             schema_directives: A list of schema directives for the schema.
             exception_handlers: A list of handlers that can convert Python
                 exceptions into explicit GraphQL union return values.
+            logger: A logger used to report GraphQL execution errors.
 
         Example:
         ```python
@@ -337,6 +341,7 @@ class Schema(BaseSchema):
         )
         self.config = config or StrawberryConfig()
         self.exception_handlers = tuple(exception_handlers)
+        self.logger = logger if logger is not None else StrawberryLogger()
 
         self.schema_converter = GraphQLCoreConverter(
             self.config,
