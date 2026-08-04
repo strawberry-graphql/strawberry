@@ -135,7 +135,7 @@ class BaseGraphQLTransportWSHandler(Generic[Context, RootValue]):
         task.exception()
 
     async def handle_task_exception(self, error: Exception) -> None:  # pragma: no cover
-        self.task_logger.exception("Exception in worker task", exc_info=error)
+        self.task_logger.exception("Exception in worker task", exc_info=error)  # noqa: LOG004
 
     async def handle_message(self, message: Message) -> None:
         try:

@@ -24,7 +24,7 @@ class OnWSConnectMixin(
 ):
     async def on_ws_connect(
         self, context: dict[str, object]
-    ) -> UnsetType | None | dict[str, object]:
+    ) -> UnsetType | dict[str, object] | None:
         connection_params = context["connection_params"]
 
         if isinstance(connection_params, dict):

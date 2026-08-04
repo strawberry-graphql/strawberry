@@ -635,7 +635,7 @@ class AsyncBaseHTTPView(
 
     async def on_ws_connect(
         self, context: Context
-    ) -> UnsetType | None | dict[str, object]:
+    ) -> UnsetType | dict[str, object] | None:
         return UNSET
 
 
