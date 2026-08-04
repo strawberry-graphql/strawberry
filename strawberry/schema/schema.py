@@ -254,7 +254,7 @@ class StrawberryGraphQLCoreExecutionContext(GraphQLExecutionContext):
 
 
 class Schema(BaseSchema):
-    def __init__(
+    def __init__(  # noqa: PLR0917
         self,
         # TODO: can we make sure we only allow to pass
         # something that has been decorated?
@@ -485,7 +485,7 @@ class Schema(BaseSchema):
             *(ext for ext in extensions if ext._implements_resolve())
         )
 
-    def _create_execution_context(
+    def _create_execution_context(  # noqa: PLR0917
         self,
         query: str | None,
         allowed_operation_types: Iterable[OperationType],
@@ -722,7 +722,7 @@ class Schema(BaseSchema):
 
         return result
 
-    async def execute(
+    async def execute(  # noqa: PLR0917
         self,
         query: str | None,
         variable_values: dict[str, Any] | None = None,
@@ -796,7 +796,7 @@ class Schema(BaseSchema):
             execution_context, result, extensions_runner, skip_process_errors=True
         )
 
-    def execute_sync(
+    def execute_sync(  # noqa: PLR0917
         self,
         query: str | None,
         variable_values: dict[str, Any] | None = None,
@@ -1087,7 +1087,7 @@ class Schema(BaseSchema):
             execution_context, result, extensions_runner, skip_process_errors=True
         )
 
-    async def subscribe(
+    async def subscribe(  # noqa: PLR0917
         self,
         query: str | None,
         variable_values: dict[str, Any] | None = None,
@@ -1117,7 +1117,7 @@ class Schema(BaseSchema):
             ),
         )
 
-    async def stream(
+    async def stream(  # noqa: PLR0917
         self,
         query: str | None,
         variable_values: dict[str, Any] | None = None,

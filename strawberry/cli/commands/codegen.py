@@ -90,7 +90,7 @@ def _load_plugins(
 
 
 @app.command(help="Generate code from a query")
-def codegen(
+def codegen(  # noqa: PLR0917
     query: list[Path] | None = typer.Argument(
         default=None, exists=True, dir_okay=False
     ),

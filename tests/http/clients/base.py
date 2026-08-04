@@ -96,7 +96,7 @@ class Response:
 
 class HttpClient(abc.ABC):
     @abc.abstractmethod
-    def __init__(
+    def __init__(  # noqa: PLR0917
         self,
         schema: Schema,
         graphiql: bool | None = None,
@@ -112,7 +112,7 @@ class HttpClient(abc.ABC):
     ): ...
 
     @abc.abstractmethod
-    async def _graphql_request(
+    async def _graphql_request(  # noqa: PLR0917
         self,
         method: Literal["get", "post"],
         query: str | None = None,
@@ -148,7 +148,7 @@ class HttpClient(abc.ABC):
         headers: dict[str, str] | None = None,
     ) -> Response: ...
 
-    async def query(
+    async def query(  # noqa: PLR0917
         self,
         query: str,
         method: Literal["get", "post"] = "post",
@@ -187,7 +187,7 @@ class HttpClient(abc.ABC):
 
         return {**additional_headers, **headers}
 
-    def _build_body(
+    def _build_body(  # noqa: PLR0917
         self,
         query: str | None = None,
         operation_name: str | None = None,

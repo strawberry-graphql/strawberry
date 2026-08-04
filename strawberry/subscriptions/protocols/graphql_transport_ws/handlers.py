@@ -48,7 +48,7 @@ class _OperationStreamClosed(Exception):
 class BaseGraphQLTransportWSHandler(Generic[Context, RootValue]):
     task_logger: logging.Logger = logging.getLogger("strawberry.ws.task")
 
-    def __init__(
+    def __init__(  # noqa: PLR0917
         self,
         view: AsyncBaseHTTPView[Any, Any, Any, Any, Any, Context, RootValue],
         websocket: AsyncWebSocketAdapter,
