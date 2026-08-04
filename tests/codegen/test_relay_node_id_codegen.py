@@ -66,7 +66,7 @@ def relay_schema() -> strawberry.Schema:
     RELAY_QUERIES,
     ids=[x.name for x in (HERE / "relay_queries").glob("*.graphql")],
 )
-def test_relay_codegen(
+def test_relay_codegen(  # noqa: PLR0917
     query: Path,
     plugin_class: type[QueryCodegenPlugin],
     plugin_name: str,

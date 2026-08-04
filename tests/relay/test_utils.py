@@ -158,7 +158,7 @@ def test_to_base64_with_invalid_type(value: Any):
         ),
     ],
 )
-def test_get_slice_metadata(
+def test_get_slice_metadata(  # noqa: PLR0917
     before: str | None,
     after: str | None,
     first: int | None,

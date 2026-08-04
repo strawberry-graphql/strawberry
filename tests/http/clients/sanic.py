@@ -53,7 +53,7 @@ class GraphQLView(BaseGraphQLView[object, Query]):
 
 
 class SanicHttpClient(HttpClient):
-    def __init__(
+    def __init__(  # noqa: PLR0917
         self,
         schema: Schema,
         graphql_ide: GraphQL_IDE | None = "graphiql",
@@ -78,7 +78,7 @@ class SanicHttpClient(HttpClient):
         )
         self.app.add_route(view, "/graphql")
 
-    async def _graphql_request(
+    async def _graphql_request(  # noqa: PLR0917
         self,
         method: Literal["get", "post"],
         query: str | None = None,

@@ -37,7 +37,7 @@ class Stadium:
     stands: list[Stand]
 
 
-def generate_seats_for_stand(
+def generate_seats_for_stand(  # noqa: PLR0917
     stand_name: str,
     rows: int,
     seats_per_row: int,

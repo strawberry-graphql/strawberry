@@ -46,7 +46,7 @@ FederationAny = NewType("FederationAny", object)
 
 
 class Schema(BaseSchema):
-    def __init__(
+    def __init__(  # noqa: PLR0917
         self,
         query: type | None = None,
         mutation: type | None = None,

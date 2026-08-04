@@ -15,7 +15,7 @@ if TYPE_CHECKING:
     from strawberry.enum import EnumType, EnumValueDefinition
 
 
-def enum_value(
+def enum_value(  # noqa: PLR0917
     value: Any,
     name: str | None = None,
     deprecation_reason: str | None = None,
