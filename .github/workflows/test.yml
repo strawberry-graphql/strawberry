@@ -63,6 +63,9 @@ jobs:
         with:
           enable-cache: true
 
+      - name: Install Python 3.15 build dependencies
+        if: matrix.session.python == '3.15'
+        run: sudo apt-get update && sudo apt-get install --yes libxml2-dev libxslt1-dev
       - run: uv sync
       - run: uv run nox -r -s "${{ matrix.session.session }}"
       - name: Rename coverage data
