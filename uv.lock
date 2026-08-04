@@ -436,9 +436,9 @@ name = "cattrs"
 version = "26.1.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "attrs" },
+    { name = "attrs", marker = "python_full_version < '3.15'" },
     { name = "exceptiongroup", marker = "python_full_version < '3.11'" },
-    { name = "typing-extensions" },
+    { name = "typing-extensions", marker = "python_full_version < '3.15'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/a0/ec/ba18945e7d6e55a58364d9fb2e46049c1c2998b3d805f19b703f14e81057/cattrs-26.1.0.tar.gz", hash = "sha256:fa239e0f0ec0715ba34852ce813986dfed1e12117e209b816ab87401271cdd40", size = 495672, upload-time = "2026-02-18T22:15:19.406Z" }
 wheels = [
@@ -744,44 +744,44 @@ name = "codeflash"
 version = "0.20.6"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "attrs" },
-    { name = "click" },
-    { name = "codeflash-benchmark" },
-    { name = "coverage" },
+    { name = "attrs", marker = "python_full_version < '3.15'" },
+    { name = "click", marker = "python_full_version < '3.15'" },
+    { name = "codeflash-benchmark", marker = "python_full_version < '3.15'" },
+    { name = "coverage", marker = "python_full_version < '3.15'" },
     { name = "crosshair-tool", marker = "python_full_version < '3.15'" },
-    { name = "dill" },
-    { name = "filelock" },
-    { name = "gitpython" },
-    { name = "humanize" },
-    { name = "inquirer" },
-    { name = "isort" },
-    { name = "jedi" },
-    { name = "junitparser" },
-    { name = "libcst" },
-    { name = "line-profiler" },
-    { name = "lxml" },
-    { name = "memray", marker = "sys_platform != 'win32'" },
-    { name = "parameterized" },
-    { name = "platformdirs" },
-    { name = "posthog" },
-    { name = "pydantic" },
-    { name = "pygls" },
-    { name = "pytest" },
-    { name = "pytest-asyncio" },
-    { name = "pytest-memray", marker = "sys_platform != 'win32'" },
-    { name = "pytest-timeout" },
-    { name = "requests" },
-    { name = "rich" },
-    { name = "sentry-sdk" },
-    { name = "tomlkit" },
-    { name = "tree-sitter" },
-    { name = "tree-sitter-go" },
-    { name = "tree-sitter-groovy" },
-    { name = "tree-sitter-java" },
-    { name = "tree-sitter-javascript" },
-    { name = "tree-sitter-kotlin" },
-    { name = "tree-sitter-typescript" },
-    { name = "unidiff" },
+    { name = "dill", marker = "python_full_version < '3.15'" },
+    { name = "filelock", marker = "python_full_version < '3.15'" },
+    { name = "gitpython", marker = "python_full_version < '3.15'" },
+    { name = "humanize", marker = "python_full_version < '3.15'" },
+    { name = "inquirer", marker = "python_full_version < '3.15'" },
+    { name = "isort", marker = "python_full_version < '3.15'" },
+    { name = "jedi", marker = "python_full_version < '3.15'" },
+    { name = "junitparser", marker = "python_full_version < '3.15'" },
+    { name = "libcst", marker = "python_full_version < '3.15'" },
+    { name = "line-profiler", marker = "python_full_version < '3.15'" },
+    { name = "lxml", marker = "python_full_version < '3.15'" },
+    { name = "memray", marker = "python_full_version < '3.15' and sys_platform != 'win32'" },
+    { name = "parameterized", marker = "python_full_version < '3.15'" },
+    { name = "platformdirs", marker = "python_full_version < '3.15'" },
+    { name = "posthog", marker = "python_full_version < '3.15'" },
+    { name = "pydantic", marker = "python_full_version < '3.15'" },
+    { name = "pygls", marker = "python_full_version < '3.15'" },
+    { name = "pytest", marker = "python_full_version < '3.15'" },
+    { name = "pytest-asyncio", marker = "python_full_version < '3.15'" },
+    { name = "pytest-memray", marker = "python_full_version < '3.15' and sys_platform != 'win32'" },
+    { name = "pytest-timeout", marker = "python_full_version < '3.15'" },
+    { name = "requests", marker = "python_full_version < '3.15'" },
+    { name = "rich", marker = "python_full_version < '3.15'" },
+    { name = "sentry-sdk", marker = "python_full_version < '3.15'" },
+    { name = "tomlkit", marker = "python_full_version < '3.15'" },
+    { name = "tree-sitter", marker = "python_full_version < '3.15'" },
+    { name = "tree-sitter-go", marker = "python_full_version < '3.15'" },
+    { name = "tree-sitter-groovy", marker = "python_full_version < '3.15'" },
+    { name = "tree-sitter-java", marker = "python_full_version < '3.15'" },
+    { name = "tree-sitter-javascript", marker = "python_full_version < '3.15'" },
+    { name = "tree-sitter-kotlin", marker = "python_full_version < '3.15'" },
+    { name = "tree-sitter-typescript", marker = "python_full_version < '3.15'" },
+    { name = "unidiff", marker = "python_full_version < '3.15'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/2d/bc/d86b03b88cf254f4581162a33c8f296092d1f1c46bd7c3478802dd8b9c23/codeflash-0.20.6.tar.gz", hash = "sha256:411202748597aff5ebb3fd8bceb510da209b3253a86fe49783238113076bba55", size = 810714, upload-time = "2026-05-30T13:23:22.792Z" }
 wheels = [
@@ -793,7 +793,7 @@ name = "codeflash-benchmark"
 version = "0.3.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pytest" },
+    { name = "pytest", marker = "python_full_version < '3.15'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/7c/10/4d43fcb71914324efc9e1f88ec88d3abd2a615aaf26d268f26dd29a9bffa/codeflash_benchmark-0.3.0.tar.gz", hash = "sha256:465232854ed64a263c0c4c8d1f919a3a92b82b73487806c45686df89feb62037", size = 4897, upload-time = "2026-02-19T06:36:47.19Z" }
 wheels = [
@@ -1427,7 +1427,7 @@ name = "gitdb"
 version = "4.0.12"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "smmap" },
+    { name = "smmap", marker = "python_full_version < '3.15'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/72/94/63b0fc47eb32792c7ba1fe1b694daec9a63620db1e313033d18140c2320a/gitdb-4.0.12.tar.gz", hash = "sha256:5ef71f855d191a3326fcfbc0d5da835f26b13fbcba60c32c21091c349ffdb571", size = 394684, upload-time = "2025-01-02T07:20:46.413Z" }
 wheels = [
@@ -1439,7 +1439,7 @@ name = "gitpython"
 version = "3.1.57"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "gitdb" },
+    { name = "gitdb", marker = "python_full_version < '3.15'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/ba/0d/132ed135c871b6bf91adf16a0e43797cd535b81d4973b5d09291c54fc5ee/gitpython-3.1.57.tar.gz", hash = "sha256:c493ec57c0ef6b19743798b6a5af859c71814b524e7e6f97baa2f8e658961488", size = 225898, upload-time = "2026-07-26T07:33:26.351Z" }
 wheels = [
@@ -1737,7 +1737,7 @@ name = "jedi"
 version = "0.19.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "parso" },
+    { name = "parso", marker = "python_full_version < '3.15'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/72/3a/79a912fbd4d8dd6fbb02bf69afd3bb72cf0c729bb3063c6f4498603db17a/jedi-0.19.2.tar.gz", hash = "sha256:4770dc3de41bde3966b02eb84fbcf557fb33cce26ad23da12c742fb50ecb11f0", size = 1231287, upload-time = "2024-11-11T01:41:42.873Z" }
 wheels = [
@@ -1933,7 +1933,7 @@ version = "5.0.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "tomli", marker = "python_full_version < '3.11'" },
-    { name = "typing-extensions" },
+    { name = "typing-extensions", marker = "python_full_version < '3.15'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/03/b6/6d18ad201417a9c5168995541d0fd7981b5652b2b34f6e46a3a93c0f1beb/line_profiler-5.0.2.tar.gz", hash = "sha256:8d8a990c84c64bcde45af22af502d17bc0ae107be405ce41bba92af5c39c0000", size = 407075, upload-time = "2026-02-23T23:31:20.698Z" }
 wheels = [
@@ -1988,7 +1988,7 @@ name = "linkify-it-py"
 version = "2.1.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "uc-micro-py" },
+    { name = "uc-micro-py", marker = "python_full_version < '3.15'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/2e/c9/06ea13676ef354f0af6169587ae292d3e2406e212876a413bf9eece4eb23/linkify_it_py-2.1.0.tar.gz", hash = "sha256:43360231720999c10e9328dc3691160e27a718e280673d444c38d7d3aaa3b98b", size = 29158, upload-time = "2026-03-01T07:48:47.683Z" }
 wheels = [
@@ -2034,8 +2034,8 @@ name = "lsprotocol"
 version = "2025.0.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "attrs" },
-    { name = "cattrs" },
+    { name = "attrs", marker = "python_full_version < '3.15'" },
+    { name = "cattrs", marker = "python_full_version < '3.15'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/e9/26/67b84e6ec1402f0e6764ef3d2a0aaf9a79522cc1d37738f4e5bb0b21521a/lsprotocol-2025.0.0.tar.gz", hash = "sha256:e879da2b9301e82cfc3e60d805630487ac2f7ab17492f4f5ba5aaba94fe56c29", size = 74896, upload-time = "2025-06-17T21:30:18.156Z" }
 wheels = [
@@ -2174,7 +2174,7 @@ wheels = [
 
 [package.optional-dependencies]
 linkify = [
-    { name = "linkify-it-py" },
+    { name = "linkify-it-py", marker = "python_full_version < '3.15'" },
 ]
 
 [[package]]
@@ -2267,7 +2267,7 @@ name = "mdit-py-plugins"
 version = "0.6.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "markdown-it-py" },
+    { name = "markdown-it-py", marker = "python_full_version < '3.15'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/59/fc/f8d0863f8862f25602c0404d75568e89fb6b4109804645e5cdfb1be5cf56/mdit_py_plugins-0.6.1.tar.gz", hash = "sha256:a2bca0f039f39dbd35fb74ae1b5f998608c437463371f0ff7f49a19a17a114d0", size = 56114, upload-time = "2026-05-13T09:03:38.91Z" }
 wheels = [
@@ -2288,9 +2288,9 @@ name = "memray"
 version = "1.19.3"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "jinja2" },
-    { name = "rich" },
-    { name = "textual" },
+    { name = "jinja2", marker = "python_full_version < '3.15'" },
+    { name = "rich", marker = "python_full_version < '3.15'" },
+    { name = "textual", marker = "python_full_version < '3.15'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/96/04/5b886a36df947599e0f37cd46e6e44e565299815f044e2303ab2ae9f8870/memray-1.19.3.tar.gz", hash = "sha256:4e0fb29ff0a50c0ec9dc84294d8f2c83419feba561a37628b304c2ae4fe73d03", size = 2417089, upload-time = "2026-04-08T18:49:32.409Z" }
 wheels = [
@@ -2825,12 +2825,12 @@ name = "posthog"
 version = "7.9.12"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "backoff" },
-    { name = "distro" },
-    { name = "python-dateutil" },
-    { name = "requests" },
-    { name = "six" },
-    { name = "typing-extensions" },
+    { name = "backoff", marker = "python_full_version < '3.15'" },
+    { name = "distro", marker = "python_full_version < '3.15'" },
+    { name = "python-dateutil", marker = "python_full_version < '3.15'" },
+    { name = "requests", marker = "python_full_version < '3.15'" },
+    { name = "six", marker = "python_full_version < '3.15'" },
+    { name = "typing-extensions", marker = "python_full_version < '3.15'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/1c/a7/2865487853061fbd62383492237b546d2d8f7c1846272350d2b9e14138cd/posthog-7.9.12.tar.gz", hash = "sha256:ebabf2eb2e1c1fbf22b0759df4644623fa43cc6c9dcbe9fd429b7937d14251ec", size = 176828, upload-time = "2026-03-12T09:01:15.184Z" }
 wheels = [
@@ -3218,9 +3218,9 @@ name = "pygls"
 version = "2.1.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "attrs" },
-    { name = "cattrs" },
-    { name = "lsprotocol" },
+    { name = "attrs", marker = "python_full_version < '3.15'" },
+    { name = "cattrs", marker = "python_full_version < '3.15'" },
+    { name = "lsprotocol", marker = "python_full_version < '3.15'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/da/2e/7bbe061d175c0baddde8fc9edb908a4c31ba5d9165b8c68e3439c3a9f138/pygls-2.1.1.tar.gz", hash = "sha256:1da03ba9053201bb337dcdd8d121df70feb2a91e1a0dcc74de5da79755b1a201", size = 55091, upload-time = "2026-03-25T11:19:10.541Z" }
 wheels = [
@@ -3444,8 +3444,8 @@ name = "pytest-memray"
 version = "1.8.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "memray" },
-    { name = "pytest" },
+    { name = "memray", marker = "python_full_version < '3.15'" },
+    { name = "pytest", marker = "python_full_version < '3.15'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/3d/28/f67963efed56d847d028d0bb939f26cdeb32c4de474b3befc9da43bf18f9/pytest_memray-1.8.0.tar.gz", hash = "sha256:c0c706ef81941a7aa7064f2b3b8b5cdc0cea72b5277c6a6a09b113ca9ab30bdb", size = 240608, upload-time = "2025-08-18T17:32:47.329Z" }
 wheels = [
@@ -3481,7 +3481,7 @@ name = "pytest-timeout"
 version = "2.4.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pytest" },
+    { name = "pytest", marker = "python_full_version < '3.15'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/ac/82/4c9ecabab13363e72d880f2fb504c5f750433b2b6f16e99f4ec21ada284c/pytest_timeout-2.4.0.tar.gz", hash = "sha256:7e68e90b01f9eff71332b25001f85c75495fc4e3a836701876183c4bcfd0540a", size = 17973, upload-time = "2025-05-05T19:44:34.99Z" }
 wheels = [
@@ -3671,10 +3671,10 @@ name = "requests"
 version = "2.33.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "certifi" },
-    { name = "charset-normalizer" },
-    { name = "idna" },
-    { name = "urllib3" },
+    { name = "certifi", marker = "python_full_version < '3.15'" },
+    { name = "charset-normalizer", marker = "python_full_version < '3.15'" },
+    { name = "idna", marker = "python_full_version < '3.15'" },
+    { name = "urllib3", marker = "python_full_version < '3.15'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/5f/a4/98b9c7c6428a668bf7e42ebb7c79d576a1c3c1e3ae2d47e674b468388871/requests-2.33.1.tar.gz", hash = "sha256:18817f8c57c6263968bc123d237e3b8b08ac046f5456bd1e307ee8f4250d3517", size = 134120, upload-time = "2026-03-30T16:09:15.531Z" }
 wheels = [
@@ -3808,8 +3808,8 @@ name = "sentry-sdk"
 version = "2.61.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "certifi" },
-    { name = "urllib3" },
+    { name = "certifi", marker = "python_full_version < '3.15'" },
+    { name = "urllib3", marker = "python_full_version < '3.15'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/63/3b/4bc6b348bbd331daa14d4babe9f2b99bc854f4da41560eefb9488d78481d/sentry_sdk-2.61.1.tar.gz", hash = "sha256:9c6adccb3feefa9ba032c8d295ca477575c2f11896046a2b0ad686c47c4af555", size = 459429, upload-time = "2026-06-01T07:24:18.875Z" }
 wheels = [
@@ -3976,7 +3976,7 @@ sanic = [
 [package.dev-dependencies]
 dev = [
     { name = "asgiref" },
-    { name = "codeflash" },
+    { name = "codeflash", marker = "python_full_version < '3.15'" },
     { name = "email-validator" },
     { name = "freezegun" },
     { name = "inline-snapshot" },
@@ -4077,7 +4077,7 @@ provides-extras = ["aiohttp", "asgi", "debug", "django", "channels", "flask", "q
 [package.metadata.requires-dev]
 dev = [
     { name = "asgiref", specifier = ">=3.2,<4.0" },
-    { name = "codeflash", specifier = ">=0.19.1" },
+    { name = "codeflash", marker = "python_full_version < '3.15'", specifier = ">=0.19.1" },
     { name = "email-validator", specifier = ">=1.1.3,<3.0.0" },
     { name = "freezegun", specifier = ">=1.2.1,<2.0.0" },
     { name = "inline-snapshot", specifier = ">=0.31.1,<0.36.0" },
@@ -4154,12 +4154,12 @@ name = "textual"
 version = "8.2.7"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "markdown-it-py", extra = ["linkify"] },
-    { name = "mdit-py-plugins" },
-    { name = "platformdirs" },
-    { name = "pygments" },
-    { name = "rich" },
-    { name = "typing-extensions" },
+    { name = "markdown-it-py", extra = ["linkify"], marker = "python_full_version < '3.15'" },
+    { name = "mdit-py-plugins", marker = "python_full_version < '3.15'" },
+    { name = "platformdirs", marker = "python_full_version < '3.15'" },
+    { name = "pygments", marker = "python_full_version < '3.15'" },
+    { name = "rich", marker = "python_full_version < '3.15'" },
+    { name = "typing-extensions", marker = "python_full_version < '3.15'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/9b/7a/c519db0aba5024f86e71e9631810bfdd6866ed2c8695bd7fa34b90e7ef59/textual-8.2.7.tar.gz", hash = "sha256:658f568ff81e30ed43890c3e07520390e5cf1b4763822006e060656b0a88f105", size = 1859249, upload-time = "2026-05-19T10:52:49.531Z" }
 wheels = [
