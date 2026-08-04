@@ -1,4 +1,5 @@
 import ast
+import re
 import sys
 import typing
 from collections.abc import AsyncGenerator
@@ -20,6 +21,8 @@ from typing import (  # type: ignore
     get_args,
     get_origin,
 )
+
+_CLASSVAR_RE = re.compile(r"^(?:\s*(\w+)\s*\.)?\s*(\w+)")
 
 
 @lru_cache
@@ -155,15 +158,18 @@ def is_classvar(cls: type, annotation: ForwardRef | str) -> bool:
     if not isinstance(annotation_str, str) or module is None:
         return False
 
-    try:
-        resolved = eval_type(
-            ForwardRef(annotation_str),
-            dict(module.__dict__),
-            dict(vars(cls)),
-        )
-    except (AttributeError, NameError, SyntaxError, TypeError):
+    match = _CLASSVAR_RE.match(annotation_str)
+    if match is None:
         return False
 
+    module_name, type_name = match.groups()
+    namespace = module.__dict__
+    if module_name:
+        if namespace.get(module_name) is not typing:
+            return False
+        namespace = vars(typing)
+
+    resolved = namespace.get(type_name)
     return resolved is ClassVar or get_origin(resolved) is ClassVar
 
 
