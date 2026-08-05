@@ -127,6 +127,17 @@ def _get_fields(
     # then we can proceed with finding the fields for the current class
     for field in dataclasses.fields(cls):  # type: ignore
         if isinstance(field, StrawberryField):
+            # ``dataclasses`` assigns annotations through ``StrawberryField.type``.
+            # A literal ``None`` is otherwise mistaken for its initialization value.
+            if (
+                field.type_annotation is None
+                and field.name is not None
+                and field.name in cls.__annotations__
+            ):
+                field.type_annotation = StrawberryAnnotation(
+                    annotation=cls.__annotations__[field.name]
+                )
+
             # Check for conflict: strawberry.field in both Annotated and assignment
             annotation = (
                 field.type_annotation.annotation
