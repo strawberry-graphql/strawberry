@@ -59,7 +59,10 @@ from strawberry.schema.types.scalar import (
     DEFAULT_SCALAR_REGISTRY,
     _make_scalar_type,
 )
-from strawberry.types.arguments import StrawberryArgument, convert_arguments
+from strawberry.types.arguments import (
+    StrawberryArgument,
+    convert_arguments,
+)
 from strawberry.types.base import (
     StrawberryList,
     StrawberryMaybe,
@@ -72,6 +75,10 @@ from strawberry.types.base import (
 from strawberry.types.cast import get_strawberry_type_cast
 from strawberry.types.enum import StrawberryEnumDefinition, has_enum_definition
 from strawberry.types.field import UNRESOLVED
+from strawberry.types.input import (
+    run_input_clean_methods,
+    type_has_input_clean_method,
+)
 from strawberry.types.lazy_type import LazyType
 from strawberry.types.private import is_private
 from strawberry.types.scalar import ScalarWrapper, scalar
@@ -991,6 +998,10 @@ class GraphQLCoreConverter:
             # that type-changing extensions are reflected before handlers are
             # matched; here we only need to build the resolver chain.
             extension_functions = build_field_extension_resolvers(field)
+            has_input_clean_methods = any(
+                type_has_input_clean_method(argument.type)
+                for argument in field.arguments
+            )
 
             def extension_resolver(
                 _source: Any,
@@ -1015,6 +1026,12 @@ class GraphQLCoreConverter:
                     # explicitly to the extensions
                     field_kwargs.pop("info")
 
+                input_clean_methods = (
+                    run_input_clean_methods([*field_args, *field_kwargs.values()], info)
+                    if has_input_clean_methods
+                    else None
+                )
+
                 # `_get_result` expects `field_args` and `field_kwargs` as
                 # separate arguments so we have to wrap the function so that we
                 # can pass them in
@@ -1032,11 +1049,20 @@ class GraphQLCoreConverter:
                     )
 
                 # combine all the extension resolvers
-                return reduce(
+                resolver = reduce(
                     lambda chained_fn, next_fn: partial(next_fn, chained_fn),
                     extension_functions,
                     wrapped_get_result,
-                )(_source, info, **field_kwargs)
+                )
+
+                if input_clean_methods is None:
+                    return resolver(_source, info, **field_kwargs)
+
+                async def run_resolver() -> Any:
+                    await input_clean_methods
+                    return await await_maybe(resolver(_source, info, **field_kwargs))
+
+                return run_resolver()
 
             return extension_resolver
 
