@@ -69,7 +69,7 @@ This gives you proper IDE autocomplete and type checking, since the type
 annotation matches the actual runtime type.
 
 A file can only be provided through a multipart request, so the `Upload` scalar
-rejects any value that comes from the JSON body of the request. Passing a
+will reject any value that comes from the JSON body of the request. Passing a
 string, number, boolean, list or object where a file is expected fails
 validation and the resolver is never called:
 

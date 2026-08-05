@@ -23,9 +23,9 @@ mutation {
 }
 ```
 
-Files can only be provided through a multipart request, so `Upload` now rejects
-values that come from the JSON body of the request, whether they are passed as
-variables or inline literals, including inside input types and lists:
+Files can only be provided through a multipart request, so `Upload` will now
+reject values that come from the JSON body of the request, whether they are
+passed as variables or inline literals, including inside input types and lists:
 
 ```json
 {
