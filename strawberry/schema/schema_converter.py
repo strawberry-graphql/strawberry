@@ -765,6 +765,14 @@ class GraphQLCoreConverter:
             ),
         )
 
+        # Re-visiting the definition that already backs this type is not an
+        # extension: a type reachable from several places in the schema graph is
+        # converted once per reference. Federation v1 marks single types with
+        # `extend=True`, so without this the type would extend itself and every
+        # field would collide.
+        if type_definition is primary_definition[0]:
+            return cached_implementation
+
         if not type_definition.extend:
             if (
                 primary_definition[0].extend
