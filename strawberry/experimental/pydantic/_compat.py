@@ -205,14 +205,14 @@ class PydanticV2Compat:
         return get_fields_map_for_v2()
 
     def get_basic_type(self, type_: Any) -> type[Any]:
+        if (model_type := _resolve_new_type_model(type_)) is not None:
+            return model_type
+
         if type_ in self.fields_map:
             type_ = self.fields_map[type_]
 
             if type_ is None:
                 raise UnsupportedTypeError
-
-        if is_new_type(type_):
-            return new_type_supertype(type_)
 
         return type_
 
@@ -264,6 +264,9 @@ class PydanticV1Compat:
         }
 
     def get_basic_type(self, type_: Any) -> type[Any]:
+        if (model_type := _resolve_new_type_model(type_)) is not None:
+            return model_type
+
         if IS_PYDANTIC_V1:
             ConstrainedInt = pydantic.ConstrainedInt
             ConstrainedFloat = pydantic.ConstrainedFloat
@@ -289,9 +292,6 @@ class PydanticV1Compat:
 
             if type_ is None:
                 raise UnsupportedTypeError
-
-        if is_new_type(type_):
-            return new_type_supertype(type_)
 
         return type_
 
@@ -342,6 +342,15 @@ else:
 
 def is_model_class(type_: Any) -> bool:
     return lenient_issubclass(type_, BASE_MODEL_TYPES)
+
+
+def _resolve_new_type_model(type_: Any) -> Any | None:
+    while is_new_type(type_):
+        type_ = new_type_supertype(type_)
+        if is_model_class(type_):
+            return type_
+
+    return None
 
 
 def is_model_instance(value: Any) -> bool:
