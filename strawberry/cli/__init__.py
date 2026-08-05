@@ -9,6 +9,7 @@ try:
     from .commands.schema_codegen import (
         schema_codegen as schema_codegen,
     )
+    from .commands.schema_diff import schema_diff as schema_diff
     from .commands.upgrade import upgrade as upgrade
 
     def run() -> None:
