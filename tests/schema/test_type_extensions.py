@@ -102,3 +102,40 @@ def test_object_extension_rejects_duplicate_fields():
         match="Type User defines duplicate extension field\\(s\\): name",
     ):
         strawberry.Schema(query=Query, types=[UserExtension])
+
+
+def test_extend_type_reachable_twice_does_not_extend_itself():
+    @strawberry.type(name="Product", extend=True)
+    class Product:
+        upc: str
+
+    @strawberry.type
+    class Review:
+        product: Product
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def review(self) -> Review: ...
+
+        @strawberry.field
+        def product(self) -> Product: ...
+
+    schema = strawberry.Schema(query=Query)
+
+    expected = """
+    extend type Product {
+      upc: String!
+    }
+
+    type Query {
+      review: Review!
+      product: Product!
+    }
+
+    type Review {
+      product: Product!
+    }
+    """
+
+    assert print_schema(schema) == textwrap.dedent(expected).strip()
