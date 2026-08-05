@@ -1,3 +1,4 @@
+import dataclasses
 import re
 import textwrap
 
@@ -33,6 +34,160 @@ def test_renaming_input_fields():
     assert not result.errors
     assert result.data
     assert result.data["filter"] == "Hello nope"
+
+
+def test_input_extension_prints_extend_input():
+    @strawberry.input(name="UserInput", extend=True)
+    class UserInputExtension:
+        extra: str
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def echo(self, data: UserInputExtension) -> str:
+            return data.extra
+
+    schema = strawberry.Schema(query=Query)
+
+    expected = """
+    type Query {
+      echo(data: UserInput!): String!
+    }
+
+    extend input UserInput {
+      extra: String!
+    }
+    """
+
+    assert print_schema(schema) == textwrap.dedent(expected).strip()
+
+
+def test_input_extension_can_extend_existing_input():
+    @strawberry.input(name="UserInput")
+    class UserInput:
+        name: str
+
+    @strawberry.input(name="UserInput", extend=True)
+    class UserInputExtension:
+        extra: str
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def echo(self, data: UserInput) -> str:
+            return f"{data.name} {data.extra}"
+
+    schema = strawberry.Schema(query=Query, types=[UserInputExtension])
+
+    expected = """
+    type Query {
+      echo(data: UserInput!): String!
+    }
+
+    input UserInput {
+      name: String!
+    }
+
+    extend input UserInput {
+      extra: String!
+    }
+    """
+
+    assert print_schema(schema) == textwrap.dedent(expected).strip()
+
+    result = schema.execute_sync('{ echo(data: { name: "Ada", extra: "Lovelace" }) }')
+
+    assert not result.errors
+    assert result.data == {"echo": "Ada Lovelace"}
+
+
+def test_input_extension_conversion_is_schema_local():
+    @strawberry.input(name="UserInput")
+    class UserInput:
+        name: str
+
+    @strawberry.input(name="UserInput", extend=True)
+    class FirstUserInputExtension:
+        first: str
+
+    @strawberry.input(name="UserInput", extend=True)
+    class SecondUserInputExtension:
+        second: str
+
+    @strawberry.type
+    class FirstQuery:
+        @strawberry.field
+        def echo(self, data: UserInput) -> str:
+            return f"{data.name} {data.first}"
+
+    @strawberry.type
+    class SecondQuery:
+        @strawberry.field
+        def echo(self, data: UserInput) -> str:
+            return f"{data.name} {data.second}"
+
+    first_schema = strawberry.Schema(query=FirstQuery, types=[FirstUserInputExtension])
+    second_schema = strawberry.Schema(
+        query=SecondQuery, types=[SecondUserInputExtension]
+    )
+
+    first_result = first_schema.execute_sync(
+        '{ echo(data: { name: "Ada", first: "Lovelace" }) }'
+    )
+    second_result = second_schema.execute_sync(
+        '{ echo(data: { name: "Grace", second: "Hopper" }) }'
+    )
+
+    assert not first_result.errors
+    assert first_result.data == {"echo": "Ada Lovelace"}
+    assert not second_result.errors
+    assert second_result.data == {"echo": "Grace Hopper"}
+
+
+def test_input_extension_can_set_fields_on_frozen_input():
+    @strawberry.input(name="UserInput")
+    @dataclasses.dataclass(frozen=True)
+    class UserInput:
+        name: str
+
+    @strawberry.input(name="UserInput", extend=True)
+    class UserInputExtension:
+        extra: str
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def echo(self, data: UserInput) -> str:
+            return f"{data.name} {data.extra}"
+
+    schema = strawberry.Schema(query=Query, types=[UserInputExtension])
+
+    result = schema.execute_sync('{ echo(data: { name: "Ada", extra: "Lovelace" }) }')
+
+    assert not result.errors
+    assert result.data == {"echo": "Ada Lovelace"}
+
+
+def test_input_extension_rejects_duplicate_fields():
+    @strawberry.input(name="UserInput")
+    class UserInput:
+        name: str
+
+    @strawberry.input(name="UserInput", extend=True)
+    class UserInputExtension:
+        name: str
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def echo(self, data: UserInput) -> str:
+            return data.name
+
+    with pytest.raises(
+        TypeError,
+        match="Input type UserInput defines duplicate extension field\\(s\\): name",
+    ):
+        strawberry.Schema(query=Query, types=[UserInputExtension])
 
 
 @skip_if_gql_32("formatting is different in gql 3.2")

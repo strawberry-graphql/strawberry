@@ -10,7 +10,13 @@ from typing import (
     overload,
 )
 
-from graphql import GraphQLInputField, GraphQLObjectType, GraphQLSchema, is_union_type
+from graphql import (
+    GraphQLInputField,
+    GraphQLInputObjectType,
+    GraphQLObjectType,
+    GraphQLSchema,
+    is_union_type,
+)
 from graphql.language.printer import print_ast
 from graphql.type import (
     is_enum_type,
@@ -359,14 +365,53 @@ def print_enum(
     )
 
 
-def print_extends(type_: GraphQLObjectType, schema: BaseSchema) -> str:
+def get_strawberry_type(type_: Any) -> StrawberryObjectDefinition | None:
     from strawberry.schema.schema_converter import GraphQLCoreConverter
 
-    strawberry_type = cast(
+    return cast(
         "StrawberryObjectDefinition | None",
         type_.extensions
         and type_.extensions.get(GraphQLCoreConverter.DEFINITION_BACKREF),
     )
+
+
+def get_input_object_definitions(type_: Any) -> list[StrawberryObjectDefinition]:
+    from strawberry.schema.schema_converter import GraphQLCoreConverter
+
+    strawberry_type = get_strawberry_type(type_)
+    if strawberry_type is None:
+        return []
+
+    extension_definitions = type_.extensions.get(
+        GraphQLCoreConverter.INPUT_EXTENSIONS_BACKREF,
+        [],
+    )
+
+    return [strawberry_type, *extension_definitions]
+
+
+def get_object_type_definitions(type_: Any) -> list[StrawberryObjectDefinition]:
+    from strawberry.schema.schema_converter import GraphQLCoreConverter
+
+    strawberry_type = get_strawberry_type(type_)
+    if strawberry_type is None:
+        return []
+
+    extension_definitions = type_.extensions.get(
+        GraphQLCoreConverter.OBJECT_EXTENSIONS_BACKREF,
+        [],
+    )
+
+    return [strawberry_type, *extension_definitions]
+
+
+def print_extends(
+    type_: GraphQLObjectType | GraphQLInputObjectType,
+    schema: BaseSchema,
+    *,
+    strawberry_type: StrawberryObjectDefinition | None = None,
+) -> str:
+    strawberry_type = strawberry_type or get_strawberry_type(type_)
 
     if strawberry_type and strawberry_type.extend:
         return "extend "
@@ -375,15 +420,13 @@ def print_extends(type_: GraphQLObjectType, schema: BaseSchema) -> str:
 
 
 def print_type_directives(
-    type_: GraphQLObjectType, schema: BaseSchema, *, extras: PrintExtras
+    type_: GraphQLObjectType | GraphQLInputObjectType,
+    schema: BaseSchema,
+    *,
+    extras: PrintExtras,
+    strawberry_type: StrawberryObjectDefinition | None = None,
 ) -> str:
-    from strawberry.schema.schema_converter import GraphQLCoreConverter
-
-    strawberry_type = cast(
-        "StrawberryObjectDefinition | None",
-        type_.extensions
-        and type_.extensions.get(GraphQLCoreConverter.DEFINITION_BACKREF),
-    )
+    strawberry_type = strawberry_type or get_strawberry_type(type_)
 
     if not strawberry_type:
         return ""
@@ -407,14 +450,102 @@ def print_type_directives(
     )
 
 
+def print_object_implemented_interfaces(
+    type_: GraphQLObjectType,
+    schema: BaseSchema,
+    *,
+    strawberry_type: StrawberryObjectDefinition | None = None,
+) -> str:
+    if strawberry_type is None:
+        return print_implemented_interfaces(type_)
+
+    interfaces = strawberry_type.interfaces
+    if not interfaces:
+        return ""
+
+    interface_names = (
+        schema.schema_converter.config.name_converter.from_type(interface)
+        for interface in interfaces
+    )
+
+    return " implements " + " & ".join(interface_names)
+
+
 def _print_object(type_: Any, schema: BaseSchema, *, extras: PrintExtras) -> str:
-    return (
+    object_definitions = get_object_type_definitions(type_)
+    if object_definitions:
+        return "\n\n".join(
+            _print_object_definition(
+                type_,
+                schema,
+                extras=extras,
+                strawberry_type=strawberry_type,
+            )
+            for strawberry_type in object_definitions
+        )
+
+    return _print_object_definition(type_, schema, extras=extras)
+
+
+def _print_object_definition(
+    type_: Any,
+    schema: BaseSchema,
+    *,
+    extras: PrintExtras,
+    strawberry_type: StrawberryObjectDefinition | None = None,
+) -> str:
+    from strawberry.schema.schema_converter import GraphQLCoreConverter
+
+    if strawberry_type:
+        strawberry_fields = {id(field) for field in strawberry_type.fields}
+        object_fields = {
+            name: field
+            for name, field in type_.fields.items()
+            if field.extensions
+            and id(field.extensions.get(GraphQLCoreConverter.DEFINITION_BACKREF))
+            in strawberry_fields
+        }
+    else:
+        object_fields = type_.fields
+
+    fields = []
+    for i, (name, field) in enumerate(object_fields.items()):
+        strawberry_field = field.extensions and field.extensions.get(
+            GraphQLCoreConverter.DEFINITION_BACKREF
+        )
+
+        args = (
+            print_args(field.args, "  ", schema=schema, extras=extras)
+            if hasattr(field, "args")
+            else ""
+        )
+
+        fields.append(
+            print_description(field, "  ", not i)
+            + f"  {name}"
+            + args
+            + f": {field.type}"
+            + print_field_directives(strawberry_field, schema=schema, extras=extras)
+            + print_deprecated(field.deprecation_reason)
+        )
+
+    description = (
         print_description(type_)
-        + print_extends(type_, schema)
+        if strawberry_type is None or get_strawberry_type(type_) is strawberry_type
+        else ""
+    )
+
+    return (
+        description
+        + print_extends(type_, schema, strawberry_type=strawberry_type)
         + f"type {type_.name}"
-        + print_implemented_interfaces(type_)
-        + print_type_directives(type_, schema, extras=extras)
-        + print_fields(type_, schema, extras=extras)
+        + print_object_implemented_interfaces(
+            type_, schema, strawberry_type=strawberry_type
+        )
+        + print_type_directives(
+            type_, schema, extras=extras, strawberry_type=strawberry_type
+        )
+        + print_block(fields)
     )
 
 
@@ -442,25 +573,63 @@ def print_input_value(name: str, arg: GraphQLArgument | GraphQLInputField) -> st
 
 
 def _print_input_object(type_: Any, schema: BaseSchema, *, extras: PrintExtras) -> str:
+    input_definitions = get_input_object_definitions(type_)
+    if input_definitions:
+        return "\n\n".join(
+            _print_input_object_definition(
+                type_,
+                schema,
+                extras=extras,
+                strawberry_type=strawberry_type,
+            )
+            for strawberry_type in input_definitions
+        )
+
+    return _print_input_object_definition(type_, schema, extras=extras)
+
+
+def _print_input_object_definition(
+    type_: Any,
+    schema: BaseSchema,
+    *,
+    extras: PrintExtras,
+    strawberry_type: StrawberryObjectDefinition | None = None,
+) -> str:
     from strawberry.schema.schema_converter import GraphQLCoreConverter
 
+    if strawberry_type:
+        input_fields = schema.schema_converter.get_graphql_input_fields(strawberry_type)
+    else:
+        input_fields = type_.fields
+
     fields = []
-    for i, (name, field) in enumerate(type_.fields.items()):
-        strawberry_field = field.extensions and field.extensions.get(
-            GraphQLCoreConverter.DEFINITION_BACKREF
+    for i, (name, field) in enumerate(input_fields.items()):
+        strawberry_field = cast(
+            "StrawberryField | None",
+            field.extensions
+            and field.extensions.get(GraphQLCoreConverter.DEFINITION_BACKREF),
         )
 
         fields.append(
-            print_description(field, "  ", not i)
+            print_description(cast("Any", field), "  ", not i)
             + "  "
             + print_input_value(name, field)
             + print_field_directives(strawberry_field, schema=schema, extras=extras)
         )
 
-    return (
+    description = (
         print_description(type_)
+        if strawberry_type is None or get_strawberry_type(type_) is strawberry_type
+        else ""
+    )
+
+    return (
+        description
+        + print_extends(type_, schema, strawberry_type=strawberry_type)
         + f"input {type_.name}"
-        + print_type_directives(type_, schema, extras=extras)
+        + print_type_directives(
+            type_, schema, extras=extras, strawberry_type=strawberry_type
+        )
         + print_block(fields)
     )
 
