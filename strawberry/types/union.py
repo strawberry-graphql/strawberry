@@ -27,6 +27,7 @@ from strawberry.types.base import (
     StrawberryType,
     has_object_definition,
 )
+from strawberry.types.cast import get_strawberry_type_cast
 from strawberry.types.lazy_type import LazyType
 
 if TYPE_CHECKING:
@@ -172,6 +173,29 @@ class StrawberryUnion(StrawberryType):
             assert isinstance(type_, GraphQLUnionType)
 
             from strawberry.types.base import StrawberryObjectDefinition
+
+            # An explicit `strawberry.cast` is the documented way to disambiguate
+            # when returning an object that isn't an instance of any of the union's
+            # types, such as a Django, Pydantic or SQLAlchemy object. Types that
+            # implement an interface get an `is_type_of` that already honours it,
+            # but types without interfaces have none, so check it here as well.
+            if (type_cast := get_strawberry_type_cast(root)) is not None:
+                for inner_type in type_.types:
+                    concrete_type = type_map.get(inner_type.name)
+
+                    if concrete_type is None:  # pragma: no cover
+                        continue
+
+                    definition = concrete_type.definition
+
+                    if (
+                        isinstance(definition, StrawberryObjectDefinition)
+                        and definition.origin is type_cast
+                    ):
+                        return inner_type.name
+
+                # The object was cast to something that isn't a member of this
+                # union, fall back to the checks below to keep the error the same
 
             # If the type given is not an Object type, try resolving using `is_type_of`
             # defined on the union's inner types
