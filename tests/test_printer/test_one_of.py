@@ -33,8 +33,8 @@ def test_prints_one_of_directive():
     directive @oneOf on INPUT_OBJECT
 
     input ExampleInputTagged @oneOf {
-      a: String
-      b: Int
+      a: String = null
+      b: Int = null
     }
 
     type ExampleResult {

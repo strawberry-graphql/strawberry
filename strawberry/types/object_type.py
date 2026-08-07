@@ -3,6 +3,7 @@ import copy
 import dataclasses
 import inspect
 import types
+import typing
 from collections.abc import Callable, Sequence
 from typing import (
     Any,
@@ -113,10 +114,12 @@ def _wrap_dataclass(cls: T) -> T:
     return cast("T", dataclasses.dataclass(kw_only=True)(cls))
 
 
-def _inject_default_for_maybe_annotations(cls: T, annotations: dict[str, Any]) -> None:
-    """Inject `= None` for fields with `Maybe` annotations and no default value."""
+def _inject_default_for_optional_input_field_annotations(
+    cls: T, annotations: dict[str, Any]
+) -> None:
+    """Inject `= None` for nullable fields or fields with `Maybe` annotations and no default value."""
     for name, annotation in annotations.copy().items():
-        if _annotation_is_maybe(annotation):
+        if _annotation_is_maybe(annotation) or _annotation_is_nullable(annotation):
             if not hasattr(cls, name):
                 setattr(cls, name, None)
             elif (
@@ -125,6 +128,23 @@ def _inject_default_for_maybe_annotations(cls: T, annotations: dict[str, Any]) -
                 and attr.default_factory is dataclasses.MISSING
             ):
                 attr.default = None
+
+
+def _annotation_is_nullable(annotation: Any) -> bool:
+    if isinstance(annotation, str):
+        # Ideally we would try to evaluate the annotation, but the args inside
+        # may still not be available, as the module is still being constructed.
+        # Checking for the pattern should be good enough for now.
+        return any(component.strip() == "None" for component in annotation.split("|"))
+
+    orig = typing.get_origin(annotation)
+    if orig is typing.Annotated:
+        return _annotation_is_nullable(typing.get_args(annotation)[0])
+
+    return orig in (
+        types.UnionType,
+        typing.Union,
+    ) and types.NoneType in typing.get_args(annotation)
 
 
 def _process_type(
@@ -294,7 +314,7 @@ def type(
             if field and isinstance(field, StrawberryField) and field.type_annotation:
                 original_type_annotations[field_name] = field.type_annotation.annotation
         if is_input:
-            _inject_default_for_maybe_annotations(cls, annotations)
+            _inject_default_for_optional_input_field_annotations(cls, annotations)
         wrapped = _wrap_dataclass(cls)
 
         return _process_type(
