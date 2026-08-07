@@ -11,9 +11,9 @@ class ExampleInput:
     id: str
     name: str
     age: int
-    person: Optional[PersonInput]
+    person: Optional[PersonInput] = None
     people: list[PersonInput]
-    optional_people: Optional[list[PersonInput]]
+    optional_people: Optional[list[PersonInput]] = None
 
 class OperationNameVariables:
     id: Optional[str]

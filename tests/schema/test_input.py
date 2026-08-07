@@ -1,11 +1,13 @@
 import re
 import textwrap
+import typing
 
 import pytest
 
 import strawberry
 from strawberry.exceptions import InvalidSuperclassInterfaceError
 from strawberry.printer import print_schema
+from strawberry.types.execution import ExecutionResult
 from tests.conftest import skip_if_gql_32
 
 
@@ -141,3 +143,43 @@ def test_input_cannot_inherit_from_interfaces():
     @strawberry.input
     class SomeOtherInput(SomeInterface, SomeOtherInterface):
         another_arg: str
+
+
+def test_nullable_input_field_without_default():
+    @strawberry.type
+    class Query:
+        hello: str = "Hello"
+
+    @strawberry.input
+    class TestInput:
+        union_expression: str | None
+        string_union_expression: "float | None"
+        typing_union: typing.Union[int | None]
+        optional: typing.Optional[bool]
+
+    @strawberry.type
+    class Mutation:
+        @strawberry.mutation
+        def test(self, input: TestInput) -> strawberry.scalars.JSON:
+            return {
+                "union_expression": input.union_expression,
+                "string_union_expression": input.string_union_expression,
+                "typing_union": input.typing_union,
+                "optional": input.optional,
+            }
+
+    schema = strawberry.Schema(query=Query, mutation=Mutation)
+    result = schema.execute_sync("mutation { test(input: {}) }")
+
+    assert result == ExecutionResult(
+        data={
+            "test": {
+                "union_expression": None,
+                "string_union_expression": None,
+                "typing_union": None,
+                "optional": None,
+            },
+        },
+        errors=None,
+        extensions={},
+    )
