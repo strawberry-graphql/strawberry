@@ -139,3 +139,72 @@ def test_input_cannot_inherit_from_interfaces():
     @strawberry.input
     class SomeOtherInput(SomeInterface, SomeOtherInterface):
         another_arg: str
+
+
+@pytest.mark.parametrize(
+    ("query", "variables", "expected_error"),
+    [
+        (
+            "query { test(input: {}) }",
+            None,
+            "Expected value of type 'TestInput' to include required field 'required', found: {  }.",
+        ),
+        (
+            "query($input: TestInput!) { test(input: $input) }",
+            None,
+            "Variable '$input' has invalid value: Expected a value of non-null type 'TestInput!' to be provided.",
+        ),
+        (
+            "query($input: TestInput!) { test(input: $input) }",
+            {"input": {}},
+            "Variable '$input' has invalid value: Expected value of type 'TestInput' to include required field 'required', found: {}.",
+        ),
+    ],
+)
+def test_non_nullable_input_fields_must_be_specified(query, variables, expected_error):
+    @strawberry.input
+    class TestInput:
+        required: str
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def test(self, input: TestInput) -> str:
+            return input.required
+
+    schema = strawberry.Schema(query=Query)
+    result = schema.execute_sync(query, variables)
+
+    assert not result.data
+    assert result.errors
+    assert [error.message for error in result.errors] == [expected_error]
+
+
+@pytest.mark.parametrize(
+    ("query", "variables"),
+    [
+        ("query { test(input: {}) }", None),
+        ("query { test(input: {optional: null}) }", None),
+        ("query($input: TestInput!) { test(input: $input) }", {"input": {}}),
+        (
+            "query($input: TestInput!) { test(input: $input) }",
+            {"input": {"optional": None}},
+        ),
+    ],
+)
+def test_nullable_input_field_without_default(query, variables):
+    @strawberry.input
+    class TestInput:
+        optional: str | None
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def test(self, input: TestInput) -> str | None:
+            return input.optional
+
+    schema = strawberry.Schema(query=Query)
+    result = schema.execute_sync(query, variables)
+
+    assert not result.errors
+    assert result.data == {"test": None}
