@@ -85,7 +85,7 @@ def tests(session: nox.Session, gql_core: str) -> None:
 
 
 @nox.session(python=["3.12"], name="Django tests", tags=["tests"])
-@with_gql_core_parametrize("django", ["5.1.3", "5.0.9", "4.2.0"])
+@with_gql_core_parametrize("django", ["6.1.0", "6.0.8", "5.2.17"])
 def tests_django(session: nox.Session, django: str, gql_core: str) -> None:
     session.run_install(
         "uv",
