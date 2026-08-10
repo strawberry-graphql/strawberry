@@ -9,7 +9,8 @@ social_messages:
     {project_name} {version} is out. This release adds a
     `mask_pre_execution_errors` option to the `MaskErrors` extension, so syntax
     and validation errors can reach clients while the errors your resolvers
-    raise stay masked.
+    raise stay masked. It also fixes an error leak when one `MaskErrors`
+    instance serves concurrent operations.
 ---
 
 This release adds a `mask_pre_execution_errors` option to the `MaskErrors` extension.
@@ -47,3 +48,5 @@ schema.execute_sync("{ hiddenError }")
 ```
 
 The default value is `True`, which keeps the current behaviour. Validation errors give the names of the fields, the arguments and the types of your schema. Thus disable the option only if the clients can know the shape of the schema.
+
+This release also fixes an error leak in `MaskErrors`. The extension kept some of its state on the instance. When one instance served more than one operation at the same time – which the deprecated `extensions=[MaskErrors()]` form does – a frame of an open stream could stop the extension from masking the errors of another operation, and the message of the original exception reached the client. `MaskErrors` now keeps this state per operation.

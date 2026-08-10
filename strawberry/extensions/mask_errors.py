@@ -1,4 +1,5 @@
 from collections.abc import Callable, Iterator
+from contextvars import ContextVar
 from typing import Protocol, runtime_checkable
 
 from graphql import ExecutionResult as GraphQLExecutionResult
@@ -19,6 +20,17 @@ class _ResultWithErrors(Protocol):
 def default_should_mask_error(_: GraphQLError) -> bool:
     # Mask all errors
     return True
+
+
+# This state belongs to one operation, not to the extension instance. A context
+# variable keeps concurrent operations apart, also when the same instance serves
+# more than one of them, and `on_operation` resets it when the operation ends.
+_in_pre_execution_phase: ContextVar[bool] = ContextVar(
+    "strawberry_mask_errors_in_pre_execution_phase", default=False
+)
+_stream_result_processed: ContextVar[bool] = ContextVar(
+    "strawberry_mask_errors_stream_result_processed", default=False
+)
 
 
 class MaskErrors(SchemaExtension):
@@ -47,8 +59,6 @@ class MaskErrors(SchemaExtension):
         self.should_mask_error = should_mask_error
         self.error_message = error_message
         self.mask_pre_execution_errors = mask_pre_execution_errors
-        self._stream_result_processed = False
-        self._in_pre_execution_phase = False
 
     def anonymise_error(self, error: GraphQLError) -> GraphQLError:
         return GraphQLError(
@@ -80,7 +90,7 @@ class MaskErrors(SchemaExtension):
         concern from the errors that resolvers raise. Thus the extension masks
         them only when `mask_pre_execution_errors` is `True`.
         """
-        return self.mask_pre_execution_errors or not self._in_pre_execution_phase
+        return self.mask_pre_execution_errors or not _in_pre_execution_phase.get()
 
     def _process_result(self, result: object) -> None:
         if isinstance(result, _ResultWithErrors) and result.errors:
@@ -96,41 +106,48 @@ class MaskErrors(SchemaExtension):
             self._process_result(completed_result)
 
     def on_parse(self) -> Iterator[None]:
-        self._in_pre_execution_phase = True
+        _in_pre_execution_phase.set(True)
         yield
 
     def on_execute(self) -> Iterator[None]:
         # The parse step and the validation step always run before this hook.
         # Thus an operation that comes here did not fail in those steps.
-        self._in_pre_execution_phase = False
+        _in_pre_execution_phase.set(False)
         yield
 
     def on_operation(self) -> Iterator[None]:
-        self._stream_result_processed = False
+        stream_token = _stream_result_processed.set(False)
         # An error that occurs before the parse step, a missing query for
         # example, does not come from the document. The extension always masks
         # these errors.
-        self._in_pre_execution_phase = False
-        yield
+        phase_token = _in_pre_execution_phase.set(False)
 
-        # Streaming operations are handled result-by-result before each frame is
-        # yielded. Avoid processing the last result again when the stream closes.
-        if self._stream_result_processed:
-            return
+        try:
+            yield
 
-        if not self._masking_enabled:
-            return
+            # Streaming operations are handled result-by-result before each
+            # frame is yielded. Avoid processing the last result again when the
+            # stream closes.
+            if _stream_result_processed.get():
+                return
 
-        result = self.execution_context.result
+            if not self._masking_enabled:
+                return
 
-        if isinstance(result, (GraphQLExecutionResult, StrawberryExecutionResult)):
-            self._process_result(result)
-        elif initial_result := getattr(result, "initial_result", None):
-            self._process_result(initial_result)
+            result = self.execution_context.result
+
+            if isinstance(result, (GraphQLExecutionResult, StrawberryExecutionResult)):
+                self._process_result(result)
+            elif initial_result := getattr(result, "initial_result", None):
+                self._process_result(initial_result)
+        finally:
+            # This state must not outlive the operation that set it.
+            _in_pre_execution_phase.reset(phase_token)
+            _stream_result_processed.reset(stream_token)
 
     def on_stream_result(self, result: StreamExecutionResult) -> Iterator[None]:
         """Mask errors before a streamed execution result reaches the client."""
-        self._stream_result_processed = True
+        _stream_result_processed.set(True)
 
         if self._masking_enabled:
             self._process_stream_result(result)
