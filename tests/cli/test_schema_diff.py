@@ -1,72 +1,112 @@
-import tempfile
+from __future__ import annotations
+
+from pathlib import Path
 
 from typer import Typer
 from typer.testing import CliRunner
 
 
-def test_schema_diff_no_breaking_changes(cli_app: Typer, cli_runner: CliRunner):
-    sdl = "type Query { hello: String }"
-    with (
-        tempfile.NamedTemporaryFile(mode="w", suffix=".graphql", delete=False) as old,
-        tempfile.NamedTemporaryFile(mode="w", suffix=".graphql", delete=False) as new,
-    ):
-        old.write(sdl)
-        new.write(sdl)
-        old.flush()
-        new.flush()
-        result = cli_runner.invoke(cli_app, ["schema-diff", old.name, new.name])
+def _write_sdl(path: Path, content: str) -> Path:
+    path.write_text(content.strip() + "\n", encoding="utf-8")
+    return path
+
+
+def test_schema_diff_no_breaking_changes(
+    cli_app: Typer, cli_runner: CliRunner, tmp_path: Path
+) -> None:
+    sdl = """
+    type Query {
+      hello: String
+    }
+    """
+    old = _write_sdl(tmp_path / "old.graphql", sdl)
+    new = _write_sdl(tmp_path / "new.graphql", sdl)
+
+    result = cli_runner.invoke(cli_app, ["schema-diff", str(old), str(new)])
+
     assert result.exit_code == 0
-    assert "No breaking changes" in result.stdout
+    assert "No breaking changes found." in result.stdout
 
 
-def test_schema_diff_with_breaking_change(cli_app: Typer, cli_runner: CliRunner):
-    old_sdl = "type Query { hello: String\n  world: String }"
-    new_sdl = "type Query { hello: String }"
-    with (
-        tempfile.NamedTemporaryFile(mode="w", suffix=".graphql", delete=False) as old,
-        tempfile.NamedTemporaryFile(mode="w", suffix=".graphql", delete=False) as new,
-    ):
-        old.write(old_sdl)
-        new.write(new_sdl)
-        old.flush()
-        new.flush()
-        result = cli_runner.invoke(cli_app, ["schema-diff", old.name, new.name])
+def test_schema_diff_breaking_change_exit_1(
+    cli_app: Typer, cli_runner: CliRunner, tmp_path: Path
+) -> None:
+    old = _write_sdl(
+        tmp_path / "old.graphql",
+        """
+        type Query {
+          hello: String
+          world: String
+        }
+        """,
+    )
+    new = _write_sdl(
+        tmp_path / "new.graphql",
+        """
+        type Query {
+          hello: String
+        }
+        """,
+    )
+
+    result = cli_runner.invoke(cli_app, ["schema-diff", str(old), str(new)])
+
     assert result.exit_code == 1
+    # field removal is a breaking change; description text is printed
     assert "world" in result.stdout
 
 
-def test_schema_diff_invalid_sdl(cli_app: Typer, cli_runner: CliRunner):
-    with (
-        tempfile.NamedTemporaryFile(mode="w", suffix=".graphql", delete=False) as old,
-        tempfile.NamedTemporaryFile(mode="w", suffix=".graphql", delete=False) as new,
-    ):
-        old.write("{ not valid sdl")
-        new.write("type Query { hello: String }")
-        old.flush()
-        new.flush()
-        result = cli_runner.invoke(cli_app, ["schema-diff", old.name, new.name])
+def test_schema_diff_list_type_description_does_not_crash_rich(
+    cli_app: Typer, cli_runner: CliRunner, tmp_path: Path
+) -> None:
+    """List types use [String!] notation; must not crash Rich markup parsing."""
+    old = _write_sdl(
+        tmp_path / "old.graphql",
+        """
+        type Query {
+          tags: [String!]!
+        }
+        """,
+    )
+    new = _write_sdl(
+        tmp_path / "new.graphql",
+        """
+        type Query {
+          tags: String
+        }
+        """,
+    )
+
+    result = cli_runner.invoke(cli_app, ["schema-diff", str(old), str(new)])
+
+    assert result.exit_code == 1
+    # Should print a type-change description without MarkupError traceback
+    assert "Error" not in result.stdout or "MarkupError" not in (result.stdout + (result.stderr or ""))
+    assert "tags" in result.stdout
+    assert result.exception is None or not isinstance(
+        result.exception, Exception
+    ) or "MarkupError" not in type(result.exception).__name__
+
+
+def test_schema_diff_invalid_sdl_exit_2(
+    cli_app: Typer, cli_runner: CliRunner, tmp_path: Path
+) -> None:
+    old = _write_sdl(tmp_path / "old.graphql", "type Query { hello: String }")
+    new = _write_sdl(tmp_path / "new.graphql", "{ not valid")
+
+    result = cli_runner.invoke(cli_app, ["schema-diff", str(old), str(new)])
+
     assert result.exit_code == 2
     assert "Error" in result.stdout
 
 
-def test_schema_diff_nonexistent_file(cli_app: Typer, cli_runner: CliRunner):
-    result = cli_runner.invoke(
-        cli_app, ["schema-diff", "/nonexistent/old.graphql", "/nonexistent/new.graphql"]
-    )
+def test_schema_diff_missing_file_exit_2(
+    cli_app: Typer, cli_runner: CliRunner, tmp_path: Path
+) -> None:
+    old = tmp_path / "missing-old.graphql"
+    new = _write_sdl(tmp_path / "new.graphql", "type Query { hello: String }")
+
+    result = cli_runner.invoke(cli_app, ["schema-diff", str(old), str(new)])
+
+    # Typer validates exists=True on Path args before our handler
     assert result.exit_code != 0
-
-
-def test_schema_diff_list_type_in_output(cli_app: Typer, cli_runner: CliRunner):
-    """Verify Rich markup escaping for types containing brackets like [String]."""
-    old_sdl = "type Query { items: [String] }"
-    new_sdl = "type Query { items: [Int] }"
-    with (
-        tempfile.NamedTemporaryFile(mode="w", suffix=".graphql", delete=False) as old,
-        tempfile.NamedTemporaryFile(mode="w", suffix=".graphql", delete=False) as new,
-    ):
-        old.write(old_sdl)
-        new.write(new_sdl)
-        old.flush()
-        new.flush()
-        result = cli_runner.invoke(cli_app, ["schema-diff", old.name, new.name])
-    assert result.exit_code == 1
