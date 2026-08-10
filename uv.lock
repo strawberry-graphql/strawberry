@@ -3941,6 +3941,7 @@ chalice = [
 channels = [
     { name = "asgiref" },
     { name = "channels" },
+    { name = "django" },
 ]
 cli = [
     { name = "libcst" },
@@ -4055,8 +4056,9 @@ requires-dist = [
     { name = "asgiref", marker = "extra == 'channels'", specifier = ">=3.2" },
     { name = "asgiref", marker = "extra == 'django'", specifier = ">=3.2" },
     { name = "chalice", marker = "extra == 'chalice'", specifier = ">=1.22" },
-    { name = "channels", marker = "extra == 'channels'", specifier = ">=3.0.5" },
+    { name = "channels", marker = "extra == 'channels'", specifier = ">=4.0.0" },
     { name = "cross-web", specifier = ">=0.6.0" },
+    { name = "django", marker = "extra == 'channels'", specifier = ">=5.2" },
     { name = "django", marker = "extra == 'django'", specifier = ">=5.2" },
     { name = "fastapi", marker = "extra == 'fastapi'", specifier = ">=0.65.2" },
     { name = "flask", marker = "extra == 'flask'", specifier = ">=1.1" },
@@ -4135,7 +4137,7 @@ dev = [
 integrations = [
     { name = "aiohttp", specifier = ">=3.7.4.post0,<4.0.0" },
     { name = "chalice", specifier = ">=1.22,<2.0" },
-    { name = "channels", specifier = ">=3.0.5,<5.0.0" },
+    { name = "channels", specifier = ">=4.0.0,<5.0.0" },
     { name = "daphne", specifier = ">=4.0.0,<5.0.0" },
     { name = "django", specifier = ">=5.2" },
     { name = "fastapi", extras = ["standard-no-fastapi-cloud-cli"], specifier = ">=0.116.0" },
