@@ -306,3 +306,47 @@ async def test_mask_errors_before_streaming_pre_execution_error(
         assert [error.message for error in result.errors] == ["Unexpected error."]
     finally:
         await results.aclose()
+
+
+async def first_stream_result(
+    schema: strawberry.Schema, operation: str | None
+) -> ExecutionResult:
+    """Return the first frame of a stream, then close the stream."""
+    results = await schema.stream(operation)
+    try:
+        result = await anext(results)
+        assert isinstance(result, ExecutionResult)
+        assert result.errors
+        return result
+    finally:
+        await results.aclose()
+
+
+@pytest.mark.asyncio
+async def test_keep_pre_execution_errors_before_streaming() -> None:
+    schema = strawberry.Schema(
+        query=Query,
+        extensions=[lambda: MaskErrors(mask_pre_execution_errors=False)],
+    )
+
+    kept = await first_stream_result(schema, "{ missingField }")
+    assert [error.message for error in kept.errors] == [
+        "Cannot query field 'missingField' on type 'Query'."
+    ]
+
+    masked = await first_stream_result(schema, "{ dangerousQuery }")
+    assert [error.message for error in masked.errors] == ["Unexpected error."]
+
+
+@pytest.mark.asyncio
+async def test_mask_errors_forgets_the_phase_of_the_previous_operation() -> None:
+    """An extension instance can be shared between operations."""
+    extension = MaskErrors(mask_pre_execution_errors=False)
+    schema = strawberry.Schema(query=Query, extensions=[lambda: extension])
+
+    # This operation stops in the validation step.
+    await first_stream_result(schema, "{ missingField }")
+
+    # This one stops before the parse step, so the extension must mask it.
+    result = await first_stream_result(schema, None)
+    assert [error.message for error in result.errors] == ["Unexpected error."]
