@@ -156,7 +156,7 @@ class Query:
 schema = strawberry.Schema(
     Query,
     extensions=[
-        MaskErrors(mask_pre_execution_errors=False),
+        lambda: MaskErrors(mask_pre_execution_errors=False),
     ],
 )
 
