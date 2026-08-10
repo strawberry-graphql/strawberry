@@ -81,11 +81,15 @@ def test_schema_diff_list_type_description_does_not_crash_rich(
 
     assert result.exit_code == 1
     # Should print a type-change description without MarkupError traceback
-    assert "Error" not in result.stdout or "MarkupError" not in (result.stdout + (result.stderr or ""))
+    assert "Error" not in result.stdout or "MarkupError" not in (
+        result.stdout + (result.stderr or "")
+    )
     assert "tags" in result.stdout
-    assert result.exception is None or not isinstance(
-        result.exception, Exception
-    ) or "MarkupError" not in type(result.exception).__name__
+    assert (
+        result.exception is None
+        or not isinstance(result.exception, Exception)
+        or "MarkupError" not in type(result.exception).__name__
+    )
 
 
 def test_schema_diff_invalid_sdl_exit_2(
