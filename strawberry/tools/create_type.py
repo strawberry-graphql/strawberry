@@ -5,7 +5,7 @@ import strawberry
 from strawberry.types.field import StrawberryField
 
 
-def create_type(
+def create_type(  # noqa: PLR0917
     name: str,
     fields: list[StrawberryField],
     is_input: bool = False,

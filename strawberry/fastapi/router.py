@@ -119,7 +119,7 @@ class GraphQLRouter(
         dependency.__signature__ = sig  # type: ignore
         return dependency
 
-    def __init__(
+    def __init__(  # noqa: PLR0917
         self,
         schema: BaseSchema,
         path: str = "",

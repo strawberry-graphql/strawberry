@@ -132,7 +132,7 @@ class DataLoader(Generic[K, T]):
         cache_key_fn: Callable[[K], Hashable] | None = None,
     ) -> None: ...
 
-    def __init__(
+    def __init__(  # noqa: PLR0917
         self,
         load_fn: Callable[[list[K]], Awaitable[Sequence[T | BaseException]]],
         max_batch_size: int | None = None,

@@ -80,7 +80,7 @@ class GraphQLView(
     request_adapter_class = QuartHTTPRequestAdapter
     websocket_adapter_class = QuartWebSocketAdapter  # type: ignore
 
-    def __init__(
+    def __init__(  # noqa: PLR0917
         self,
         schema: "BaseSchema",
         graphql_ide: GraphQL_IDE | None = "graphiql",

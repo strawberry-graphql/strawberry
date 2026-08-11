@@ -91,7 +91,7 @@ class DjangoHttpClient(HttpClient):
                 headers=dict(response.headers),
             )
 
-    async def _graphql_request(
+    async def _graphql_request(  # noqa: PLR0917
         self,
         method: Literal["get", "post"],
         query: str | None = None,

@@ -41,7 +41,7 @@ class BaseSchema(Protocol):
     exception_handlers: tuple[ExceptionHandler[Any], ...]
 
     @abstractmethod
-    async def execute(
+    async def execute(  # noqa: PLR0917
         self,
         query: str | None,
         variable_values: dict[str, Any] | None = None,
@@ -54,7 +54,7 @@ class BaseSchema(Protocol):
         raise NotImplementedError
 
     @abstractmethod
-    def execute_sync(
+    def execute_sync(  # noqa: PLR0917
         self,
         query: str | None,
         variable_values: dict[str, Any] | None = None,
@@ -67,7 +67,7 @@ class BaseSchema(Protocol):
         raise NotImplementedError
 
     @abstractmethod
-    async def subscribe(
+    async def subscribe(  # noqa: PLR0917
         self,
         query: str | None,
         variable_values: dict[str, Any] | None = None,
@@ -79,7 +79,7 @@ class BaseSchema(Protocol):
         raise NotImplementedError
 
     @abstractmethod
-    async def stream(
+    async def stream(  # noqa: PLR0917
         self,
         query: str | None,
         variable_values: dict[str, Any] | None = None,

@@ -145,7 +145,7 @@ class DebuggableGraphQLWSConsumer(
 class ChannelsHttpClient(HttpClient):
     """A client to test websockets over channels."""
 
-    def __init__(
+    def __init__(  # noqa: PLR0917
         self,
         schema: Schema,
         graphql_ide: GraphQL_IDE | None = "graphiql",
@@ -179,7 +179,7 @@ class ChannelsHttpClient(HttpClient):
             subscription_protocols=subscription_protocols,
         )
 
-    async def _graphql_request(
+    async def _graphql_request(  # noqa: PLR0917
         self,
         method: Literal["get", "post"],
         query: str | None = None,
