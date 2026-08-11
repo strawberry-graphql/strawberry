@@ -1,11 +1,13 @@
-class RelayNestedNodesResultPostAuthor:
+from typing_extensions import TypedDict
+
+class RelayNestedNodesResultPostAuthor(TypedDict):
     id: str
     name: str
 
-class RelayNestedNodesResultPost:
+class RelayNestedNodesResultPost(TypedDict):
     id: str
     title: str
     author: RelayNestedNodesResultPostAuthor
 
-class RelayNestedNodesResult:
+class RelayNestedNodesResult(TypedDict):
     post: RelayNestedNodesResultPost
