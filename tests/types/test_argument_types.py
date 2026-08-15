@@ -109,10 +109,19 @@ class CustomInfo(Info[ContextType, RootValueType]):
 
 @pytest.mark.parametrize(
     "annotation",
-    [CustomInfo, CustomInfo[None, None], Info, Info[None, None]],
+    [
+        CustomInfo,
+        CustomInfo[None, None],
+        Info,
+        Info[None, None],
+        CustomInfo | None,
+        CustomInfo[None, None] | None,
+        Info | None,
+        Info[None, None] | None,
+    ],
 )
 def test_custom_info(annotation):
-    """Test to ensure that subclassed Info does not raise warning."""
+    """Test that concrete, generic, and optional Info types are injected."""
     with warnings.catch_warnings():
         warnings.filterwarnings("error")
 

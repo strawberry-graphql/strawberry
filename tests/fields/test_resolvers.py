@@ -1,12 +1,13 @@
 import dataclasses
 import textwrap
 import types
-from typing import Any, ClassVar, ForwardRef, no_type_check
+from typing import Any, ClassVar, ForwardRef, Optional, Union, no_type_check
 
 import pytest
 
 import strawberry
 from strawberry.exceptions import (
+    ConflictingArgumentsError,
     MissingArgumentsAnnotationsError,
     MissingFieldAnnotationError,
     MissingReturnAnnotationError,
@@ -15,6 +16,7 @@ from strawberry.parent import Parent
 from strawberry.scalars import JSON
 from strawberry.types.fields.resolver import (
     INFO_PARAMSPEC,
+    PARENT_PARAMSPEC,
     Signature,
     StrawberryResolver,
     UncallableResolverError,
@@ -685,6 +687,131 @@ def test_info_annotation_with_type_alias():
     result = schema.execute_sync("query { hello }")
     assert result.errors is None
     assert result.data == {"hello": "Hello World"}
+
+
+def test_optional_info_is_reserved_type():
+    """Optional Info annotations are recognized as the info parameter (#4389)."""
+    assert INFO_PARAMSPEC.is_reserved_type(Optional[strawberry.Info]) is True
+    assert INFO_PARAMSPEC.is_reserved_type(Union[strawberry.Info, None]) is True
+    assert INFO_PARAMSPEC.is_reserved_type(strawberry.Info | None) is True
+    assert INFO_PARAMSPEC.is_reserved_type(None | strawberry.Info) is True
+    assert INFO_PARAMSPEC.is_reserved_type(strawberry.Info[None, None] | None) is True
+
+
+def test_optional_info_type_alias_is_reserved_type():
+    """TypeAliasType wrapping or wrapped by Optional is unwrapped recursively."""
+    from typing_extensions import TypeAliasType
+
+    AliasedInfo = TypeAliasType("AliasedInfo", strawberry.Info[None, None])
+    OptionalAliasedInfo = TypeAliasType(
+        "OptionalAliasedInfo", Optional[strawberry.Info[None, None]]
+    )
+
+    assert INFO_PARAMSPEC.is_reserved_type(AliasedInfo | None) is True
+    assert INFO_PARAMSPEC.is_reserved_type(OptionalAliasedInfo) is True
+
+
+def test_non_optional_info_unions_are_not_reserved_types():
+    """Only unions of exactly one Info and None are matched."""
+    assert INFO_PARAMSPEC.is_reserved_type(strawberry.Info | str) is False
+    assert INFO_PARAMSPEC.is_reserved_type(strawberry.Info | str | None) is False
+    assert INFO_PARAMSPEC.is_reserved_type(list[strawberry.Info] | None) is False
+    assert INFO_PARAMSPEC.is_reserved_type(Optional[str]) is False
+    assert INFO_PARAMSPEC.is_reserved_type(str) is False
+
+
+def test_optional_parent_annotation_is_not_reserved_type():
+    """Only ``Info`` opts into optional matching; ``Parent`` is unchanged."""
+    assert PARENT_PARAMSPEC.is_reserved_type(Parent[str]) is True
+    assert PARENT_PARAMSPEC.is_reserved_type(Optional[Parent[str]]) is False
+    assert PARENT_PARAMSPEC.is_reserved_type("strawberry.Parent") is True
+    assert PARENT_PARAMSPEC.is_reserved_type("strawberry.Parent | None") is False
+
+
+def test_optional_info_forward_reference_string():
+    """Qualified optional strings match too, for TYPE_CHECKING-only imports."""
+    assert INFO_PARAMSPEC.is_reserved_type("strawberry.Info | None") is True
+    assert INFO_PARAMSPEC.is_reserved_type("None | strawberry.Info") is True
+    assert INFO_PARAMSPEC.is_reserved_type("Optional[strawberry.Info]") is True
+    assert INFO_PARAMSPEC.is_reserved_type("typing.Optional[strawberry.Info]") is True
+    assert INFO_PARAMSPEC.is_reserved_type("Union[strawberry.Info, None]") is True
+    assert INFO_PARAMSPEC.is_reserved_type("strawberry.types.info.Info | None") is True
+    assert (
+        INFO_PARAMSPEC.is_reserved_type("strawberry.Info[Context, None] | None") is True
+    )
+    assert INFO_PARAMSPEC.is_reserved_type(ForwardRef("strawberry.Info | None")) is True
+
+    # Unqualified names and multi-member unions still do not match
+    assert INFO_PARAMSPEC.is_reserved_type("Info | None") is False
+    assert INFO_PARAMSPEC.is_reserved_type("MyInfo | None") is False
+    assert INFO_PARAMSPEC.is_reserved_type("strawberry.Info | str") is False
+    assert INFO_PARAMSPEC.is_reserved_type("strawberry.Info | str | None") is False
+    assert INFO_PARAMSPEC.is_reserved_type("list[strawberry.Info] | None") is False
+    assert INFO_PARAMSPEC.is_reserved_type("strawberry.Info |") is False
+
+
+def test_optional_info_annotation_supports_graphql_and_direct_calls():
+    """Regression test for issue #4389."""
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def hello(self, request_info: strawberry.Info | None = None) -> str:
+            return "injected" if request_info is not None else "standalone"
+
+    # The resolver stays usable as a plain Python function
+    assert Query().hello() == "standalone"
+
+    field = Query.__strawberry_definition__.fields[0]
+    assert field.arguments == []
+    assert field.base_resolver.info_parameter.name == "request_info"
+
+    result = strawberry.Schema(query=Query).execute_sync("{ hello }")
+    assert result.errors is None
+    assert result.data == {"hello": "injected"}
+
+
+async def test_optional_info_annotation_with_async_resolver():
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        async def hello(self, request_info: strawberry.Info | None = None) -> str:
+            return "injected" if request_info is not None else "standalone"
+
+    assert await Query().hello() == "standalone"
+
+    result = await strawberry.Schema(query=Query).execute("{ hello }")
+    assert result.errors is None
+    assert result.data == {"hello": "injected"}
+
+
+def test_optional_generic_info_annotation_builds_schema():
+    """``Info[Ctx, Root] | None`` used to fail at decoration time."""
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def hello(self, info: strawberry.Info[None, None] | None = None) -> str:
+            return "injected" if info is not None else "standalone"
+
+    result = strawberry.Schema(query=Query).execute_sync("{ hello }")
+    assert result.errors is None
+    assert result.data == {"hello": "injected"}
+
+
+def test_conflicting_optional_info_arguments():
+    """Two optional Info parameters conflict, like two plain Info parameters."""
+    with pytest.raises(ConflictingArgumentsError):
+
+        @strawberry.type
+        class Query:
+            @strawberry.field
+            def hello(
+                self,
+                first: strawberry.Info | None = None,
+                second: strawberry.Info | None = None,
+            ) -> str:
+                return "hi"
 
 
 def test_info_forward_reference_string():

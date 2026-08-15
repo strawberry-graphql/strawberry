@@ -1,5 +1,6 @@
 from __future__ import annotations as _
 
+import ast
 import asyncio
 import inspect
 import sys
@@ -27,7 +28,11 @@ from strawberry.parent import StrawberryParent, resolve_parent_forward_arg
 from strawberry.types.arguments import StrawberryArgument
 from strawberry.types.base import StrawberryType, has_object_definition
 from strawberry.types.info import Info
-from strawberry.utils.typing import type_has_annotation
+from strawberry.utils.typing import (
+    get_optional_annotation,
+    is_optional,
+    type_has_annotation,
+)
 
 if TYPE_CHECKING:
     import builtins
@@ -107,6 +112,7 @@ class ReservedType(NamedTuple):
     name: str | None
     type: type
     alias: str | None = None
+    allow_optional: bool = False
 
     def find(
         self,
@@ -159,7 +165,12 @@ class ReservedType(NamedTuple):
         # Handle TypeAliasType (Python 3.12+ `type X = ...` syntax)
         # We need to unwrap the alias to get the actual type
         if hasattr(other, "__value__"):
-            other = other.__value__
+            return self.is_reserved_type(other.__value__)
+
+        # Optional[T] and T | None describe the value accepted by direct Python
+        # calls, but GraphQL still needs to inject reserved parameters as T.
+        if self.allow_optional and is_optional(other):
+            return self.is_reserved_type(get_optional_annotation(other))
 
         origin = cast("type", get_origin(other)) or other
         if origin is Annotated:
@@ -188,13 +199,88 @@ class ReservedType(NamedTuple):
         if self.alias:
             valid_names.add(f"strawberry.{self.alias}")
 
-        return base_annotation in valid_names
+        if base_annotation in valid_names:
+            return True
+
+        # Unresolvable annotations can still be optional, e.g. when the type is
+        # imported under TYPE_CHECKING and written as "strawberry.Info | None".
+        if not self.allow_optional:
+            return False
+
+        inner = _unwrap_optional_str(annotation)
+        return inner is not None and inner in valid_names
+
+
+def _is_none_node(node: ast.expr) -> bool:
+    return isinstance(node, ast.Constant) and node.value is None
+
+
+def _dotted_name(node: ast.expr) -> str | None:
+    """Return the dotted name for a Name/Attribute chain, if it is one."""
+    parts: list[str] = []
+    current: ast.expr = node
+    while isinstance(current, ast.Attribute):
+        parts.append(current.attr)
+        current = current.value
+    if not isinstance(current, ast.Name):
+        return None
+    parts.append(current.id)
+    return ".".join(reversed(parts))
+
+
+def _union_members(node: ast.expr) -> list[ast.expr] | None:
+    """Flatten a union annotation node, or return None if it is not a union."""
+    if isinstance(node, ast.BinOp) and isinstance(node.op, ast.BitOr):
+        return (_union_members(node.left) or [node.left]) + (
+            _union_members(node.right) or [node.right]
+        )
+
+    if isinstance(node, ast.Subscript):
+        name = _dotted_name(node.value)
+        tail = name.rsplit(".", maxsplit=1)[-1] if name else None
+        if tail == "Optional":
+            return [node.slice, ast.Constant(value=None)]
+        if tail == "Union":
+            if not isinstance(node.slice, ast.Tuple):
+                return [node.slice]
+            members: list[ast.expr] = []
+            for element in node.slice.elts:
+                members.extend(_union_members(element) or [element])
+            return members
+
+    return None
+
+
+def _unwrap_optional_str(annotation: str) -> str | None:
+    """Return the base name of the sole non-None member of an optional string.
+
+    The annotation is parsed structurally, never evaluated. ``None`` is returned
+    when the annotation is not a union, is not optional, or has more than one
+    non-``None`` member.
+    """
+    try:
+        node = ast.parse(annotation.strip(), mode="eval").body
+    except SyntaxError:
+        return None
+
+    members = _union_members(node)
+    if members is None:
+        return None
+
+    non_none = [member for member in members if not _is_none_node(member)]
+    if len(non_none) != 1 or len(non_none) == len(members):
+        return None
+
+    inner = non_none[0]
+    if isinstance(inner, ast.Subscript):
+        inner = inner.value
+    return _dotted_name(inner)
 
 
 SELF_PARAMSPEC = ReservedNameBoundParameter("self")
 CLS_PARAMSPEC = ReservedNameBoundParameter("cls")
 ROOT_PARAMSPEC = ReservedName("root")
-INFO_PARAMSPEC = ReservedType("info", Info)
+INFO_PARAMSPEC = ReservedType("info", Info, allow_optional=True)
 PARENT_PARAMSPEC = ReservedType(name=None, type=StrawberryParent, alias="Parent")
 
 T = TypeVar("T")
