@@ -28,7 +28,7 @@ import strawberry
 class Query:
     @strawberry.field
     def hello(self, info: strawberry.Info | None = None) -> str:
-        return "from graphql" if info else "standalone"
+        return "from GraphQL" if info else "standalone"
 ```
 
 `Optional[Info]`, `Union[Info, None]`, generic forms such as
