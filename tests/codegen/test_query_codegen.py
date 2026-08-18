@@ -31,7 +31,7 @@ QUERIES = list(HERE.glob("queries/*.graphql"))
     ids=["python", "typescript"],
 )
 @pytest.mark.parametrize("query", QUERIES, ids=[x.name for x in QUERIES])
-def test_codegen(
+def test_codegen(  # noqa: PLR0917
     query: Path,
     plugin_class: type[QueryCodegenPlugin],
     plugin_name: str,

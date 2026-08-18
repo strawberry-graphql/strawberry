@@ -1,6 +1,246 @@
 CHANGELOG
 =========
 
+0.324.0 - 2026-08-10
+--------------------
+
+This release adds support for Django 6.0 and 6.1, and drops support for Django
+older than 5.2.
+
+Django 4.2, 5.0 and 5.1 have all reached end of life. Django 5.2 LTS is now the
+minimum supported version, and the test suite runs against Django 5.2, 6.0 and
+6.1.
+
+If you are still on one of the dropped versions, we strongly recommend
+upgrading to Django 5.2 or newer: unmaintained releases no longer get security
+fixes.
+
+This release was contributed by [@bellini666](https://github.com/bellini666) in [#4576](https://github.com/strawberry-graphql/strawberry/pull/4576)
+
+0.323.2 - 2026-07-23
+--------------------
+
+This release fixes an issue where `MaskErrors` leaked parsing and validation
+error details during synchronous execution.
+
+Synchronous execution now masks pre-execution errors consistently with
+asynchronous execution, including when `ValidationCache` is enabled.
+
+This release was contributed by [@dextermb](https://github.com/dextermb) in [#3968](https://github.com/strawberry-graphql/strawberry/pull/3968)
+
+Additional contributors: [@patrick91](https://github.com/patrick91)
+
+0.323.1 - 2026-07-22
+--------------------
+
+This release fixes type checking for FastAPI `GraphQLRouter` subclasses that
+provide a custom context getter without explicit generic parameters.
+
+Bare subclasses now default to the context types supported by the FastAPI
+integration, so valid context getters are accepted by type checkers. Explicitly
+using `GraphQLRouter[MyContext]` is still available when the precise context
+type needs to be preserved on the subclass.
+
+The minimum supported `typing-extensions` version is now 4.14.0, ensuring these
+default generic parameters work across Strawberry's supported Python versions.
+
+This release was contributed by [@patrick91](https://github.com/patrick91) in [#4540](https://github.com/strawberry-graphql/strawberry/pull/4540)
+
+0.323.0 - 2026-07-21
+--------------------
+
+This release adds an `on_stream_result` hook to `SchemaExtension` for extension
+authors who need to inspect or mutate GraphQL results before they reach a
+streaming transport.
+
+The hook wraps subscription events and queries or mutations sent over WebSockets,
+SSE, or multipart responses. On transports that support experimental incremental
+execution, it also wraps each incremental-delivery frame.
+
+Strawberry's built-in `MaskErrors` extension now uses the hook so streamed query,
+mutation, subscription, incremental-delivery, and pre-execution errors are masked
+before being sent to clients.
+
+This release was contributed by [@Ladol](https://github.com/Ladol) in [#4330](https://github.com/strawberry-graphql/strawberry/pull/4330)
+
+Additional contributors: [@patrick91](https://github.com/patrick91), [@pre-commit-ci[bot]](https://github.com/pre-commit-ci[bot])
+
+0.322.2 - 2026-07-20
+--------------------
+
+This release fixes a bug in Relay connection pagination where combining `first` with `before` returned the wrong slice of items — walking backward from the `before` cursor instead of taking the first `first` items among those before it, per the Relay Cursor Connections spec.
+
+This release was contributed by [@ritsth](https://github.com/ritsth) in [#4516](https://github.com/strawberry-graphql/strawberry/pull/4516)
+
+0.322.1 - 2026-07-20
+--------------------
+
+This release fixes the built-in `UUID`, `Date`, `DateTime`, and `Time` scalars
+to reject non-string variable values with a standard coercion error instead of
+raising an unhandled `AttributeError`/`TypeError` inside the parser.
+
+Previously a value like `{"id": 469610.0}` sent into a `UUID` position crashed
+with `'float' object has no attribute 'replace'` and surfaced in error
+trackers as a server-side exception. The `Decimal` scalar keeps accepting
+numeric input by stringifying it, as before.
+
+This release was contributed by [@simonline](https://github.com/simonline) in [#4525](https://github.com/strawberry-graphql/strawberry/pull/4525)
+
+0.322.0 - 2026-07-18
+--------------------
+
+This release adds a cleaner extension API by removing the deprecated `Extension`
+import alias from `strawberry.extensions`. The alias was deprecated in
+[0.160.0](https://github.com/strawberry-graphql/strawberry/releases/tag/0.160.0);
+import `SchemaExtension` instead.
+
+### Migration guide
+
+**Before (deprecated):**
+```python
+from strawberry.extensions import Extension
+
+
+class MyExtension(Extension): ...
+```
+
+**After:**
+```python
+from strawberry.extensions import SchemaExtension
+
+
+class MyExtension(SchemaExtension): ...
+```
+
+This release was contributed by [@Ckk3](https://github.com/Ckk3) in [#4210](https://github.com/strawberry-graphql/strawberry/pull/4210)
+
+Additional contributors: [@github-actions[bot]](https://github.com/github-actions[bot]), [@patrick91](https://github.com/patrick91)
+
+0.321.1 - 2026-07-17
+--------------------
+
+This release adds precise type annotations for custom scalars: `serialize`,
+`parse_value` and `parse_literal` are now typed with graphql-core's
+`GraphQLScalarSerializer`, `GraphQLScalarValueParser` and
+`GraphQLScalarLiteralParser` aliases instead of bare `Callable`, so
+`strawberry.scalar(...)` calls type-check cleanly under strict type checkers.
+
+This release was contributed by [@Flamefork](https://github.com/Flamefork) in [#4527](https://github.com/strawberry-graphql/strawberry/pull/4527)
+
+0.321.0 - 2026-07-13
+--------------------
+
+This release adds configurable exception handlers that map Python exceptions to
+typed GraphQL union results.
+
+Most applications do not need to adopt this directly. It is primarily useful for
+integrations and framework-level helpers: for example, catching validation
+exceptions from a library such as Pydantic and exposing them as an explicit
+GraphQL error type, without requiring every resolver to catch and convert those
+exceptions manually.
+
+Handlers are passed to `strawberry.Schema` (and `strawberry.federation.Schema`):
+
+```python
+import strawberry
+from strawberry.types.field import StrawberryField
+
+
+class ValidationProblem(Exception):
+    pass
+
+
+@strawberry.type
+class ValidationError:
+    message: str
+
+
+class ValidationErrorHandler(
+    strawberry.ExceptionHandler[ValidationProblem, ValidationError]
+):
+    def handle(
+        self,
+        exception: ValidationProblem,
+        *,
+        field: StrawberryField,
+        info: strawberry.Info,
+    ) -> ValidationError:
+        return ValidationError(message=str(exception))
+
+
+schema = strawberry.Schema(
+    query=Query,
+    mutation=Mutation,
+    exception_handlers=[ValidationErrorHandler()],
+)
+```
+
+Handlers can alternatively declare `exception_type` and `error_type` class
+attributes instead of type parameters, which also covers types that are only
+known at runtime. Declaring both a type parameter and a conflicting attribute
+for the same slot raises an error at schema creation.
+
+Strawberry only converts the exception when the field return type includes the
+handler's GraphQL error type. Other fields continue to raise normal GraphQL
+errors, so applications can opt in one field at a time. Exceptions raised by
+the resolver, during argument conversion, or by field extensions are all
+covered.
+
+Exception handlers apply to query and mutation fields. Subscriptions are not
+covered: exceptions raised while establishing a subscription are not converted
+into union results.
+
+This release was contributed by [@patrick91](https://github.com/patrick91) in [#4492](https://github.com/strawberry-graphql/strawberry/pull/4492)
+
+0.320.4 - 2026-07-09
+--------------------
+
+This release fixes a PyCharm false positive where classes decorated with `@strawberry.type` and `@strawberry.input` reported "Unexpected argument" on their generated keyword constructors.
+
+This release was contributed by [@Speedy1991](https://github.com/Speedy1991) in [#4508](https://github.com/strawberry-graphql/strawberry/pull/4508)
+
+Additional contributors: [@patrick91](https://github.com/patrick91), [@github-actions[bot]](https://github.com/github-actions[bot])
+
+0.320.3 - 2026-07-07
+--------------------
+
+This release fixes `InputMutationExtension` to unpack its generated `input`
+object into the resolver's individual keyword arguments before permission
+classes and other field extensions run.
+
+Previously, permission classes and field extensions on an input-mutation field
+received the wrapping `input` object; they now receive the individual arguments
+(for example `name` and `color`).
+
+```python
+import strawberry
+from strawberry.field_extensions import InputMutationExtension
+from strawberry.permission import BasePermission
+
+
+class IsAuthenticated(BasePermission):
+    message = "Not authenticated"
+
+    def has_permission(self, source, info, **kwargs) -> bool:
+        # Previously: kwargs == {"input": CreateFruitInput(name=..., color=...)}
+        # Now:        kwargs == {"name": ..., "color": ...}
+        return True
+
+
+@strawberry.type
+class Mutation:
+    @strawberry.mutation(
+        extensions=[InputMutationExtension()],
+        permission_classes=[IsAuthenticated],
+    )
+    def create_fruit(self, name: str, color: str) -> Fruit:
+        return Fruit(name=name, color=color)
+```
+
+This release was contributed by [@patrick91](https://github.com/patrick91) in [#4510](https://github.com/strawberry-graphql/strawberry/pull/4510)
+
+Additional contributors: [@github-actions[bot]](https://github.com/github-actions[bot])
+
 0.320.2 - 2026-07-06
 --------------------
 
@@ -1839,7 +2079,8 @@ You must migrate to Federation v2. See the [breaking changes documentation](http
 
 ```python
 schema = strawberry.federation.Schema(
-    query=Query, federation_version="2.5"  # Specify a specific version if needed
+    query=Query,
+    federation_version="2.5",  # Specify a specific version if needed
 )
 ```
 
@@ -7331,7 +7572,7 @@ class UpperCaseExtension(FieldExtension):
         next: Callable[..., Awaitable[Any]],
         source: Any,
         info: strawberry.Info,
-        **kwargs
+        **kwargs,
     ):
         result = await next(source, info, **kwargs)
         return str(result).upper()

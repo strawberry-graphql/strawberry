@@ -34,7 +34,7 @@ if TYPE_CHECKING:
 
 
 class BaseGraphQLWSHandler(Generic[Context, RootValue]):
-    def __init__(
+    def __init__(  # noqa: PLR0917
         self,
         view: AsyncBaseHTTPView[Any, Any, Any, Any, Any, Context, RootValue],
         websocket: AsyncWebSocketAdapter,

@@ -4,7 +4,7 @@ from typing import Any
 from strawberry.types.arguments import StrawberryArgumentAnnotation
 
 
-def argument(
+def argument(  # noqa: PLR0917
     description: str | None = None,
     name: str | None = None,
     deprecation_reason: str | None = None,

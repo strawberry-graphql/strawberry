@@ -34,7 +34,7 @@ if TYPE_CHECKING:
     from strawberry.types.base import WithStrawberryObjectDefinition
 
 
-def get_type_for_field(field: CompatModelField) -> type[None | list] | Any:
+def get_type_for_field(field: CompatModelField) -> type[list | None] | Any:
     type_ = field.outer_type_
     type_ = normalize_type(type_)
     return field_type_to_type(type_)

@@ -80,7 +80,7 @@ class StrawberryField(dataclasses.Field):
     type_annotation: StrawberryAnnotation | None
     default_resolver: Callable[[Any, str], object] = getattr
 
-    def __init__(
+    def __init__(  # noqa: PLR0917
         self,
         python_name: str | None = None,
         graphql_name: str | None = None,

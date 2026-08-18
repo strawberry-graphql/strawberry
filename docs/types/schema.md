@@ -108,6 +108,12 @@ schema = strawberry.Schema(Query, types=[Individual, Company])
 
 List of [extensions](/docs/extensions) to add to your Schema.
 
+#### `exception_handlers: Iterable[ExceptionHandler] = ()`
+
+List of handlers that convert expected Python exceptions into typed GraphQL
+union results. See
+[dealing with expected errors](/docs/guides/errors#mapping-expected-exceptions-to-union-results).
+
 #### `scalar_overrides: Optional[Dict[object, ScalarWrapper]] = None`
 
 Override the implementation of the built in scalars.

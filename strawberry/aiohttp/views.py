@@ -89,7 +89,7 @@ class GraphQLView(
     request_adapter_class = AiohttpHTTPRequestAdapter
     websocket_adapter_class = AiohttpWebSocketAdapter  # type: ignore
 
-    def __init__(
+    def __init__(  # noqa: PLR0917
         self,
         schema: BaseSchema,
         graphql_ide: GraphQL_IDE | None = "graphiql",

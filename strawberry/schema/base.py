@@ -12,6 +12,7 @@ if TYPE_CHECKING:
     from graphql import GraphQLError
 
     from strawberry.directive import StrawberryDirective
+    from strawberry.schema.exception_handlers import ExceptionHandler
     from strawberry.schema.schema import StreamResult, SubscriptionResult
     from strawberry.schema.schema_converter import GraphQLCoreConverter
     from strawberry.types import (
@@ -37,9 +38,10 @@ class BaseSchema(Protocol):
     mutation: type[WithStrawberryObjectDefinition] | None
     subscription: type[WithStrawberryObjectDefinition] | None
     schema_directives: list[object]
+    exception_handlers: tuple[ExceptionHandler[Any], ...]
 
     @abstractmethod
-    async def execute(
+    async def execute(  # noqa: PLR0917
         self,
         query: str | None,
         variable_values: dict[str, Any] | None = None,
@@ -52,7 +54,7 @@ class BaseSchema(Protocol):
         raise NotImplementedError
 
     @abstractmethod
-    def execute_sync(
+    def execute_sync(  # noqa: PLR0917
         self,
         query: str | None,
         variable_values: dict[str, Any] | None = None,
@@ -65,7 +67,7 @@ class BaseSchema(Protocol):
         raise NotImplementedError
 
     @abstractmethod
-    async def subscribe(
+    async def subscribe(  # noqa: PLR0917
         self,
         query: str | None,
         variable_values: dict[str, Any] | None = None,
@@ -77,7 +79,7 @@ class BaseSchema(Protocol):
         raise NotImplementedError
 
     @abstractmethod
-    async def stream(
+    async def stream(  # noqa: PLR0917
         self,
         query: str | None,
         variable_values: dict[str, Any] | None = None,

@@ -7,12 +7,13 @@ from strawberry.extensions.context import (
     ExecutingContextManager,
     OperationContextManager,
     ParsingContextManager,
+    StreamResultContextManager,
     ValidationContextManager,
 )
 from strawberry.utils.await_maybe import await_maybe
 
 if TYPE_CHECKING:
-    from strawberry.types import ExecutionContext
+    from strawberry.types import ExecutionContext, StreamExecutionResult
 
     from . import SchemaExtension
 
@@ -39,6 +40,11 @@ class SchemaExtensionsRunner:
 
     def executing(self) -> ExecutingContextManager:
         return ExecutingContextManager(self.extensions)
+
+    def on_stream_result(
+        self, result: StreamExecutionResult
+    ) -> StreamResultContextManager:
+        return StreamResultContextManager(self.extensions, result)
 
     def get_extensions_results_sync(self) -> dict[str, Any]:
         data: dict[str, Any] = {}

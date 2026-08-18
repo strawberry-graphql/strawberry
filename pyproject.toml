@@ -1,6 +1,6 @@
 [project]
 name = "strawberry-graphql"
-version = "0.320.2"
+version = "0.324.0"
 description = "A library for creating GraphQL APIs"
 authors = [{ name = "Patrick Arminio", email = "patrick.arminio@gmail.com" }]
 license = "MIT"
@@ -16,7 +16,7 @@ classifiers = [
 requires-python = ">=3.10,<4.0"
 dependencies = [
   "graphql-core>=3.2.0,<3.4.0",
-  "typing-extensions>=4.5.0",
+  "typing-extensions>=4.14.0",
   "python-dateutil>=2.7",
   "packaging>=23",
   "cross-web>=0.6.0",
@@ -40,8 +40,8 @@ strawberry = "strawberry.cli:run"
 aiohttp = ["aiohttp>=3.7.4.post0,<4"]
 asgi = ["starlette>=0.18.0", "python-multipart>=0.0.7"]
 debug = ["rich>=12.0.0", "libcst"]
-django = ["Django>=3.2", "asgiref>=3.2"]
-channels = ["channels>=3.0.5", "asgiref>=3.2"]
+django = ["Django>=5.2", "asgiref>=3.2"]
+channels = ["channels>=4.0.0", "Django>=5.2", "asgiref>=3.2"]
 flask = ["flask>=1.1"]
 quart = ["quart>=0.19.3"]
 apollo-federation = ["protobuf>=3.20"]
@@ -65,13 +65,13 @@ pyinstrument = ["pyinstrument>=4.0.0"]
 
 [dependency-groups]
 dev = [
-  "ruff>=0.14.1,<0.16.0",
+  "ruff>=0.14.1,<0.17.0",
   "asgiref>=3.2,<4.0",
   "email-validator>=1.1.3,<3.0.0",
   "freezegun>=1.2.1,<2.0.0",
   "libcst>=1.8.2,<2.0.0",
   "markupsafe~=3.0.3",
-  "nox>=2025.11.12,<2026.5.0",
+  "nox>=2025.11.12,<2026.8.0",
   "opentelemetry-api<2",
   "opentelemetry-sdk<2",
   "pygments>=2.3,<3.0",
@@ -97,7 +97,7 @@ dev = [
   "types-typed-ast>=1.5.8,<2.0.0",
   "types-ujson>=5.10.0.20250326,<6.0.0.0",
   "types-protobuf>=6.32.1.20251210,<7.34.2.0",
-  "inline-snapshot>=0.31.1,<0.35.0",
+  "inline-snapshot>=0.31.1,<0.36.0",
   "types-deprecated>=1.2.15.20241117,<2.0.0.0",
   "types-six>=1.17.0.20250403,<2.0.0.0",
   "types-pyyaml>=6.0.12.20240917,<7.0.0.0",
@@ -110,8 +110,8 @@ dev = [
 integrations = [
   "aiohttp>=3.7.4.post0,<4.0.0",
   "chalice>=1.22,<2.0",
-  "channels>=3.0.5,<5.0.0",
-  "django>=3.2",
+  "channels>=4.0.0,<5.0.0",
+  "django>=5.2",
   "fastapi[standard-no-fastapi-cloud-cli]>=0.116.0",
   "flask>=1.1",
   "quart>=0.19.3",
@@ -161,9 +161,6 @@ filterwarnings = [
   "ignore:Passing a class to strawberry.scalar:DeprecationWarning",
   "ignore::DeprecationWarning:ddtrace.internal",
   "ignore::DeprecationWarning:django.utils.encoding",
-  # ignoring the text instead of the whole warning because we'd
-  # get an error when django is not installed
-  "ignore:The default value of USE_TZ",
   "ignore::DeprecationWarning:pydantic_openapi_schema.*",
   "ignore::DeprecationWarning:graphql.*",
   "ignore::DeprecationWarning:websockets.*",
@@ -190,6 +187,9 @@ platforms = ["x", "linkedin", "bluesky", "mastodon"]
 publish-mode = "next-free-slot"
 require-social-message = true
 required-social-platforms = ["x", "linkedin"]
+required-message-substrings = { x = [
+  "https://strawberry.rocks/release/{version}",
+] }
 require-release-note-lead = true
 
 [tool.pyright]
@@ -275,6 +275,9 @@ ignore = [
   "PLR0913",
   "PLR0912",
   "PLR0911",
+
+  # Missing copyright notice
+  "CPY001",
 
   # Do not force adding _co to covariant typevars
   "PLC0105",

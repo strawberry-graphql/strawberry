@@ -17,6 +17,7 @@ if TYPE_CHECKING:
     from types import TracebackType
 
     from strawberry.extensions.base_extension import Hook
+    from strawberry.types import StreamExecutionResult
     from strawberry.utils.await_maybe import AwaitableOrValue
 
 
@@ -70,7 +71,7 @@ class ExtensionContextManagerBase:
                 )
 
             if callable(hook_fn):
-                return self.from_callable(extension, hook_fn)
+                return self.from_callable(extension, hook_fn)  # type: ignore[arg-type]
 
             raise ValueError(
                 f"Hook {self.HOOK_NAME} on {extension} "
@@ -155,3 +156,58 @@ class ParsingContextManager(ExtensionContextManagerBase):
 
 class ExecutingContextManager(ExtensionContextManagerBase):
     HOOK_NAME = SchemaExtension.on_execute.__name__
+
+
+class StreamResultContextManager(ExtensionContextManagerBase):
+    HOOK_NAME = SchemaExtension.on_stream_result.__name__
+
+    def __init__(
+        self, extensions: list[SchemaExtension], result: StreamExecutionResult
+    ) -> None:
+        self.result = result
+        super().__init__(extensions)
+
+    def from_callable(  # type: ignore[override]
+        self,
+        extension: SchemaExtension,
+        func: Callable[..., AwaitableOrValue[Any]],
+    ) -> WrappedHook:
+        if iscoroutinefunction(func):
+
+            @contextlib.asynccontextmanager
+            async def async_iterator(
+                result: StreamExecutionResult,
+            ) -> AsyncIterator[None]:
+                await func(extension, result)
+                yield
+
+            return WrappedHook(extension=extension, hook=async_iterator, is_async=True)
+
+        @contextlib.contextmanager
+        def sync_iterator(result: StreamExecutionResult) -> Iterator[None]:
+            func(extension, result)
+            yield
+
+        return WrappedHook(extension=extension, hook=sync_iterator, is_async=False)
+
+    def __enter__(self) -> None:
+        self.exit_stack = contextlib.ExitStack()
+        self.exit_stack.__enter__()
+
+        for hook in self.hooks:
+            if hook.is_async:
+                raise RuntimeError(
+                    f"SchemaExtension hook {hook.extension}.{self.HOOK_NAME} "
+                    "failed to complete synchronously."
+                )
+            self.exit_stack.enter_context(hook.hook(self.result))  # type: ignore
+
+    async def __aenter__(self) -> None:
+        self.async_exit_stack = contextlib.AsyncExitStack()
+        await self.async_exit_stack.__aenter__()
+
+        for hook in self.hooks:
+            if hook.is_async:
+                await self.async_exit_stack.enter_async_context(hook.hook(self.result))  # type: ignore
+            else:
+                self.async_exit_stack.enter_context(hook.hook(self.result))  # type: ignore

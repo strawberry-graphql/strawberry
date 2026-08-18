@@ -111,7 +111,6 @@ class CachingExtension(FieldExtension):
 ```python
 @strawberry.type
 class Client:
-
     @strawberry.field(extensions=[CachingExtensions(caching_time=200)])
     def analyzed_hours(self, info) -> int:
         return do_expensive_computation()
@@ -190,7 +189,7 @@ class UpperCaseExtension(FieldExtension):
         next: Callable[..., Awaitable[Any]],
         source: Any,
         info: strawberry.Info,
-        **kwargs
+        **kwargs,
     ):
         result = await next(source, info, **kwargs)
         return str(result).upper()

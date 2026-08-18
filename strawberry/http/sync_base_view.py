@@ -107,7 +107,7 @@ class SyncBaseHTTPView(
             request_data=request_data,
         )
 
-    def execute_single(
+    def execute_single(  # noqa: PLR0917
         self,
         request: Request,
         request_adapter: SyncHTTPRequestAdapter,

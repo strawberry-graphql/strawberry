@@ -40,7 +40,7 @@ class StrawberryArgumentAnnotation:
     metadata: Mapping[Any, Any]
     graphql_type: Any | None
 
-    def __init__(
+    def __init__(  # noqa: PLR0917
         self,
         description: str | None = None,
         name: str | None = None,
@@ -58,7 +58,7 @@ class StrawberryArgumentAnnotation:
 
 
 class StrawberryArgument:
-    def __init__(
+    def __init__(  # noqa: PLR0917
         self,
         python_name: str,
         graphql_name: str | None,
@@ -299,7 +299,7 @@ def convert_arguments(
     return kwargs
 
 
-def argument(
+def argument(  # noqa: PLR0917
     description: str | None = None,
     name: str | None = None,
     deprecation_reason: str | None = None,

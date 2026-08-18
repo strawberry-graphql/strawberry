@@ -4,11 +4,28 @@ import dataclasses
 from typing import (
     TYPE_CHECKING,
     Any,
+    TypeAlias,
     runtime_checkable,
 )
 from typing_extensions import NotRequired, Protocol, TypedDict
 
 from graphql import specified_rules
+
+try:
+    from graphql.execution import (  # type: ignore[attr-defined]
+        InitialIncrementalExecutionResult as _InitialIncrementalExecutionResult,  # pyright: ignore[reportAttributeAccessIssue]
+    )
+    from graphql.execution import (  # type: ignore[attr-defined]
+        SubsequentIncrementalExecutionResult as _SubsequentIncrementalExecutionResult,  # pyright: ignore[reportAttributeAccessIssue]
+    )
+except ImportError:
+
+    class _InitialIncrementalExecutionResult:  # type: ignore[no-redef]
+        extensions: dict[str, Any] | None
+
+    class _SubsequentIncrementalExecutionResult:  # type: ignore[no-redef]
+        extensions: dict[str, Any] | None
+
 
 from strawberry.utils.operation import get_first_operation, get_operation_type
 
@@ -107,6 +124,13 @@ class PreExecutionError(ExecutionResult):
     """
 
 
+StreamExecutionResult: TypeAlias = (
+    ExecutionResult
+    | _InitialIncrementalExecutionResult
+    | _SubsequentIncrementalExecutionResult
+)
+
+
 @runtime_checkable
 class SubscriptionExecutionResult(Protocol):
     def __aiter__(self) -> SubscriptionExecutionResult:  # pragma: no cover
@@ -120,5 +144,6 @@ __all__ = [
     "ExecutionContext",
     "ExecutionResult",
     "ParseOptions",
+    "StreamExecutionResult",
     "SubscriptionExecutionResult",
 ]

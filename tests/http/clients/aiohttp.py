@@ -60,7 +60,7 @@ class GraphQLView(OnWSConnectMixin, BaseGraphQLView[dict[str, object], object]):
 
 
 class AioHttpClient(HttpClient):
-    def __init__(
+    def __init__(  # noqa: PLR0917
         self,
         schema: Schema,
         graphql_ide: GraphQL_IDE | None = "graphiql",
@@ -92,7 +92,7 @@ class AioHttpClient(HttpClient):
         self.app = web.Application()
         self.app.router.add_route("*", "/graphql", view)
 
-    async def _graphql_request(
+    async def _graphql_request(  # noqa: PLR0917
         self,
         method: Literal["get", "post"],
         query: str | None = None,

@@ -369,7 +369,7 @@ class GraphQLController(
         return self.temporal_response
 
 
-def make_graphql_controller(
+def make_graphql_controller(  # noqa: PLR0917
     schema: BaseSchema,
     path: str = "",
     graphql_ide: GraphQL_IDE | None = "graphiql",

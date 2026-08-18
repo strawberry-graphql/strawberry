@@ -7,6 +7,7 @@ from collections.abc import Callable, Sequence
 from typing import (
     Any,
     TypeVar,
+    cast,
     overload,
 )
 from typing_extensions import dataclass_transform, get_annotations
@@ -105,16 +106,14 @@ def _check_field_annotations(cls: builtins.type[Any]) -> None:
             raise MissingFieldAnnotationError(field_name, cls)
 
 
-def _wrap_dataclass(cls: builtins.type[T]) -> builtins.type[T]:
+def _wrap_dataclass(cls: T) -> T:
     """Wrap a strawberry.type class with a dataclass and check for any issues before doing so."""
     # Ensure all Fields have been properly type-annotated
     _check_field_annotations(cls)
-    return dataclasses.dataclass(kw_only=True)(cls)
+    return cast("T", dataclasses.dataclass(kw_only=True)(cls))
 
 
-def _inject_default_for_maybe_annotations(
-    cls: builtins.type[T], annotations: dict[str, Any]
-) -> None:
+def _inject_default_for_maybe_annotations(cls: T, annotations: dict[str, Any]) -> None:
     """Inject `= None` for fields with `Maybe` annotations and no default value."""
     for name, annotation in annotations.copy().items():
         if _annotation_is_maybe(annotation):
@@ -221,6 +220,9 @@ def type(
 ) -> Callable[[T], T]: ...
 
 
+@dataclass_transform(
+    order_default=True, kw_only_default=True, field_specifiers=(field, StrawberryField)
+)
 def type(
     cls: T | None = None,
     *,
@@ -295,7 +297,7 @@ def type(
             _inject_default_for_maybe_annotations(cls, annotations)
         wrapped = _wrap_dataclass(cls)
 
-        return _process_type(  # type: ignore
+        return _process_type(
             wrapped,
             name=name,
             is_input=is_input,
@@ -339,6 +341,9 @@ def input(
 ) -> Callable[[T], T]: ...
 
 
+@dataclass_transform(
+    order_default=True, kw_only_default=True, field_specifiers=(field, StrawberryField)
+)
 def input(
     cls: T | None = None,
     *,

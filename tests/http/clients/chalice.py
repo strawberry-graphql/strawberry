@@ -46,7 +46,7 @@ class GraphQLView(BaseGraphQLView[dict[str, object], object]):
 
 
 class ChaliceHttpClient(HttpClient):
-    def __init__(
+    def __init__(  # noqa: PLR0917
         self,
         schema: Schema,
         graphql_ide: GraphQL_IDE | None = "graphiql",
@@ -71,7 +71,7 @@ class ChaliceHttpClient(HttpClient):
             assert self.app.current_request is not None
             return view.execute_request(self.app.current_request)
 
-    async def _graphql_request(
+    async def _graphql_request(  # noqa: PLR0917
         self,
         method: Literal["get", "post"],
         query: str | None = None,

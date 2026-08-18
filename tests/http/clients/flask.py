@@ -80,7 +80,7 @@ class FlaskHttpClient(HttpClient):
             view_func=view,
         )
 
-    async def _graphql_request(
+    async def _graphql_request(  # noqa: PLR0917
         self,
         method: Literal["get", "post"],
         query: str | None = None,

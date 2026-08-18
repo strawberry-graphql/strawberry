@@ -28,12 +28,12 @@ jobs:
       contents: read
 
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
       - name: Install uv
-        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39 # v8.2.0
+        uses: astral-sh/setup-uv@ae62891fec2bb8e7d6c99fc78c9fec3a63790f8d # v10.0.0
         with:
           enable-cache: true
           python-version: "3.12"
@@ -43,7 +43,7 @@ jobs:
         run: uv run strawberry export-schema schema:schema > schema.graphql
         working-directory: federation-compatibility
 
-      - uses: apollographql/federation-subgraph-compatibility@b6981fd83d24450a7cbd2d7727196e0ba57614e0 # v2
+      - uses: apollographql/federation-subgraph-compatibility@f688595a4637f0307944672c49b1121618953f74 # v3.0.1
         with:
           compose: 'federation-compatibility/docker-compose.yml'
           schema: 'federation-compatibility/schema.graphql'
