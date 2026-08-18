@@ -6,11 +6,11 @@ import typer
 from graphql.error import GraphQLError
 
 from strawberry.cli.app import app
-from strawberry.utils.schema_diff import find_breaking_changes_between_sdls
+from strawberry.utils.breaking_changes import find_breaking_changes_between_sdls
 
 
-@app.command(help="Compare two GraphQL SDL files for breaking schema changes")
-def schema_diff(
+@app.command(help="Check two GraphQL SDL files for breaking schema changes")
+def breaking_changes(
     old_schema: Path = typer.Argument(
         ...,
         exists=True,

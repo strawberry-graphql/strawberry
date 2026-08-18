@@ -1,7 +1,7 @@
 import pytest
 from graphql.error import GraphQLError
 
-from strawberry.utils.schema_diff import (
+from strawberry.utils.breaking_changes import (
     build_schema_from_sdl,
     find_breaking_changes_between_sdls,
 )

@@ -11,7 +11,7 @@ def _write_sdl(path: Path, content: str) -> Path:
     return path
 
 
-def test_schema_diff_no_breaking_changes(
+def test_breaking_changes_no_breaking_changes(
     cli_app: Typer, cli_runner: CliRunner, tmp_path: Path
 ) -> None:
     sdl = """
@@ -22,13 +22,13 @@ def test_schema_diff_no_breaking_changes(
     old = _write_sdl(tmp_path / "old.graphql", sdl)
     new = _write_sdl(tmp_path / "new.graphql", sdl)
 
-    result = cli_runner.invoke(cli_app, ["schema-diff", str(old), str(new)])
+    result = cli_runner.invoke(cli_app, ["breaking-changes", str(old), str(new)])
 
     assert result.exit_code == 0
     assert "No breaking changes found." in result.stdout
 
 
-def test_schema_diff_breaking_change_exit_1(
+def test_breaking_changes_field_removed_exit_1(
     cli_app: Typer, cli_runner: CliRunner, tmp_path: Path
 ) -> None:
     old = _write_sdl(
@@ -49,14 +49,14 @@ def test_schema_diff_breaking_change_exit_1(
         """,
     )
 
-    result = cli_runner.invoke(cli_app, ["schema-diff", str(old), str(new)])
+    result = cli_runner.invoke(cli_app, ["breaking-changes", str(old), str(new)])
 
     assert result.exit_code == 1
     # field removal is a breaking change; description text is printed
     assert "world" in result.stdout
 
 
-def test_schema_diff_list_type_description_does_not_crash_rich(
+def test_breaking_changes_list_type_description_does_not_crash_rich(
     cli_app: Typer, cli_runner: CliRunner, tmp_path: Path
 ) -> None:
     """List types use [String!] notation; must not crash Rich markup parsing."""
@@ -77,7 +77,7 @@ def test_schema_diff_list_type_description_does_not_crash_rich(
         """,
     )
 
-    result = cli_runner.invoke(cli_app, ["schema-diff", str(old), str(new)])
+    result = cli_runner.invoke(cli_app, ["breaking-changes", str(old), str(new)])
 
     assert result.exit_code == 1
     # Should print a type-change description without MarkupError traceback
@@ -92,25 +92,25 @@ def test_schema_diff_list_type_description_does_not_crash_rich(
     )
 
 
-def test_schema_diff_invalid_sdl_exit_2(
+def test_breaking_changes_invalid_sdl_exit_2(
     cli_app: Typer, cli_runner: CliRunner, tmp_path: Path
 ) -> None:
     old = _write_sdl(tmp_path / "old.graphql", "type Query { hello: String }")
     new = _write_sdl(tmp_path / "new.graphql", "{ not valid")
 
-    result = cli_runner.invoke(cli_app, ["schema-diff", str(old), str(new)])
+    result = cli_runner.invoke(cli_app, ["breaking-changes", str(old), str(new)])
 
     assert result.exit_code == 2
     assert "Error" in result.stdout
 
 
-def test_schema_diff_missing_file_exit_2(
+def test_breaking_changes_missing_file_exit_2(
     cli_app: Typer, cli_runner: CliRunner, tmp_path: Path
 ) -> None:
     old = tmp_path / "missing-old.graphql"
     new = _write_sdl(tmp_path / "new.graphql", "type Query { hello: String }")
 
-    result = cli_runner.invoke(cli_app, ["schema-diff", str(old), str(new)])
+    result = cli_runner.invoke(cli_app, ["breaking-changes", str(old), str(new)])
 
     # Typer validates exists=True on Path args before our handler
     assert result.exit_code != 0

@@ -1,5 +1,8 @@
 try:
     from .app import app
+    from .commands.breaking_changes import (
+        breaking_changes as breaking_changes,
+    )
     from .commands.codegen import codegen as codegen
     from .commands.dev import dev as dev
     from .commands.export_schema import export_schema as export_schema
@@ -9,7 +12,6 @@ try:
     from .commands.schema_codegen import (
         schema_codegen as schema_codegen,
     )
-    from .commands.schema_diff import schema_diff as schema_diff
     from .commands.upgrade import upgrade as upgrade
 
     def run() -> None:
