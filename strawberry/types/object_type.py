@@ -325,6 +325,7 @@ def input(
     one_of: bool | None = None,
     description: str | None = None,
     directives: Sequence[object] | None = (),
+    extend: bool = False,
 ) -> T: ...
 
 
@@ -338,6 +339,7 @@ def input(
     one_of: bool | None = None,
     description: str | None = None,
     directives: Sequence[object] | None = (),
+    extend: bool = False,
 ) -> Callable[[T], T]: ...
 
 
@@ -351,6 +353,7 @@ def input(
     one_of: bool | None = None,
     description: str | None = None,
     directives: Sequence[object] | None = (),
+    extend: bool = False,
 ):
     """Annotates a class as a GraphQL Input type.
 
@@ -362,6 +365,7 @@ def input(
         description: The description of the GraphQL input type.
         directives: The directives of the GraphQL input type.
         one_of: Whether the input type is a `oneOf` type.
+        extend: Whether the class is extending an existing input type.
 
     Returns:
         The class.
@@ -392,6 +396,7 @@ def input(
         name=name,
         description=description,
         directives=directives,
+        extend=extend,
         is_input=True,
     )
 
