@@ -30,6 +30,7 @@ from graphql import (
     GraphQLSchema,
     OperationDefinitionNode,
     get_introspection_query,
+    lexicographic_sort_schema,
     parse,
     validate_schema,
 )
@@ -424,6 +425,9 @@ class Schema(BaseSchema):
                 raise error.__cause__ from None
 
             raise
+
+        if self.config.lexicographic_sort_schema:
+            self._schema = lexicographic_sort_schema(self._schema)
 
         # attach our schema to the GraphQL schema instance
         self._schema._strawberry_schema = self  # type: ignore
