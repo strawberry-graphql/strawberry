@@ -45,6 +45,14 @@ Python function that returns data. In Strawberry there are two ways of defining
 resolvers; the first is to pass a function to the field definition, like this:
 
 ```python
+import strawberry
+
+
+@strawberry.type
+class User:
+    name: str
+
+
 def get_last_user() -> User:
     return User(name="Marco")
 
@@ -85,6 +93,14 @@ The other way to define a resolver is to use `strawberry.field` as a decorator,
 like here:
 
 ```python
+import strawberry
+
+
+@strawberry.type
+class User:
+    name: str
+
+
 @strawberry.type
 class Query:
     @strawberry.field
