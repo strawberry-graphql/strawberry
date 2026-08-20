@@ -354,6 +354,7 @@ def get_arguments(
         field.arguments,
         scalar_registry=scalar_registry,
         config=config,
+        info=info,
     )
 
     # Let field extensions reshape the converted arguments before the resolver
