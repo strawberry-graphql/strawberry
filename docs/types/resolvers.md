@@ -233,6 +233,7 @@ Info objects contain information for the current execution context:
 | context         | `ContextType`             | The value of the context                                              |
 | root_value      | `RootValueType`           | The value for the root type                                           |
 | variable_values | `Dict[str, Any]`          | The variables for this operation                                      |
+| field_args      | `Dict[str, Any]`          | The current field's arguments, converted to Strawberry types          |
 | query           | `str \| None`             | The full GraphQL document string sent in the request                  |
 | operation       | `OperationDefinitionNode` | The ast for the current operation (public API might change in future) |
 | path            | `Path`                    | The path for the current field                                        |
