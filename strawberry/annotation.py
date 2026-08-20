@@ -17,7 +17,7 @@ from typing import (
     get_args,
     get_origin,
 )
-from typing_extensions import Self
+from typing_extensions import Self, is_typeddict
 
 from strawberry.streamable import StrawberryStreamable
 from strawberry.types.base import (
@@ -196,6 +196,8 @@ class StrawberryAnnotation:
             return self.create_union(evaled_type, args)
         if is_type_var(evaled_type) or evaled_type is Self:
             return self.create_type_var(cast("TypeVar", evaled_type))
+        if self._is_typed_dict(evaled_type):
+            return evaled_type
         if self._is_strawberry_type(evaled_type):
             # Simply return objects that are already StrawberryTypes
             return evaled_type
@@ -446,6 +448,10 @@ class StrawberryAnnotation:
         from strawberry.types.union import StrawberryUnion
 
         return any(isinstance(arg, StrawberryUnion) for arg in args)
+
+    @classmethod
+    def _is_typed_dict(cls, annotation: Any) -> bool:
+        return is_typeddict(annotation)
 
     @classmethod
     def _strip_async_type(cls, annotation: type[Any]) -> type:
