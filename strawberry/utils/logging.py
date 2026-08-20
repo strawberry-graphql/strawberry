@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 from typing import TYPE_CHECKING, Any
+from typing_extensions import Protocol
 
 if TYPE_CHECKING:
     from typing import Final
@@ -9,6 +10,16 @@ if TYPE_CHECKING:
     from graphql.error import GraphQLError
 
     from strawberry.types import ExecutionContext
+
+
+class StrawberryLoggerProtocol(Protocol):
+    """Interface for loggers used to report GraphQL execution errors."""
+
+    def error(
+        self,
+        error: GraphQLError,
+        execution_context: ExecutionContext | None = None,
+    ) -> None: ...
 
 
 class StrawberryLogger:
@@ -25,4 +36,4 @@ class StrawberryLogger:
         cls.logger.error(error, exc_info=error.original_error, **logger_kwargs)
 
 
-__all__ = ["StrawberryLogger"]
+__all__ = ["StrawberryLogger", "StrawberryLoggerProtocol"]

@@ -321,6 +321,17 @@ def test_can_create_schema_without_query():
     )
 
 
+def test_custom_logger():
+    class CustomLogger:
+        def error(self, error, execution_context=None):
+            pass
+
+    logger = CustomLogger()
+    schema = strawberry.federation.Schema(logger=logger)
+
+    assert schema.logger is logger
+
+
 def test_federation_schema_warning():
     @strawberry.federation.type(keys=["upc"])
     class ProductFed:
