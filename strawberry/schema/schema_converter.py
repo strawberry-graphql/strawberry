@@ -73,6 +73,7 @@ from strawberry.types.cast import get_strawberry_type_cast
 from strawberry.types.enum import StrawberryEnumDefinition, has_enum_definition
 from strawberry.types.field import UNRESOLVED
 from strawberry.types.lazy_type import LazyType
+from strawberry.types.literal import get_literal_python_type, is_literal
 from strawberry.types.private import is_private
 from strawberry.types.scalar import ScalarWrapper, scalar
 from strawberry.types.union import StrawberryUnion
@@ -1199,6 +1200,9 @@ class GraphQLCoreConverter:
             type_, self.scalar_registry
         ):  # TODO: Replace with StrawberryScalar
             return self.from_scalar(type_)
+
+        if is_literal(type_):
+            return self.from_scalar(get_literal_python_type(type_))
 
         raise TypeError(f"Unexpected type '{type_}'")
 
