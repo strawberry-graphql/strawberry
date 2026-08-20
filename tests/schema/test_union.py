@@ -531,6 +531,148 @@ def test_union_explicit_type_resolution():
     assert result.data == {"myField": {"__typename": "A", "a": 1}}
 
 
+def test_union_resolution_with_strawberry_cast():
+    """`strawberry.cast` should disambiguate a union of types without interfaces."""
+
+    @dataclass
+    class Row:
+        name: str
+
+    @strawberry.type
+    class A:
+        name: str
+
+    @strawberry.type
+    class B:
+        name: str
+
+    MyUnion = Annotated[A | B, strawberry.union("MyUnion")]
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def my_field(self) -> MyUnion:
+            return strawberry.cast(B, Row(name="hi"))  # type: ignore
+
+    schema = strawberry.Schema(query=Query)
+
+    query = "{ myField { __typename, ... on A { name }, ... on B { name } } }"
+    result = schema.execute_sync(query)
+
+    assert not result.errors
+    assert result.data == {"myField": {"__typename": "B", "name": "hi"}}
+
+
+def test_union_resolution_with_strawberry_cast_in_list():
+    """Each item of a list of unions should resolve to its own cast type."""
+
+    @dataclass
+    class Row:
+        name: str
+
+    @strawberry.type
+    class A:
+        name: str
+
+    @strawberry.type
+    class B:
+        name: str
+
+    MyUnion = Annotated[A | B, strawberry.union("MyUnion")]
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def my_field(self) -> list[MyUnion]:
+            return [
+                strawberry.cast(B, Row(name="b")),  # type: ignore
+                strawberry.cast(A, Row(name="a")),  # type: ignore
+            ]
+
+    schema = strawberry.Schema(query=Query)
+
+    query = "{ myField { __typename, ... on A { name }, ... on B { name } } }"
+    result = schema.execute_sync(query)
+
+    assert not result.errors
+    assert result.data == {
+        "myField": [
+            {"__typename": "B", "name": "b"},
+            {"__typename": "A", "name": "a"},
+        ]
+    }
+
+
+def test_union_resolution_with_strawberry_cast_and_interfaces():
+    """Casting keeps working when the union's types implement an interface."""
+
+    @dataclass
+    class Row:
+        name: str
+
+    @strawberry.interface
+    class Node:
+        name: str
+
+    @strawberry.type
+    class A(Node): ...
+
+    @strawberry.type
+    class B(Node): ...
+
+    MyUnion = Annotated[A | B, strawberry.union("MyUnion")]
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def my_field(self) -> MyUnion:
+            return strawberry.cast(B, Row(name="hi"))  # type: ignore
+
+    schema = strawberry.Schema(query=Query, types=[A, B])
+
+    query = "{ myField { __typename, ... on Node { name } } }"
+    result = schema.execute_sync(query)
+
+    assert not result.errors
+    assert result.data == {"myField": {"__typename": "B", "name": "hi"}}
+
+
+def test_union_resolution_with_strawberry_cast_outside_union():
+    """Casting to a type that isn't part of the union keeps the existing error."""
+
+    @dataclass
+    class Row:
+        name: str
+
+    @strawberry.type
+    class A:
+        name: str
+
+    @strawberry.type
+    class B:
+        name: str
+
+    @strawberry.type
+    class C:
+        name: str
+
+    MyUnion = Annotated[A | B, strawberry.union("MyUnion")]
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def my_field(self) -> MyUnion:
+            return strawberry.cast(C, Row(name="hi"))  # type: ignore
+
+    schema = strawberry.Schema(query=Query, types=[C])
+
+    query = "{ myField { __typename, ... on A { name }, ... on B { name } } }"
+    result = schema.execute_sync(query)
+
+    assert result.errors
+    assert "cannot be resolved for the field" in result.errors[0].message
+
+
 def test_union_optional_with_or_operator():
     """Verify that the `|` operator is supported when annotating unions as
     optional in schemas.
