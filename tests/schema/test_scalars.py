@@ -66,6 +66,32 @@ def test_void_function():
     assert result.errors
 
 
+def test_void_field_with_strawberry_field():
+    @strawberry.type
+    class Query:
+        value: None = strawberry.field()
+
+    schema = strawberry.Schema(query=Query)
+
+    assert (
+        str(schema)
+        == dedent(
+            '''
+      type Query {
+        value: Void
+      }
+
+      """Represents NULL values"""
+      scalar Void
+    '''
+        ).strip()
+    )
+
+    result = schema.execute_sync("query { value }", root_value=Query(value=None))
+    assert not result.errors
+    assert result.data == {"value": None}
+
+
 def test_uuid_field_string_value():
     @strawberry.type
     class Query:
