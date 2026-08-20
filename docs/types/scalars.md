@@ -387,6 +387,13 @@ def parse_datetime(value: str) -> Union[pendulum.DateTime, datetime]:  # type: i
     return pendulum.parse(value)  # type: ignore
 
 
+@strawberry.type
+class Query:
+    @strawberry.field
+    def current_time(self) -> datetime:
+        return datetime.now()
+
+
 schema = strawberry.Schema(
     Query,
     config=StrawberryConfig(
