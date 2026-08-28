@@ -229,7 +229,8 @@ class MyGraphQLView(GraphQLView):
 
 # Async Django
 
-Strawberry also provides an async view that you can use with Django 3.1+
+Strawberry also provides an async view that you can use with Django's ASGI
+support:
 
 ```python
 from django.urls import path

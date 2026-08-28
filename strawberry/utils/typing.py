@@ -22,7 +22,7 @@ from typing import (  # type: ignore
     get_origin,
 )
 
-_CLASSVAR_RE = re.compile(r"^(?:\s*(\w+)\s*\.)?\s*(\w+)")
+_CLASSVAR_RE = re.compile(r"^\s*(\w+(?:\s*\.\s*\w+)*)")
 
 
 @lru_cache
@@ -146,7 +146,7 @@ def is_type_var(annotation: type) -> bool:
     return isinstance(annotation, TypeVar)
 
 
-def is_classvar(cls: type, annotation: ForwardRef | str) -> bool:
+def is_classvar(cls: type, annotation: object) -> bool:
     """Returns True if the annotation is a ClassVar."""
     if annotation is ClassVar or get_origin(annotation) is ClassVar:
         return True
@@ -162,14 +162,12 @@ def is_classvar(cls: type, annotation: ForwardRef | str) -> bool:
     if match is None:
         return False
 
-    module_name, type_name = match.groups()
-    namespace = module.__dict__
-    if module_name:
-        if namespace.get(module_name) is not typing:
+    resolved: object | None = module
+    for path_item in match.group(1).split("."):
+        resolved = getattr(resolved, path_item.strip(), None)
+        if resolved is None:
             return False
-        namespace = vars(typing)
 
-    resolved = namespace.get(type_name)
     return resolved is ClassVar or get_origin(resolved) is ClassVar
 
 

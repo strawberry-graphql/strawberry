@@ -1,6 +1,22 @@
 CHANGELOG
 =========
 
+0.324.0 - 2026-08-10
+--------------------
+
+This release adds support for Django 6.0 and 6.1, and drops support for Django
+older than 5.2.
+
+Django 4.2, 5.0 and 5.1 have all reached end of life. Django 5.2 LTS is now the
+minimum supported version, and the test suite runs against Django 5.2, 6.0 and
+6.1.
+
+If you are still on one of the dropped versions, we strongly recommend
+upgrading to Django 5.2 or newer: unmaintained releases no longer get security
+fixes.
+
+This release was contributed by [@bellini666](https://github.com/bellini666) in [#4576](https://github.com/strawberry-graphql/strawberry/pull/4576)
+
 0.323.2 - 2026-07-23
 --------------------
 

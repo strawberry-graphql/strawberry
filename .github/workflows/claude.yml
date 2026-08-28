@@ -48,7 +48,7 @@ jobs:
             done
 
       - name: Review release copy
-        uses: anthropics/claude-code-action@be7b93b1907a4abad570368f3c74b6fe3807510b # v1.0.183
+        uses: anthropics/claude-code-action@3f854a8fb5146b39d5cbf8b57f70d80810e1366f # v1.0.198
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           # Use the workflow's built-in token to post the review comment.

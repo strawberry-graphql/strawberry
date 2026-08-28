@@ -1,6 +1,6 @@
 [project]
 name = "strawberry-graphql"
-version = "0.323.2"
+version = "0.324.0"
 description = "A library for creating GraphQL APIs"
 authors = [{ name = "Patrick Arminio", email = "patrick.arminio@gmail.com" }]
 license = "MIT"
@@ -40,8 +40,8 @@ strawberry = "strawberry.cli:run"
 aiohttp = ["aiohttp>=3.7.4.post0,<4"]
 asgi = ["starlette>=0.18.0", "python-multipart>=0.0.7"]
 debug = ["rich>=12.0.0", "libcst>=1.9.0"]
-django = ["Django>=3.2", "asgiref>=3.2"]
-channels = ["channels>=3.0.5", "asgiref>=3.2"]
+django = ["Django>=5.2", "asgiref>=3.2"]
+channels = ["channels>=4.0.0", "Django>=5.2", "asgiref>=3.2"]
 flask = ["flask>=1.1"]
 quart = ["quart>=0.19.3"]
 apollo-federation = ["protobuf>=3.20"]
@@ -110,8 +110,8 @@ dev = [
 integrations = [
   "aiohttp>=3.7.4.post0,<4.0.0",
   "chalice>=1.22,<2.0",
-  "channels>=3.0.5,<5.0.0",
-  "django>=3.2",
+  "channels>=4.0.0,<5.0.0",
+  "django>=5.2",
   "fastapi[standard-no-fastapi-cloud-cli]>=0.116.0",
   "flask>=1.1",
   "quart>=0.19.3",
@@ -161,9 +161,6 @@ filterwarnings = [
   "ignore:Passing a class to strawberry.scalar:DeprecationWarning",
   "ignore::DeprecationWarning:ddtrace.internal",
   "ignore::DeprecationWarning:django.utils.encoding",
-  # ignoring the text instead of the whole warning because we'd
-  # get an error when django is not installed
-  "ignore:The default value of USE_TZ",
   "ignore::DeprecationWarning:pydantic_openapi_schema.*",
   "ignore::DeprecationWarning:graphql.*",
   "ignore::DeprecationWarning:websockets.*",
