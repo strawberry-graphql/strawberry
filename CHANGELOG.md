@@ -1,6 +1,40 @@
 CHANGELOG
 =========
 
+0.324.2 - 2026-08-28
+--------------------
+
+This release fixes fields configured with `strawberry.field()` inside
+`typing.Annotated`.
+
+You can now use this syntax consistently on object types, input types, and
+interfaces, including in projects that use `from __future__ import annotations`:
+
+```python
+from typing import Annotated
+
+import strawberry
+
+Name = Annotated[
+    str,
+    strawberry.field(name="displayName", default="Anonymous"),
+]
+
+
+@strawberry.type
+class User:
+    name: Name
+```
+
+All `strawberry.field()` options are supported. Fields with `default` or
+`default_factory` can be omitted when creating an instance, and field
+configuration can be combined with other Strawberry metadata such as named
+unions.
+
+This release was contributed by [@patrick91](https://github.com/patrick91) in [#4594](https://github.com/strawberry-graphql/strawberry/pull/4594)
+
+Additional contributors: [@ampagent](https://github.com/ampagent), [@Patrick](https://github.com/Patrick)
+
 0.324.1 - 2026-08-28
 --------------------
 
