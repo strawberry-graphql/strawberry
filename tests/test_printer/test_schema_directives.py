@@ -176,6 +176,21 @@ def test_using_different_names_for_directive_field():
     assert print_schema(schema) == textwrap.dedent(expected_output).strip()
 
 
+def test_annotated_directive_field_configures_constructor():
+    @strawberry.schema_directive(locations=[Location.FIELD_DEFINITION])
+    class Sensitive:
+        reason: Annotated[
+            str,
+            strawberry.directive_field(name="why", default="classified"),
+        ]
+
+    field = Sensitive.__strawberry_directive__.fields[0]
+
+    assert Sensitive().reason == "classified"
+    assert field.graphql_name == "why"
+    assert field.default == "classified"
+
+
 def test_respects_schema_config_for_names():
     @strawberry.schema_directive(locations=[Location.FIELD_DEFINITION])
     class Sensitive:

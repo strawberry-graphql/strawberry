@@ -90,6 +90,49 @@ type Book {
 
 </CodeGrid>
 
+## Customizing fields with `Annotated`
+
+You can configure fields by adding `strawberry.field()` to
+[`typing.Annotated`](https://docs.python.org/3/library/typing.html#typing.Annotated).
+This syntax works on object types, input types, and interfaces, including when
+using `from __future__ import annotations`:
+
+```python
+from typing import Annotated
+
+import strawberry
+
+
+@strawberry.type
+class User:
+    name: Annotated[
+        str,
+        strawberry.field(name="displayName", description="The displayed name"),
+    ]
+    tags: Annotated[list[str], strawberry.field(default_factory=list)]
+```
+
+All `strawberry.field()` options are supported. In particular, `default` and
+`default_factory` also configure the generated dataclass constructor, so
+`User(name="Patrick")` in the example above gets a new empty `tags` list.
+
+The field configuration can be combined with other Strawberry metadata. The
+order of the metadata does not matter:
+
+```python
+@strawberry.type
+class Query:
+    result: Annotated[
+        Success | Failure,
+        strawberry.union("Result"),
+        strawberry.field(description="The operation result"),
+    ]
+```
+
+Use only one `strawberry.field()` for each field. You can alternatively use the
+equivalent assignment syntax, such as
+`name: str = strawberry.field(description="The displayed name")`.
+
 ## API
 
 `@strawberry.type(name: str = None, description: str = None)`

@@ -174,17 +174,16 @@ class StrawberryField(dataclasses.Field):
             is_subscription=self.is_subscription,
             description=self.description,
             base_resolver=self.base_resolver,
-            permission_classes=(
-                self.permission_classes[:]
-                if self.permission_classes is not None
-                else []
-            ),
-            default=self.default_value,
+            permission_classes=[],
+            default=self.default,
             default_factory=self.default_factory,
             metadata=self.metadata.copy() if self.metadata is not None else None,
             deprecation_reason=self.deprecation_reason,
             directives=self.directives[:] if self.directives is not None else [],
             extensions=self.extensions[:] if self.extensions is not None else [],
+        )
+        new_field.permission_classes = (
+            self.permission_classes[:] if self.permission_classes is not None else []
         )
         new_field._arguments = (
             self._arguments[:] if self._arguments is not None else None

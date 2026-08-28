@@ -2,20 +2,32 @@ import builtins
 import copy
 import dataclasses
 import inspect
+import sys
 import types
 from collections.abc import Callable, Sequence
 from typing import (
+    Annotated,
     Any,
+    ForwardRef,
     TypeVar,
     cast,
+    get_args,
+    get_origin,
     overload,
 )
-from typing_extensions import dataclass_transform, get_annotations
+from typing_extensions import (
+    Format,
+    dataclass_transform,
+    evaluate_forward_ref,
+    get_annotations,
+)
 
+from strawberry.annotation import StrawberryAnnotation
 from strawberry.exceptions import (
     InvalidSuperclassInterfaceError,
     MissingFieldAnnotationError,
     MissingReturnAnnotationError,
+    MultipleStrawberryFieldsError,
     ObjectIsNotClassError,
 )
 from strawberry.types.base import get_object_definition
@@ -28,6 +40,87 @@ from .field import StrawberryField, field
 from .type_resolver import _get_fields
 
 T = TypeVar("T", bound=builtins.type)
+
+
+def _process_annotated_fields(cls: T) -> dict[str, StrawberryAnnotation]:
+    """Make StrawberryFields in Annotated available to dataclasses."""
+    module_namespace = sys.modules[cls.__module__].__dict__
+    type_annotations: dict[str, StrawberryAnnotation] = {}
+
+    annotations = get_annotations(cls, format=Format.FORWARDREF)
+
+    for field_name, raw_annotation in annotations.items():
+        annotation: object
+        if isinstance(raw_annotation, str):
+            try:
+                annotation = evaluate_forward_ref(
+                    ForwardRef(raw_annotation),
+                    owner=cls,
+                    globals=module_namespace,
+                    locals=dict(vars(cls)),
+                    format=Format.FORWARDREF,
+                )
+                if isinstance(annotation, ForwardRef):
+                    annotation = StrawberryAnnotation(
+                        raw_annotation,
+                        namespace=module_namespace,
+                    ).evaluate()
+            except (NameError, TypeError):
+                continue
+        else:
+            annotation = raw_annotation
+
+        if get_origin(annotation) is not Annotated:
+            continue
+
+        first, *rest = get_args(annotation)
+        strawberry_fields = [arg for arg in rest if isinstance(arg, StrawberryField)]
+
+        if len(strawberry_fields) > 1 or (
+            strawberry_fields
+            and isinstance(cls.__dict__.get(field_name), StrawberryField)
+        ):
+            raise MultipleStrawberryFieldsError(field_name=field_name, cls=cls)
+
+        if not strawberry_fields:
+            continue
+
+        source_field = strawberry_fields[0]
+        field = copy.copy(source_field)
+
+        default = cls.__dict__.get(field_name, dataclasses.MISSING)
+        if (
+            field.default is dataclasses.MISSING
+            and field.default_factory is dataclasses.MISSING
+            and default is not dataclasses.MISSING
+        ):
+            if isinstance(default, dataclasses.Field):
+                field.default = default.default
+                field.default_factory = default.default_factory
+                if default.default is not dataclasses.MISSING:
+                    field.default_value = default.default
+                elif callable(default.default_factory):
+                    field.default_value = default.default_factory()
+            else:
+                field.default = default
+                field.default_value = default
+
+        remaining_metadata = [
+            arg for arg in rest if not isinstance(arg, StrawberryField)
+        ]
+        field_type = (
+            Annotated[(first, *remaining_metadata)] if remaining_metadata else first
+        )
+        type_annotation = field.type_annotation or StrawberryAnnotation(
+            field_type,
+            namespace=module_namespace,
+        )
+        field.type_annotation = type_annotation
+
+        setattr(cls, field_name, field)
+        type_annotations[field_name] = type_annotation
+
+    return type_annotations
 
 
 def _get_interfaces(cls: builtins.type[Any]) -> list[StrawberryObjectDefinition]:
@@ -108,9 +201,19 @@ def _check_field_annotations(cls: builtins.type[Any]) -> None:
 
 def _wrap_dataclass(cls: T) -> T:
     """Wrap a strawberry.type class with a dataclass and check for any issues before doing so."""
+    annotated_field_types = _process_annotated_fields(cls)
+
     # Ensure all Fields have been properly type-annotated
     _check_field_annotations(cls)
-    return cast("T", dataclasses.dataclass(kw_only=True)(cls))
+    wrapped = cast("T", dataclasses.dataclass(kw_only=True)(cls))
+
+    # dataclasses replaces each StrawberryField's type with the class annotation.
+    # Restore the type with only the StrawberryField metadata removed, keeping any
+    # other Annotated metadata and explicit graphql_type override intact.
+    for field_name, type_annotation in annotated_field_types.items():
+        wrapped.__dataclass_fields__[field_name].type_annotation = type_annotation  # type: ignore[attr-defined]
+
+    return wrapped
 
 
 def _inject_default_for_maybe_annotations(cls: T, annotations: dict[str, Any]) -> None:
