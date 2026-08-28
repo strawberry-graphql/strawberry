@@ -4,7 +4,7 @@ social_messages:
   x: >-
     {project_name} {version} is out! This release fixes Annotated field
     configuration with postponed annotations, defaults, and combined metadata.
-    🍓 https://strawberry.rocks/release/{version}
+    https://strawberry.rocks/release/{version}
   linkedin: >-
     {project_name} {version} is out. This release fixes Annotated field
     configuration with postponed annotations, dataclass defaults, and combined
