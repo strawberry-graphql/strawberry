@@ -195,3 +195,6 @@ $RECYCLE.BIN/
 .idea/
 node_modules/
 .codspeed/
+
+# Amp orb runtime files
+.amp/portals/*
