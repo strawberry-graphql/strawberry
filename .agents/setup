@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$repo_root"
+
+run_step() {
+  local label="$1"
+  shift
+
+  local start=$SECONDS
+  printf '\n==> %s\n' "$label"
+  "$@"
+  printf '<== %s completed in %ss\n' "$label" "$((SECONDS - start))"
+}
+
+install_uv() {
+  curl --proto '=https' --tlsv1.2 -LsSf https://astral.sh/uv/install.sh |
+    env UV_INSTALL_DIR="$HOME/.local/bin" UV_NO_MODIFY_PATH=1 sh
+}
+
+install_pre_commit_hook() {
+  if git config --get core.hooksPath >/dev/null; then
+    printf 'Skipping hook installation: core.hooksPath is already configured.\n'
+    return
+  fi
+
+  uv run --frozen pre-commit install
+}
+
+if ! command -v uv >/dev/null 2>&1; then
+  run_step "Install uv" install_uv
+fi
+
+export PATH="$HOME/.local/bin:$PATH"
+
+run_step "Sync Python dependencies" uv sync --frozen
+run_step "Install pre-commit hook" install_pre_commit_hook
+run_step "Sync E2E dependencies" bun install --cwd e2e --no-save
+
+printf '\nOrb setup complete.\n'
