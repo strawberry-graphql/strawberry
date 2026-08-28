@@ -144,14 +144,26 @@ def test_annotated_field_preserves_union_metadata():
             strawberry.union("NamedResult"),
             strawberry.field(description="The result"),
         ]
+        overridden_result: Annotated[
+            bool,
+            strawberry.field(
+                graphql_type=Success | Failure,
+                description="The overridden result",
+            ),
+            strawberry.union("NamedOverriddenResult"),
+        ]
 
-    field = get_object_definition(Query).fields[0]
+    fields = {field.python_name: field for field in get_object_definition(Query).fields}
 
-    assert field.description == "The result"
-    assert field.type.graphql_name == "NamedResult"
-    assert "union NamedResult = Success | Failure" in str(
-        strawberry.Schema(query=Query)
-    )
+    assert fields["result"].description == "The result"
+    assert fields["result"].type.graphql_name == "NamedResult"
+    assert fields["overridden_result"].description == "The overridden result"
+    assert fields["overridden_result"].type.graphql_name == "NamedOverriddenResult"
+
+    schema = str(strawberry.Schema(query=Query))
+
+    assert "union NamedResult = Success | Failure" in schema
+    assert "union NamedOverriddenResult = Success | Failure" in schema
 
 
 def test_annotated_field_preserves_other_type_metadata():

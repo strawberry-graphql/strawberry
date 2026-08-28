@@ -109,11 +109,27 @@ def _process_annotated_fields(cls: T) -> dict[str, StrawberryAnnotation]:
             arg for arg in rest if not isinstance(arg, StrawberryField)
         ]
         field_type = (
-            Annotated[(first, *remaining_metadata)] if remaining_metadata else first
+            field.type_annotation.raw_annotation
+            if field.type_annotation is not None
+            else first
         )
-        type_annotation = field.type_annotation or StrawberryAnnotation(
-            field_type,
-            namespace=module_namespace,
+        field_type = (
+            Annotated[(field_type, *remaining_metadata)]
+            if remaining_metadata
+            else field_type
+        )
+        type_annotation = (
+            field.type_annotation
+            if field.type_annotation is not None and not remaining_metadata
+            else StrawberryAnnotation(
+                field_type,
+                namespace=(
+                    field.type_annotation.namespace
+                    if field.type_annotation is not None
+                    and field.type_annotation.namespace is not None
+                    else module_namespace
+                ),
+            )
         )
         field.type_annotation = type_annotation
 
