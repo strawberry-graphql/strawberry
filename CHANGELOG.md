@@ -1,6 +1,17 @@
 CHANGELOG
 =========
 
+0.324.1 - 2026-08-28
+--------------------
+
+This release adds support for the upcoming Python 3.15.
+
+Strawberry's test suite now runs on Python 3.15.
+
+This release was contributed by [@patrick91](https://github.com/patrick91) in [#4565](https://github.com/strawberry-graphql/strawberry/pull/4565)
+
+Additional contributors: [@Patrick](https://github.com/Patrick), [@ampagent](https://github.com/ampagent)
+
 0.324.0 - 2026-08-10
 --------------------
 
