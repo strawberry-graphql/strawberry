@@ -56,6 +56,29 @@ Strawberry, so there’s not really a way to customize this behavior. You can
 disable all validation by using the
 [DisableValidation](../extensions/disable-validation) extension.
 
+### Strawberry input coercion errors
+
+When Strawberry cannot coerce a value provided for one of its built-in `Date`,
+`DateTime`, `Time`, `Decimal`, or `UUID` scalars, or for a OneOf input object,
+it raises `StrawberryInputCoercionError`. This exception lets server-side error
+handling distinguish these client input errors without changing the serialized
+GraphQL response.
+
+graphql-core wraps scalar errors raised while coercing variables, so error
+handlers should also check `original_error`:
+
+```python
+from graphql import GraphQLError
+
+from strawberry.exceptions import StrawberryInputCoercionError
+
+
+def is_strawberry_input_error(error: GraphQLError) -> bool:
+    return isinstance(error, StrawberryInputCoercionError) or isinstance(
+        error.original_error, StrawberryInputCoercionError
+    )
+```
+
 ## GraphQL type errors
 
 When a query is executed each field must resolve to the correct type. For

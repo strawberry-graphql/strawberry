@@ -159,6 +159,10 @@ class StrawberryGraphQLError(GraphQLError):
     """Use it when you want to override the graphql.GraphQLError in custom extensions."""
 
 
+class StrawberryInputCoercionError(StrawberryGraphQLError):
+    """Raised when Strawberry cannot coerce a client-provided input value."""
+
+
 class ConnectionRejectionError(Exception):
     """Use it when you want to reject a WebSocket connection."""
 
@@ -193,6 +197,7 @@ __all__ = [
     "ScalarAlreadyRegisteredError",
     "StrawberryException",
     "StrawberryGraphQLError",
+    "StrawberryInputCoercionError",
     "UnableToFindExceptionSource",
     "UnallowedReturnTypeForUnion",
     "UnresolvedFieldTypeError",

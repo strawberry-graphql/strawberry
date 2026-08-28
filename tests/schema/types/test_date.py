@@ -4,6 +4,7 @@ import pytest
 from graphql import GraphQLError
 
 import strawberry
+from strawberry.exceptions import StrawberryInputCoercionError
 from strawberry.types.execution import ExecutionResult
 from strawberry.utils import IS_GQL_32
 
@@ -65,6 +66,23 @@ def test_deserialization_with_parse_literal():
     assert Query.deserialized == datetime.date(2019, 10, 25)
 
 
+@pytest.mark.parametrize("value", ['"2021-13-01"', "12345"])
+def test_invalid_literal_is_classifiable(value: str):
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def deserialize(self, arg: datetime.date) -> bool:  # pragma: no cover
+            return True
+
+    schema = strawberry.Schema(Query)
+
+    result = schema.execute_sync(f"query {{ deserialize(arg: {value}) }}")
+
+    assert result.errors
+    assert isinstance(result.errors[0], StrawberryInputCoercionError)
+    assert result.errors[0].extensions == {}
+
+
 def execute_mutation(value) -> ExecutionResult:
     @strawberry.type
     class Query:
@@ -100,12 +118,13 @@ def execute_mutation(value) -> ExecutionResult:
     ],
 )
 def test_serialization_of_incorrect_date_string(value):
-    """Test GraphQLError is raised for incorrect date.
-    The error should exclude "original_error".
-    """
+    """Test invalid date variables retain a classifiable coercion error."""
     result = execute_mutation(value)
     assert result.errors
-    assert isinstance(result.errors[0], GraphQLError)
+    error = result.errors[0]
+    assert isinstance(error, GraphQLError)
+    assert isinstance(error.original_error, StrawberryInputCoercionError)
+    assert error.extensions == {}
 
 
 def test_serialization_error_message_for_incorrect_date_string():
@@ -133,8 +152,10 @@ def test_parsing_of_non_string_value(value):
     """
     result = execute_mutation(value)
     assert result.errors
-    assert isinstance(result.errors[0], GraphQLError)
+    error = result.errors[0]
+    assert isinstance(error, GraphQLError)
+    assert isinstance(error.original_error, StrawberryInputCoercionError)
+    assert error.extensions == {}
     assert (
-        f'Value cannot represent a Date: "{value}". Expected a string.'
-        in result.errors[0].message
+        f'Value cannot represent a Date: "{value}". Expected a string.' in error.message
     )

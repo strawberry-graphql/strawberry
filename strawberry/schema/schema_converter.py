@@ -21,7 +21,6 @@ from graphql import (
     GraphQLDirective,
     GraphQLEnumType,
     GraphQLEnumValue,
-    GraphQLError,
     GraphQLField,
     GraphQLID,
     GraphQLInputField,
@@ -47,6 +46,7 @@ from strawberry.exceptions import (
     InvalidUnionTypeError,
     MissingTypesForGenericError,
     ScalarAlreadyRegisteredError,
+    StrawberryInputCoercionError,
     UnresolvedFieldTypeError,
 )
 from strawberry.extensions.field_extension import build_field_extension_resolvers
@@ -668,14 +668,14 @@ class GraphQLCoreConverter:
 
         def check_one_of(value: dict[str, Any]) -> dict[str, Any]:
             if len(value) != 1:
-                raise GraphQLError(
+                raise StrawberryInputCoercionError(
                     f"OneOf Input Object '{type_name}' must specify exactly one key."
                 )
 
             first_key, first_value = next(iter(value.items()))
 
             if first_value is None or first_value is UNSET:
-                raise GraphQLError(
+                raise StrawberryInputCoercionError(
                     f"Value for member field '{first_key}' must be non-null"
                 )
 
