@@ -537,7 +537,8 @@ class Schema(BaseSchema):
         def add_directive(directive: object) -> None:
             directive_type = directive.__class__
             if (
-                compat.is_schema_directive(directive_type)
+                self._should_register_schema_directive(directive)
+                and compat.is_schema_directive(directive_type)
                 and directive_type not in seen_directive_types
             ):
                 seen_directive_types.add(directive_type)
@@ -555,40 +556,47 @@ class Schema(BaseSchema):
         for directive in self.schema_directives:
             add_directive(directive)
 
-        for graphql_type in self._schema.type_map.values():
-            type_definition = (getattr(graphql_type, "extensions", None) or {}).get(
-                GraphQLCoreConverter.DEFINITION_BACKREF
-            )
-            if type_definition is not None:
-                add_directives(type_definition)
+        registered_directive_types = self._explicit_schema_directive_types
 
-            for field in getattr(graphql_type, "fields", {}).values():
-                field_definition = (field.extensions or {}).get(
+        # Directive arguments can add types that have their own attached directives.
+        # Rebuild and rescan until every reachable directive has been registered.
+        while True:
+            for graphql_type in self._schema.type_map.values():
+                type_definition = (getattr(graphql_type, "extensions", None) or {}).get(
                     GraphQLCoreConverter.DEFINITION_BACKREF
                 )
-                if field_definition is not None:
-                    add_directives(field_definition)
+                if type_definition is not None:
+                    add_directives(type_definition)
 
-                for argument in getattr(field, "args", {}).values():
-                    argument_definition = (argument.extensions or {}).get(
+                for field in getattr(graphql_type, "fields", {}).values():
+                    field_definition = (field.extensions or {}).get(
                         GraphQLCoreConverter.DEFINITION_BACKREF
                     )
-                    if argument_definition is not None:
-                        add_directives(argument_definition)
+                    if field_definition is not None:
+                        add_directives(field_definition)
 
-            for value in getattr(graphql_type, "values", {}).values():
-                value_definition = (value.extensions or {}).get(
-                    GraphQLCoreConverter.DEFINITION_BACKREF
-                )
-                if value_definition is not None:
-                    add_directives(value_definition)
+                    for argument in getattr(field, "args", {}).values():
+                        argument_definition = (argument.extensions or {}).get(
+                            GraphQLCoreConverter.DEFINITION_BACKREF
+                        )
+                        if argument_definition is not None:
+                            add_directives(argument_definition)
 
-        self._schema_directive_types = tuple(schema_directive_types)
+                for value in getattr(graphql_type, "values", {}).values():
+                    value_definition = (value.extensions or {}).get(
+                        GraphQLCoreConverter.DEFINITION_BACKREF
+                    )
+                    if value_definition is not None:
+                        add_directives(value_definition)
 
-        if self._schema_directive_types == self._explicit_schema_directive_types:
-            return
+            discovered_directive_types = tuple(schema_directive_types)
+            if discovered_directive_types == registered_directive_types:
+                break
 
-        self._schema = self._create_graphql_schema(self._schema_directive_types)
+            self._schema = self._create_graphql_schema(discovered_directive_types)
+            registered_directive_types = discovered_directive_types
+
+        self._schema_directive_types = registered_directive_types
 
     def get_extensions(self, sync: bool = False) -> list[SchemaExtension]:
         # Deprecated instances are passed through as-is. The DeprecationWarning
@@ -1351,6 +1359,11 @@ class Schema(BaseSchema):
 
                 if not has_custom_resolve_id:
                     origin.resolve_id_attr()
+
+    def _should_register_schema_directive(self, directive: object) -> bool:
+        from strawberry.federation.schema_directives import FederationDirective
+
+        return not isinstance(directive, FederationDirective)
 
     def _warn_for_federation_directives(self) -> None:
         """Raises a warning if the schema has any federation directives."""

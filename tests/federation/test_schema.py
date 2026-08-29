@@ -101,6 +101,8 @@ def test_entities_type():
 
         union _Entity = Product
 
+        scalar _FieldSet
+
         type _Service {
           sdl: String!
         }

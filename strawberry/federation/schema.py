@@ -367,6 +367,9 @@ class Schema(BaseSchema):
 
         pass
 
+    def _should_register_schema_directive(self, directive: object) -> bool:
+        return True
+
 
 def _get_entity_type(
     query: type[WithStrawberryObjectDefinition] | None,

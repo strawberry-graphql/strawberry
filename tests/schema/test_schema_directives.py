@@ -141,15 +141,21 @@ def test_explicit_directive_type_is_reconciled_with_attached_uses():
 
 
 def test_registers_nested_directive_argument_input_types():
+    @strawberry.schema_directive(locations=[Location.INPUT_OBJECT])
+    class OnNestedInput: ...
+
+    @strawberry.schema_directive(locations=[Location.INPUT_FIELD_DEFINITION])
+    class OnNestedInputField: ...
+
     @strawberry.enum
     class Mode(Enum):
         PRIVATE = "private"
 
     Secret = strawberry.scalar(str, name="Secret")
 
-    @strawberry.input
+    @strawberry.input(directives=[OnNestedInput()])
     class Rule:
-        value: str
+        value: str = strawberry.field(directives=[OnNestedInputField()])
 
     @strawberry.input
     class Policy:
@@ -185,8 +191,12 @@ def test_registers_nested_directive_argument_input_types():
     assert isinstance(schema._schema.get_type("Mode"), GraphQLEnumType)
     assert isinstance(schema._schema.get_type("Secret"), GraphQLScalarType)
     assert get_named_type(policy_type.fields["rule"].type) is rule_type
+    assert schema._schema.get_directive("onNestedInput") is not None
+    assert schema._schema.get_directive("onNestedInputField") is not None
 
     sdl = schema.as_str()
+    assert sdl.count("directive @onNestedInput on INPUT_OBJECT") == 1
+    assert sdl.count("directive @onNestedInputField on INPUT_FIELD_DEFINITION") == 1
     assert sdl.count("input Policy") == 1
     assert sdl.count("input Rule") == 1
     assert sdl.count("enum Mode") == 1
