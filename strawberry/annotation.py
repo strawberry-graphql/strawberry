@@ -39,8 +39,6 @@ from strawberry.types.unset import UNSET
 from strawberry.utils.typing import eval_type, is_generic, is_type_var
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
-
     from strawberry.types.base import StrawberryType
     from strawberry.types.field import StrawberryField
     from strawberry.types.union import StrawberryUnion
@@ -125,6 +123,12 @@ class StrawberryAnnotation:
 
         return eval_type(annotation, self.namespace, None)
 
+    def _get_evaluated_annotation(self) -> object:
+        if self.__evaluated_cache__ is _NOT_EVALUATED:
+            self.__evaluated_cache__ = self.evaluate()
+
+        return self.__evaluated_cache__
+
     def _get_type_with_args(
         self, evaled_type: type[Any]
     ) -> tuple[type[Any], list[Any]]:
@@ -142,14 +146,11 @@ class StrawberryAnnotation:
         self,
         *,
         type_definition: StrawberryObjectDefinition | None = None,
-        _validate: Callable[[object], None] | None = None,
     ) -> StrawberryType | type:
         """Return resolved (transformed) annotation."""
         if (resolved := self.__resolve_cache__) is None:
-            resolved = self._resolve(_validate=_validate)
+            resolved = self._resolve()
             self.__resolve_cache__ = resolved
-        elif _validate is not None and self.__evaluated_cache__ is not _NOT_EVALUATED:
-            _validate(self.__evaluated_cache__)
 
         # If this is a generic field, try to resolve it using its origin's
         # specialized type_var_map
@@ -174,14 +175,8 @@ class StrawberryAnnotation:
 
         return resolved
 
-    def _resolve(
-        self,
-        _validate: Callable[[object], None] | None = None,
-    ) -> StrawberryType | type:
-        evaled_type = cast("Any", self.evaluate())
-        self.__evaluated_cache__ = evaled_type
-        if _validate is not None:
-            _validate(evaled_type)
+    def _resolve(self) -> StrawberryType | type:
+        evaled_type = cast("Any", self._get_evaluated_annotation())
         return self._resolve_evaled_type(evaled_type)
 
     def _resolve_evaled_type(self, evaled_type: Any) -> StrawberryType | type:
@@ -228,6 +223,7 @@ class StrawberryAnnotation:
         module = sys.modules[field.origin.__module__]
         self.namespace = module.__dict__
 
+        self.__evaluated_cache__ = _NOT_EVALUATED
         self.__resolve_cache__ = None  # Invalidate cache to allow re-evaluation
 
     def create_concrete_type(self, evaled_type: type) -> type:
