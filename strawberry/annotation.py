@@ -39,6 +39,8 @@ from strawberry.types.unset import UNSET
 from strawberry.utils.typing import eval_type, is_generic, is_type_var
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from strawberry.types.base import StrawberryType
     from strawberry.types.field import StrawberryField
     from strawberry.types.union import StrawberryUnion
@@ -54,9 +56,16 @@ ASYNC_TYPES = (
     typing.AsyncIterator,
 )
 
+_NOT_EVALUATED = object()
+
 
 class StrawberryAnnotation:
-    __slots__ = "__resolve_cache__", "namespace", "raw_annotation"
+    __slots__ = (
+        "__evaluated_cache__",
+        "__resolve_cache__",
+        "namespace",
+        "raw_annotation",
+    )
 
     def __init__(
         self,
@@ -67,6 +76,7 @@ class StrawberryAnnotation:
         self.raw_annotation = annotation
         self.namespace = namespace
 
+        self.__evaluated_cache__: object = _NOT_EVALUATED
         self.__resolve_cache__: StrawberryType | type | None = None
 
     def __eq__(self, other: object) -> bool:
@@ -103,6 +113,7 @@ class StrawberryAnnotation:
     def annotation(self, value: object | str) -> None:
         self.raw_annotation = value
 
+        self.__evaluated_cache__ = _NOT_EVALUATED
         self.__resolve_cache__ = None
 
     def evaluate(self) -> type:
@@ -131,11 +142,14 @@ class StrawberryAnnotation:
         self,
         *,
         type_definition: StrawberryObjectDefinition | None = None,
+        _validate: Callable[[object], None] | None = None,
     ) -> StrawberryType | type:
         """Return resolved (transformed) annotation."""
         if (resolved := self.__resolve_cache__) is None:
-            resolved = self._resolve()
+            resolved = self._resolve(_validate=_validate)
             self.__resolve_cache__ = resolved
+        elif _validate is not None and self.__evaluated_cache__ is not _NOT_EVALUATED:
+            _validate(self.__evaluated_cache__)
 
         # If this is a generic field, try to resolve it using its origin's
         # specialized type_var_map
@@ -160,8 +174,14 @@ class StrawberryAnnotation:
 
         return resolved
 
-    def _resolve(self) -> StrawberryType | type:
+    def _resolve(
+        self,
+        _validate: Callable[[object], None] | None = None,
+    ) -> StrawberryType | type:
         evaled_type = cast("Any", self.evaluate())
+        self.__evaluated_cache__ = evaled_type
+        if _validate is not None:
+            _validate(evaled_type)
         return self._resolve_evaled_type(evaled_type)
 
     def _resolve_evaled_type(self, evaled_type: Any) -> StrawberryType | type:

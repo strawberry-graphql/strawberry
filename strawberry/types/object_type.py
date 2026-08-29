@@ -37,19 +37,10 @@ from strawberry.types.unset import UNSET
 from strawberry.utils.str_converters import to_camel_case
 
 from .base import StrawberryObjectDefinition
-from .field import StrawberryField, field
+from .field import StrawberryField, _contains_strawberry_field, field
 from .type_resolver import _get_fields
 
 T = TypeVar("T", bound=builtins.type)
-
-
-def _contains_strawberry_field(annotation: object) -> bool:
-    if get_origin(annotation) is Annotated:
-        annotation, *metadata = get_args(annotation)
-        if any(isinstance(item, StrawberryField) for item in metadata):
-            return True
-
-    return any(_contains_strawberry_field(arg) for arg in get_args(annotation))
 
 
 def _process_annotated_fields(cls: T) -> dict[str, StrawberryAnnotation]:
@@ -94,7 +85,10 @@ def _process_annotated_fields(cls: T) -> dict[str, StrawberryAnnotation]:
         ):
             raise MultipleStrawberryFieldsError(field_name=field_name, cls=cls)
 
-        if _contains_strawberry_field(first):
+        if _contains_strawberry_field(
+            annotation,
+            allow_field_metadata=True,
+        ):
             raise InvalidStrawberryFieldAnnotationError(
                 field_name=field_name,
                 cls=cls,

@@ -8,16 +8,23 @@ from collections.abc import Awaitable, Callable, Coroutine, Mapping, Sequence
 from functools import cached_property
 from typing import (
     TYPE_CHECKING,
+    Annotated,
     Any,
     NoReturn,
     TypeAlias,
     TypeVar,
     Union,
+    get_args,
+    get_origin,
     overload,
 )
 
 from strawberry.annotation import StrawberryAnnotation
-from strawberry.exceptions import InvalidArgumentTypeError, InvalidDefaultFactoryError
+from strawberry.exceptions import (
+    InvalidArgumentTypeError,
+    InvalidDefaultFactoryError,
+    InvalidStrawberryFieldAnnotationError,
+)
 from strawberry.types.base import (
     StrawberryType,
     WithStrawberryObjectDefinition,
@@ -345,7 +352,10 @@ class StrawberryField(dataclasses.Field):
         with contextlib.suppress(NameError):
             # Prioritise the field type over the resolver return type
             if self.type_annotation is not None:
-                resolved = self.type_annotation.resolve(type_definition=type_definition)
+                resolved = self.type_annotation.resolve(
+                    type_definition=type_definition,
+                    _validate=self._validate_type_annotation,
+                )
             elif self.base_resolver is not None and self.base_resolver.type is not None:
                 # Handle unannotated functions (such as lambdas)
                 # Generics will raise MissingTypesForGenericError later
@@ -354,6 +364,20 @@ class StrawberryField(dataclasses.Field):
                 resolved = self.base_resolver.type
 
         return resolved
+
+    def _validate_type_annotation(self, annotation: object) -> None:
+        if (
+            self.python_name is not None
+            and isinstance(self.origin, type)
+            and _contains_strawberry_field(
+                annotation,
+                allow_field_metadata=True,
+            )
+        ):
+            raise InvalidStrawberryFieldAnnotationError(
+                field_name=self.python_name,
+                cls=self.origin,
+            )
 
     def copy_with(
         self, type_var_map: Mapping[str, StrawberryType | builtins.type]
@@ -393,6 +417,29 @@ class StrawberryField(dataclasses.Field):
     @cached_property
     def is_async(self) -> bool:
         return self._has_async_base_resolver
+
+
+def _contains_strawberry_field(
+    annotation: object,
+    *,
+    allow_field_metadata: bool = False,
+) -> bool:
+    if get_origin(annotation) is Annotated:
+        annotation, *metadata = get_args(annotation)
+        if not allow_field_metadata and any(
+            isinstance(item, StrawberryField) for item in metadata
+        ):
+            return True
+
+        return _contains_strawberry_field(
+            annotation,
+            allow_field_metadata=allow_field_metadata,
+        )
+
+    return any(
+        _contains_strawberry_field(arg, allow_field_metadata=False)
+        for arg in get_args(annotation)
+    )
 
 
 # NOTE: we are separating the sync and async resolvers because using both

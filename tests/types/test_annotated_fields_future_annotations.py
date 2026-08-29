@@ -11,6 +11,7 @@ from strawberry.exceptions import (
     InvalidStrawberryFieldAnnotationError,
     MultipleStrawberryFieldsError,
     PrivateStrawberryFieldError,
+    UnresolvedFieldTypeError,
 )
 from strawberry.extensions import FieldExtension
 from strawberry.permission import BasePermission, PermissionExtension
@@ -20,6 +21,7 @@ from strawberry.types.lazy_type import LazyType
 
 if TYPE_CHECKING:
     from tests.schema.test_lazy.type_c import TypeC
+    from tests.schema.test_lazy.type_c import TypeC as UnresolvableType
 
 
 class AllowAll(BasePermission):
@@ -231,6 +233,60 @@ def test_nested_annotated_field_raises_error():
     @strawberry.type
     class Query:
         values: list[Annotated[str, strawberry.field(description="Not the list field")]]
+
+
+def test_nested_annotated_field_with_later_forward_reference_raises_error():
+    global LaterWithNestedField
+
+    try:
+
+        @strawberry.type
+        class Query:
+            values: list[
+                Annotated[
+                    LaterWithNestedField,
+                    strawberry.field(description="Not the list field"),
+                ]
+            ]
+
+        @strawberry.type
+        class LaterWithNestedField:
+            value: str
+
+        with pytest.raises(
+            InvalidStrawberryFieldAnnotationError,
+            match=(
+                r"`strawberry.field\(\)` for field `values` on type `Query` "
+                r"must be placed at the top level of the field annotation"
+            ),
+        ):
+            strawberry.Schema(query=Query)
+    finally:
+        del LaterWithNestedField
+
+
+def test_nested_annotated_field_with_unresolvable_type_raises_unresolved_error():
+    @strawberry.type
+    class Query:
+        values: list[
+            Annotated[UnresolvableType, strawberry.field(description="Nested")]
+        ]
+
+    with pytest.raises(UnresolvedFieldTypeError):
+        strawberry.Schema(query=Query)
+
+
+def test_field_owned_metadata_with_unresolved_forward_reference_is_not_rejected():
+    @strawberry.type
+    class Query:
+        values: Annotated[
+            list[TypeC],
+            strawberry.field(description="The list field"),
+        ]
+
+    field = get_object_definition(Query).fields[0]
+
+    assert field.python_name == "values"
 
 
 def test_nested_lazy_metadata_is_preserved():
