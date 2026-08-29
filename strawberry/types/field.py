@@ -131,6 +131,8 @@ class StrawberryField(dataclasses.Field):
             self.python_name = python_name
 
         self.type_annotation = type_annotation
+        # Cache the exact annotation object after successful validation and
+        # resolution so replacing `type_annotation` automatically revalidates it.
         self._validated_type_annotation: StrawberryAnnotation | None = None
 
         self.description: str | None = description
