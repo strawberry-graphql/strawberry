@@ -38,6 +38,7 @@ from graphql import (
     GraphQLSchema,
     OperationDefinitionNode,
     get_introspection_query,
+    get_named_type,
     parse,
     validate_schema,
 )
@@ -96,7 +97,7 @@ if TYPE_CHECKING:
 
     from graphql.language import DocumentNode
     from graphql.pyutils import Path
-    from graphql.type import GraphQLResolveInfo
+    from graphql.type import GraphQLInputType, GraphQLResolveInfo
     from graphql.validation import ASTValidationRule
 
     from strawberry.directive import StrawberryDirective
@@ -533,6 +534,7 @@ class Schema(BaseSchema):
     def _register_schema_directives(self) -> None:
         schema_directive_types = list(self._explicit_schema_directive_types)
         seen_directive_types = set(schema_directive_types)
+        seen_directive_argument_types: set[str] = set()
 
         def add_directive(directive: object) -> None:
             directive_type = directive.__class__
@@ -553,50 +555,71 @@ class Schema(BaseSchema):
             for directive in attached_directives:
                 add_directive(directive)
 
+        def add_directives_from_graphql_type(
+            graphql_type: GraphQLNamedType, *, recurse_fields: bool = False
+        ) -> None:
+            type_definition = (graphql_type.extensions or {}).get(
+                GraphQLCoreConverter.DEFINITION_BACKREF
+            )
+            if type_definition is not None:
+                add_directives(type_definition)
+
+            for field in getattr(graphql_type, "fields", {}).values():
+                field_definition = (field.extensions or {}).get(
+                    GraphQLCoreConverter.DEFINITION_BACKREF
+                )
+                if field_definition is not None:
+                    add_directives(field_definition)
+
+                for argument in getattr(field, "args", {}).values():
+                    argument_definition = (argument.extensions or {}).get(
+                        GraphQLCoreConverter.DEFINITION_BACKREF
+                    )
+                    if argument_definition is not None:
+                        add_directives(argument_definition)
+
+                if recurse_fields:
+                    add_directives_from_argument_type(field.type)
+
+            for value in getattr(graphql_type, "values", {}).values():
+                value_definition = (value.extensions or {}).get(
+                    GraphQLCoreConverter.DEFINITION_BACKREF
+                )
+                if value_definition is not None:
+                    add_directives(value_definition)
+
+        def add_directives_from_argument_type(type_: GraphQLInputType) -> None:
+            graphql_type = get_named_type(type_)
+            if graphql_type.name in seen_directive_argument_types:
+                return
+
+            seen_directive_argument_types.add(graphql_type.name)
+            add_directives_from_graphql_type(graphql_type, recurse_fields=True)
+
         for directive in self.schema_directives:
             add_directive(directive)
 
-        registered_directive_types = self._explicit_schema_directive_types
+        for graphql_type in self._schema.type_map.values():
+            add_directives_from_graphql_type(graphql_type)
 
-        # Directive arguments can add types that have their own attached directives.
-        # Rebuild and rescan until every reachable directive has been registered.
-        while True:
-            for graphql_type in self._schema.type_map.values():
-                type_definition = (getattr(graphql_type, "extensions", None) or {}).get(
-                    GraphQLCoreConverter.DEFINITION_BACKREF
-                )
-                if type_definition is not None:
-                    add_directives(type_definition)
+        # Directive arguments can introduce input types with more attached
+        # directives. Collect that closure before rebuilding the schema once.
+        directive_index = 0
+        while directive_index < len(schema_directive_types):
+            directive_type = schema_directive_types[directive_index]
+            graphql_directive = self.schema_converter.from_schema_directive(
+                directive_type
+            )
+            for argument in graphql_directive.args.values():
+                add_directives_from_argument_type(argument.type)
+            directive_index += 1
 
-                for field in getattr(graphql_type, "fields", {}).values():
-                    field_definition = (field.extensions or {}).get(
-                        GraphQLCoreConverter.DEFINITION_BACKREF
-                    )
-                    if field_definition is not None:
-                        add_directives(field_definition)
+        self._schema_directive_types = tuple(schema_directive_types)
 
-                    for argument in getattr(field, "args", {}).values():
-                        argument_definition = (argument.extensions or {}).get(
-                            GraphQLCoreConverter.DEFINITION_BACKREF
-                        )
-                        if argument_definition is not None:
-                            add_directives(argument_definition)
+        if self._schema_directive_types == self._explicit_schema_directive_types:
+            return
 
-                for value in getattr(graphql_type, "values", {}).values():
-                    value_definition = (value.extensions or {}).get(
-                        GraphQLCoreConverter.DEFINITION_BACKREF
-                    )
-                    if value_definition is not None:
-                        add_directives(value_definition)
-
-            discovered_directive_types = tuple(schema_directive_types)
-            if discovered_directive_types == registered_directive_types:
-                break
-
-            self._schema = self._create_graphql_schema(discovered_directive_types)
-            registered_directive_types = discovered_directive_types
-
-        self._schema_directive_types = registered_directive_types
+        self._schema = self._create_graphql_schema(self._schema_directive_types)
 
     def get_extensions(self, sync: bool = False) -> list[SchemaExtension]:
         # Deprecated instances are passed through as-is. The DeprecationWarning
