@@ -85,10 +85,7 @@ def _process_annotated_fields(cls: T) -> dict[str, StrawberryAnnotation]:
         ):
             raise MultipleStrawberryFieldsError(field_name=field_name, cls=cls)
 
-        if _contains_strawberry_field(
-            annotation,
-            at_field_annotation_root=True,
-        ):
+        if _contains_strawberry_field(annotation):
             raise InvalidStrawberryFieldAnnotationError(
                 field_name=field_name,
                 cls=cls,

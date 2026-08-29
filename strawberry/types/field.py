@@ -369,10 +369,7 @@ class StrawberryField(dataclasses.Field):
         if (
             self.python_name is not None
             and isinstance(self.origin, type)
-            and _contains_strawberry_field(
-                annotation,
-                at_field_annotation_root=True,
-            )
+            and _contains_strawberry_field(annotation)
         ):
             raise InvalidStrawberryFieldAnnotationError(
                 field_name=self.python_name,
@@ -422,7 +419,7 @@ class StrawberryField(dataclasses.Field):
 def _contains_strawberry_field(
     annotation: object,
     *,
-    at_field_annotation_root: bool = False,
+    at_field_annotation_root: bool = True,
 ) -> bool:
     if get_origin(annotation) is Annotated:
         annotation, *metadata = get_args(annotation)
