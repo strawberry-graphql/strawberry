@@ -137,29 +137,6 @@ ProcessErrors: TypeAlias = (
 _DirectiveEntry: TypeAlias = tuple[GraphQLDirective, object, str]
 
 
-def _add_graphql_directive(
-    directives: dict[str, _DirectiveEntry],
-    directive: GraphQLDirective,
-    definition: object,
-    source: str,
-) -> None:
-    name = directive.name
-    existing = directives.get(name)
-    if existing is None:
-        directives[name] = (directive, definition, source)
-        return
-
-    _, existing_definition, existing_source = existing
-    if existing_definition is definition:
-        return
-
-    raise ValueError(
-        f"Schema directive '@{name}' is defined by both "
-        f"{existing_source} and {source}. Use a different "
-        "GraphQL name for one of them."
-    )
-
-
 # TODO: merge with below
 def validate_document(
     schema: GraphQLSchema,
@@ -436,8 +413,17 @@ class Schema(BaseSchema):
         self._explicit_schema_directive_types = tuple(explicit_schema_directive_types)
 
         try:
-            self._schema = self._create_graphql_schema(
-                self._explicit_schema_directive_types
+            self._schema = GraphQLSchema(
+                query=self._graphql_query_type,
+                mutation=self._graphql_mutation_type,
+                subscription=self._graphql_subscription_type,
+                directives=self._collect_graphql_directives(
+                    self._explicit_schema_directive_types
+                ),
+                types=self._graphql_types,
+                extensions={
+                    GraphQLCoreConverter.DEFINITION_BACKREF: self,
+                },
             )
             self._register_schema_directives()
 
@@ -467,10 +453,31 @@ class Schema(BaseSchema):
             formatted_errors = "\n\n".join(f"❌ {error.message}" for error in errors)
             raise ValueError(f"Invalid Schema. Errors:\n\n{formatted_errors}")
 
+    def _add_graphql_directive(
+        self,
+        directive: GraphQLDirective,
+        definition: object,
+        source: str,
+    ) -> None:
+        name = directive.name
+        if (existing := self._graphql_directives.get(name)) is None:
+            self._graphql_directives[name] = (directive, definition, source)
+            return
+
+        _, existing_definition, existing_source = existing
+        if existing_definition is definition:
+            return
+
+        raise ValueError(
+            f"Schema directive '@{name}' is defined by both "
+            f"{existing_source} and {source}. Use a different "
+            "GraphQL name for one of them."
+        )
+
     def _collect_graphql_directives(
         self, schema_directive_types: Iterable[type]
     ) -> tuple[GraphQLDirective, ...]:
-        directives: dict[str, _DirectiveEntry] = {
+        self._graphql_directives: dict[str, _DirectiveEntry] = {
             directive.name: (
                 directive,
                 directive,
@@ -483,8 +490,7 @@ class Schema(BaseSchema):
             strawberry_directive = directive.extensions[
                 GraphQLCoreConverter.DEFINITION_BACKREF
             ]
-            _add_graphql_directive(
-                directives,
+            self._add_graphql_directive(
                 directive,
                 strawberry_directive,
                 f"operation directive '{strawberry_directive.python_name}'",
@@ -504,12 +510,11 @@ class Schema(BaseSchema):
             if (
                 directive_type is OneOf
                 and directive_name == "oneOf"
-                and directive_name in directives
+                and directive_name in self._graphql_directives
             ):
                 continue
 
-            _add_graphql_directive(
-                directives,
+            self._add_graphql_directive(
                 self.schema_converter.from_schema_directive(directive_type),
                 directive_type,
                 (
@@ -520,28 +525,13 @@ class Schema(BaseSchema):
 
         if self.config.enable_experimental_incremental_execution:
             for directive in incremental_execution_directives:
-                _add_graphql_directive(
-                    directives,
+                self._add_graphql_directive(
                     directive,
                     directive,
                     f"the experimental GraphQL directive '@{directive.name}'",
                 )
 
-        return tuple(directive for directive, _, _ in directives.values())
-
-    def _create_graphql_schema(
-        self, schema_directive_types: Iterable[type]
-    ) -> GraphQLSchema:
-        return GraphQLSchema(
-            query=self._graphql_query_type,
-            mutation=self._graphql_mutation_type,
-            subscription=self._graphql_subscription_type,
-            directives=self._collect_graphql_directives(schema_directive_types),
-            types=self._graphql_types,
-            extensions={
-                GraphQLCoreConverter.DEFINITION_BACKREF: self,
-            },
-        )
+        return tuple(directive for directive, _, _ in self._graphql_directives.values())
 
     def _register_schema_directives(self) -> None:
         schema_directive_types = list(self._explicit_schema_directive_types)
@@ -631,7 +621,16 @@ class Schema(BaseSchema):
         if self._schema_directive_types == self._explicit_schema_directive_types:
             return
 
-        self._schema = self._create_graphql_schema(self._schema_directive_types)
+        self._schema = GraphQLSchema(
+            query=self._graphql_query_type,
+            mutation=self._graphql_mutation_type,
+            subscription=self._graphql_subscription_type,
+            directives=self._collect_graphql_directives(self._schema_directive_types),
+            types=self._graphql_types,
+            extensions={
+                GraphQLCoreConverter.DEFINITION_BACKREF: self,
+            },
+        )
 
     def get_extensions(self, sync: bool = False) -> list[SchemaExtension]:
         # Deprecated instances are passed through as-is. The DeprecationWarning
