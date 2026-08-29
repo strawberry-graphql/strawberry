@@ -101,7 +101,7 @@ class StrawberryAnnotation:
     def annotation(self) -> object | str:
         """Return evaluated type on success or fallback to raw (string) annotation."""
         try:
-            return self.evaluate()
+            return self._evaluated_annotation
         except NameError:
             # Evaluation failures can happen when importing types within a TYPE_CHECKING
             # block or if the type is declared later on in a module.
