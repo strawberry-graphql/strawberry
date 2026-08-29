@@ -124,10 +124,15 @@ jobs:
           path: coverage_html_report
 
   benchmarks:
-    name: 📈 Benchmarks
+    name: 📈 Benchmarks (${{ matrix.shard }}/4)
 
     # Using this version because CodSpeed doesn't support Ubuntu 24.04 LTS yet
     runs-on: ubuntu-22.04
+
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
 
     permissions:
       contents: read
@@ -143,13 +148,17 @@ jobs:
           enable-cache: true
           python-version: "3.14"
 
-      - run: uv sync
+      - run: uv sync --locked
 
       - name: Run benchmarks
         uses: CodSpeedHQ/action@4296e51e7041e24dadb86d1d6e8b9320d223dbe8 # v5.0.3
         with:
           mode: simulation
-          run: uv run pytest tests/benchmarks --codspeed -p no:codeflash-benchmark
+          run: >-
+            uv run pytest tests/benchmarks --codspeed
+            -p no:codeflash-benchmark
+            --test-group=${{ matrix.shard }}
+            --test-group-count=4
 
   lint:
     name: ✨ Lint

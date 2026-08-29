@@ -83,6 +83,7 @@ dev = [
   "pytest-emoji>=0.2.0,<0.3.0",
   "pytest-mock>=3.10,<4.0",
   "pytest-snapshot>=0.9.0,<0.10.0",
+  "pytest-test-groups>=1.2.1,<2.0.0",
   "pytest-xdist[psutil]>=3.1.0,<4.0.0",
   "python-multipart>=0.0.7",
   "rich>=12.5.1",
