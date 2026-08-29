@@ -10,10 +10,17 @@ from typing import (
     overload,
 )
 
-from graphql import GraphQLInputField, GraphQLObjectType, GraphQLSchema, is_union_type
+from graphql import (
+    GraphQLInputField,
+    GraphQLObjectType,
+    GraphQLSchema,
+    get_named_type,
+    is_union_type,
+)
 from graphql.language.printer import print_ast
 from graphql.type import (
     is_enum_type,
+    is_input_object_type,
     is_input_type,
     is_interface_type,
     is_object_type,
@@ -49,6 +56,7 @@ if TYPE_CHECKING:
         GraphQLArgument,
         GraphQLEnumType,
         GraphQLEnumValue,
+        GraphQLInputObjectType,
         GraphQLNamedType,
         GraphQLScalarType,
         GraphQLUnionType,
@@ -609,7 +617,8 @@ def print_schema(schema: BaseSchema) -> str:
     types = [
         type_
         for type_name in sorted(type_map)
-        if is_defined_type(type_ := type_map[type_name])
+        if type_name not in schema._schema_directive_argument_types
+        and is_defined_type(type_ := type_map[type_name])
     ]
 
     types_printed = [_print_type(type_, schema, extras=extras) for type_ in types]
@@ -619,6 +628,7 @@ def print_schema(schema: BaseSchema) -> str:
         printed_directive
         for directive in filtered_directives
         if (printed_directive := print_directive(directive, schema=schema)) is not None
+        and printed_directive not in extras.directives
     ]
 
     if schema.config.enable_experimental_incremental_execution:
@@ -638,6 +648,8 @@ def print_schema(schema: BaseSchema) -> str:
 
     def _print_extra_types() -> Iterable[str]:
         # Make sure extra types are ordered for predictive printing
+        graphql_types: dict[str, GraphQLNamedType] = {}
+
         for type_ in sorted(extras.types, key=_name_getter):
             graphql_type = cast(
                 "GraphQLNamedType", schema.schema_converter.from_type(type_)
@@ -646,9 +658,34 @@ def print_schema(schema: BaseSchema) -> str:
             # Skip types that are already part of the schema's type map, otherwise
             # they'd be printed twice (e.g. an enum used both as a regular type and
             # as a schema directive field), producing invalid SDL.
-            if graphql_type.name in type_map:
+            if (
+                graphql_type.name in type_map
+                and graphql_type.name not in schema._schema_directive_argument_types
+            ):
                 continue
 
+            graphql_types[graphql_type.name] = graphql_type
+
+        def add_referenced_types(graphql_type: GraphQLNamedType) -> None:
+            if not is_input_object_type(graphql_type):
+                return
+
+            input_type = cast("GraphQLInputObjectType", graphql_type)
+            for field in input_type.fields.values():
+                field_type = get_named_type(field.type)
+                if field_type.name in graphql_types or (
+                    field_type.name in type_map
+                    and field_type.name not in schema._schema_directive_argument_types
+                ):
+                    continue
+
+                graphql_types[field_type.name] = field_type
+                add_referenced_types(field_type)
+
+        for graphql_type in tuple(graphql_types.values()):
+            add_referenced_types(graphql_type)
+
+        for graphql_type in graphql_types.values():
             yield _print_type(graphql_type, schema, extras=extras)
 
     return "\n\n".join(
