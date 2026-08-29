@@ -219,7 +219,7 @@ def test_print_definition_false_remains_available_to_introspection():
 
     sdl = schema.as_str()
     assert "directive @hidden" not in sdl
-    assert "input HiddenConfig" not in sdl
+    assert "input HiddenConfig" in sdl
     assert "@hidden(config:" in sdl
     assert 'reason: "private"' in sdl
 

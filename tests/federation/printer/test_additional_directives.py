@@ -43,6 +43,8 @@ def test_additional_schema_directives_printed_correctly_object():
 
     union _Entity = FederatedType
 
+    scalar _FieldSet
+
     type _Service {
       sdl: String!
     }
@@ -98,6 +100,8 @@ def test_additional_schema_directives_printed_in_order_object():
     scalar _Any
 
     union _Entity = FederatedType
+
+    scalar _FieldSet
 
     type _Service {
       sdl: String!

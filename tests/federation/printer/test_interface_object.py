@@ -28,6 +28,8 @@ def test_interface_object():
 
         union _Entity = SomeInterface
 
+        scalar _FieldSet
+
         type _Service {
           sdl: String!
         }

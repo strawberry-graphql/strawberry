@@ -34,6 +34,13 @@ def test_link_directive():
         type _Service {
           sdl: String!
         }
+
+        scalar link__Import
+
+        enum link__Purpose {
+          SECURITY
+          EXECUTION
+        }
     """
 
     assert schema.as_str() == textwrap.dedent(expected).strip()
@@ -90,6 +97,13 @@ def test_link_directive_imports():
     type _Service {
       sdl: String!
     }
+
+    scalar link__Import
+
+    enum link__Purpose {
+      SECURITY
+      EXECUTION
+    }
     """
 
     assert schema.as_str() == textwrap.dedent(expected).strip()
@@ -124,6 +138,8 @@ def test_adds_link_directive_automatically():
         scalar _Any
 
         union _Entity = User
+
+        scalar _FieldSet
 
         type _Service {
           sdl: String!
@@ -167,6 +183,8 @@ def test_adds_link_directive_from_interface():
         }
 
         scalar _Any
+
+        scalar _FieldSet
 
         type _Service {
           sdl: String!
@@ -251,6 +269,8 @@ def test_adds_link_directive_automatically_from_field():
 
         union _Entity = User
 
+        scalar _FieldSet
+
         type _Service {
           sdl: String!
         }
@@ -288,6 +308,8 @@ def test_adds_directive_link_for_federation():
         scalar _Any
 
         union _Entity = User
+
+        scalar _FieldSet
 
         type _Service {
           sdl: String!
@@ -335,6 +357,8 @@ def test_adds_link_directive_automatically_from_scalar():
         scalar _Any
 
         union _Entity = User
+
+        scalar _FieldSet
 
         type _Service {
           sdl: String!

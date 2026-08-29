@@ -47,6 +47,8 @@ def test_field_override_printed_correctly():
 
         union _Entity = Product
 
+        scalar _FieldSet
+
         type _Service {
           sdl: String!
         }
@@ -98,6 +100,8 @@ def test_field_override_label_printed_correctly():
         scalar _Any
 
         union _Entity = Product
+
+        scalar _FieldSet
 
         type _Service {
           sdl: String!

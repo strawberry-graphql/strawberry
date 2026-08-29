@@ -1,5 +1,5 @@
 ---
-release type: patch
+release type: minor
 social_messages:
   x: >-
     {project_name} {version} is out! Custom schema directives attached to types and
@@ -18,5 +18,6 @@ now appear in standard GraphQL introspection. Schema explorers, IDEs, code
 generators, and other tools can discover each directive's description, arguments,
 allowed locations, repeatability, and any input types it uses.
 
-Existing Strawberry SDL output stays compatible, and a directive reused across
-the schema is defined only once.
+A directive reused across the schema is defined only once. Input, enum, and scalar
+types referenced by directive arguments are now part of the schema and may appear
+in generated SDL even when they are not used by fields.

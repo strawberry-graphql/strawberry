@@ -55,6 +55,8 @@ def test_schema_directives_and_compose_schema():
 
     union _Entity = FederatedType
 
+    scalar _FieldSet
+
     type _Service {
       sdl: String!
     }
@@ -118,6 +120,8 @@ def test_schema_directives_and_compose_schema_custom_import_url():
     scalar _Any
 
     union _Entity = FederatedType
+
+    scalar _FieldSet
 
     type _Service {
       sdl: String!

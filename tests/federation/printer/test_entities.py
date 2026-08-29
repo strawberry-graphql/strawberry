@@ -124,6 +124,8 @@ def test_entities_type_when_one_type_has_keys():
 
         union _Entity = Product
 
+        scalar _FieldSet
+
         type _Service {
           sdl: String!
         }

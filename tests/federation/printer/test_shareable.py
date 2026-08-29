@@ -46,6 +46,8 @@ def test_field_shareable_printed_correctly():
 
         union _Entity = Product
 
+        scalar _FieldSet
+
         type _Service {
           sdl: String!
         }

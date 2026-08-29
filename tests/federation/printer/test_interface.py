@@ -44,6 +44,8 @@ def test_entities_extending_interface():
 
         union _Entity = Product
 
+        scalar _FieldSet
+
         type _Service {
           sdl: String!
         }

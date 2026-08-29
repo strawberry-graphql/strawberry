@@ -132,16 +132,16 @@ def test_directive_on_types():
       user(input: Input!): User!
     }
 
+    input SensitiveValue {
+      key: String!
+      value: String!
+    }
+
     type User @sensitiveData(reason: "GDPR") {
       firstName: String!
       age: Int!
       phone: String! @sensitiveData(reason: "PRIVATE", meta: [{ key: "can_share_field", value: "phone_share_accepted" }])
       phoneShareAccepted: Boolean!
-    }
-
-    input SensitiveValue {
-      key: String!
-      value: String!
     }
     """
 
@@ -831,13 +831,13 @@ def test_print_directive_with_unset_value():
     expected_output = """
     directive @fooDirective(input: FooInput!, optionalInput: FooInput) on FIELD_DEFINITION
 
-    type Query {
-      foo: String! @fooDirective(input: { a: "something" })
-    }
-
     input FooInput {
       a: String
       b: String
+    }
+
+    type Query {
+      foo: String! @fooDirective(input: { a: "something" })
     }
     """
 
@@ -872,13 +872,13 @@ def test_print_directive_with_snake_case_arguments():
     expected_output = """
     directive @fooDirective(input: FooInput!, optionalInput: FooInput) on FIELD_DEFINITION
 
-    type Query {
-      foo: String! @fooDirective(input: { hello: "hello", helloWorld: "hello world" })
-    }
-
     input FooInput {
       hello: String!
       helloWorld: String!
+    }
+
+    type Query {
+      foo: String! @fooDirective(input: { hello: "hello", helloWorld: "hello world" })
     }
     """
 

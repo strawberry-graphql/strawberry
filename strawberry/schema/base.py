@@ -38,7 +38,6 @@ class BaseSchema(Protocol):
     mutation: type[WithStrawberryObjectDefinition] | None
     subscription: type[WithStrawberryObjectDefinition] | None
     schema_directives: list[object]
-    _schema_directive_argument_types: set[str]
     exception_handlers: tuple[ExceptionHandler[Any], ...]
 
     @abstractmethod

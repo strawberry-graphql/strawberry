@@ -409,7 +409,6 @@ class Schema(BaseSchema):
         self._graphql_subscription_type = subscription_type
         self._graphql_types = graphql_types
         self._explicit_schema_directive_types = tuple(explicit_schema_directive_types)
-        self._schema_directive_argument_types: set[str] = set()
 
         try:
             self._schema = self._create_graphql_schema(
@@ -589,11 +588,7 @@ class Schema(BaseSchema):
         if self._schema_directive_types == self._explicit_schema_directive_types:
             return
 
-        existing_type_names = set(self._schema.type_map)
         self._schema = self._create_graphql_schema(self._schema_directive_types)
-        self._schema_directive_argument_types.update(
-            set(self._schema.type_map) - existing_type_names
-        )
 
     def get_extensions(self, sync: bool = False) -> list[SchemaExtension]:
         # Deprecated instances are passed through as-is. The DeprecationWarning
