@@ -148,15 +148,14 @@ jobs:
           enable-cache: true
           python-version: "3.14"
 
-      - run: uv sync
+      - run: uv sync --locked
 
       - name: Run benchmarks
         uses: CodSpeedHQ/action@4296e51e7041e24dadb86d1d6e8b9320d223dbe8 # v5.0.3
         with:
           mode: simulation
           run: >-
-            uv run --with pytest-test-groups==1.2.1
-            pytest tests/benchmarks --codspeed
+            uv run pytest tests/benchmarks --codspeed
             -p no:codeflash-benchmark
             --test-group=${{ matrix.shard }}
             --test-group-count=4
