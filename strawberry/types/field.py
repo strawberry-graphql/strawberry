@@ -353,7 +353,7 @@ class StrawberryField(dataclasses.Field):
             # Prioritise the field type over the resolver return type
             if self.type_annotation is not None:
                 self._validate_type_annotation(
-                    self.type_annotation._get_evaluated_annotation()
+                    self.type_annotation._evaluated_annotation
                 )
                 resolved = self.type_annotation.resolve(type_definition=type_definition)
             elif self.base_resolver is not None and self.base_resolver.type is not None:

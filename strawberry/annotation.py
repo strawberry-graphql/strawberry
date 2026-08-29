@@ -123,7 +123,8 @@ class StrawberryAnnotation:
 
         return eval_type(annotation, self.namespace, None)
 
-    def _get_evaluated_annotation(self) -> object:
+    @property
+    def _evaluated_annotation(self) -> object:
         if self.__evaluated_cache__ is _NOT_EVALUATED:
             self.__evaluated_cache__ = self.evaluate()
 
@@ -176,7 +177,7 @@ class StrawberryAnnotation:
         return resolved
 
     def _resolve(self) -> StrawberryType | type:
-        evaled_type = cast("Any", self._get_evaluated_annotation())
+        evaled_type = cast("Any", self._evaluated_annotation)
         return self._resolve_evaled_type(evaled_type)
 
     def _resolve_evaled_type(self, evaled_type: Any) -> StrawberryType | type:
