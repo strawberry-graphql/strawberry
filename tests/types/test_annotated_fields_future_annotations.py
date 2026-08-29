@@ -236,9 +236,8 @@ def test_nested_annotated_field_raises_error():
 
 
 def test_nested_annotated_field_with_later_forward_reference_raises_error():
-    global LaterWithNestedField
-
-    try:
+    def create_schema() -> None:
+        global LaterWithNestedField
 
         @strawberry.type
         class Query:
@@ -253,6 +252,9 @@ def test_nested_annotated_field_with_later_forward_reference_raises_error():
         class LaterWithNestedField:
             value: str
 
+        strawberry.Schema(query=Query)
+
+    try:
         with pytest.raises(
             InvalidStrawberryFieldAnnotationError,
             match=(
@@ -260,20 +262,30 @@ def test_nested_annotated_field_with_later_forward_reference_raises_error():
                 r"must be placed at the top level of the field annotation"
             ),
         ):
-            strawberry.Schema(query=Query)
+            create_schema()
     finally:
-        del LaterWithNestedField
+        globals().pop("LaterWithNestedField", None)
 
 
 def test_nested_annotated_field_with_unresolvable_type_raises_unresolved_error():
-    @strawberry.type
-    class Query:
-        values: list[
-            Annotated[UnresolvableType, strawberry.field(description="Nested")]
-        ]
+    if sys.version_info >= (3, 14):
+        with pytest.raises(InvalidStrawberryFieldAnnotationError):
 
-    with pytest.raises(UnresolvedFieldTypeError):
-        strawberry.Schema(query=Query)
+            @strawberry.type
+            class Query:
+                values: list[
+                    Annotated[UnresolvableType, strawberry.field(description="Nested")]
+                ]
+    else:
+
+        @strawberry.type
+        class Query:
+            values: list[
+                Annotated[UnresolvableType, strawberry.field(description="Nested")]
+            ]
+
+        with pytest.raises(UnresolvedFieldTypeError):
+            strawberry.Schema(query=Query)
 
 
 def test_field_owned_metadata_with_unresolved_forward_reference_is_not_rejected():
