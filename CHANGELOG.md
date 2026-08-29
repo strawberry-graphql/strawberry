@@ -1,6 +1,39 @@
 CHANGELOG
 =========
 
+0.324.3 - 2026-08-29
+--------------------
+
+This release fixes silently ignored `strawberry.field()` metadata in nested type
+annotations.
+
+Strawberry now raises a clear error when field metadata is placed below the
+class-field annotation, such as on a list item, and explains that it must be moved
+to the outermost `Annotated` metadata for the field.
+
+For example, Strawberry now reports this misplaced metadata:
+
+```python
+from typing import Annotated
+
+import strawberry
+
+
+@strawberry.type
+class Query:
+    names: list[Annotated[str, strawberry.field(description="A name")]]
+```
+
+Move `strawberry.field()` to the field's outermost `Annotated` metadata:
+
+```python
+@strawberry.type
+class Query:
+    names: Annotated[list[str], strawberry.field(description="The names")]
+```
+
+This release was contributed by [@patrick91](https://github.com/patrick91) in [#4595](https://github.com/strawberry-graphql/strawberry/pull/4595)
+
 0.324.2 - 2026-08-28
 --------------------
 

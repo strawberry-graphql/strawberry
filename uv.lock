@@ -3914,7 +3914,7 @@ wheels = [
 
 [[package]]
 name = "strawberry-graphql"
-version = "0.324.2"
+version = "0.324.3"
 source = { editable = "." }
 dependencies = [
     { name = "cross-web" },
