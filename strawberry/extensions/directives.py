@@ -2,8 +2,11 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
+from graphql import get_argument_values
+
 from strawberry.extensions import SchemaExtension
-from strawberry.types.nodes import convert_arguments
+from strawberry.types.arguments import convert_arguments
+from strawberry.utils import IS_GQL_33
 from strawberry.utils.await_maybe import await_maybe
 
 if TYPE_CHECKING:
@@ -76,7 +79,25 @@ def process_directive(
     strawberry_directive = schema.get_directive_by_name(directive_name)
     assert strawberry_directive is not None, f"Directive {directive_name} not found"
 
-    arguments = convert_arguments(info=info, nodes=directive.arguments)
+    directive_definition = info.schema.get_directive(directive_name)
+    assert directive_definition is not None, f"Directive {directive_name} not found"
+
+    variable_values: Any = info.variable_values
+    if IS_GQL_33 and not hasattr(variable_values, "coerced"):
+        # Strawberry exposes a plain dict, while graphql-core 3.3 expects its
+        # VariableValues container when coercing arguments.
+        from graphql.execution import values as execution_values
+
+        variable_values_type = vars(execution_values)["VariableValues"]
+        variable_values = variable_values_type({}, variable_values)
+
+    arguments = get_argument_values(directive_definition, directive, variable_values)
+    arguments = convert_arguments(
+        arguments,
+        strawberry_directive.arguments,
+        scalar_registry=schema.schema_converter.scalar_registry,
+        config=schema.config,
+    )
     resolver = strawberry_directive.resolver
 
     info_parameter = resolver.info_parameter
