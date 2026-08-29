@@ -1,6 +1,99 @@
 CHANGELOG
 =========
 
+0.324.4 - 2026-08-29
+--------------------
+
+This release fixes argument handling for operation directive resolvers.
+
+Arguments passed to operation directives now use GraphQL's standard coercion before
+your resolver runs. Directive resolvers receive Python numeric values, Strawberry
+enum members and nested input objects, and values parsed by custom scalars, whether
+clients use literals or variables.
+
+When a client omits a variable, Strawberry now applies the directive argument's
+default. Explicit `null` continues to reach nullable arguments as `None`.
+
+This release was contributed by [@patrick91](https://github.com/patrick91) in [#4596](https://github.com/strawberry-graphql/strawberry/pull/4596)
+
+0.324.3 - 2026-08-29
+--------------------
+
+This release fixes silently ignored `strawberry.field()` metadata in nested type
+annotations.
+
+Strawberry now raises a clear error when field metadata is placed below the
+class-field annotation, such as on a list item, and explains that it must be moved
+to the outermost `Annotated` metadata for the field.
+
+For example, Strawberry now reports this misplaced metadata:
+
+```python
+from typing import Annotated
+
+import strawberry
+
+
+@strawberry.type
+class Query:
+    names: list[Annotated[str, strawberry.field(description="A name")]]
+```
+
+Move `strawberry.field()` to the field's outermost `Annotated` metadata:
+
+```python
+@strawberry.type
+class Query:
+    names: Annotated[list[str], strawberry.field(description="The names")]
+```
+
+This release was contributed by [@patrick91](https://github.com/patrick91) in [#4595](https://github.com/strawberry-graphql/strawberry/pull/4595)
+
+0.324.2 - 2026-08-28
+--------------------
+
+This release fixes fields configured with `strawberry.field()` inside
+`typing.Annotated`.
+
+You can now use this syntax consistently on object types, input types, and
+interfaces, including in projects that use `from __future__ import annotations`:
+
+```python
+from typing import Annotated
+
+import strawberry
+
+Name = Annotated[
+    str,
+    strawberry.field(name="displayName", default="Anonymous"),
+]
+
+
+@strawberry.type
+class User:
+    name: Name
+```
+
+All `strawberry.field()` options are supported. Fields with `default` or
+`default_factory` can be omitted when creating an instance, and field
+configuration can be combined with other Strawberry metadata such as named
+unions.
+
+This release was contributed by [@patrick91](https://github.com/patrick91) in [#4594](https://github.com/strawberry-graphql/strawberry/pull/4594)
+
+Additional contributors: [@ampagent](https://github.com/ampagent), [@Patrick](https://github.com/Patrick)
+
+0.324.1 - 2026-08-28
+--------------------
+
+This release adds support for the upcoming Python 3.15.
+
+Strawberry's test suite now runs on Python 3.15.
+
+This release was contributed by [@patrick91](https://github.com/patrick91) in [#4565](https://github.com/strawberry-graphql/strawberry/pull/4565)
+
+Additional contributors: [@Patrick](https://github.com/Patrick), [@ampagent](https://github.com/ampagent)
+
 0.324.0 - 2026-08-10
 --------------------
 

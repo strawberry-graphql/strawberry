@@ -47,7 +47,7 @@ class ExampleExtension(SchemaExtension):
 def default_query_types_and_query() -> SchemaHelper:
     @strawberry.type
     class Person:
-        name: str = "Jess"
+        name: str = "Duck"
 
     @strawberry.type
     class Query:
