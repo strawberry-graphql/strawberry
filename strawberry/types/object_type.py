@@ -24,6 +24,7 @@ from typing_extensions import (
 
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.exceptions import (
+    InvalidStrawberryFieldAnnotationError,
     InvalidSuperclassInterfaceError,
     MissingFieldAnnotationError,
     MissingReturnAnnotationError,
@@ -40,6 +41,15 @@ from .field import StrawberryField, field
 from .type_resolver import _get_fields
 
 T = TypeVar("T", bound=builtins.type)
+
+
+def _contains_strawberry_field(annotation: object) -> bool:
+    if get_origin(annotation) is Annotated:
+        annotation, *metadata = get_args(annotation)
+        if any(isinstance(item, StrawberryField) for item in metadata):
+            return True
+
+    return any(_contains_strawberry_field(arg) for arg in get_args(annotation))
 
 
 def _process_annotated_fields(cls: T) -> dict[str, StrawberryAnnotation]:
@@ -70,10 +80,12 @@ def _process_annotated_fields(cls: T) -> dict[str, StrawberryAnnotation]:
         else:
             annotation = raw_annotation
 
-        if get_origin(annotation) is not Annotated:
-            continue
+        if get_origin(annotation) is Annotated:
+            first, *rest = get_args(annotation)
+        else:
+            first = annotation
+            rest = []
 
-        first, *rest = get_args(annotation)
         strawberry_fields = [arg for arg in rest if isinstance(arg, StrawberryField)]
 
         if len(strawberry_fields) > 1 or (
@@ -81,6 +93,12 @@ def _process_annotated_fields(cls: T) -> dict[str, StrawberryAnnotation]:
             and isinstance(cls.__dict__.get(field_name), StrawberryField)
         ):
             raise MultipleStrawberryFieldsError(field_name=field_name, cls=cls)
+
+        if _contains_strawberry_field(first):
+            raise InvalidStrawberryFieldAnnotationError(
+                field_name=field_name,
+                cls=cls,
+            )
 
         if not strawberry_fields:
             continue

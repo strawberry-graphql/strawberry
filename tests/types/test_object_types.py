@@ -7,7 +7,10 @@ from typing import Annotated, Optional, TypeVar
 import pytest
 
 import strawberry
-from strawberry.exceptions import MultipleStrawberryFieldsError
+from strawberry.exceptions import (
+    InvalidStrawberryFieldAnnotationError,
+    MultipleStrawberryFieldsError,
+)
 from strawberry.types.base import get_object_definition, has_object_definition
 from strawberry.types.field import StrawberryField
 
@@ -448,6 +451,60 @@ def test_annotated_field_with_other_annotations():
 
     assert field.python_name == "name"
     assert field.type is str
+
+
+@pytest.mark.parametrize(
+    "annotation",
+    [
+        list[Annotated[str, strawberry.field(description="List item")]],
+        Optional[Annotated[str, strawberry.field(description="Optional value")]],
+        list[
+            Optional[
+                Annotated[str, strawberry.field(description="Nested optional value")]
+            ]
+        ],
+    ],
+    ids=["list", "optional", "nested-wrappers"],
+)
+def test_nested_annotated_field_raises_error(annotation: object):
+    with pytest.raises(
+        InvalidStrawberryFieldAnnotationError,
+        match=(
+            r"`strawberry.field\(\)` for field `values` on type `Query` "
+            r"must be placed at the top level of the field annotation"
+        ),
+    ):
+
+        @strawberry.type
+        class Query:
+            values: annotation
+
+
+def test_nested_non_field_metadata_is_preserved():
+    class Colour(Enum):
+        RED = "red"
+
+    @strawberry.type
+    class Success:
+        value: str
+
+    @strawberry.type
+    class Failure:
+        message: str
+
+    @strawberry.type
+    class Query:
+        results: Annotated[
+            list[Annotated[Success | Failure, strawberry.union("NestedResult")]],
+            strawberry.field(description="The results"),
+        ]
+        colours: list[Annotated[Colour, strawberry.enum(name="NestedColour")]]
+
+    fields = {field.python_name: field for field in get_object_definition(Query).fields}
+
+    assert fields["results"].description == "The results"
+    assert fields["results"].type.of_type.graphql_name == "NestedResult"
+    assert fields["colours"].type.of_type.name == "NestedColour"
 
 
 def test_annotated_field_preserves_union_metadata():

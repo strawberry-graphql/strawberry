@@ -8,6 +8,7 @@ import pytest
 
 import strawberry
 from strawberry.exceptions import (
+    InvalidStrawberryFieldAnnotationError,
     MultipleStrawberryFieldsError,
     PrivateStrawberryFieldError,
 )
@@ -217,6 +218,34 @@ def test_multiple_annotated_fields_raise_error():
                 strawberry.field(description="First"),
                 strawberry.field(description="Second"),
             ]
+
+
+@pytest.mark.raises_strawberry_exception(
+    InvalidStrawberryFieldAnnotationError,
+    match=(
+        r"`strawberry.field\(\)` for field `values` on type `Query` "
+        r"must be placed at the top level of the field annotation"
+    ),
+)
+def test_nested_annotated_field_raises_error():
+    @strawberry.type
+    class Query:
+        values: list[Annotated[str, strawberry.field(description="Not the list field")]]
+
+
+def test_nested_lazy_metadata_is_preserved():
+    @strawberry.type
+    class Query:
+        children: Annotated[
+            list[Annotated[TypeC, strawberry.lazy("tests.schema.test_lazy.type_c")]],
+            strawberry.field(description="The children"),
+        ]
+
+    field = get_object_definition(Query).fields[0]
+
+    assert field.description == "The children"
+    assert isinstance(field.type.of_type, LazyType)
+    assert field.type.of_type.resolve_type().__name__ == "TypeC"
 
 
 @pytest.mark.skipif(

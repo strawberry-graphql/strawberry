@@ -158,6 +158,18 @@ Use only one `strawberry.field()` for each field. You can alternatively use the
 equivalent assignment syntax, such as
 `name: str = strawberry.field(description="The displayed name")`.
 
+`strawberry.field()` must be metadata on the field's outermost `Annotated` type.
+Placing it inside a wrapper configures no GraphQL field, so Strawberry raises an
+error instead of silently ignoring it:
+
+```python
+# Incorrect: strawberry.field() describes the list item, not `names`.
+names: list[Annotated[str, strawberry.field(description="A name")]]
+
+# Correct: strawberry.field() describes `names`.
+names: Annotated[list[str], strawberry.field(description="The names")]
+```
+
 ## API
 
 `@strawberry.type(name: str = None, description: str = None)`
