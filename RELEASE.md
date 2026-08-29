@@ -11,7 +11,7 @@ social_messages:
     existing benchmark coverage.
 ---
 
-This release improves the turnaround time of Strawberry's benchmark checks.
+This release adds parallel execution to Strawberry's benchmark checks.
 
 CodSpeed benchmarks now run across four parallel CI jobs while preserving the
 existing benchmark coverage and simulation mode.
