@@ -23,3 +23,10 @@ in the same way.
 A directive reused across the schema is defined only once. Input, enum, and scalar
 types referenced by directive arguments are now part of the schema and may appear
 in generated SDL even when they are not used by fields.
+
+Because these directives and argument types are now part of the runtime schema,
+their GraphQL names must be unique. Schema construction reports a clear error when
+different directive definitions share a name, a custom directive replaces a
+built-in directive such as `@skip`, or a directive argument type conflicts with
+another schema type. Compatible custom `@oneOf` definitions continue to use
+GraphQL's built-in directive.

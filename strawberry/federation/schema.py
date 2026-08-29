@@ -1,7 +1,5 @@
 from collections import defaultdict
 from collections.abc import Callable, Iterable, Mapping
-from functools import cached_property
-from itertools import chain
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -123,18 +121,6 @@ class Schema(BaseSchema):
             exception_handlers=exception_handlers,
         )
 
-        self.schema_directives = list(schema_directives)
-
-        # Validate directive compatibility with federation version
-        self._validate_directive_compatibility()
-
-        composed_directives = self._add_compose_directives()
-        self._add_link_directives(composed_directives)  # type: ignore
-
-        # Compose and link directives are generated after the base schema has
-        # collected attached directives, so include them in the runtime schema too.
-        self._register_schema_directives()
-
     def _get_federation_query_type(
         self,
         query: type[WithStrawberryObjectDefinition] | None,
@@ -246,27 +232,9 @@ class Schema(BaseSchema):
 
         return results
 
-    @cached_property
+    @property
     def schema_directives_in_use(self) -> list[object]:
-        all_graphql_types = self._schema.type_map.values()
-
-        directives: list[object] = []
-
-        for type_ in all_graphql_types:
-            strawberry_definition = type_.extensions.get("strawberry-definition")
-
-            if not strawberry_definition:
-                continue
-
-            directives.extend(strawberry_definition.directives)
-
-            fields = getattr(strawberry_definition, "fields", [])
-            values = getattr(strawberry_definition, "values", [])
-
-            for field in chain(fields, values):
-                directives.extend(field.directives)
-
-        return directives
+        return self._schema_directives_in_use
 
     def _add_link_for_composed_directive(
         self,
@@ -306,13 +274,13 @@ class Schema(BaseSchema):
         directive_by_url[url].add(f"@{name}")
 
     def _add_link_directives(
-        self, additional_directives: list[object] | None = None
+        self, additional_directives: Iterable[object] | None = None
     ) -> None:
         from .schema_directives import Link
 
         directive_by_url: defaultdict[str, set[str]] = defaultdict(set)
 
-        additional_directives = additional_directives or []
+        additional_directives = list(additional_directives or ())
 
         for directive in self.schema_directives_in_use + additional_directives:
             definition = directive.__strawberry_directive__  # type: ignore
@@ -378,6 +346,11 @@ class Schema(BaseSchema):
         # since it is expected to have federation directives
 
         pass
+
+    def _prepare_schema_directives(self) -> None:
+        self._validate_directive_compatibility()
+        composed_directives = self._add_compose_directives()
+        self._add_link_directives(composed_directives)
 
     def _should_register_schema_directive(self, directive: object) -> bool:
         return True

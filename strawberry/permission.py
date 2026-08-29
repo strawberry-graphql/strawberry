@@ -7,6 +7,7 @@ from inspect import iscoroutinefunction
 from typing import (
     TYPE_CHECKING,
     Any,
+    ClassVar,
 )
 
 from strawberry.exceptions import StrawberryGraphQLError
@@ -54,7 +55,7 @@ class BasePermission(abc.ABC):
 
     error_class: type[GraphQLError] = StrawberryGraphQLError
 
-    _schema_directive: object | None = None
+    _schema_directive: ClassVar[object | None] = None
 
     @abc.abstractmethod
     def has_permission(
@@ -106,19 +107,23 @@ class BasePermission(abc.ABC):
 
     @property
     def schema_directive(self) -> object:
-        if not self._schema_directive:
+        permission_class = self.__class__
+        if (
+            schema_directive := permission_class.__dict__.get("_schema_directive")
+        ) is None:
 
             class AutoDirective:
                 __strawberry_directive__ = StrawberrySchemaDirective(
-                    self.__class__.__name__,
-                    self.__class__.__name__,
+                    permission_class.__name__,
+                    permission_class.__name__,
                     [Location.FIELD_DEFINITION],
                     [],
                 )
 
-            self._schema_directive = AutoDirective()
+            schema_directive = AutoDirective()
+            permission_class._schema_directive = schema_directive
 
-        return self._schema_directive
+        return schema_directive
 
 
 class PermissionExtension(FieldExtension):

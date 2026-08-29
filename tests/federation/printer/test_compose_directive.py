@@ -1,10 +1,11 @@
 import textwrap
 
 import strawberry
+import strawberry.schema.schema as schema_module
 from strawberry.schema_directive import Location
 
 
-def test_schema_directives_and_compose_schema():
+def test_schema_directives_and_compose_schema(monkeypatch):
     @strawberry.federation.schema_directive(
         locations=[Location.OBJECT],
         name="cacheControl",
@@ -60,10 +61,29 @@ def test_schema_directives_and_compose_schema():
     }
     """
 
+    graphql_schema_calls = 0
+    graphql_schema = schema_module.GraphQLSchema
+    validated_schemas: list[object] = []
+    validate_schema = schema_module.validate_schema
+
+    def counting_graphql_schema(*args: object, **kwargs: object):
+        nonlocal graphql_schema_calls
+        graphql_schema_calls += 1
+        return graphql_schema(*args, **kwargs)
+
+    def tracking_validate_schema(schema: object):
+        validated_schemas.append(schema)
+        return validate_schema(schema)
+
+    monkeypatch.setattr(schema_module, "GraphQLSchema", counting_graphql_schema)
+    monkeypatch.setattr(schema_module, "validate_schema", tracking_validate_schema)
+
     schema = strawberry.federation.Schema(
         query=Query,
     )
 
+    assert graphql_schema_calls == 1
+    assert validated_schemas == [schema._schema]
     assert schema.as_str() == textwrap.dedent(expected_type).strip()
 
     result = schema.execute_sync(

@@ -3,8 +3,10 @@ import warnings
 from typing import Generic, NewType, TypeVar
 
 import pytest
+from graphql import build_schema
 
 import strawberry
+from strawberry.federation.types import FieldSet, LinkImport, LinkPurpose
 
 
 def test_entities_type_when_no_type_has_keys():
@@ -195,6 +197,44 @@ def test_user_type_named_like_private_federation_type_is_printed():
     """).strip()
 
     assert schema.as_str() == expected_sdl
+
+
+def test_private_federation_types_are_printed_when_used_by_fields():
+    @strawberry.type
+    class Query:
+        field_set: FieldSet
+        link_import: LinkImport
+        link_purpose: LinkPurpose
+
+    schema = strawberry.federation.Schema(query=Query)
+
+    expected_sdl = textwrap.dedent("""
+        type Query {
+          _service: _Service!
+          fieldSet: _FieldSet!
+          linkImport: link__Import!
+          linkPurpose: link__Purpose!
+        }
+
+        scalar _Any
+
+        scalar _FieldSet
+
+        type _Service {
+          sdl: String!
+        }
+
+        scalar link__Import
+
+        enum link__Purpose {
+          SECURITY
+          EXECUTION
+        }
+    """).strip()
+
+    sdl = schema.as_str()
+    assert sdl == expected_sdl
+    build_schema(sdl)
 
 
 def test_service():

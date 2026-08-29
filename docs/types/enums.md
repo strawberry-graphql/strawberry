@@ -187,3 +187,21 @@ When querying, the custom name will be used in the response:
 Note that the Python enum member name (`CHOCOLATE_COOKIE`) is still used in your
 Python code, while the custom name (`chocolateCookie`) is used in the GraphQL
 schema and responses.
+
+## Hiding integration support types from SDL
+
+Integration authors can pass `print_definition=False` to `strawberry.enum` for
+an enum that should be available to runtime introspection without normally
+appearing in Strawberry's generated SDL:
+
+```python
+@strawberry.enum(print_definition=False)
+class InternalPurpose(Enum):
+    SECURITY = "security"
+    EXECUTION = "execution"
+```
+
+If a regular field, argument, or printed directive definition uses the enum,
+Strawberry prints its definition to keep the generated SDL valid. This option is
+primarily intended for types used only by hidden schema directives and framework
+integrations.

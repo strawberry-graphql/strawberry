@@ -531,6 +531,33 @@ def test_permission_directives_added():
     assert print_schema(schema) == textwrap.dedent(expected_output).strip()
 
 
+def test_permission_directives_reused_across_fields():
+    class IsAuthorized(BasePermission):
+        def has_permission(self, source, info, **kwargs: typing.Any) -> bool:
+            return True
+
+    @strawberry.type
+    class Query:
+        first: str = strawberry.field(
+            extensions=[PermissionExtension([IsAuthorized()])]
+        )
+        second: str = strawberry.field(
+            extensions=[PermissionExtension([IsAuthorized()])]
+        )
+
+    schema = strawberry.Schema(query=Query)
+
+    expected_output = """
+    directive @isAuthorized on FIELD_DEFINITION
+
+    type Query {
+      first: String! @isAuthorized
+      second: String! @isAuthorized
+    }
+    """
+    assert print_schema(schema) == textwrap.dedent(expected_output).strip()
+
+
 def test_permission_directives_not_added_on_field():
     class IsAuthorized(BasePermission):
         message = "User is not authorized"

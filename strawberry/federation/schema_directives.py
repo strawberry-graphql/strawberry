@@ -28,6 +28,8 @@ class ImportedFrom:
 class FederationDirective:
     imported_from: ClassVar[ImportedFrom]
     minimum_version: ClassVar[FederationVersion]
+    # The base Schema does not install Federation's supporting scalar mappings.
+    __strawberry_register_definition__: ClassVar[bool] = False
 
 
 @schema_directive(
@@ -94,6 +96,9 @@ class Shareable(FederationDirective):
     locations=[Location.SCHEMA], name="link", repeatable=True, print_definition=False
 )
 class Link:
+    # The base Schema does not install Federation's supporting scalar mappings.
+    __strawberry_register_definition__: ClassVar[bool] = False
+
     url: str | None
     as_: str | None = directive_field(name="as")
     for_: LinkPurpose | None = directive_field(name="for")

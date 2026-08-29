@@ -48,6 +48,44 @@ type User @keys(fields: "id") {
 }
 ```
 
+## Introspection
+
+Directives attached to a Strawberry schema are included in standard GraphQL
+introspection. Tools can discover their descriptions, arguments, default values,
+locations, and repeatability with a query such as:
+
+```graphql
+{
+  __schema {
+    directives {
+      name
+      description
+      locations
+      isRepeatable
+      args {
+        name
+        defaultValue
+      }
+    }
+  }
+}
+```
+
+Input objects, enums, and scalars used only by directive arguments are also part
+of the runtime schema. Their GraphQL names must therefore be distinct from other
+types in the schema. Directive names must likewise be unique and cannot replace
+built-in directives such as `@skip` or `@deprecated`. Compatible legacy `@oneOf`
+definitions use GraphQL's built-in directive automatically.
+
+Directive argument annotations are resolved when the schema is built, in the
+same way as field and argument annotations elsewhere in the schema. Types
+imported only under `TYPE_CHECKING` should use
+[`strawberry.lazy`](/docs/types/lazy) so Strawberry can resolve them at runtime.
+
+Setting `print_definition=False` on `@strawberry.schema_directive` keeps its
+definition out of Strawberry's generated SDL, but the directive and its argument
+types stay available to runtime introspection.
+
 ## Overriding field names
 
 You can use `strawberry.directive_field` to override the name of a field:

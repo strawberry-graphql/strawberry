@@ -38,7 +38,6 @@ from graphql import (
     GraphQLSchema,
     OperationDefinitionNode,
     get_introspection_query,
-    get_named_type,
     parse,
     validate_schema,
 )
@@ -97,7 +96,7 @@ if TYPE_CHECKING:
 
     from graphql.language import DocumentNode
     from graphql.pyutils import Path
-    from graphql.type import GraphQLInputType, GraphQLResolveInfo
+    from graphql.type import GraphQLResolveInfo
     from graphql.validation import ASTValidationRule
 
     from strawberry.directive import StrawberryDirective
@@ -413,19 +412,21 @@ class Schema(BaseSchema):
         self._explicit_schema_directive_types = tuple(explicit_schema_directive_types)
 
         try:
+            self._schema_directive_types = self._collect_schema_directives(
+                self._explicit_schema_directive_types
+            )
             self._schema = GraphQLSchema(
                 query=self._graphql_query_type,
                 mutation=self._graphql_mutation_type,
                 subscription=self._graphql_subscription_type,
                 directives=self._collect_graphql_directives(
-                    self._explicit_schema_directive_types
+                    self._schema_directive_types
                 ),
                 types=self._graphql_types,
                 extensions={
                     GraphQLCoreConverter.DEFINITION_BACKREF: self,
                 },
             )
-            self._register_schema_directives()
 
         except TypeError as error:
             # GraphQL core throws a TypeError if there's any exception raised
@@ -496,26 +497,29 @@ class Schema(BaseSchema):
                 f"operation directive '{strawberry_directive.python_name}'",
             )
 
-        from strawberry.schema_directives import OneOf
-
         for directive_type in schema_directive_types:
+            graphql_directive = self._schema_graphql_directives[directive_type]
             strawberry_directive = cast("Any", directive_type).__strawberry_directive__
             directive_name = self.config.name_converter.from_directive(
                 strawberry_directive
             )
 
             # Strawberry's OneOf schema directive predates graphql-core exposing
-            # the specified @oneOf directive. Keep its SDL behavior while using
-            # the canonical runtime directive.
+            # the specified @oneOf directive. Treat compatible definitions as the
+            # canonical runtime directive regardless of the Python class used.
             if (
-                directive_type is OneOf
-                and directive_name == "oneOf"
-                and directive_name in self._graphql_directives
+                directive_name == "oneOf"
+                and (existing := self._graphql_directives.get(directive_name))
+                is not None
+                and existing[0] is existing[1]
+                and graphql_directive.locations == existing[0].locations
+                and graphql_directive.args.keys() == existing[0].args.keys()
+                and graphql_directive.is_repeatable == existing[0].is_repeatable
             ):
                 continue
 
             self._add_graphql_directive(
-                self.schema_converter.from_schema_directive(directive_type),
+                graphql_directive,
                 directive_type,
                 (
                     "schema directive "
@@ -533,17 +537,19 @@ class Schema(BaseSchema):
 
         return tuple(directive for directive, _, _ in self._graphql_directives.values())
 
-    def _register_schema_directives(self) -> None:
-        registered_schema_directive_types = getattr(
-            self,
-            "_schema_directive_types",
-            self._explicit_schema_directive_types,
-        )
-        schema_directive_types = list(registered_schema_directive_types)
+    def _collect_schema_directives(
+        self, explicit_schema_directive_types: Iterable[type]
+    ) -> tuple[type, ...]:
+        schema_directive_types = list(dict.fromkeys(explicit_schema_directive_types))
         seen_directive_types = set(schema_directive_types)
-        seen_directive_argument_types: set[str] = set()
+        seen_type_definitions: set[int] = set()
+        self._schema_graphql_directives: dict[type, GraphQLDirective] = {}
+        self._schema_directives_in_use: list[object] = []
 
-        def add_directive(directive: object) -> None:
+        def add_directive(directive: object, *, track_application: bool) -> None:
+            if track_application:
+                self._schema_directives_in_use.append(directive)
+
             directive_type = directive.__class__
             if (
                 self._should_register_schema_directive(directive)
@@ -553,90 +559,68 @@ class Schema(BaseSchema):
                 seen_directive_types.add(directive_type)
                 schema_directive_types.append(directive_type)
 
-        def add_directives(owner: object) -> None:
+        def add_directives(owner: object, *, track_application: bool) -> None:
             attached_directives = getattr(owner, "directives", ()) or ()
             if isinstance(attached_directives, Iterator):
                 attached_directives = list(attached_directives)
                 owner.directives = attached_directives  # type: ignore[attr-defined]
 
             for directive in attached_directives:
-                add_directive(directive)
-
-        def add_directives_from_graphql_type(
-            graphql_type: GraphQLNamedType, *, recurse_fields: bool = False
-        ) -> None:
-            type_definition = (graphql_type.extensions or {}).get(
-                GraphQLCoreConverter.DEFINITION_BACKREF
-            )
-            if type_definition is not None:
-                add_directives(type_definition)
-
-            for field in getattr(graphql_type, "fields", {}).values():
-                field_definition = (field.extensions or {}).get(
-                    GraphQLCoreConverter.DEFINITION_BACKREF
-                )
-                if field_definition is not None:
-                    add_directives(field_definition)
-
-                for argument in getattr(field, "args", {}).values():
-                    argument_definition = (argument.extensions or {}).get(
-                        GraphQLCoreConverter.DEFINITION_BACKREF
-                    )
-                    if argument_definition is not None:
-                        add_directives(argument_definition)
-
-                if recurse_fields:
-                    add_directives_from_argument_type(field.type)
-
-            for value in getattr(graphql_type, "values", {}).values():
-                value_definition = (value.extensions or {}).get(
-                    GraphQLCoreConverter.DEFINITION_BACKREF
-                )
-                if value_definition is not None:
-                    add_directives(value_definition)
-
-        def add_directives_from_argument_type(type_: GraphQLInputType) -> None:
-            graphql_type = get_named_type(type_)
-            if graphql_type.name in seen_directive_argument_types:
-                return
-
-            seen_directive_argument_types.add(graphql_type.name)
-            add_directives_from_graphql_type(graphql_type, recurse_fields=True)
+                add_directive(directive, track_application=track_application)
 
         for directive in self.schema_directives:
-            add_directive(directive)
+            add_directive(directive, track_application=False)
 
-        for graphql_type in self._schema.type_map.values():
-            add_directives_from_graphql_type(graphql_type)
-
-        # Directive arguments can introduce input types with more attached
-        # directives. Collect that closure before rebuilding the schema once.
         directive_index = 0
-        while directive_index < len(schema_directive_types):
-            directive_type = schema_directive_types[directive_index]
-            graphql_directive = self.schema_converter.from_schema_directive(
-                directive_type
-            )
-            for argument in graphql_directive.args.values():
-                add_directives_from_argument_type(argument.type)
-            directive_index += 1
 
-        self._schema_directive_types = tuple(schema_directive_types)
+        def collect_new_definitions() -> None:
+            nonlocal directive_index
 
-        if self._schema_directive_types == registered_schema_directive_types:
-            return
+            while True:
+                made_progress = False
 
-        self._schema = GraphQLSchema(
-            query=self._graphql_query_type,
-            mutation=self._graphql_mutation_type,
-            subscription=self._graphql_subscription_type,
-            directives=self._collect_graphql_directives(self._schema_directive_types),
-            types=self._graphql_types,
-            extensions={
-                GraphQLCoreConverter.DEFINITION_BACKREF: self,
-            },
-        )
-        self._schema._strawberry_schema = self  # type: ignore
+                for concrete_type in tuple(self.schema_converter.type_map.values()):
+                    definition = concrete_type.definition
+                    if id(definition) in seen_type_definitions:
+                        continue
+
+                    seen_type_definitions.add(id(definition))
+                    made_progress = True
+
+                    # Resolve lazy fields and unions so their reachable types are
+                    # added to the converter map before GraphQLSchema is built.
+                    tuple(getattr(concrete_type.implementation, "fields", {}).values())
+                    tuple(getattr(concrete_type.implementation, "types", ()))
+
+                    add_directives(definition, track_application=True)
+                    for field in getattr(definition, "fields", ()):
+                        add_directives(field, track_application=True)
+                        for argument in getattr(field, "arguments", ()):
+                            add_directives(argument, track_application=True)
+                    for value in getattr(definition, "values", ()):
+                        add_directives(value, track_application=True)
+
+                while directive_index < len(schema_directive_types):
+                    directive_type = schema_directive_types[directive_index]
+                    self._schema_graphql_directives[directive_type] = (
+                        self.schema_converter.from_schema_directive(directive_type)
+                    )
+                    directive_index += 1
+                    made_progress = True
+
+                if not made_progress:
+                    return
+
+        collect_new_definitions()
+        self._prepare_schema_directives()
+
+        # Subclasses can add schema applications such as Federation's generated
+        # @link and @composeDirective directives during preparation.
+        for directive in self.schema_directives:
+            add_directive(directive, track_application=False)
+        collect_new_definitions()
+
+        return tuple(schema_directive_types)
 
     def get_extensions(self, sync: bool = False) -> list[SchemaExtension]:
         # Deprecated instances are passed through as-is. The DeprecationWarning
@@ -1400,10 +1384,13 @@ class Schema(BaseSchema):
                 if not has_custom_resolve_id:
                     origin.resolve_id_attr()
 
-    def _should_register_schema_directive(self, directive: object) -> bool:
-        from strawberry.federation.schema_directives import FederationDirective
+    def _prepare_schema_directives(self) -> None:
+        pass
 
-        return not isinstance(directive, FederationDirective)
+    def _should_register_schema_directive(self, directive: object) -> bool:
+        # Integrations can opt out when their directives require schema-specific
+        # support types. Their Schema subclass can override this policy.
+        return getattr(directive, "__strawberry_register_definition__", True)
 
     def _warn_for_federation_directives(self) -> None:
         """Raises a warning if the schema has any federation directives."""

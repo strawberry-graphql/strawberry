@@ -539,13 +539,17 @@ class GraphQLCoreConverter:
             if default == dataclasses.MISSING:
                 default = UNSET
 
+            field_type = field.resolve_type()
+            if field_type is UNRESOLVED:
+                raise UnresolvedFieldTypeError(strawberry_directive, field)
+
             name = self.config.name_converter.get_graphql_name(field)
             args[name] = self.from_argument(
                 StrawberryArgument(
                     python_name=field.python_name or field.name,
                     graphql_name=None,
                     type_annotation=StrawberryAnnotation(
-                        annotation=field.type,
+                        annotation=field_type,
                         namespace=module.__dict__,
                     ),
                     default=default,

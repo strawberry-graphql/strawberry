@@ -12,6 +12,9 @@ from graphql import (
 )
 
 import strawberry
+import strawberry.schema.schema as schema_module
+from strawberry.exceptions import DuplicatedTypeName, UnresolvedFieldTypeError
+from strawberry.schema.schema_converter import GraphQLCoreConverter
 from strawberry.schema_directive import Location
 
 
@@ -274,6 +277,37 @@ def test_print_definition_false_remains_available_to_introspection():
     assert schema.as_str() == textwrap.dedent(expected).strip()
 
 
+def test_hidden_argument_types_are_printed_with_visible_directive_definitions():
+    HiddenValue = strawberry.scalar(str, name="HiddenValue", print_definition=False)
+
+    @strawberry.schema_directive(locations=[Location.FIELD_DEFINITION])
+    class Marker:
+        value: HiddenValue
+
+    @strawberry.type
+    class Query:
+        name: str = strawberry.field(
+            default="Patrick",
+            directives=[Marker(value="example")],
+        )
+
+    schema = strawberry.Schema(query=Query)
+
+    expected = """
+    directive @marker(value: HiddenValue!) on FIELD_DEFINITION
+
+    scalar HiddenValue
+
+    type Query {
+      name: String! @marker(value: "example")
+    }
+    """
+
+    sdl = schema.as_str()
+    assert sdl == textwrap.dedent(expected).strip()
+    build_schema(sdl)
+
+
 def test_registers_directives_from_all_type_system_attachment_points():
     def directive(name: str, location: Location) -> type:
         @strawberry.schema_directive(name=name, locations=[location])
@@ -382,6 +416,125 @@ def test_rejects_schema_directive_collisions_with_specified_directives():
         match=(
             r"Schema directive '@skip' is defined by both the built-in GraphQL "
             "directive and schema directive .*CustomSkip"
+        ),
+    ):
+        strawberry.Schema(query=Query)
+
+
+def test_compatible_custom_one_of_uses_specified_directive():
+    @strawberry.schema_directive(name="oneOf", locations=[Location.INPUT_OBJECT])
+    class LegacyOneOf: ...
+
+    @strawberry.input(directives=[LegacyOneOf()])
+    class Choice:
+        value: str | None
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def choose(self, choice: Choice) -> str:
+            return choice.value or ""
+
+    schema = strawberry.Schema(query=Query)
+
+    expected = """
+    directive @oneOf on INPUT_OBJECT
+
+    input Choice @oneOf {
+      value: String
+    }
+
+    type Query {
+      choose(choice: Choice!): String!
+    }
+    """
+
+    assert schema.as_str() == textwrap.dedent(expected).strip()
+    assert schema._schema.get_directive("oneOf") is not None
+
+
+def test_rejects_directive_argument_type_name_conflicts():
+    @strawberry.input(name="Conflict")
+    class DirectiveInput:
+        value: str
+
+    @strawberry.type(name="Conflict")
+    class RegularType:
+        value: str
+
+    @strawberry.schema_directive(locations=[Location.OBJECT])
+    class Marker:
+        config: DirectiveInput
+
+    @strawberry.type(directives=[Marker(config=DirectiveInput(value="directive"))])
+    class Query:
+        value: RegularType
+
+    with pytest.raises(
+        DuplicatedTypeName,
+        match="Type Conflict is defined multiple times in the schema",
+    ):
+        strawberry.Schema(query=Query)
+
+
+def test_constructs_graphql_schema_and_directive_definitions_once(monkeypatch):
+    @strawberry.schema_directive(locations=[Location.INPUT_OBJECT])
+    class OnConfig: ...
+
+    @strawberry.input(directives=[OnConfig()])
+    class Config:
+        value: str
+
+    @strawberry.schema_directive(locations=[Location.OBJECT])
+    class Marker:
+        config: Config
+
+    @strawberry.type(directives=[Marker(config=Config(value="example"))])
+    class Query:
+        value: str
+
+    graphql_schema_calls = 0
+    converted_directives: list[type] = []
+    graphql_schema = schema_module.GraphQLSchema
+    from_schema_directive = GraphQLCoreConverter.from_schema_directive
+
+    def counting_graphql_schema(*args: object, **kwargs: object):
+        nonlocal graphql_schema_calls
+        graphql_schema_calls += 1
+        return graphql_schema(*args, **kwargs)
+
+    def counting_from_schema_directive(self, directive_type):
+        converted_directives.append(directive_type)
+        return from_schema_directive(self, directive_type)
+
+    monkeypatch.setattr(schema_module, "GraphQLSchema", counting_graphql_schema)
+    monkeypatch.setattr(
+        GraphQLCoreConverter,
+        "from_schema_directive",
+        counting_from_schema_directive,
+    )
+
+    schema = strawberry.Schema(query=Query)
+    schema.as_str()
+
+    assert graphql_schema_calls == 1
+    assert converted_directives == [Marker, OnConfig]
+
+
+def test_reports_unresolved_directive_argument_types():
+    @strawberry.schema_directive(locations=[Location.OBJECT])
+    class Marker:
+        config: "MissingConfig"  # noqa: F821
+
+    @strawberry.type(directives=[Marker(config=None)])  # type: ignore[arg-type]
+    class Query:
+        name: str
+
+    with pytest.raises(
+        UnresolvedFieldTypeError,
+        match=(
+            r"Could not resolve the type of 'config'\. Check that the class is "
+            r"accessible from the global module scope\."
         ),
     ):
         strawberry.Schema(query=Query)

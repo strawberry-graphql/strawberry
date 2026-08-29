@@ -14,6 +14,7 @@ from graphql import (
     GraphQLInputField,
     GraphQLObjectType,
     GraphQLSchema,
+    get_named_type,
     is_union_type,
 )
 from graphql.language.printer import print_ast
@@ -159,7 +160,11 @@ def print_schema_directive(
         "StrawberrySchemaDirective", directive.__class__.__strawberry_directive__
     )
     schema_converter = schema.schema_converter
-    gql_directive = schema_converter.from_schema_directive(directive.__class__)
+    gql_directive = getattr(schema, "_schema_graphql_directives", {}).get(
+        directive.__class__
+    )
+    if gql_directive is None:
+        gql_directive = schema_converter.from_schema_directive(directive.__class__)
     params = print_schema_directive_params(
         gql_directive,
         {
@@ -597,10 +602,68 @@ def is_builtin_directive(directive: GraphQLDirective) -> bool:
     return False
 
 
-def _should_print_type(type_: GraphQLNamedType) -> bool:
+def _should_print_type(type_: GraphQLNamedType, schema_type_names: set[str]) -> bool:
     strawberry_definition = type_.extensions.get("strawberry-definition")
 
-    return getattr(strawberry_definition, "print_definition", True)
+    return (
+        getattr(strawberry_definition, "print_definition", True)
+        or type_.name in schema_type_names
+    )
+
+
+def _get_schema_type_names(schema: BaseSchema) -> set[str]:
+    graphql_schema = cast("GraphQLSchema", schema._schema)  # type: ignore[attr-defined]
+    stack = [
+        graphql_schema.query_type,
+        graphql_schema.mutation_type,
+        graphql_schema.subscription_type,
+        *schema._graphql_types,  # type: ignore[attr-defined]
+    ]
+
+    for type_ in graphql_schema.type_map.values():
+        strawberry_definition = type_.extensions.get("strawberry-definition")
+        if is_defined_type(type_) and getattr(
+            strawberry_definition, "print_definition", True
+        ):
+            stack.append(type_)
+
+    for directive in graphql_schema.directives:
+        if is_builtin_directive(directive):
+            continue
+
+        strawberry_definition = directive.extensions.get("strawberry-definition")
+        if (
+            isinstance(strawberry_definition, StrawberrySchemaDirective)
+            and not strawberry_definition.print_definition
+        ):
+            continue
+
+        stack.extend(argument.type for argument in directive.args.values())
+
+    type_names: set[str] = set()
+
+    while stack:
+        type_ = stack.pop()
+        if type_ is None:
+            continue
+
+        named_type = get_named_type(type_)
+        if named_type.name in type_names:
+            continue
+
+        type_names.add(named_type.name)
+        stack.extend(getattr(named_type, "interfaces", ()))
+        stack.extend(getattr(named_type, "types", ()))
+        if is_interface_type(named_type):
+            stack.extend(graphql_schema.get_possible_types(named_type))
+
+        for field in getattr(named_type, "fields", {}).values():
+            stack.append(field.type)
+            stack.extend(
+                argument.type for argument in getattr(field, "args", {}).values()
+            )
+
+    return type_names
 
 
 def print_schema(schema: BaseSchema) -> str:
@@ -617,10 +680,12 @@ def print_schema(schema: BaseSchema) -> str:
     ]
 
     type_map = graphql_core_schema.type_map
+    schema_type_names = _get_schema_type_names(schema)
     types = [
         type_
         for type_name in sorted(type_map)
-        if is_defined_type(type_ := type_map[type_name]) and _should_print_type(type_)
+        if is_defined_type(type_ := type_map[type_name])
+        and _should_print_type(type_, schema_type_names)
     ]
 
     types_printed = [_print_type(type_, schema, extras=extras) for type_ in types]
@@ -655,7 +720,7 @@ def print_schema(schema: BaseSchema) -> str:
                 "GraphQLNamedType", schema.schema_converter.from_type(type_)
             )
 
-            if not _should_print_type(graphql_type):
+            if not _should_print_type(graphql_type, schema_type_names):
                 continue
 
             # Skip types that are already part of the schema's type map, otherwise

@@ -170,6 +170,26 @@ from strawberry.scalars import Base16, Base32, Base64
 
 </Note>
 
+### Hiding integration support types from SDL
+
+Integration authors can pass `print_definition=False` to `strawberry.scalar` for
+a support type that should be available to runtime introspection without
+normally appearing in Strawberry's generated SDL:
+
+```python
+InternalIDScalar = strawberry.scalar(
+    name="InternalID",
+    serialize=str,
+    parse_value=str,
+    print_definition=False,
+)
+```
+
+If a regular field, argument, or printed directive definition uses the scalar,
+Strawberry prints its definition to keep the generated SDL valid. This option is
+primarily intended for types used only by hidden schema directives and framework
+integrations.
+
 ## Example: Custom Object Scalar
 
 Suppose we would like to use a Pillow `Image` as a scalar that serializes
