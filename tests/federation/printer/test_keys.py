@@ -62,8 +62,6 @@ def test_keys_federation_2():
 
         union _Entity = Product | Review
 
-        scalar _FieldSet
-
         type _Service {
           sdl: String!
         }

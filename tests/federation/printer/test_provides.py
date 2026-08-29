@@ -67,8 +67,6 @@ def test_field_provides_are_printed_correctly_camel_case_on():
 
         union _Entity = Product
 
-        scalar _FieldSet
-
         type _Service {
           sdl: String!
         }
@@ -139,8 +137,6 @@ def test_field_provides_are_printed_correctly_camel_case_off():
         scalar _Any
 
         union _Entity = Product
-
-        scalar _FieldSet
 
         type _Service {
           sdl: String!

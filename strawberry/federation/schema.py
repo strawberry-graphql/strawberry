@@ -32,6 +32,7 @@ from .versions import format_version, parse_version
 
 if TYPE_CHECKING:
     from graphql import ExecutionContext as GraphQLExecutionContext
+    from graphql import GraphQLNamedType
 
     from strawberry.extensions import SchemaExtension
     from strawberry.federation.schema_directives import ComposeDirective
@@ -43,6 +44,14 @@ if TYPE_CHECKING:
 
 FederationAny = NewType("FederationAny", object)
 """Represents the _Any scalar type used in federation entity resolution."""
+
+_PRIVATE_FEDERATION_TYPES = frozenset(
+    {
+        "_FieldSet",
+        "link__Import",
+        "link__Purpose",
+    }
+)
 
 
 class Schema(BaseSchema):
@@ -369,6 +378,9 @@ class Schema(BaseSchema):
 
     def _should_register_schema_directive(self, directive: object) -> bool:
         return True
+
+    def _should_include_type_in_sdl(self, graphql_type: "GraphQLNamedType") -> bool:
+        return graphql_type.name not in _PRIVATE_FEDERATION_TYPES
 
 
 def _get_entity_type(

@@ -615,6 +615,7 @@ def print_schema(schema: BaseSchema) -> str:
         type_
         for type_name in sorted(type_map)
         if is_defined_type(type_ := type_map[type_name])
+        and schema._should_include_type_in_sdl(type_)
     ]
 
     types_printed = [_print_type(type_, schema, extras=extras) for type_ in types]
@@ -648,6 +649,9 @@ def print_schema(schema: BaseSchema) -> str:
             graphql_type = cast(
                 "GraphQLNamedType", schema.schema_converter.from_type(type_)
             )
+
+            if not schema._should_include_type_in_sdl(graphql_type):
+                continue
 
             # Skip types that are already part of the schema's type map, otherwise
             # they'd be printed twice (e.g. an enum used both as a regular type and

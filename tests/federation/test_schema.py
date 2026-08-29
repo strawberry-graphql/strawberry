@@ -101,8 +101,6 @@ def test_entities_type():
 
         union _Entity = Product
 
-        scalar _FieldSet
-
         type _Service {
           sdl: String!
         }
@@ -118,6 +116,10 @@ def test_entities_type():
                     name
                 }
             }
+            fieldSet: __type(name: "_FieldSet") {
+                kind
+                name
+            }
         }
     """
 
@@ -126,7 +128,8 @@ def test_entities_type():
     assert not result.errors
 
     assert result.data == {
-        "__type": {"kind": "UNION", "possibleTypes": [{"name": "Product"}]}
+        "__type": {"kind": "UNION", "possibleTypes": [{"name": "Product"}]},
+        "fieldSet": {"kind": "SCALAR", "name": "_FieldSet"},
     }
 
 

@@ -34,16 +34,30 @@ def test_link_directive():
         type _Service {
           sdl: String!
         }
-
-        scalar link__Import
-
-        enum link__Purpose {
-          SECURITY
-          EXECUTION
-        }
     """
 
     assert schema.as_str() == textwrap.dedent(expected).strip()
+
+    result = schema.execute_sync(
+        """
+        {
+          importType: __type(name: "link__Import") {
+            kind
+            name
+          }
+          purposeType: __type(name: "link__Purpose") {
+            kind
+            name
+          }
+        }
+        """
+    )
+
+    assert result.errors is None
+    assert result.data == {
+        "importType": {"kind": "SCALAR", "name": "link__Import"},
+        "purposeType": {"kind": "ENUM", "name": "link__Purpose"},
+    }
 
 
 @skip_if_gql_32("formatting is different in gql 3.2")
@@ -97,13 +111,6 @@ def test_link_directive_imports():
     type _Service {
       sdl: String!
     }
-
-    scalar link__Import
-
-    enum link__Purpose {
-      SECURITY
-      EXECUTION
-    }
     """
 
     assert schema.as_str() == textwrap.dedent(expected).strip()
@@ -138,8 +145,6 @@ def test_adds_link_directive_automatically():
         scalar _Any
 
         union _Entity = User
-
-        scalar _FieldSet
 
         type _Service {
           sdl: String!
@@ -183,8 +188,6 @@ def test_adds_link_directive_from_interface():
         }
 
         scalar _Any
-
-        scalar _FieldSet
 
         type _Service {
           sdl: String!
@@ -269,8 +272,6 @@ def test_adds_link_directive_automatically_from_field():
 
         union _Entity = User
 
-        scalar _FieldSet
-
         type _Service {
           sdl: String!
         }
@@ -308,8 +309,6 @@ def test_adds_directive_link_for_federation():
         scalar _Any
 
         union _Entity = User
-
-        scalar _FieldSet
 
         type _Service {
           sdl: String!
@@ -357,8 +356,6 @@ def test_adds_link_directive_automatically_from_scalar():
         scalar _Any
 
         union _Entity = User
-
-        scalar _FieldSet
 
         type _Service {
           sdl: String!
