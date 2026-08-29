@@ -1,3 +1,4 @@
+import textwrap
 from enum import Enum
 from typing import Annotated
 
@@ -37,11 +38,20 @@ def test_registers_reused_directives_and_preserves_application_order():
     ]
     assert len(directives) == 1
 
+    expected = """
+    directive @marker(name: String!) repeatable on SCHEMA | OBJECT | FIELD_DEFINITION
+
+    schema @marker(name: "schema") {
+      query: Query
+    }
+
+    type Query @marker(name: "object-1") @marker(name: "object-2") {
+      name: String! @marker(name: "field")
+    }
+    """
+
     sdl = schema.as_str()
-    assert sdl.count("directive @marker") == 1
-    assert 'schema @marker(name: "schema")' in sdl
-    assert 'type Query @marker(name: "object-1") @marker(name: "object-2")' in sdl
-    assert 'name: String! @marker(name: "field")' in sdl
+    assert sdl == textwrap.dedent(expected).strip()
     build_schema(sdl)
 
 
@@ -135,8 +145,17 @@ def test_explicit_directive_type_is_reconciled_with_attached_uses():
     assert (
         sum(directive.name == "marker" for directive in schema._schema.directives) == 1
     )
+
+    expected = """
+    directive @marker on OBJECT
+
+    type Query @marker {
+      name: String!
+    }
+    """
+
     sdl = schema.as_str()
-    assert sdl.count("directive @marker") == 1
+    assert sdl == textwrap.dedent(expected).strip()
     build_schema(sdl)
 
 
@@ -165,21 +184,13 @@ def test_registers_nested_directive_argument_input_types():
 
     @strawberry.schema_directive(locations=[Location.FIELD_DEFINITION])
     class Protected:
-        policy: Policy
+        policy: Policy | None = strawberry.UNSET
 
     @strawberry.type
     class Query:
         name: str = strawberry.field(
             default="Patrick",
-            directives=[
-                Protected(
-                    policy=Policy(
-                        rule=Rule(value="private"),
-                        mode=Mode.PRIVATE,
-                        secret="token",
-                    )
-                )
-            ],
+            directives=[Protected()],
         )
 
     schema = strawberry.Schema(query=Query)
@@ -194,13 +205,36 @@ def test_registers_nested_directive_argument_input_types():
     assert schema._schema.get_directive("onNestedInput") is not None
     assert schema._schema.get_directive("onNestedInputField") is not None
 
+    expected = """
+    directive @onNestedInput on INPUT_OBJECT
+
+    directive @onNestedInputField on INPUT_FIELD_DEFINITION
+
+    directive @protected(policy: Policy) on FIELD_DEFINITION
+
+    enum Mode {
+      PRIVATE
+    }
+
+    input Policy {
+      rule: Rule!
+      mode: Mode!
+      secret: Secret!
+    }
+
+    type Query {
+      name: String! @protected
+    }
+
+    input Rule @onNestedInput {
+      value: String! @onNestedInputField
+    }
+
+    scalar Secret
+    """
+
     sdl = schema.as_str()
-    assert sdl.count("directive @onNestedInput on INPUT_OBJECT") == 1
-    assert sdl.count("directive @onNestedInputField on INPUT_FIELD_DEFINITION") == 1
-    assert sdl.count("input Policy") == 1
-    assert sdl.count("input Rule") == 1
-    assert sdl.count("enum Mode") == 1
-    assert sdl.count("scalar Secret") == 1
+    assert sdl == textwrap.dedent(expected).strip()
     build_schema(sdl)
 
 
@@ -213,13 +247,13 @@ def test_print_definition_false_remains_available_to_introspection():
         locations=[Location.FIELD_DEFINITION], print_definition=False
     )
     class Hidden:
-        config: HiddenConfig
+        config: HiddenConfig | None = strawberry.UNSET
 
     @strawberry.type
     class Query:
         name: str = strawberry.field(
             default="Patrick",
-            directives=[Hidden(config=HiddenConfig(reason="private"))],
+            directives=[Hidden()],
         )
 
     schema = strawberry.Schema(query=Query)
@@ -227,11 +261,17 @@ def test_print_definition_false_remains_available_to_introspection():
     assert schema._schema.get_directive("hidden") is not None
     assert schema._schema.get_type("HiddenConfig") is not None
 
-    sdl = schema.as_str()
-    assert "directive @hidden" not in sdl
-    assert "input HiddenConfig" in sdl
-    assert "@hidden(config:" in sdl
-    assert 'reason: "private"' in sdl
+    expected = """
+    input HiddenConfig {
+      reason: String!
+    }
+
+    type Query {
+      name: String! @hidden
+    }
+    """
+
+    assert schema.as_str() == textwrap.dedent(expected).strip()
 
 
 def test_registers_directives_from_all_type_system_attachment_points():
