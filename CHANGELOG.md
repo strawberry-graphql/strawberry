@@ -1,6 +1,21 @@
 CHANGELOG
 =========
 
+0.324.4 - 2026-08-29
+--------------------
+
+This release fixes argument handling for operation directive resolvers.
+
+Arguments passed to operation directives now use GraphQL's standard coercion before
+your resolver runs. Directive resolvers receive Python numeric values, Strawberry
+enum members and nested input objects, and values parsed by custom scalars, whether
+clients use literals or variables.
+
+When a client omits a variable, Strawberry now applies the directive argument's
+default. Explicit `null` continues to reach nullable arguments as `None`.
+
+This release was contributed by [@patrick91](https://github.com/patrick91) in [#4596](https://github.com/strawberry-graphql/strawberry/pull/4596)
+
 0.324.3 - 2026-08-29
 --------------------
 
