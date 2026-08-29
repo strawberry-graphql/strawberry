@@ -73,3 +73,18 @@ def test_set_anntation():
     annotation.annotation = str
 
     assert annotation.annotation is str
+
+
+def test_evaluation_is_cached_between_annotation_and_resolve():
+    class CountingAnnotation(StrawberryAnnotation):
+        evaluations = 0
+
+        def evaluate(self) -> type:
+            self.evaluations += 1
+            return super().evaluate()
+
+    annotation = CountingAnnotation("int")
+
+    assert annotation.annotation is int
+    assert annotation.resolve() is int
+    assert annotation.evaluations == 1

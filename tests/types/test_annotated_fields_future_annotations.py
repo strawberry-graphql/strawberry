@@ -8,8 +8,10 @@ import pytest
 
 import strawberry
 from strawberry.exceptions import (
+    InvalidStrawberryFieldAnnotationError,
     MultipleStrawberryFieldsError,
     PrivateStrawberryFieldError,
+    UnresolvedFieldTypeError,
 )
 from strawberry.extensions import FieldExtension
 from strawberry.permission import BasePermission, PermissionExtension
@@ -19,6 +21,7 @@ from strawberry.types.lazy_type import LazyType
 
 if TYPE_CHECKING:
     from tests.schema.test_lazy.type_c import TypeC
+    from tests.schema.test_lazy.type_c import TypeC as UnresolvableType
 
 
 class AllowAll(BasePermission):
@@ -217,6 +220,100 @@ def test_multiple_annotated_fields_raise_error():
                 strawberry.field(description="First"),
                 strawberry.field(description="Second"),
             ]
+
+
+@pytest.mark.raises_strawberry_exception(
+    InvalidStrawberryFieldAnnotationError,
+    match=(
+        r"`strawberry.field\(\)` for field `values` on type `Query` "
+        r"must be placed at the top level of the field annotation"
+    ),
+)
+def test_nested_annotated_field_raises_error():
+    @strawberry.type
+    class Query:
+        values: list[Annotated[str, strawberry.field(description="Not the list field")]]
+
+
+def test_nested_annotated_field_with_later_forward_reference_raises_error():
+    def create_schema() -> None:
+        global LaterWithNestedField
+
+        @strawberry.type
+        class Query:
+            values: list[
+                Annotated[
+                    LaterWithNestedField,
+                    strawberry.field(description="Not the list field"),
+                ]
+            ]
+
+        @strawberry.type
+        class LaterWithNestedField:
+            value: str
+
+        strawberry.Schema(query=Query)
+
+    try:
+        with pytest.raises(
+            InvalidStrawberryFieldAnnotationError,
+            match=(
+                r"`strawberry.field\(\)` for field `values` on type `Query` "
+                r"must be placed at the top level of the field annotation"
+            ),
+        ):
+            create_schema()
+    finally:
+        globals().pop("LaterWithNestedField", None)
+
+
+def test_nested_annotated_field_with_unresolvable_type_raises_unresolved_error():
+    if sys.version_info >= (3, 14):
+        with pytest.raises(InvalidStrawberryFieldAnnotationError):
+
+            @strawberry.type
+            class Query:
+                values: list[
+                    Annotated[UnresolvableType, strawberry.field(description="Nested")]
+                ]
+    else:
+
+        @strawberry.type
+        class Query:
+            values: list[
+                Annotated[UnresolvableType, strawberry.field(description="Nested")]
+            ]
+
+        with pytest.raises(UnresolvedFieldTypeError):
+            strawberry.Schema(query=Query)
+
+
+def test_field_owned_metadata_with_unresolved_forward_reference_is_not_rejected():
+    @strawberry.type
+    class Query:
+        values: Annotated[
+            list[TypeC],
+            strawberry.field(description="The list field"),
+        ]
+
+    field = get_object_definition(Query).fields[0]
+
+    assert field.python_name == "values"
+
+
+def test_nested_lazy_metadata_is_preserved():
+    @strawberry.type
+    class Query:
+        children: Annotated[
+            list[Annotated[TypeC, strawberry.lazy("tests.schema.test_lazy.type_c")]],
+            strawberry.field(description="The children"),
+        ]
+
+    field = get_object_definition(Query).fields[0]
+
+    assert field.description == "The children"
+    assert isinstance(field.type.of_type, LazyType)
+    assert field.type.of_type.resolve_type().__name__ == "TypeC"
 
 
 @pytest.mark.skipif(

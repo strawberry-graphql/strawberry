@@ -49,6 +49,27 @@ def test_literal():
     assert field.type is bool
 
 
+def test_field_annotation_validation_is_cached(mocker):
+    contains_strawberry_field = mocker.patch(
+        "strawberry.types.field._contains_strawberry_field",
+        return_value=False,
+    )
+    field = StrawberryField(
+        python_name="value",
+        type_annotation=StrawberryAnnotation(str),
+        origin=object,
+    )
+
+    assert field.resolve_type() is str
+    assert field.resolve_type() is str
+    contains_strawberry_field.assert_called_once_with(str)
+
+    field.type_annotation = StrawberryAnnotation(int)
+
+    assert field.resolve_type() is int
+    assert contains_strawberry_field.call_count == 2
+
+
 def test_object():
     @strawberry.type
     class TypeyType:
