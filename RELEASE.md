@@ -16,7 +16,9 @@ This release fixes introspection for custom schema directives.
 Schema directives attached to types, fields, arguments, and other schema elements
 now appear in standard GraphQL introspection. Schema explorers, IDEs, code
 generators, and other tools can discover each directive's description, arguments,
-allowed locations, repeatability, and any input types it uses.
+allowed locations, repeatability, and any input types it uses. Federation directives,
+including generated `@link` and `@composeDirective` applications, are discoverable
+in the same way.
 
 A directive reused across the schema is defined only once. Input, enum, and scalar
 types referenced by directive arguments are now part of the schema and may appear

@@ -66,6 +66,31 @@ def test_schema_directives_and_compose_schema():
 
     assert schema.as_str() == textwrap.dedent(expected_type).strip()
 
+    result = schema.execute_sync(
+        """
+        {
+          __schema {
+            directives {
+              name
+            }
+          }
+        }
+        """
+    )
+
+    assert result.errors is None
+    directive_names = {
+        directive["name"] for directive in result.data["__schema"]["directives"]
+    }
+    assert {
+        "cacheControl",
+        "sensitive",
+        "key",
+        "shareable",
+        "composeDirective",
+        "link",
+    } <= directive_names
+
 
 def test_schema_directives_and_compose_schema_custom_import_url():
     @strawberry.federation.schema_directive(

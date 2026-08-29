@@ -131,6 +131,10 @@ class Schema(BaseSchema):
         composed_directives = self._add_compose_directives()
         self._add_link_directives(composed_directives)  # type: ignore
 
+        # Compose and link directives are generated after the base schema has
+        # collected attached directives, so include them in the runtime schema too.
+        self._register_schema_directives()
+
     def _get_federation_query_type(
         self,
         query: type[WithStrawberryObjectDefinition] | None,

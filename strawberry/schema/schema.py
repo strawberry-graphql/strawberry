@@ -534,7 +534,12 @@ class Schema(BaseSchema):
         return tuple(directive for directive, _, _ in self._graphql_directives.values())
 
     def _register_schema_directives(self) -> None:
-        schema_directive_types = list(self._explicit_schema_directive_types)
+        registered_schema_directive_types = getattr(
+            self,
+            "_schema_directive_types",
+            self._explicit_schema_directive_types,
+        )
+        schema_directive_types = list(registered_schema_directive_types)
         seen_directive_types = set(schema_directive_types)
         seen_directive_argument_types: set[str] = set()
 
@@ -618,7 +623,7 @@ class Schema(BaseSchema):
 
         self._schema_directive_types = tuple(schema_directive_types)
 
-        if self._schema_directive_types == self._explicit_schema_directive_types:
+        if self._schema_directive_types == registered_schema_directive_types:
             return
 
         self._schema = GraphQLSchema(
@@ -631,6 +636,7 @@ class Schema(BaseSchema):
                 GraphQLCoreConverter.DEFINITION_BACKREF: self,
             },
         )
+        self._schema._strawberry_schema = self  # type: ignore
 
     def get_extensions(self, sync: bool = False) -> list[SchemaExtension]:
         # Deprecated instances are passed through as-is. The DeprecationWarning
