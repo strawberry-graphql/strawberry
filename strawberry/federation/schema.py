@@ -14,7 +14,6 @@ from typing import (
 
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.printer import print_schema
-from strawberry.printer.printer import PRINT_DEFINITION
 from strawberry.schema import Schema as BaseSchema
 from strawberry.types.base import (
     StrawberryContainer,
@@ -28,7 +27,7 @@ from strawberry.types.union import StrawberryUnion
 from strawberry.utils.inspect import get_func_args
 
 from .schema_directive import StrawberryFederationSchemaDirective
-from .types import FieldSet, LinkImport, LinkPurpose
+from .types import FieldSet, LinkImport
 from .versions import format_version, parse_version
 
 if TYPE_CHECKING:
@@ -88,26 +87,24 @@ class Schema(BaseSchema):
         types = [*types, FederationAny]
 
         # Add federation scalars to scalar_overrides so they can be recognized
-        field_set_scalar = scalar(
-            name="_FieldSet", serialize=lambda v: v, parse_value=str
-        )
-        link_import_scalar = scalar(
-            name="link__Import", serialize=lambda v: v, parse_value=lambda v: v
-        )
-        private_type_definitions = (
-            field_set_scalar,
-            link_import_scalar,
-            LinkPurpose.__strawberry_definition__,  # type: ignore[attr-defined]
-        )
-
         federation_scalar_overrides: dict[
             object, type | ScalarDefinition | ScalarWrapper
         ] = {
             FederationAny: scalar(
                 name="_Any", serialize=lambda v: v, parse_value=lambda v: v
             ),
-            FieldSet: field_set_scalar,
-            LinkImport: link_import_scalar,
+            FieldSet: scalar(
+                name="_FieldSet",
+                serialize=lambda v: v,
+                parse_value=str,
+                print_definition=False,
+            ),
+            LinkImport: scalar(
+                name="link__Import",
+                serialize=lambda v: v,
+                parse_value=lambda v: v,
+                print_definition=False,
+            ),
         }
         if scalar_overrides:
             federation_scalar_overrides.update(scalar_overrides)
@@ -125,18 +122,6 @@ class Schema(BaseSchema):
             schema_directives=schema_directives,
             exception_handlers=exception_handlers,
         )
-
-        # These types are imported from Federation specs. Keep them in the runtime
-        # schema for directive introspection without defining them in subgraph SDL.
-        for graphql_type in self._schema.type_map.values():
-            strawberry_definition = graphql_type.extensions.get(
-                self.schema_converter.DEFINITION_BACKREF
-            )
-            if any(
-                strawberry_definition is definition
-                for definition in private_type_definitions
-            ):
-                graphql_type.extensions[PRINT_DEFINITION] = False
 
         self.schema_directives = list(schema_directives)
 

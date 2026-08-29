@@ -51,6 +51,7 @@ class ScalarDefinition(StrawberryType):
     # used for better error messages
     _source_file: str | None = None
     _source_line: int | None = None
+    print_definition: bool = True
 
     def copy_with(
         self, type_var_map: Mapping[str, StrawberryType | type]
@@ -92,6 +93,7 @@ def _process_scalar(
     parse_value: GraphQLScalarValueParser | None = None,
     parse_literal: GraphQLScalarLiteralParser | None = None,
     directives: Iterable[object] = (),
+    print_definition: bool = True,
 ) -> ScalarWrapper:
     from strawberry.exceptions.handler import should_use_rich_exceptions
 
@@ -115,6 +117,7 @@ def _process_scalar(
         parse_literal=parse_literal,
         parse_value=parse_value,
         directives=directives,
+        print_definition=print_definition,
         origin=cls,  # type: ignore[arg-type]
         _source_file=_source_file,
         _source_line=_source_line,
@@ -134,6 +137,7 @@ def scalar(
     parse_value: GraphQLScalarValueParser | None = None,
     parse_literal: GraphQLScalarLiteralParser | None = None,
     directives: Iterable[object] = (),
+    print_definition: bool = True,
 ) -> ScalarDefinition: ...
 
 
@@ -148,6 +152,7 @@ def scalar(
     parse_value: GraphQLScalarValueParser | None = None,
     parse_literal: GraphQLScalarLiteralParser | None = None,
     directives: Iterable[object] = (),
+    print_definition: bool = True,
 ) -> Callable[[_T], _T]: ...
 
 
@@ -162,6 +167,7 @@ def scalar(
     parse_value: GraphQLScalarValueParser | None = None,
     parse_literal: GraphQLScalarLiteralParser | None = None,
     directives: Iterable[object] = (),
+    print_definition: bool = True,
 ) -> _T: ...
 
 
@@ -178,6 +184,7 @@ def scalar(
     parse_value: GraphQLScalarValueParser | None = None,
     parse_literal: GraphQLScalarLiteralParser | None = None,
     directives: Iterable[object] = (),
+    print_definition: bool = True,
 ) -> Any:
     """Annotates a class or type as a GraphQL custom scalar.
 
@@ -204,6 +211,7 @@ def scalar(
         parse_value: The function to parse the value.
         parse_literal: The function to parse the literal.
         directives: The directives to apply to the scalar.
+        print_definition: Whether to include the scalar definition in generated SDL.
 
     Returns:
         A `ScalarDefinition` when called with `name` only, a decorator function
@@ -265,6 +273,7 @@ def scalar(
             parse_literal=parse_literal,
             parse_value=parse_value,
             directives=directives,
+            print_definition=print_definition,
             origin=None,
             _source_file=_source_file,
             _source_line=_source_line,
@@ -292,6 +301,7 @@ def scalar(
             parse_value=parse_value,
             parse_literal=parse_literal,
             directives=directives,
+            print_definition=print_definition,
         )
 
     if cls is None:

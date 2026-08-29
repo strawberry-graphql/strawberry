@@ -10,7 +10,7 @@ LinkImport = NewType("LinkImport", object)
 """Represents an import for the @link directive."""
 
 
-@enum(name="link__Purpose")
+@enum(name="link__Purpose", print_definition=False)
 class LinkPurpose(Enum):
     SECURITY = "SECURITY"
     EXECUTION = "EXECUTION"
