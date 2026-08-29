@@ -9,7 +9,7 @@ from strawberry.utils.logging import StrawberryLogger
 if TYPE_CHECKING:
     from collections.abc import Iterable
 
-    from graphql import GraphQLError, GraphQLNamedType
+    from graphql import GraphQLError
 
     from strawberry.directive import StrawberryDirective
     from strawberry.schema.exception_handlers import ExceptionHandler
@@ -109,10 +109,6 @@ class BaseSchema(Protocol):
 
     @abstractmethod
     def as_str(self) -> str:
-        raise NotImplementedError
-
-    @abstractmethod
-    def _should_include_type_in_sdl(self, graphql_type: GraphQLNamedType) -> bool:
         raise NotImplementedError
 
     @staticmethod

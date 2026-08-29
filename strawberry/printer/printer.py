@@ -66,6 +66,9 @@ if TYPE_CHECKING:
 
 _T = TypeVar("_T")
 
+# GraphQL type extension controlling SDL output without changing the runtime schema.
+PRINT_DEFINITION = "strawberry-print-definition"
+
 
 @dataclasses.dataclass
 class PrintExtras:
@@ -615,7 +618,7 @@ def print_schema(schema: BaseSchema) -> str:
         type_
         for type_name in sorted(type_map)
         if is_defined_type(type_ := type_map[type_name])
-        and schema._should_include_type_in_sdl(type_)
+        and type_.extensions.get(PRINT_DEFINITION, True)
     ]
 
     types_printed = [_print_type(type_, schema, extras=extras) for type_ in types]
@@ -650,7 +653,7 @@ def print_schema(schema: BaseSchema) -> str:
                 "GraphQLNamedType", schema.schema_converter.from_type(type_)
             )
 
-            if not schema._should_include_type_in_sdl(graphql_type):
+            if not graphql_type.extensions.get(PRINT_DEFINITION, True):
                 continue
 
             # Skip types that are already part of the schema's type map, otherwise

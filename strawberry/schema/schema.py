@@ -1427,9 +1427,6 @@ class Schema(BaseSchema):
 
     __str__ = as_str
 
-    def _should_include_type_in_sdl(self, graphql_type: GraphQLNamedType) -> bool:
-        return True
-
     def introspect(self) -> dict[str, Any]:
         """Return the introspection query result for the current schema.
 

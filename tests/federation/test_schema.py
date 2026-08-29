@@ -1,6 +1,6 @@
 import textwrap
 import warnings
-from typing import Generic, TypeVar
+from typing import Generic, NewType, TypeVar
 
 import pytest
 
@@ -159,6 +159,42 @@ def test_additional_scalars():
     assert not result.errors
 
     assert result.data == {"__type": {"kind": "SCALAR"}}
+
+
+def test_user_type_named_like_private_federation_type_is_printed():
+    UserFieldSet = NewType("UserFieldSet", str)
+
+    @strawberry.type
+    class Query:
+        field_set: UserFieldSet
+
+    schema = strawberry.federation.Schema(
+        query=Query,
+        scalar_overrides={
+            UserFieldSet: strawberry.scalar(
+                name="_FieldSet",
+                serialize=lambda value: value,
+                parse_value=str,
+            )
+        },
+    )
+
+    expected_sdl = textwrap.dedent("""
+        type Query {
+          _service: _Service!
+          fieldSet: _FieldSet!
+        }
+
+        scalar _Any
+
+        scalar _FieldSet
+
+        type _Service {
+          sdl: String!
+        }
+    """).strip()
+
+    assert schema.as_str() == expected_sdl
 
 
 def test_service():
