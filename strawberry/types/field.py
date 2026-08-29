@@ -131,6 +131,7 @@ class StrawberryField(dataclasses.Field):
             self.python_name = python_name
 
         self.type_annotation = type_annotation
+        self._validated_type_annotation: StrawberryAnnotation | None = None
 
         self.description: str | None = description
         self.origin = origin
@@ -352,10 +353,14 @@ class StrawberryField(dataclasses.Field):
         with contextlib.suppress(NameError):
             # Prioritise the field type over the resolver return type
             if self.type_annotation is not None:
-                self._validate_type_annotation(
-                    self.type_annotation._evaluated_annotation
-                )
-                resolved = self.type_annotation.resolve(type_definition=type_definition)
+                type_annotation = self.type_annotation
+                if type_annotation is not self._validated_type_annotation:
+                    self._validate_type_annotation(
+                        type_annotation._evaluated_annotation
+                    )
+
+                resolved = type_annotation.resolve(type_definition=type_definition)
+                self._validated_type_annotation = type_annotation
             elif self.base_resolver is not None and self.base_resolver.type is not None:
                 # Handle unannotated functions (such as lambdas)
                 # Generics will raise MissingTypesForGenericError later
