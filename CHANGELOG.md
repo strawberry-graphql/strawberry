@@ -1,6 +1,17 @@
 CHANGELOG
 =========
 
+0.324.5 - 2026-08-30
+--------------------
+
+This release fixes incorrect dataclass transform ordering metadata.
+
+Strawberry decorators now correctly declare that ordering methods are not generated
+by default, matching their runtime dataclass behavior and allowing custom ordering
+methods such as `__gt__` to be used without type-checking errors.
+
+This release was contributed by [@subham-hq](https://github.com/subham-hq) in [#4591](https://github.com/strawberry-graphql/strawberry/pull/4591)
+
 0.324.4 - 2026-08-29
 --------------------
 
