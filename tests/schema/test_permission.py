@@ -11,6 +11,7 @@ from strawberry.exceptions.permission_fail_silently_requires_optional import (
 )
 from strawberry.permission import BasePermission, PermissionExtension
 from strawberry.printer import print_schema
+from strawberry.schema_directive import Location
 from strawberry.utils.aio import aclosing
 
 
@@ -556,6 +557,100 @@ def test_permission_directives_reused_across_fields():
     }
     """
     assert print_schema(schema) == textwrap.dedent(expected_output).strip()
+
+
+def test_permission_directive_can_be_overridden_on_an_instance():
+    @strawberry.schema_directive(
+        name="requiresRole", locations=[Location.FIELD_DEFINITION]
+    )
+    class RequiresRole:
+        role: str
+
+    class IsAuthorized(BasePermission):
+        def has_permission(self, source, info, **kwargs: typing.Any) -> bool:
+            return True
+
+    permission = IsAuthorized()
+    permission._schema_directive = RequiresRole(role="member")
+
+    @strawberry.type
+    class Query:
+        name: str = strawberry.field(extensions=[PermissionExtension([permission])])
+
+    schema = strawberry.Schema(query=Query)
+
+    expected_output = """
+    directive @requiresRole(role: String!) on FIELD_DEFINITION
+
+    type Query {
+      name: String! @requiresRole(role: "member")
+    }
+    """
+    assert print_schema(schema) == textwrap.dedent(expected_output).strip()
+
+
+def test_permission_directive_can_be_inherited():
+    @strawberry.schema_directive(
+        name="requiresRole", locations=[Location.FIELD_DEFINITION]
+    )
+    class RequiresRole:
+        role: str
+
+    class IsAuthorized(BasePermission):
+        _schema_directive = RequiresRole(role="member")
+
+        def has_permission(self, source, info, **kwargs: typing.Any) -> bool:
+            return True
+
+    class IsMember(IsAuthorized): ...
+
+    @strawberry.type
+    class Query:
+        name: str = strawberry.field(extensions=[PermissionExtension([IsMember()])])
+
+    schema = strawberry.Schema(query=Query)
+
+    expected_output = """
+    directive @requiresRole(role: String!) on FIELD_DEFINITION
+
+    type Query {
+      name: String! @requiresRole(role: "member")
+    }
+    """
+    assert print_schema(schema) == textwrap.dedent(expected_output).strip()
+
+
+def test_permission_directive_collision_names_permission_classes():
+    def has_permission(
+        self: BasePermission, source, info, **kwargs: typing.Any
+    ) -> bool:
+        return True
+
+    First = type(
+        "CanAccess",
+        (BasePermission,),
+        {"__module__": "permissions.first", "has_permission": has_permission},
+    )
+    Second = type(
+        "CanAccess",
+        (BasePermission,),
+        {"__module__": "permissions.second", "has_permission": has_permission},
+    )
+
+    @strawberry.type
+    class Query:
+        first: str = strawberry.field(extensions=[PermissionExtension([First()])])
+        second: str = strawberry.field(extensions=[PermissionExtension([Second()])])
+
+    with pytest.raises(
+        ValueError,
+        match=(
+            r"Schema directive '@canAccess' is defined by both schema directive "
+            r"'permissions\.first\.CanAccess' and schema directive "
+            r"'permissions\.second\.CanAccess'"
+        ),
+    ):
+        strawberry.Schema(query=Query)
 
 
 def test_permission_directives_not_added_on_field():

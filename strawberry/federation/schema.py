@@ -84,7 +84,12 @@ class Schema(BaseSchema):
         # Add FederationAny to types so it appears in the schema
         types = [*types, FederationAny]
 
-        # Add federation scalars to scalar_overrides so they can be recognized
+        # graphql-core needs Federation's directive argument types in the runtime
+        # schema for validation and introspection. Federation SDL imports the
+        # directive definitions through @link instead of printing them locally,
+        # so mark their private support types as hidden by default. The printer
+        # still emits one when a regular field makes that type part of the public
+        # schema.
         federation_scalar_overrides: dict[
             object, type | ScalarDefinition | ScalarWrapper
         ] = {
@@ -234,6 +239,11 @@ class Schema(BaseSchema):
 
     @property
     def schema_directives_in_use(self) -> list[object]:
+        # Federation needs this list to generate @link and @composeDirective
+        # applications before the GraphQLSchema exists. The base collector tracks
+        # it while traversing the same definitions used for schema construction,
+        # including argument and nested input definitions that the old post-build
+        # GraphQL type-map scan could not see.
         return self._schema_directives_in_use
 
     def _add_link_for_composed_directive(
@@ -348,12 +358,23 @@ class Schema(BaseSchema):
         pass
 
     def _prepare_schema_directives(self) -> None:
+        # This hook runs inside the base collector, before GraphQLSchema is built.
+        # Generated directives are therefore included in that single schema
+        # construction and in the validation of the schema that will be served.
         self._validate_directive_compatibility()
         composed_directives = self._add_compose_directives()
         self._add_link_directives(composed_directives)
 
     def _should_register_schema_directive(self, directive: object) -> bool:
-        return True
+        from .schema_directives import FederationDirective, Link
+
+        # The base policy skips Federation definitions because a plain Schema
+        # does not install their private argument types. This subclass does, so
+        # its built-ins and generated @link directives are safe to register.
+        # Delegate all other directives to preserve integration opt-outs.
+        return isinstance(
+            directive, (FederationDirective, Link)
+        ) or super()._should_register_schema_directive(directive)
 
 
 def _get_entity_type(

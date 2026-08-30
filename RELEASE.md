@@ -20,6 +20,10 @@ allowed locations, repeatability, and any input types it uses. Federation direct
 including generated `@link` and `@composeDirective` applications, are discoverable
 in the same way.
 
+Federation directives and custom composed directives used on field arguments are
+also included in the generated subgraph metadata, so routers can recognize those
+argument annotations without additional schema configuration.
+
 A directive reused across the schema is defined only once. Input, enum, and scalar
 types referenced by directive arguments are now part of the schema and may appear
 in generated SDL even when they are not used by fields.

@@ -9,6 +9,7 @@ from graphql import (
     GraphQLScalarType,
     build_schema,
     get_named_type,
+    specified_directives,
 )
 
 import strawberry
@@ -451,6 +452,38 @@ def test_compatible_custom_one_of_uses_specified_directive():
 
     assert schema.as_str() == textwrap.dedent(expected).strip()
     assert schema._schema.get_directive("oneOf") is not None
+
+
+@pytest.mark.skipif(
+    not any(directive.name == "oneOf" for directive in specified_directives),
+    reason="graphql-core does not define the specified @oneOf directive",
+)
+def test_rejects_custom_one_of_with_a_different_description():
+    @strawberry.schema_directive(
+        name="oneOf",
+        description="A custom oneOf definition.",
+        locations=[Location.INPUT_OBJECT],
+    )
+    class CustomOneOf: ...
+
+    @strawberry.input(directives=[CustomOneOf()])
+    class Choice:
+        value: str | None
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def choose(self, choice: Choice) -> str:
+            return choice.value or ""
+
+    with pytest.raises(
+        ValueError,
+        match=(
+            r"Schema directive '@oneOf' is defined by both the built-in GraphQL "
+            r"directive and schema directive .*CustomOneOf"
+        ),
+    ):
+        strawberry.Schema(query=Query)
 
 
 def test_rejects_directive_argument_type_name_conflicts():

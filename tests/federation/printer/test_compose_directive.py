@@ -1,4 +1,5 @@
 import textwrap
+from typing import Annotated
 
 import strawberry
 import strawberry.schema.schema as schema_module
@@ -172,5 +173,53 @@ def test_schema_directives_and_compose_schema_custom_import_url():
     schema = strawberry.federation.Schema(
         query=Query,
     )
+
+    assert schema.as_str() == textwrap.dedent(expected_type).strip()
+
+
+def test_composes_directives_attached_to_arguments():
+    @strawberry.federation.schema_directive(
+        locations=[Location.ARGUMENT_DEFINITION],
+        name="validate",
+        compose=True,
+        import_url="https://example.com/validate/v1.0",
+    )
+    class Validate:
+        pattern: str
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def search(
+            self,
+            term: Annotated[
+                str,
+                strawberry.federation.argument(
+                    directives=[Validate(pattern="letters-only")]
+                ),
+            ],
+        ) -> str:
+            return term
+
+    schema = strawberry.federation.Schema(query=Query)
+
+    expected_type = """
+    directive @validate(pattern: String!) on ARGUMENT_DEFINITION
+
+    schema @composeDirective(name: "@validate") @link(url: "https://example.com/validate/v1.0", import: ["@validate"]) @link(url: "https://specs.apollo.dev/federation/v2.11", import: ["@composeDirective"]) {
+      query: Query
+    }
+
+    type Query {
+      _service: _Service!
+      search(term: String! @validate(pattern: "letters-only")): String!
+    }
+
+    scalar _Any
+
+    type _Service {
+      sdl: String!
+    }
+    """
 
     assert schema.as_str() == textwrap.dedent(expected_type).strip()

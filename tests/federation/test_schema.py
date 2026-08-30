@@ -7,6 +7,7 @@ from graphql import build_schema
 
 import strawberry
 from strawberry.federation.types import FieldSet, LinkImport, LinkPurpose
+from strawberry.schema_directive import Location
 
 
 def test_entities_type_when_no_type_has_keys():
@@ -133,6 +134,55 @@ def test_entities_type():
         "__type": {"kind": "UNION", "possibleTypes": [{"name": "Product"}]},
         "fieldSet": {"kind": "SCALAR", "name": "_FieldSet"},
     }
+
+
+def test_runtime_registration_opt_out_does_not_hide_federation_directives():
+    @strawberry.schema_directive(locations=[Location.OBJECT])
+    class RuntimeOptOut:
+        __strawberry_register_definition__ = False
+
+    @strawberry.federation.type(keys=["upc"], directives=[RuntimeOptOut()])
+    class Product:
+        upc: str
+
+    @strawberry.type
+    class Query:
+        product: Product
+
+    schema = strawberry.federation.Schema(query=Query)
+
+    assert schema._schema.get_directive("runtimeOptOut") is None
+    assert schema._schema.get_directive("key") is not None
+    assert schema._schema.get_directive("link") is not None
+
+    expected_sdl = textwrap.dedent("""
+        directive @runtimeOptOut on OBJECT
+
+        schema @link(url: "https://specs.apollo.dev/federation/v2.11", import: ["@key"]) {
+          query: Query
+        }
+
+        type Product @runtimeOptOut @key(fields: "upc") {
+          upc: String!
+        }
+
+        type Query {
+          _entities(representations: [_Any!]!): [_Entity]!
+          _service: _Service!
+          product: Product!
+        }
+
+        scalar _Any
+
+        union _Entity = Product
+
+        type _Service {
+          sdl: String!
+        }
+    """).strip()
+
+    sdl = schema.as_str()
+    assert sdl == expected_sdl
 
 
 def test_additional_scalars():

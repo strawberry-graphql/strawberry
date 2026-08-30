@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import dataclasses
 import inspect
-import sys
 import typing
 from functools import partial, reduce
 from typing import (
@@ -531,7 +530,6 @@ class GraphQLCoreConverter:
             "StrawberrySchemaDirective",
             cls.__strawberry_directive__,  # type: ignore[attr-defined]
         )
-        module = sys.modules[cls.__module__]
 
         args: dict[str, GraphQLArgument] = {}
         for field in strawberry_directive.fields:
@@ -539,6 +537,11 @@ class GraphQLCoreConverter:
             if default == dataclasses.MISSING:
                 default = UNSET
 
+            # Attached schema directives are now converted during schema
+            # construction instead of only when SDL happens to be printed.
+            # Resolve their annotations at the Strawberry boundary so unresolved
+            # forward references raise the usual actionable Strawberry error
+            # instead of surfacing later as a graphql-core type error.
             field_type = field.resolve_type()
             if field_type is UNRESOLVED:
                 raise UnresolvedFieldTypeError(strawberry_directive, field)
@@ -550,7 +553,6 @@ class GraphQLCoreConverter:
                     graphql_name=None,
                     type_annotation=StrawberryAnnotation(
                         annotation=field_type,
-                        namespace=module.__dict__,
                     ),
                     default=default,
                 )

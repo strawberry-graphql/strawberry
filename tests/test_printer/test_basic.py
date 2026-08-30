@@ -1,4 +1,5 @@
 import textwrap
+from types import SimpleNamespace
 from uuid import UUID
 
 import pytest
@@ -38,6 +39,79 @@ def test_simple_required_types():
     schema = strawberry.Schema(query=Query)
 
     assert print_schema(schema) == textwrap.dedent(expected_type).strip()
+
+
+def test_prints_base_schema_without_explicit_graphql_types():
+    @strawberry.type
+    class Query:
+        name: str
+
+    schema = strawberry.Schema(query=Query)
+    custom_schema = SimpleNamespace(
+        _schema=schema._schema,
+        config=schema.config,
+        mutation=schema.mutation,
+        query=schema.query,
+        schema_converter=schema.schema_converter,
+        schema_directives=schema.schema_directives,
+        subscription=schema.subscription,
+    )
+
+    expected_type = """
+    type Query {
+      name: String!
+    }
+    """
+
+    assert print_schema(custom_schema) == textwrap.dedent(expected_type).strip()
+
+
+def test_caches_schema_type_reachability(monkeypatch):
+    @strawberry.interface
+    class Node:
+        id: strawberry.ID
+
+    @strawberry.type
+    class User(Node):
+        name: str
+
+    @strawberry.type
+    class Query:
+        node: Node
+
+    schema = strawberry.Schema(query=Query, types=[User])
+    get_possible_types = schema._schema.get_possible_types
+    calls = 0
+
+    def counting_get_possible_types(type_):
+        nonlocal calls
+        calls += 1
+        return get_possible_types(type_)
+
+    monkeypatch.setattr(
+        schema._schema, "get_possible_types", counting_get_possible_types
+    )
+
+    expected_type = """
+    interface Node {
+      id: ID!
+    }
+
+    type Query {
+      node: Node!
+    }
+
+    type User implements Node {
+      id: ID!
+      name: String!
+    }
+    """
+    expected_type = textwrap.dedent(expected_type).strip()
+
+    assert print_schema(schema) == expected_type
+    assert calls == 1
+    assert print_schema(schema) == expected_type
+    assert calls == 1
 
 
 def test_printer_with_camel_case_on():
