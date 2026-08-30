@@ -1,6 +1,28 @@
 CHANGELOG
 =========
 
+0.325.0 - 2026-08-30
+--------------------
+
+This release adds richer verbose output to `assert_no_errors`. When GraphQL
+errors are detected, the assertion now includes full error details, making it
+easier to debug failing tests.
+
+This release was contributed by [@Akay7](https://github.com/Akay7) in [#4423](https://github.com/strawberry-graphql/strawberry/pull/4423)
+
+Additional contributors: [@greptile-apps[bot]](https://github.com/greptile-apps[bot]), [@pre-commit-ci[bot]](https://github.com/pre-commit-ci[bot]), [@bellini666](https://github.com/bellini666), [@sourcery-ai[bot]](https://github.com/sourcery-ai[bot])
+
+0.324.5 - 2026-08-30
+--------------------
+
+This release fixes incorrect dataclass transform ordering metadata.
+
+Strawberry decorators now correctly declare that ordering methods are not generated
+by default, matching their runtime dataclass behavior and allowing custom ordering
+methods such as `__gt__` to be used without type-checking errors.
+
+This release was contributed by [@subham-hq](https://github.com/subham-hq) in [#4591](https://github.com/strawberry-graphql/strawberry/pull/4591)
+
 0.324.4 - 2026-08-29
 --------------------
 

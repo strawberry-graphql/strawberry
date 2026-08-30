@@ -41,7 +41,7 @@ T = TypeVar("T", bound=type)
 
 
 @dataclass_transform(
-    order_default=True,
+    order_default=False,
     kw_only_default=True,
     field_specifiers=(directive_field, field, StrawberryField),
 )
