@@ -53,7 +53,7 @@ class BaseGraphQLTestClient(ABC):
         )
 
         if assert_no_errors:
-            assert response.errors is None
+            assert response.errors is None, response.errors
 
         return response
 
