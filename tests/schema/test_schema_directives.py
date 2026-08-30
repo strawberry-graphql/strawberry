@@ -163,6 +163,35 @@ def test_explicit_directive_type_is_reconciled_with_attached_uses():
     build_schema(sdl)
 
 
+def test_plain_subclass_reuses_inherited_directive_definition():
+    @strawberry.schema_directive(locations=[Location.OBJECT, Location.FIELD_DEFINITION])
+    class Marker: ...
+
+    class FieldMarker(Marker): ...
+
+    @strawberry.type(directives=[Marker()])
+    class Query:
+        name: str = strawberry.field(default="Patrick", directives=[FieldMarker()])
+
+    schema = strawberry.Schema(query=Query)
+
+    assert (
+        sum(directive.name == "marker" for directive in schema._schema.directives) == 1
+    )
+
+    expected = """
+    directive @marker on OBJECT | FIELD_DEFINITION
+
+    type Query @marker {
+      name: String! @marker
+    }
+    """
+
+    sdl = schema.as_str()
+    assert sdl == textwrap.dedent(expected).strip()
+    build_schema(sdl)
+
+
 def test_registers_nested_directive_argument_input_types():
     @strawberry.schema_directive(locations=[Location.INPUT_OBJECT])
     class OnNestedInput: ...

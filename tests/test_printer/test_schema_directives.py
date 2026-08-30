@@ -514,7 +514,7 @@ def test_does_not_duplicate_renamed_type_used_as_type_and_directive_field():
     assert print_schema(schema) == textwrap.dedent(expected_output).strip()
 
 
-def test_deduplicates_directives_discovered_while_printing_extra_types():
+def test_deduplicates_directives_discovered_in_directive_argument_types():
     @strawberry.schema_directive(locations=[Location.INPUT_OBJECT])
     class OnConfig: ...
 
@@ -524,27 +524,25 @@ def test_deduplicates_directives_discovered_while_printing_extra_types():
 
     @strawberry.schema_directive(locations=[Location.OBJECT])
     class WithConfig:
-        __strawberry_register_definition__ = False
-
         config: Config | None = strawberry.UNSET
 
     @strawberry.type(directives=[WithConfig()])
     class Query:
         name: str
 
-    schema = strawberry.Schema(query=Query, types=[OnConfig])
+    schema = strawberry.Schema(query=Query)
 
     expected_output = """
     directive @onConfig on INPUT_OBJECT
 
     directive @withConfig(config: Config) on OBJECT
 
-    type Query @withConfig {
-      name: String!
-    }
-
     input Config @onConfig {
       value: String!
+    }
+
+    type Query @withConfig {
+      name: String!
     }
     """
     expected_output = textwrap.dedent(expected_output).strip()

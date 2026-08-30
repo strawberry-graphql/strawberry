@@ -55,8 +55,10 @@ if TYPE_CHECKING:
         GraphQLArgument,
         GraphQLEnumType,
         GraphQLEnumValue,
+        GraphQLInterfaceType,
         GraphQLNamedType,
         GraphQLScalarType,
+        GraphQLType,
         GraphQLUnionType,
     )
     from graphql.type.directives import GraphQLDirective
@@ -637,18 +639,18 @@ def _get_schema_type_names(schema: BaseSchema) -> set[str]:
     # roots, visible types, and visible directive arguments to determine which
     # definitions the printed document really needs. A hidden support type
     # remains visible when an ordinary field makes it reachable.
-    stack = [
+    stack: list[GraphQLType | None] = [
         graphql_schema.query_type,
         graphql_schema.mutation_type,
         graphql_schema.subscription_type,
     ]
 
-    for type_ in graphql_schema.type_map.values():
-        strawberry_definition = type_.extensions.get("strawberry-definition")
-        if is_defined_type(type_) and getattr(
+    for schema_type in graphql_schema.type_map.values():
+        strawberry_definition = schema_type.extensions.get("strawberry-definition")
+        if is_defined_type(schema_type) and getattr(
             strawberry_definition, "print_definition", True
         ):
-            stack.append(type_)
+            stack.append(schema_type)
 
     for directive in graphql_schema.directives:
         if is_builtin_directive(directive):
@@ -666,11 +668,11 @@ def _get_schema_type_names(schema: BaseSchema) -> set[str]:
     type_names: set[str] = set()
 
     while stack:
-        type_ = stack.pop()
-        if type_ is None:
+        graphql_type = stack.pop()
+        if graphql_type is None:
             continue
 
-        named_type = get_named_type(type_)
+        named_type = get_named_type(graphql_type)
         if named_type.name in type_names:
             continue
 
@@ -678,7 +680,11 @@ def _get_schema_type_names(schema: BaseSchema) -> set[str]:
         stack.extend(getattr(named_type, "interfaces", ()))
         stack.extend(getattr(named_type, "types", ()))
         if is_interface_type(named_type):
-            stack.extend(graphql_schema.get_possible_types(named_type))
+            stack.extend(
+                graphql_schema.get_possible_types(
+                    cast("GraphQLInterfaceType", named_type)
+                )
+            )
 
         for field in getattr(named_type, "fields", {}).values():
             stack.append(field.type)

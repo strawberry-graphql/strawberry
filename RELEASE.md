@@ -33,4 +33,6 @@ their GraphQL names must be unique. Schema construction reports a clear error wh
 different directive definitions share a name, a custom directive replaces a
 built-in directive such as `@skip`, or a directive argument type conflicts with
 another schema type. Compatible custom `@oneOf` definitions continue to use
-GraphQL's built-in directive.
+GraphQL's built-in directive. Strawberry now also resolves attached directive
+argument annotations during schema construction, so unresolved forward references
+are reported when the schema is created instead of later when its SDL is printed.

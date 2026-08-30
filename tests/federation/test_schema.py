@@ -136,12 +136,11 @@ def test_entities_type():
     }
 
 
-def test_runtime_registration_opt_out_does_not_hide_federation_directives():
+def test_registers_custom_and_federation_directives():
     @strawberry.schema_directive(locations=[Location.OBJECT])
-    class RuntimeOptOut:
-        __strawberry_register_definition__ = False
+    class Custom: ...
 
-    @strawberry.federation.type(keys=["upc"], directives=[RuntimeOptOut()])
+    @strawberry.federation.type(keys=["upc"], directives=[Custom()])
     class Product:
         upc: str
 
@@ -151,18 +150,18 @@ def test_runtime_registration_opt_out_does_not_hide_federation_directives():
 
     schema = strawberry.federation.Schema(query=Query)
 
-    assert schema._schema.get_directive("runtimeOptOut") is None
+    assert schema._schema.get_directive("custom") is not None
     assert schema._schema.get_directive("key") is not None
     assert schema._schema.get_directive("link") is not None
 
     expected_sdl = textwrap.dedent("""
-        directive @runtimeOptOut on OBJECT
+        directive @custom on OBJECT
 
         schema @link(url: "https://specs.apollo.dev/federation/v2.11", import: ["@key"]) {
           query: Query
         }
 
-        type Product @runtimeOptOut @key(fields: "upc") {
+        type Product @custom @key(fields: "upc") {
           upc: String!
         }
 
@@ -461,7 +460,7 @@ def test_federation_schema_warning():
         weight: int | None
 
     with pytest.warns(UserWarning) as record:  # noqa: PT030
-        strawberry.Schema(
+        schema = strawberry.Schema(
             query=ProductFed,
         )
 
@@ -470,6 +469,8 @@ def test_federation_schema_warning():
         "Use `strawberry.federation.Schema` instead of `strawberry.Schema`."
         in [str(r.message) for r in record]
     )
+    assert schema._schema.get_directive("key") is not None
+    assert schema._schema.get_type("_FieldSet") is not None
 
 
 def test_does_not_warn_when_using_federation_schema():
