@@ -162,7 +162,9 @@
         defaultHeaders["x-csrftoken"] = csrfToken;
       }
 
-      const subscriptionUrl = httpUrlToWebSockeUrl(fetchURL);
+      // Replaced server-side when a custom subscription URL is configured.
+      const customSubscriptionUrl = null;
+      const subscriptionUrl = customSubscriptionUrl || httpUrlToWebSockeUrl(fetchURL);
 
       const fetcher = GraphiQL.createFetcher({
         url: fetchURL,

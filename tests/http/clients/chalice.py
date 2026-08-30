@@ -50,6 +50,7 @@ class ChaliceHttpClient(HttpClient):
         self,
         schema: Schema,
         graphql_ide: GraphQL_IDE | None = "graphiql",
+        subscription_url: str | None = None,
         allow_queries_via_get: bool = True,
         result_override: ResultOverrideFunction = None,
         multipart_uploads_enabled: bool = False,
@@ -60,6 +61,7 @@ class ChaliceHttpClient(HttpClient):
         view = GraphQLView(
             schema=schema,
             graphql_ide=graphql_ide,
+            subscription_url=subscription_url,
             allow_queries_via_get=allow_queries_via_get,
         )
         view.result_override = result_override

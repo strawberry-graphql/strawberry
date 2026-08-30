@@ -25,11 +25,13 @@ class GraphQLView(
         self,
         schema: BaseSchema,
         graphql_ide: GraphQL_IDE | None = "graphiql",
+        subscription_url: str | None = None,
         allow_queries_via_get: bool = True,
     ) -> None:
         self.allow_queries_via_get = allow_queries_via_get
         self.schema = schema
         self.graphql_ide = graphql_ide
+        self.subscription_url = subscription_url
 
     def get_root_value(self, request: Request) -> RootValue | None:
         return None
