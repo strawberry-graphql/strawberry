@@ -1,6 +1,17 @@
 CHANGELOG
 =========
 
+0.325.0 - 2026-08-30
+--------------------
+
+This release adds richer verbose output to `assert_no_errors`. When GraphQL
+errors are detected, the assertion now includes full error details, making it
+easier to debug failing tests.
+
+This release was contributed by [@Akay7](https://github.com/Akay7) in [#4423](https://github.com/strawberry-graphql/strawberry/pull/4423)
+
+Additional contributors: [@greptile-apps[bot]](https://github.com/greptile-apps[bot]), [@pre-commit-ci[bot]](https://github.com/pre-commit-ci[bot]), [@bellini666](https://github.com/bellini666), [@sourcery-ai[bot]](https://github.com/sourcery-ai[bot])
+
 0.324.5 - 2026-08-30
 --------------------
 
