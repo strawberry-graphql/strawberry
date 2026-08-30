@@ -19,6 +19,11 @@ class EnumValue:
     directives: Iterable[object] = ()
     description: str | None = None
 
+    def __post_init__(self) -> None:
+        # Directives are read by several consumers (schema construction,
+        # federation, the SDL printer), so one-shot iterables are materialized.
+        self.directives = tuple(self.directives)
+
 
 @dataclasses.dataclass
 class StrawberryEnumDefinition(StrawberryType):
@@ -28,6 +33,9 @@ class StrawberryEnumDefinition(StrawberryType):
     description: str | None
     directives: Iterable[object] = ()
     print_definition: bool = True
+
+    def __post_init__(self) -> None:
+        self.directives = tuple(self.directives)
 
     def __hash__(self) -> int:
         # TODO: Is this enough for unique-ness?

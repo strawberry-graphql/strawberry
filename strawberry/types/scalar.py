@@ -116,7 +116,7 @@ def _process_scalar(
         serialize=serialize,
         parse_literal=parse_literal,
         parse_value=parse_value,
-        directives=directives,
+        directives=tuple(directives),
         print_definition=print_definition,
         origin=cls,  # type: ignore[arg-type]
         _source_file=_source_file,

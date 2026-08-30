@@ -413,6 +413,81 @@ def test_registers_directives_from_all_type_system_attachment_points():
     } <= directive_names
 
 
+def test_directives_passed_as_one_shot_iterables_are_kept():
+    @strawberry.schema_directive(
+        locations=[
+            Location.ARGUMENT_DEFINITION,
+            Location.ENUM,
+            Location.ENUM_VALUE,
+            Location.SCALAR,
+            Location.UNION,
+        ]
+    )
+    class Marker: ...
+
+    def markers():
+        yield Marker()
+
+    @strawberry.enum(directives=markers())
+    class Choice(Enum):
+        FIRST = strawberry.enum_value("first", directives=markers())
+
+    CustomScalar = strawberry.scalar(str, name="CustomScalar", directives=markers())
+
+    @strawberry.type
+    class Item:
+        name: str
+
+    @strawberry.type
+    class Other:
+        value: str
+
+    Result = Annotated[Item | Other, strawberry.union("Result", directives=markers())]
+
+    @strawberry.type
+    class Query:
+        result: Result
+        custom_scalar: CustomScalar
+
+        @strawberry.field
+        def choice(
+            self,
+            choice: Annotated[Choice, strawberry.argument(directives=markers())],
+        ) -> Choice:
+            return choice
+
+    schema = strawberry.Schema(query=Query)
+
+    expected = """
+    directive @marker on ARGUMENT_DEFINITION | ENUM | ENUM_VALUE | SCALAR | UNION
+
+    enum Choice @marker {
+      FIRST @marker
+    }
+
+    scalar CustomScalar @marker
+
+    type Item {
+      name: String!
+    }
+
+    type Other {
+      value: String!
+    }
+
+    type Query {
+      result: Result!
+      customScalar: CustomScalar!
+      choice(choice: Choice! @marker): Choice!
+    }
+
+    union Result @marker = Item | Other
+    """
+
+    assert schema.as_str() == textwrap.dedent(expected).strip()
+    assert schema._schema.get_directive("marker") is not None
+
+
 def test_rejects_conflicting_schema_directive_names():
     @strawberry.schema_directive(name="conflict", locations=[Location.OBJECT])
     class First: ...
