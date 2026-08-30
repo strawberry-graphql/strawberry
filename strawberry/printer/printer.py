@@ -610,9 +610,9 @@ def is_builtin_directive(directive: GraphQLDirective) -> bool:
 def _should_print_type(type_: GraphQLNamedType, schema_type_names: set[str]) -> bool:
     strawberry_definition = type_.extensions.get("strawberry-definition")
 
-    # `print_definition=False` hides a private support type only while nothing
-    # visible refers to it. Reachability wins so a field can never produce SDL
-    # that names a type whose definition was omitted.
+    # `print_definition=False` omits otherwise-private support types from SDL.
+    # If a visible field or printed directive definition reaches one, its
+    # definition is restored so SDL never references an undefined type.
     return (
         getattr(strawberry_definition, "print_definition", True)
         or type_.name in schema_type_names
@@ -634,14 +634,13 @@ def _get_schema_type_names(schema: BaseSchema) -> set[str]:
     # directive argument. Strawberry sometimes omits a directive definition from
     # SDL (notably Federation directives imported with @link), and should omit
     # private types used only by that hidden definition as well. Start from the
-    # roots, explicit/visible types, and visible directive arguments to determine
-    # which definitions the printed document really needs. A hidden support type
+    # roots, visible types, and visible directive arguments to determine which
+    # definitions the printed document really needs. A hidden support type
     # remains visible when an ordinary field makes it reachable.
     stack = [
         graphql_schema.query_type,
         graphql_schema.mutation_type,
         graphql_schema.subscription_type,
-        *getattr(schema, "_graphql_types", ()),
     ]
 
     for type_ in graphql_schema.type_map.values():

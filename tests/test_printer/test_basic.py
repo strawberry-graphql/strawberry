@@ -1,5 +1,4 @@
 import textwrap
-from types import SimpleNamespace
 from uuid import UUID
 
 import pytest
@@ -41,21 +40,14 @@ def test_simple_required_types():
     assert print_schema(schema) == textwrap.dedent(expected_type).strip()
 
 
-def test_prints_base_schema_without_explicit_graphql_types():
+def test_does_not_print_unreferenced_hidden_explicit_type():
+    Hidden = strawberry.scalar(str, name="Hidden", print_definition=False)
+
     @strawberry.type
     class Query:
         name: str
 
-    schema = strawberry.Schema(query=Query)
-    custom_schema = SimpleNamespace(
-        _schema=schema._schema,
-        config=schema.config,
-        mutation=schema.mutation,
-        query=schema.query,
-        schema_converter=schema.schema_converter,
-        schema_directives=schema.schema_directives,
-        subscription=schema.subscription,
-    )
+    schema = strawberry.Schema(query=Query, types=[Hidden])
 
     expected_type = """
     type Query {
@@ -63,7 +55,8 @@ def test_prints_base_schema_without_explicit_graphql_types():
     }
     """
 
-    assert print_schema(custom_schema) == textwrap.dedent(expected_type).strip()
+    assert schema._schema.get_type("Hidden") is not None
+    assert print_schema(schema) == textwrap.dedent(expected_type).strip()
 
 
 def test_caches_schema_type_reachability(monkeypatch):
