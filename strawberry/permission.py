@@ -10,7 +10,10 @@ from typing import (
     ClassVar,
 )
 
-from strawberry.exceptions import StrawberryGraphQLError
+from strawberry.exceptions import (
+    PermissionReturnedAwaitableInSyncContextError,
+    StrawberryGraphQLError,
+)
 from strawberry.exceptions.permission_fail_silently_requires_optional import (
     PermissionFailSilentlyRequiresOptionalError,
 )
@@ -205,8 +208,25 @@ class PermissionExtension(FieldExtension):
     ) -> Any:
         """Checks if the permission should be accepted and raises an exception if not."""
         for permission in self.permissions:
-            if not permission.has_permission(source, info, **kwargs):
+            has_permission = permission.has_permission(source, info, **kwargs)
+
+            # A permission whose `has_permission` returns an awaitable (e.g. a
+            # plain `def` returning a coroutine) cannot be resolved here: the
+            # awaitable is truthy regardless of what it resolves to, so trusting
+            # it would silently grant access. `supports_sync` only detects
+            # `async def` via `iscoroutinefunction`, so this case reaches the
+            # sync path. Fail closed instead of leaking the field.
+            if inspect.isawaitable(has_permission):
+                # Close the coroutine so we don't leak a "coroutine was never
+                # awaited" warning on top of the error we are about to raise.
+                if inspect.iscoroutine(has_permission):
+                    has_permission.close()
+
+                raise PermissionReturnedAwaitableInSyncContextError(permission)
+
+            if not has_permission:
                 return self._on_unauthorized(permission)
+
         return next_(source, info, **kwargs)
 
     async def resolve_async(

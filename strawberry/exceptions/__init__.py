@@ -169,6 +169,29 @@ class ConnectionRejectionError(Exception):
         self.payload = payload
 
 
+class PermissionReturnedAwaitableInSyncContextError(Exception):
+    """A permission returned an awaitable while being resolved synchronously.
+
+    Raised when a permission's ``has_permission`` returns an awaitable (for
+    example a plain ``def`` that returns a coroutine) but the field is being
+    resolved on the synchronous path, where the awaitable cannot be awaited.
+    Returning it as-is would be truthy and silently grant access, so we fail
+    closed instead.
+    """
+
+    def __init__(self, permission: object) -> None:
+        self.permission = permission
+        permission_name = type(permission).__name__
+        message = (
+            f"Permission {permission_name!r} returned an awaitable from "
+            "`has_permission` but is being resolved synchronously, so the "
+            "result cannot be awaited. Declare `has_permission` as "
+            "`async def` so Strawberry runs it on the asynchronous path, or "
+            "return a plain boolean."
+        )
+        super().__init__(message)
+
+
 __all__ = [
     "ConflictingArgumentsError",
     "DuplicatedTypeName",
@@ -191,6 +214,7 @@ __all__ = [
     "MultipleStrawberryFieldsError",
     "ObjectIsNotAnEnumError",
     "ObjectIsNotClassError",
+    "PermissionReturnedAwaitableInSyncContextError",
     "PrivateStrawberryFieldError",
     "ScalarAlreadyRegisteredError",
     "StrawberryException",
