@@ -34,13 +34,17 @@ schema = strawberry.Schema(
 ## API reference:
 
 ```python
-class ParserCache(maxsize=None): ...
+class ParserCache(maxsize=128): ...
 ```
 
-#### `maxsize: Optional[int] = None`
+#### `maxsize: Optional[int] = 128`
 
-Set the maxsize of the cache. If `maxsize` is set to `None` then the cache will
-grow without bound.
+Set the maxsize of the cache. By default the cache is bounded to 128 entries,
+with the least recently used entries evicted first. Pass an explicit
+`maxsize=None` to let the cache grow without bound; only do this when the set of
+distinct query texts reaching the server is trusted and bounded, as an unbounded
+cache lets clients grow the server's memory indefinitely by sending unique query
+texts.
 
 More info: https://docs.python.org/3/library/functools.html#functools.lru_cache
 
