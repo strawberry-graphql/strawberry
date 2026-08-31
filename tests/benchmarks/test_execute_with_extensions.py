@@ -19,7 +19,9 @@ class SimpleExtension(SchemaExtension):
 
 
 class ResolveExtension(SchemaExtension):
-    async def resolve(self, _next, root, info, *args: Any, **kwargs: Any) -> Any:
+    async def resolve(
+        self, _next, root, info: strawberry.Info, *args: Any, **kwargs: Any
+    ) -> Any:
         result = _next(root, info, *args, **kwargs)
         if isawaitable(result):
             result = await result

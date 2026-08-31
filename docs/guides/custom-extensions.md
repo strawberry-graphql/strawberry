@@ -80,13 +80,68 @@ check out [field extensions](field-extensions.md).
 Note that `resolve` can also be implemented asynchronously.
 
 ```python
-from graphql import GraphQLResolveInfo
+import strawberry
 from strawberry.extensions import SchemaExtension
 
 
 class MyExtension(SchemaExtension):
-    def resolve(self, _next, root, info: GraphQLResolveInfo, *args, **kwargs):
+    def resolve(self, _next, root, info: strawberry.Info, *args, **kwargs):
         return _next(root, info, *args, **kwargs)
+```
+
+Annotating `info` with `strawberry.Info` opts the extension into Strawberry's
+Info API, including a custom `info_class` configured on the schema. Access the
+underlying graphql-core object with `info._raw_info` when integrating with an
+API that requires `GraphQLResolveInfo`.
+
+For graphql-core-only fields such as introspection fields, `python_name` falls
+back to the GraphQL field name and `get_argument_definition` returns `None`.
+Because those fields have no Strawberry return type, `return_type` raises a
+`ValueError`; use `info._raw_info.return_type` when handling them.
+
+#### Migrating from `GraphQLResolveInfo`
+
+An unannotated `info` parameter, or one annotated as `GraphQLResolveInfo`, keeps
+the previous runtime behavior for compatibility but emits a
+`DeprecationWarning`. This compatibility behavior will be removed in
+Strawberry 2.
+
+The upgrade command opts direct `SchemaExtension` subclasses into
+`strawberry.Info` while preserving their existing use of the raw object:
+
+```shell
+strawberry upgrade schema-extension-info .
+```
+
+For example, the codemod renames the new parameter and retains `info` as an
+alias for the graphql-core object. This makes the automated change
+behavior-preserving and leaves semantic cleanup to a follow-up review:
+
+```python
+class MyExtension(SchemaExtension):
+    def resolve(self, _next, root, strawberry_info: strawberry.Info, **kwargs):
+        info = strawberry_info._raw_info
+        return _next(root, info, **kwargs)
+```
+
+Indirect subclasses must be reviewed manually; unrecognized annotations on
+direct subclasses are reported by the codemod. The following prompt can be given
+to a coding agent after running the codemod:
+
+```text
+Find all SchemaExtension subclasses that override resolve. Ensure the Info
+parameter is annotated as strawberry.Info and preserve every _next call.
+
+Replace access through info._raw_info with Strawberry Info properties when they
+are equivalent: field_name, context, root_value, variable_values, operation,
+and path. Review schema and return_type carefully because Strawberry and
+graphql-core expose different objects for those properties. Keep _raw_info for
+parent_type, field_nodes, fragments, is_awaitable, graphql-core helpers, and
+APIs that explicitly require GraphQLResolveInfo.
+
+Do not modify FieldExtension classes. Run the affected sync and async extension
+tests, including custom info_class, mixed legacy/new extension chains, and
+introspection queries.
 ```
 
 ### Get results

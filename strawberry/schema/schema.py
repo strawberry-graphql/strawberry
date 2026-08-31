@@ -63,6 +63,7 @@ from strawberry.types.execution import (
     PreExecutionError,
 )
 from strawberry.types.graphql import OperationType
+from strawberry.types.info import Info
 from strawberry.utils import IS_GQL_32, IS_GQL_33
 from strawberry.utils.aio import aclosing
 from strawberry.utils.await_maybe import await_maybe
@@ -124,6 +125,7 @@ DEFAULT_ALLOWED_OPERATION_TYPES = {
     OperationType.MUTATION,
     OperationType.SUBSCRIPTION,
 }
+_WARNED_GRAPHQL_INFO_EXTENSIONS: set[type[SchemaExtension]] = set()
 ProcessErrors: TypeAlias = (
     "Callable[[list[GraphQLError], ExecutionContext | None], None]"
 )
@@ -606,8 +608,66 @@ class Schema(BaseSchema):
         # references to extension instances, which are now constructed
         # per-request to avoid concurrency leaks (see #4369).
         return MiddlewareManager(
-            *(ext for ext in extensions if ext._implements_resolve())
+            *(
+                self._get_extension_middleware(extension)
+                for extension in extensions
+                if extension._implements_resolve()
+            )
         )
+
+    def _get_extension_middleware(
+        self, extension: SchemaExtension
+    ) -> SchemaExtension | Callable[..., Any]:
+        if not extension._uses_strawberry_info():
+            extension_type = type(extension)
+            resolver_module = extension_type.resolve.__module__
+            if (
+                extension_type not in _WARNED_GRAPHQL_INFO_EXTENSIONS
+                and not resolver_module.startswith("strawberry.extensions.")
+            ):
+                _WARNED_GRAPHQL_INFO_EXTENSIONS.add(extension_type)
+                warnings.warn(
+                    (
+                        f"{extension_type.__qualname__}.resolve receives "
+                        "GraphQLResolveInfo, which is deprecated. Annotate its "
+                        "`info` parameter as `strawberry.Info` to use Strawberry's "
+                        "Info API. Run `strawberry upgrade schema-extension-info .` "
+                        "for an automated migration. The raw graphql-core object "
+                        "remains available as `info._raw_info`. Support for the "
+                        "legacy behavior will be removed in Strawberry 2."
+                    ),
+                    DeprecationWarning,
+                    stacklevel=4,
+                )
+            return extension
+
+        def middleware(
+            next_: Callable[..., Any],
+            root: Any,
+            raw_info: GraphQLResolveInfo,
+            *args: str,
+            **kwargs: Any,
+        ) -> Any:
+            field = self.get_field_for_type(
+                field_name=raw_info.field_name,
+                type_name=raw_info.parent_type.name,
+            )
+            info = self.config.info_class(_raw_info=raw_info, _field=field)
+
+            def adapted_next(
+                next_root: Any,
+                next_info: Info | GraphQLResolveInfo,
+                *next_args: str,
+                **next_kwargs: Any,
+            ) -> Any:
+                if isinstance(next_info, Info):
+                    next_info = next_info._raw_info
+                return next_(next_root, next_info, *next_args, **next_kwargs)
+
+            extension_resolver = cast("Callable[..., Any]", extension.resolve)
+            return extension_resolver(adapted_next, root, info, *args, **kwargs)
+
+        return middleware
 
     def _create_execution_context(  # noqa: PLR0917
         self,
