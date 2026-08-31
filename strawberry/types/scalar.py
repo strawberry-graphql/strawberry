@@ -174,7 +174,7 @@ def scalar(
 # TODO: We are tricking pyright into thinking that we are returning the given type
 # here or else it won't let us use any custom scalar to annotate attributes in
 # dataclasses/types. This should be properly solved when implementing StrawberryScalar
-def scalar(
+def scalar(  # noqa: D417
     cls: _T | None = None,
     *,
     name: str | None = None,
@@ -211,7 +211,6 @@ def scalar(
         parse_value: The function to parse the value.
         parse_literal: The function to parse the literal.
         directives: The directives to apply to the scalar.
-        print_definition: Whether to include the scalar definition in generated SDL.
 
     Returns:
         A `ScalarDefinition` when called with `name` only, a decorator function

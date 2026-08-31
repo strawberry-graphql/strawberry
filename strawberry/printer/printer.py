@@ -34,6 +34,7 @@ from graphql.utilities.print_schema import (
     print_implemented_interfaces,
     print_specified_by_url,
 )
+from graphql.utilities.print_schema import print_directive as original_print_directive
 from graphql.utilities.print_schema import print_type as original_print_type
 
 from strawberry.schema_directive import Location, StrawberrySchemaDirective
@@ -580,7 +581,10 @@ def print_schema_definition(schema: BaseSchema, *, extras: PrintExtras) -> str |
 def print_directive(directive: GraphQLDirective, *, schema: BaseSchema) -> str | None:
     strawberry_directive = directive.extensions.get("strawberry-definition")
 
-    if strawberry_directive is None or (
+    if strawberry_directive is None:
+        return original_print_directive(directive)
+
+    if (
         isinstance(strawberry_directive, StrawberrySchemaDirective)
         and not strawberry_directive.print_definition
     ):
@@ -758,14 +762,6 @@ def print_schema(schema: BaseSchema) -> str:
         if (printed_directive := print_directive(directive, schema=schema)) is not None
         and printed_directive not in extras.directives
     ]
-
-    if schema.config.enable_experimental_incremental_execution:
-        directives.append(
-            "directive @defer(if: Boolean, label: String) on FRAGMENT_SPREAD | INLINE_FRAGMENT"
-        )
-        directives.append(
-            "directive @stream(if: Boolean, label: String, initialCount: Int = 0) on FIELD"
-        )
 
     return "\n\n".join(
         chain(

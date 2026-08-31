@@ -82,10 +82,6 @@ same way as field and argument annotations elsewhere in the schema. Types
 imported only under `TYPE_CHECKING` should use
 [`strawberry.lazy`](/docs/types/lazy) so Strawberry can resolve them at runtime.
 
-Setting `print_definition=False` on `@strawberry.schema_directive` keeps its
-definition out of Strawberry's generated SDL, but the directive and its argument
-types stay available to runtime introspection.
-
 ## Overriding field names
 
 You can use `strawberry.directive_field` to override the name of a field:

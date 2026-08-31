@@ -223,7 +223,7 @@ def enum(
 ) -> Callable[[EnumType], EnumType]: ...
 
 
-def enum(
+def enum(  # noqa: D417
     cls: EnumType | None = None,
     *,
     name: str | None = None,
@@ -244,7 +244,6 @@ def enum(
         description: The description of the GraphQL enum.
         directives: The directives to attach to the GraphQL enum.
         graphql_name_from: Whether to use the names (key) or values of the Python enums in GraphQL.
-        print_definition: Whether to include the enum definition in generated SDL.
 
     Returns:
         The decorated Enum class.

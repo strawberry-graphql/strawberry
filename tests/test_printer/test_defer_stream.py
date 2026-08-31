@@ -35,14 +35,35 @@ def test_prints_defer_and_stream_directives_when_experimental_execution_is_enabl
         config=StrawberryConfig(enable_experimental_incremental_execution=True),
     )
 
-    expected_type = """
-    directive @defer(if: Boolean, label: String) on FRAGMENT_SPREAD | INLINE_FRAGMENT
+    expected_type = '''
+    """
+    Directs the executor to defer this fragment when the `if` argument is true or undefined.
+    """
+    directive @defer(
+      """Deferred when true or undefined."""
+      if: Boolean! = true
 
-    directive @stream(if: Boolean, label: String, initialCount: Int = 0) on FIELD
+      """Unique name"""
+      label: String
+    ) on FRAGMENT_SPREAD | INLINE_FRAGMENT
+
+    """
+    Directs the executor to stream plural fields when the `if` argument is true or undefined.
+    """
+    directive @stream(
+      """Stream when true or undefined."""
+      if: Boolean! = true
+
+      """Unique name"""
+      label: String
+
+      """Number of items to return immediately"""
+      initialCount: Int = 0
+    ) on FIELD
 
     type Query {
       hello: String!
     }
-    """
+    '''
 
     assert str(schema) == textwrap.dedent(expected_type).strip()
