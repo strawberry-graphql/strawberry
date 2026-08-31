@@ -7,6 +7,7 @@ from inspect import iscoroutinefunction
 from typing import (
     TYPE_CHECKING,
     Any,
+    ClassVar,
 )
 
 from strawberry.exceptions import StrawberryGraphQLError
@@ -54,7 +55,34 @@ class BasePermission(abc.ABC):
 
     error_class: type[GraphQLError] = StrawberryGraphQLError
 
-    _schema_directive: object | None = None
+    _schema_directive: ClassVar[object | None] = None
+    _auto_schema_directive: ClassVar[object]
+
+    def __init_subclass__(cls, **kwargs: Any) -> None:
+        super().__init_subclass__(**kwargs)
+
+        # Every instance of one permission class must use the same directive
+        # definition; otherwise two uses look like conflicting definitions with
+        # the same GraphQL name during schema collection. Build it when the
+        # permission subclass is created rather than lazily, which also avoids
+        # concurrent schema construction racing to create two definitions. Keep
+        # it separate from `_schema_directive` so instance, class, and inherited
+        # overrides work.
+        class AutoDirective:
+            __strawberry_directive__ = StrawberrySchemaDirective(
+                cls.__name__,
+                cls.__name__,
+                [Location.FIELD_DEFINITION],
+                [],
+            )
+
+        # Without this metadata a collision would report the local
+        # `AutoDirective` class twice. Make diagnostics point to the permission
+        # classes that users can actually rename.
+        AutoDirective.__name__ = cls.__name__
+        AutoDirective.__qualname__ = cls.__qualname__
+        AutoDirective.__module__ = cls.__module__
+        cls._auto_schema_directive = AutoDirective()
 
     @abc.abstractmethod
     def has_permission(
@@ -106,19 +134,7 @@ class BasePermission(abc.ABC):
 
     @property
     def schema_directive(self) -> object:
-        if not self._schema_directive:
-
-            class AutoDirective:
-                __strawberry_directive__ = StrawberrySchemaDirective(
-                    self.__class__.__name__,
-                    self.__class__.__name__,
-                    [Location.FIELD_DEFINITION],
-                    [],
-                )
-
-            self._schema_directive = AutoDirective()
-
-        return self._schema_directive
+        return self._schema_directive or self._auto_schema_directive
 
 
 class PermissionExtension(FieldExtension):

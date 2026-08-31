@@ -1,7 +1,5 @@
 from collections import defaultdict
 from collections.abc import Callable, Iterable, Mapping
-from functools import cached_property
-from itertools import chain
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -27,7 +25,6 @@ from strawberry.types.union import StrawberryUnion
 from strawberry.utils.inspect import get_func_args
 
 from .schema_directive import StrawberryFederationSchemaDirective
-from .types import FieldSet, LinkImport
 from .versions import format_version, parse_version
 
 if TYPE_CHECKING:
@@ -86,16 +83,15 @@ class Schema(BaseSchema):
         # Add FederationAny to types so it appears in the schema
         types = [*types, FederationAny]
 
-        # Add federation scalars to scalar_overrides so they can be recognized
+        # _Any belongs to Federation's entity resolver rather than a directive,
+        # so this schema installs its scalar mapping. Directive support types
+        # such as _FieldSet carry their definitions on the annotations themselves;
+        # that lets both Schema classes register attached Federation directives.
         federation_scalar_overrides: dict[
             object, type | ScalarDefinition | ScalarWrapper
         ] = {
             FederationAny: scalar(
                 name="_Any", serialize=lambda v: v, parse_value=lambda v: v
-            ),
-            FieldSet: scalar(name="_FieldSet", serialize=lambda v: v, parse_value=str),
-            LinkImport: scalar(
-                name="link__Import", serialize=lambda v: v, parse_value=lambda v: v
             ),
         }
         if scalar_overrides:
@@ -114,14 +110,6 @@ class Schema(BaseSchema):
             schema_directives=schema_directives,
             exception_handlers=exception_handlers,
         )
-
-        self.schema_directives = list(schema_directives)
-
-        # Validate directive compatibility with federation version
-        self._validate_directive_compatibility()
-
-        composed_directives = self._add_compose_directives()
-        self._add_link_directives(composed_directives)  # type: ignore
 
     def _get_federation_query_type(
         self,
@@ -234,27 +222,14 @@ class Schema(BaseSchema):
 
         return results
 
-    @cached_property
+    @property
     def schema_directives_in_use(self) -> list[object]:
-        all_graphql_types = self._schema.type_map.values()
-
-        directives: list[object] = []
-
-        for type_ in all_graphql_types:
-            strawberry_definition = type_.extensions.get("strawberry-definition")
-
-            if not strawberry_definition:
-                continue
-
-            directives.extend(strawberry_definition.directives)
-
-            fields = getattr(strawberry_definition, "fields", [])
-            values = getattr(strawberry_definition, "values", [])
-
-            for field in chain(fields, values):
-                directives.extend(field.directives)
-
-        return directives
+        # Federation needs this list to generate @link and @composeDirective
+        # applications before the GraphQLSchema exists. The base collector tracks
+        # it while traversing the same definitions used for schema construction,
+        # including argument and nested input definitions that the old post-build
+        # GraphQL type-map scan could not see.
+        return self._schema_directives_in_use
 
     def _add_link_for_composed_directive(
         self,
@@ -294,13 +269,13 @@ class Schema(BaseSchema):
         directive_by_url[url].add(f"@{name}")
 
     def _add_link_directives(
-        self, additional_directives: list[object] | None = None
+        self, additional_directives: Iterable[object] | None = None
     ) -> None:
         from .schema_directives import Link
 
         directive_by_url: defaultdict[str, set[str]] = defaultdict(set)
 
-        additional_directives = additional_directives or []
+        additional_directives = list(additional_directives or ())
 
         for directive in self.schema_directives_in_use + additional_directives:
             definition = directive.__strawberry_directive__  # type: ignore
@@ -366,6 +341,14 @@ class Schema(BaseSchema):
         # since it is expected to have federation directives
 
         pass
+
+    def _prepare_schema_directives(self) -> None:
+        # This hook runs inside the base collector, before GraphQLSchema is built.
+        # Generated directives are therefore included in that single schema
+        # construction and in the validation of the schema that will be served.
+        self._validate_directive_compatibility()
+        composed_directives = self._add_compose_directives()
+        self._add_link_directives(composed_directives)
 
 
 def _get_entity_type(

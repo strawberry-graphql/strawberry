@@ -10,7 +10,13 @@ from typing import (
     overload,
 )
 
-from graphql import GraphQLInputField, GraphQLObjectType, GraphQLSchema, is_union_type
+from graphql import (
+    GraphQLInputField,
+    GraphQLObjectType,
+    GraphQLSchema,
+    get_named_type,
+    is_union_type,
+)
 from graphql.language.printer import print_ast
 from graphql.type import (
     is_enum_type,
@@ -28,6 +34,7 @@ from graphql.utilities.print_schema import (
     print_implemented_interfaces,
     print_specified_by_url,
 )
+from graphql.utilities.print_schema import print_directive as original_print_directive
 from graphql.utilities.print_schema import print_type as original_print_type
 
 from strawberry.schema_directive import Location, StrawberrySchemaDirective
@@ -49,8 +56,10 @@ if TYPE_CHECKING:
         GraphQLArgument,
         GraphQLEnumType,
         GraphQLEnumValue,
+        GraphQLInterfaceType,
         GraphQLNamedType,
         GraphQLScalarType,
+        GraphQLType,
         GraphQLUnionType,
     )
     from graphql.type.directives import GraphQLDirective
@@ -60,6 +69,7 @@ if TYPE_CHECKING:
 
 
 _T = TypeVar("_T")
+_SCHEMA_TYPE_NAMES_CACHE_KEY = "strawberry-schema-type-names"
 
 
 @dataclasses.dataclass
@@ -154,7 +164,15 @@ def print_schema_directive(
         "StrawberrySchemaDirective", directive.__class__.__strawberry_directive__
     )
     schema_converter = schema.schema_converter
-    gql_directive = schema_converter.from_schema_directive(directive.__class__)
+    # Registered directives were already converted while constructing the
+    # GraphQLSchema. Reuse that object so argument types and defaults match
+    # introspection exactly. The fallback is for definitions deliberately kept
+    # out of the runtime schema but still supported by Strawberry's SDL printer.
+    gql_directive = getattr(schema, "_schema_graphql_directives", {}).get(
+        directive.__class__
+    )
+    if gql_directive is None:
+        gql_directive = schema_converter.from_schema_directive(directive.__class__)
     params = print_schema_directive_params(
         gql_directive,
         {
@@ -563,7 +581,10 @@ def print_schema_definition(schema: BaseSchema, *, extras: PrintExtras) -> str |
 def print_directive(directive: GraphQLDirective, *, schema: BaseSchema) -> str | None:
     strawberry_directive = directive.extensions.get("strawberry-definition")
 
-    if strawberry_directive is None or (
+    if strawberry_directive is None:
+        return original_print_directive(directive)
+
+    if (
         isinstance(strawberry_directive, StrawberrySchemaDirective)
         and not strawberry_directive.print_definition
     ):
@@ -592,6 +613,94 @@ def is_builtin_directive(directive: GraphQLDirective) -> bool:
     return False
 
 
+def _should_print_type(type_: GraphQLNamedType, schema_type_names: set[str]) -> bool:
+    strawberry_definition = type_.extensions.get("strawberry-definition")
+
+    # `print_definition=False` omits otherwise-private support types from SDL.
+    # If a visible field or printed directive definition reaches one, its
+    # definition is restored so SDL never references an undefined type.
+    return (
+        getattr(strawberry_definition, "print_definition", True)
+        or type_.name in schema_type_names
+    )
+
+
+def _get_schema_type_names(schema: BaseSchema) -> set[str]:
+    graphql_schema = cast("GraphQLSchema", schema._schema)  # type: ignore[attr-defined]
+
+    # A schema is finalized before it can be printed, and Federation's _service
+    # resolver can print the same instance repeatedly. Cache this traversal on
+    # the GraphQLSchema instead of walking every field for each request.
+    if (
+        cached_type_names := graphql_schema.extensions.get(_SCHEMA_TYPE_NAMES_CACHE_KEY)
+    ) is not None:
+        return cast("set[str]", cached_type_names)
+
+    # graphql-core includes every named type referenced by a registered
+    # directive argument. Strawberry sometimes omits a directive definition from
+    # SDL (notably Federation directives imported with @link), and should omit
+    # private types used only by that hidden definition as well. Start from the
+    # roots, visible types, and visible directive arguments to determine which
+    # definitions the printed document really needs. A hidden support type
+    # remains visible when an ordinary field makes it reachable.
+    stack: list[GraphQLType | None] = [
+        graphql_schema.query_type,
+        graphql_schema.mutation_type,
+        graphql_schema.subscription_type,
+    ]
+
+    for schema_type in graphql_schema.type_map.values():
+        strawberry_definition = schema_type.extensions.get("strawberry-definition")
+        if is_defined_type(schema_type) and getattr(
+            strawberry_definition, "print_definition", True
+        ):
+            stack.append(schema_type)
+
+    for directive in graphql_schema.directives:
+        if is_builtin_directive(directive):
+            continue
+
+        strawberry_definition = directive.extensions.get("strawberry-definition")
+        if (
+            isinstance(strawberry_definition, StrawberrySchemaDirective)
+            and not strawberry_definition.print_definition
+        ):
+            continue
+
+        stack.extend(argument.type for argument in directive.args.values())
+
+    type_names: set[str] = set()
+
+    while stack:
+        graphql_type = stack.pop()
+        if graphql_type is None:
+            continue
+
+        named_type = get_named_type(graphql_type)
+        if named_type.name in type_names:
+            continue
+
+        type_names.add(named_type.name)
+        stack.extend(getattr(named_type, "interfaces", ()))
+        stack.extend(getattr(named_type, "types", ()))
+        if is_interface_type(named_type):
+            stack.extend(
+                graphql_schema.get_possible_types(
+                    cast("GraphQLInterfaceType", named_type)
+                )
+            )
+
+        for field in getattr(named_type, "fields", {}).values():
+            stack.append(field.type)
+            stack.extend(
+                argument.type for argument in getattr(field, "args", {}).values()
+            )
+
+    graphql_schema.extensions[_SCHEMA_TYPE_NAMES_CACHE_KEY] = type_names
+
+    return type_names
+
+
 def print_schema(schema: BaseSchema) -> str:
     graphql_core_schema = cast(
         "GraphQLSchema",
@@ -606,28 +715,16 @@ def print_schema(schema: BaseSchema) -> str:
     ]
 
     type_map = graphql_core_schema.type_map
+    schema_type_names = _get_schema_type_names(schema)
     types = [
         type_
         for type_name in sorted(type_map)
         if is_defined_type(type_ := type_map[type_name])
+        and _should_print_type(type_, schema_type_names)
     ]
 
     types_printed = [_print_type(type_, schema, extras=extras) for type_ in types]
     schema_definition = print_schema_definition(schema, extras=extras)
-
-    directives = [
-        printed_directive
-        for directive in filtered_directives
-        if (printed_directive := print_directive(directive, schema=schema)) is not None
-    ]
-
-    if schema.config.enable_experimental_incremental_execution:
-        directives.append(
-            "directive @defer(if: Boolean, label: String) on FRAGMENT_SPREAD | INLINE_FRAGMENT"
-        )
-        directives.append(
-            "directive @stream(if: Boolean, label: String, initialCount: Int = 0) on FIELD"
-        )
 
     def _name_getter(type_: Any) -> str:
         if hasattr(type_, "name"):
@@ -643,6 +740,9 @@ def print_schema(schema: BaseSchema) -> str:
                 "GraphQLNamedType", schema.schema_converter.from_type(type_)
             )
 
+            if not _should_print_type(graphql_type, schema_type_names):
+                continue
+
             # Skip types that are already part of the schema's type map, otherwise
             # they'd be printed twice (e.g. an enum used both as a regular type and
             # as a schema directive field), producing invalid SDL.
@@ -651,13 +751,25 @@ def print_schema(schema: BaseSchema) -> str:
 
             yield _print_type(graphql_type, schema, extras=extras)
 
+    # Printing an extra directive argument type can discover directive
+    # applications attached to that type. Materialize extras before filtering
+    # the runtime directive list so each definition is emitted exactly once;
+    # relying on generator evaluation order would make this dedup accidental.
+    extra_types_printed = list(_print_extra_types())
+    directives = [
+        printed_directive
+        for directive in filtered_directives
+        if (printed_directive := print_directive(directive, schema=schema)) is not None
+        and printed_directive not in extras.directives
+    ]
+
     return "\n\n".join(
         chain(
             sorted(extras.directives),
             filter(None, [schema_definition]),
             directives,
             types_printed,
-            _print_extra_types(),
+            extra_types_printed,
         )
     )
 
