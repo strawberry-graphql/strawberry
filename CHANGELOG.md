@@ -1,6 +1,29 @@
 CHANGELOG
 =========
 
+0.326.1 - 2026-08-31
+--------------------
+
+This release fixes a permission bypass (GHSA-pfvf-fwfp-25mp) where a custom
+permission could unintentionally authorize access to a protected field.
+
+When a permission's `has_permission` was a normal `def` that returned an
+awaitable (for example a wrapper returning a coroutine), Strawberry classified
+the permission as synchronous because only `async def` methods are detected as
+async. On the synchronous resolve path the returned awaitable was evaluated for
+truthiness directly, and an awaitable is always truthy — so the check passed and
+the protected resolver ran even when the awaitable resolved to `False`. This
+affected any field with a synchronous resolver, under both `execute_sync` and
+`execute`.
+
+Strawberry now detects this case and fails closed: the synchronous permission
+path raises a clear error instead of trusting the awaitable, so access is never
+granted by accident. Permissions written as `async def has_permission` continue
+to work as before. If you intend a permission to be asynchronous, declare it
+with `async def` (or return a plain boolean from a synchronous one).
+
+This release was contributed by [@patrick91](https://github.com/patrick91) in [#4605](https://github.com/strawberry-graphql/strawberry/pull/4605)
+
 0.326.0 - 2026-08-31
 --------------------
 
