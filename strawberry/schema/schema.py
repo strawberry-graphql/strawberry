@@ -609,16 +609,27 @@ class Schema(BaseSchema):
         # Build a fresh middleware manager per request: the manager holds
         # references to extension instances, which are now constructed
         # per-request to avoid concurrency leaks (see #4369).
-        return MiddlewareManager(
-            *(
-                self._get_extension_middleware(extension)
-                for extension in extensions
-                if extension._implements_resolve()
-            )
-        )
+        middleware: list[SchemaExtension | Callable[..., Any]] = []
+        # graphql-core wraps each middleware around the ones already added.
+        inner_uses_strawberry_info: bool | None = None
+        for extension in extensions:
+            if extension._implements_resolve():
+                uses_strawberry_info = extension._uses_strawberry_info()
+                middleware.append(
+                    self._get_extension_middleware(
+                        extension,
+                        inner_uses_strawberry_info=inner_uses_strawberry_info,
+                    )
+                )
+                inner_uses_strawberry_info = uses_strawberry_info
+
+        return MiddlewareManager(*middleware)
 
     def _get_extension_middleware(
-        self, extension: SchemaExtension
+        self,
+        extension: SchemaExtension,
+        *,
+        inner_uses_strawberry_info: bool | None,
     ) -> SchemaExtension | Callable[..., Any]:
         if not extension._uses_strawberry_info():
             extension_type = type(extension)
@@ -646,31 +657,48 @@ class Schema(BaseSchema):
                 )
             return extension
 
+        extension_resolver = cast("Callable[..., Any]", extension.resolve)
+
         def middleware(
             next_: Callable[..., Any],
             root: Any,
-            raw_info: GraphQLResolveInfo,
+            raw_info: GraphQLResolveInfo | Info,
             *args: str,
             **kwargs: Any,
         ) -> Any:
-            field = self.get_field_for_type(
-                field_name=raw_info.field_name,
-                type_name=raw_info.parent_type.name,
+            if isinstance(raw_info, Info):
+                info = raw_info
+            else:
+                graphql_field = raw_info.parent_type.fields.get(raw_info.field_name)
+                field = cast(
+                    "StrawberryField | None",
+                    graphql_field.extensions.get(
+                        GraphQLCoreConverter.DEFINITION_BACKREF
+                    )
+                    if graphql_field
+                    else None,
+                )
+                info = self.config.info_class(_raw_info=raw_info, _field=field)
+
+            next_requires_graphql_info = inner_uses_strawberry_info is False or (
+                inner_uses_strawberry_info is None and info._field is None
             )
-            info = self.config.info_class(_raw_info=raw_info, _field=field)
+            if next_requires_graphql_info:
+                raw_next = next_
 
-            def adapted_next(
-                next_root: Any,
-                next_info: Info | GraphQLResolveInfo,
-                *next_args: str,
-                **next_kwargs: Any,
-            ) -> Any:
-                if isinstance(next_info, Info):
-                    next_info = next_info._raw_info
-                return next_(next_root, next_info, *next_args, **next_kwargs)
+                def adapted_next(
+                    next_root: Any,
+                    next_info: Info | GraphQLResolveInfo,
+                    *next_args: str,
+                    **next_kwargs: Any,
+                ) -> Any:
+                    if isinstance(next_info, Info):
+                        next_info = next_info._raw_info
+                    return raw_next(next_root, next_info, *next_args, **next_kwargs)
 
-            extension_resolver = cast("Callable[..., Any]", extension.resolve)
-            return extension_resolver(adapted_next, root, info, *args, **kwargs)
+                next_ = adapted_next
+
+            return extension_resolver(next_, root, info, *args, **kwargs)
 
         return middleware
 

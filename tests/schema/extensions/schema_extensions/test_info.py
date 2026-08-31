@@ -25,6 +25,14 @@ def test_resolve_receives_configured_strawberry_info() -> None:
     class CustomInfo(strawberry.Info): ...
 
     received_info: list[strawberry.Info] = []
+    resolver_info: list[strawberry.Info] = []
+
+    @strawberry.type
+    class InfoQuery:
+        @strawberry.field
+        def hello(self, info: strawberry.Info) -> str:
+            resolver_info.append(info)
+            return "world"
 
     class Extension(SchemaExtension):
         def resolve(
@@ -38,7 +46,7 @@ def test_resolve_receives_configured_strawberry_info() -> None:
             return next_(root, info, **kwargs)
 
     schema = strawberry.Schema(
-        query=Query,
+        query=InfoQuery,
         extensions=[Extension],
         config=StrawberryConfig(info_class=CustomInfo),
     )
@@ -50,6 +58,7 @@ def test_resolve_receives_configured_strawberry_info() -> None:
     assert len(received_info) == 1
     assert isinstance(received_info[0], CustomInfo)
     assert received_info[0].field_name == "hello"
+    assert received_info[0] is resolver_info[0]
 
 
 @pytest.mark.asyncio
@@ -94,7 +103,10 @@ def test_strawberry_info_extension_can_pass_raw_info_to_next() -> None:
     assert result.data == {"hello": "world"}
 
 
-def test_strawberry_and_graphql_info_extensions_can_be_mixed() -> None:
+@pytest.mark.parametrize("legacy_first", [False, True])
+def test_strawberry_and_graphql_info_extensions_can_be_mixed(
+    legacy_first: bool,
+) -> None:
     received_info: list[tuple[str, object]] = []
 
     class StrawberryInfoExtension(SchemaExtension):
@@ -119,20 +131,30 @@ def test_strawberry_and_graphql_info_extensions_can_be_mixed() -> None:
             received_info.append(("graphql", info))
             return next_(root, info, **kwargs)
 
-    schema = strawberry.Schema(
-        query=Query,
-        extensions=[StrawberryInfoExtension, GraphQLInfoExtension],
+    class OtherStrawberryInfoExtension(StrawberryInfoExtension): ...
+
+    strawberry_extensions = [
+        StrawberryInfoExtension,
+        OtherStrawberryInfoExtension,
+    ]
+    extensions = (
+        [GraphQLInfoExtension, *strawberry_extensions]
+        if legacy_first
+        else [*strawberry_extensions, GraphQLInfoExtension]
     )
+    schema = strawberry.Schema(query=Query, extensions=extensions)
 
     with pytest.warns(DeprecationWarning, match="GraphQLInfoExtension.resolve"):
         result = schema.execute_sync("{ hello }")
 
     assert result.errors is None
     assert {name for name, _ in received_info} == {"strawberry", "graphql"}
-    strawberry_info = dict(received_info)["strawberry"]
+    strawberry_info = [info for name, info in received_info if name == "strawberry"]
     graphql_info = dict(received_info)["graphql"]
-    assert isinstance(strawberry_info, strawberry.Info)
-    assert strawberry_info._raw_info is graphql_info
+    assert len(strawberry_info) == 2
+    assert isinstance(strawberry_info[0], strawberry.Info)
+    assert strawberry_info[0] is strawberry_info[1]
+    assert strawberry_info[0]._raw_info is graphql_info
 
 
 def test_legacy_info_warning_is_emitted_once_per_extension_class() -> None:
