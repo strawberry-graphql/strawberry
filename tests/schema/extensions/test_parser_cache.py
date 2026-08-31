@@ -191,3 +191,14 @@ async def test_parser_cache_extension_async(mock_parse):
     assert result.data == {"ping": "pong"}
 
     assert mock_parse.call_count == 2
+
+
+def test_parser_cache_extension_default_is_bounded():
+    cache = ParserCache()
+
+    assert cache.cached_parse_document.cache_info().maxsize == 128
+
+    for i in range(200):
+        cache.cached_parse_document(f"query {{ field_{i} }}")
+
+    assert cache.cached_parse_document.cache_info().currsize == 128
