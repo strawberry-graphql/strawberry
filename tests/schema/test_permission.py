@@ -705,3 +705,68 @@ def test_basic_permission_access_inputs():
     result = schema.execute_sync(query)
 
     assert result.data["name"] == "Erik"
+
+
+def test_sync_permission_returning_awaitable_denies_access():
+    calls = 0
+
+    class DenyViaAwaitable(BasePermission):
+        message = "denied"
+
+        def has_permission(
+            self, source: typing.Any, info: strawberry.Info, **kwargs: typing.Any
+        ) -> typing.Any:
+            async def result() -> bool:
+                return False
+
+            return result()
+
+    @strawberry.type
+    class Query:
+        @strawberry.field(permission_classes=[DenyViaAwaitable])
+        def secret(self) -> str:
+            nonlocal calls
+            calls += 1
+            return "secret"
+
+    schema = strawberry.Schema(query=Query)
+
+    result = schema.execute_sync("{ secret }")
+
+    assert result.data is None
+    assert result.errors is not None
+    assert "returned an awaitable" in result.errors[0].message
+    assert calls == 0
+
+
+@pytest.mark.asyncio
+async def test_sync_permission_returning_awaitable_denies_access_on_async_execution():
+    calls = 0
+
+    class DenyViaAwaitable(BasePermission):
+        message = "denied"
+
+        def has_permission(
+            self, source: typing.Any, info: strawberry.Info, **kwargs: typing.Any
+        ) -> typing.Any:
+            async def result() -> bool:
+                return False
+
+            return result()
+
+    @strawberry.type
+    class Query:
+        @strawberry.field(permission_classes=[DenyViaAwaitable])
+        def secret(self) -> str:
+            nonlocal calls
+            calls += 1
+            return "secret"
+
+    schema = strawberry.Schema(query=Query)
+
+    result = await schema.execute("{ secret }")
+
+    assert result.data is None
+    assert result.errors is not None
+    assert "returned an awaitable" in result.errors[0].message
+    assert calls == 0
