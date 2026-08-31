@@ -1,6 +1,39 @@
 CHANGELOG
 =========
 
+0.327.0 - 2026-08-31
+--------------------
+
+This release fixes a potential unbounded memory growth in the `ParserCache` and
+`ValidationCache` extensions.
+
+Both extensions previously defaulted to `maxsize=None`, which creates an
+unbounded `functools.lru_cache`. On a network-exposed endpoint with one of these
+extensions enabled, a client sending many distinct query texts could grow the
+server's memory without limit.
+
+The default is now a bounded LRU cache of 128 entries, matching the
+`functools.lru_cache` default. Existing behavior can be restored by explicitly
+opting in to an unbounded cache:
+
+```python
+import strawberry
+from strawberry.extensions import ParserCache, ValidationCache
+
+schema = strawberry.Schema(
+    Query,
+    extensions=[
+        ParserCache(maxsize=None),  # explicitly unbounded
+        ValidationCache(maxsize=100),
+    ],
+)
+```
+
+Only use `maxsize=None` when the set of distinct query texts reaching the server
+is trusted and bounded.
+
+This release was contributed by [@patrick91](https://github.com/patrick91) in [#4606](https://github.com/strawberry-graphql/strawberry/pull/4606)
+
 0.326.1 - 2026-08-31
 --------------------
 
