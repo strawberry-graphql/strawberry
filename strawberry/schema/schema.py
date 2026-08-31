@@ -6,6 +6,7 @@ from asyncio import ensure_future
 from collections.abc import AsyncGenerator, AsyncIterator, Awaitable, Callable, Iterable
 from functools import lru_cache
 from inspect import isawaitable
+from threading import Lock
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -126,6 +127,7 @@ DEFAULT_ALLOWED_OPERATION_TYPES = {
     OperationType.SUBSCRIPTION,
 }
 _WARNED_GRAPHQL_INFO_EXTENSIONS: set[type[SchemaExtension]] = set()
+_WARNED_GRAPHQL_INFO_EXTENSIONS_LOCK = Lock()
 ProcessErrors: TypeAlias = (
     "Callable[[list[GraphQLError], ExecutionContext | None], None]"
 )
@@ -621,11 +623,14 @@ class Schema(BaseSchema):
         if not extension._uses_strawberry_info():
             extension_type = type(extension)
             resolver_module = extension_type.resolve.__module__
-            if (
-                extension_type not in _WARNED_GRAPHQL_INFO_EXTENSIONS
-                and not resolver_module.startswith("strawberry.extensions.")
-            ):
-                _WARNED_GRAPHQL_INFO_EXTENSIONS.add(extension_type)
+            should_warn = False
+            if not resolver_module.startswith("strawberry.extensions."):
+                with _WARNED_GRAPHQL_INFO_EXTENSIONS_LOCK:
+                    if extension_type not in _WARNED_GRAPHQL_INFO_EXTENSIONS:
+                        _WARNED_GRAPHQL_INFO_EXTENSIONS.add(extension_type)
+                        should_warn = True
+
+            if should_warn:
                 warnings.warn(
                     (
                         f"{extension_type.__qualname__}.resolve receives "
@@ -634,7 +639,7 @@ class Schema(BaseSchema):
                         "Info API. Run `strawberry upgrade schema-extension-info .` "
                         "for an automated migration. The raw graphql-core object "
                         "remains available as `info._raw_info`. Support for the "
-                        "legacy behavior will be removed in Strawberry 2."
+                        "legacy behavior will be removed in Strawberry 1.0."
                     ),
                     DeprecationWarning,
                     stacklevel=4,

@@ -16,7 +16,7 @@ This release adds `strawberry.Info` support to schema extension resolvers.
 Annotating `SchemaExtension.resolve` with `strawberry.Info` now passes the same
 configured Info type used by field resolvers. Existing unannotated and
 `GraphQLResolveInfo` extension resolvers continue to receive the graphql-core
-object, with a deprecation warning ahead of Strawberry 2.
+object, with a deprecation warning ahead of Strawberry 1.0.
 
 Run `strawberry upgrade schema-extension-info .` to opt direct schema extension
 subclasses into Strawberry Info while preserving their existing raw Info

@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import warnings
+from concurrent.futures import ThreadPoolExecutor
+from threading import Barrier
 from typing import Any
 
 import pytest
@@ -127,12 +129,15 @@ def test_strawberry_and_graphql_info_extensions_can_be_mixed() -> None:
 
     assert result.errors is None
     assert {name for name, _ in received_info} == {"strawberry", "graphql"}
-    assert isinstance(dict(received_info)["strawberry"], strawberry.Info)
-    assert isinstance(dict(received_info)["graphql"], GraphQLResolveInfo)
+    strawberry_info = dict(received_info)["strawberry"]
+    graphql_info = dict(received_info)["graphql"]
+    assert isinstance(strawberry_info, strawberry.Info)
+    assert strawberry_info._raw_info is graphql_info
 
 
 def test_legacy_info_warning_is_emitted_once_per_extension_class() -> None:
     received_info: list[object] = []
+    worker_count = 8
 
     class LegacyExtension(SchemaExtension):
         def resolve(self, next_: Any, root: Any, info: Any, **kwargs: Any) -> Any:
@@ -140,11 +145,16 @@ def test_legacy_info_warning_is_emitted_once_per_extension_class() -> None:
             return next_(root, info, **kwargs)
 
     schema = strawberry.Schema(query=Query, extensions=[LegacyExtension])
+    barrier = Barrier(worker_count)
+
+    def execute(_: int) -> Any:
+        barrier.wait()
+        return schema.execute_sync("{ hello }")
 
     with warnings.catch_warnings(record=True) as caught_warnings:
         warnings.simplefilter("always")
-        schema.execute_sync("{ hello }")
-        schema.execute_sync("{ hello }")
+        with ThreadPoolExecutor(max_workers=worker_count) as executor:
+            results = list(executor.map(execute, range(worker_count)))
 
     matching_warnings = [
         warning
@@ -152,7 +162,9 @@ def test_legacy_info_warning_is_emitted_once_per_extension_class() -> None:
         if "LegacyExtension.resolve receives GraphQLResolveInfo" in str(warning.message)
     ]
     assert len(matching_warnings) == 1
-    assert all(isinstance(info, GraphQLResolveInfo) for info in received_info)
+    assert all(result.errors is None for result in results)
+    assert all(not isinstance(info, strawberry.Info) for info in received_info)
+    assert all(info.field_name == "hello" for info in received_info)
 
 
 def test_strawberry_info_extension_handles_graphql_core_only_fields() -> None:
