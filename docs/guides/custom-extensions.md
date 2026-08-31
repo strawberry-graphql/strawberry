@@ -103,8 +103,8 @@ Because those fields have no Strawberry return type, `return_type` raises a
 
 An unannotated `info` parameter, or one annotated as `GraphQLResolveInfo`, keeps
 the previous runtime behavior for compatibility but emits a
-`DeprecationWarning`. This compatibility behavior will be removed in
-Strawberry 2.
+`DeprecationWarning`. This compatibility behavior will be removed in Strawberry
+1.0.
 
 The upgrade command opts direct `SchemaExtension` subclasses into
 `strawberry.Info` while preserving their existing use of the raw object:

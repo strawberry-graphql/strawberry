@@ -58,6 +58,7 @@ class Info(Generic[ContextType, RootValueType]):
     """
 
     _raw_info: GraphQLResolveInfo
+    # graphql-core-only fields, such as introspection fields, have no StrawberryField.
     _field: StrawberryField | None
 
     def __class_getitem__(cls, types: type | tuple[type, ...]) -> type[Info]:
