@@ -1,6 +1,19 @@
 CHANGELOG
 =========
 
+0.327.1 - 2026-09-01
+--------------------
+
+This release adds continuous compatibility testing against the latest Strawberry
+Django release.
+
+Strawberry pull requests now run the complete Strawberry Django test suite using
+the proposed Strawberry changes.
+
+This release was contributed by [@patrick91](https://github.com/patrick91) in [#4608](https://github.com/strawberry-graphql/strawberry/pull/4608)
+
+Additional contributors: [@Amp](https://github.com/Amp)
+
 0.327.0 - 2026-08-31
 --------------------
 
