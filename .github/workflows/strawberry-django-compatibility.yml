@@ -1,7 +1,7 @@
 name: Strawberry Django compatibility
 
 concurrency:
-  group: ${{ github.head_ref || github.run_id }}-strawberry-django
+  group: django-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 on:
