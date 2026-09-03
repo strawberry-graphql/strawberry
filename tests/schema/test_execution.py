@@ -429,6 +429,29 @@ def test_overriding_process_errors(caplog: pytest.LogCaptureFixture):
     assert caplog.records == []
 
 
+def test_custom_logger(caplog: pytest.LogCaptureFixture):
+    @strawberry.type
+    class Query:
+        example: str = "hi"
+
+    logged_errors = []
+
+    class CustomLogger:
+        def error(self, error, execution_context=None):
+            logged_errors.append((error, execution_context))
+
+    schema = strawberry.Schema(query=Query, logger=CustomLogger())
+
+    result = schema.execute_sync("{ missingField }")
+
+    assert result.errors
+    assert len(logged_errors) == 1
+    assert logged_errors[0][0] is result.errors[0]
+    assert logged_errors[0][1] is not None
+    assert logged_errors[0][1].schema is schema
+    assert caplog.records == []
+
+
 def test_adding_custom_validation_rules():
     @strawberry.type
     class Query:
