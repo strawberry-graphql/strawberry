@@ -1030,6 +1030,98 @@ async def test_reusing_operation_id_does_not_count_against_limit(
         await ws.close()
 
 
+async def test_completed_subscriptions_do_not_count_against_limit(
+    http_client_class: type[HttpClient],
+):
+    """Subscriptions that complete on their own must release their slot,
+    otherwise a client could hit the limit with operations that are no longer
+    active."""
+    test_client = http_client_class(schema, max_subscriptions_per_connection=2)
+
+    async with test_client.ws_connect(
+        "/graphql", protocols=[GRAPHQL_WS_PROTOCOL]
+    ) as ws:
+        await ws.send_legacy_message({"type": "connection_init"})
+        response: ConnectionAckMessage = await ws.receive_json()
+        assert response["type"] == "connection_ack"
+
+        # Each of these completes on its own after a single result, so the
+        # third one must not be rejected even though the limit is 2.
+        for operation_id in ("sub1", "sub2", "sub3"):
+            await ws.send_legacy_message(
+                {
+                    "type": "start",
+                    "id": operation_id,
+                    "payload": {
+                        "query": 'subscription { echo(message: "Hi") }',
+                    },
+                }
+            )
+
+            data_message: DataMessage = await ws.receive_json()
+            assert data_message["type"] == "data"
+            assert data_message["id"] == operation_id
+            assert data_message["payload"]["data"] == {"echo": "Hi"}
+
+            complete_message: CompleteMessage = await ws.receive_json()
+            assert complete_message["type"] == "complete"
+            assert complete_message["id"] == operation_id
+
+        # Stopping an operation that already completed is a no-op and must
+        # not affect the connection.
+        await ws.send_legacy_message({"type": "stop", "id": "sub1"})
+
+        await ws.send_legacy_message(
+            {
+                "type": "start",
+                "id": "sub4",
+                "payload": {
+                    "query": 'subscription { echo(message: "Hi") }',
+                },
+            }
+        )
+        data_message = await ws.receive_json()
+        assert data_message["type"] == "data"
+        assert data_message["id"] == "sub4"
+
+        complete_message = await ws.receive_json()
+        assert complete_message["type"] == "complete"
+        assert complete_message["id"] == "sub4"
+
+        await ws.close()
+
+
+async def test_failed_subscriptions_do_not_count_against_limit(
+    http_client_class: type[HttpClient],
+):
+    """Operations that fail before execution (e.g. validation errors) must
+    release their slot as well."""
+    test_client = http_client_class(schema, max_subscriptions_per_connection=2)
+
+    async with test_client.ws_connect(
+        "/graphql", protocols=[GRAPHQL_WS_PROTOCOL]
+    ) as ws:
+        await ws.send_legacy_message({"type": "connection_init"})
+        response: ConnectionAckMessage = await ws.receive_json()
+        assert response["type"] == "connection_ack"
+
+        for operation_id in ("sub1", "sub2", "sub3"):
+            await ws.send_legacy_message(
+                {
+                    "type": "start",
+                    "id": operation_id,
+                    "payload": {"query": "subscription { doesNotExist }"},
+                }
+            )
+
+            error_message: ErrorMessage = await ws.receive_json()
+            assert error_message["type"] == "error"
+            assert error_message["id"] == operation_id
+            assert error_message["payload"] != {"message": "Subscription limit reached"}
+
+        await ws.close()
+
+
 async def test_max_subscriptions_per_connection_disabled(
     http_client_class: type[HttpClient],
 ):
