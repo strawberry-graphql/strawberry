@@ -2,13 +2,27 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, cast
 
-from graphql import get_named_type
+from graphql import (
+    get_named_type,
+    is_enum_type,
+    is_input_object_type,
+    is_interface_type,
+    is_object_type,
+    is_scalar_type,
+    is_union_type,
+)
+
+from strawberry.exceptions import (
+    DuplicateSchemaDirectiveError,
+    InvalidSchemaDirectiveLocationError,
+)
+from strawberry.schema_directive import Location, StrawberrySchemaDirective
 
 from .compat import is_schema_directive
 from .schema_converter import GraphQLCoreConverter
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable
+    from collections.abc import Callable, Iterable
 
     from graphql import GraphQLDirective, GraphQLNamedType, GraphQLType
 
@@ -41,6 +55,7 @@ class SchemaDirectiveCollector:
         # traversal order. Federation derives @link and @composeDirective from
         # these, so the order is kept independent of the definitions above.
         self.directives_in_use: list[object] = []
+        self._schema_directive_definitions: dict[str, StrawberrySchemaDirective] = {}
 
         self._graphql_types: list[GraphQLNamedType] = []
         self._seen_graphql_types: set[int] = set()
@@ -64,8 +79,13 @@ class SchemaDirectiveCollector:
 
     def add_schema_directives(self, directives: Iterable[object]) -> None:
         """Register directives applied to the schema definition itself."""
-        for directive in directives:
-            self._add_directive_type_of(directive)
+        self._record_directives(
+            directives,
+            location=Location.SCHEMA,
+            element="schema",
+            seen_directives=self._schema_directive_definitions,
+            record_in_use=False,
+        )
 
     def add_graphql_types(self, graphql_types: Iterable[GraphQLType | None]) -> None:
         for graphql_type in graphql_types:
@@ -98,15 +118,80 @@ class SchemaDirectiveCollector:
         for alias, canonical_type in self._aliases.items():
             self.graphql_directives[alias] = self.graphql_directives[canonical_type]
 
-    def _add_directive_type_of(self, directive: object) -> None:
-        directive_type = directive.__class__
-        if is_schema_directive(directive_type):
+    def _record_directives(
+        self,
+        directives: Iterable[object],
+        *,
+        location: Location,
+        element: str,
+        source: type | Callable[..., Any] | None = None,
+        source_attribute: str | None = None,
+        source_argument: str | None = None,
+        seen_directives: dict[str, StrawberrySchemaDirective] | None = None,
+        record_in_use: bool = True,
+    ) -> None:
+        seen_directives = seen_directives if seen_directives is not None else {}
+
+        for directive in directives:
+            if record_in_use:
+                self.directives_in_use.append(directive)
+
+            directive_type = directive.__class__
+            if not is_schema_directive(directive_type):
+                continue
+
+            definition = cast(
+                "StrawberrySchemaDirective",
+                cast("Any", directive_type).__strawberry_directive__,
+            )
+            directive_name = self._converter.config.name_converter.from_directive(
+                definition
+            )
+
+            if location not in definition.locations:
+                raise InvalidSchemaDirectiveLocationError(
+                    directive_name,
+                    location,
+                    element,
+                    definition.locations,
+                    source=source,
+                    source_attribute=source_attribute,
+                    source_argument=source_argument,
+                )
+
+            if (previous := seen_directives.get(directive_name)) is not None and (
+                not previous.repeatable or not definition.repeatable
+            ):
+                raise DuplicateSchemaDirectiveError(
+                    directive_name,
+                    location,
+                    element,
+                    source=source,
+                    source_attribute=source_attribute,
+                    source_argument=source_argument,
+                )
+
+            seen_directives.setdefault(directive_name, definition)
             self.add_directive_type(directive_type)
 
-    def _record_applied_directives(self, owner: object) -> None:
-        for directive in getattr(owner, "directives", None) or ():
-            self.directives_in_use.append(directive)
-            self._add_directive_type_of(directive)
+    def _record_applied_directives(
+        self,
+        owner: object,
+        *,
+        location: Location,
+        element: str,
+        source: type | Callable[..., Any] | None = None,
+        source_attribute: str | None = None,
+        source_argument: str | None = None,
+    ) -> None:
+        self._record_directives(
+            getattr(owner, "directives", None) or (),
+            location=location,
+            element=element,
+            source=source,
+            source_attribute=source_attribute,
+            source_argument=source_argument,
+        )
 
     def _queue_graphql_type(self, graphql_type: GraphQLType) -> None:
         named_type = get_named_type(graphql_type)
@@ -115,6 +200,23 @@ class SchemaDirectiveCollector:
 
         self._seen_graphql_types.add(id(named_type))
         self._graphql_types.append(named_type)
+
+    @staticmethod
+    def _get_type_location(graphql_type: GraphQLNamedType) -> Location | None:
+        if is_scalar_type(graphql_type):
+            return Location.SCALAR
+        if is_object_type(graphql_type):
+            return Location.OBJECT
+        if is_interface_type(graphql_type):
+            return Location.INTERFACE
+        if is_union_type(graphql_type):
+            return Location.UNION
+        if is_enum_type(graphql_type):
+            return Location.ENUM
+        if is_input_object_type(graphql_type):
+            return Location.INPUT_OBJECT
+
+        return None
 
     def _visit_graphql_type(self, graphql_type: GraphQLNamedType) -> None:
         # Resolve graphql-core's lazy thunks before reading the Strawberry
@@ -129,13 +231,73 @@ class SchemaDirectiveCollector:
             GraphQLCoreConverter.DEFINITION_BACKREF
         )
         if definition is not None:
-            self._record_applied_directives(definition)
-            for field in getattr(definition, "fields", ()):
-                self._record_applied_directives(field)
-                for argument in getattr(field, "arguments", ()):
-                    self._record_applied_directives(argument)
-            for value in getattr(definition, "values", ()):
-                self._record_applied_directives(value)
+            location = self._get_type_location(graphql_type)
+            source = getattr(definition, "origin", None)
+            source = source if isinstance(source, type) else None
+
+            if location is not None:
+                self._record_applied_directives(
+                    definition,
+                    location=location,
+                    element=graphql_type.name,
+                    source=source,
+                )
+
+            field_location = (
+                Location.INPUT_FIELD_DEFINITION
+                if is_input_object_type(graphql_type)
+                else Location.FIELD_DEFINITION
+            )
+            for field_name, graphql_field in graphql_fields.items():
+                field = graphql_field.extensions.get(
+                    GraphQLCoreConverter.DEFINITION_BACKREF
+                )
+                if field is None:
+                    continue
+
+                field_source = getattr(field, "origin", None)
+                field_source = field_source if isinstance(field_source, type) else None
+                field_element = f"{graphql_type.name}.{field_name}"
+                self._record_applied_directives(
+                    field,
+                    location=field_location,
+                    element=field_element,
+                    source=field_source,
+                    source_attribute=getattr(field, "python_name", None),
+                )
+
+                resolver = getattr(field, "base_resolver", None)
+                resolver_source = getattr(resolver, "wrapped_func", None)
+                for argument_name, graphql_argument in getattr(
+                    graphql_field, "args", {}
+                ).items():
+                    argument = graphql_argument.extensions.get(
+                        GraphQLCoreConverter.DEFINITION_BACKREF
+                    )
+                    if argument is None:
+                        continue
+
+                    self._record_applied_directives(
+                        argument,
+                        location=Location.ARGUMENT_DEFINITION,
+                        element=f"{field_element}({argument_name}:)",
+                        source=resolver_source,
+                        source_argument=getattr(argument, "python_name", None),
+                    )
+
+            for value_name, graphql_value in getattr(
+                graphql_type, "values", {}
+            ).items():
+                value = graphql_value.extensions.get(
+                    GraphQLCoreConverter.DEFINITION_BACKREF
+                )
+                if value is not None:
+                    self._record_applied_directives(
+                        value,
+                        location=Location.ENUM_VALUE,
+                        element=f"{graphql_type.name}.{value_name}",
+                        source=source,
+                    )
 
         for field in graphql_fields.values():
             self._queue_graphql_type(field.type)
