@@ -2,14 +2,14 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from enum import Enum
+from functools import cache
 from typing import TYPE_CHECKING, Any
 
 from strawberry.types import StreamExecutionResult
+from strawberry.types.fields.resolver import StrawberryResolver
 from strawberry.utils.await_maybe import AsyncIteratorOrIterator, AwaitableOrValue
 
 if TYPE_CHECKING:
-    from graphql import GraphQLResolveInfo
-
     from strawberry.types import ExecutionContext
 
 
@@ -66,7 +66,7 @@ class SchemaExtension:
         self,
         _next: Callable,
         root: Any,
-        info: GraphQLResolveInfo,
+        info: Any,
         *args: str,
         **kwargs: Any,
     ) -> AwaitableOrValue[object]:
@@ -79,6 +79,12 @@ class SchemaExtension:
     def _implements_resolve(cls) -> bool:
         """Whether the extension implements the resolve method."""
         return cls.resolve is not SchemaExtension.resolve
+
+    @classmethod
+    @cache
+    def _uses_strawberry_info(cls) -> bool:
+        """Whether ``resolve`` requests Strawberry's Info wrapper."""
+        return StrawberryResolver(cls.resolve).info_parameter is not None
 
 
 Hook = (
