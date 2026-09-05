@@ -306,3 +306,118 @@ async def test_mask_errors_before_streaming_pre_execution_error(
         assert [error.message for error in result.errors] == ["Unexpected error."]
     finally:
         await results.aclose()
+
+
+async def first_stream_result(
+    schema: strawberry.Schema, operation: str | None
+) -> ExecutionResult:
+    """Return the first frame of a stream, then close the stream."""
+    results = await schema.stream(operation)
+    try:
+        result = await anext(results)
+        assert isinstance(result, ExecutionResult)
+        assert result.errors
+        return result
+    finally:
+        await results.aclose()
+
+
+@pytest.mark.asyncio
+async def test_keep_pre_execution_errors_before_streaming() -> None:
+    schema = strawberry.Schema(
+        query=Query,
+        extensions=[lambda: MaskErrors(mask_pre_execution_errors=False)],
+    )
+
+    kept = await first_stream_result(schema, "{ missingField }")
+    assert [error.message for error in kept.errors] == [
+        "Cannot query field 'missingField' on type 'Query'."
+    ]
+
+    masked = await first_stream_result(schema, "{ dangerousQuery }")
+    assert [error.message for error in masked.errors] == ["Unexpected error."]
+
+
+@pytest.mark.asyncio
+async def test_mask_errors_forgets_the_phase_of_the_previous_operation() -> None:
+    """An extension instance can be shared between operations."""
+    extension = MaskErrors(mask_pre_execution_errors=False)
+    schema = strawberry.Schema(query=Query, extensions=[lambda: extension])
+
+    # This operation stops in the validation step.
+    await first_stream_result(schema, "{ missingField }")
+
+    # This one stops before the parse step, so the extension must mask it.
+    result = await first_stream_result(schema, None)
+    assert [error.message for error in result.errors] == ["Unexpected error."]
+
+
+@pytest.mark.asyncio
+async def test_mask_errors_masks_an_operation_that_overlaps_a_stream() -> None:
+    """One extension instance can serve two operations at the same time.
+
+    A frame of an open stream must not stop the extension from masking the
+    error of another operation that runs at the same time.
+    """
+    started = asyncio.Event()
+    release = asyncio.Event()
+
+    @strawberry.type
+    class GatedQuery:
+        @strawberry.field
+        async def gated_error(self) -> str:
+            started.set()
+            await release.wait()
+            raise RuntimeError("Secret query error")
+
+    extension = MaskErrors()
+    schema = strawberry.Schema(
+        query=GatedQuery, subscription=Subscription, extensions=[lambda: extension]
+    )
+
+    stream = await schema.stream("subscription { count }")
+    try:
+        await anext(stream)
+
+        overlapping = asyncio.create_task(schema.execute("{ gatedError }"))
+        await started.wait()
+
+        # The stream reports a frame while the other operation is in its resolver.
+        await anext(stream)
+        release.set()
+
+        result = await overlapping
+        assert result.errors
+        assert [error.message for error in result.errors] == ["Unexpected error."]
+    finally:
+        await stream.aclose()
+
+
+@pytest.mark.asyncio
+async def test_mask_errors_phase_does_not_outlive_its_operation() -> None:
+    """The phase behind `mask_pre_execution_errors` belongs to one operation.
+
+    A second operation that stops in the validation step must not stop the
+    extension from masking the error of a resolver in a stream that is still
+    open.
+    """
+    extension = MaskErrors(mask_pre_execution_errors=False)
+    schema = strawberry.Schema(
+        query=Query, subscription=Subscription, extensions=[lambda: extension]
+    )
+
+    results = await schema.stream("subscription { dangerousStream }")
+    try:
+        first_result = await anext(results)
+        assert isinstance(first_result, ExecutionResult)
+        assert first_result.data == {"dangerousStream": 1}
+
+        # This operation stops in the validation step of its own document.
+        await schema.execute("{ missingField }")
+
+        error_result = await anext(results)
+        assert isinstance(error_result, ExecutionResult)
+        assert error_result.errors
+        assert [error.message for error in error_result.errors] == ["Unexpected error."]
+    finally:
+        await results.aclose()
