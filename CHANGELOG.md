@@ -1,6 +1,21 @@
 CHANGELOG
 =========
 
+0.327.3 - 2026-09-05
+--------------------
+
+This release fixes classification of built-in scalar and OneOf input errors.
+
+Strawberry now raises `StrawberryInputCoercionError` for these client input
+errors, allowing server-side error handling and monitoring to distinguish them
+from server faults without changing error messages or serialized responses.
+Custom scalar parsers can raise the same exception for expected conversion
+errors.
+
+This release was contributed by [@patrick91](https://github.com/patrick91) in [#4593](https://github.com/strawberry-graphql/strawberry/pull/4593)
+
+Additional contributors: [@ampagent](https://github.com/ampagent)
+
 0.327.2 - 2026-09-03
 --------------------
 
