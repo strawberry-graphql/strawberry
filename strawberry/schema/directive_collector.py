@@ -125,10 +125,39 @@ class SchemaDirectiveCollector:
         interfaces = getattr(graphql_type, "interfaces", ())
         member_types = getattr(graphql_type, "types", ())
 
-        definition = graphql_type.extensions.get(
-            GraphQLCoreConverter.DEFINITION_BACKREF
-        )
-        if definition is not None:
+        definitions = [
+            graphql_type.extensions.get(GraphQLCoreConverter.DEFINITION_BACKREF),
+            *graphql_type.extensions.get(
+                GraphQLCoreConverter.OBJECT_EXTENSIONS_BACKREF, ()
+            ),
+            *graphql_type.extensions.get(
+                GraphQLCoreConverter.INPUT_EXTENSIONS_BACKREF, ()
+            ),
+        ]
+        seen_directive_names: set[str] = set()
+        for definition in definitions:
+            if definition is None:
+                continue
+            if len(definitions) > 1:
+                # All definitions compose into one GraphQL type, so a
+                # non-repeatable directive may only occur once across them.
+                for directive in definition.directives or ():
+                    directive_definition = getattr(
+                        type(directive), "__strawberry_directive__", None
+                    )
+                    if directive_definition is None or directive_definition.repeatable:
+                        continue
+                    directive_name = (
+                        self._converter.config.name_converter.from_directive(
+                            directive_definition
+                        )
+                    )
+                    if directive_name in seen_directive_names:
+                        raise ValueError(
+                            f"Type '{graphql_type.name}' repeats non-repeatable "
+                            f"directive '@{directive_name}'"
+                        )
+                    seen_directive_names.add(directive_name)
             self._record_applied_directives(definition)
             for field in getattr(definition, "fields", ()):
                 self._record_applied_directives(field)
