@@ -4,6 +4,10 @@ from typing import Any
 
 from strawberry.extensions.base_extension import SchemaExtension
 
+# Bounded by default so caching enabled on a public endpoint cannot be used
+# to grow memory without limit via unique query texts
+DEFAULT_MAXSIZE = 128
+
 
 @cache
 def _get_validate_cache(maxsize: int | None) -> Callable[..., Any]:
@@ -36,12 +40,15 @@ class ValidationCache(SchemaExtension):
     ```
     """
 
-    def __init__(self, maxsize: int | None = None) -> None:
+    def __init__(self, maxsize: int | None = DEFAULT_MAXSIZE) -> None:
         """Initialize the ValidationCache.
 
         Args:
-            maxsize: Set the maxsize of the cache. If `maxsize` is set to `None` then the
-                cache will grow without bound.
+            maxsize: Set the maxsize of the cache. Defaults to a bounded cache of
+                `DEFAULT_MAXSIZE` (128) entries. Pass an explicit `maxsize=None` to
+                let the cache grow without bound; only do this when the set of
+                distinct query texts reaching the server is trusted and bounded,
+                as an unbounded cache can otherwise grow memory indefinitely.
 
         More info: https://docs.python.org/3/library/functools.html#functools.lru_cache
         """

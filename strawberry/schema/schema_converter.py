@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import dataclasses
 import inspect
-import sys
 import typing
 from functools import partial, reduce
 from typing import (
@@ -21,7 +20,6 @@ from graphql import (
     GraphQLDirective,
     GraphQLEnumType,
     GraphQLEnumValue,
-    GraphQLError,
     GraphQLField,
     GraphQLID,
     GraphQLInputField,
@@ -47,6 +45,7 @@ from strawberry.exceptions import (
     InvalidUnionTypeError,
     MissingTypesForGenericError,
     ScalarAlreadyRegisteredError,
+    StrawberryInputCoercionError,
     UnresolvedFieldTypeError,
 )
 from strawberry.extensions.field_extension import build_field_extension_resolvers
@@ -586,7 +585,6 @@ class GraphQLCoreConverter:
             "StrawberrySchemaDirective",
             cls.__strawberry_directive__,  # type: ignore[attr-defined]
         )
-        module = sys.modules[cls.__module__]
 
         args: dict[str, GraphQLArgument] = {}
         for field in strawberry_directive.fields:
@@ -594,14 +592,22 @@ class GraphQLCoreConverter:
             if default == dataclasses.MISSING:
                 default = UNSET
 
+            # Attached schema directives are now converted during schema
+            # construction instead of only when SDL happens to be printed.
+            # Resolve their annotations at the Strawberry boundary so unresolved
+            # forward references raise the usual actionable Strawberry error
+            # instead of surfacing later as a graphql-core type error.
+            field_type = field.resolve_type()
+            if field_type is UNRESOLVED:
+                raise UnresolvedFieldTypeError(strawberry_directive, field)
+
             name = self.config.name_converter.get_graphql_name(field)
             args[name] = self.from_argument(
                 StrawberryArgument(
                     python_name=field.python_name or field.name,
                     graphql_name=None,
                     type_annotation=StrawberryAnnotation(
-                        annotation=field.type,
-                        namespace=module.__dict__,
+                        annotation=field_type,
                     ),
                     default=default,
                 )
@@ -818,14 +824,14 @@ class GraphQLCoreConverter:
 
         def check_one_of(value: dict[str, Any]) -> dict[str, Any]:
             if len(value) != 1:
-                raise GraphQLError(
+                raise StrawberryInputCoercionError(
                     f"OneOf Input Object '{type_name}' must specify exactly one key."
                 )
 
             first_key, first_value = next(iter(value.items()))
 
             if first_value is None or first_value is UNSET:
-                raise GraphQLError(
+                raise StrawberryInputCoercionError(
                     f"Value for member field '{first_key}' must be non-null"
                 )
 

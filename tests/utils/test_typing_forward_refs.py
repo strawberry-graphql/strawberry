@@ -1,10 +1,16 @@
 from __future__ import annotations
 
 import typing
+import typing_extensions
+from types import SimpleNamespace
 from typing import ClassVar, ForwardRef, Optional, Union
 
 from strawberry.scalars import JSON
 from strawberry.utils.typing import eval_type, is_classvar
+
+_classvar_proxy = SimpleNamespace(
+    nested=SimpleNamespace(ClassVar=ClassVar),
+)
 
 
 def test_eval_type():
@@ -51,7 +57,12 @@ def test_is_classvar():
         attr1: str
         attr2: ClassVar[str]
         attr3: typing.ClassVar[str]
+        attr4: typing_extensions.ClassVar[str]
+
+    Foo.__annotations__["attr5"] = "_classvar_proxy.nested.ClassVar[str]"
 
     assert not is_classvar(Foo, Foo.__annotations__["attr1"])
     assert is_classvar(Foo, Foo.__annotations__["attr2"])
     assert is_classvar(Foo, Foo.__annotations__["attr3"])
+    assert is_classvar(Foo, Foo.__annotations__["attr4"])
+    assert is_classvar(Foo, Foo.__annotations__["attr5"])

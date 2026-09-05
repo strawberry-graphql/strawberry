@@ -120,13 +120,13 @@ class ReservedType(NamedTuple):
             annotation = resolver.strawberry_annotations[parameter]
             if isinstance(annotation, StrawberryAnnotation):
                 try:
-                    evaled_annotation: Any = annotation.evaluate()
+                    evaled_annotation: Any = annotation._evaluated_annotation
                 except NameError:
                     # If we fail to evaluate, check if the raw annotation string
                     # matches this reserved type. This handles cases where types
                     # are imported under TYPE_CHECKING or use forward references
                     # like "strawberry.Info".
-                    raw = annotation.annotation
+                    raw = annotation.raw_annotation
                     if isinstance(raw, str):
                         evaled_annotation = raw
                     else:

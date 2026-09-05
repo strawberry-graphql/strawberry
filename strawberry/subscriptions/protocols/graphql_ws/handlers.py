@@ -215,17 +215,28 @@ class BaseGraphQLWSHandler(Generic[Context, RootValue]):
 
         except asyncio.CancelledError:
             await self.send_message(CompleteMessage(type="complete", id=operation_id))
+        finally:
+            # The operation is over, whether it completed on its own, failed
+            # before execution or was stopped. Release its bookkeeping so that
+            # it no longer counts towards ``max_subscriptions_per_connection``
+            # and its id can be reused right away.
+            self.subscriptions.pop(operation_id, None)
+            self.tasks.pop(operation_id, None)
 
     async def cleanup_operation(self, operation_id: str) -> None:
-        if operation_id in self.subscriptions:
+        result_source = self.subscriptions.pop(operation_id, None)
+        if result_source is not None:
             with suppress(RuntimeError):
-                await self.subscriptions[operation_id].aclose()
-            del self.subscriptions[operation_id]
+                await result_source.aclose()
 
-        self.tasks[operation_id].cancel()
+        task = self.tasks.pop(operation_id, None)
+        if task is None:
+            # Already finished (and released itself), or never existed
+            return
+
+        task.cancel()
         with suppress(BaseException):
-            await self.tasks[operation_id]
-        del self.tasks[operation_id]
+            await task
 
     async def cleanup(self) -> None:
         for operation_id in list(self.tasks.keys()):

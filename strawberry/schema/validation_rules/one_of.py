@@ -2,7 +2,6 @@ from typing import Any
 
 from graphql import (
     ExecutableDefinitionNode,
-    GraphQLError,
     GraphQLNamedType,
     ObjectValueNode,
     ValidationContext,
@@ -10,6 +9,8 @@ from graphql import (
     VariableDefinitionNode,
     get_named_type,
 )
+
+from strawberry.exceptions import StrawberryInputCoercionError
 
 
 class OneOfInputValidationRule(ValidationRule):
@@ -44,7 +45,7 @@ class OneOfInputValidationRule(ValidationRule):
 
         if is_not_exactly_one_field:
             self.report_error(
-                GraphQLError(
+                StrawberryInputCoercionError(
                     f"OneOf Input Object '{type.name}' must specify exactly one key.",
                     nodes=[node],
                 )
@@ -58,7 +59,7 @@ class OneOfInputValidationRule(ValidationRule):
 
         if is_null_literal:
             self.report_error(
-                GraphQLError(
+                StrawberryInputCoercionError(
                     f"Field '{type.name}.{keys[0]}' must be non-null.",
                     nodes=[node],
                 )
@@ -73,7 +74,7 @@ class OneOfInputValidationRule(ValidationRule):
 
             if is_nullable_variable:
                 self.report_error(
-                    GraphQLError(
+                    StrawberryInputCoercionError(
                         f"Variable '{variable_name}' must be non-nullable to be used for OneOf Input Object '{type.name}'.",
                         nodes=[node],
                     )

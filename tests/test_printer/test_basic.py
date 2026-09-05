@@ -40,6 +40,73 @@ def test_simple_required_types():
     assert print_schema(schema) == textwrap.dedent(expected_type).strip()
 
 
+def test_does_not_print_unreferenced_hidden_explicit_type():
+    Hidden = strawberry.scalar(str, name="Hidden", print_definition=False)
+
+    @strawberry.type
+    class Query:
+        name: str
+
+    schema = strawberry.Schema(query=Query, types=[Hidden])
+
+    expected_type = """
+    type Query {
+      name: String!
+    }
+    """
+
+    assert schema._schema.get_type("Hidden") is not None
+    assert print_schema(schema) == textwrap.dedent(expected_type).strip()
+
+
+def test_caches_schema_type_reachability(monkeypatch):
+    @strawberry.interface
+    class Node:
+        id: strawberry.ID
+
+    @strawberry.type
+    class User(Node):
+        name: str
+
+    @strawberry.type
+    class Query:
+        node: Node
+
+    schema = strawberry.Schema(query=Query, types=[User])
+    get_possible_types = schema._schema.get_possible_types
+    calls = 0
+
+    def counting_get_possible_types(type_):
+        nonlocal calls
+        calls += 1
+        return get_possible_types(type_)
+
+    monkeypatch.setattr(
+        schema._schema, "get_possible_types", counting_get_possible_types
+    )
+
+    expected_type = """
+    interface Node {
+      id: ID!
+    }
+
+    type Query {
+      node: Node!
+    }
+
+    type User implements Node {
+      id: ID!
+      name: String!
+    }
+    """
+    expected_type = textwrap.dedent(expected_type).strip()
+
+    assert print_schema(schema) == expected_type
+    assert calls == 1
+    assert print_schema(schema) == expected_type
+    assert calls == 1
+
+
 def test_printer_with_camel_case_on():
     @strawberry.type
     class Query:

@@ -1,6 +1,255 @@
 CHANGELOG
 =========
 
+0.327.3 - 2026-09-05
+--------------------
+
+This release fixes classification of built-in scalar and OneOf input errors.
+
+Strawberry now raises `StrawberryInputCoercionError` for these client input
+errors, allowing server-side error handling and monitoring to distinguish them
+from server faults without changing error messages or serialized responses.
+Custom scalar parsers can raise the same exception for expected conversion
+errors.
+
+This release was contributed by [@patrick91](https://github.com/patrick91) in [#4593](https://github.com/strawberry-graphql/strawberry/pull/4593)
+
+Additional contributors: [@ampagent](https://github.com/ampagent)
+
+0.327.2 - 2026-09-03
+--------------------
+
+This release fixes the legacy `graphql-ws` protocol handler so that
+subscriptions which complete on their own (or fail before execution) release
+their slot on the connection.
+
+Previously, completed operations were kept in the handler's bookkeeping until
+the client sent a `stop` message for them, reused their operation id, or
+disconnected. On connections with `max_subscriptions_per_connection`
+configured, a client using distinct operation ids could therefore hit
+`Subscription limit reached` even though none of its earlier subscriptions
+were still active. The `graphql-transport-ws` handler was not affected.
+
+Sending a `stop` message for an operation that has already completed is now a
+no-op instead of an error.
+
+This release was contributed by [@patrick91](https://github.com/patrick91) in [#4610](https://github.com/strawberry-graphql/strawberry/pull/4610)
+
+0.327.1 - 2026-09-01
+--------------------
+
+This release adds continuous compatibility testing against the latest Strawberry
+Django release.
+
+Strawberry pull requests now run the complete Strawberry Django test suite using
+the proposed Strawberry changes.
+
+This release was contributed by [@patrick91](https://github.com/patrick91) in [#4608](https://github.com/strawberry-graphql/strawberry/pull/4608)
+
+Additional contributors: [@Amp](https://github.com/Amp)
+
+0.327.0 - 2026-08-31
+--------------------
+
+This release fixes a potential unbounded memory growth in the `ParserCache` and
+`ValidationCache` extensions.
+
+Both extensions previously defaulted to `maxsize=None`, which creates an
+unbounded `functools.lru_cache`. On a network-exposed endpoint with one of these
+extensions enabled, a client sending many distinct query texts could grow the
+server's memory without limit.
+
+The default is now a bounded LRU cache of 128 entries, matching the
+`functools.lru_cache` default. Existing behavior can be restored by explicitly
+opting in to an unbounded cache:
+
+```python
+import strawberry
+from strawberry.extensions import ParserCache, ValidationCache
+
+schema = strawberry.Schema(
+    Query,
+    extensions=[
+        ParserCache(maxsize=None),  # explicitly unbounded
+        ValidationCache(maxsize=100),
+    ],
+)
+```
+
+Only use `maxsize=None` when the set of distinct query texts reaching the server
+is trusted and bounded.
+
+This release was contributed by [@patrick91](https://github.com/patrick91) in [#4606](https://github.com/strawberry-graphql/strawberry/pull/4606)
+
+0.326.1 - 2026-08-31
+--------------------
+
+This release fixes a permission bypass (GHSA-pfvf-fwfp-25mp) where a custom
+permission could unintentionally authorize access to a protected field.
+
+When a permission's `has_permission` was a normal `def` that returned an
+awaitable (for example a wrapper returning a coroutine), Strawberry classified
+the permission as synchronous because only `async def` methods are detected as
+async. On the synchronous resolve path the returned awaitable was evaluated for
+truthiness directly, and an awaitable is always truthy — so the check passed and
+the protected resolver ran even when the awaitable resolved to `False`. This
+affected any field with a synchronous resolver, under both `execute_sync` and
+`execute`.
+
+Strawberry now detects this case and fails closed: the synchronous permission
+path raises a clear error instead of trusting the awaitable, so access is never
+granted by accident. Permissions written as `async def has_permission` continue
+to work as before. If you intend a permission to be asynchronous, declare it
+with `async def` (or return a plain boolean from a synchronous one).
+
+This release was contributed by [@patrick91](https://github.com/patrick91) in [#4605](https://github.com/strawberry-graphql/strawberry/pull/4605)
+
+0.326.0 - 2026-08-31
+--------------------
+
+This release fixes introspection for custom schema directives.
+
+Schema directives attached to types, fields, arguments, and other schema elements
+now appear in standard GraphQL introspection. Schema explorers, IDEs, code
+generators, and other tools can discover each directive's description, arguments,
+allowed locations, repeatability, and any input types it uses. Federation directives,
+including generated `@link` and `@composeDirective` applications, are discoverable
+in the same way.
+
+Federation directives and custom composed directives used on field arguments are
+also included in the generated subgraph metadata, so routers can recognize those
+argument annotations without additional schema configuration.
+
+A directive reused across the schema is defined only once. Input, enum, and scalar
+types referenced by directive arguments are now part of the schema and may appear
+in generated SDL even when they are not used by fields.
+
+Because these directives and argument types are now part of the runtime schema,
+their GraphQL names must be unique. Schema construction reports a clear error when
+different directive definitions share a name, a custom directive replaces a
+built-in directive such as `@skip`, or a directive argument type conflicts with
+another schema type. Compatible custom `@oneOf` definitions continue to use
+GraphQL's built-in directive. Strawberry now also resolves attached directive
+argument annotations during schema construction, so unresolved forward references
+are reported when the schema is created instead of later when its SDL is printed.
+
+This release was contributed by [@patrick91](https://github.com/patrick91) in [#4598](https://github.com/strawberry-graphql/strawberry/pull/4598)
+
+0.325.0 - 2026-08-30
+--------------------
+
+This release adds richer verbose output to `assert_no_errors`. When GraphQL
+errors are detected, the assertion now includes full error details, making it
+easier to debug failing tests.
+
+This release was contributed by [@Akay7](https://github.com/Akay7) in [#4423](https://github.com/strawberry-graphql/strawberry/pull/4423)
+
+Additional contributors: [@greptile-apps[bot]](https://github.com/greptile-apps[bot]), [@pre-commit-ci[bot]](https://github.com/pre-commit-ci[bot]), [@bellini666](https://github.com/bellini666), [@sourcery-ai[bot]](https://github.com/sourcery-ai[bot])
+
+0.324.5 - 2026-08-30
+--------------------
+
+This release fixes incorrect dataclass transform ordering metadata.
+
+Strawberry decorators now correctly declare that ordering methods are not generated
+by default, matching their runtime dataclass behavior and allowing custom ordering
+methods such as `__gt__` to be used without type-checking errors.
+
+This release was contributed by [@subham-hq](https://github.com/subham-hq) in [#4591](https://github.com/strawberry-graphql/strawberry/pull/4591)
+
+0.324.4 - 2026-08-29
+--------------------
+
+This release fixes argument handling for operation directive resolvers.
+
+Arguments passed to operation directives now use GraphQL's standard coercion before
+your resolver runs. Directive resolvers receive Python numeric values, Strawberry
+enum members and nested input objects, and values parsed by custom scalars, whether
+clients use literals or variables.
+
+When a client omits a variable, Strawberry now applies the directive argument's
+default. Explicit `null` continues to reach nullable arguments as `None`.
+
+This release was contributed by [@patrick91](https://github.com/patrick91) in [#4596](https://github.com/strawberry-graphql/strawberry/pull/4596)
+
+0.324.3 - 2026-08-29
+--------------------
+
+This release fixes silently ignored `strawberry.field()` metadata in nested type
+annotations.
+
+Strawberry now raises a clear error when field metadata is placed below the
+class-field annotation, such as on a list item, and explains that it must be moved
+to the outermost `Annotated` metadata for the field.
+
+For example, Strawberry now reports this misplaced metadata:
+
+```python
+from typing import Annotated
+
+import strawberry
+
+
+@strawberry.type
+class Query:
+    names: list[Annotated[str, strawberry.field(description="A name")]]
+```
+
+Move `strawberry.field()` to the field's outermost `Annotated` metadata:
+
+```python
+@strawberry.type
+class Query:
+    names: Annotated[list[str], strawberry.field(description="The names")]
+```
+
+This release was contributed by [@patrick91](https://github.com/patrick91) in [#4595](https://github.com/strawberry-graphql/strawberry/pull/4595)
+
+0.324.2 - 2026-08-28
+--------------------
+
+This release fixes fields configured with `strawberry.field()` inside
+`typing.Annotated`.
+
+You can now use this syntax consistently on object types, input types, and
+interfaces, including in projects that use `from __future__ import annotations`:
+
+```python
+from typing import Annotated
+
+import strawberry
+
+Name = Annotated[
+    str,
+    strawberry.field(name="displayName", default="Anonymous"),
+]
+
+
+@strawberry.type
+class User:
+    name: Name
+```
+
+All `strawberry.field()` options are supported. Fields with `default` or
+`default_factory` can be omitted when creating an instance, and field
+configuration can be combined with other Strawberry metadata such as named
+unions.
+
+This release was contributed by [@patrick91](https://github.com/patrick91) in [#4594](https://github.com/strawberry-graphql/strawberry/pull/4594)
+
+Additional contributors: [@ampagent](https://github.com/ampagent), [@Patrick](https://github.com/Patrick)
+
+0.324.1 - 2026-08-28
+--------------------
+
+This release adds support for the upcoming Python 3.15.
+
+Strawberry's test suite now runs on Python 3.15.
+
+This release was contributed by [@patrick91](https://github.com/patrick91) in [#4565](https://github.com/strawberry-graphql/strawberry/pull/4565)
+
+Additional contributors: [@Patrick](https://github.com/Patrick), [@ampagent](https://github.com/ampagent)
+
 0.324.0 - 2026-08-10
 --------------------
 

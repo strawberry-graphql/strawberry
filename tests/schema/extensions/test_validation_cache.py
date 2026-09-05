@@ -140,3 +140,22 @@ async def test_validation_cache_extension_async():
         assert result.data == {"ping": "pong"}
 
         assert mock_validate.call_count == 2
+
+
+def test_validation_cache_extension_default_is_bounded():
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def hello(self) -> str:
+            return "world"
+
+    schema = strawberry.Schema(query=Query, extensions=[ValidationCache])
+
+    cache = ValidationCache()
+    assert cache.cached_validate_document.cache_info().maxsize == 128
+
+    for i in range(200):
+        result = schema.execute_sync(f"query {{ alias_{i}: hello }}")
+        assert not result.errors
+
+    assert cache.cached_validate_document.cache_info().currsize == 128

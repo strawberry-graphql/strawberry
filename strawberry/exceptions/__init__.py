@@ -10,6 +10,7 @@ from .duplicated_type_name import DuplicatedTypeName
 from .exception import StrawberryException, UnableToFindExceptionSource
 from .handler import setup_exception_handler
 from .invalid_argument_type import InvalidArgumentTypeError
+from .invalid_strawberry_field_annotation import InvalidStrawberryFieldAnnotationError
 from .invalid_superclass_interface import InvalidSuperclassInterfaceError
 from .invalid_union_type import InvalidTypeForUnionMergeError, InvalidUnionTypeError
 from .missing_arguments_annotations import MissingArgumentsAnnotationsError
@@ -159,6 +160,10 @@ class StrawberryGraphQLError(GraphQLError):
     """Use it when you want to override the graphql.GraphQLError in custom extensions."""
 
 
+class StrawberryInputCoercionError(StrawberryGraphQLError):
+    """Raised when Strawberry cannot coerce a client-provided input value."""
+
+
 class ConnectionRejectionError(Exception):
     """Use it when you want to reject a WebSocket connection."""
 
@@ -166,6 +171,29 @@ class ConnectionRejectionError(Exception):
         if payload is None:
             payload = {}
         self.payload = payload
+
+
+class PermissionReturnedAwaitableInSyncContextError(Exception):
+    """A permission returned an awaitable while being resolved synchronously.
+
+    Raised when a permission's ``has_permission`` returns an awaitable (for
+    example a plain ``def`` that returns a coroutine) but the field is being
+    resolved on the synchronous path, where the awaitable cannot be awaited.
+    Returning it as-is would be truthy and silently grant access, so we fail
+    closed instead.
+    """
+
+    def __init__(self, permission: object) -> None:
+        self.permission = permission
+        permission_name = type(permission).__name__
+        message = (
+            f"Permission {permission_name!r} returned an awaitable from "
+            "`has_permission` but is being resolved synchronously, so the "
+            "result cannot be awaited. Declare `has_permission` as "
+            "`async def` so Strawberry runs it on the asynchronous path, or "
+            "return a plain boolean."
+        )
+        super().__init__(message)
 
 
 __all__ = [
@@ -176,6 +204,7 @@ __all__ = [
     "InvalidArgumentTypeError",
     "InvalidCustomContext",
     "InvalidDefaultFactoryError",
+    "InvalidStrawberryFieldAnnotationError",
     "InvalidSuperclassInterfaceError",
     "InvalidTypeForUnionMergeError",
     "InvalidUnionTypeError",
@@ -189,10 +218,12 @@ __all__ = [
     "MultipleStrawberryFieldsError",
     "ObjectIsNotAnEnumError",
     "ObjectIsNotClassError",
+    "PermissionReturnedAwaitableInSyncContextError",
     "PrivateStrawberryFieldError",
     "ScalarAlreadyRegisteredError",
     "StrawberryException",
     "StrawberryGraphQLError",
+    "StrawberryInputCoercionError",
     "UnableToFindExceptionSource",
     "UnallowedReturnTypeForUnion",
     "UnresolvedFieldTypeError",

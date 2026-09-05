@@ -19,6 +19,11 @@ class EnumValue:
     directives: Iterable[object] = ()
     description: str | None = None
 
+    def __post_init__(self) -> None:
+        # Directives are read by several consumers (schema construction,
+        # federation, the SDL printer), so one-shot iterables are materialized.
+        self.directives = tuple(self.directives)
+
 
 @dataclasses.dataclass
 class StrawberryEnumDefinition(StrawberryType):
@@ -27,6 +32,10 @@ class StrawberryEnumDefinition(StrawberryType):
     values: list[EnumValue]
     description: str | None
     directives: Iterable[object] = ()
+    print_definition: bool = True
+
+    def __post_init__(self) -> None:
+        self.directives = tuple(self.directives)
 
     def __hash__(self) -> int:
         # TODO: Is this enough for unique-ness?
@@ -111,6 +120,7 @@ class EnumAnnotation:
     description: str | None = None
     directives: Iterable[object] = ()
     graphql_name_from: GraphqlEnumNameFrom = "key"
+    print_definition: bool = True
 
     def __call__(self, cls: EnumType) -> EnumType:
         return _process_enum(
@@ -119,6 +129,7 @@ class EnumAnnotation:
             self.description,
             directives=self.directives,
             graphql_name_from=self.graphql_name_from,
+            print_definition=self.print_definition,
         )
 
 
@@ -128,6 +139,8 @@ def _process_enum(
     description: str | None = None,
     directives: Iterable[object] = (),
     graphql_name_from: GraphqlEnumNameFrom = "key",
+    *,
+    print_definition: bool = True,
 ) -> EnumType:
     if not isinstance(cls, EnumMeta):
         raise ObjectIsNotAnEnumError(cls)
@@ -180,6 +193,7 @@ def _process_enum(
         values=values,
         description=description,
         directives=directives,
+        print_definition=print_definition,
     )
 
     return cls
@@ -193,6 +207,7 @@ def enum(
     description: str | None = None,
     directives: Iterable[object] = (),
     graphql_name_from: GraphqlEnumNameFrom = "key",
+    print_definition: bool = True,
 ) -> EnumType: ...
 
 
@@ -204,16 +219,18 @@ def enum(
     description: str | None = None,
     directives: Iterable[object] = (),
     graphql_name_from: GraphqlEnumNameFrom = "key",
+    print_definition: bool = True,
 ) -> Callable[[EnumType], EnumType]: ...
 
 
-def enum(
+def enum(  # noqa: D417
     cls: EnumType | None = None,
     *,
     name: str | None = None,
     description: str | None = None,
     directives: Iterable[object] = (),
     graphql_name_from: GraphqlEnumNameFrom = "key",
+    print_definition: bool = True,
 ) -> EnumType | Callable[[EnumType], EnumType]:
     """Annotates an Enum class a GraphQL enum.
 
@@ -260,6 +277,7 @@ def enum(
         description=description,
         directives=directives,
         graphql_name_from=graphql_name_from,
+        print_definition=print_definition,
     )
 
     if not cls:

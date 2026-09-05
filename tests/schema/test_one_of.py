@@ -3,6 +3,7 @@ from typing import Any
 import pytest
 
 import strawberry
+from strawberry.exceptions import StrawberryInputCoercionError
 from strawberry.schema_directives import OneOf
 
 
@@ -57,6 +58,8 @@ def test_must_specify_at_least_one_key_default(
 
     assert result.errors
     assert len(result.errors) == 1
+    assert isinstance(result.errors[0], StrawberryInputCoercionError)
+    assert result.errors[0].extensions == {}
     assert (
         result.errors[0].message
         == "OneOf Input Object 'ExampleInputTagged' must specify exactly one key."
@@ -108,8 +111,11 @@ def test_must_specify_at_least_one_key_literal(value: str, variables: dict[str, 
 
     assert result.errors
     assert len(result.errors) == 1
+    error = result.errors[0]
+    assert isinstance(error, StrawberryInputCoercionError)
+    assert error.extensions == {}
     assert (
-        result.errors[0].message
+        error.message
         == "OneOf Input Object 'ExampleInputTagged' must specify exactly one key."
     )
 
@@ -128,7 +134,10 @@ def test_value_must_be_non_null_input():
 
     assert result.errors
     assert len(result.errors) == 1
-    assert result.errors[0].message == "Value for member field 'a' must be non-null"
+    error = result.errors[0]
+    assert isinstance(error, StrawberryInputCoercionError)
+    assert error.extensions == {}
+    assert error.message == "Value for member field 'a' must be non-null"
 
 
 def test_value_must_be_non_null_literal():
@@ -145,6 +154,8 @@ def test_value_must_be_non_null_literal():
 
     assert result.errors
     assert len(result.errors) == 1
+    assert isinstance(result.errors[0], StrawberryInputCoercionError)
+    assert result.errors[0].extensions == {}
     assert result.errors[0].message == "Field 'ExampleInputTagged.a' must be non-null."
 
 
@@ -161,6 +172,8 @@ def test_value_must_be_non_null_variable():
 
     assert result.errors
     assert len(result.errors) == 1
+    assert isinstance(result.errors[0], StrawberryInputCoercionError)
+    assert result.errors[0].extensions == {}
     assert (
         result.errors[0].message
         == "Variable 'b' must be non-nullable to be used for OneOf Input Object 'ExampleInputTagged'."

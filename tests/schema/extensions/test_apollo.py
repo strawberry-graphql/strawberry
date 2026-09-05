@@ -21,7 +21,7 @@ def test_tracing_sync(mocker):
 
     @strawberry.type
     class Person:
-        name: str = "Jess"
+        name: str = "Duck"
 
     @strawberry.type
     class Query:
@@ -76,7 +76,7 @@ async def test_tracing_async(mocker):
 
     @strawberry.type
     class Person:
-        name: str = "Jess"
+        name: str = "Duck"
 
     @strawberry.type
     class Query:
@@ -143,7 +143,7 @@ def test_should_not_trace_introspection_sync_queries(mocker):
 
     @strawberry.type
     class Person:
-        name: str = "Jess"
+        name: str = "Duck"
 
     @strawberry.type
     class Query:
@@ -178,7 +178,7 @@ async def test_should_not_trace_introspection_async_queries(mocker):
 
     @strawberry.type
     class Person:
-        name: str = "Jess"
+        name: str = "Duck"
 
     @strawberry.type
     class Query:

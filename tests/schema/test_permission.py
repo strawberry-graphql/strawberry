@@ -11,6 +11,7 @@ from strawberry.exceptions.permission_fail_silently_requires_optional import (
 )
 from strawberry.permission import BasePermission, PermissionExtension
 from strawberry.printer import print_schema
+from strawberry.schema_directive import Location
 from strawberry.utils.aio import aclosing
 
 
@@ -531,6 +532,127 @@ def test_permission_directives_added():
     assert print_schema(schema) == textwrap.dedent(expected_output).strip()
 
 
+def test_permission_directives_reused_across_fields():
+    class IsAuthorized(BasePermission):
+        def has_permission(self, source, info, **kwargs: typing.Any) -> bool:
+            return True
+
+    @strawberry.type
+    class Query:
+        first: str = strawberry.field(
+            extensions=[PermissionExtension([IsAuthorized()])]
+        )
+        second: str = strawberry.field(
+            extensions=[PermissionExtension([IsAuthorized()])]
+        )
+
+    schema = strawberry.Schema(query=Query)
+
+    expected_output = """
+    directive @isAuthorized on FIELD_DEFINITION
+
+    type Query {
+      first: String! @isAuthorized
+      second: String! @isAuthorized
+    }
+    """
+    assert print_schema(schema) == textwrap.dedent(expected_output).strip()
+
+
+def test_permission_directive_can_be_overridden_on_an_instance():
+    @strawberry.schema_directive(
+        name="requiresRole", locations=[Location.FIELD_DEFINITION]
+    )
+    class RequiresRole:
+        role: str
+
+    class IsAuthorized(BasePermission):
+        def has_permission(self, source, info, **kwargs: typing.Any) -> bool:
+            return True
+
+    permission = IsAuthorized()
+    permission._schema_directive = RequiresRole(role="member")
+
+    @strawberry.type
+    class Query:
+        name: str = strawberry.field(extensions=[PermissionExtension([permission])])
+
+    schema = strawberry.Schema(query=Query)
+
+    expected_output = """
+    directive @requiresRole(role: String!) on FIELD_DEFINITION
+
+    type Query {
+      name: String! @requiresRole(role: "member")
+    }
+    """
+    assert print_schema(schema) == textwrap.dedent(expected_output).strip()
+
+
+def test_permission_directive_can_be_inherited():
+    @strawberry.schema_directive(
+        name="requiresRole", locations=[Location.FIELD_DEFINITION]
+    )
+    class RequiresRole:
+        role: str
+
+    class IsAuthorized(BasePermission):
+        _schema_directive = RequiresRole(role="member")
+
+        def has_permission(self, source, info, **kwargs: typing.Any) -> bool:
+            return True
+
+    class IsMember(IsAuthorized): ...
+
+    @strawberry.type
+    class Query:
+        name: str = strawberry.field(extensions=[PermissionExtension([IsMember()])])
+
+    schema = strawberry.Schema(query=Query)
+
+    expected_output = """
+    directive @requiresRole(role: String!) on FIELD_DEFINITION
+
+    type Query {
+      name: String! @requiresRole(role: "member")
+    }
+    """
+    assert print_schema(schema) == textwrap.dedent(expected_output).strip()
+
+
+def test_permission_directive_collision_names_permission_classes():
+    def has_permission(
+        self: BasePermission, source, info, **kwargs: typing.Any
+    ) -> bool:
+        return True
+
+    First = type(
+        "CanAccess",
+        (BasePermission,),
+        {"__module__": "permissions.first", "has_permission": has_permission},
+    )
+    Second = type(
+        "CanAccess",
+        (BasePermission,),
+        {"__module__": "permissions.second", "has_permission": has_permission},
+    )
+
+    @strawberry.type
+    class Query:
+        first: str = strawberry.field(extensions=[PermissionExtension([First()])])
+        second: str = strawberry.field(extensions=[PermissionExtension([Second()])])
+
+    with pytest.raises(
+        ValueError,
+        match=(
+            r"Schema directive '@canAccess' is defined by both schema directive "
+            r"'permissions\.first\.CanAccess' and schema directive "
+            r"'permissions\.second\.CanAccess'"
+        ),
+    ):
+        strawberry.Schema(query=Query)
+
+
 def test_permission_directives_not_added_on_field():
     class IsAuthorized(BasePermission):
         message = "User is not authorized"
@@ -583,3 +705,68 @@ def test_basic_permission_access_inputs():
     result = schema.execute_sync(query)
 
     assert result.data["name"] == "Erik"
+
+
+def test_sync_permission_returning_awaitable_denies_access():
+    calls = 0
+
+    class DenyViaAwaitable(BasePermission):
+        message = "denied"
+
+        def has_permission(
+            self, source: typing.Any, info: strawberry.Info, **kwargs: typing.Any
+        ) -> typing.Any:
+            async def result() -> bool:
+                return False
+
+            return result()
+
+    @strawberry.type
+    class Query:
+        @strawberry.field(permission_classes=[DenyViaAwaitable])
+        def secret(self) -> str:
+            nonlocal calls
+            calls += 1
+            return "secret"
+
+    schema = strawberry.Schema(query=Query)
+
+    result = schema.execute_sync("{ secret }")
+
+    assert result.data is None
+    assert result.errors is not None
+    assert "returned an awaitable" in result.errors[0].message
+    assert calls == 0
+
+
+@pytest.mark.asyncio
+async def test_sync_permission_returning_awaitable_denies_access_on_async_execution():
+    calls = 0
+
+    class DenyViaAwaitable(BasePermission):
+        message = "denied"
+
+        def has_permission(
+            self, source: typing.Any, info: strawberry.Info, **kwargs: typing.Any
+        ) -> typing.Any:
+            async def result() -> bool:
+                return False
+
+            return result()
+
+    @strawberry.type
+    class Query:
+        @strawberry.field(permission_classes=[DenyViaAwaitable])
+        def secret(self) -> str:
+            nonlocal calls
+            calls += 1
+            return "secret"
+
+    schema = strawberry.Schema(query=Query)
+
+    result = await schema.execute("{ secret }")
+
+    assert result.data is None
+    assert result.errors is not None
+    assert "returned an awaitable" in result.errors[0].message
+    assert calls == 0

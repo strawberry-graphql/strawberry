@@ -7,9 +7,13 @@ from inspect import iscoroutinefunction
 from typing import (
     TYPE_CHECKING,
     Any,
+    ClassVar,
 )
 
-from strawberry.exceptions import StrawberryGraphQLError
+from strawberry.exceptions import (
+    PermissionReturnedAwaitableInSyncContextError,
+    StrawberryGraphQLError,
+)
 from strawberry.exceptions.permission_fail_silently_requires_optional import (
     PermissionFailSilentlyRequiresOptionalError,
 )
@@ -54,7 +58,34 @@ class BasePermission(abc.ABC):
 
     error_class: type[GraphQLError] = StrawberryGraphQLError
 
-    _schema_directive: object | None = None
+    _schema_directive: ClassVar[object | None] = None
+    _auto_schema_directive: ClassVar[object]
+
+    def __init_subclass__(cls, **kwargs: Any) -> None:
+        super().__init_subclass__(**kwargs)
+
+        # Every instance of one permission class must use the same directive
+        # definition; otherwise two uses look like conflicting definitions with
+        # the same GraphQL name during schema collection. Build it when the
+        # permission subclass is created rather than lazily, which also avoids
+        # concurrent schema construction racing to create two definitions. Keep
+        # it separate from `_schema_directive` so instance, class, and inherited
+        # overrides work.
+        class AutoDirective:
+            __strawberry_directive__ = StrawberrySchemaDirective(
+                cls.__name__,
+                cls.__name__,
+                [Location.FIELD_DEFINITION],
+                [],
+            )
+
+        # Without this metadata a collision would report the local
+        # `AutoDirective` class twice. Make diagnostics point to the permission
+        # classes that users can actually rename.
+        AutoDirective.__name__ = cls.__name__
+        AutoDirective.__qualname__ = cls.__qualname__
+        AutoDirective.__module__ = cls.__module__
+        cls._auto_schema_directive = AutoDirective()
 
     @abc.abstractmethod
     def has_permission(
@@ -106,19 +137,7 @@ class BasePermission(abc.ABC):
 
     @property
     def schema_directive(self) -> object:
-        if not self._schema_directive:
-
-            class AutoDirective:
-                __strawberry_directive__ = StrawberrySchemaDirective(
-                    self.__class__.__name__,
-                    self.__class__.__name__,
-                    [Location.FIELD_DEFINITION],
-                    [],
-                )
-
-            self._schema_directive = AutoDirective()
-
-        return self._schema_directive
+        return self._schema_directive or self._auto_schema_directive
 
 
 class PermissionExtension(FieldExtension):
@@ -189,8 +208,25 @@ class PermissionExtension(FieldExtension):
     ) -> Any:
         """Checks if the permission should be accepted and raises an exception if not."""
         for permission in self.permissions:
-            if not permission.has_permission(source, info, **kwargs):
+            has_permission = permission.has_permission(source, info, **kwargs)
+
+            # A permission whose `has_permission` returns an awaitable (e.g. a
+            # plain `def` returning a coroutine) cannot be resolved here: the
+            # awaitable is truthy regardless of what it resolves to, so trusting
+            # it would silently grant access. `supports_sync` only detects
+            # `async def` via `iscoroutinefunction`, so this case reaches the
+            # sync path. Fail closed instead of leaking the field.
+            if inspect.isawaitable(has_permission):
+                # Close the coroutine so we don't leak a "coroutine was never
+                # awaited" warning on top of the error we are about to raise.
+                if inspect.iscoroutine(has_permission):
+                    has_permission.close()
+
+                raise PermissionReturnedAwaitableInSyncContextError(permission)
+
+            if not has_permission:
                 return self._on_unauthorized(permission)
+
         return next_(source, info, **kwargs)
 
     async def resolve_async(
