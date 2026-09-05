@@ -807,15 +807,15 @@ class GraphQLCoreConverter:
         # Don't reevaluate known types
         cached_type = self.type_map.get(type_name, None)
         if cached_type:
-            cached_implementation = self._extend_cached_type(
+            extended_type = self._extend_cached_type(
                 type_definition,
                 cached_type,
                 GraphQLInputObjectType,
                 base_definition_backref=self.INPUT_BASE_DEFINITION_BACKREF,
                 extension_definitions_backref=self.INPUT_EXTENSIONS_BACKREF,
             )
-            if cached_implementation is not None:
-                return cached_implementation
+            if extended_type is not None:
+                return extended_type
 
             self.validate_same_type_definition(type_name, type_definition, cached_type)
             cached_implementation = cached_type.implementation
@@ -876,7 +876,7 @@ class GraphQLCoreConverter:
             definition=type_definition, implementation=graphql_input_object_type
         )
 
-        return cast("GraphQLInputObjectType", graphql_input_object_type)
+        return graphql_input_object_type
 
     def from_interface(
         self, interface: StrawberryObjectDefinition
@@ -1047,7 +1047,7 @@ class GraphQLCoreConverter:
         # Don't reevaluate known types
         cached_type = self.type_map.get(object_type_name, None)
         if cached_type:
-            cached_implementation = self._extend_cached_type(
+            extended_type = self._extend_cached_type(
                 object_type,
                 cached_type,
                 GraphQLObjectType,
@@ -1055,9 +1055,9 @@ class GraphQLCoreConverter:
                 extension_definitions_backref=self.OBJECT_EXTENSIONS_BACKREF,
                 cached_properties=("fields", "interfaces"),
             )
-            if cached_implementation is not None:
-                self._refresh_graphql_object_type(cached_implementation)
-                return cached_implementation
+            if extended_type is not None:
+                self._refresh_graphql_object_type(extended_type)
+                return extended_type
 
             self.validate_same_type_definition(
                 object_type_name, object_type, cached_type
@@ -1097,7 +1097,7 @@ class GraphQLCoreConverter:
             definition=object_type, implementation=graphql_object_type
         )
 
-        return cast("GraphQLObjectType", graphql_object_type)
+        return graphql_object_type
 
     def _get_field_exception_handlers(
         self, field: StrawberryField
