@@ -5,8 +5,8 @@ from collections.abc import Callable
 from operator import methodcaller
 
 import dateutil.parser
-from graphql import GraphQLError
 
+from strawberry.exceptions import StrawberryInputCoercionError
 from strawberry.types.scalar import ScalarDefinition
 
 
@@ -29,7 +29,7 @@ def wrap_parser(
     def inner(value: object) -> object:
         if not isinstance(value, str):
             if not accept_non_string:
-                raise GraphQLError(
+                raise StrawberryInputCoercionError(
                     f'Value cannot represent a {type_}: "{value}". Expected a string.'
                 )
             value = str(value)
@@ -37,7 +37,7 @@ def wrap_parser(
             return parser(value)
         except exceptions as e:
             detail = f" {e}" if include_error else ""
-            raise GraphQLError(
+            raise StrawberryInputCoercionError(
                 f'Value cannot represent a {type_}: "{value}".{detail}'
             ) from None
 
