@@ -139,7 +139,8 @@ extend input SearchInput {
 
 Extension fields are readable on the value your resolver receives, alongside the
 fields declared by the base input. As with object types, redefining an existing
-field raises a `TypeError`.
+field raises a `TypeError`. Repeating a non-repeatable directive across the
+input's definitions raises a `ValueError` when the schema is built.
 
 ## API
 

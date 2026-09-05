@@ -2,6 +2,7 @@ import textwrap
 from typing import Annotated
 
 import pytest
+from graphql import build_schema
 
 import strawberry
 from strawberry.printer import print_schema
@@ -189,3 +190,96 @@ def test_extension_directives_are_available_to_introspection(is_input):
     keyword = "input" if is_input else "type"
     assert f"extend {keyword} Item @extensionType" in sdl
     assert "extra: String! @extensionField" in sdl
+
+
+@pytest.mark.parametrize("is_input", [False, True])
+@pytest.mark.parametrize("extension_first", [False, True])
+@pytest.mark.parametrize("directive_on_base", [False, True])
+@pytest.mark.parametrize("repeatable", [False, True])
+def test_composed_type_directives_respect_repeatability(
+    is_input, extension_first, directive_on_base, repeatable
+):
+    @strawberry.schema_directive(
+        name="markerPolicy",
+        locations=[Location.OBJECT, Location.INPUT_OBJECT],
+        repeatable=repeatable,
+    )
+    class Marker: ...
+
+    decorator = strawberry.input if is_input else strawberry.type
+
+    @decorator(name="Item", directives=[Marker()] if directive_on_base else [])
+    class Item:
+        name: str
+
+    @decorator(name="Item", extend=True, directives=[Marker()])
+    class ItemExtension:
+        extra: str
+
+    @decorator(name="Item", extend=True, directives=[Marker()])
+    class OtherExtension:
+        other: str
+
+    if is_input:
+
+        @strawberry.type
+        class Query:
+            @strawberry.field
+            def item(self, value: Item) -> str:
+                return value.name
+
+    else:
+
+        @strawberry.type
+        class Query:
+            item: Item
+
+    types = [Item, ItemExtension]
+    if not directive_on_base:
+        types.append(OtherExtension)
+    if extension_first:
+        types.reverse()
+
+    if not repeatable:
+        with pytest.raises(
+            ValueError,
+            match="Type 'Item' repeats non-repeatable directive '@markerPolicy'",
+        ):
+            strawberry.Schema(query=Query, types=types)
+        return
+
+    schema = strawberry.Schema(query=Query, types=types)
+    sdl = schema.as_str()
+    assert sdl.count(" @markerPolicy") == 3  # Definition and two applications.
+    build_schema(sdl)
+
+
+@pytest.mark.parametrize("reverse_order", [False, True])
+def test_federation_extensions_compose_without_local_base(reverse_order):
+    @strawberry.federation.type(name="Item", extend=True)
+    class FirstExtension:
+        name: str
+
+    @strawberry.federation.type(name="Item", extend=True)
+    class SecondExtension:
+        @strawberry.field
+        def extra(self) -> str:
+            return "extra"
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def item(self) -> FirstExtension:
+            return FirstExtension(name="item")
+
+    types = [FirstExtension, SecondExtension]
+    if reverse_order:
+        types.reverse()
+    schema = strawberry.federation.Schema(query=Query, types=types)
+
+    result = schema.execute_sync("{ item { name extra } }")
+    assert result.errors is None
+    assert result.data == {"item": {"name": "item", "extra": "extra"}}
+    sdl = schema.as_str()
+    assert sdl.count("extend type Item") == 2
+    assert "\ntype Item" not in sdl
