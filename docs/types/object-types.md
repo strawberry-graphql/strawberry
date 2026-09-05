@@ -227,7 +227,7 @@ extend type User {
 The extension must be reachable by the schema. If nothing in the schema refers
 to it, pass it through the `types` argument as shown above.
 
-Extensions may only add fields. Redefining a field that the base type — or
+Extensions cannot redefine fields. Redefining a field that the base type — or
 another extension — already declares raises a `TypeError`, so two modules cannot
 silently disagree about what a field means:
 
@@ -245,12 +245,22 @@ class UserConflict:
 # TypeError: Type User defines duplicate extension field(s): name
 ```
 
+Directives may also be contributed by extensions. A non-repeatable directive may
+occur only once across the definitions of a type; repeating it raises a
+`ValueError` when the schema is built. Repeatable directives keep their separate
+applications in the printed SDL.
+
 <Note>
 
 `extend=True` is also how Apollo Federation marks a type that is owned by
-another subgraph, which is why the printed SDL uses `extend type`. Merging only
-happens when a base type with the same name exists in the same schema; a
-federated type declared once behaves exactly as before.
+another subgraph, which is why the printed SDL uses `extend type`. This flag
+also allows several definitions with the same name to compose within one schema.
+A federated type declared once behaves as before.
+
+A local base definition is optional: several extensions can contribute to a type
+whose base is supplied by another subgraph. In that case each definition is
+printed as `extend type`; Strawberry does not synthesize a base declaration. The
+resulting SDL needs that external base when composed into a complete schema.
 
 </Note>
 

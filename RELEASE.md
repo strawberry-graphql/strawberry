@@ -22,3 +22,6 @@ generated SDL prints extension definitions as `extend type` and `extend input`,
 and input extension fields are available on converted resolver arguments.
 Schema directives attached to extension types and fields are included in
 introspection as well as the printed SDL.
+Repeated non-repeatable directives across a type's definitions are rejected
+when the schema is built. Federation extensions can compose without a local
+base declaration, preserving each `extend type` block in the SDL.
