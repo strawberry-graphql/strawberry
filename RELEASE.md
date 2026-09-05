@@ -20,3 +20,5 @@ This release adds support for GraphQL object and input object type extensions.
 can now be registered alongside a base type with the same GraphQL name. The
 generated SDL prints extension definitions as `extend type` and `extend input`,
 and input extension fields are available on converted resolver arguments.
+Schema directives attached to extension types and fields are included in
+introspection as well as the printed SDL.

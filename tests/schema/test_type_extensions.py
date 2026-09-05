@@ -1,9 +1,11 @@
 import textwrap
+from typing import Annotated
 
 import pytest
 
 import strawberry
 from strawberry.printer import print_schema
+from strawberry.schema_directive import Location
 
 
 def test_object_extension_can_extend_existing_type():
@@ -139,3 +141,51 @@ def test_extend_type_reachable_twice_does_not_extend_itself():
     """
 
     assert print_schema(schema) == textwrap.dedent(expected).strip()
+
+
+@pytest.mark.parametrize("is_input", [False, True])
+def test_extension_directives_are_available_to_introspection(is_input):
+    @strawberry.schema_directive(locations=[Location.OBJECT, Location.INPUT_OBJECT])
+    class ExtensionType: ...
+
+    @strawberry.schema_directive(
+        locations=[Location.FIELD_DEFINITION, Location.INPUT_FIELD_DEFINITION]
+    )
+    class ExtensionField: ...
+
+    decorator = strawberry.input if is_input else strawberry.type
+
+    @decorator(name="Item")
+    class Item:
+        name: str
+
+    @decorator(name="Item", extend=True, directives=[ExtensionType()])
+    class ItemExtension:
+        extra: Annotated[str, strawberry.field(directives=[ExtensionField()])]
+
+    if is_input:
+
+        @strawberry.type
+        class Query:
+            @strawberry.field
+            def item(self, value: Item) -> str:
+                return value.name
+
+    else:
+
+        @strawberry.type
+        class Query:
+            item: Item
+
+    schema = strawberry.Schema(query=Query, types=[ItemExtension])
+    result = schema.execute_sync("{ __schema { directives { name } } }")
+
+    assert result.errors is None
+    names = [directive["name"] for directive in result.data["__schema"]["directives"]]
+    assert names.count("extensionType") == 1
+    assert names.count("extensionField") == 1
+
+    sdl = print_schema(schema)
+    keyword = "input" if is_input else "type"
+    assert f"extend {keyword} Item @extensionType" in sdl
+    assert "extra: String! @extensionField" in sdl

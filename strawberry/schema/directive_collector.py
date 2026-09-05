@@ -125,10 +125,18 @@ class SchemaDirectiveCollector:
         interfaces = getattr(graphql_type, "interfaces", ())
         member_types = getattr(graphql_type, "types", ())
 
-        definition = graphql_type.extensions.get(
-            GraphQLCoreConverter.DEFINITION_BACKREF
-        )
-        if definition is not None:
+        definitions = [
+            graphql_type.extensions.get(GraphQLCoreConverter.DEFINITION_BACKREF),
+            *graphql_type.extensions.get(
+                GraphQLCoreConverter.OBJECT_EXTENSIONS_BACKREF, ()
+            ),
+            *graphql_type.extensions.get(
+                GraphQLCoreConverter.INPUT_EXTENSIONS_BACKREF, ()
+            ),
+        ]
+        for definition in definitions:
+            if definition is None:
+                continue
             self._record_applied_directives(definition)
             for field in getattr(definition, "fields", ()):
                 self._record_applied_directives(field)
