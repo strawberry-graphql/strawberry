@@ -1,6 +1,17 @@
 CHANGELOG
 =========
 
+0.327.4 - 2026-09-06
+--------------------
+
+This release fixes unnecessary allocation and enqueue overhead in DataLoader.
+
+Batch entries now use slotted dataclasses and avoid runtime generic construction.
+Batch selection also avoids repeated attribute lookups and length-method calls.
+Existing batching, caching, priming, and cancellation behavior is preserved.
+
+This release was contributed by [@patrick91](https://github.com/patrick91) in [#4611](https://github.com/strawberry-graphql/strawberry/pull/4611)
+
 0.327.3 - 2026-09-05
 --------------------
 
