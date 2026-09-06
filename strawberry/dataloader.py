@@ -32,13 +32,13 @@ T = TypeVar("T")
 K = TypeVar("K")
 
 
-@dataclass
+@dataclass(slots=True)
 class LoaderTask(Generic[K, T]):
     key: K
     future: Future
 
 
-@dataclass
+@dataclass(slots=True)
 class Batch(Generic[K, T]):
     tasks: list[LoaderTask] = dataclasses.field(default_factory=list)
     dispatched: bool = False
@@ -47,7 +47,7 @@ class Batch(Generic[K, T]):
     )
 
     def add_task(self, key: Any, future: Future) -> None:
-        task = LoaderTask[K, T](key, future)
+        task: LoaderTask[K, T] = LoaderTask(key, future)
         self.tasks.append(task)
         future.add_done_callback(self._on_future_done)
 
@@ -223,19 +223,20 @@ class DataLoader(Generic[K, T]):
 def should_create_new_batch(loader: DataLoader, batch: Batch) -> bool:
     return bool(
         batch.dispatched
-        or (loader.max_batch_size and len(batch) >= loader.max_batch_size)
+        or (loader.max_batch_size and len(batch.tasks) >= loader.max_batch_size)
     )
 
 
 def get_current_batch(loader: DataLoader) -> Batch:
-    if loader.batch and not should_create_new_batch(loader, loader.batch):
-        return loader.batch
+    batch = loader.batch
+    if batch is not None and batch.tasks and not should_create_new_batch(loader, batch):
+        return batch
 
-    loader.batch = Batch()
+    batch = loader.batch = Batch()
 
-    dispatch(loader, loader.batch)
+    dispatch(loader, batch)
 
-    return loader.batch
+    return batch
 
 
 def dispatch(loader: DataLoader, batch: Batch) -> None:

@@ -53,10 +53,13 @@ async def test_gathering(mocker: MockerFixture):
 
 
 @pytest.mark.asyncio
-async def test_max_batch_size(mocker: MockerFixture):
+@pytest.mark.parametrize("cache", [False, True])
+async def test_max_batch_size(mocker: MockerFixture, cache: bool):
     mock_loader = mocker.Mock(side_effect=idx)
 
-    loader = DataLoader(load_fn=cast("IDXType", mock_loader), max_batch_size=2)
+    loader = DataLoader(
+        load_fn=cast("IDXType", mock_loader), max_batch_size=2, cache=cache
+    )
 
     [value_a, value_b, value_c] = await asyncio.gather(
         loader.load(1),
@@ -406,7 +409,8 @@ async def test_cancelled_future_with_failing_loader():
 
 
 @pytest.mark.asyncio
-async def test_all_futures_cancelled_skips_load_fn():
+@pytest.mark.parametrize("cache", [False, True])
+async def test_all_futures_cancelled_skips_load_fn(cache: bool):
     """When all futures in a batch are cancelled before dispatch, the load_fn
     should not be called at all.  This prevents wasted work like database
     queries whose results no one is waiting for.
@@ -418,7 +422,7 @@ async def test_all_futures_cancelled_skips_load_fn():
         call_count += 1
         return keys
 
-    loader = DataLoader(load_fn=counting_loader, cache=False)
+    loader = DataLoader(load_fn=counting_loader, cache=cache)
 
     future_a = cast("Future[Any]", loader.load(1))
     future_b = cast("Future[Any]", loader.load(2))
@@ -437,7 +441,8 @@ async def test_all_futures_cancelled_skips_load_fn():
 
 
 @pytest.mark.asyncio
-async def test_cancelled_futures_cancel_dispatch_task():
+@pytest.mark.parametrize("cache", [False, True])
+async def test_cancelled_futures_cancel_dispatch_task(cache: bool):
     """When all futures in a batch are cancelled, the underlying dispatch
     task should also be cancelled.  This is important for resource cleanup
     when using asyncio.TaskGroup or similar structured concurrency patterns.
@@ -447,7 +452,7 @@ async def test_cancelled_futures_cancel_dispatch_task():
         await asyncio.sleep(10)
         return keys
 
-    loader = DataLoader(load_fn=slow_loader, cache=False)
+    loader = DataLoader(load_fn=slow_loader, cache=cache)
 
     future_a = cast("Future[Any]", loader.load(1))
     future_b = cast("Future[Any]", loader.load(2))
@@ -475,7 +480,8 @@ async def test_cancelled_futures_cancel_dispatch_task():
 
 
 @pytest.mark.asyncio
-async def test_cancelled_futures_cancel_running_dispatch():
+@pytest.mark.parametrize("cache", [False, True])
+async def test_cancelled_futures_cancel_running_dispatch(cache: bool):
     """When all futures are cancelled after load_fn has already started,
     the dispatch task should still be cancelled, interrupting the in-progress
     load_fn via CancelledError.
@@ -488,7 +494,7 @@ async def test_cancelled_futures_cancel_running_dispatch():
         await asyncio.sleep(10)
         return keys
 
-    loader = DataLoader(load_fn=slow_loader, cache=False)
+    loader = DataLoader(load_fn=slow_loader, cache=cache)
 
     future_a = cast("Future[Any]", loader.load(1))
     future_b = cast("Future[Any]", loader.load(2))
@@ -517,7 +523,8 @@ async def test_cancelled_futures_cancel_running_dispatch():
 
 
 @pytest.mark.asyncio
-async def test_partial_cancellation_still_dispatches():
+@pytest.mark.parametrize("cache", [False, True])
+async def test_partial_cancellation_still_dispatches(cache: bool):
     """When only some futures in a batch are cancelled, the batch should
     still dispatch and deliver results for the non-cancelled futures.
     """
@@ -528,7 +535,7 @@ async def test_partial_cancellation_still_dispatches():
         call_count += 1
         return keys
 
-    loader = DataLoader(load_fn=counting_loader, cache=False)
+    loader = DataLoader(load_fn=counting_loader, cache=cache)
 
     future_a = cast("Future[Any]", loader.load(1))
     future_b = cast("Future[Any]", loader.load(2))
@@ -652,3 +659,70 @@ def test_works_when_created_in_a_different_loop(mocker: MockerFixture):
     assert data == 1
 
     mock_loader.assert_called_once_with([1])
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("cache", [False, True])
+async def test_batching_window(cache: bool):
+    calls: list[list[int]] = []
+
+    async def load(keys: list[int]) -> list[int]:
+        calls.append(keys)
+        return keys
+
+    loader = DataLoader(load_fn=load, cache=cache)
+    first = loader.load(1)
+    # Scheduling the dispatch task must still allow loads in this next turn
+    # to join the batch, before load_fn starts.
+    await asyncio.sleep(0)
+    second = loader.load(2)
+    assert calls == []
+    assert await asyncio.gather(first, second) == [1, 2]
+    assert await loader.load(3) == 3
+    assert calls == [[1, 2], [3]]
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("cache", [False, True])
+async def test_prime_empty_batch_then_load(cache: bool):
+    calls: list[list[int]] = []
+
+    async def load(keys: list[int]) -> list[int]:
+        calls.append(keys)
+        return keys
+
+    loader = DataLoader(load_fn=load, cache=cache, max_batch_size=2)
+    first = loader.load(1)
+    loader.prime(1, 10)
+    # A pending dispatch for the emptied batch must not affect later loads.
+    assert await loader.load_many([2, 3, 4]) == [2, 3, 4]
+    assert await first == 10
+    assert calls == [[2, 3], [4]]
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("cache", [False, True])
+async def test_partial_cancellation_during_load(cache: bool):
+    started = asyncio.Event()
+    finish = asyncio.Event()
+    calls: list[list[int]] = []
+
+    async def load(keys: list[int]) -> list[int]:
+        calls.append(keys)
+        started.set()
+        await finish.wait()
+        return keys
+
+    loader = DataLoader(load_fn=load, cache=cache)
+    first = cast("Future[int]", loader.load(1))
+    second = loader.load(2)
+    await started.wait()
+    first.cancel()
+    await asyncio.sleep(0)
+    finish.set()
+
+    assert await asyncio.wait_for(second, timeout=1) == 2
+    assert first.cancelled()
+    # A cancelled cached future must be replaced on the next load.
+    assert await asyncio.wait_for(loader.load(1), timeout=1) == 1
+    assert calls == [[1, 2], [1]]
