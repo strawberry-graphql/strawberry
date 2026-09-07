@@ -1,6 +1,18 @@
 CHANGELOG
 =========
 
+0.327.5 - 2026-09-07
+--------------------
+
+This release fixes Channels HTTP responses bypassing custom `encode_json`
+overrides.
+
+Both `GraphQLHTTPConsumer` and `SyncGraphQLHTTPConsumer` now use the encoding hook
+for single and batched JSON responses, including GraphQL errors. Bytes are sent
+unchanged, while strings are encoded as UTF-8.
+
+This release was contributed by [@patrick91](https://github.com/patrick91) in [#4613](https://github.com/strawberry-graphql/strawberry/pull/4613)
+
 0.327.4 - 2026-09-06
 --------------------
 
