@@ -87,15 +87,20 @@ query Query($query: String!, $first: Int!) {
 
 
 @pytest.mark.parametrize("number", [50])
-def test_execute_complex_schema(benchmark: BenchmarkFixture, number: int):
+def test_execute_complex_schema_v2(
+    benchmark: BenchmarkFixture, number: int, benchmark_loop: asyncio.AbstractEventLoop
+):
     def run():
         coroutine = schema.execute(
             query,
             variable_values={"query": "test", "first": number},
         )
 
-        return asyncio.run(coroutine)
+        return benchmark_loop.run_until_complete(coroutine)
 
     result = benchmark(run)
 
     assert not result.errors
+
+    assert result.data is not None
+    assert len(result.data["search"]) == number
