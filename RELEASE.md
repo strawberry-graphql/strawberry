@@ -18,3 +18,7 @@ Plain fields avoid temporary argument containers. Standard no-argument
 resolvers without field extensions or applicable exception handlers skip
 argument conversion and only construct `Info` when requested. Custom field
 subclasses retain their existing resolution behavior.
+
+This release also fixes lazy type aliases inside lists and other containers
+when postponed annotations are enabled. These aliases resolve without requiring
+another field to have resolved the referenced type first.
