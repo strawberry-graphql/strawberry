@@ -4,16 +4,22 @@ from decimal import Decimal
 from uuid import UUID
 
 import pytest
-from django.core.serializers.json import DjangoJSONEncoder
-from django.http import HttpResponse
 
-from strawberry.django.views import AsyncGraphQLView, GraphQLView
 from tests.views.schema import schema
 
 
-@pytest.mark.parametrize("view_class", [GraphQLView, AsyncGraphQLView])
+@pytest.fixture(params=["GraphQLView", "AsyncGraphQLView"])
+def view_class(request):
+    from strawberry.django import views
+
+    return getattr(views, request.param)
+
+
 @pytest.mark.parametrize("batch", [False, True])
 def test_default_json_encoding_preserves_django_types(view_class, batch):
+    from django.core.serializers.json import DjangoJSONEncoder
+    from django.http import HttpResponse
+
     payload = {
         "data": {
             "amount": Decimal("12.30"),
@@ -42,9 +48,10 @@ def test_default_json_encoding_preserves_django_types(view_class, batch):
     )
 
 
-@pytest.mark.parametrize("view_class", [GraphQLView, AsyncGraphQLView])
 @pytest.mark.parametrize("as_bytes", [False, True])
 def test_custom_json_encoder_is_authoritative(view_class, as_bytes):
+    from django.http import HttpResponse
+
     class CustomView(view_class):
         def encode_json(self, data: object) -> str | bytes:
             encoded = json.dumps(data, ensure_ascii=False, indent=2)
