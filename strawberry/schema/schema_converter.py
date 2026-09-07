@@ -894,11 +894,13 @@ class GraphQLCoreConverter:
 
         if field.is_basic_field and not field_exception_handlers:
             if type(field) is StrawberryField:
+                default_resolver = field.default_resolver
+                python_name = field.python_name
 
                 def _get_basic_field(
                     _source: Any, info: GraphQLResolveInfo, **kwargs: Any
                 ) -> Any:
-                    return field.default_resolver(_source, field.python_name)
+                    return default_resolver(_source, python_name)
 
                 _get_basic_field._is_default = True  # type: ignore
                 return _get_basic_field
