@@ -83,6 +83,11 @@ thresholds or change the repository's existing CodSpeed gate settings.
 - CodSpeed disables cyclic GC during measurements. Allocator/RSS measurements
   and repeated subscription cleanup are diagnostic; a single sample is not proof
   of a leak. Collect sustained native runs when investigating retention.
+- Permission and handled-error queries perform ten unmeasured warmup requests
+  before timing one complete request. Parsing, validation, permission checks,
+  exception handling and allocation costs are included in the measured callback.
+  Native timing collects 30 rounds; simulation measures one request, as it does
+  for other pedantic benchmarks.
 
 ## Comparing revisions
 

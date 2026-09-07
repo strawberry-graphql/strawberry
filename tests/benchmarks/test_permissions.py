@@ -50,7 +50,16 @@ def test_permission_and_error(benchmark: BenchmarkFixture, operation: str):
         if operation == "permission"
         else "{ checked { ... on Failure { message } } }"
     )
-    result = benchmark(schema.execute_sync, query, context_value={"allowed": True})
+    # Warm the same request before measuring it: simulation otherwise takes just
+    # one sample after its perf-map warmup, exposing prior workloads' heap state.
+    result = benchmark.pedantic(
+        schema.execute_sync,
+        args=(query,),
+        kwargs={"context_value": {"allowed": True}},
+        warmup_rounds=10,
+        rounds=30,
+        iterations=1,
+    )
     assert result.errors is None
     assert result.data == (
         {"protected": 42}
