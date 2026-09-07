@@ -198,10 +198,24 @@ def _get_namespace_from_ast(
 
     extra: dict[str, Any] = {}
 
-    if isinstance(expr, ast.Expr) and isinstance(
-        expr.value, (ast.BinOp, ast.Subscript)
-    ):
+    if isinstance(expr, ast.Expr):
         extra.update(_get_namespace_from_ast(expr.value, globalns, localns))
+    elif isinstance(expr, ast.Name):
+        # Aliases can hide lazy references inside containers such as list[Alias].
+        # Supply their target before Python recursively evaluates the container.
+        alias = (localns or {}).get(expr.id, (globalns or {}).get(expr.id))
+        if get_origin(alias) is Annotated:
+            type_arg, *metadata = get_args(alias)
+            if isinstance(type_arg, ForwardRef):
+                type_name = type_arg.__forward_arg__
+                already_resolved = (globalns and type_name in globalns) or (
+                    localns and type_name in localns
+                )
+                if not already_resolved:
+                    for annotation in metadata:
+                        if isinstance(annotation, StrawberryLazyReference):
+                            extra[type_name] = annotation.resolve_forward_ref(type_arg)
+                            break
     elif isinstance(expr, ast.BinOp):
         for elt in (expr.left, expr.right):
             extra.update(_get_namespace_from_ast(elt, globalns, localns))

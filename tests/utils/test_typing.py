@@ -1,6 +1,8 @@
 import typing
 from typing import Annotated, ClassVar, ForwardRef, Optional, Union
 
+import pytest
+
 import strawberry
 from strawberry.types.lazy_type import LazyType
 from strawberry.utils.typing import eval_type, get_optional_annotation, is_classvar
@@ -95,6 +97,46 @@ def test_eval_type_with_deferred_annotations():
             LazyType("datetime", "datetime"),
             strawberry.lazy("datetime"),
         ]
+    )
+
+
+@pytest.mark.parametrize("use_localns", [False, True])
+@pytest.mark.parametrize(
+    ("expression", "expected"),
+    [
+        ("Alias", lambda value: value),
+        ("list[Alias]", lambda value: list[value]),
+        ("Optional[Alias]", lambda value: Optional[value]),
+        ("list[Alias] | None", lambda value: Optional[list[value]]),
+        ("dict[str, list[Alias]]", lambda value: dict[str, list[value]]),
+    ],
+)
+def test_eval_type_nested_lazy_alias(expression, expected, use_localns):
+    lazy = strawberry.lazy("tests.utils.test_typing")
+    namespace = {
+        "Alias": Annotated["Fruit", lazy, "metadata"],
+        "Optional": Optional,
+    }
+    globalns, localns = ({}, namespace) if use_localns else (namespace, {})
+
+    result = eval_type(ForwardRef(expression), globalns, localns)
+
+    assert result == expected(
+        Annotated[LazyType("Fruit", "tests.utils.test_typing"), lazy, "metadata"]
+    )
+
+
+@pytest.mark.parametrize("use_localns", [False, True])
+def test_eval_type_lazy_alias_preserves_existing_type(use_localns):
+    class ExistingType: ...
+
+    lazy = strawberry.lazy("tests.utils.test_typing")
+    namespace = {"Alias": Annotated["Fruit", lazy], "Fruit": ExistingType}
+    globalns, localns = ({}, namespace) if use_localns else (namespace, {})
+
+    assert (
+        eval_type(ForwardRef("list[Alias]"), globalns, localns)
+        == list[Annotated[ExistingType, lazy]]
     )
 
 

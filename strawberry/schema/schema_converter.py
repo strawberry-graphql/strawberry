@@ -70,7 +70,7 @@ from strawberry.types.base import (
 )
 from strawberry.types.cast import get_strawberry_type_cast
 from strawberry.types.enum import StrawberryEnumDefinition, has_enum_definition
-from strawberry.types.field import UNRESOLVED
+from strawberry.types.field import UNRESOLVED, StrawberryField
 from strawberry.types.lazy_type import LazyType
 from strawberry.types.private import is_private
 from strawberry.types.scalar import ScalarWrapper, scalar
@@ -97,7 +97,6 @@ if TYPE_CHECKING:
     from strawberry.schema.exception_handlers import ExceptionHandler
     from strawberry.schema_directive import StrawberrySchemaDirective
     from strawberry.types.enum import EnumValue
-    from strawberry.types.field import StrawberryField
     from strawberry.types.info import Info
     from strawberry.types.scalar import ScalarDefinition
 
@@ -894,6 +893,17 @@ class GraphQLCoreConverter:
         field_exception_handlers = self._get_field_exception_handlers(field)
 
         if field.is_basic_field and not field_exception_handlers:
+            if type(field) is StrawberryField:
+                default_resolver = field.default_resolver
+                python_name = field.python_name
+
+                def _get_basic_field(
+                    _source: Any, info: GraphQLResolveInfo, **kwargs: Any
+                ) -> Any:
+                    return default_resolver(_source, python_name)
+
+                _get_basic_field._is_default = True  # type: ignore
+                return _get_basic_field
 
             def _get_basic_result(_source: Any, *args: str, **kwargs: Any) -> Any:
                 # Call `get_result` without an info object or any args or
@@ -903,6 +913,45 @@ class GraphQLCoreConverter:
             _get_basic_result._is_default = True  # type: ignore
 
             return _get_basic_result
+
+        # Only standard fields without middleware can omit Info and argument
+        # conversion. Custom fields may use Info in get_result even when their
+        # resolver does not request it. Inspect after extension.apply above.
+        if (
+            type(field) is StrawberryField
+            and not field.extensions
+            and not field_exception_handlers
+            and (resolver := field.base_resolver) is not None
+            and not field.arguments
+            and resolver.info_parameter is None
+        ):
+            has_self = resolver.self_parameter is not None
+            parent_parameter = resolver.parent_parameter
+            root_parameter = resolver.root_parameter
+
+            def _get_no_arguments_result(
+                _source: Any, info: GraphQLResolveInfo, **_kwargs: Any
+            ) -> Any:
+                args = (_source,) if has_self else ()
+                kwargs = {}
+                if parent_parameter is not None:
+                    kwargs[parent_parameter.name] = _source
+                if root_parameter is not None:
+                    kwargs[root_parameter.name] = _source
+                return resolver(*args, **kwargs)
+
+            if field.is_async:
+
+                async def _get_no_arguments_result_async(
+                    _source: Any, info: GraphQLResolveInfo, **kwargs: Any
+                ) -> Any:
+                    return await await_maybe(_get_no_arguments_result(_source, info))
+
+                _get_no_arguments_result_async._is_default = False  # type: ignore
+                return _get_no_arguments_result_async
+
+            _get_no_arguments_result._is_default = False  # type: ignore
+            return _get_no_arguments_result
 
         def _strawberry_info_from_graphql(info: GraphQLResolveInfo) -> Info:
             return self.config.info_class(

@@ -55,6 +55,16 @@ jobs:
           python-version: "3.14"
           cache-dependency-glob: strawberry-django/uv.lock
 
+      - name: Backport upstream compatibility test corrections
+        if: steps.strawberry-django.outputs.version == '0.88.1'
+        working-directory: strawberry-django
+        run: |
+          # https://github.com/strawberry-graphql/strawberry-django/pull/955
+          # Correct stale pagination and SDL-order expectations in this release.
+          # Only tests are replaced; the released integration code is unchanged.
+          git fetch --depth=1 origin 44ee3815700e2572b6851880210c94cefe6ff449
+          git checkout FETCH_HEAD -- tests/relay/test_fields.py tests/projects/test_schema.py
+
       - name: Install Strawberry Django
         run: uv sync --locked --project strawberry-django --python 3.14
 
