@@ -11,6 +11,7 @@ from strawberry.extensions.base_extension import SchemaExtension
 from strawberry.utils.await_maybe import AwaitableOrValue
 
 from .api import Query
+from .assertions import assert_items
 
 
 class SimpleExtension(SchemaExtension):
@@ -35,21 +36,24 @@ items_query = (ROOT / "items.graphql").read_text()
 @pytest.mark.parametrize("items", [1_000, 10_000], ids=lambda x: f"items_{x}")
 @pytest.mark.parametrize(
     "extensions",
-    [[], [SimpleExtension()], [ResolveExtension()]],
+    [[], [SimpleExtension], [ResolveExtension]],
     ids=lambda x: (
-        f"with_{'_'.join(type(ext).__name__.lower() for ext in x) or 'no_extensions'}"
+        f"with_{'_'.join(ext.__name__.lower() for ext in x) or 'no_extensions'}"
     ),
 )
-def test_execute(
-    benchmark: BenchmarkFixture, items: int, extensions: list[SchemaExtension]
+def test_execute_v2(
+    benchmark: BenchmarkFixture,
+    items: int,
+    extensions: list[type[SchemaExtension]],
+    benchmark_loop: asyncio.AbstractEventLoop,
 ):
     schema = strawberry.Schema(query=Query, extensions=extensions)
 
     def run():
-        return asyncio.run(
+        return benchmark_loop.run_until_complete(
             schema.execute(items_query, variable_values={"count": items})
         )
 
     results = benchmark(run)
 
-    assert results.errors is None
+    assert_items(results, items)
