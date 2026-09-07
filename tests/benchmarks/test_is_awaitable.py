@@ -112,12 +112,9 @@ def test_is_awaitable(
 
 
 @pytest.mark.benchmark
-@pytest.mark.parametrize("count", [1, 1_000], ids=["small", "large-list"])
 @pytest.mark.parametrize("mode", ["sync", "async"])
-def test_execute_awaitable_results(
-    benchmark: BenchmarkFixture, count: int, mode: str
-) -> None:
-    items = [Item(id=i, name=f"item-{i}", active=True) for i in range(count)]
+def test_execute_awaitable_results(benchmark: BenchmarkFixture, mode: str) -> None:
+    items = [Item(id=i, name=f"item-{i}", active=True) for i in range(1_000)]
 
     @strawberry.type
     class Query:
