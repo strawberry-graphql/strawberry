@@ -1,6 +1,17 @@
 CHANGELOG
 =========
 
+0.327.7 - 2026-09-07
+--------------------
+
+This release fixes unnecessary overhead when handling resolver results.
+
+Strawberry now does a little less work to check whether a result needs to be
+awaited. This small optimization works automatically with your existing
+synchronous and asynchronous resolvers, with no code changes needed.
+
+This release was contributed by [@patrick91](https://github.com/patrick91) in [#4618](https://github.com/strawberry-graphql/strawberry/pull/4618)
+
 0.327.6 - 2026-09-07
 --------------------
 
