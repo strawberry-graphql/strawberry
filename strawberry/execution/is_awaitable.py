@@ -7,9 +7,9 @@ large result sets containing primitive values.
 
 from __future__ import annotations
 
+from inspect import CO_ITERABLE_COROUTINE
+from types import CoroutineType, GeneratorType
 from typing import Any
-
-from graphql.pyutils.is_awaitable import is_awaitable as graphql_core_is_awaitable
 
 __all__ = ["optimized_is_awaitable"]
 
@@ -43,7 +43,7 @@ def optimized_is_awaitable(value: Any) -> bool:
 
     Performance characteristics:
     - Fast path for primitives: O(1) type lookup
-    - Falls back to graphql-core's is_awaitable for other types
+    - Checks other types directly, preserving graphql-core's check order
 
     Args:
         value: The value to check
@@ -55,5 +55,13 @@ def optimized_is_awaitable(value: Any) -> bool:
     if type(value) in _NON_AWAITABLE_TYPES:
         return False
 
-    # Fallback to graphql-core's implementation for other types
-    return graphql_core_is_awaitable(value)
+    # Keep graphql-core's order: isinstance can access a custom __class__, and
+    # hasattr can invoke a descriptor. Reordering changes their side effects.
+    return (
+        isinstance(value, CoroutineType)
+        or (
+            isinstance(value, GeneratorType)
+            and bool(value.gi_code.co_flags & CO_ITERABLE_COROUTINE)
+        )
+        or hasattr(value, "__await__")
+    )
