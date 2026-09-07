@@ -120,6 +120,9 @@ Stress sizes retain their parameter IDs, even though their measurement schedule
 changes. The stadium adds a smaller 1,800-seat PR case; the 45,000/90,000-seat cases
 are available as stress cases.
 
-The public overview at [speed.strawberry.rocks](https://speed.strawberry.rocks/)
-links the current CPU, native and memory measurements. The obsolete ASV harness,
-stored runs and historical charts are removed from the reporting repository.
+The dashboard at [speed.strawberry.rocks](https://speed.strawberry.rocks/) uses ASV
+to chart native walltime measurements from this pytest-codspeed suite. The
+[reporting workflow](https://github.com/strawberry-graphql/benchmarks) tracks main
+and future stable releases, retaining results from the modern suite after
+resetting obsolete history. Changed workloads or environments start separate
+series. Its methodology page links the CPU and memory measurements.
