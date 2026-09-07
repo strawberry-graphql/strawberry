@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import dataclasses
-import json
 from functools import cached_property
 from io import BytesIO
 from typing import TYPE_CHECKING, Any, TypeGuard
@@ -21,6 +20,7 @@ from django.core.files import uploadhandler
 from django.http.multipartparser import MultiPartParser
 
 from strawberry.http.async_base_view import AsyncBaseHTTPView
+from strawberry.http.base import BaseView
 from strawberry.http.sync_base_view import SyncBaseHTTPView
 from strawberry.http.temporal_response import TemporalResponse
 from strawberry.http.typevars import Context, RootValue
@@ -198,7 +198,9 @@ class SyncChannelsRequestAdapter(BaseChannelsRequestAdapter, SyncHTTPRequestAdap
         return self.request.form_data
 
 
-class BaseGraphQLHTTPConsumer(ChannelsConsumer, AsyncHttpConsumer):
+class BaseGraphQLHTTPConsumer(
+    ChannelsConsumer, AsyncHttpConsumer, BaseView[ChannelsRequest]
+):
     graphql_ide_html: str
     graphql_ide: GraphQL_IDE | None = "graphiql"
 
@@ -227,8 +229,9 @@ class BaseGraphQLHTTPConsumer(ChannelsConsumer, AsyncHttpConsumer):
         response_data: GraphQLHTTPResponse | list[GraphQLHTTPResponse],
         sub_response: TemporalResponse,
     ) -> ChannelsResponse:
+        content = self.encode_json(response_data)
         return ChannelsResponse(
-            content=json.dumps(response_data).encode(),
+            content=content.encode() if isinstance(content, str) else content,
             status=sub_response.status_code,
             headers={k.encode(): v.encode() for k, v in sub_response.headers.items()},
         )
