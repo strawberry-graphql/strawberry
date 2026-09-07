@@ -68,6 +68,8 @@ thresholds or change the repository's existing CodSpeed gate settings.
   results, verify the exact count and payloads, and explicitly close generators.
   The setup case measures 100 setup/first-event/close cycles; the stream case
   includes consuming and retaining its requested event count.
+- Federation entity inputs are recreated outside timing before every round,
+  because entity resolution consumes the representation's `__typename` key.
 - The stadium and application workloads intentionally construct resolver data.
   The matched execution workload reuses prepared objects to isolate execution.
 - Schema construction starts from already-decorated types. The process-startup

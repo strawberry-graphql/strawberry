@@ -12,6 +12,27 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 
+def hardware_identity() -> dict[str, str | int | None]:
+    cpu_model = None
+    try:
+        if sys.platform == "darwin":
+            cpu_model = subprocess.check_output(
+                ["sysctl", "-n", "machdep.cpu.brand_string"], text=True
+            ).strip()
+        elif sys.platform == "linux":
+            cpu_model = next(
+                (
+                    line.partition(":")[2].strip()
+                    for line in Path("/proc/cpuinfo").read_text().splitlines()
+                    if line.startswith("model name")
+                ),
+                None,
+            )
+    except (OSError, subprocess.CalledProcessError):
+        pass
+    return {"cpu_model": cpu_model, "logical_cpus": os.cpu_count()}
+
+
 def write_metadata(output: Path, instrument: str) -> None:
     root = Path(__file__).resolve().parents[2]
     suite = Path(__file__).resolve().parent
@@ -42,6 +63,7 @@ def write_metadata(output: Path, instrument: str) -> None:
         "platform": platform.platform(),
         "machine": platform.machine(),
         "processor": platform.processor(),
+        "hardware": hardware_identity(),
         "gc_policy": "pytest-codspeed disables cyclic GC inside measurement",
         "cache_policy": "explicit per-round setup for cache workloads; see README",
         "dependencies": dict(

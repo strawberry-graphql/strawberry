@@ -36,12 +36,18 @@ class Query:
 @pytest.mark.parametrize("count", [1, 100])
 def test_federation_entities(benchmark: BenchmarkFixture, count: int):
     schema = strawberry.federation.Schema(query=Query, types=[Product])
-    result = benchmark(
-        schema.execute_sync,
-        "query ($items: [_Any!]!) { _entities(representations: $items) { ... on Product { id name } } }",
-        variable_values={
-            "items": [{"__typename": "Product", "id": str(i)} for i in range(count)]
-        },
+    query = "query ($items: [_Any!]!) { _entities(representations: $items) { ... on Product { id name } } }"
+
+    def setup():
+        # Entity resolution consumes __typename; every invocation needs fresh input.
+        return (query,), {
+            "variable_values": {
+                "items": [{"__typename": "Product", "id": str(i)} for i in range(count)]
+            }
+        }
+
+    result = benchmark.pedantic(
+        schema.execute_sync, setup=setup, rounds=30, iterations=1
     )
     assert result.errors is None
     assert result.data == {
