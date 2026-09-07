@@ -1,21 +1,23 @@
 import json
 
 import pytest
-from channels.testing import HttpCommunicator
 
-import strawberry
-from strawberry.channels import GraphQLHTTPConsumer, SyncGraphQLHTTPConsumer
 from strawberry.schema.config import StrawberryConfig
 from tests.views.schema import Query
 
 
 @pytest.mark.parametrize(
-    "consumer_class", [GraphQLHTTPConsumer, SyncGraphQLHTTPConsumer]
+    "consumer_name", ["GraphQLHTTPConsumer", "SyncGraphQLHTTPConsumer"]
 )
 @pytest.mark.parametrize("return_bytes", [False, True], ids=["str", "bytes"])
 @pytest.mark.parametrize("batch", [False, True], ids=["single", "batch"])
 @pytest.mark.parametrize("with_error", [False, True], ids=["success", "error"])
-async def test_encode_json_override(consumer_class, return_bytes, batch, with_error):
+async def test_encode_json_override(consumer_name, return_bytes, batch, with_error):
+    from channels.testing import HttpCommunicator
+
+    import strawberry.channels
+
+    consumer_class = getattr(strawberry.channels, consumer_name)
     encoded_inputs = []
     encoded_outputs = []
 
