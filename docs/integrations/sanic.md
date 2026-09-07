@@ -28,6 +28,10 @@ The `GraphQLView` accepts the following options at the moment:
 - `graphql_ide`: optional, defaults to `"graphiql"`, allows to choose the
   GraphQL IDE interface (one of `graphiql`, `apollo-sandbox` or `pathfinder`) or
   to disable it by passing `None`.
+- `subscription_url`: optional, defaults to `None`. When set, the GraphiQL IDE
+  uses this URL for subscriptions (websockets) instead of deriving it from the
+  page URL. Useful when subscriptions are served from a separate URL to the main
+  GraphQL endpoint (for example, when routed differently by a reverse proxy).
 - `allow_queries_via_get`: optional, defaults to `True`, whether to enable
   queries via `GET` requests
 - `subscription_protocols`: optional, defaults to
