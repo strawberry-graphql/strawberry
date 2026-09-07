@@ -48,7 +48,8 @@ See [CodSpeed's Python documentation](https://codspeed.io/docs/benchmarks/python
 
 Markers may overlap. A plain correctness run covers every group. The native
 workflow in `strawberry-graphql/benchmarks` uses the existing Mac runner with Python
-3.12.13 and 3.14.7, serially; do not compare the Python versions as the same series.
+3.14.7, the latest stable release as of September 7, 2026. All three instruments
+pin this exact version; a Python upgrade starts a new baseline.
 The main repository's `benchmark-memory.yml` runs bounded allocation workloads.
 New native and memory results are advisory; the workflows do not invent regression
 thresholds or change the repository's existing CodSpeed gate settings.
@@ -119,8 +120,6 @@ Stress sizes retain their parameter IDs, even though their measurement schedule
 changes. The stadium adds a smaller 1,800-seat PR case; the 45,000/90,000-seat cases
 are available as stress cases.
 
-The public ASV archive at [speed.strawberry.rocks](https://speed.strawberry.rocks/)
-is preserved separately. Its legacy directive fixture can return validation errors
-on current Strawberry, and old measurements lack current correctness guarantees.
-Do not infer a runtime improvement from that series without reproducing the
-historical workload successfully.
+The public overview at [speed.strawberry.rocks](https://speed.strawberry.rocks/)
+links the current CPU, native and memory measurements. The obsolete ASV harness,
+stored runs and historical charts are removed from the reporting repository.
