@@ -1,6 +1,10 @@
 name: Benchmark memory
 
 on:
+  # Exercise new or changed workflow wiring before it becomes a nightly job.
+  pull_request:
+    paths:
+      - ".github/workflows/benchmark-memory.yml"
   schedule:
     - cron: "23 5 * * *"
   workflow_dispatch:
