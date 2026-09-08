@@ -37,7 +37,7 @@ from graphql.utilities.print_schema import (
 from graphql.utilities.print_schema import print_directive as original_print_directive
 from graphql.utilities.print_schema import print_type as original_print_type
 
-from strawberry.schema_directive import Location, StrawberrySchemaDirective
+from strawberry.schema_directive import StrawberrySchemaDirective
 from strawberry.types.base import (
     StrawberryContainer,
     StrawberryObjectDefinition,
@@ -213,18 +213,9 @@ def print_field_directives(
     if not field:
         return ""
 
-    directives = (
-        directive
-        for directive in field.directives
-        if any(
-            location in [Location.FIELD_DEFINITION, Location.INPUT_FIELD_DEFINITION]
-            for location in directive.__strawberry_directive__.locations  # type: ignore
-        )
-    )
-
     return "".join(
         print_schema_directive(directive, schema=schema, extras=extras)
-        for directive in directives
+        for directive in field.directives
     )
 
 
@@ -406,22 +397,9 @@ def print_type_directives(
     if not strawberry_type:
         return ""
 
-    allowed_locations = (
-        [Location.INPUT_OBJECT] if strawberry_type.is_input else [Location.OBJECT]
-    )
-
-    directives = (
-        directive
-        for directive in strawberry_type.directives or []
-        if any(
-            location in allowed_locations
-            for location in directive.__strawberry_directive__.locations  # type: ignore[attr-defined]
-        )
-    )
-
     return "".join(
         print_schema_directive(directive, schema=schema, extras=extras)
-        for directive in directives
+        for directive in strawberry_type.directives or []
     )
 
 
@@ -527,18 +505,9 @@ def _print_type(type_: Any, schema: BaseSchema, *, extras: PrintExtras) -> str:
 
 
 def print_schema_directives(schema: BaseSchema, *, extras: PrintExtras) -> str:
-    directives = (
-        directive
-        for directive in schema.schema_directives
-        if any(
-            location == Location.SCHEMA
-            for location in directive.__strawberry_directive__.locations  # type: ignore
-        )
-    )
-
     return "".join(
         print_schema_directive(directive, schema=schema, extras=extras)
-        for directive in directives
+        for directive in schema.schema_directives
     )
 
 

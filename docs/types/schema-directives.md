@@ -110,3 +110,31 @@ list of all the allowed locations:
 | ENUM_VALUE             | `strawberry.enum_value` | The definition of a enum value                           |
 | INPUT_OBJECT           | `strawberry.input`      | The definition of an input object type                   |
 | INPUT_FIELD_DEFINITION | `strawberry.field`      | The definition of a field on an input type               |
+
+Strawberry validates every schema directive application when the schema is
+created. The application must match one of the directive's declared locations;
+for example, `Location.OBJECT` does not include interfaces, and
+`Location.FIELD_DEFINITION` does not include input fields. A directive declared
+with several locations can be used at each of them.
+
+By default, a schema directive can be applied only once to a particular schema
+element. Set `repeatable=True` when defining a directive that can occur more
+than once:
+
+```python
+@strawberry.schema_directive(
+    locations=[Location.OBJECT],
+    repeatable=True,
+)
+class Tag:
+    name: str
+```
+
+Repeatable applications are printed in the order in which they were attached. A
+non-repeatable directive can still be reused on different schema elements.
+
+Schema construction now reports applications that previously could be omitted
+from printed SDL or produce SDL rejected by GraphQL tools. If an existing schema
+raises a location or repeatability error after upgrading, move or remove the
+invalid application, add the intended location to its definition, or mark a
+genuinely repeatable directive with `repeatable=True`.
