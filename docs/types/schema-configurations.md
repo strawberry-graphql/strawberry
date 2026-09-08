@@ -106,20 +106,20 @@ schema = strawberry.Schema(
 )
 ```
 
-### lexicographic_sort_schema
+### sort_schema
 
 By default Strawberry preserves the order in which fields and types are defined.
 This can make the introspection UI and the exported `schema.graphql` file harder
 to read, since related fields (for example `userById`, `userByName`) are not
 grouped together.
 
-Setting `lexicographic_sort_schema` to `True` sorts all types, fields and
+Setting `sort_schema` to `True` sorts all types, fields and
 arguments alphabetically, affecting both the introspection result and the
 exported SDL.
 
 ```python
 schema = strawberry.Schema(
-    query=Query, config=StrawberryConfig(lexicographic_sort_schema=True)
+    query=Query, config=StrawberryConfig(sort_schema=True)
 )
 ```
 

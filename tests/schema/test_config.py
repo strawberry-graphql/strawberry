@@ -42,11 +42,11 @@ def test_config_post_init_info_class_is_not_subclass():
     assert str(exc_info.value) == "`info_class` must be a subclass of strawberry.Info"
 
 
-def test_lexicographic_sort_schema_defaults_to_false():
-    assert StrawberryConfig().lexicographic_sort_schema is False
+def test_sort_schema_defaults_to_false():
+    assert StrawberryConfig().sort_schema is False
 
 
-def test_lexicographic_sort_schema_preserves_definition_order_by_default():
+def test_sort_schema_preserves_definition_order_by_default():
     @strawberry.type
     class Query:
         @strawberry.field
@@ -66,7 +66,7 @@ def test_lexicographic_sort_schema_preserves_definition_order_by_default():
     assert str(schema) == textwrap.dedent(expected).strip()
 
 
-def test_lexicographic_sort_schema_sorts_fields_and_types():
+def test_sort_schema_sorts_fields_and_types():
     @strawberry.type
     class User:
         name: str
@@ -85,7 +85,7 @@ def test_lexicographic_sort_schema_sorts_fields_and_types():
 
     schema = strawberry.Schema(
         query=Query,
-        config=StrawberryConfig(lexicographic_sort_schema=True),
+        config=StrawberryConfig(sort_schema=True),
     )
 
     expected = """\
@@ -103,7 +103,7 @@ def test_lexicographic_sort_schema_sorts_fields_and_types():
     assert str(schema) == textwrap.dedent(expected).strip()
 
 
-def test_lexicographic_sort_schema_still_executes():
+def test_sort_schema_still_executes():
     @strawberry.type
     class Query:
         @strawberry.field
@@ -112,7 +112,7 @@ def test_lexicographic_sort_schema_still_executes():
 
     schema = strawberry.Schema(
         query=Query,
-        config=StrawberryConfig(lexicographic_sort_schema=True),
+        config=StrawberryConfig(sort_schema=True),
     )
 
     result = schema.execute_sync('{ hello(name: "Patrick") }')

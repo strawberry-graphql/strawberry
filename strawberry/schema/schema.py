@@ -372,7 +372,7 @@ class Schema(BaseSchema):
 
             raise
 
-        if self.config.lexicographic_sort_schema:
+        if self.config.sort_schema:
             self._schema = lexicographic_sort_schema(self._schema)
 
         # attach our schema to the GraphQL schema instance
