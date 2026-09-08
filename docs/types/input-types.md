@@ -89,6 +89,84 @@ completely absent (common in update operations), you can use `strawberry.Maybe`.
 See the [Maybe documentation](./maybe.md) for comprehensive examples and usage
 patterns.
 
+## Clean methods
+
+Input types can prepare or validate coerced values before the resolver runs.
+Define `clean` as either a regular or async method; it receives the resolver's
+`Info` object. Nested input clean methods run before the method of their
+containing input.
+
+### Normalize input values
+
+Use a synchronous `clean` method for local normalization and validation.
+
+```python
+import strawberry
+from strawberry.types import Info
+
+
+@strawberry.input
+class CreateUserInput:
+    email: str
+
+    def clean(self, info: Info) -> None:
+        self.email = self.email.strip().lower()
+```
+
+### Load request data asynchronously
+
+Use an async `clean` method when preparation needs request-scoped resources such
+as dataloaders.
+
+```python
+import strawberry
+from strawberry.dataloader import DataLoader
+from strawberry.types import Info
+
+
+class RequestContext:
+    project_loader: DataLoader[strawberry.ID, object]
+
+
+@strawberry.input
+class ProjectInput:
+    project_id: strawberry.ID
+    project: strawberry.Private[object | None] = None
+
+    async def clean(self, info: Info) -> None:
+        self.project = await info.context.project_loader.load(self.project_id)
+```
+
+Asynchronous clean methods require asynchronous execution with
+`await schema.execute(...)`.
+
+### Clean nested inputs
+
+Nested input clean methods run before the clean method of their containing
+input. This lets a parent validate normalized nested values.
+
+```python
+import strawberry
+from strawberry.types import Info
+
+
+@strawberry.input
+class AddressInput:
+    country: str
+
+    def clean(self, info: Info) -> None:
+        self.country = self.country.upper()
+
+
+@strawberry.input
+class ShippingInput:
+    address: AddressInput
+
+    def clean(self, info: Info) -> None:
+        if self.address.country not in info.context.shipping_countries:
+            raise ValueError("Shipping is not available in this country")
+```
+
 ## API
 
 `@strawberry.input(name: str = None, description: str = None)`
