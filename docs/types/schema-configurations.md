@@ -113,14 +113,11 @@ This can make the introspection UI and the exported `schema.graphql` file harder
 to read, since related fields (for example `userById`, `userByName`) are not
 grouped together.
 
-Setting `sort_schema` to `True` sorts all types, fields and
-arguments alphabetically, affecting both the introspection result and the
-exported SDL.
+Setting `sort_schema` to `True` sorts all types, fields and arguments
+alphabetically, affecting both the introspection result and the exported SDL.
 
 ```python
-schema = strawberry.Schema(
-    query=Query, config=StrawberryConfig(sort_schema=True)
-)
+schema = strawberry.Schema(query=Query, config=StrawberryConfig(sort_schema=True))
 ```
 
 With sorting enabled a schema like:
