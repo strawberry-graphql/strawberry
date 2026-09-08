@@ -591,8 +591,42 @@ def _get_class_definition(
     return Definition(class_definition, interfaces, definition.name.value)
 
 
-def _get_enum_value(enum_value: EnumValueDefinitionNode) -> cst.SimpleStatementLine:
+def _get_enum_value(
+    enum_value: EnumValueDefinitionNode, used_names: set[str]
+) -> cst.SimpleStatementLine:
     name = enum_value.name.value
+
+    # A Python keyword can't be used as an enum member name. Neither can a name
+    # that collides with an alias we already generated for another member (e.g.
+    # an enum with both `class` and `class_`). In those cases we alias the member
+    # with trailing underscore(s) until it is unique, and keep the original
+    # GraphQL name via `strawberry.enum_value`.
+    member_name = name
+    if keyword.iskeyword(name) or name in used_names:
+        member_name = f"{name}_"
+        while member_name in used_names:
+            member_name += "_"
+
+    used_names.add(member_name)
+
+    if member_name != name:
+        return cst.SimpleStatementLine(
+            body=[
+                cst.Assign(
+                    targets=[cst.AssignTarget(cst.Name(member_name))],
+                    value=cst.Call(
+                        func=cst.Attribute(
+                            value=cst.Name("strawberry"),
+                            attr=cst.Name("enum_value"),
+                        ),
+                        args=[
+                            cst.Arg(cst.SimpleString(f'"{name}"')),
+                            _get_argument("name", name),
+                        ],
+                    ),
+                )
+            ]
+        )
 
     return cst.SimpleStatementLine(
         body=[
@@ -612,11 +646,12 @@ def _get_enum_definition(definition: EnumTypeDefinitionNode) -> Definition:
         ),
     )
 
+    used_names: set[str] = set()
     class_definition = cst.ClassDef(
         name=cst.Name(definition.name.value),
         bases=[cst.Arg(cst.Name("Enum"))],
         body=cst.IndentedBlock(
-            body=[_get_enum_value(value) for value in definition.values]
+            body=[_get_enum_value(value, used_names) for value in definition.values]
         ),
         decorators=[decorator],
     )
