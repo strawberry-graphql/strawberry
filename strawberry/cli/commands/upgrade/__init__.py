@@ -12,6 +12,7 @@ from strawberry.cli.app import app
 from strawberry.codemods.annotated_unions import ConvertUnionToAnnotatedUnion
 from strawberry.codemods.maybe_optional import ConvertMaybeToOptional
 from strawberry.codemods.replace_scalar_wrappers import ReplaceScalarWrappers
+from strawberry.codemods.schema_extension_info import ConvertSchemaExtensionInfo
 from strawberry.codemods.update_imports import UpdateImportsCodemod
 
 from ._run_codemod import run_codemod
@@ -21,6 +22,7 @@ codemods = {
     "update-imports": UpdateImportsCodemod,
     "maybe-optional": ConvertMaybeToOptional,
     "replace-scalar-wrappers": ReplaceScalarWrappers,
+    "schema-extension-info": ConvertSchemaExtensionInfo,
 }
 
 
@@ -55,6 +57,7 @@ def upgrade(
         | ReplaceScalarWrappers
         | ConvertMaybeToOptional
         | ConvertUnionToAnnotatedUnion
+        | ConvertSchemaExtensionInfo
     )
 
     if codemod == "update-imports":
@@ -63,6 +66,8 @@ def upgrade(
         transformer = ReplaceScalarWrappers(context=context)
     elif codemod == "maybe-optional":
         transformer = ConvertMaybeToOptional(context=context)
+    elif codemod == "schema-extension-info":
+        transformer = ConvertSchemaExtensionInfo(context=context)
     else:
         transformer = ConvertUnionToAnnotatedUnion(
             context,
@@ -83,6 +88,17 @@ def upgrade(
 
     results = list(run_codemod(transformer, files))
     changed = [result for result in results if result.changed]
+    warnings = [
+        (result.filename, warning)
+        for result in results
+        for warning in result.transform_result.warning_messages
+    ]
+
+    if warnings:
+        rich.print()
+        rich.print("[yellow]Warnings:")
+        for filename, warning in warnings:
+            rich.print(f"  - {filename}: {warning}")
 
     rich.print()
     rich.print("[green]Upgrade completed successfully, here's a summary:")

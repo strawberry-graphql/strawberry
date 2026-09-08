@@ -71,6 +71,7 @@ from strawberry.types.base import (
 from strawberry.types.cast import get_strawberry_type_cast
 from strawberry.types.enum import StrawberryEnumDefinition, has_enum_definition
 from strawberry.types.field import UNRESOLVED
+from strawberry.types.info import Info
 from strawberry.types.lazy_type import LazyType
 from strawberry.types.private import is_private
 from strawberry.types.scalar import ScalarWrapper, scalar
@@ -98,7 +99,6 @@ if TYPE_CHECKING:
     from strawberry.schema_directive import StrawberrySchemaDirective
     from strawberry.types.enum import EnumValue
     from strawberry.types.field import StrawberryField
-    from strawberry.types.info import Info
     from strawberry.types.scalar import ScalarDefinition
 
 
@@ -904,7 +904,11 @@ class GraphQLCoreConverter:
 
             return _get_basic_result
 
-        def _strawberry_info_from_graphql(info: GraphQLResolveInfo) -> Info:
+        def _strawberry_info_from_graphql(
+            info: GraphQLResolveInfo | Info,
+        ) -> Info:
+            if isinstance(info, Info):
+                return info
             return self.config.info_class(
                 _raw_info=info,
                 _field=field,
@@ -1048,7 +1052,9 @@ class GraphQLCoreConverter:
 
         _get_result_with_extensions = wrap_field_extensions()
 
-        def _resolver(_source: Any, info: GraphQLResolveInfo, **kwargs: Any) -> Any:
+        def _resolver(
+            _source: Any, info: GraphQLResolveInfo | Info, **kwargs: Any
+        ) -> Any:
             strawberry_info = _strawberry_info_from_graphql(info)
 
             if not field_exception_handlers:
@@ -1068,7 +1074,7 @@ class GraphQLCoreConverter:
             )
 
         async def _async_resolver(
-            _source: Any, info: GraphQLResolveInfo, **kwargs: Any
+            _source: Any, info: GraphQLResolveInfo | Info, **kwargs: Any
         ) -> Any:
             strawberry_info = _strawberry_info_from_graphql(info)
 

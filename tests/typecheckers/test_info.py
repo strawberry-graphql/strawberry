@@ -157,3 +157,30 @@ def example(info: strawberry.Info) -> None:
             ),
         ]
     )
+
+
+def test_schema_extension_resolve_accepts_strawberry_info():
+    code = """
+from typing import Any
+
+import strawberry
+from strawberry.extensions import SchemaExtension
+
+
+class Extension(SchemaExtension):
+    def resolve(
+        self,
+        _next: Any,
+        root: Any,
+        info: strawberry.Info,
+        *args: str,
+        **kwargs: Any,
+    ) -> Any:
+        return _next(root, info, *args, **kwargs)
+"""
+
+    results = typecheck(code)
+
+    assert results.pyright == snapshot([])
+    assert results.mypy == snapshot([])
+    assert results.ty == snapshot([])
