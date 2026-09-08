@@ -108,6 +108,29 @@ async def test_upload(enabled_http_client: HttpClient):
     assert response.json["data"] == {"readText": "strawberry"}
 
 
+async def test_upload_variable_without_a_file_is_rejected(
+    enabled_http_client: HttpClient,
+):
+    """A plain JSON request cannot carry a file, so it must not reach the resolver."""
+    query = """
+    mutation($textFile: Upload!) {
+        readText(textFile: $textFile)
+    }
+    """
+
+    response = await enabled_http_client.query(
+        query,
+        variables={"textFile": "not a file"},
+    )
+
+    assert response.status_code == 200
+    assert response.json["data"] is None
+    assert (
+        "Upload cannot represent a non-file value"
+        in response.json["errors"][0]["message"]
+    )
+
+
 async def test_file_list_upload(enabled_http_client: HttpClient):
     query = "mutation($files: [Upload!]!) { readFiles(files: $files) }"
     file1 = BytesIO(b"strawberry1")
