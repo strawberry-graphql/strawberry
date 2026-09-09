@@ -59,6 +59,7 @@ cli = [
   "uvicorn>=0.11.6",
   "websockets>=15.0.1,<17",
   "python-multipart>=0.0.7",
+  "pyyaml>=6.0",
 ]
 litestar = ["litestar>=2; python_version~='3.10'"]
 pyinstrument = ["pyinstrument>=4.0.0"]
