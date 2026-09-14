@@ -252,7 +252,9 @@ def sync_extension() -> type[ExampleExtension]:
             self.called_hooks.append("get_results")
             return {"example": "example"}
 
-        def resolve(self, _next, root, info, *args: str, **kwargs: Any):
+        def resolve(
+            self, _next, root, info: strawberry.Info, *args: str, **kwargs: Any
+        ):
             self.called_hooks.append("resolve")
             return _next(root, info, *args, **kwargs)
 
