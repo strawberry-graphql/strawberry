@@ -14,7 +14,12 @@ from graphql import (
 
 import strawberry
 import strawberry.schema.schema as schema_module
-from strawberry.exceptions import DuplicatedTypeName, UnresolvedFieldTypeError
+from strawberry.exceptions import (
+    DuplicatedTypeName,
+    DuplicateSchemaDirectiveError,
+    InvalidSchemaDirectiveLocationError,
+    UnresolvedFieldTypeError,
+)
 from strawberry.schema.schema_converter import GraphQLCoreConverter
 from strawberry.schema_directive import Location
 
@@ -345,14 +350,17 @@ def test_registers_directives_from_all_type_system_attachment_points():
 
         return Directive
 
+    SchemaDirective = directive("onSchema", Location.SCHEMA)
+    ScalarDirective = directive("onScalar", Location.SCALAR)
+    ObjectDirective = directive("onObject", Location.OBJECT)
+    FieldDirective = directive("onField", Location.FIELD_DEFINITION)
+    ArgumentDirective = directive("onArgument", Location.ARGUMENT_DEFINITION)
     InterfaceDirective = directive("onInterface", Location.INTERFACE)
     UnionDirective = directive("onUnion", Location.UNION)
     EnumDirective = directive("onEnum", Location.ENUM)
     EnumValueDirective = directive("onEnumValue", Location.ENUM_VALUE)
-    ScalarDirective = directive("onScalar", Location.SCALAR)
     InputDirective = directive("onInput", Location.INPUT_OBJECT)
     InputFieldDirective = directive("onInputField", Location.INPUT_FIELD_DEFINITION)
-    ArgumentDirective = directive("onArgument", Location.ARGUMENT_DEFINITION)
 
     @strawberry.interface(directives=[InterfaceDirective()])
     class Node:
@@ -383,9 +391,9 @@ def test_registers_directives_from_all_type_system_attachment_points():
     class Filter:
         term: str = strawberry.field(directives=[InputFieldDirective()])
 
-    @strawberry.type
+    @strawberry.type(directives=[ObjectDirective()])
     class Query:
-        node: Node
+        node: Node = strawberry.field(directives=[FieldDirective()])
         result: Result
         choice: Choice
         custom_scalar: CustomScalar
@@ -398,19 +406,193 @@ def test_registers_directives_from_all_type_system_attachment_points():
         ) -> str:
             return filter.term + term
 
-    schema = strawberry.Schema(query=Query, types=[Item])
+    schema = strawberry.Schema(
+        query=Query,
+        types=[Item],
+        schema_directives=[SchemaDirective()],
+    )
     directive_names = {item.name for item in schema._schema.directives}
 
     assert {
+        "onSchema",
+        "onScalar",
+        "onObject",
+        "onField",
+        "onArgument",
         "onInterface",
         "onUnion",
         "onEnum",
         "onEnumValue",
-        "onScalar",
         "onInput",
         "onInputField",
-        "onArgument",
     } <= directive_names
+
+    sdl = schema.as_str()
+    assert "schema @onSchema {" in sdl
+    assert "scalar CustomScalar @onScalar" in sdl
+    assert "type Query @onObject {" in sdl
+    assert "node: Node! @onField" in sdl
+    assert "term: String! @onArgument" in sdl
+    assert "interface Node @onInterface" in sdl
+    assert "union Result @onUnion" in sdl
+    assert "enum Choice @onEnum" in sdl
+    assert "FIRST @onEnumValue" in sdl
+    assert "input Filter @onInput" in sdl
+    assert "term: String! @onInputField" in sdl
+    build_schema(sdl)
+
+
+def test_rejects_object_directive_on_interface():
+    @strawberry.schema_directive(locations=[Location.OBJECT])
+    class Marker: ...
+
+    @strawberry.interface(directives=[Marker()])
+    class Node:
+        id: strawberry.ID
+
+    @strawberry.type
+    class Query:
+        node: Node
+
+    with pytest.raises(
+        InvalidSchemaDirectiveLocationError,
+        match=(
+            r"Schema directive '@marker' cannot be applied to INTERFACE schema "
+            r"element 'Node'\. Allowed locations: OBJECT\."
+        ),
+    ):
+        strawberry.Schema(query=Query)
+
+
+def test_rejects_field_directive_on_schema():
+    @strawberry.schema_directive(locations=[Location.FIELD_DEFINITION])
+    class Marker: ...
+
+    @strawberry.type
+    class Query:
+        value: str
+
+    with pytest.raises(
+        InvalidSchemaDirectiveLocationError,
+        match=(
+            r"Schema directive '@marker' cannot be applied to SCHEMA schema "
+            r"element 'schema'\. Allowed locations: FIELD_DEFINITION\."
+        ),
+    ):
+        strawberry.Schema(query=Query, schema_directives=[Marker()])
+
+
+def test_rejects_output_field_directive_on_input_field():
+    @strawberry.schema_directive(locations=[Location.FIELD_DEFINITION])
+    class Marker: ...
+
+    @strawberry.input
+    class Filter:
+        value: str = strawberry.field(directives=[Marker()])
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def search(self, filter: Filter) -> str:
+            return filter.value
+
+    with pytest.raises(
+        InvalidSchemaDirectiveLocationError,
+        match=(
+            r"Schema directive '@marker' cannot be applied to "
+            r"INPUT_FIELD_DEFINITION schema element 'Filter.value'\. Allowed "
+            r"locations: FIELD_DEFINITION\."
+        ),
+    ):
+        strawberry.Schema(query=Query)
+
+
+def test_rejects_input_field_directive_on_output_field():
+    @strawberry.schema_directive(locations=[Location.INPUT_FIELD_DEFINITION])
+    class Marker: ...
+
+    @strawberry.type
+    class Query:
+        value: str = strawberry.field(directives=[Marker()])
+
+    with pytest.raises(
+        InvalidSchemaDirectiveLocationError,
+        match=(
+            r"Schema directive '@marker' cannot be applied to FIELD_DEFINITION "
+            r"schema element 'Query.value'\. Allowed locations: "
+            r"INPUT_FIELD_DEFINITION\."
+        ),
+    ):
+        strawberry.Schema(query=Query)
+
+
+def test_rejects_scalar_directive_on_union():
+    @strawberry.schema_directive(locations=[Location.SCALAR])
+    class Marker: ...
+
+    @strawberry.type
+    class Item:
+        name: str
+
+    @strawberry.type
+    class Other:
+        value: str
+
+    Result = Annotated[
+        Item | Other,
+        strawberry.union("Result", directives=[Marker()]),
+    ]
+
+    @strawberry.type
+    class Query:
+        result: Result
+
+    with pytest.raises(
+        InvalidSchemaDirectiveLocationError,
+        match=(
+            r"Schema directive '@marker' cannot be applied to UNION schema "
+            r"element 'Result'\. Allowed locations: SCALAR\."
+        ),
+    ):
+        strawberry.Schema(query=Query)
+
+
+def test_rejects_duplicate_non_repeatable_directive():
+    @strawberry.schema_directive(locations=[Location.FIELD_DEFINITION])
+    class Marker:
+        value: str
+
+    @strawberry.type
+    class Query:
+        value: str = strawberry.field(
+            directives=[Marker(value="first"), Marker(value="second")]
+        )
+
+    with pytest.raises(
+        DuplicateSchemaDirectiveError,
+        match=(
+            r"Schema directive '@marker' is not repeatable and cannot be applied "
+            r"more than once to FIELD_DEFINITION schema element 'Query.value'\."
+        ),
+    ):
+        strawberry.Schema(query=Query)
+
+
+def test_non_repeatable_directive_can_be_reused_on_separate_elements():
+    @strawberry.schema_directive(locations=[Location.FIELD_DEFINITION])
+    class Marker: ...
+
+    @strawberry.type
+    class Query:
+        first: str = strawberry.field(directives=[Marker()])
+        second: str = strawberry.field(directives=[Marker()])
+
+    schema = strawberry.Schema(query=Query)
+    sdl = schema.as_str()
+
+    assert "first: String! @marker" in sdl
+    assert "second: String! @marker" in sdl
+    build_schema(sdl)
 
 
 def test_directives_passed_as_one_shot_iterables_are_kept():

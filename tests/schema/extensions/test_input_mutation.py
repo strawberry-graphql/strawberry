@@ -8,7 +8,7 @@ from strawberry.schema_directive import Location, schema_directive
 
 
 @schema_directive(
-    locations=[Location.FIELD_DEFINITION],
+    locations=[Location.INPUT_FIELD_DEFINITION],
     name="some_directive",
 )
 class SomeDirective:
@@ -71,7 +71,7 @@ schema = strawberry.Schema(query=Query, mutation=Mutation)
 
 def test_schema():
     expected = '''
-    directive @some_directive(some: String!, directive: String!) on FIELD_DEFINITION
+    directive @some_directive(some: String!, directive: String!) on INPUT_FIELD_DEFINITION
 
     input CreateFruitAsyncInput {
       name: String!

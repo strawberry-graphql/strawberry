@@ -22,6 +22,10 @@ from .object_is_not_a_class import ObjectIsNotClassError
 from .object_is_not_an_enum import ObjectIsNotAnEnumError
 from .private_strawberry_field import PrivateStrawberryFieldError
 from .scalar_already_registered import ScalarAlreadyRegisteredError
+from .schema_directive import (
+    DuplicateSchemaDirectiveError,
+    InvalidSchemaDirectiveLocationError,
+)
 from .unresolved_field_type import UnresolvedFieldTypeError
 
 if TYPE_CHECKING:
@@ -198,12 +202,14 @@ class PermissionReturnedAwaitableInSyncContextError(Exception):
 
 __all__ = [
     "ConflictingArgumentsError",
+    "DuplicateSchemaDirectiveError",
     "DuplicatedTypeName",
     "FieldWithResolverAndDefaultFactoryError",
     "FieldWithResolverAndDefaultValueError",
     "InvalidArgumentTypeError",
     "InvalidCustomContext",
     "InvalidDefaultFactoryError",
+    "InvalidSchemaDirectiveLocationError",
     "InvalidStrawberryFieldAnnotationError",
     "InvalidSuperclassInterfaceError",
     "InvalidTypeForUnionMergeError",

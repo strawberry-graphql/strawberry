@@ -85,6 +85,9 @@ def test_schema_directives_and_compose_schema(monkeypatch):
 
     assert graphql_schema_calls == 1
     assert validated_schemas == [schema._schema]
+    compose_directive = schema._schema.get_directive("composeDirective")
+    assert compose_directive is not None
+    assert compose_directive.is_repeatable
     assert schema.as_str() == textwrap.dedent(expected_type).strip()
 
     result = schema.execute_sync(
