@@ -21,6 +21,7 @@ from strawberry.types.base import (
 )
 from strawberry.types.enum import StrawberryEnumDefinition, has_enum_definition
 from strawberry.types.lazy_type import LazyType, StrawberryLazyReference
+from strawberry.types.literal import is_literal, is_valid_literal_value
 from strawberry.types.maybe import Some
 from strawberry.types.unset import UNSET
 
@@ -233,6 +234,15 @@ def convert_argument(
     if _is_leaf_type(type_, scalar_registry):
         if type_ is GlobalID:
             return GlobalID.from_id(value)  # type: ignore
+
+        return value
+
+    if is_literal(type_):
+        if not is_valid_literal_value(type_, value):
+            values = get_args(type_)
+            raise ValueError(
+                f"Expected value to be one of {values!r}; received {value!r}"
+            )
 
         return value
 

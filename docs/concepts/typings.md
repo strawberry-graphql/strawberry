@@ -52,6 +52,35 @@ express the required Strawberry graphQL type annotation.
 - The annotation `typing.Optional[Type]` is shorthand for
   `typing.Union[None, Type]`, which is itself equivalent to `None | Type`.
 
+## Literal types
+
+Strawberry supports homogeneous `typing.Literal` annotations containing strings,
+integers, or booleans. They are represented in the GraphQL schema by their
+underlying scalar type:
+
+```python
+from typing import Literal
+
+import strawberry
+
+
+@strawberry.type
+class Query:
+    status: Literal["ready"]
+
+    @strawberry.field
+    def echo_priority(self, priority: Literal[1, 2, 3]) -> int:
+        return priority
+```
+
+This produces `String` for `status` and `Int` for `priority`. Strawberry also
+checks input values against the allowed values before calling the resolver.
+
+GraphQL introspection exposes the underlying scalar rather than the allowed
+values. Use a Strawberry enum when clients need to discover the choices from the
+schema. Literal annotations containing mixed or unsupported value types raise an
+error while the schema is being created.
+
 ## Example
 
 A complete example of this, extending upon
