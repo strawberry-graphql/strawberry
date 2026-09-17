@@ -39,7 +39,7 @@ from graphql.language.ast import (
     NullValueNode,
 )
 
-from strawberry.utils.str_converters import to_snake_case
+from strawberry.utils.str_converters import to_camel_case, to_snake_case
 
 if TYPE_CHECKING:
     from graphql.language.ast import ConstDirectiveNode
@@ -332,19 +332,41 @@ def _get_field_value(
     return None
 
 
+def _make_unique_name(name: str, used_names: set[str]) -> str:
+    """Return a variant of *name* not in *used_names*, and reserve it.
+
+    Two GraphQL names can convert to the same Python name (e.g. `someField` and
+    `some_field`); appending underscores stops the later one from silently
+    overwriting the earlier one.
+    """
+    while name in used_names:
+        name += "_"
+
+    used_names.add(name)
+
+    return name
+
+
 def _get_field(
     field: FieldDefinitionNode | InputValueDefinitionNode,
     is_apollo_federation: bool,
     imports: set[Import],
     *,
     is_input_field: bool = False,
+    used_names: set[str],
 ) -> cst.SimpleStatementLine:
-    name = to_snake_case(field.name.value)
-    alias: str | None = None
+    graphql_name = field.name.value
+    name = to_snake_case(graphql_name)
 
     if keyword.iskeyword(name):
         name = f"{name}_"
-        alias = field.name.value
+
+    name = _make_unique_name(name, used_names)
+
+    # Strawberry derives the GraphQL name by camel-casing the Python name, so an
+    # explicit alias is needed whenever that would not give the original name
+    # back, e.g. for `some_field`, `URL` or names aliased above.
+    alias = graphql_name if to_camel_case(name) != graphql_name else None
 
     # For input types, wrap nullable fields in strawberry.Maybe[...]
     wrap_in_maybe = is_input_field and _is_nullable(field.type)
@@ -571,6 +593,7 @@ def _get_class_definition(
 
     is_input_type = isinstance(definition, InputObjectTypeDefinitionNode)
 
+    used_names: set[str] = set()
     class_definition = cst.ClassDef(
         name=cst.Name(definition.name.value),
         body=cst.IndentedBlock(
@@ -580,6 +603,7 @@ def _get_class_definition(
                     is_apollo_federation,
                     imports,
                     is_input_field=is_input_type,
+                    used_names=used_names,
                 )
                 for field in definition.fields
             ]
