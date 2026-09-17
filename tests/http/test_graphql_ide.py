@@ -35,6 +35,23 @@ async def test_renders_graphql_ide(
         assert "unpkg.com/graphiql" in response.text
 
 
+async def test_renders_graphiql_with_a_custom_subscription_url(
+    http_client_class: type[HttpClient],
+):
+    http_client = http_client_class(
+        schema,
+        graphql_ide="graphiql",
+        subscription_url="wss://example.com/ws/graphql",
+    )
+
+    response = await http_client.get("/graphql", headers={"Accept": "text/html"})
+
+    assert response.status_code == 200
+    assert (
+        'const customSubscriptionUrl = "wss://example.com/ws/graphql";' in response.text
+    )
+
+
 async def test_does_not_render_graphiql_if_wrong_accept(
     http_client_class: type[HttpClient],
 ):

@@ -208,6 +208,7 @@ class BaseGraphQLHTTPConsumer(
         self,
         schema: BaseSchema,
         graphql_ide: GraphQL_IDE | None = "graphiql",
+        subscription_url: str | None = None,
         allow_queries_via_get: bool = True,
         multipart_uploads_enabled: bool = False,
         subscription_protocols: Sequence[str] = (
@@ -221,6 +222,7 @@ class BaseGraphQLHTTPConsumer(
         self.multipart_uploads_enabled = multipart_uploads_enabled
         self.protocols = subscription_protocols
         self.graphql_ide = graphql_ide
+        self.subscription_url = subscription_url
 
         super().__init__(**kwargs)
 
