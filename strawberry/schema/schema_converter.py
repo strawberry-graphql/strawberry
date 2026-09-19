@@ -49,6 +49,7 @@ from strawberry.exceptions import (
     UnresolvedFieldTypeError,
 )
 from strawberry.extensions.field_extension import build_field_extension_resolvers
+from strawberry.printer.ast_from_value import object_to_shallow_dict
 from strawberry.relay.types import GlobalID
 from strawberry.schema.exception_handlers import (
     get_error_type,
@@ -309,6 +310,9 @@ class CustomGraphQLEnumType(GraphQLEnumType):
     def coerce_input_value(
         self, input_value: str, hide_suggestions: bool = False
     ) -> Any:
+        if isinstance(input_value, self.wrapped_cls):
+            return input_value
+
         if IS_GQL_32:
             return self.wrapped_cls(super().parse_value(input_value))
 
@@ -447,10 +451,10 @@ class GraphQLCoreConverter:
         argument_type = cast(
             "GraphQLInputType", self.from_maybe_optional(argument.type)
         )
-        if argument.is_maybe:
+        if argument.is_maybe or argument.default is UNSET:
             default_value: Any = Undefined
         else:
-            default_value = Undefined if argument.default is UNSET else argument.default
+            default_value = self._convert_default_value(argument.default, argument.type)
 
         return GraphQLArgument(
             type_=argument_type,
@@ -627,7 +631,9 @@ class GraphQLCoreConverter:
         elif field.default_value is UNSET or field.default_value is dataclasses.MISSING:
             default_value = Undefined
         else:
-            default_value = field.default_value
+            default_value = self._convert_default_value(
+                field.default_value, field.resolve_type(type_definition=type_definition)
+            )
 
         return GraphQLInputField(
             type_=field_type,
@@ -638,6 +644,53 @@ class GraphQLCoreConverter:
                 GraphQLCoreConverter.DEFINITION_BACKREF: field,
             },
         )
+
+    def _convert_default_value(
+        self, value: object, type_: StrawberryType | type
+    ) -> object:
+        while isinstance(type_, StrawberryOptional):
+            type_ = type_.of_type
+        if isinstance(type_, LazyType):
+            type_ = type_.resolve_type()
+
+        if has_object_definition(value):
+            definition = value.__strawberry_definition__
+            return {
+                self.config.name_converter.from_field(field): (
+                    self._convert_default_value(
+                        field_value, field.resolve_type(type_definition=definition)
+                    )
+                )
+                for python_name, field_value in object_to_shallow_dict(value).items()
+                if (field := definition.get_field(python_name)) is not None
+            }
+
+        if isinstance(value, list) and isinstance(type_, StrawberryList):
+            return [self._convert_default_value(item, type_.of_type) for item in value]
+
+        if isinstance(value, dict) and has_object_definition(type_):
+            definition = type_.__strawberry_definition__
+            fields_by_name = {
+                field.python_name: field for field in definition.fields
+            } | {
+                self.config.name_converter.from_field(field): field
+                for field in definition.fields
+            }
+            result = {}
+            for key, item in value.items():
+                field = fields_by_name.get(key)
+                if field is None:
+                    result[key] = item
+                    continue
+
+                result[self.config.name_converter.from_field(field)] = (
+                    self._convert_default_value(
+                        item, field.resolve_type(type_definition=definition)
+                    )
+                )
+            return result
+
+        return value
 
     def get_graphql_fields(
         self, type_definition: StrawberryObjectDefinition

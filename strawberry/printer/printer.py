@@ -18,6 +18,7 @@ from graphql import (
     is_union_type,
 )
 from graphql.language.printer import print_ast
+from graphql.pyutils import Undefined
 from graphql.type import (
     is_enum_type,
     is_input_type,
@@ -38,6 +39,7 @@ from graphql.utilities.print_schema import print_directive as original_print_dir
 from graphql.utilities.print_schema import print_type as original_print_type
 
 from strawberry.schema_directive import Location, StrawberrySchemaDirective
+from strawberry.types.arguments import StrawberryArgument
 from strawberry.types.base import (
     StrawberryContainer,
     StrawberryObjectDefinition,
@@ -448,8 +450,19 @@ def _print_interface(type_: Any, schema: BaseSchema, *, extras: PrintExtras) -> 
 
 
 def print_input_value(name: str, arg: GraphQLArgument | GraphQLInputField) -> str:
+    from strawberry.schema.schema_converter import GraphQLCoreConverter
+
+    definition = arg.extensions.get(GraphQLCoreConverter.DEFINITION_BACKREF)
+    default_value = arg.default_value
+    if default_value is not Undefined and definition is not None:
+        default_value = (
+            definition.default
+            if isinstance(definition, StrawberryArgument)
+            else definition.default_value
+        )
+
     default_ast = ast_from_value(
-        arg.default_value,
+        default_value,
         arg.type,
         isinstance(arg, GraphQLInputField),
     )

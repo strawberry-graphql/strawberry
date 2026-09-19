@@ -89,6 +89,57 @@ completely absent (common in update operations), you can use `strawberry.Maybe`.
 See the [Maybe documentation](./maybe.md) for comprehensive examples and usage
 patterns.
 
+## Input instances as default values
+
+An input type instance can be used as the default value of a resolver argument
+or of another input's field. The default is printed in the schema, reported by
+introspection, and each execution receives a fresh instance:
+
+<CodeGrid>
+
+```python
+import strawberry
+
+
+@strawberry.input
+class Pagination:
+    limit: int = 10
+    offset: int = 0
+
+
+@strawberry.input
+class Filters:
+    query: str
+    pagination: Pagination = strawberry.field(default_factory=Pagination)
+
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def search(self, filters: Filters = Filters(query="")) -> list[str]:
+        return []
+```
+
+```graphql
+input Pagination {
+  limit: Int! = 10
+  offset: Int! = 0
+}
+
+input Filters {
+  query: String!
+  pagination: Pagination! = { limit: 10, offset: 0 }
+}
+
+type Query {
+  search(
+    filters: Filters! = { query: "", pagination: { limit: 10, offset: 0 } }
+  ): [String!]!
+}
+```
+
+</CodeGrid>
+
 ## API
 
 `@strawberry.input(name: str = None, description: str = None)`
