@@ -7,6 +7,30 @@ import strawberry
 from strawberry.extensions import MaskErrors, ValidationCache
 
 
+@strawberry.type
+class Query:
+    """Shared schema for the `mask_pre_execution_errors` tests."""
+
+    @strawberry.field
+    def test_field(self) -> str:
+        return "TestField"
+
+    @strawberry.field
+    def hidden_error(self) -> str:
+        raise KeyError("This error is not visible")
+
+
+# What `MaskErrors(mask_pre_execution_errors=False)` does with a document that
+# fails to parse, with one that fails to validate, and with one that makes a
+# resolver raise: the message the client gets, and how many times the extension
+# asks `should_mask_error` about it.
+KEEP_PRE_EXECUTION_ERRORS = [
+    ("query { testField( }", "Syntax Error: Expected Name, found '}'.", 0),
+    ("query { missingField }", "Cannot query field 'missingField' on type 'Query'.", 0),
+    ("query { hiddenError }", "Unexpected error.", 1),
+]
+
+
 @pytest.mark.parametrize(
     "query",
     [
@@ -314,3 +338,54 @@ async def test_mask_errors_selective_async():
             "path": ["visibleError"],
         }
     ]
+
+
+@pytest.mark.parametrize(
+    ("query", "expected_message", "expected_calls"), KEEP_PRE_EXECUTION_ERRORS
+)
+def test_keep_pre_execution_errors_sync(
+    query: str, expected_message: str, expected_calls: int
+):
+    should_mask_error = Mock(return_value=True)
+    schema = strawberry.Schema(
+        query=Query,
+        extensions=[
+            lambda: MaskErrors(
+                should_mask_error=should_mask_error,
+                mask_pre_execution_errors=False,
+            )
+        ],
+    )
+
+    result = schema.execute_sync(query)
+
+    assert result.data is None
+    assert result.errors is not None
+    assert [error.message for error in result.errors] == [expected_message]
+    assert should_mask_error.call_count == expected_calls
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("query", "expected_message", "expected_calls"), KEEP_PRE_EXECUTION_ERRORS
+)
+async def test_keep_pre_execution_errors_async(
+    query: str, expected_message: str, expected_calls: int
+):
+    should_mask_error = Mock(return_value=True)
+    schema = strawberry.Schema(
+        query=Query,
+        extensions=[
+            lambda: MaskErrors(
+                should_mask_error=should_mask_error,
+                mask_pre_execution_errors=False,
+            )
+        ],
+    )
+
+    result = await schema.execute(query)
+
+    assert result.data is None
+    assert result.errors is not None
+    assert [error.message for error in result.errors] == [expected_message]
+    assert should_mask_error.call_count == expected_calls
