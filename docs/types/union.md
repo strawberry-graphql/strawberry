@@ -157,6 +157,24 @@ class Query:
         )
 ```
 
+If you return an object that is not an instance of one of the union's types,
+such as a Django, Pydantic or SQLAlchemy object, Strawberry has no way to tell
+which type it should resolve to. Use `strawberry.cast` to say which one it is:
+
+```python
+from typing import Union
+import strawberry
+
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def latest_media(self) -> Union[Audio, Video, Image]:
+        media = MediaModel.objects.latest()
+
+        return strawberry.cast(Video, media)
+```
+
 ## Single member union
 
 Sometimes you might want to define a union with only one member. This is useful
