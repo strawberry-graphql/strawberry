@@ -8,6 +8,7 @@ from typing import (
     TypeGuard,
     cast,
 )
+from typing_extensions import TypeVar
 
 from cross_web import HTTPException, StarletteRequestAdapter
 from fastapi import APIRouter, Depends, params
@@ -30,8 +31,10 @@ from strawberry.asgi import ASGIWebSocketAdapter
 from strawberry.exceptions import InvalidCustomContext
 from strawberry.fastapi.context import BaseContext, CustomContext
 from strawberry.http.async_base_view import AsyncBaseHTTPView
-from strawberry.http.typevars import Context, RootValue
+from strawberry.http.typevars import RootValue
 from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
+
+Context = TypeVar("Context", default=CustomContext)
 
 if TYPE_CHECKING:
     from collections.abc import (
@@ -69,7 +72,7 @@ class GraphQLRouter(
     @staticmethod
     def __get_context_getter(
         custom_getter: Callable[
-            ..., CustomContext | None | Awaitable[CustomContext | None]
+            ..., CustomContext | Awaitable[CustomContext | None] | None
         ],
     ) -> Callable[..., Awaitable[CustomContext]]:
         async def dependency(
@@ -116,7 +119,7 @@ class GraphQLRouter(
         dependency.__signature__ = sig  # type: ignore
         return dependency
 
-    def __init__(
+    def __init__(  # noqa: PLR0917
         self,
         schema: BaseSchema,
         path: str = "",
@@ -125,7 +128,7 @@ class GraphQLRouter(
         keep_alive: bool = False,
         keep_alive_interval: float = 1,
         root_value_getter: Callable[[], RootValue] | None = None,
-        context_getter: Callable[..., Context | None | Awaitable[Context | None]]
+        context_getter: Callable[..., Context | Awaitable[Context | None] | None]
         | None = None,
         subscription_protocols: Sequence[str] = (
             GRAPHQL_TRANSPORT_WS_PROTOCOL,

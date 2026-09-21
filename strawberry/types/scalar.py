@@ -18,7 +18,12 @@ from strawberry.utils.str_converters import to_camel_case
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Mapping
 
-    from graphql import GraphQLScalarType
+    from graphql import (
+        GraphQLScalarLiteralParser,
+        GraphQLScalarSerializer,
+        GraphQLScalarType,
+        GraphQLScalarValueParser,
+    )
 
 
 _T = TypeVar("_T", bound=type | NewType)
@@ -33,9 +38,9 @@ class ScalarDefinition(StrawberryType):
     name: str
     description: str | None
     specified_by_url: str | None
-    serialize: Callable | None
-    parse_value: Callable | None
-    parse_literal: Callable | None
+    serialize: GraphQLScalarSerializer | None
+    parse_value: GraphQLScalarValueParser | None
+    parse_literal: GraphQLScalarLiteralParser | None
     directives: Iterable[object] = ()
     origin: GraphQLScalarType | type | None = None
 
@@ -46,6 +51,7 @@ class ScalarDefinition(StrawberryType):
     # used for better error messages
     _source_file: str | None = None
     _source_line: int | None = None
+    print_definition: bool = True
 
     def copy_with(
         self, type_var_map: Mapping[str, StrawberryType | type]
@@ -83,10 +89,11 @@ def _process_scalar(
     name: str | None = None,
     description: str | None = None,
     specified_by_url: str | None = None,
-    serialize: Callable | None = None,
-    parse_value: Callable | None = None,
-    parse_literal: Callable | None = None,
+    serialize: GraphQLScalarSerializer | None = None,
+    parse_value: GraphQLScalarValueParser | None = None,
+    parse_literal: GraphQLScalarLiteralParser | None = None,
     directives: Iterable[object] = (),
+    print_definition: bool = True,
 ) -> ScalarWrapper:
     from strawberry.exceptions.handler import should_use_rich_exceptions
 
@@ -109,7 +116,8 @@ def _process_scalar(
         serialize=serialize,
         parse_literal=parse_literal,
         parse_value=parse_value,
-        directives=directives,
+        directives=tuple(directives),
+        print_definition=print_definition,
         origin=cls,  # type: ignore[arg-type]
         _source_file=_source_file,
         _source_line=_source_line,
@@ -125,10 +133,11 @@ def scalar(
     name: str,
     description: str | None = None,
     specified_by_url: str | None = None,
-    serialize: Callable = identity,
-    parse_value: Callable | None = None,
-    parse_literal: Callable | None = None,
+    serialize: GraphQLScalarSerializer = identity,
+    parse_value: GraphQLScalarValueParser | None = None,
+    parse_literal: GraphQLScalarLiteralParser | None = None,
     directives: Iterable[object] = (),
+    print_definition: bool = True,
 ) -> ScalarDefinition: ...
 
 
@@ -139,10 +148,11 @@ def scalar(
     name: None = None,
     description: str | None = None,
     specified_by_url: str | None = None,
-    serialize: Callable = identity,
-    parse_value: Callable | None = None,
-    parse_literal: Callable | None = None,
+    serialize: GraphQLScalarSerializer = identity,
+    parse_value: GraphQLScalarValueParser | None = None,
+    parse_literal: GraphQLScalarLiteralParser | None = None,
     directives: Iterable[object] = (),
+    print_definition: bool = True,
 ) -> Callable[[_T], _T]: ...
 
 
@@ -153,26 +163,28 @@ def scalar(
     name: str | None = None,
     description: str | None = None,
     specified_by_url: str | None = None,
-    serialize: Callable = identity,
-    parse_value: Callable | None = None,
-    parse_literal: Callable | None = None,
+    serialize: GraphQLScalarSerializer = identity,
+    parse_value: GraphQLScalarValueParser | None = None,
+    parse_literal: GraphQLScalarLiteralParser | None = None,
     directives: Iterable[object] = (),
+    print_definition: bool = True,
 ) -> _T: ...
 
 
 # TODO: We are tricking pyright into thinking that we are returning the given type
 # here or else it won't let us use any custom scalar to annotate attributes in
 # dataclasses/types. This should be properly solved when implementing StrawberryScalar
-def scalar(
+def scalar(  # noqa: D417
     cls: _T | None = None,
     *,
     name: str | None = None,
     description: str | None = None,
     specified_by_url: str | None = None,
-    serialize: Callable = identity,
-    parse_value: Callable | None = None,
-    parse_literal: Callable | None = None,
+    serialize: GraphQLScalarSerializer = identity,
+    parse_value: GraphQLScalarValueParser | None = None,
+    parse_literal: GraphQLScalarLiteralParser | None = None,
     directives: Iterable[object] = (),
+    print_definition: bool = True,
 ) -> Any:
     """Annotates a class or type as a GraphQL custom scalar.
 
@@ -260,6 +272,7 @@ def scalar(
             parse_literal=parse_literal,
             parse_value=parse_value,
             directives=directives,
+            print_definition=print_definition,
             origin=None,
             _source_file=_source_file,
             _source_line=_source_line,
@@ -287,6 +300,7 @@ def scalar(
             parse_value=parse_value,
             parse_literal=parse_literal,
             directives=directives,
+            print_definition=print_definition,
         )
 
     if cls is None:

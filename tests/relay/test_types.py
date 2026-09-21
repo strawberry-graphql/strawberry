@@ -1,3 +1,4 @@
+import typing_extensions
 from collections.abc import AsyncGenerator, AsyncIterable
 from typing import Any, Optional, Union, cast
 from typing_extensions import assert_type
@@ -257,6 +258,18 @@ def test_overwrite_resolve_id_and_no_node_id():
             return Fruit(color="red")  # pragma: no cover
 
     strawberry.Schema(query=Query)
+
+
+def test_resolve_id_attr_ignores_qualified_classvar():
+    @strawberry.type
+    class Fruit(relay.Node):
+        id: relay.NodeID[int]
+
+    Fruit.__annotations__["registry"] = (
+        f"{typing_extensions.__name__}.ClassVar[MissingType]"
+    )
+
+    assert Fruit.resolve_id_attr() == "id"
 
 
 def test_list_connection_without_edges_or_page_info(mocker: MagicMock):

@@ -107,7 +107,7 @@ def _get_type_for_expr(expr: Expression, api: SemanticAnalyzerPluginInterface) -
     raise ValueError(f"Unsupported expression {type(expr)}")
 
 
-def add_static_method_to_class(
+def add_static_method_to_class(  # noqa: PLR0917
     api: SemanticAnalyzerPluginInterface | CheckerPluginInterface,
     cls: ClassDef,
     name: str,

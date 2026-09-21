@@ -184,7 +184,7 @@ class AsyncBaseHTTPView(
             if protocol in (GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL)
         ]
 
-    async def execute_operation(
+    async def execute_operation(  # noqa: PLR0917
         self,
         request: Request,
         request_adapter: AsyncHTTPRequestAdapter,
@@ -236,7 +236,7 @@ class AsyncBaseHTTPView(
             request_data=request_data,
         )
 
-    async def execute_single(
+    async def execute_single(  # noqa: PLR0917
         self,
         request: Request,
         request_adapter: AsyncHTTPRequestAdapter,
@@ -635,7 +635,7 @@ class AsyncBaseHTTPView(
 
     async def on_ws_connect(
         self, context: Context
-    ) -> UnsetType | None | dict[str, object]:
+    ) -> UnsetType | dict[str, object] | None:
         return UNSET
 
 

@@ -54,9 +54,16 @@ ASYNC_TYPES = (
     typing.AsyncIterator,
 )
 
+_NOT_EVALUATED = object()
+
 
 class StrawberryAnnotation:
-    __slots__ = "__resolve_cache__", "namespace", "raw_annotation"
+    __slots__ = (
+        "__evaluated_cache__",
+        "__resolve_cache__",
+        "namespace",
+        "raw_annotation",
+    )
 
     def __init__(
         self,
@@ -67,6 +74,7 @@ class StrawberryAnnotation:
         self.raw_annotation = annotation
         self.namespace = namespace
 
+        self.__evaluated_cache__: object = _NOT_EVALUATED
         self.__resolve_cache__: StrawberryType | type | None = None
 
     def __eq__(self, other: object) -> bool:
@@ -93,7 +101,7 @@ class StrawberryAnnotation:
     def annotation(self) -> object | str:
         """Return evaluated type on success or fallback to raw (string) annotation."""
         try:
-            return self.evaluate()
+            return self._evaluated_annotation
         except NameError:
             # Evaluation failures can happen when importing types within a TYPE_CHECKING
             # block or if the type is declared later on in a module.
@@ -103,6 +111,7 @@ class StrawberryAnnotation:
     def annotation(self, value: object | str) -> None:
         self.raw_annotation = value
 
+        self.__evaluated_cache__ = _NOT_EVALUATED
         self.__resolve_cache__ = None
 
     def evaluate(self) -> type:
@@ -113,6 +122,13 @@ class StrawberryAnnotation:
             annotation = ForwardRef(annotation)
 
         return eval_type(annotation, self.namespace, None)
+
+    @property
+    def _evaluated_annotation(self) -> object:
+        if self.__evaluated_cache__ is _NOT_EVALUATED:
+            self.__evaluated_cache__ = self.evaluate()
+
+        return self.__evaluated_cache__
 
     def _get_type_with_args(
         self, evaled_type: type[Any]
@@ -161,7 +177,7 @@ class StrawberryAnnotation:
         return resolved
 
     def _resolve(self) -> StrawberryType | type:
-        evaled_type = cast("Any", self.evaluate())
+        evaled_type = cast("Any", self._evaluated_annotation)
         return self._resolve_evaled_type(evaled_type)
 
     def _resolve_evaled_type(self, evaled_type: Any) -> StrawberryType | type:
@@ -208,6 +224,7 @@ class StrawberryAnnotation:
         module = sys.modules[field.origin.__module__]
         self.namespace = module.__dict__
 
+        self.__evaluated_cache__ = _NOT_EVALUATED
         self.__resolve_cache__ = None  # Invalidate cache to allow re-evaluation
 
     def create_concrete_type(self, evaled_type: type) -> type:

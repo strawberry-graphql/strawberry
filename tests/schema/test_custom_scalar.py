@@ -2,6 +2,8 @@ import base64
 from typing import NewType
 
 import strawberry
+from strawberry.exceptions import StrawberryInputCoercionError
+from strawberry.schema.config import StrawberryConfig
 
 Base64Encoded = strawberry.scalar(
     NewType("Base64Encoded", bytes),
@@ -50,6 +52,45 @@ def test_custom_scalar_deserialization():
 
     assert not result.errors
     assert result.data["decodeBase64"] == "decoded"
+
+
+def test_custom_scalar_input_errors_can_be_classified():
+    CustomValue = NewType("CustomValue", str)
+
+    def parse_value(value: object) -> CustomValue:
+        raise StrawberryInputCoercionError(f"Invalid value: {value}")
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def parse(self, value: CustomValue) -> bool:  # pragma: no cover
+            return True
+
+    schema = strawberry.Schema(
+        Query,
+        config=StrawberryConfig(
+            scalar_map={
+                CustomValue: strawberry.scalar(
+                    name="CustomValue",
+                    serialize=str,
+                    parse_value=parse_value,
+                )
+            }
+        ),
+    )
+
+    literal_result = schema.execute_sync('{ parse(value: "invalid") }')
+    variable_result = schema.execute_sync(
+        "query($value: CustomValue!) { parse(value: $value) }",
+        variable_values={"value": "invalid"},
+    )
+
+    assert literal_result.errors
+    assert isinstance(literal_result.errors[0], StrawberryInputCoercionError)
+    assert variable_result.errors
+    assert isinstance(
+        variable_result.errors[0].original_error, StrawberryInputCoercionError
+    )
 
 
 def test_custom_scalar_decorated_class():

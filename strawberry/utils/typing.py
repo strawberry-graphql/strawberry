@@ -1,5 +1,5 @@
 import ast
-import dataclasses
+import re
 import sys
 import typing
 from collections.abc import AsyncGenerator
@@ -21,6 +21,8 @@ from typing import (  # type: ignore
     get_args,
     get_origin,
 )
+
+_CLASSVAR_RE = re.compile(r"^\s*(\w+(?:\s*\.\s*\w+)*)")
 
 
 @lru_cache
@@ -144,24 +146,29 @@ def is_type_var(annotation: type) -> bool:
     return isinstance(annotation, TypeVar)
 
 
-def is_classvar(cls: type, annotation: ForwardRef | str) -> bool:
+def is_classvar(cls: type, annotation: object) -> bool:
     """Returns True if the annotation is a ClassVar."""
-    # This code was copied from the dataclassses cpython implementation to check
-    # if a field is annotated with ClassVar or not, taking future annotations
-    # in consideration.
-    if dataclasses._is_classvar(annotation, typing):  # type: ignore
+    if annotation is ClassVar or get_origin(annotation) is ClassVar:
         return True
 
     annotation_str = (
         annotation.__forward_arg__ if isinstance(annotation, ForwardRef) else annotation
     )
-    return isinstance(annotation_str, str) and dataclasses._is_type(  # type: ignore
-        annotation_str,
-        cls,
-        typing,
-        typing.ClassVar,
-        dataclasses._is_classvar,  # type: ignore
-    )
+    module = sys.modules.get(cls.__module__)
+    if not isinstance(annotation_str, str) or module is None:
+        return False
+
+    match = _CLASSVAR_RE.match(annotation_str)
+    if match is None:
+        return False
+
+    resolved: object | None = module
+    for path_item in match.group(1).split("."):
+        resolved = getattr(resolved, path_item.strip(), None)
+        if resolved is None:
+            return False
+
+    return resolved is ClassVar or get_origin(resolved) is ClassVar
 
 
 def type_has_annotation(type_: object, annotation: type) -> bool:

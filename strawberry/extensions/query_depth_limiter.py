@@ -215,7 +215,7 @@ def get_field_arguments(
     return args_dict
 
 
-def determine_depth(
+def determine_depth(  # noqa: PLR0917
     node: Node,
     fragments: dict[str, FragmentDefinitionNode],
     depth_so_far: int,

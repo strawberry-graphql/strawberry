@@ -290,6 +290,22 @@ following methods:
 - `async def render_graphql_ide(self, request: Request) -> HTMLResponse`
 - `async def on_ws_connect(self, context: Context) -> Union[UnsetType, None, Dict[str, object]]`
 
+`GraphQLRouter` is generic over the context and root value types. Type checkers
+can usually infer these types when the router is instantiated directly. When
+subclassing the router, specify any custom context or root value types on the
+base class to preserve their precise types:
+
+```python
+class MyGraphQLRouter(GraphQLRouter[MyContext, MyRootValue]):
+    pass
+```
+
+The context defaults to the context types supported by the FastAPI integration,
+while the root value defaults to `None`. You can therefore omit the root value
+type when only the context is customized: `GraphQLRouter[MyContext]`. Apply the
+same type arguments to explicit `GraphQLRouter` variable annotations, or omit
+the redundant annotation and let the type checker infer the concrete subclass.
+
 ### process_result
 
 The `process_result` option allows you to customize and/or process results
@@ -395,14 +411,17 @@ provide a custom error payload that will be sent to the client when the legacy
 GraphQL over WebSocket protocol is used.
 
 ```python
-from typing import Dict
 from strawberry.exceptions import ConnectionRejectionError
-from strawberry.fastapi import GraphQLRouter
+from strawberry.fastapi import BaseContext, GraphQLRouter
 
 
-class MyGraphQLRouter(GraphQLRouter):
-    async def on_ws_connect(self, context: Dict[str, object]):
-        connection_params = context["connection_params"]
+class Context(BaseContext):
+    pass
+
+
+class MyGraphQLRouter(GraphQLRouter[Context]):
+    async def on_ws_connect(self, context: Context):
+        connection_params = context.connection_params
 
         if not isinstance(connection_params, dict):
             # Reject without a custom graphql-ws error payload

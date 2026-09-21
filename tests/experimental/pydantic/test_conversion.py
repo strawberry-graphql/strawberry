@@ -454,7 +454,7 @@ def test_can_convert_pydantic_type_to_strawberry_with_union_nullable():
 
     class User(BaseModel):
         age: int
-        union_field: None | BranchA | BranchB
+        union_field: BranchA | BranchB | None
 
     @strawberry.experimental.pydantic.type(BranchA)
     class BranchAType:

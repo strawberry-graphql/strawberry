@@ -18,7 +18,7 @@ from .conftest import ExampleExtension, ExecType, SchemaHelper, hook_wrap
 def test_base_extension():
     @strawberry.type
     class Person:
-        name: str = "Jess"
+        name: str = "Duck"
 
     @strawberry.type
     class Query:
@@ -62,7 +62,7 @@ def test_called_only_if_overriden(monkeypatch: pytest.MonkeyPatch):
 
     @strawberry.type
     class Person:
-        name: str = "Jess"
+        name: str = "Duck"
 
     @strawberry.type
     class Query:
@@ -100,7 +100,7 @@ def test_extension_access_to_parsed_document():
 
     @strawberry.type
     class Person:
-        name: str = "Jess"
+        name: str = "Duck"
 
     @strawberry.type
     class Query:
@@ -135,7 +135,7 @@ def test_extension_access_to_errors():
 
     @strawberry.type
     class Person:
-        name: str = "Jess"
+        name: str = "Duck"
 
     @strawberry.type
     class Query:
@@ -288,7 +288,7 @@ async def test_mixed_sync_and_async_extension_hooks(
 
     @strawberry.type
     class Person:
-        name: str = "Jess"
+        name: str = "Duck"
 
     @strawberry.type
     class Query:

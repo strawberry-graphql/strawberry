@@ -75,7 +75,7 @@ class GraphQLRouter(OnWSConnectMixin, BaseGraphQLRouter[dict[str, object], objec
 
 
 class FastAPIHttpClient(HttpClient):
-    def __init__(
+    def __init__(  # noqa: PLR0917
         self,
         schema: Schema,
         graphql_ide: GraphQL_IDE | None = "graphiql",
@@ -119,7 +119,7 @@ class FastAPIHttpClient(HttpClient):
             headers=response.headers,
         )
 
-    async def _graphql_request(
+    async def _graphql_request(  # noqa: PLR0917
         self,
         method: Literal["get", "post"],
         query: str | None = None,

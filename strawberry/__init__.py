@@ -9,7 +9,7 @@ from .directive import directive, directive_field
 from .parent import Parent
 from .permission import BasePermission
 from .scalars import ID
-from .schema import Schema
+from .schema import ExceptionHandler, Schema
 from .schema_directive import schema_directive
 from .streamable import Streamable
 from .types.arguments import argument
@@ -31,6 +31,7 @@ __all__ = [
     "ID",
     "UNSET",
     "BasePermission",
+    "ExceptionHandler",
     "Info",
     "LazyType",
     "Maybe",

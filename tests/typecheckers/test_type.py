@@ -186,3 +186,53 @@ def test():
             ),
         ]
     )
+
+
+def test_custom_ordering_method():
+    code = """
+import strawberry
+
+
+@strawberry.type
+class User:
+    name: str
+
+    def __gt__(self, other: "User") -> bool:
+        return self.name > other.name
+
+
+reveal_type(User)
+"""
+
+    results = typecheck(code)
+
+    assert results.pyright == snapshot(
+        [
+            Result(
+                type="information",
+                message='Type of "User" is "type[User]"',
+                line=13,
+                column=13,
+            )
+        ]
+    )
+    assert results.mypy == snapshot(
+        [
+            Result(
+                type="note",
+                message='Revealed type is "def (*, name: str) -> mypy_test.User"',
+                line=13,
+                column=13,
+            )
+        ]
+    )
+    assert results.ty == snapshot(
+        [
+            Result(
+                type="information",
+                message="Revealed type: `<class 'User'>`",
+                line=13,
+                column=13,
+            )
+        ]
+    )

@@ -24,7 +24,7 @@ T = TypeVar("T", bound=type)
 
 
 @dataclass_transform(
-    order_default=True,
+    order_default=False,
     kw_only_default=True,
     field_specifiers=(directive_field, field, StrawberryField),
 )
@@ -39,7 +39,7 @@ def schema_directive(
     import_url: str | None = None,
 ) -> Callable[[T], T]:
     def _wrap(cls: T) -> T:
-        cls = _wrap_dataclass(cls)  # type: ignore
+        cls = _wrap_dataclass(cls)
         fields = _get_fields(cls, {})
 
         cls.__strawberry_directive__ = StrawberryFederationSchemaDirective(  # type: ignore[attr-defined]

@@ -1,10 +1,13 @@
 import textwrap
 import warnings
-from typing import Generic, TypeVar
+from typing import Generic, NewType, TypeVar
 
 import pytest
+from graphql import build_schema
 
 import strawberry
+from strawberry.federation.types import FieldSet, LinkImport, LinkPurpose
+from strawberry.schema_directive import Location
 
 
 def test_entities_type_when_no_type_has_keys():
@@ -116,6 +119,10 @@ def test_entities_type():
                     name
                 }
             }
+            fieldSet: __type(name: "_FieldSet") {
+                kind
+                name
+            }
         }
     """
 
@@ -124,8 +131,57 @@ def test_entities_type():
     assert not result.errors
 
     assert result.data == {
-        "__type": {"kind": "UNION", "possibleTypes": [{"name": "Product"}]}
+        "__type": {"kind": "UNION", "possibleTypes": [{"name": "Product"}]},
+        "fieldSet": {"kind": "SCALAR", "name": "_FieldSet"},
     }
+
+
+def test_registers_custom_and_federation_directives():
+    @strawberry.schema_directive(locations=[Location.OBJECT])
+    class Custom: ...
+
+    @strawberry.federation.type(keys=["upc"], directives=[Custom()])
+    class Product:
+        upc: str
+
+    @strawberry.type
+    class Query:
+        product: Product
+
+    schema = strawberry.federation.Schema(query=Query)
+
+    assert schema._schema.get_directive("custom") is not None
+    assert schema._schema.get_directive("key") is not None
+    assert schema._schema.get_directive("link") is not None
+
+    expected_sdl = textwrap.dedent("""
+        directive @custom on OBJECT
+
+        schema @link(url: "https://specs.apollo.dev/federation/v2.11", import: ["@key"]) {
+          query: Query
+        }
+
+        type Product @custom @key(fields: "upc") {
+          upc: String!
+        }
+
+        type Query {
+          _entities(representations: [_Any!]!): [_Entity]!
+          _service: _Service!
+          product: Product!
+        }
+
+        scalar _Any
+
+        union _Entity = Product
+
+        type _Service {
+          sdl: String!
+        }
+    """).strip()
+
+    sdl = schema.as_str()
+    assert sdl == expected_sdl
 
 
 def test_additional_scalars():
@@ -154,6 +210,80 @@ def test_additional_scalars():
     assert not result.errors
 
     assert result.data == {"__type": {"kind": "SCALAR"}}
+
+
+def test_user_type_named_like_private_federation_type_is_printed():
+    UserFieldSet = NewType("UserFieldSet", str)
+
+    @strawberry.type
+    class Query:
+        field_set: UserFieldSet
+
+    schema = strawberry.federation.Schema(
+        query=Query,
+        scalar_overrides={
+            UserFieldSet: strawberry.scalar(
+                name="_FieldSet",
+                serialize=lambda value: value,
+                parse_value=str,
+            )
+        },
+    )
+
+    expected_sdl = textwrap.dedent("""
+        type Query {
+          _service: _Service!
+          fieldSet: _FieldSet!
+        }
+
+        scalar _Any
+
+        scalar _FieldSet
+
+        type _Service {
+          sdl: String!
+        }
+    """).strip()
+
+    assert schema.as_str() == expected_sdl
+
+
+def test_private_federation_types_are_printed_when_used_by_fields():
+    @strawberry.type
+    class Query:
+        field_set: FieldSet
+        link_import: LinkImport
+        link_purpose: LinkPurpose
+
+    schema = strawberry.federation.Schema(query=Query)
+
+    expected_sdl = textwrap.dedent("""
+        type Query {
+          _service: _Service!
+          fieldSet: _FieldSet!
+          linkImport: link__Import!
+          linkPurpose: link__Purpose!
+        }
+
+        scalar _Any
+
+        scalar _FieldSet
+
+        type _Service {
+          sdl: String!
+        }
+
+        scalar link__Import
+
+        enum link__Purpose {
+          SECURITY
+          EXECUTION
+        }
+    """).strip()
+
+    sdl = schema.as_str()
+    assert sdl == expected_sdl
+    build_schema(sdl)
 
 
 def test_service():
@@ -330,7 +460,7 @@ def test_federation_schema_warning():
         weight: int | None
 
     with pytest.warns(UserWarning) as record:  # noqa: PT030
-        strawberry.Schema(
+        schema = strawberry.Schema(
             query=ProductFed,
         )
 
@@ -339,6 +469,8 @@ def test_federation_schema_warning():
         "Use `strawberry.federation.Schema` instead of `strawberry.Schema`."
         in [str(r.message) for r in record]
     )
+    assert schema._schema.get_directive("key") is not None
+    assert schema._schema.get_type("_FieldSet") is not None
 
 
 def test_does_not_warn_when_using_federation_schema():

@@ -1,4 +1,8 @@
+from typing import Annotated
+
 import strawberry
+from strawberry.federation.schema_directives import External
+from strawberry.types import get_object_definition
 
 
 def test_type():
@@ -32,3 +36,17 @@ def test_type_and_override_with_resolver():
     location = Location(id=strawberry.ID("1"))
 
     assert location.id == "1"
+
+
+def test_annotated_federation_field():
+    @strawberry.federation.type
+    class Product:
+        sku: Annotated[
+            str,
+            strawberry.federation.field(external=True, default="default-sku"),
+        ]
+
+    field = get_object_definition(Product).fields[0]
+
+    assert Product().sku == "default-sku"
+    assert any(isinstance(directive, External) for directive in field.directives)

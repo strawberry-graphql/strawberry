@@ -50,7 +50,7 @@ async def get_root_value(request: Request = None):
 
 
 class LitestarHttpClient(HttpClient):
-    def __init__(
+    def __init__(  # noqa: PLR0917
         self,
         schema: Schema,
         graphql_ide: GraphQL_IDE | None = "graphiql",
@@ -97,7 +97,7 @@ class LitestarHttpClient(HttpClient):
         self.app = Litestar(route_handlers=[GraphQLController])
         self.client = TestClient(self.app)
 
-    async def _graphql_request(
+    async def _graphql_request(  # noqa: PLR0917
         self,
         method: Literal["get", "post"],
         query: str | None = None,

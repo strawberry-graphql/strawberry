@@ -132,16 +132,16 @@ def test_directive_on_types():
       user(input: Input!): User!
     }
 
+    input SensitiveValue {
+      key: String!
+      value: String!
+    }
+
     type User @sensitiveData(reason: "GDPR") {
       firstName: String!
       age: Int!
       phone: String! @sensitiveData(reason: "PRIVATE", meta: [{ key: "can_share_field", value: "phone_share_accepted" }])
       phoneShareAccepted: Boolean!
-    }
-
-    input SensitiveValue {
-      key: String!
-      value: String!
     }
     """
 
@@ -174,6 +174,21 @@ def test_using_different_names_for_directive_field():
     schema = strawberry.Schema(query=Query)
 
     assert print_schema(schema) == textwrap.dedent(expected_output).strip()
+
+
+def test_annotated_directive_field_configures_constructor():
+    @strawberry.schema_directive(locations=[Location.FIELD_DEFINITION])
+    class Sensitive:
+        reason: Annotated[
+            str,
+            strawberry.directive_field(name="why", default="classified"),
+        ]
+
+    field = Sensitive.__strawberry_directive__.fields[0]
+
+    assert Sensitive().reason == "classified"
+    assert field.graphql_name == "why"
+    assert field.default == "classified"
 
 
 def test_respects_schema_config_for_names():
@@ -417,6 +432,123 @@ def test_prints_with_enum():
     schema = strawberry.Schema(query=Query)
 
     assert print_schema(schema) == textwrap.dedent(expected_output).strip()
+
+
+def test_does_not_duplicate_enum_used_as_type_and_directive_field():
+    # https://github.com/strawberry-graphql/strawberry/issues/4502
+    # an enum referenced both as a regular schema type and as a schema directive
+    # field must only be printed once, otherwise the SDL is invalid.
+    @strawberry.enum
+    class Role(Enum):
+        EDITOR = "editor"
+        VIEWER = "viewer"
+
+    @strawberry.schema_directive(locations=[Location.FIELD_DEFINITION])
+    class RequiresRole:
+        roles: list[Role]
+
+    @strawberry.type
+    class Query:
+        secret: str = strawberry.field(directives=[RequiresRole(roles=[Role.EDITOR])])
+
+        @strawberry.field
+        def assign(self, role: Role) -> bool:
+            return True
+
+    expected_output = """
+    directive @requiresRole(roles: [Role!]!) on FIELD_DEFINITION
+
+    type Query {
+      secret: String! @requiresRole(roles: [EDITOR])
+      assign(role: Role!): Boolean!
+    }
+
+    enum Role {
+      EDITOR
+      VIEWER
+    }
+    """
+
+    schema = strawberry.Schema(query=Query)
+
+    assert print_schema(schema) == textwrap.dedent(expected_output).strip()
+
+
+def test_does_not_duplicate_renamed_type_used_as_type_and_directive_field():
+    # https://github.com/strawberry-graphql/strawberry/issues/4502
+    # dedup must resolve the *GraphQL* name (not the Python class name), otherwise
+    # a type with a `name=` override used both as a regular type and as a schema
+    # directive field would still be printed twice. An empty list is used as the
+    # directive value to keep the output stable across graphql-core versions.
+    @strawberry.input(name="RenamedInput")
+    class Config:
+        key: str
+
+    @strawberry.schema_directive(locations=[Location.FIELD_DEFINITION])
+    class WithConfig:
+        configs: list[Config]
+
+    @strawberry.type
+    class Query:
+        secret: str = strawberry.field(directives=[WithConfig(configs=[])])
+
+        @strawberry.field
+        def run(self, config: Config) -> bool:
+            return True
+
+    expected_output = """
+    directive @withConfig(configs: [RenamedInput!]!) on FIELD_DEFINITION
+
+    type Query {
+      secret: String! @withConfig(configs: [])
+      run(config: RenamedInput!): Boolean!
+    }
+
+    input RenamedInput {
+      key: String!
+    }
+    """
+
+    schema = strawberry.Schema(query=Query)
+
+    assert print_schema(schema) == textwrap.dedent(expected_output).strip()
+
+
+def test_deduplicates_directives_discovered_in_directive_argument_types():
+    @strawberry.schema_directive(locations=[Location.INPUT_OBJECT])
+    class OnConfig: ...
+
+    @strawberry.input(directives=[OnConfig()])
+    class Config:
+        value: str
+
+    @strawberry.schema_directive(locations=[Location.OBJECT])
+    class WithConfig:
+        config: Config | None = strawberry.UNSET
+
+    @strawberry.type(directives=[WithConfig()])
+    class Query:
+        name: str
+
+    schema = strawberry.Schema(query=Query)
+
+    expected_output = """
+    directive @onConfig on INPUT_OBJECT
+
+    directive @withConfig(config: Config) on OBJECT
+
+    input Config @onConfig {
+      value: String!
+    }
+
+    type Query @withConfig {
+      name: String!
+    }
+    """
+    expected_output = textwrap.dedent(expected_output).strip()
+
+    assert print_schema(schema) == expected_output
+    assert print_schema(schema) == expected_output
 
 
 def test_does_not_print_definition():
@@ -736,13 +868,13 @@ def test_print_directive_with_unset_value():
     expected_output = """
     directive @fooDirective(input: FooInput!, optionalInput: FooInput) on FIELD_DEFINITION
 
-    type Query {
-      foo: String! @fooDirective(input: { a: "something" })
-    }
-
     input FooInput {
       a: String
       b: String
+    }
+
+    type Query {
+      foo: String! @fooDirective(input: { a: "something" })
     }
     """
 
@@ -777,13 +909,13 @@ def test_print_directive_with_snake_case_arguments():
     expected_output = """
     directive @fooDirective(input: FooInput!, optionalInput: FooInput) on FIELD_DEFINITION
 
-    type Query {
-      foo: String! @fooDirective(input: { hello: "hello", helloWorld: "hello world" })
-    }
-
     input FooInput {
       hello: String!
       helloWorld: String!
+    }
+
+    type Query {
+      foo: String! @fooDirective(input: { hello: "hello", helloWorld: "hello world" })
     }
     """
 

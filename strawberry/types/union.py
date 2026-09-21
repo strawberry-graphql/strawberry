@@ -57,7 +57,7 @@ class StrawberryUnion(StrawberryType):
         self.graphql_name = name
         self.type_annotations = type_annotations
         self.description = description
-        self.directives = directives
+        self.directives = tuple(directives)
         self._source_file = None
         self._source_line = None
         self.concrete_of: StrawberryUnion | None = None

@@ -19,7 +19,7 @@ def global_tracer_mock(mocker: MockerFixture) -> MagicMock:
 
 @strawberry.type
 class Person:
-    name: str = "Jess"
+    name: str = "Duck"
 
 
 @strawberry.type

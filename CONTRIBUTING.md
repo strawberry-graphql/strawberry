@@ -146,18 +146,60 @@ present, your code will not be merged.
 - If your changes warrant a documentation change, the pull request must also
   update the documentation.
 
+##### AI-assisted contributions
+
+You are welcome to use AI and other automated tools when contributing. However,
+every contribution must include meaningful human judgment and be work that you
+understand, have reviewed, and can explain.
+
+Please do not submit generated code, descriptions, or comments without carefully
+checking them. If reviewing a contribution would require more maintainer effort
+than the contributor put into understanding and validating it, it is not ready
+to be submitted.
+
+Maintainers may apply the `maybe-ai` label to pull requests that appear to be
+substantially generated and lack that human ownership. The pull request will be
+closed automatically. If the label was applied in error, comment with additional
+context about your approach, validation, and understanding of the change so a
+maintainer can reconsider it.
+
+Repeated low-effort or automated submissions may be treated as spam.
+
 ##### RELEASE.md files
 
-When you submit a PR, make sure to include a RELEASE.md file. We use that to automatically do releases here on GitHub and, most importantly, to PyPI!
+When you submit a PR, make sure to include a RELEASE.md file. We use that to
+automatically do releases here on GitHub and, most importantly, to PyPI.
 
-So as soon as your PR is merged, a release will be made.
+As soon as your PR is merged, a release will be made.
 
 Here's an example of RELEASE.md:
 
-```text
-Release type: patch
+```markdown
+---
+release type: patch
+social_messages:
+  x: >-
+    {project_name} {version} is out! This release fixes schema printing for
+    nullable input defaults. 🍓 https://strawberry.rocks/release/{version}
+  linkedin: >-
+    {project_name} {version} is out. This release fixes schema printing for
+    nullable input defaults, so generated SDL now keeps explicit null values.
+---
 
-Description of the changes, ideally with some examples, if adding a new feature.
+This release fixes schema printing for nullable input defaults.
+
+Strawberry now preserves explicit `None` values in printed nested input
+defaults, including fields set with `strawberry.Some(None)`.
 ```
 
-Release type can be one of patch, minor or major. We use [semver](https://semver.org/), so make sure to pick the appropriate type. If in doubt feel free to ask :)
+Release type can be one of patch, minor or major. We use
+[semver](https://semver.org/), so make sure to pick the appropriate type. If in
+doubt feel free to ask.
+
+Release notes should start with `This release adds ...` or
+`This release fixes ...` and should explain the user-visible behavior first.
+Include social messages for X and LinkedIn so the release announcement reads
+well on each platform. They should read like natural release announcements,
+start with `{project_name} {version} is out`, and explain what changed and who
+benefits. X messages must include the website release URL template:
+`https://strawberry.rocks/release/{version}`.

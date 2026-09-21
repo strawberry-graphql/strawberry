@@ -45,7 +45,7 @@ class AsyncGraphQLView(BaseAsyncGraphQLView[dict[str, object], object]):
 
 
 class AsyncDjangoHttpClient(DjangoHttpClient):
-    def __init__(
+    def __init__(  # noqa: PLR0917
         self,
         schema: Schema,
         graphql_ide: GraphQL_IDE | None = "graphiql",

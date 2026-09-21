@@ -4,7 +4,6 @@ import sys
 import textwrap
 
 import pytest
-
 import strawberry
 
 pytestmark = pytest.mark.skipif(

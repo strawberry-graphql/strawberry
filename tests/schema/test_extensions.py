@@ -14,7 +14,6 @@ from strawberry.directive import DirectiveValue
 from strawberry.scalars import JSON
 from strawberry.schema.schema_converter import GraphQLCoreConverter
 from strawberry.schema_directive import Location
-from strawberry.types.base import get_object_definition
 
 DEFINITION_BACKREF = GraphQLCoreConverter.DEFINITION_BACKREF
 
@@ -34,16 +33,8 @@ def test_extensions_schema_directive():
     # Schema
     assert graphql_schema.extensions[DEFINITION_BACKREF] is schema
 
-    # TODO: Apparently I stumbled on a bug:
-    #        SchemaDirective are used on schema.__str__(),
-    #        but aren't added to graphql_schema.directives
-    # maybe graphql_schema_directive = graphql_schema.get_directive("schemaDirective")
-
-    directives = get_object_definition(Query, strict=True).directives
-    assert directives is not None
-    graphql_schema_directive = schema.schema_converter.from_schema_directive(
-        directives[0]
-    )
+    graphql_schema_directive = graphql_schema.get_directive("schemaDirective")
+    assert graphql_schema_directive is not None
     assert (
         graphql_schema_directive.extensions[DEFINITION_BACKREF]
         is SchemaDirective.__strawberry_directive__

@@ -8,6 +8,7 @@ from strawberry.exceptions.utils.source_finder import SourceFinder
 from .exception import StrawberryException
 
 if TYPE_CHECKING:
+    from strawberry.schema_directive import StrawberrySchemaDirective
     from strawberry.types.field import StrawberryField
     from strawberry.types.object_type import StrawberryObjectDefinition
 
@@ -17,7 +18,7 @@ if TYPE_CHECKING:
 class UnresolvedFieldTypeError(StrawberryException):
     def __init__(
         self,
-        type_definition: StrawberryObjectDefinition,
+        type_definition: StrawberryObjectDefinition | StrawberrySchemaDirective,
         field: StrawberryField,
     ) -> None:
         self.type_definition = type_definition
@@ -44,10 +45,11 @@ class UnresolvedFieldTypeError(StrawberryException):
         source_finder = SourceFinder()
 
         # field could be attached to the class or not
+        origin = self.type_definition.origin
+        if origin is None:
+            return None
 
-        source = source_finder.find_class_attribute_from_object(
-            self.type_definition.origin, self.field.name
-        )
+        source = source_finder.find_class_attribute_from_object(origin, self.field.name)
 
         if source is not None:
             return source

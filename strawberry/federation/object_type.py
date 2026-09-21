@@ -58,7 +58,7 @@ def _impl_type(
 
 @overload
 @dataclass_transform(
-    order_default=True,
+    order_default=False,
     kw_only_default=True,
     field_specifiers=(base_field, field, StrawberryField),
 )
@@ -74,7 +74,7 @@ def type(
 
 @overload
 @dataclass_transform(
-    order_default=True,
+    order_default=False,
     kw_only_default=True,
     field_specifiers=(base_field, field, StrawberryField),
 )
@@ -106,7 +106,7 @@ def type(
 
 @overload
 @dataclass_transform(
-    order_default=True,
+    order_default=False,
     kw_only_default=True,
     field_specifiers=(base_field, field, StrawberryField),
 )
@@ -124,7 +124,7 @@ def input(
 
 @overload
 @dataclass_transform(
-    order_default=True,
+    order_default=False,
     kw_only_default=True,
     field_specifiers=(base_field, field, StrawberryField),
 )
@@ -163,7 +163,7 @@ def input(
 
 @overload
 @dataclass_transform(
-    order_default=True,
+    order_default=False,
     kw_only_default=True,
     field_specifiers=(base_field, field, StrawberryField),
 )
@@ -179,7 +179,7 @@ def interface(
 
 @overload
 @dataclass_transform(
-    order_default=True,
+    order_default=False,
     kw_only_default=True,
     field_specifiers=(base_field, field, StrawberryField),
 )
@@ -212,7 +212,7 @@ def interface(
 
 @overload
 @dataclass_transform(
-    order_default=True,
+    order_default=False,
     kw_only_default=True,
     field_specifiers=(base_field, field, StrawberryField),
 )
@@ -228,7 +228,7 @@ def interface_object(
 
 @overload
 @dataclass_transform(
-    order_default=True,
+    order_default=False,
     kw_only_default=True,
     field_specifiers=(base_field, field, StrawberryField),
 )

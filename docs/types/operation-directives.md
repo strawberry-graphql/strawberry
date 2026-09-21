@@ -98,11 +98,11 @@ query People($identified: Boolean!) {
   person {
     name @turnUppercase
   }
-  jess: person {
-    name @replace(old: "Jess", new: "Jessica")
+  duck: person {
+    name @replace(old: "Duck", new: "Duck")
   }
   johnDoe: person {
-    name @replace(old: "Jess", new: "John") @include(if: $identified)
+    name @replace(old: "Duck", new: "John") @include(if: $identified)
   }
 }
 ```

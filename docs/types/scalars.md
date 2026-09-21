@@ -170,6 +170,46 @@ from strawberry.scalars import Base16, Base32, Base64
 
 </Note>
 
+### Classifying invalid custom scalar input
+
+Strawberry cannot determine whether an arbitrary exception from a custom
+`parse_value` function represents invalid client input or a bug in the parser.
+To make an expected conversion error identifiable by server-side error handling,
+raise `StrawberryInputCoercionError` explicitly:
+
+```python
+import uuid
+from typing import NewType
+
+import strawberry
+from strawberry.exceptions import StrawberryInputCoercionError
+
+OrderID = NewType("OrderID", uuid.UUID)
+
+
+def parse_order_id(value: object) -> OrderID:
+    if not isinstance(value, str):
+        raise StrawberryInputCoercionError("OrderID must be a string")
+
+    try:
+        return OrderID(uuid.UUID(value))
+    except ValueError:
+        raise StrawberryInputCoercionError("Invalid OrderID") from None
+
+
+order_id_scalar = strawberry.scalar(
+    name="OrderID",
+    serialize=str,
+    parse_value=parse_order_id,
+)
+```
+
+The resulting scalar definition can be added to `StrawberryConfig.scalar_map`.
+Only catch exceptions that represent expected conversion errors so unexpected
+parser exceptions continue to be reported as server faults. See
+[Dealing with errors](../guides/errors#strawberry-input-coercion-errors) for how
+to identify direct and wrapped coercion errors.
+
 ## Example: Custom Object Scalar
 
 Suppose we would like to use a Pillow `Image` as a scalar that serializes

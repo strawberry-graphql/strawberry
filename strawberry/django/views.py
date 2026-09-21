@@ -133,7 +133,7 @@ class BaseView:
         )
 
     def encode_json(self, data: object) -> str | bytes:
-        return json.dumps(data, cls=DjangoJSONEncoder)
+        return json.dumps(data, cls=DjangoJSONEncoder, separators=(",", ":"))
 
 
 class GraphQLView(

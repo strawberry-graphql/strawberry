@@ -512,15 +512,16 @@ def test_with_types():
     class Query:
         foo: int
 
-    @strawberry.schema_directive(locations=[Location.SCALAR], name="specifiedBy")
-    class SpecifiedBy:
+    @strawberry.schema_directive(locations=[Location.SCALAR], name="customDirective")
+    class CustomDirective:
         name: str
 
     schema = strawberry.Schema(
-        query=Query, types=[Type, Interface, Input, Base64, ID, str, int, SpecifiedBy]
+        query=Query,
+        types=[Type, Interface, Input, Base64, ID, str, int, CustomDirective],
     )
     expected = '''
-        directive @specifiedBy(name: String!) on SCALAR
+        directive @customDirective(name: String!) on SCALAR
 
         """
         Represents binary data as Base64-encoded strings, using the standard alphabet.

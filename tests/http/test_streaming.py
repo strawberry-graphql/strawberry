@@ -5,8 +5,37 @@ from strawberry.http.base import BaseView
 from strawberry.http.streaming import (
     MultipartSubscriptionTransport,
     MultipartTransport,
+    SSETransport,
 )
 from strawberry.subscriptions import MULTIPART_SUBSCRIPTION_PROTOCOL
+
+
+def test_compact_json_preserves_stream_framing() -> None:
+    view = BaseView()
+
+    def encode(data: object) -> str:
+        encoded = view.encode_json(data)
+        assert isinstance(encoded, str)
+        return encoded
+
+    payload = {"data": {"message": "café\n🍓"}}
+    encoded = r'{"data":{"message":"caf\u00e9\n\ud83c\udf53"}}'
+    multipart = MultipartTransport()
+    subscription = MultipartSubscriptionTransport()
+    sse = SSETransport()
+
+    assert multipart.encode_multipart_data(payload, encode) == (
+        "\r\nContent-Type: application/json; charset=utf-8\r\n"
+        f"Content-Length: {len(encoded.encode())}\r\n\r\n{encoded}\r\n---"
+    )
+    wrapped = '{"payload":' + encoded + "}"
+    assert subscription.encode_next(payload, encode) == (
+        "\r\nContent-Type: application/json; charset=utf-8\r\n"
+        f"Content-Length: {len(wrapped.encode())}\r\n\r\n{wrapped}\r\n--graphql"
+    )
+    assert sse.encode_next(payload, encode) == f"event: next\r\ndata: {encoded}\r\n\r\n"
+    assert sse.encode_complete() == "event: complete\r\ndata: \r\n\r\n"
+    assert sse.heartbeat_message(encode) == ": ping\r\n\r\n"
 
 
 def test_multipart_transport_encode_multipart_data_uses_utf8_byte_length() -> None:

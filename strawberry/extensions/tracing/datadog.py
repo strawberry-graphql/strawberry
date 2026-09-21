@@ -83,48 +83,44 @@ class DatadogTracingExtension(SchemaExtension):
             f"{self._operation_name}" if self._operation_name else "Anonymous Query"
         )
 
-        self.request_span = self.create_span(
+        with self.create_span(
             LifecycleStep.OPERATION,
             span_name,
             resource=self._resource_name,
             service="strawberry",
-        )
-        self.request_span.set_tag("graphql.operation_name", self._operation_name)
+        ) as self.request_span:
+            self.request_span.set_tag("graphql.operation_name", self._operation_name)
 
-        query = self.execution_context.query
+            query = self.execution_context.query
 
-        if query is not None:
-            query = query.strip()
-            operation_type = "query"
+            if query is not None:
+                query = query.strip()
+                operation_type = "query"
 
-            if query.startswith("mutation"):
-                operation_type = "mutation"
-            elif query.startswith("subscription"):  # pragma: no cover
-                operation_type = "subscription"
-        else:
-            operation_type = "query_missing"
+                if query.startswith("mutation"):
+                    operation_type = "mutation"
+                elif query.startswith("subscription"):  # pragma: no cover
+                    operation_type = "subscription"
+            else:
+                operation_type = "query_missing"
 
-        self.request_span.set_tag("graphql.operation_type", operation_type)
+            self.request_span.set_tag("graphql.operation_type", operation_type)
 
-        yield
-
-        self.request_span.finish()
+            yield
 
     def on_validate(self) -> Generator[None, None, None]:
-        self.validation_span = self.create_span(
+        with self.create_span(
             lifecycle_step=LifecycleStep.VALIDATION,
             name="Validation",
-        )
-        yield
-        self.validation_span.finish()
+        ) as self.validation_span:
+            yield
 
     def on_parse(self) -> Generator[None, None, None]:
-        self.parsing_span = self.create_span(
+        with self.create_span(
             lifecycle_step=LifecycleStep.PARSE,
             name="Parsing",
-        )
-        yield
-        self.parsing_span.finish()
+        ) as self.parsing_span:
+            yield
 
     async def resolve(
         self,

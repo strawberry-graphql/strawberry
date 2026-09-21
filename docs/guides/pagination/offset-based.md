@@ -152,7 +152,7 @@ def get_pagination_window(
     dataset.sort(key=lambda x: x[order_by])
 
     if offset != 0 and not 0 <= offset < len(dataset):
-        raise Exception(f"offset ({offset}) is out of range " f"(0-{len(dataset) - 1})")
+        raise Exception(f"offset ({offset}) is out of range (0-{len(dataset) - 1})")
 
     total_items_count = len(dataset)
 

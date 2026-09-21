@@ -16,7 +16,7 @@ from strawberry.utils.await_maybe import await_maybe
 def test_supports_default_directives():
     @strawberry.type
     class Person:
-        name: str = "Jess"
+        name: str = "Duck"
         points: int = 2000
 
     @strawberry.type
@@ -41,7 +41,7 @@ def test_supports_default_directives():
 
     assert not result.errors
     assert result.data
-    assert result.data["person"] == {"name": "Jess"}
+    assert result.data["person"] == {"name": "Duck"}
 
     query = """query ($skipPoints: Boolean!){
         person {
@@ -55,14 +55,14 @@ def test_supports_default_directives():
 
     assert not result.errors
     assert result.data
-    assert result.data["person"] == {"name": "Jess", "points": 2000}
+    assert result.data["person"] == {"name": "Duck", "points": 2000}
 
 
 @pytest.mark.asyncio
 async def test_supports_default_directives_async():
     @strawberry.type
     class Person:
-        name: str = "Jess"
+        name: str = "Duck"
         points: int = 2000
 
     @strawberry.type
@@ -83,7 +83,7 @@ async def test_supports_default_directives_async():
 
     assert not result.errors
     assert result.data
-    assert result.data["person"] == {"name": "Jess"}
+    assert result.data["person"] == {"name": "Duck"}
 
     query = """query ($skipPoints: Boolean!){
         person {
@@ -97,7 +97,7 @@ async def test_supports_default_directives_async():
 
     assert not result.errors
     assert result.data
-    assert result.data["person"] == {"name": "Jess", "points": 2000}
+    assert result.data["person"] == {"name": "Duck", "points": 2000}
 
 
 def test_can_declare_directives():
@@ -170,7 +170,7 @@ def test_directive_arguments_without_value_param():
 def test_runs_directives():
     @strawberry.type
     class Person:
-        name: str = "Jess"
+        name: str = "Duck"
 
     @strawberry.type
     class Query:
@@ -194,11 +194,14 @@ def test_runs_directives():
         person {
             name @turnUppercase
         }
-        jess: person {
-            name @replace(old: "Jess", new: "Jessica")
+        duck: person {
+            name @replace(old: "Duck", new: "Duck")
+        }
+        duckUpper: person {
+            name @replace(old: "Duck", new: "Duck") @turnUppercase
         }
         johnDoe: person {
-            name @replace(old: "Jess", new: "John") @include(if: $identified)
+            name @replace(old: "Duck", new: "John") @include(if: $identified)
         }
     }"""
 
@@ -206,15 +209,16 @@ def test_runs_directives():
 
     assert not result.errors
     assert result.data
-    assert result.data["person"]["name"] == "JESS"
-    assert result.data["jess"]["name"] == "Jessica"
+    assert result.data["person"]["name"] == "DUCK"
+    assert result.data["duck"]["name"] == "Duck"
+    assert result.data["duckUpper"]["name"] == "DUCK"
     assert result.data["johnDoe"].get("name") is None
 
 
 def test_runs_directives_camel_case_off():
     @strawberry.type
     class Person:
-        name: str = "Jess"
+        name: str = "Duck"
 
     @strawberry.type
     class Query:
@@ -242,11 +246,11 @@ def test_runs_directives_camel_case_off():
         person {
             name @turn_uppercase
         }
-        jess: person {
-            name @replace(old: "Jess", new: "Jessica")
+        duck: person {
+            name @replace(old: "Duck", new: "Duck")
         }
         johnDoe: person {
-            name @replace(old: "Jess", new: "John") @include(if: $identified)
+            name @replace(old: "Duck", new: "John") @include(if: $identified)
         }
     }"""
 
@@ -254,8 +258,8 @@ def test_runs_directives_camel_case_off():
 
     assert not result.errors
     assert result.data
-    assert result.data["person"]["name"] == "JESS"
-    assert result.data["jess"]["name"] == "Jessica"
+    assert result.data["person"]["name"] == "DUCK"
+    assert result.data["duck"]["name"] == "Duck"
     assert result.data["johnDoe"].get("name") is None
 
 
@@ -263,7 +267,7 @@ def test_runs_directives_camel_case_off():
 async def test_runs_directives_async():
     @strawberry.type
     class Person:
-        name: str = "Jess"
+        name: str = "Duck"
 
     @strawberry.type
     class Query:
@@ -289,14 +293,14 @@ async def test_runs_directives_async():
 
     assert not result.errors
     assert result.data
-    assert result.data["person"]["name"] == "JESS"
+    assert result.data["person"]["name"] == "DUCK"
 
 
 @pytest.mark.xfail
 def test_runs_directives_with_list_params():
     @strawberry.type
     class Person:
-        name: str = "Jess"
+        name: str = "Duck"
 
     @strawberry.type
     class Query:
@@ -323,13 +327,13 @@ def test_runs_directives_with_list_params():
 
     assert not result.errors
     assert result.data
-    assert result.data["person"]["name"] == "JESS"
+    assert result.data["person"]["name"] == "DUCK"
 
 
 def test_runs_directives_with_extensions():
     @strawberry.type
     class Person:
-        name: str = "Jess"
+        name: str = "Duck"
 
     @strawberry.type
     class Query:
@@ -361,14 +365,14 @@ def test_runs_directives_with_extensions():
 
     assert not result.errors
     assert result.data
-    assert result.data["person"]["name"] == "JESS"
+    assert result.data["person"]["name"] == "DUCK"
 
 
 @pytest.mark.asyncio
 async def test_runs_directives_with_extensions_async():
     @strawberry.type
     class Person:
-        name: str = "Jess"
+        name: str = "Duck"
 
     @strawberry.type
     class Query:
@@ -400,7 +404,7 @@ async def test_runs_directives_with_extensions_async():
 
     assert not result.errors
     assert result.data
-    assert result.data["person"]["name"] == "JESS"
+    assert result.data["person"]["name"] == "DUCK"
 
 
 @pytest.fixture
@@ -594,6 +598,162 @@ async def test_directive_list_argument() -> NoReturn:
     assert result.errors is None
     assert result.data
     assert result.data["greeting"] == "Hi foo, bar"
+
+
+@pytest.mark.parametrize(
+    ("query", "variable_values"),
+    [
+        (
+            """
+            query {
+                greeting @inspectArguments(
+                    inputValue: {
+                        integer: 3
+                        floatingPoint: 1.5
+                        flavor: VANILLA
+                        nestedInput: { snakeCaseValue: 7 }
+                        parsed: "raw"
+                        integers: [1, 2]
+                    }
+                )
+            }
+            """,
+            None,
+        ),
+        (
+            """
+            query InspectArguments($inputValue: DirectiveInput!) {
+                greeting @inspectArguments(
+                    inputValue: $inputValue
+                )
+            }
+            """,
+            {
+                "inputValue": {
+                    "integer": 3,
+                    "floatingPoint": 1.5,
+                    "flavor": "VANILLA",
+                    "nestedInput": {"snakeCaseValue": 7},
+                    "parsed": "raw",
+                    "integers": [1, 2],
+                },
+            },
+        ),
+    ],
+)
+def test_directive_arguments_are_coerced_and_converted(
+    query: str, variable_values: dict[str, Any] | None
+) -> None:
+    @strawberry.enum
+    class Flavor(Enum):
+        VANILLA = "vanilla"
+        CHOCOLATE = "chocolate"
+
+    ParsedScalar = strawberry.scalar(
+        str,
+        name="ParsedScalar",
+        serialize=str,
+        parse_value=lambda value: f"parsed:{value}",
+    )
+
+    @strawberry.input
+    class NestedDirectiveInput:
+        snake_case_value: int
+
+    @strawberry.input
+    class DirectiveInput:
+        integer: int
+        floating_point: float
+        flavor: Flavor
+        nested_input: NestedDirectiveInput
+        parsed: ParsedScalar
+        integers: list[int]
+
+    received_arguments: list[DirectiveInput] = []
+
+    @strawberry.directive(locations=[DirectiveLocation.FIELD])
+    def inspect_arguments(
+        value: DirectiveValue[str],
+        input_value: DirectiveInput,
+    ) -> str:
+        received_arguments.append(input_value)
+        return value
+
+    @strawberry.type
+    class Query:
+        greeting: str = "Hi"
+
+    schema = strawberry.Schema(query=Query, directives=[inspect_arguments])
+    result = schema.execute_sync(
+        query, root_value=Query(), variable_values=variable_values
+    )
+
+    assert result.errors is None
+    assert result.data == {"greeting": "Hi"}
+    assert received_arguments == [
+        DirectiveInput(
+            integer=3,
+            floating_point=1.5,
+            flavor=Flavor.VANILLA,
+            nested_input=NestedDirectiveInput(snake_case_value=7),
+            parsed="parsed:raw",
+            integers=[1, 2],
+        )
+    ]
+
+
+@pytest.mark.parametrize(
+    ("query", "variable_values", "expected"),
+    [
+        ("{ greeting @captureDefault }", None, "fallback"),
+        (
+            "query($label: String) { greeting @captureDefault(label: $label) }",
+            {},
+            "fallback",
+        ),
+        (
+            """
+            query($label: String = "variable default") {
+                greeting @captureDefault(label: $label)
+            }
+            """,
+            {},
+            "variable default",
+        ),
+        ("{ greeting @captureDefault(label: null) }", None, None),
+        (
+            "query($label: String) { greeting @captureDefault(label: $label) }",
+            {"label": None},
+            None,
+        ),
+    ],
+)
+def test_directive_argument_defaults_distinguish_omitted_values_from_null(
+    query: str,
+    variable_values: dict[str, Any] | None,
+    expected: str | None,
+) -> None:
+    received_labels: list[str | None] = []
+
+    @strawberry.directive(locations=[DirectiveLocation.FIELD])
+    def capture_default(
+        value: DirectiveValue[str], label: str | None = "fallback"
+    ) -> str:
+        received_labels.append(label)
+        return value
+
+    @strawberry.type
+    class Query:
+        greeting: str = "Hi"
+
+    schema = strawberry.Schema(query=Query, directives=[capture_default])
+    result = schema.execute_sync(
+        query, root_value=Query(), variable_values=variable_values
+    )
+
+    assert result.errors is None
+    assert result.data == {"greeting": "Hi"}
+    assert received_labels == [expected]
 
 
 def test_directives_with_custom_types():

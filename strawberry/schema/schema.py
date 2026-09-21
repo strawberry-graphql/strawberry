@@ -21,6 +21,7 @@ from graphql import (
     FieldNode,
     FragmentDefinitionNode,
     GraphQLBoolean,
+    GraphQLDirective,
     GraphQLError,
     GraphQLField,
     GraphQLNamedType,
@@ -80,6 +81,7 @@ from ._graphql_core import (
 )
 from .base import BaseSchema
 from .config import StrawberryConfig
+from .directive_collector import SchemaDirectiveCollector
 from .exceptions import CannotGetOperationTypeError, InvalidOperationTypeError
 
 if TYPE_CHECKING:
@@ -92,6 +94,7 @@ if TYPE_CHECKING:
     from graphql.validation import ASTValidationRule
 
     from strawberry.directive import StrawberryDirective
+    from strawberry.schema.exception_handlers import ExceptionHandler
     from strawberry.types.base import StrawberryType
     from strawberry.types.enum import StrawberryEnumDefinition
     from strawberry.types.field import StrawberryField
@@ -124,6 +127,58 @@ DEFAULT_ALLOWED_OPERATION_TYPES = {
 ProcessErrors: TypeAlias = (
     "Callable[[list[GraphQLError], ExecutionContext | None], None]"
 )
+_DirectiveEntry: TypeAlias = tuple[GraphQLDirective, object, str]
+
+
+def _register_graphql_directive(
+    registry: dict[str, _DirectiveEntry],
+    directive: GraphQLDirective,
+    definition: object,
+    source: str,
+) -> None:
+    """Add ``directive`` to ``registry`` unless its name is already taken.
+
+    Registering the same Strawberry definition twice is harmless; two distinct
+    definitions sharing a GraphQL name raise an error naming both sources.
+    """
+    if (existing := registry.get(directive.name)) is None:
+        registry[directive.name] = (directive, definition, source)
+        return
+
+    _, existing_definition, existing_source = existing
+    if existing_definition is definition:
+        return
+
+    raise ValueError(
+        f"Schema directive '@{directive.name}' is defined by both "
+        f"{existing_source} and {source}. Use a different "
+        "GraphQL name for one of them."
+    )
+
+
+def _is_specified_one_of_directive(
+    directive: GraphQLDirective, registry: dict[str, _DirectiveEntry]
+) -> bool:
+    """Whether ``directive`` is a compatible spelling of graphql-core's @oneOf.
+
+    Strawberry's OneOf schema directive (and user-defined ones) predate
+    graphql-core exposing the specified @oneOf directive. A compatible
+    definition stands in for the built-in regardless of the Python class used.
+    Legacy definitions normally have no description; a supplied description is
+    only accepted when it matches the specified one so custom metadata is not
+    silently discarded.
+    """
+    if directive.name != "oneOf" or (existing := registry.get("oneOf")) is None:
+        return False
+
+    specified, definition, _ = existing
+    return (
+        specified is definition
+        and directive.locations == specified.locations
+        and directive.args.keys() == specified.args.keys()
+        and directive.is_repeatable == specified.is_repeatable
+        and directive.description in (None, specified.description)
+    )
 
 
 # TODO: merge with below
@@ -253,7 +308,7 @@ class StrawberryGraphQLCoreExecutionContext(GraphQLExecutionContext):
 
 
 class Schema(BaseSchema):
-    def __init__(
+    def __init__(  # noqa: PLR0917
         self,
         # TODO: can we make sure we only allow to pass
         # something that has been decorated?
@@ -271,6 +326,7 @@ class Schema(BaseSchema):
             Mapping[object, type | ScalarWrapper | ScalarDefinition] | None
         ) = None,
         schema_directives: Iterable[object] = (),
+        exception_handlers: Iterable[ExceptionHandler[Any]] = (),
     ) -> None:
         """Default Schema to be used in a Strawberry application.
 
@@ -293,6 +349,8 @@ class Schema(BaseSchema):
             config: The configuration for the schema.
             scalar_overrides: A dictionary of overrides for scalars.
             schema_directives: A list of schema directives for the schema.
+            exception_handlers: A list of handlers that can convert Python
+                exceptions into explicit GraphQL union return values.
 
         Example:
         ```python
@@ -332,15 +390,17 @@ class Schema(BaseSchema):
             execution_context_class or StrawberryGraphQLCoreExecutionContext
         )
         self.config = config or StrawberryConfig()
+        self.exception_handlers = tuple(exception_handlers)
 
         self.schema_converter = GraphQLCoreConverter(
             self.config,
             scalar_overrides=scalar_overrides or {},  # type: ignore
             scalar_map=self.config.scalar_map,
             get_fields=self.get_fields,
+            exception_handlers=self.exception_handlers,
         )
 
-        self.directives = directives
+        self.directives = tuple(directives)
         self.schema_directives = list(schema_directives)
 
         query_type = self.schema_converter.from_object(
@@ -367,16 +427,11 @@ class Schema(BaseSchema):
             else None
         )
 
-        graphql_directives = [
-            self.schema_converter.from_directive(directive) for directive in directives
-        ]
-
-        graphql_types = []
+        graphql_types: list[GraphQLNamedType] = []
+        explicit_directive_types: list[type] = []
         for type_ in types:
             if compat.is_schema_directive(type_):
-                graphql_directives.append(
-                    self.schema_converter.from_schema_directive(type_)
-                )
+                explicit_directive_types.append(type_)
             else:
                 if (
                     has_object_definition(type_)
@@ -391,16 +446,20 @@ class Schema(BaseSchema):
                 graphql_types.append(graphql_type)
 
         try:
-            directives = specified_directives + tuple(graphql_directives)  # type: ignore
-
-            if self.config.enable_experimental_incremental_execution:
-                directives = tuple(directives) + tuple(incremental_execution_directives)
-
+            # graphql-core adds the argument types of every directive passed to
+            # GraphQLSchema to its type map. It cannot, however, discover
+            # directives stored only in Strawberry definitions. Collect and
+            # convert those directives first so the one GraphQLSchema we build
+            # receives the complete directive and type graph.
+            schema_directive_types = self._collect_schema_directives(
+                explicit_directive_types,
+                [query_type, mutation_type, subscription_type, *graphql_types],
+            )
             self._schema = GraphQLSchema(
                 query=query_type,
                 mutation=mutation_type,
-                subscription=subscription_type if subscription else None,
-                directives=directives,  # type: ignore
+                subscription=subscription_type,
+                directives=self._collect_graphql_directives(schema_directive_types),
                 types=graphql_types,
                 extensions={
                     GraphQLCoreConverter.DEFINITION_BACKREF: self,
@@ -432,6 +491,77 @@ class Schema(BaseSchema):
         if errors:
             formatted_errors = "\n\n".join(f"❌ {error.message}" for error in errors)
             raise ValueError(f"Invalid Schema. Errors:\n\n{formatted_errors}")
+
+    def _collect_schema_directives(
+        self,
+        explicit_directive_types: Iterable[type],
+        graphql_types: Iterable[GraphQLNamedType | None],
+    ) -> list[type]:
+        collector = SchemaDirectiveCollector(self.schema_converter)
+        for directive_type in explicit_directive_types:
+            collector.add_directive_type(directive_type)
+        collector.add_schema_directives(self.schema_directives)
+        collector.add_graphql_types(graphql_types)
+        collector.collect()
+
+        # Federation reads the applications found so far to generate @link and
+        # @composeDirective, appending them to ``schema_directives``. Fold what
+        # it added into the same collection so the single GraphQLSchema built
+        # from it is validated with every generated directive and support type.
+        self._schema_directives_in_use = collector.directives_in_use
+        prepared_count = len(self.schema_directives)
+        self._prepare_schema_directives()
+        collector.add_schema_directives(self.schema_directives[prepared_count:])
+        collector.collect()
+
+        self._schema_graphql_directives = collector.graphql_directives
+        return collector.directive_types
+
+    def _collect_graphql_directives(
+        self, schema_directive_types: Iterable[type]
+    ) -> tuple[GraphQLDirective, ...]:
+        # GraphQLSchema expects its directive collection to be canonical. Seed
+        # the registry with the specified directives so a custom definition
+        # cannot silently replace a built-in, then keep one insertion-ordered
+        # entry per GraphQL name.
+        registry: dict[str, _DirectiveEntry] = {
+            directive.name: (directive, directive, "the built-in GraphQL directive")
+            for directive in specified_directives
+        }
+
+        for directive in self.directives:
+            _register_graphql_directive(
+                registry,
+                self.schema_converter.from_directive(directive),
+                directive,
+                f"operation directive '{directive.python_name}'",
+            )
+
+        for directive_type in schema_directive_types:
+            graphql_directive = self._schema_graphql_directives[directive_type]
+            if _is_specified_one_of_directive(graphql_directive, registry):
+                continue
+
+            _register_graphql_directive(
+                registry,
+                graphql_directive,
+                cast("Any", directive_type).__strawberry_directive__,
+                (
+                    "schema directive "
+                    f"'{directive_type.__module__}.{directive_type.__qualname__}'"
+                ),
+            )
+
+        if self.config.enable_experimental_incremental_execution:
+            for directive in incremental_execution_directives:
+                _register_graphql_directive(
+                    registry,
+                    directive,
+                    directive,
+                    f"the experimental GraphQL directive '@{directive.name}'",
+                )
+
+        return tuple(directive for directive, _, _ in registry.values())
 
     def get_extensions(self, sync: bool = False) -> list[SchemaExtension]:
         # Deprecated instances are passed through as-is. The DeprecationWarning
@@ -479,7 +609,7 @@ class Schema(BaseSchema):
             *(ext for ext in extensions if ext._implements_resolve())
         )
 
-    def _create_execution_context(
+    def _create_execution_context(  # noqa: PLR0917
         self,
         query: str | None,
         allowed_operation_types: Iterable[OperationType],
@@ -716,7 +846,7 @@ class Schema(BaseSchema):
 
         return result
 
-    async def execute(
+    async def execute(  # noqa: PLR0917
         self,
         query: str | None,
         variable_values: dict[str, Any] | None = None,
@@ -790,7 +920,7 @@ class Schema(BaseSchema):
             execution_context, result, extensions_runner, skip_process_errors=True
         )
 
-    def execute_sync(
+    def execute_sync(  # noqa: PLR0917
         self,
         query: str | None,
         variable_values: dict[str, Any] | None = None,
@@ -834,6 +964,9 @@ class Schema(BaseSchema):
                         execution_context, extensions_runner
                     )
                 ) is not None:
+                    # Match the async path by exposing pre-execution results to
+                    # operation extensions before their hooks unwind.
+                    execution_context.result = pre_execution_result
                     return pre_execution_result
 
                 assert execution_context.graphql_document is not None
@@ -921,9 +1054,11 @@ class Schema(BaseSchema):
                 initial_error.extensions = (
                     await extensions_runner.get_extensions_results(execution_context)
                 )
-                yield await self._handle_execution_result(
+                execution_result = await self._handle_execution_result(
                     execution_context, initial_error, extensions_runner
                 )
+                async with extensions_runner.on_stream_result(execution_result):
+                    yield execution_result
                 return
 
             assert execution_context.graphql_document is not None
@@ -940,7 +1075,8 @@ class Schema(BaseSchema):
                 )
                 async with aclosing(result_source):
                     async for result in result_source:
-                        yield result
+                        async with extensions_runner.on_stream_result(result):
+                            yield result
                 return
 
             try:
@@ -972,39 +1108,50 @@ class Schema(BaseSchema):
 
                 # Handle pre-execution errors.
                 if isinstance(aiter_or_result, OriginalExecutionResult):
-                    yield await self._handle_execution_result(
+                    execution_result = await self._handle_execution_result(
                         execution_context,
                         PreExecutionError(data=None, errors=aiter_or_result.errors),
                         extensions_runner,
                     )
+                    async with extensions_runner.on_stream_result(execution_result):
+                        yield execution_result
                 else:
                     try:
                         async with aclosing(aiter_or_result):
                             async for result in aiter_or_result:
-                                yield await self._handle_execution_result(
+                                extension_result = await self._handle_execution_result(
                                     execution_context,
                                     result,
                                     extensions_runner,
                                 )
+
+                                async with extensions_runner.on_stream_result(
+                                    extension_result
+                                ):
+                                    yield extension_result
                     # graphql-core doesn't handle exceptions raised while executing.
                     except Exception as exc:  # noqa: BLE001
-                        yield await self._handle_execution_result(
+                        execution_result = await self._handle_execution_result(
                             execution_context,
                             OriginalExecutionResult(
                                 data=None, errors=[_coerce_error(exc)]
                             ),
                             extensions_runner,
                         )
+                        async with extensions_runner.on_stream_result(execution_result):
+                            yield execution_result
             # catch exceptions raised in `on_execute` hook.
             except Exception as exc:  # noqa: BLE001
                 origin_result = OriginalExecutionResult(
                     data=None, errors=[_coerce_error(exc)]
                 )
-                yield await self._handle_execution_result(
+                execution_result = await self._handle_execution_result(
                     execution_context,
                     origin_result,
                     extensions_runner,
                 )
+                async with extensions_runner.on_stream_result(execution_result):
+                    yield execution_result
 
     async def _stream_non_subscription(
         self,
@@ -1064,7 +1211,7 @@ class Schema(BaseSchema):
             execution_context, result, extensions_runner, skip_process_errors=True
         )
 
-    async def subscribe(
+    async def subscribe(  # noqa: PLR0917
         self,
         query: str | None,
         variable_values: dict[str, Any] | None = None,
@@ -1094,7 +1241,7 @@ class Schema(BaseSchema):
             ),
         )
 
-    async def stream(
+    async def stream(  # noqa: PLR0917
         self,
         query: str | None,
         variable_values: dict[str, Any] | None = None,
@@ -1177,6 +1324,14 @@ class Schema(BaseSchema):
 
                 if not has_custom_resolve_id:
                     origin.resolve_id_attr()
+
+    def _prepare_schema_directives(self) -> None:
+        """Hook for subclasses to append generated ``schema_directives``.
+
+        Runs after the attached directives have been collected (so
+        ``_schema_directives_in_use`` is populated) and before the GraphQLSchema
+        is built, so anything appended here is part of the served schema.
+        """
 
     def _warn_for_federation_directives(self) -> None:
         """Raises a warning if the schema has any federation directives."""

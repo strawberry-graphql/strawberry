@@ -54,7 +54,7 @@ def get_type_for_field(field: CompatModelField, is_input: bool, compat: Pydantic
     return replaced_type
 
 
-def _build_dataclass_creation_fields(
+def _build_dataclass_creation_fields(  # noqa: PLR0917
     field: CompatModelField,
     is_input: bool,
     existing_fields: dict[str, StrawberryField],

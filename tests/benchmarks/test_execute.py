@@ -1,6 +1,4 @@
 import asyncio
-import datetime
-import random
 from datetime import date
 from typing import cast
 
@@ -12,8 +10,10 @@ from strawberry.scalars import ID
 
 
 @pytest.mark.benchmark
-def test_execute(benchmark: BenchmarkFixture):
-    birthday = datetime.datetime.now()
+def test_execute_v2(
+    benchmark: BenchmarkFixture, benchmark_loop: asyncio.AbstractEventLoop
+):
+    birthday = date(2000, 1, 1)
     pets = ("cat", "shark", "dog", "lama")
 
     @strawberry.type
@@ -34,7 +34,7 @@ def test_execute(benchmark: BenchmarkFixture):
             return [
                 Pet(
                     id=i,
-                    name=random.choice(pets),  # noqa: S311
+                    name=pets[i % len(pets)],
                 )
                 for i in range(5)
             ]
@@ -73,13 +73,23 @@ def test_execute(benchmark: BenchmarkFixture):
     """
 
     def run():
-        return asyncio.run(schema.execute(query))
+        return benchmark_loop.run_until_complete(schema.execute(query))
 
-    benchmark(run)
+    result = benchmark(run)
+    assert result.errors is None
+    assert result.data is not None
+
+    assert len(result.data["patrons"]) == 1000
+    assert all(len(patron["pets"]) == 5 for patron in result.data["patrons"])
+    assert result.data["patrons"][0]["birthday"] == "2000-01-01"
 
 
-@pytest.mark.parametrize("ntypes", [2**k for k in range(0, 13, 4)])
-def test_interface_performance(benchmark: BenchmarkFixture, ntypes: int):
+@pytest.mark.parametrize(
+    "ntypes", [1, 16, 256, pytest.param(4096, marks=pytest.mark.benchmark_stress)]
+)
+def test_interface_performance_v2(
+    benchmark: BenchmarkFixture, ntypes: int, benchmark_loop: asyncio.AbstractEventLoop
+):
     @strawberry.interface
     class Item:
         id: ID
@@ -96,7 +106,7 @@ def test_interface_performance(benchmark: BenchmarkFixture, ntypes: int):
     query = "query { items { id } }"
 
     def run():
-        return asyncio.run(
+        return benchmark_loop.run_until_complete(
             schema.execute(
                 query,
                 root_value=Query(
@@ -108,4 +118,6 @@ def test_interface_performance(benchmark: BenchmarkFixture, ntypes: int):
             )
         )
 
-    benchmark(run)
+    result = benchmark(run)
+    assert result.errors is None
+    assert result.data == {"items": [{"id": str(i)} for i in range(1000)]}

@@ -1,0 +1,88 @@
+name: Strawberry Django compatibility
+
+concurrency:
+  group: django-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  compatibility:
+    name: Latest release on Python 3.14
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Resolve the latest Strawberry Django release
+        id: strawberry-django
+        shell: bash
+        run: |
+          version=$(
+            curl --fail --location --silent --show-error --retry 3 \
+              https://pypi.org/pypi/strawberry-graphql-django/json |
+              jq --exit-status --raw-output '.info.version'
+          )
+
+          if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+[a-zA-Z0-9.-]*$ ]]; then
+            echo "Unexpected Strawberry Django version: $version" >&2
+            exit 1
+          fi
+
+          echo "version=$version" | tee --append "$GITHUB_OUTPUT"
+
+      - name: Checkout Strawberry Django
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: strawberry-graphql/strawberry-django
+          ref: ${{ steps.strawberry-django.outputs.version }}
+          path: strawberry-django
+          persist-credentials: false
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+        with:
+          enable-cache: true
+          python-version: "3.14"
+          cache-dependency-glob: strawberry-django/uv.lock
+
+      - name: Install Strawberry Django
+        run: uv sync --locked --project strawberry-django --python 3.14
+
+      - name: Install Strawberry from this checkout
+        run: |
+          uv pip install \
+            --python strawberry-django/.venv/bin/python \
+            --reinstall \
+            --editable "$GITHUB_WORKSPACE"
+
+      - name: Verify the Strawberry installation
+        run: |
+          strawberry-django/.venv/bin/python - <<'PY'
+          import os
+          from importlib.metadata import version
+          from pathlib import Path
+
+          import strawberry
+
+          source = Path(strawberry.__file__).resolve()
+          workspace_package = (Path(os.environ["GITHUB_WORKSPACE"]) / "strawberry").resolve()
+
+          if not source.is_relative_to(workspace_package):
+              raise RuntimeError(f"Strawberry was imported from {source}")
+
+          print(f"Testing Strawberry {version('strawberry-graphql')} from {source}")
+          PY
+
+      - name: Run Strawberry Django tests
+        run: .venv/bin/pytest -n auto --showlocals -vv --no-cov
+        working-directory: strawberry-django
