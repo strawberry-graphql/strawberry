@@ -13,11 +13,11 @@ social_messages:
     🍓
 ---
 
-Add a new `sort_schema` option to `StrawberryConfig`. When enabled,
-the schema's types, fields and arguments are sorted alphabetically, affecting both
-the introspection result and the exported SDL. This makes it easier to find
-related fields (for example `userById`, `userByName`) in the GraphiQL UI and in
-exported `schema.graphql` files.
+This release adds a new `sort_schema` option to `StrawberryConfig`. When
+enabled, the schema's types, fields and arguments are sorted alphabetically,
+affecting both the introspection result and the exported SDL. This makes it
+easier to find related fields (for example `userById`, `userByName`) in the
+GraphiQL UI and in exported `schema.graphql` files.
 
 ```python
 import strawberry
