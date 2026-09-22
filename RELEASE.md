@@ -1,4 +1,17 @@
-Release type: minor
+---
+release type: minor
+social_messages:
+  x: >-
+    {project_name} {version} is out! The new `sort_schema` config option sorts
+    your schema's types, fields and arguments alphabetically in introspection
+    and exported SDL. 🍓 https://strawberry.rocks/release/{version}
+  linkedin: >-
+    {project_name} {version} is out. It adds a `sort_schema` option to
+    StrawberryConfig that sorts types, fields and arguments alphabetically, in
+    both the introspection result and the exported SDL, so related fields such
+    as userById and userByName appear next to each other. It is off by default.
+    🍓
+---
 
 Add a new `sort_schema` option to `StrawberryConfig`. When enabled,
 the schema's types, fields and arguments are sorted alphabetically, affecting both

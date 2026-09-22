@@ -109,8 +109,8 @@ schema = strawberry.Schema(
 ### sort_schema
 
 By default Strawberry preserves the order in which fields and types are defined.
-This can make the introspection UI and the exported `schema.graphql` file harder
-to read, since related fields (for example `userById`, `userByName`) are not
+In the introspection UI and the exported `schema.graphql` file, related fields
+(for example `userById`, `userByName`) can then end up far apart instead of
 grouped together.
 
 Setting `sort_schema` to `True` sorts all types, fields and arguments
