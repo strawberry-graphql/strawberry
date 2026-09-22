@@ -288,22 +288,14 @@ def _merge_type_fields(
     type_definition: StrawberryObjectDefinition,
     extension_definitions: list[StrawberryObjectDefinition],
     get_fields: Callable[[StrawberryObjectDefinition], dict[str, FieldType]],
-    *,
-    type_label: str,
 ) -> dict[str, FieldType]:
+    # Field name collisions across the composed definitions are rejected up front,
+    # when each definition is registered (see `_reject_duplicate_composed_fields`),
+    # so by the time the thunk resolves the definitions are known to be disjoint.
     fields = get_fields(type_definition)
 
     for extension_definition in extension_definitions:
-        extension_fields = get_fields(extension_definition)
-        duplicated_field_names = fields.keys() & extension_fields.keys()
-        if duplicated_field_names:
-            duplicated_fields = ", ".join(sorted(duplicated_field_names))
-            raise TypeError(
-                f"{type_label} {type_definition.name} defines duplicate "
-                f"extension field(s): {duplicated_fields}"
-            )
-
-        fields.update(extension_fields)
+        fields.update(get_fields(extension_definition))
 
     return fields
 
@@ -713,7 +705,6 @@ class GraphQLCoreConverter:
             type_definition,
             extension_definitions,
             self.get_graphql_fields,
-            type_label="Type",
         )
 
     def get_graphql_input_fields(
@@ -735,7 +726,6 @@ class GraphQLCoreConverter:
             type_definition,
             extension_definitions,
             self.get_graphql_input_fields,
-            type_label="Input type",
         )
 
     def _extend_cached_type(
@@ -746,6 +736,7 @@ class GraphQLCoreConverter:
         *,
         base_definition_backref: str,
         extension_definitions_backref: str,
+        type_label: str,
         cached_properties: tuple[str, ...] = ("fields",),
     ) -> GraphQLObjectOrInputType | None:
         cached_implementation = cached_type.implementation
@@ -780,6 +771,12 @@ class GraphQLCoreConverter:
             return cached_implementation
 
         if not type_definition.extend:
+            self._reject_duplicate_composed_fields(
+                type_definition,
+                primary_definition[0],
+                extension_definitions,
+                type_label,
+            )
             if (
                 primary_definition[0].extend
                 and primary_definition[0] not in extension_definitions
@@ -791,6 +788,12 @@ class GraphQLCoreConverter:
             cached_implementation.extensions[self.DEFINITION_BACKREF] = type_definition
             cached_implementation.description = type_definition.description
         elif type_definition not in extension_definitions:
+            self._reject_duplicate_composed_fields(
+                type_definition,
+                primary_definition[0],
+                extension_definitions,
+                type_label,
+            )
             extension_definitions.append(type_definition)
 
         _clear_graphql_type_cached_properties(
@@ -798,6 +801,41 @@ class GraphQLCoreConverter:
             *cached_properties,
         )
         return cached_implementation
+
+    def _declared_graphql_field_names(
+        self, type_definition: StrawberryObjectDefinition
+    ) -> set[str]:
+        # The GraphQL field names a definition contributes are known from its
+        # declaration alone, before any field type thunk is resolved. This lets the
+        # composition reject collisions eagerly, independently of whether some other
+        # field's type can be resolved yet. `strawberry.Private` fields never reach
+        # the schema, so they cannot collide.
+        return {
+            self.config.name_converter.from_field(field)
+            for field in self.get_fields(type_definition)
+            if not is_private(field.type)
+        }
+
+    def _reject_duplicate_composed_fields(
+        self,
+        type_definition: StrawberryObjectDefinition,
+        primary_definition: StrawberryObjectDefinition,
+        extension_definitions: list[StrawberryObjectDefinition],
+        type_label: str,
+    ) -> None:
+        existing_field_names: set[str] = set()
+        for definition in (primary_definition, *extension_definitions):
+            existing_field_names |= self._declared_graphql_field_names(definition)
+
+        duplicated_field_names = (
+            existing_field_names & self._declared_graphql_field_names(type_definition)
+        )
+        if duplicated_field_names:
+            duplicated_fields = ", ".join(sorted(duplicated_field_names))
+            raise TypeError(
+                f"{type_label} {type_definition.name} defines duplicate "
+                f"extension field(s): {duplicated_fields}"
+            )
 
     def from_input_object(self, object_type: type) -> GraphQLInputObjectType:
         type_definition = object_type.__strawberry_definition__  # type: ignore
@@ -813,6 +851,7 @@ class GraphQLCoreConverter:
                 GraphQLInputObjectType,
                 base_definition_backref=self.INPUT_BASE_DEFINITION_BACKREF,
                 extension_definitions_backref=self.INPUT_EXTENSIONS_BACKREF,
+                type_label="Input type",
             )
             if extended_type is not None:
                 return extended_type
@@ -1053,6 +1092,7 @@ class GraphQLCoreConverter:
                 GraphQLObjectType,
                 base_definition_backref=self.OBJECT_BASE_DEFINITION_BACKREF,
                 extension_definitions_backref=self.OBJECT_EXTENSIONS_BACKREF,
+                type_label="Type",
                 cached_properties=("fields", "interfaces"),
             )
             if extended_type is not None:

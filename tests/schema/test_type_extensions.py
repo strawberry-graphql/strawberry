@@ -107,6 +107,33 @@ def test_object_extension_rejects_duplicate_fields():
         strawberry.Schema(query=Query, types=[UserExtension])
 
 
+def test_object_extension_duplicate_fields_fail_before_unresolved_siblings():
+    # The collision is detected when the definitions are composed, from their
+    # declared field names, so it fails fast even when another field's type cannot
+    # be resolved yet. Here ``conflict`` returns a function-local ``Conflict`` via a
+    # string annotation, which is unresolvable from the module scope; the duplicate
+    # ``shared`` field must still be reported rather than the unresolved type.
+    @strawberry.type
+    class Conflict:
+        shared: str
+
+    @strawberry.type(name="Conflict", extend=True)
+    class ConflictExtra:
+        shared: int
+
+    @strawberry.type
+    class ConflictQuery:
+        @strawberry.field
+        def conflict(self) -> "Conflict":
+            return Conflict(shared="x")
+
+    with pytest.raises(
+        TypeError,
+        match="Type Conflict defines duplicate extension field\\(s\\): shared",
+    ):
+        strawberry.Schema(query=ConflictQuery, types=[Conflict, ConflictExtra])
+
+
 def test_extend_type_reachable_twice_does_not_extend_itself():
     @strawberry.type(name="Product", extend=True)
     class Product:
