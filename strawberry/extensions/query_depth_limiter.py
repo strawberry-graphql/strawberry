@@ -30,6 +30,7 @@ from __future__ import annotations
 import re
 from collections.abc import Callable
 from dataclasses import dataclass
+from functools import lru_cache
 from typing import (
     TYPE_CHECKING,
     TypeAlias,
@@ -124,11 +125,16 @@ class QueryDepthLimiter(AddValidationRules):
         super().__init__([validator])
 
 
+@lru_cache(maxsize=128)
 def create_validator(
     max_depth: int,
     should_ignore: ShouldIgnoreType | None,
     callback: Callable[[dict[str, int]], None] | None = None,
 ) -> type[ValidationRule]:
+    # The returned class is part of the validation rules tuple that
+    # ``ValidationCache`` keys its cache on, and classes hash by identity.
+    # Extensions are built per request, so the same configuration has to give
+    # back the same class or that cache never hits.
     class DepthLimitValidator(ValidationRule):
         def __init__(self, validation_context: ValidationContext) -> None:
             document = validation_context.document
