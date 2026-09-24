@@ -229,3 +229,19 @@ def test_literal_types():
 
     assert field.python_name == "field"
     assert field.type == Literal["field"]
+
+
+def test_input_use_pydantic_default_false_field_types():
+    class UserModel(pydantic.BaseModel):
+        name: str
+        interests: list[str] | None = pydantic.Field(default_factory=list)
+
+    @strawberry.experimental.pydantic.input(UserModel, use_pydantic_default=False)
+    class UpdateUserInput:
+        name: strawberry.auto
+        interests: strawberry.auto
+
+    definition = UpdateUserInput.__strawberry_definition__
+    fields = {f.python_name: f for f in definition.fields}
+
+    assert isinstance(fields["interests"].type, StrawberryOptional)
