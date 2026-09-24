@@ -239,7 +239,24 @@ class StrawberryResolver(Generic[T]):
 
     @cached_property
     def signature(self) -> inspect.Signature:
-        return Signature.from_callable(self._unbound_wrapped_func, follow_wrapped=True)
+        try:
+            return Signature.from_callable(
+                self._unbound_wrapped_func, follow_wrapped=True
+            )
+        except NameError:
+            # On Python 3.14+ (PEP 649), accessing function annotations triggers
+            # deferred evaluation via __annotate__. If the annotation references a
+            # name that doesn't exist yet (e.g. a forward reference to a class
+            # being defined), this raises NameError. Fall back to FORWARDREF format
+            # which wraps unresolvable names in ForwardRef instead of raising.
+            forwardref_format = getattr(inspect, "Format", None)
+            if forwardref_format is not None:
+                return Signature.from_callable(
+                    self._unbound_wrapped_func,
+                    follow_wrapped=True,
+                    annotation_format=forwardref_format.FORWARDREF,
+                )
+            raise
 
     # TODO: find better name
     @cached_property
