@@ -176,9 +176,19 @@ stadium_query = (ROOT / "stadium.graphql").read_text()
 
 @pytest.mark.benchmark
 @pytest.mark.parametrize(
-    "seats_per_row", [250, 500], ids=lambda x: f"seats_per_row_{x}"
+    "seats_per_row",
+    [
+        10,
+        pytest.param(250, marks=pytest.mark.benchmark_stress),
+        pytest.param(500, marks=pytest.mark.benchmark_stress),
+    ],
+    ids=lambda x: f"seats_per_row_{x}",
 )
-def test_stadium(benchmark: BenchmarkFixture, seats_per_row: int):
+def test_stadium_v2(
+    benchmark: BenchmarkFixture,
+    seats_per_row: int,
+    benchmark_loop: asyncio.AbstractEventLoop,
+):
     """Benchmark a complex nested query with a large dataset.
 
     This test benchmarks the execution of a GraphQL query that returns
@@ -192,7 +202,7 @@ def test_stadium(benchmark: BenchmarkFixture, seats_per_row: int):
     schema = strawberry.Schema(query=Query)
 
     def run():
-        return asyncio.run(
+        return benchmark_loop.run_until_complete(
             schema.execute(
                 stadium_query, variable_values={"seatsPerRow": seats_per_row}
             )
@@ -203,3 +213,8 @@ def test_stadium(benchmark: BenchmarkFixture, seats_per_row: int):
     assert results.errors is None
     assert results.data is not None
     assert results.data["stadium"]["name"] == "Grand Metropolitan Stadium"
+
+    assert (
+        sum(len(stand["seats"]) for stand in results.data["stadium"]["stands"])
+        == 180 * seats_per_row
+    )

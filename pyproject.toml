@@ -138,6 +138,9 @@ addopts = "--emoji"
 DJANGO_SETTINGS_MODULE = "tests.django.django_settings"
 testpaths = ["tests/"]
 markers = [
+  "benchmark_native: native elapsed-time workloads (HTTP and process startup)",
+  "benchmark_stress: large scaling cases for scheduled and manual runs",
+  "benchmark_memory: bounded workloads suitable for allocation profiling",
   "aiohttp",
   "asgi",
   "chalice",

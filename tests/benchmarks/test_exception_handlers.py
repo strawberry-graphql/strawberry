@@ -71,6 +71,7 @@ def test_plain_resolver_field(benchmark: BenchmarkFixture, handlers: bool):
 
     result = benchmark(run)
     assert result.errors is None
+    assert result.data == {"items": [{"plain": i * 2} for i in range(2000)]}
 
 
 @pytest.mark.benchmark
@@ -84,3 +85,5 @@ def test_handled_union_field(benchmark: BenchmarkFixture):
 
     result = benchmark(run)
     assert result.errors is None
+
+    assert result.data == {"items": [{"checked": {"amount": i}} for i in range(2000)]}

@@ -198,3 +198,6 @@ node_modules/
 
 # Amp orb runtime files
 .amp/portals/*
+
+# Reproducibility artifacts from local benchmark runs
+benchmark-artifacts/

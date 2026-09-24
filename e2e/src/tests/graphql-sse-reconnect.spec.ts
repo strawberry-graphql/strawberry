@@ -7,6 +7,16 @@ import { expect, test } from "@playwright/test";
 test.describe("GraphQL SSE reconnection", () => {
 	const query = "subscription { resumableCount(target: 3) }";
 
+	// The `complete` event carries an empty data field, so only `data: {` lines
+	// hold a result.
+	const streamedCounts = (body: string) =>
+		body
+			.split("\r\n")
+			.filter((line) => line.startsWith("data: {"))
+			.map(
+				(line) => JSON.parse(line.slice("data: ".length)).data.resumableCount,
+			);
+
 	test("streams all results without Last-Event-ID", async ({ request }) => {
 		const response = await request.post("/graphql", {
 			headers: { accept: "text/event-stream" },
@@ -17,9 +27,7 @@ test.describe("GraphQL SSE reconnection", () => {
 		expect(response.headers()["content-type"]).toContain("text/event-stream");
 
 		const body = await response.text();
-		expect(body).toContain('"resumableCount": 0');
-		expect(body).toContain('"resumableCount": 1');
-		expect(body).toContain('"resumableCount": 2');
+		expect(streamedCounts(body)).toEqual([0, 1, 2]);
 	});
 
 	test("resumes from the Last-Event-ID header", async ({ request }) => {
@@ -32,8 +40,6 @@ test.describe("GraphQL SSE reconnection", () => {
 
 		const body = await response.text();
 		// Resumes after id 1: the already-seen results are not replayed.
-		expect(body).not.toContain('"resumableCount": 0');
-		expect(body).not.toContain('"resumableCount": 1');
-		expect(body).toContain('"resumableCount": 2');
+		expect(streamedCounts(body)).toEqual([2]);
 	});
 });

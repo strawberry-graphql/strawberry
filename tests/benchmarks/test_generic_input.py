@@ -64,12 +64,21 @@ query = """{
 """
 
 
-def test_execute_generic_input(benchmark: BenchmarkFixture):
+def test_execute_generic_input_v2(
+    benchmark: BenchmarkFixture, benchmark_loop: asyncio.AbstractEventLoop
+):
     def run():
         coroutine = schema.execute(query)
 
-        return asyncio.run(coroutine)
+        return benchmark_loop.run_until_complete(coroutine)
 
     result = benchmark(run)
 
     assert not result.errors
+
+    assert result.data is not None
+    assert len(result.data["books"]) == 1000
+    assert all(
+        book["authors"] == [{"name": "F. Scott Fitzgerald"}]
+        for book in result.data["books"]
+    )

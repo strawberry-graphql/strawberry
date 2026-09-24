@@ -36,7 +36,7 @@ class User(Node):
     @classmethod
     def random(cls, seed: int) -> User:
         return User(
-            id=strawberry.ID(str(int)),
+            id=strawberry.ID(str(seed)),
             username=f"username={seed}",
             email=f"email={seed}",
             role=Role.ADMIN,
@@ -71,7 +71,7 @@ class Post(Node):
     @classmethod
     def random(cls, seed: int) -> Post:
         return Post(
-            id=strawberry.ID(str(int)),
+            id=strawberry.ID(str(seed)),
             title=f"title={seed}",
             content=f"content={seed}",
             author=User.random(seed),
@@ -108,7 +108,7 @@ class Comment(Node):
     @classmethod
     def random(cls, seed: int) -> Comment:
         return Comment(
-            id=strawberry.ID(str(int)),
+            id=strawberry.ID(str(seed)),
             text=f"text={seed}",
             author=User.random(seed),
             post=Post.random(seed),
