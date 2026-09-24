@@ -15,4 +15,5 @@ also enabled.
 
 `QueryDepthLimiter` built a new validator class on every request, which changed
 the cache key each time. Identical limiter configuration now reuses one
-validator class.
+validator class. Unhashable `should_ignore` or `callback` values still get a
+new class per request.
