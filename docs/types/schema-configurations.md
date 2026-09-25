@@ -126,6 +126,11 @@ class CustomInfo(Info):
 schema = strawberry.Schema(query=Query, config=StrawberryConfig(info_class=CustomInfo))
 ```
 
+Strawberry constructs `Info` when it is needed by a resolver, field extension,
+custom field, or exception handler. Plain fields and standard no-argument
+resolvers that do not request it can skip construction. A custom `Info`
+constructor should therefore not be used as a hook for every field execution.
+
 ### enable_experimental_incremental_execution
 
 <Note>
