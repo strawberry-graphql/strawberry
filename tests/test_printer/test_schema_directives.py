@@ -294,7 +294,7 @@ def test_prints_directive_on_schema():
 
     @strawberry.type
     class Query:
-        first_name: str = strawberry.field(directives=[Tag(name="team-1")])
+        first_name: str
 
     schema = strawberry.Schema(query=Query, schema_directives=[Tag(name="team-1")])
 
@@ -314,7 +314,7 @@ def test_prints_directive_on_schema():
 
 
 def test_prints_multiple_directives_on_schema():
-    @strawberry.schema_directive(locations=[Location.SCHEMA])
+    @strawberry.schema_directive(locations=[Location.SCHEMA], repeatable=True)
     class Tag:
         name: str
 
@@ -327,7 +327,7 @@ def test_prints_multiple_directives_on_schema():
     )
 
     expected_output = """
-    directive @tag(name: String!) on SCHEMA
+    directive @tag(name: String!) repeatable on SCHEMA
 
     schema @tag(name: "team-1") @tag(name: "team-2") {
       query: Query
@@ -739,7 +739,7 @@ def test_print_directive_on_union():
     class B:
         b: int
 
-    @strawberry.schema_directive(locations=[Location.SCALAR])
+    @strawberry.schema_directive(locations=[Location.UNION])
     class Sensitive:
         reason: str
 
@@ -753,7 +753,7 @@ def test_print_directive_on_union():
         example: MyUnion
 
     expected_output = """
-    directive @sensitive(reason: String!) on SCALAR
+    directive @sensitive(reason: String!) on UNION
 
     type A {
       a: Int!

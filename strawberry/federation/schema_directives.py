@@ -173,7 +173,10 @@ class Inaccessible(FederationDirective):
 
 
 @schema_directive(
-    locations=[Location.SCHEMA], name="composeDirective", print_definition=False
+    locations=[Location.SCHEMA],
+    name="composeDirective",
+    repeatable=True,
+    print_definition=False,
 )
 class ComposeDirective(FederationDirective):
     name: str
