@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import dataclasses
 import inspect
 from typing import (
     TYPE_CHECKING,
@@ -28,7 +29,7 @@ if TYPE_CHECKING:
     from collections.abc import Iterable, Mapping
 
     from strawberry.schema.config import StrawberryConfig
-    from strawberry.types.base import StrawberryType
+    from strawberry.types.base import StrawberryObjectDefinition, StrawberryType
     from strawberry.types.scalar import ScalarDefinition, ScalarWrapper
 
 
@@ -169,6 +170,59 @@ def _is_optional_leaf_type(
     return False
 
 
+def _get_input_value_mapping(value: object) -> Mapping[str, Any]:
+    return cast(
+        "Mapping[str, Any]",
+        getattr(value, "strawberry_input_value", value),
+    )
+
+
+def _get_input_extension_definitions(
+    value: object,
+) -> tuple[StrawberryObjectDefinition, ...]:
+    return cast(
+        "tuple[StrawberryObjectDefinition, ...]",
+        getattr(value, "strawberry_input_extension_definitions", ()),
+    )
+
+
+def _convert_input_field_values(
+    value: Mapping[str, Any],
+    type_definition: StrawberryObjectDefinition,
+    scalar_registry: Mapping[object, ScalarWrapper | ScalarDefinition],
+    config: StrawberryConfig,
+) -> dict[str, object]:
+    converted_values = {}
+
+    for field in type_definition.fields:
+        python_name = field.python_name
+        assert python_name is not None
+
+        graphql_name = config.name_converter.from_field(field)
+        if graphql_name not in value:
+            continue
+
+        converted_values[python_name] = convert_argument(
+            value[graphql_name],
+            field.resolve_type(type_definition=type_definition),
+            scalar_registry,
+            config,
+        )
+
+    return converted_values
+
+
+def _set_input_extension_value(
+    converted: object,
+    python_name: str,
+    value: object,
+) -> None:
+    try:
+        setattr(converted, python_name, value)
+    except dataclasses.FrozenInstanceError:
+        object.__setattr__(converted, python_name, value)
+
+
 def convert_argument(
     value: object,
     type_: StrawberryType | type,
@@ -244,23 +298,29 @@ def convert_argument(
         return convert_argument(value, enum_definition, scalar_registry, config)
 
     if has_object_definition(type_):
-        kwargs = {}
-
+        input_value = _get_input_value_mapping(value)
         type_definition = type_.__strawberry_definition__
-        for field in type_definition.fields:
-            value = cast("Mapping", value)
-            graphql_name = config.name_converter.from_field(field)
-
-            if graphql_name in value:
-                kwargs[field.python_name] = convert_argument(
-                    value[graphql_name],
-                    field.resolve_type(type_definition=type_definition),
-                    scalar_registry,
-                    config,
-                )
+        kwargs = _convert_input_field_values(
+            input_value,
+            type_definition,
+            scalar_registry,
+            config,
+        )
 
         type_ = cast("type", type_)
-        return type_(**kwargs)
+        converted = type_(**kwargs)
+
+        for extension_definition in _get_input_extension_definitions(value):
+            extension_values = _convert_input_field_values(
+                input_value,
+                extension_definition,
+                scalar_registry,
+                config,
+            )
+            for python_name, converted_value in extension_values.items():
+                _set_input_extension_value(converted, python_name, converted_value)
+
+        return converted
 
     raise UnsupportedTypeError(type_)
 
