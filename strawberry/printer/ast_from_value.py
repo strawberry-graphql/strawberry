@@ -82,6 +82,11 @@ def ast_from_leaf_type(serialized: object, type_: GraphQLInputType | None) -> Va
             )
         )
 
+    if isinstance(serialized, (list, tuple)):
+        return ListValueNode(
+            values=tuple(ast_from_leaf_type(item, None) for item in serialized)
+        )
+
     raise TypeError(
         f"Cannot convert value to AST: {inspect(serialized)}."
     )  # pragma: no cover
