@@ -115,10 +115,11 @@ class PythonPlugin(QueryCodegenPlugin):
         if field.alias:
             name = f"# alias for {field.name}\n{field.alias}"
 
-        default_value = ""
+        type_str = self._get_type_name(field.type)
         if field.default_value is not None:
-            default_value = f" = {self._print_argument_value(field.default_value)}"
-        return f"{name}: {self._get_type_name(field.type)}{default_value}"
+            self.imports["typing_extensions"].add("NotRequired")
+            type_str = f"NotRequired[{type_str}]"
+        return f"{name}: {type_str}"
 
     def _print_argument_value(self, argval: GraphQLArgumentValue) -> str:
         if hasattr(argval, "values"):
@@ -155,6 +156,8 @@ class PythonPlugin(QueryCodegenPlugin):
         return f'{value} = "{value}"'
 
     def _print_object_type(self, type_: GraphQLObjectType) -> str:
+        self.imports["typing_extensions"].add("TypedDict")
+
         fields = "\n".join(
             self._print_field(field)
             for field in type_.fields
@@ -163,7 +166,7 @@ class PythonPlugin(QueryCodegenPlugin):
 
         indent = 4 * " "
         lines = [
-            f"class {type_.name}:",
+            f"class {type_.name}(TypedDict):",
         ]
         if type_.graphql_typename:
             lines.append(

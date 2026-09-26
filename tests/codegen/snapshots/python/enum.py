@@ -1,3 +1,4 @@
+from typing_extensions import TypedDict
 from enum import Enum
 
 class Color(Enum):
@@ -5,5 +6,5 @@ class Color(Enum):
     GREEN = "GREEN"
     BLUE = "BLUE"
 
-class OperationNameResult:
+class OperationNameResult(TypedDict):
     enum: Color

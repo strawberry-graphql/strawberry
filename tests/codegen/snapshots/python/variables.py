@@ -1,13 +1,14 @@
+from typing_extensions import NotRequired, TypedDict
 from typing import List, Optional
 
-class OperationNameResult:
+class OperationNameResult(TypedDict):
     with_inputs: bool
 
-class PersonInput:
+class PersonInput(TypedDict):
     name: str
-    age: Optional[int] = None
+    age: NotRequired[Optional[int]]
 
-class ExampleInput:
+class ExampleInput(TypedDict):
     id: str
     name: str
     age: int
@@ -15,7 +16,7 @@ class ExampleInput:
     people: list[PersonInput]
     optional_people: Optional[list[PersonInput]]
 
-class OperationNameVariables:
+class OperationNameVariables(TypedDict):
     id: Optional[str]
     input: ExampleInput
     ids: list[str]

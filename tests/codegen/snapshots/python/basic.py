@@ -1,11 +1,12 @@
+from typing_extensions import TypedDict
 from uuid import UUID
 from datetime import date, datetime, time
 from decimal import Decimal
 
-class OperationNameResultLazy:
+class OperationNameResultLazy(TypedDict):
     something: bool
 
-class OperationNameResult:
+class OperationNameResult(TypedDict):
     id: str
     integer: int
     float: float
