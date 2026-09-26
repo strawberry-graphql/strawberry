@@ -11,7 +11,7 @@ social_messages:
 
 This release fixes a bug with nullable input fields.
 
-Given a Strawberry schema like
+Given a Strawberry schema like the following:
 ```python
 @strawberry.input
 class RunInput:
