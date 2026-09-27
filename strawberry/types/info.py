@@ -9,6 +9,11 @@ from typing import (
 )
 from typing_extensions import TypeVar
 
+from graphql import get_argument_values
+
+from strawberry.utils import IS_GQL_33
+
+from .arguments import convert_arguments
 from .nodes import convert_selections
 
 if TYPE_CHECKING:
@@ -89,6 +94,51 @@ class Info(Generic[ContextType, RootValueType]):
         """The fields that were selected on the current field's type."""
         info = self._raw_info
         return convert_selections(info, info.field_nodes)
+
+    @cached_property
+    def field_args(self) -> dict[str, Any]:
+        """The arguments passed to the current field, converted to strawberry types.
+
+        Scalars are coerced and input types are converted to their proper
+        dataclasses, mirroring the values a resolver receives. Arguments with a
+        default value that were not provided in the query are included with that
+        default; arguments without a default that were not provided are omitted.
+
+        The arguments are read from the first field node; when a field is
+        selected multiple times (for example through fragments) GraphQL requires
+        the arguments to be identical, so the first node is representative.
+
+        Returns an empty dict if the field definition cannot be resolved (for
+        example for introspection fields), since those carry no strawberry
+        arguments.
+        """
+        raw_info = self._raw_info
+        field_node = raw_info.field_nodes[0]
+        field_def = raw_info.parent_type.fields.get(raw_info.field_name)
+        if field_def is None:
+            return {}
+
+        variable_values = raw_info.variable_values
+        if IS_GQL_33:
+            # graphql-core 3.3 expects a ``VariableValues`` wrapper rather than
+            # the plain coerced dict exposed on the resolve info.
+            from graphql.execution.values import (  # type: ignore[attr-defined]
+                VariableValues,  # pyright: ignore[reportAttributeAccessIssue]
+            )
+
+            if not isinstance(variable_values, VariableValues):
+                variable_values = VariableValues(sources={}, coerced=variable_values)
+
+        raw_args = get_argument_values(field_def, field_node, variable_values)
+
+        schema_converter = self.schema.schema_converter
+
+        return convert_arguments(
+            value=raw_args,
+            arguments=self._field.arguments,
+            config=schema_converter.config,
+            scalar_registry=schema_converter.scalar_registry,
+        )
 
     @property
     def context(self) -> ContextType:
