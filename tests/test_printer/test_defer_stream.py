@@ -4,9 +4,6 @@ import textwrap
 
 import strawberry
 from strawberry.schema.config import StrawberryConfig
-from tests.conftest import skip_if_gql_32
-
-pytestmark = skip_if_gql_32("GraphQL 3.3.0 is required for incremental execution")
 
 
 @strawberry.type

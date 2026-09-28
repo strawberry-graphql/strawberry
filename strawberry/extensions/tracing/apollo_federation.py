@@ -77,6 +77,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable, Generator
 
     from graphql import GraphQLResolveInfo
+    from graphql.pyutils import Path
 
     from strawberry.types.execution import ExecutionContext
 
@@ -475,7 +476,7 @@ class ApolloFederationTracingExtension(SchemaExtension):
         # Include path if available
         if info.path:
             path_parts = []
-            current = info.path
+            current: Path | None = info.path
             while current is not None:
                 path_parts.append(current.key)
                 current = current.prev

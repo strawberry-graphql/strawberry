@@ -2,7 +2,6 @@ import textwrap
 
 import strawberry
 from strawberry.federation.schema_directives import Link
-from tests.conftest import skip_if_gql_32
 
 
 def test_link_directive():
@@ -60,7 +59,6 @@ def test_link_directive():
     }
 
 
-@skip_if_gql_32("formatting is different in gql 3.2")
 def test_link_directive_imports():
     @strawberry.type
     class Query:

@@ -28,7 +28,7 @@ from .schema_directive import StrawberryFederationSchemaDirective
 from .versions import format_version, parse_version
 
 if TYPE_CHECKING:
-    from graphql import ExecutionContext as GraphQLExecutionContext
+    from graphql.execution import Executor as GraphQLExecutionContext
 
     from strawberry.extensions import SchemaExtension
     from strawberry.federation.schema_directives import ComposeDirective

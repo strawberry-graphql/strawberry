@@ -11,7 +11,6 @@ from strawberry.schema._graphql_core import (
 )
 from strawberry.schema.config import StrawberryConfig
 from strawberry.types import ExecutionResult, StreamExecutionResult
-from tests.conftest import skip_if_gql_32
 
 
 @strawberry.type
@@ -142,7 +141,6 @@ async def test_async_stream_result_hook_wraps_query_result() -> None:
     assert events == ["entered", "exited"]
 
 
-@skip_if_gql_32("GraphQL 3.3.0 is required for incremental execution")
 @pytest.mark.asyncio
 async def test_stream_result_hook_wraps_incremental_delivery_frames() -> None:
     seen_results: list[StreamExecutionResult] = []
@@ -238,7 +236,6 @@ async def test_mask_errors_before_streaming_subscription_result() -> None:
         await results.aclose()
 
 
-@skip_if_gql_32("GraphQL 3.3.0 is required for incremental execution")
 @pytest.mark.asyncio
 async def test_mask_errors_in_incremental_defer_result() -> None:
     schema = strawberry.Schema(
@@ -259,7 +256,6 @@ async def test_mask_errors_in_incremental_defer_result() -> None:
     assert [error.message for error in errors] == ["Unexpected error."]
 
 
-@skip_if_gql_32("GraphQL 3.3.0 is required for incremental execution")
 @pytest.mark.asyncio
 async def test_mask_errors_in_incremental_completed_result() -> None:
     schema = strawberry.Schema(

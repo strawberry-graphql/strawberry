@@ -120,7 +120,8 @@ class CodegenResult:
 
 
 class HasSelectionSet(Protocol):
-    selection_set: SelectionSetNode | None
+    @property
+    def selection_set(self) -> SelectionSetNode | None: ...
 
 
 def _get_field_name(field: StrawberryField) -> str:
@@ -386,6 +387,9 @@ class QueryCodegen:
             )
 
         if isinstance(selection, InlineFragmentNode):
+            assert selection.type_condition is not None, (
+                "Inline fragments without a type condition are not supported"
+            )
             return GraphQLInlineFragment(
                 selection.type_condition.name.value,
                 self._convert_selection_set(selection.selection_set),
@@ -840,6 +844,9 @@ class QueryCodegen:
         all_common_fields_typename = all(f.name == "__typename" for f in common_fields)
 
         for fragment in fragments:
+            assert fragment.type_condition is not None, (
+                "Inline fragments without a type condition are not supported"
+            )
             type_condition_name = fragment.type_condition.name.value
             fragment_class_name = class_name + type_condition_name
 

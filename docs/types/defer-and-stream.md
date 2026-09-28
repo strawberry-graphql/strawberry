@@ -11,8 +11,8 @@ rather than waiting for the entire response to be ready.
 
 <Note>
 
-This feature requires `graphql-core>=3.3.0a9` and is currently experimental. The
-API and behavior may change in future releases.
+This feature is currently experimental. The API and behavior may change in
+future releases.
 
 **Important limitations:**
 
@@ -21,6 +21,9 @@ API and behavior may change in future releases.
   incremental payloads delivered by `@defer` and `@stream`.
 - This means error masking and other extension functionality will only apply to
   the initial response, not to deferred or streamed data.
+- Incremental delivery requires asynchronous execution. `Schema.execute_sync`
+  and the synchronous integrations (such as the sync Django, Flask and Chalice
+  views) return an error for operations that use `@defer` or `@stream`.
 
 </Note>
 

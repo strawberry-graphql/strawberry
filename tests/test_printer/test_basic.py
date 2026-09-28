@@ -1,15 +1,11 @@
 import textwrap
 from uuid import UUID
 
-import pytest
-
 import strawberry
 from strawberry import UNSET, Maybe, Some
 from strawberry.printer import print_schema
 from strawberry.scalars import JSON
 from strawberry.schema.config import StrawberryConfig
-from strawberry.utils import IS_GQL_32
-from tests.conftest import skip_if_gql_32
 
 
 def test_simple_required_types():
@@ -253,7 +249,6 @@ def test_input_defaults():
     assert print_schema(schema) == textwrap.dedent(expected_type).strip()
 
 
-@skip_if_gql_32("formatting is different in gql 3.2")
 def test_input_other_inputs():
     @strawberry.input
     class Nested:
@@ -294,7 +289,6 @@ def test_input_other_inputs():
     assert print_schema(schema) == textwrap.dedent(expected_type).strip()
 
 
-@skip_if_gql_32("formatting is different in gql 3.2")
 def test_input_defaults_scalars():
     @strawberry.input
     class MyInput:
@@ -332,7 +326,6 @@ def test_input_defaults_scalars():
     assert print_schema(schema) == textwrap.dedent(expected_type).strip()
 
 
-@skip_if_gql_32("formatting is different in gql 3.2")
 def test_arguments_scalar():
     @strawberry.input
     class MyInput:
@@ -447,7 +440,6 @@ def test_root_objects_with_different_names():
     assert print_schema(schema) == textwrap.dedent(expected_type).strip()
 
 
-@skip_if_gql_32("formatting is different in gql 3.2")
 def test_input_with_unset_default():
     @strawberry.input
     class FilterInput:
@@ -487,7 +479,6 @@ def test_input_with_unset_default():
     assert sdl == expected
 
 
-@skip_if_gql_32("formatting is different in gql 3.2")
 def test_input_with_maybe_some_none_default():
     @strawberry.input
     class FilterInput:
@@ -548,29 +539,7 @@ def _get_renamed_maybe_some_none_default_sdl() -> str:
     return print_schema(schema).strip()
 
 
-@pytest.mark.skipif(not IS_GQL_32, reason="formatting is different in gql 3.3")
-def test_input_with_renamed_maybe_some_none_default_gql_32():
-    sdl = _get_renamed_maybe_some_none_default_sdl()
-
-    expected = textwrap.dedent("""
-        input FilterInput {
-          in: String
-        }
-
-        type Query {
-          search(filter: QueryInput!): String!
-        }
-
-        input QueryInput {
-          filter: FilterInput! = {in: null}
-        }
-    """).strip()
-
-    assert sdl == expected
-
-
-@skip_if_gql_32("formatting is different in gql 3.2")
-def test_input_with_renamed_maybe_some_none_default_gql_33():
+def test_input_with_renamed_maybe_some_none_default():
     sdl = _get_renamed_maybe_some_none_default_sdl()
 
     expected = textwrap.dedent("""

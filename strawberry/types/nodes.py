@@ -33,12 +33,23 @@ Directives = dict[str, Arguments]
 Selection = Union["SelectedField", "FragmentSpread", "InlineFragment"]
 
 
+def get_variable_values(info: GraphQLResolveInfo) -> dict[str, Any]:
+    """Return the coerced variable values of the operation.
+
+    Strawberry's executor exposes the plain coerced dict, while graphql-core's
+    own executor (e.g. a custom `execution_context_class` not based on
+    Strawberry's) passes its `VariableValues` container.
+    """
+    variable_values: Any = info.variable_values
+    return getattr(variable_values, "coerced", variable_values)
+
+
 def convert_value(info: GraphQLResolveInfo, node: GQLValueNode) -> Any:
     """Return useful value from any node."""
     if isinstance(node, GQLVariableNode):
         # Look up variable
         name = node.name.value
-        return info.variable_values.get(name)
+        return get_variable_values(info).get(name)
     if isinstance(node, GQLListValueNode):
         return [convert_value(info, value) for value in node.values]
     if isinstance(node, GQLObjectValueNode):
@@ -114,7 +125,9 @@ class FragmentSpread:
 class InlineFragment:
     """Wrapper for a InlineFragmentNode."""
 
-    type_condition: str
+    # `None` for inline fragments without a type condition, e.g.
+    # `... @include(if: $flag) { field }`.
+    type_condition: str | None
     selections: list[Selection]
     directives: Directives
 
@@ -125,7 +138,9 @@ class InlineFragment:
         node: GQLInlineFragmentNode,
     ) -> InlineFragment:
         return cls(
-            type_condition=node.type_condition.name.value,
+            type_condition=(
+                node.type_condition.name.value if node.type_condition else None
+            ),
             selections=convert_selections(
                 info, getattr(node.selection_set, "selections", [])
             ),

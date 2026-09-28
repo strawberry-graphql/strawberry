@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from graphql import GraphQLResolveInfo
+    from graphql.pyutils import Path
 
 
 def is_introspection_key(key: str | int) -> bool:
@@ -16,7 +17,7 @@ def is_introspection_key(key: str | int) -> bool:
 
 
 def is_introspection_field(info: GraphQLResolveInfo) -> bool:
-    path = info.path
+    path: Path | None = info.path
 
     while path:
         if is_introspection_key(path.key):
@@ -26,8 +27,8 @@ def is_introspection_field(info: GraphQLResolveInfo) -> bool:
     return False
 
 
-def get_path_from_info(info: GraphQLResolveInfo) -> list[str]:
-    path = info.path
+def get_path_from_info(info: GraphQLResolveInfo) -> list[str | int]:
+    path: Path | None = info.path
     elements = []
 
     while path:

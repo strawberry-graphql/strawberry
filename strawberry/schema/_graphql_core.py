@@ -1,69 +1,43 @@
 from typing import Any, TypeAlias, Union
 
-try:
-    from graphql.execution import ExecutionContext as GraphQLExecutionContext
-
-    _execution_context_class_arg = "execution_context_class"
-except ImportError:
-    from graphql.execution import (  # type: ignore[attr-defined,no-redef]
-        Executor as GraphQLExecutionContext,  # pyright: ignore[reportAttributeAccessIssue]
-    )
-
-    _execution_context_class_arg = "executor_class"
-
+from graphql import (
+    ExperimentalIncrementalExecutionResults as GraphQLIncrementalExecutionResults,
+)
 from graphql.execution import ExecutionResult as OriginalGraphQLExecutionResult
-from graphql.execution import execute, subscribe
+from graphql.execution import (
+    Executor as GraphQLExecutionContext,
+)
+from graphql.execution import (
+    InitialIncrementalExecutionResult,
+    SubsequentIncrementalExecutionResult,
+    execute,
+    experimental_execute_incrementally,
+    subscribe,
+)
+
+# graphql-core only delivers `@defer`/`@stream` results from `IncrementalExecutor`,
+# which is also what its own `execute` uses by default.
+from graphql.execution.incremental import (
+    IncrementalExecutor as BaseGraphQLExecutionContext,
+)
+from graphql.type.directives import GraphQLDeferDirective, GraphQLStreamDirective
 
 from strawberry.types import ExecutionResult
 
-try:
-    from graphql import (  # type: ignore[attr-defined]
-        ExperimentalIncrementalExecutionResults as GraphQLIncrementalExecutionResults,  # pyright: ignore[reportAttributeAccessIssue]
-    )
-    from graphql.execution import (  # type: ignore[attr-defined]
-        InitialIncrementalExecutionResult,  # pyright: ignore[reportAttributeAccessIssue]
-        SubsequentIncrementalExecutionResult,  # pyright: ignore[reportAttributeAccessIssue]
-        experimental_execute_incrementally,  # pyright: ignore[reportAttributeAccessIssue]
-    )
-    from graphql.type.directives import (  # type: ignore[attr-defined]
-        GraphQLDeferDirective,  # pyright: ignore[reportAttributeAccessIssue]
-        GraphQLStreamDirective,  # pyright: ignore[reportAttributeAccessIssue]
-    )
+incremental_execution_directives = (
+    GraphQLDeferDirective,
+    GraphQLStreamDirective,
+)
 
-    incremental_execution_directives = (
-        GraphQLDeferDirective,
-        GraphQLStreamDirective,
-    )
+GraphQLExecutionResult: TypeAlias = (
+    OriginalGraphQLExecutionResult | InitialIncrementalExecutionResult
+)
 
-    GraphQLExecutionResult: TypeAlias = (
-        OriginalGraphQLExecutionResult | InitialIncrementalExecutionResult
-    )
-
-    # The individual frames produced when an incremental delivery container
-    # (`@defer`/`@stream`) is expanded into a flat stream of results.
-    GraphQLIncrementalResult: TypeAlias = (
-        InitialIncrementalExecutionResult | SubsequentIncrementalExecutionResult
-    )
-
-except ImportError:
-
-    class GraphQLIncrementalExecutionResults:  # type: ignore[no-redef]
-        pass
-
-    class InitialIncrementalExecutionResult:  # type: ignore[no-redef]
-        pass
-
-    class SubsequentIncrementalExecutionResult:  # type: ignore[no-redef]
-        pass
-
-    GraphQLExecutionResult = OriginalGraphQLExecutionResult  # type: ignore
-    # Incremental delivery isn't available on graphql-core < 3.3, so no frame
-    # type exists. Fall back to the (empty) container type so annotations remain
-    # importable at runtime.
-    GraphQLIncrementalResult = GraphQLIncrementalExecutionResults  # type: ignore
-
-    incremental_execution_directives = ()  # type: ignore
-    experimental_execute_incrementally = None
+# The individual frames produced when an incremental delivery container
+# (`@defer`/`@stream`) is expanded into a flat stream of results.
+GraphQLIncrementalResult: TypeAlias = (
+    InitialIncrementalExecutionResult | SubsequentIncrementalExecutionResult
+)
 
 
 def execution_context_class_kwargs(
@@ -72,17 +46,19 @@ def execution_context_class_kwargs(
     if execution_context_class is None:
         return {}
 
-    return {_execution_context_class_arg: execution_context_class}
+    return {"executor_class": execution_context_class}
 
 
 # TODO: give this a better name, maybe also a better place
 ResultType = Union[  # noqa: UP007
     OriginalGraphQLExecutionResult,
+    InitialIncrementalExecutionResult,
     GraphQLIncrementalExecutionResults,
     ExecutionResult,
 ]
 
 __all__ = [
+    "BaseGraphQLExecutionContext",
     "GraphQLExecutionContext",
     "GraphQLExecutionResult",
     "GraphQLIncrementalExecutionResults",

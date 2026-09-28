@@ -2,7 +2,6 @@ import pytest
 
 import strawberry
 from strawberry.schema.config import StrawberryConfig
-from tests.conftest import skip_if_gql_32
 from tests.http.clients.base import HttpClient
 from tests.views.schema import Mutation, MyExtension, Query, Subscription
 
@@ -100,7 +99,6 @@ async def test_operations_can_be_selected_per_query(batching_http_client):
     ]
 
 
-@skip_if_gql_32("formatting is different in gql 3.2")
 async def test_extensions_are_handled_per_query(batching_http_client):
     response = await batching_http_client.post(
         url="/graphql",

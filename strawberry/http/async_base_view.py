@@ -507,7 +507,12 @@ class AsyncBaseHTTPView(
         all_pending: list[Any],
     ) -> tuple[GraphQLHTTPResponse, list[Any]]:
         if isinstance(value, InitialIncrementalExecutionResult):
-            initial_response = await self.process_result(request, value)
+            # The initial incremental result shares `ExecutionResult`'s shape
+            # (data/errors/extensions), which is all `process_result` reads.
+            initial_response = await self.process_result(
+                request,
+                value,  # type: ignore[arg-type]
+            )
             initial_response["hasNext"] = value.has_next
             initial_response["pending"] = [p.formatted for p in value.pending]
             initial_response["extensions"] = value.extensions
@@ -533,7 +538,7 @@ class AsyncBaseHTTPView(
 
             if value.incremental:
                 incremental = []
-                all_pending.extend(value.pending)
+                all_pending.extend(value.pending or ())
 
                 for incremental_value in value.incremental:
                     pending_value = next(

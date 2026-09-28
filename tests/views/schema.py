@@ -5,7 +5,6 @@ from enum import Enum
 from typing import Any
 
 from graphql import GraphQLError
-from graphql.version import VersionInfo, version_info
 
 import strawberry
 from strawberry.extensions import SchemaExtension
@@ -333,9 +332,5 @@ schema = Schema(
     mutation=Mutation,
     subscription=Subscription,
     extensions=[MyExtension],
-    config=StrawberryConfig(
-        enable_experimental_incremental_execution=(
-            version_info >= VersionInfo.from_str("3.3.0a0")
-        )
-    ),
+    config=StrawberryConfig(enable_experimental_incremental_execution=True),
 )

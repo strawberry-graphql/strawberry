@@ -10,7 +10,6 @@ from strawberry.schema.config import StrawberryConfig
 from strawberry.types.execution import ExecutionResult, PreExecutionError
 from strawberry.types.graphql import OperationType
 from strawberry.utils.aio import aclosing
-from tests.conftest import skip_if_gql_32
 
 
 @strawberry.type
@@ -172,7 +171,6 @@ async def test_stream_disallowed_operation_type_yields_single_pre_execution_erro
     assert results[0].errors[0].message == "subscriptions are not allowed"
 
 
-@skip_if_gql_32("GraphQL 3.3.0 is required for incremental execution")
 @pytest.mark.asyncio
 async def test_stream_expands_incremental_delivery():
     @strawberry.type
@@ -322,3 +320,30 @@ async def test_stream_closes_incremental_subsequent_results_when_abandoned(monke
     await results.aclose()
 
     assert subsequent_results.closed
+
+
+def test_defer_with_sync_execution_returns_error():
+    @strawberry.type
+    class Hero:
+        id: strawberry.ID
+        name: str
+
+    @strawberry.type
+    class DeferQuery:
+        @strawberry.field
+        def hero(self) -> Hero:
+            return Hero(id=strawberry.ID("1"), name="Luke Skywalker")
+
+    defer_schema = strawberry.Schema(
+        query=DeferQuery,
+        config=StrawberryConfig(enable_experimental_incremental_execution=True),
+    )
+
+    result = defer_schema.execute_sync("{ hero { id ... @defer { name } } }")
+
+    assert result.data is None
+    assert result.errors
+    assert result.errors[0].message == (
+        "Incremental delivery (@defer and @stream) is not supported with "
+        "synchronous execution, use `Schema.execute` instead."
+    )

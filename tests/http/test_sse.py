@@ -16,7 +16,6 @@ from strawberry.subscriptions import (
     GRAPHQL_WS_PROTOCOL,
 )
 from strawberry.types import ExecutionResult
-from tests.conftest import skip_if_gql_32
 from tests.http.clients.base import HttpClient
 from tests.views.schema import Mutation, MyExtension, Query, Subscription, schema
 
@@ -840,7 +839,6 @@ async def test_sse_response_uses_streaming_status_and_headers(
     ]
 
 
-@skip_if_gql_32("GraphQL 3.3.0 is required for incremental execution")
 async def test_sse_stream_directive(http_client: HttpClient):
     response = await http_client.query(
         method="get",
