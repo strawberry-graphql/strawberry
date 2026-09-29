@@ -80,7 +80,7 @@ from ._graphql_core import (
     subscribe,
 )
 from .base import BaseSchema
-from .config import StrawberryConfig
+from .config import StrawberryConfig, StrawberryConfigDict, normalize_config
 from .directive_collector import SchemaDirectiveCollector
 from .exceptions import CannotGetOperationTypeError, InvalidOperationTypeError
 
@@ -321,7 +321,7 @@ class Schema(BaseSchema):
             type[SchemaExtension] | Callable[[], SchemaExtension]
         ] = (),
         execution_context_class: type[GraphQLExecutionContext] | None = None,
-        config: StrawberryConfig | None = None,
+        config: StrawberryConfig | StrawberryConfigDict | None = None,
         scalar_overrides: (
             Mapping[object, type | ScalarWrapper | ScalarDefinition] | None
         ) = None,
@@ -346,7 +346,9 @@ class Schema(BaseSchema):
             types: A list of additional types that will be included in the schema.
             extensions: A list of Strawberry extensions.
             execution_context_class: The execution context class.
-            config: The configuration for the schema.
+            config: The configuration for the schema, either as a
+                `StrawberryConfig` instance or as a plain dictionary, e.g.
+                `{"auto_camel_case": False}`.
             scalar_overrides: A dictionary of overrides for scalars.
             schema_directives: A list of schema directives for the schema.
             exception_handlers: A list of handlers that can convert Python
@@ -389,7 +391,7 @@ class Schema(BaseSchema):
         self.execution_context_class = (
             execution_context_class or StrawberryGraphQLCoreExecutionContext
         )
-        self.config = config or StrawberryConfig()
+        self.config = normalize_config(config)
         self.exception_handlers = tuple(exception_handlers)
 
         self.schema_converter = GraphQLCoreConverter(
