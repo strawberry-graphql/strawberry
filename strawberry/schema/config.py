@@ -1,16 +1,16 @@
 from __future__ import annotations
 
+# Imported at runtime (not under TYPE_CHECKING) on purpose: StrawberryConfigDict
+# is a public TypedDict, and tools like typing.get_type_hints() can only
+# resolve its field types when the names are available at runtime.
+from collections.abc import Callable, Mapping  # noqa: TC003
 from dataclasses import InitVar, dataclass, field
-from typing import TYPE_CHECKING, Any, TypedDict
+from typing import Any, TypedDict
 
 from strawberry.types.info import Info
+from strawberry.types.scalar import ScalarDefinition  # noqa: TC001
 
 from .name_converter import NameConverter
-
-if TYPE_CHECKING:
-    from collections.abc import Callable, Mapping
-
-    from strawberry.types.scalar import ScalarDefinition
 
 
 class BatchingConfig(TypedDict):
@@ -38,6 +38,7 @@ class StrawberryConfigDict(TypedDict, total=False):
     disable_field_suggestions: bool
     info_class: type[Info]
     enable_experimental_incremental_execution: bool
+    _unsafe_disable_same_type_validation: bool
     scalar_map: Mapping[object, ScalarDefinition]
     batching_config: BatchingConfig | None
 
