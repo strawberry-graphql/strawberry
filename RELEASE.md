@@ -2,14 +2,14 @@
 release type: minor
 social_messages:
   x: >-
-    Strawberry {version} is out! This release adds support for configuring your
-    schema with a plain dictionary, e.g. `config={"auto_camel_case": False}`. 🍓
-    https://strawberry.rocks/release/{version}
+    {project_name} {version} is out! You can now configure your schema with a
+    plain dictionary, no need to instantiate StrawberryConfig for simple
+    setups. 🍓 https://strawberry.rocks/release/{version}
   linkedin: >-
-    Strawberry {version} is out. This release adds support for configuring your
-    schema with a plain dictionary, e.g. `config={"auto_camel_case": False}`,
-    so you no longer need to import and instantiate `StrawberryConfig` for
-    simple configuration.
+    {project_name} {version} is out. This release adds support for passing a
+    plain dictionary as the config argument of strawberry.Schema, so simple
+    schema configuration no longer requires importing and instantiating
+    StrawberryConfig.
 ---
 
 This release adds support for passing a plain dictionary as the `config`

@@ -107,3 +107,15 @@ def test_schema_config_dict_validates_info_class():
 def test_config_dict_is_typed_dict():
     assert StrawberryConfigDict.__total__ is False
     assert "auto_camel_case" in StrawberryConfigDict.__annotations__
+
+
+def test_config_dict_supports_all_dataclass_options():
+    import typing
+
+    hints = typing.get_type_hints(StrawberryConfigDict)
+    assert hints["_unsafe_disable_same_type_validation"] is bool
+
+    config = normalize_config({"_unsafe_disable_same_type_validation": True})
+
+    assert isinstance(config, StrawberryConfig)
+    assert config._unsafe_disable_same_type_validation is True
