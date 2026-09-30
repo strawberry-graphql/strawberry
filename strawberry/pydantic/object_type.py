@@ -6,7 +6,7 @@ into GraphQL types, inputs, and interfaces without requiring a separate wrapper 
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, overload
+from typing import TYPE_CHECKING, Any, TypeVar, overload
 
 if TYPE_CHECKING:
     import builtins
@@ -20,6 +20,10 @@ from strawberry.types.cast import get_strawberry_type_cast
 from strawberry.utils.str_converters import to_camel_case
 
 from .fields import _get_pydantic_fields
+
+# The decorators return the class they're given, so type checkers keep the
+# model's own type instead of a plain BaseModel
+ModelT = TypeVar("ModelT", bound="BaseModel")
 
 
 def _get_interfaces(cls: builtins.type[Any]) -> list[StrawberryObjectDefinition]:
@@ -36,7 +40,7 @@ def _get_interfaces(cls: builtins.type[Any]) -> list[StrawberryObjectDefinition]
 
 
 def _process_pydantic_type(
-    cls: builtins.type[BaseModel],
+    cls: builtins.type[ModelT],
     *,
     name: str | None = None,
     is_input: bool = False,
@@ -44,7 +48,7 @@ def _process_pydantic_type(
     description: str | None = None,
     directives: Sequence[object] | None = (),
     include_computed: bool = False,
-) -> builtins.type[BaseModel]:
+) -> builtins.type[ModelT]:
     """Process a Pydantic BaseModel class and add GraphQL metadata.
 
     Args:
@@ -102,13 +106,13 @@ def _process_pydantic_type(
 
 @overload
 def type(
-    cls: builtins.type[BaseModel],
+    cls: builtins.type[ModelT],
     *,
     name: str | None = None,
     description: str | None = None,
     directives: Sequence[object] | None = (),
     include_computed: bool = False,
-) -> builtins.type[BaseModel]: ...
+) -> builtins.type[ModelT]: ...
 
 
 @overload
@@ -118,20 +122,17 @@ def type(
     description: str | None = None,
     directives: Sequence[object] | None = (),
     include_computed: bool = False,
-) -> Callable[[builtins.type[BaseModel]], builtins.type[BaseModel]]: ...
+) -> Callable[[builtins.type[ModelT]], builtins.type[ModelT]]: ...
 
 
 def type(
-    cls: builtins.type[BaseModel] | None = None,
+    cls: builtins.type[ModelT] | None = None,
     *,
     name: str | None = None,
     description: str | None = None,
     directives: Sequence[object] | None = (),
     include_computed: bool = False,
-) -> (
-    builtins.type[BaseModel]
-    | Callable[[builtins.type[BaseModel]], builtins.type[BaseModel]]
-):
+) -> builtins.type[ModelT] | Callable[[builtins.type[ModelT]], builtins.type[ModelT]]:
     """Decorator to convert a Pydantic BaseModel directly into a GraphQL type.
 
     This decorator allows you to use Pydantic models directly as GraphQL types
@@ -162,7 +163,7 @@ def type(
             age: Annotated[int, strawberry.field(directives=[SomeDirective()])]
     """
 
-    def wrap(cls: builtins.type[BaseModel]) -> builtins.type[BaseModel]:
+    def wrap(cls: builtins.type[ModelT]) -> builtins.type[ModelT]:
         return _process_pydantic_type(
             cls,
             name=name,
@@ -181,12 +182,12 @@ def type(
 
 @overload
 def input(
-    cls: builtins.type[BaseModel],
+    cls: builtins.type[ModelT],
     *,
     name: str | None = None,
     description: str | None = None,
     directives: Sequence[object] | None = (),
-) -> builtins.type[BaseModel]: ...
+) -> builtins.type[ModelT]: ...
 
 
 @overload
@@ -195,19 +196,16 @@ def input(
     name: str | None = None,
     description: str | None = None,
     directives: Sequence[object] | None = (),
-) -> Callable[[builtins.type[BaseModel]], builtins.type[BaseModel]]: ...
+) -> Callable[[builtins.type[ModelT]], builtins.type[ModelT]]: ...
 
 
 def input(
-    cls: builtins.type[BaseModel] | None = None,
+    cls: builtins.type[ModelT] | None = None,
     *,
     name: str | None = None,
     description: str | None = None,
     directives: Sequence[object] | None = (),
-) -> (
-    builtins.type[BaseModel]
-    | Callable[[builtins.type[BaseModel]], builtins.type[BaseModel]]
-):
+) -> builtins.type[ModelT] | Callable[[builtins.type[ModelT]], builtins.type[ModelT]]:
     """Decorator to convert a Pydantic BaseModel directly into a GraphQL input type.
 
     This decorator allows you to use Pydantic models directly as GraphQL input types
@@ -231,7 +229,7 @@ def input(
         # All fields from the Pydantic model will be included in the GraphQL input type
     """
 
-    def wrap(cls: builtins.type[BaseModel]) -> builtins.type[BaseModel]:
+    def wrap(cls: builtins.type[ModelT]) -> builtins.type[ModelT]:
         return _process_pydantic_type(
             cls,
             name=name,
@@ -250,13 +248,13 @@ def input(
 
 @overload
 def interface(
-    cls: builtins.type[BaseModel],
+    cls: builtins.type[ModelT],
     *,
     name: str | None = None,
     description: str | None = None,
     directives: Sequence[object] | None = (),
     include_computed: bool = False,
-) -> builtins.type[BaseModel]: ...
+) -> builtins.type[ModelT]: ...
 
 
 @overload
@@ -266,20 +264,17 @@ def interface(
     description: str | None = None,
     directives: Sequence[object] | None = (),
     include_computed: bool = False,
-) -> Callable[[builtins.type[BaseModel]], builtins.type[BaseModel]]: ...
+) -> Callable[[builtins.type[ModelT]], builtins.type[ModelT]]: ...
 
 
 def interface(
-    cls: builtins.type[BaseModel] | None = None,
+    cls: builtins.type[ModelT] | None = None,
     *,
     name: str | None = None,
     description: str | None = None,
     directives: Sequence[object] | None = (),
     include_computed: bool = False,
-) -> (
-    builtins.type[BaseModel]
-    | Callable[[builtins.type[BaseModel]], builtins.type[BaseModel]]
-):
+) -> builtins.type[ModelT] | Callable[[builtins.type[ModelT]], builtins.type[ModelT]]:
     """Decorator to convert a Pydantic BaseModel directly into a GraphQL interface.
 
     This decorator allows you to use Pydantic models directly as GraphQL interfaces
@@ -301,7 +296,7 @@ def interface(
             id: str
     """
 
-    def wrap(cls: builtins.type[BaseModel]) -> builtins.type[BaseModel]:
+    def wrap(cls: builtins.type[ModelT]) -> builtins.type[ModelT]:
         return _process_pydantic_type(
             cls,
             name=name,
