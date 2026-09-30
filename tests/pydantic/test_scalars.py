@@ -7,6 +7,7 @@ from inline_snapshot import snapshot
 
 import strawberry
 from strawberry.file_uploads import Upload
+from strawberry.pydantic.exceptions import UploadFieldError
 from strawberry.scalars import JSON
 from strawberry.schema.config import StrawberryConfig
 
@@ -114,6 +115,22 @@ def test_upload_fields_on_inputs():
 
     assert not result.errors
     assert result.data == {"createPost": "image content"}
+
+
+@pytest.mark.parametrize(
+    "annotation",
+    [Upload, list[Upload], Upload | None],
+    ids=["upload", "list", "optional"],
+)
+def test_upload_annotations_on_inputs_raise_an_error(annotation: object):
+    with pytest.raises(
+        UploadFieldError,
+        match="Field `image` on pydantic input `CreatePostInput` can't be typed as `Upload`",
+    ):
+
+        @strawberry.pydantic.input
+        class CreatePostInput(pydantic.BaseModel):
+            image: annotation  # type: ignore[valid-type]
 
 
 def test_scalar_map_new_types():

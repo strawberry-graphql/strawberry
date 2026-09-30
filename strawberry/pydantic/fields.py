@@ -23,12 +23,17 @@ from strawberry.exceptions import (
 )
 from strawberry.experimental.pydantic._compat import PydanticCompat
 from strawberry.experimental.pydantic.utils import get_default_factory_for_field
+from strawberry.file_uploads import Upload
 from strawberry.types.base import StrawberryObjectDefinition
 from strawberry.types.field import StrawberryField, _contains_strawberry_field
 from strawberry.types.private import is_private
 from strawberry.utils.typing import is_generic_alias, is_union
 
-from .exceptions import StrawberryFieldAsDefaultError, UnregisteredTypeException
+from .exceptions import (
+    StrawberryFieldAsDefaultError,
+    UnregisteredTypeException,
+    UploadFieldError,
+)
 
 if TYPE_CHECKING:
     from pydantic.fields import FieldInfo
@@ -93,6 +98,12 @@ def _get_strawberry_field_override(
         raise MultipleStrawberryFieldsError(field_name=field_name, cls=cls)
 
     return strawberry_fields[0] if strawberry_fields else None
+
+
+def _contains_upload(annotation: object) -> bool:
+    return annotation is Upload or any(
+        _contains_upload(arg) for arg in get_args(annotation)
+    )
 
 
 def replace_pydantic_types(type_: Any, is_input: bool) -> Any:
@@ -196,6 +207,11 @@ def _get_pydantic_fields(
             # hide it from the GraphQL output too
             if field_info.exclude is True and not is_input:
                 continue
+
+            # Uploads are the integration's file objects, which pydantic would
+            # reject on every request when validating them as `Upload` (bytes)
+            if is_input and _contains_upload(field_info.annotation):
+                raise UploadFieldError(field_name=field_name, cls=origin)
 
         if (base_field := _get_strawberry_base_field(origin, field_name)) is not None:
             fields.append(base_field)

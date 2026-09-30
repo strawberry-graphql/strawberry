@@ -260,7 +260,8 @@ class User(BaseModel):
 
 The same applies to [file uploads](../guides/file-upload.md): uploaded files are
 the file objects of your integration, which Pydantic can't validate as `Upload`,
-so annotate the field with the file type and use `Upload` as its GraphQL type:
+so input fields typed as `Upload` raise an error. Annotate the field with the
+file type and use `Upload` as its GraphQL type instead:
 
 ```python
 from typing import Annotated
