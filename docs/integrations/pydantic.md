@@ -301,6 +301,24 @@ class User(BaseModel):
     address: Address
 ```
 
+Models can reference themselves, and models defined in the same module can
+reference each other:
+
+```python
+@strawberry.pydantic.type
+class Category(BaseModel):
+    name: str
+    children: list["Category"] = []
+```
+
+<Note>
+
+Models in different modules that import each other (using a `TYPE_CHECKING`
+import and `model_rebuild()`) are not supported yet. Define them in the same
+module instead.
+
+</Note>
+
 ### Lists and Collections
 
 Lists of Pydantic models work seamlessly:

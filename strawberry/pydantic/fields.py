@@ -106,12 +106,13 @@ def _contains_upload(annotation: object) -> bool:
     )
 
 
-def replace_pydantic_types(type_: Any, is_input: bool) -> Any:
+def replace_pydantic_types(type_: Any, is_input: bool, model: type[BaseModel]) -> Any:
     """Replace Pydantic types with their Strawberry equivalents for first-class integration."""
     from pydantic import BaseModel
 
     if lenient_issubclass(type_, BaseModel):
-        if hasattr(type_, "__strawberry_definition__"):
+        # `model` can reference itself, but it's only registered after its fields
+        if type_ is model or hasattr(type_, "__strawberry_definition__"):
             return type_
 
         raise UnregisteredTypeException(type_)
@@ -123,13 +124,14 @@ def replace_types_recursively(
     type_: Any,
     is_input: bool,
     compat: PydanticCompat,
+    model: type[BaseModel],
 ) -> Any:
     """Recursively replace Pydantic types with their Strawberry equivalents."""
     # NewTypes are resolved by the schema's scalar registry, like with
     # `@strawberry.type`: that's how `strawberry.ID`, `JSON`, `Upload` and
     # `scalar_map` scalars work, so they must not be replaced by their supertype
     basic_type = type_ if is_new_type(type_) else compat.get_basic_type(type_)
-    replaced_type = replace_pydantic_types(basic_type, is_input)
+    replaced_type = replace_pydantic_types(basic_type, is_input, model)
 
     origin = get_origin(type_)
 
@@ -137,7 +139,7 @@ def replace_types_recursively(
         return replaced_type
 
     converted = tuple(
-        replace_types_recursively(t, is_input=is_input, compat=compat)
+        replace_types_recursively(t, is_input=is_input, compat=compat, model=model)
         for t in get_args(replaced_type)
     )
 
@@ -154,10 +156,15 @@ def replace_types_recursively(
 
 
 def get_type_for_field(
-    field: CompatModelField, is_input: bool, compat: PydanticCompat
+    field: CompatModelField,
+    is_input: bool,
+    compat: PydanticCompat,
+    model: type[BaseModel],
 ) -> Any:
-    """Get the GraphQL type for a Pydantic field."""
-    return replace_types_recursively(field.outer_type_, is_input, compat=compat)
+    """Get the GraphQL type for a field of `model`."""
+    return replace_types_recursively(
+        field.outer_type_, is_input, compat=compat, model=model
+    )
 
 
 def _get_pydantic_fields(
@@ -243,7 +250,7 @@ def _get_pydantic_fields(
             module = sys.modules.get(origin.__module__)
 
             strawberry_field.type_annotation = StrawberryAnnotation(
-                get_type_for_field(pydantic_field, is_input, compat=compat),
+                get_type_for_field(pydantic_field, is_input, compat=compat, model=cls),
                 namespace=vars(module) if module is not None else None,
             )
         elif strawberry_field.type_annotation.namespace is None:
