@@ -124,3 +124,85 @@ def test_strawberry_private_fields_not_in_schema():
     assert result.errors[0].message == snapshot(
         "Cannot query field 'password' on type 'User'."
     )
+
+
+def test_private_fields_declared_on_a_base_model_are_excluded():
+    class UserBase(pydantic.BaseModel):
+        name: str
+        password: strawberry.Private[str]
+
+    @strawberry.pydantic.type
+    class User(UserBase):
+        pass
+
+    definition = get_object_definition(User, strict=True)
+
+    assert [f.python_name for f in definition.fields] == ["name"]
+
+
+def test_private_fields_declared_on_a_strawberry_interface_are_excluded():
+    @strawberry.interface
+    class Account:
+        password: strawberry.Private[str]
+
+    @strawberry.pydantic.type
+    class User(pydantic.BaseModel, Account):
+        name: str
+
+    definition = get_object_definition(User, strict=True)
+
+    assert [f.python_name for f in definition.fields] == ["name"]
+
+
+def test_excluded_fields_are_not_exposed_on_types():
+    @strawberry.pydantic.type
+    class User(pydantic.BaseModel):
+        name: str
+        api_key: str = pydantic.Field(exclude=True)
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def user(self) -> User:
+            return User(name="Ada", api_key="secret")
+
+    schema = strawberry.Schema(query=Query)
+
+    assert str(schema) == snapshot("""\
+type Query {
+  user: User!
+}
+
+type User {
+  name: String!
+}\
+""")
+
+
+def test_excluded_fields_are_not_exposed_on_interfaces():
+    @strawberry.pydantic.interface
+    class Node(pydantic.BaseModel):
+        id: str
+        internal_id: int = pydantic.Field(exclude=True)
+
+    @strawberry.pydantic.type
+    class User(Node):
+        name: str
+
+    node_fields = get_object_definition(Node, strict=True).fields
+    user_fields = get_object_definition(User, strict=True).fields
+
+    assert [f.python_name for f in node_fields] == ["id"]
+    assert [f.python_name for f in user_fields] == ["id", "name"]
+
+
+def test_excluded_fields_are_kept_on_inputs():
+    # `exclude` only affects pydantic's serialization, inputs still accept it
+    @strawberry.pydantic.input
+    class CreateUserInput(pydantic.BaseModel):
+        name: str
+        password: str = pydantic.Field(exclude=True)
+
+    definition = get_object_definition(CreateUserInput, strict=True)
+
+    assert [f.python_name for f in definition.fields] == ["name", "password"]

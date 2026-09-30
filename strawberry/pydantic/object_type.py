@@ -66,7 +66,6 @@ def _process_pydantic_type(
     # All fields from the Pydantic model are included by default, except strawberry.Private fields
     fields = _get_pydantic_fields(
         cls=cls,
-        original_type_annotations={},
         is_input=is_input,
         include_computed=include_computed,
     )
@@ -160,7 +159,7 @@ def type(
         @strawberry.pydantic.type
         class User(BaseModel):
             name: str
-            age: int = strawberry.field(directives=[SomeDirective()])
+            age: Annotated[int, strawberry.field(directives=[SomeDirective()])]
     """
 
     def wrap(cls: builtins.type[BaseModel]) -> builtins.type[BaseModel]:

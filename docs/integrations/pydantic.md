@@ -192,6 +192,23 @@ class Query:
         return None
 ```
 
+Fields excluded from Pydantic's serialization with `Field(exclude=True)` are not
+exposed on GraphQL types and interfaces either, so GraphQL never returns more
+than `model_dump()` does:
+
+```python
+from pydantic import BaseModel, Field
+
+
+@strawberry.pydantic.type
+class ApiClient(BaseModel):
+    name: str
+    api_key: str = Field(exclude=True)  # Not exposed in GraphQL
+```
+
+Input types are not affected: clients can still send fields marked with
+`exclude=True`.
+
 ## Advanced Usage
 
 ### Nested Types
@@ -477,6 +494,14 @@ When using `strawberry.field()` with Pydantic models, you can specify:
 - **`description`**: Override the Pydantic field description for GraphQL
 - **`name`**: Override the GraphQL field name (takes precedence over Pydantic
   aliases)
+- **`graphql_type`**: Override the GraphQL type of the field
+
+`strawberry.field()` must be used inside `Annotated`. Assigning it as the
+default value (`email: str = strawberry.field(...)`) raises an error, because
+Pydantic would keep only its default and discard the rest of its configuration.
+
+Customizations declared on a base model or on an interface are inherited by its
+subclasses and implementations.
 
 #### Input Types with Directives
 
