@@ -35,7 +35,7 @@ if TYPE_CHECKING:
 
     from strawberry.experimental.pydantic._compat import CompatModelField
 
-from strawberry.experimental.pydantic._compat import lenient_issubclass
+from strawberry.experimental.pydantic._compat import is_new_type, lenient_issubclass
 
 
 def _get_field_origins(cls: type[BaseModel]) -> dict[str, type]:
@@ -114,8 +114,10 @@ def replace_types_recursively(
     compat: PydanticCompat,
 ) -> Any:
     """Recursively replace Pydantic types with their Strawberry equivalents."""
-    # For now, use a simpler approach similar to the experimental module
-    basic_type = compat.get_basic_type(type_)
+    # NewTypes are resolved by the schema's scalar registry, like with
+    # `@strawberry.type`: that's how `strawberry.ID`, `JSON`, `Upload` and
+    # `scalar_map` scalars work, so they must not be replaced by their supertype
+    basic_type = type_ if is_new_type(type_) else compat.get_basic_type(type_)
     replaced_type = replace_pydantic_types(basic_type, is_input)
 
     origin = get_origin(type_)
