@@ -1,6 +1,26 @@
 CHANGELOG
 =========
 
+0.328.0 - 2026-09-30
+--------------------
+
+This release adds support for graphql-core 3.3.0 and drops support for
+graphql-core 3.2 and the 3.3 pre-releases. See the
+[breaking changes](https://strawberry.rocks/docs/breaking-changes/0.328.0) page
+for upgrade notes.
+
+It also fixes:
+
+- `@defer` and `@stream` returning a single, non-incremental result on
+  graphql-core 3.3.0.
+- `@defer` and `@stream` in synchronous execution (`Schema.execute_sync` and
+  the sync integrations) now return a clear error instead of crashing.
+- Module-level lazy aliases (`Annotated["User", strawberry.lazy(...)]`) under
+  `from __future__ import annotations` failing to resolve in some cases.
+- `info.selected_fields` crashing on inline fragments without a type condition.
+
+This release was contributed by [@patrick91](https://github.com/patrick91) in [#4641](https://github.com/strawberry-graphql/strawberry/pull/4641)
+
 0.327.7 - 2026-09-07
 --------------------
 
