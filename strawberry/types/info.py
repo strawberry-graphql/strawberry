@@ -9,7 +9,7 @@ from typing import (
 )
 from typing_extensions import TypeVar
 
-from .nodes import convert_selections
+from .nodes import convert_selections, get_variable_values
 
 if TYPE_CHECKING:
     from graphql import GraphQLResolveInfo, OperationDefinitionNode
@@ -108,7 +108,7 @@ class Info(Generic[ContextType, RootValueType]):
     @property
     def variable_values(self) -> dict[str, Any]:
         """The variable values passed to the query execution."""
-        return self._raw_info.variable_values
+        return get_variable_values(self._raw_info)
 
     @property
     def return_type(

@@ -6,7 +6,6 @@ from graphql import get_argument_values
 
 from strawberry.extensions import SchemaExtension
 from strawberry.types.arguments import convert_arguments
-from strawberry.utils import IS_GQL_33
 from strawberry.utils.await_maybe import await_maybe
 
 if TYPE_CHECKING:
@@ -83,8 +82,8 @@ def process_directive(
     assert directive_definition is not None, f"Directive {directive_name} not found"
 
     variable_values: Any = info.variable_values
-    if IS_GQL_33 and not hasattr(variable_values, "coerced"):
-        # Strawberry exposes a plain dict, while graphql-core 3.3 expects its
+    if not hasattr(variable_values, "coerced"):
+        # Strawberry exposes a plain dict, while graphql-core expects its
         # VariableValues container when coercing arguments.
         from graphql.execution import values as execution_values
 

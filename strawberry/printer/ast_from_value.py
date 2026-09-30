@@ -4,7 +4,7 @@ import dataclasses
 import re
 from collections.abc import Mapping
 from math import isfinite
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any
 
 from graphql.language import (
     BooleanValueNode,
@@ -34,10 +34,7 @@ from strawberry.types.base import StrawberryMaybe, has_object_definition
 if TYPE_CHECKING:
     from graphql.language import ValueNode
     from graphql.type import (
-        GraphQLInputObjectType,
         GraphQLInputType,
-        GraphQLList,
-        GraphQLNonNull,
     )
 
     from strawberry.types.field import StrawberryField
@@ -187,7 +184,6 @@ def ast_from_value(
     # basic types, namely JSON scalar types
 
     if is_non_null_type(type_):
-        type_ = cast("GraphQLNonNull", type_)
         ast_value = ast_from_value(
             value,
             type_.of_type,
@@ -208,7 +204,6 @@ def ast_from_value(
     # Convert Python list to GraphQL list. If the GraphQLType is a list, but the value
     # is not a list, convert the value using the list's item type.
     if is_list_type(type_):
-        type_ = cast("GraphQLList", type_)
         item_type = type_.of_type
         if is_iterable(value):
             maybe_value_nodes = (
@@ -230,7 +225,6 @@ def ast_from_value(
         if value is None or not isinstance(value, Mapping):
             return None
 
-        type_ = cast("GraphQLInputObjectType", type_)
         field_nodes = []
         for field_name, field in type_.fields.items():
             field_python_name = get_field_python_name(field)
@@ -262,7 +256,7 @@ def ast_from_value(
     if is_leaf_type(type_):
         # Since value is an internally represented value, it must be serialized to an
         # externally represented value before converting into an AST.
-        serialized = type_.serialize(value)  # type: ignore
+        serialized = type_.serialize(value)
         if serialized is None or serialized is Undefined:
             return None  # pragma: no cover
 

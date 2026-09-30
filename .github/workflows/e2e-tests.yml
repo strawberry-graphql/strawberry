@@ -41,15 +41,12 @@ jobs:
           python-version: "3.12"
 
       - name: Install Python dependencies
-        run: |
-          uv sync
-          uv pip install graphql-core==3.3.0rc0
+        run: uv sync
 
       - name: Start FastAPI server
         run: |
           cd e2e
-          # --no-sync prevents uv from reverting graphql-core to lockfile version
-          uv run --no-sync fastapi dev app.py --port 8000 &
+          uv run fastapi dev app.py --port 8000 &
           echo $! > server.pid
           sleep 5  # Wait for server to start
 

@@ -10,22 +10,12 @@ from typing import (
 from typing_extensions import NotRequired, Protocol, TypedDict
 
 from graphql import specified_rules
-
-try:
-    from graphql.execution import (  # type: ignore[attr-defined]
-        InitialIncrementalExecutionResult as _InitialIncrementalExecutionResult,  # pyright: ignore[reportAttributeAccessIssue]
-    )
-    from graphql.execution import (  # type: ignore[attr-defined]
-        SubsequentIncrementalExecutionResult as _SubsequentIncrementalExecutionResult,  # pyright: ignore[reportAttributeAccessIssue]
-    )
-except ImportError:
-
-    class _InitialIncrementalExecutionResult:  # type: ignore[no-redef]
-        extensions: dict[str, Any] | None
-
-    class _SubsequentIncrementalExecutionResult:  # type: ignore[no-redef]
-        extensions: dict[str, Any] | None
-
+from graphql.execution import (
+    InitialIncrementalExecutionResult as _InitialIncrementalExecutionResult,
+)
+from graphql.execution import (
+    SubsequentIncrementalExecutionResult as _SubsequentIncrementalExecutionResult,
+)
 
 from strawberry.utils.operation import get_first_operation, get_operation_type
 
@@ -67,7 +57,7 @@ class ExecutionContext:
     # accessed by extensions
     graphql_document: DocumentNode | None = None
     pre_execution_errors: list[GraphQLError] | None = None
-    result: GraphQLExecutionResult | None = None
+    result: GraphQLExecutionResult | ExecutionResult | None = None
     extensions_results: dict[str, Any] = dataclasses.field(default_factory=dict)
 
     operation_extensions: dict[str, Any] | None = None

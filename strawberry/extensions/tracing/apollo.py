@@ -33,7 +33,7 @@ class ApolloStepStats:
 
 @dataclasses.dataclass
 class ApolloResolverStats:
-    path: list[str]
+    path: list[str | int]
     parent_type: Any
     field_name: str
     return_type: Any

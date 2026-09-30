@@ -23,7 +23,9 @@ class GraphQLHTTPResponse(TypedDict, total=False):
 
 def process_result(result: ResultType) -> GraphQLHTTPResponse:
     if isinstance(result, GraphQLIncrementalExecutionResults):
-        return result
+        # Streamed by the views through the multipart transport, not as a
+        # single JSON response.
+        return result  # type: ignore[return-value]
 
     errors, extensions = result.errors, result.extensions
     data: GraphQLHTTPResponse = {

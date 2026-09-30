@@ -76,7 +76,6 @@ from strawberry.types.private import is_private
 from strawberry.types.scalar import ScalarWrapper, scalar
 from strawberry.types.union import StrawberryUnion
 from strawberry.types.unset import UNSET
-from strawberry.utils import IS_GQL_32
 from strawberry.utils.await_maybe import await_maybe
 
 from . import compat
@@ -91,6 +90,7 @@ if TYPE_CHECKING:
         GraphQLOutputType,
         GraphQLResolveInfo,
     )
+    from graphql.language import ConstValueNode
 
     from strawberry.directive import StrawberryDirective
     from strawberry.schema.config import StrawberryConfig
@@ -296,12 +296,7 @@ class CustomGraphQLEnumType(GraphQLEnumType):
                 f"Invalid value for enum {self.name}: {output_value}"
             )  # pragma: no cover
 
-        if IS_GQL_32:
-            return super().serialize(output_value)
-
-        return super().coerce_output_value(  # type: ignore[misc]  # pyright: ignore[reportAttributeAccessIssue]
-            output_value
-        )
+        return super().coerce_output_value(output_value)
 
     def parse_value(self, input_value: str, hide_suggestions: bool = False) -> Any:
         return self.coerce_input_value(input_value, hide_suggestions)
@@ -309,13 +304,8 @@ class CustomGraphQLEnumType(GraphQLEnumType):
     def coerce_input_value(
         self, input_value: str, hide_suggestions: bool = False
     ) -> Any:
-        if IS_GQL_32:
-            return self.wrapped_cls(super().parse_value(input_value))
-
         return self.wrapped_cls(
-            super().coerce_input_value(  # type: ignore[misc]  # pyright: ignore[reportAttributeAccessIssue]
-                input_value, hide_suggestions
-            )
+            super().coerce_input_value(input_value, hide_suggestions)
         )
 
     def parse_literal(
@@ -324,18 +314,16 @@ class CustomGraphQLEnumType(GraphQLEnumType):
         _variables: dict[str, Any] | None = None,
         hide_suggestions: bool = False,
     ) -> Any:
-        return self.coerce_input_literal(value_node, hide_suggestions)
+        # Variables are resolved before literals reach the enum type.
+        return self.coerce_input_literal(
+            cast("ConstValueNode", value_node), hide_suggestions
+        )
 
     def coerce_input_literal(
-        self, value_node: ValueNode, hide_suggestions: bool = False
+        self, value_node: ConstValueNode, hide_suggestions: bool = False
     ) -> Any:
-        if IS_GQL_32:
-            return self.wrapped_cls(super().parse_literal(value_node, None))
-
         return self.wrapped_cls(
-            super().coerce_input_literal(  # type: ignore[misc]  # pyright: ignore[reportAttributeAccessIssue]
-                value_node, hide_suggestions
-            )
+            super().coerce_input_literal(value_node, hide_suggestions)
         )
 
 

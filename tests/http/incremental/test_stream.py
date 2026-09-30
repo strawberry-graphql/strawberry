@@ -3,10 +3,7 @@ import contextlib
 import pytest
 from inline_snapshot import snapshot
 
-from tests.conftest import skip_if_gql_32
 from tests.http.clients.base import HttpClient
-
-pytestmark = skip_if_gql_32("GraphQL 3.3.0 is required for incremental execution")
 
 
 async def test_basic_stream(http_client: HttpClient):

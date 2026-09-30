@@ -303,7 +303,7 @@ schema = strawberry.Schema(
 </details>
 
 <details>
-  <summary>Operation Extensions (Requires GraphQL 3.3)</summary>
+  <summary>Operation Extensions</summary>
 
 ```python
 import time

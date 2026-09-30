@@ -1,5 +1,6 @@
 import textwrap
 from textwrap import dedent
+from typing import Any
 from unittest.mock import patch
 
 import pytest
@@ -11,7 +12,8 @@ from strawberry.extensions import (
     DisableValidation,
     SchemaExtension,
 )
-from strawberry.utils import IS_GQL_32
+from strawberry.schema.config import StrawberryConfig
+from strawberry.schema.schema import StrawberryGraphQLCoreExecutionContext
 
 
 @pytest.mark.parametrize("validate_queries", [True, False])
@@ -147,18 +149,7 @@ async def test_sending_wrong_variables():
         root_value=Query(),
     )
 
-    expected_error = (
-        """
-        Argument 'value' has invalid value 123.
-
-        GraphQL request:3:28
-        2 |         query {
-        3 |             example(value: 123)
-          |                            ^
-        4 |         }
-        """
-        if IS_GQL_32
-        else """
+    expected_error = """
         Argument 'value' has invalid value: String cannot represent a non string value: 123
 
         GraphQL request:3:28
@@ -167,7 +158,6 @@ async def test_sending_wrong_variables():
           |                            ^
         4 |         }
         """
-    )
     assert str(result.errors[0]) == textwrap.dedent(expected_error).strip()
 
 
@@ -486,3 +476,43 @@ def test_partial_responses():
     assert result.data == {"example": "hi", "thisFails": None}
     assert result.errors
     assert result.errors[0].message == "this field fails"
+
+
+@pytest.mark.asyncio
+async def test_defer_with_custom_execution_context_class():
+    built_resolve_infos: list[str] = []
+
+    class CustomExecutionContext(StrawberryGraphQLCoreExecutionContext):
+        def build_resolve_info(
+            self, field_def: Any, field_nodes: Any, *args: Any, **kwargs: Any
+        ) -> Any:
+            built_resolve_infos.append(field_nodes[0].name.value)
+            return super().build_resolve_info(field_def, field_nodes, *args, **kwargs)
+
+    @strawberry.type
+    class Hero:
+        id: strawberry.ID
+
+        @strawberry.field
+        async def name(self) -> str:
+            return "Luke Skywalker"
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def hero(self) -> Hero:
+            return Hero(id=strawberry.ID("1"))
+
+    schema = strawberry.Schema(
+        query=Query,
+        execution_context_class=CustomExecutionContext,
+        config=StrawberryConfig(enable_experimental_incremental_execution=True),
+    )
+
+    result = await schema.execute("{ hero { id ... @defer { name } } }")
+
+    assert result.initial_result.formatted["data"] == {"hero": {"id": "1"}}
+    subsequent = [item.formatted async for item in result.subsequent_results]
+    assert subsequent[0]["incremental"][0]["data"] == {"name": "Luke Skywalker"}
+    # The custom overrides still run, including for the deferred field.
+    assert built_resolve_infos == ["hero", "id", "name"]

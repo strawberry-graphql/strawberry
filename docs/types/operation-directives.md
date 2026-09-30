@@ -40,9 +40,8 @@ is enabled, these additional directives become available:
 
 <Note>
 
-These experimental directives require `graphql-core>=3.3.0a9` and must be
-enabled via schema configuration. See [Defer and Stream](./defer-and-stream) for
-detailed usage information.
+These experimental directives must be enabled via schema configuration. See
+[Defer and Stream](./defer-and-stream) for detailed usage information.
 
 </Note>
 

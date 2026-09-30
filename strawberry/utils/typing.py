@@ -199,12 +199,30 @@ def _get_namespace_from_ast(
     extra: dict[str, Any] = {}
 
     if isinstance(expr, ast.Expr) and isinstance(
-        expr.value, (ast.BinOp, ast.Subscript)
+        expr.value, (ast.BinOp, ast.Name, ast.Subscript)
     ):
         extra.update(_get_namespace_from_ast(expr.value, globalns, localns))
     elif isinstance(expr, ast.BinOp):
         for elt in (expr.left, expr.right):
             extra.update(_get_namespace_from_ast(elt, globalns, localns))
+    elif isinstance(expr, ast.Name):
+        # A name may refer to a module-level lazy alias such as
+        # `LazyUser = Annotated["User", strawberry.lazy("module")]`, whose target
+        # only exists under `TYPE_CHECKING`. Resolve the alias target through its
+        # lazy reference so that _eval_type can resolve the inner forward ref.
+        alias = (localns or {}).get(expr.id, (globalns or {}).get(expr.id))
+        if (
+            get_origin(alias) is Annotated
+            and (alias_args := get_args(alias))
+            and isinstance(alias_args[0], ForwardRef)
+        ):
+            type_name = alias_args[0].__forward_arg__
+            already_resolved = (globalns and type_name in globalns) or (
+                localns and type_name in localns
+            )
+            for arg in alias_args[1:]:
+                if isinstance(arg, StrawberryLazyReference) and not already_resolved:
+                    extra[type_name] = arg.resolve_forward_ref(alias_args[0])
     elif (
         isinstance(expr, ast.Subscript)
         and isinstance(expr.value, ast.Name)
@@ -294,23 +312,7 @@ def eval_type(
         if sys.version_info >= (3, 13):
             extra = {"type_params": None}
 
-        type_ = _eval_type(type_, globalns, localns, **extra)
-
-        # The forward ref may have resolved to a module-level alias such as
-        # `Annotated[ForwardRef("User"), StrawberryLazyReference(...)]`. The
-        # inner ForwardRef won't be resolved by `_eval_type` because its
-        # target only exists under `TYPE_CHECKING`; use the lazy reference
-        # to convert it into a LazyType, preserving the Annotated wrapper.
-        if (
-            get_origin(type_) is Annotated
-            and (args := get_args(type_))
-            and isinstance(args[0], ForwardRef)
-        ):
-            for arg in args[1:]:
-                if isinstance(arg, StrawberryLazyReference):
-                    return Annotated[(arg.resolve_forward_ref(args[0]), *args[1:])]
-
-        return type_
+        return _eval_type(type_, globalns, localns, **extra)
 
     origin = get_origin(type_)
     if origin is not None:

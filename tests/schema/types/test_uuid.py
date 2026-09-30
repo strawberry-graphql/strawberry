@@ -4,7 +4,6 @@ import pytest
 from graphql import GraphQLError
 
 import strawberry
-from strawberry.utils import IS_GQL_32
 
 
 def test_uuid():
@@ -66,10 +65,7 @@ def test_serialization_of_incorrect_uuid_string():
     assert result.errors
     assert isinstance(result.errors[0], GraphQLError)
     expected_message = (
-        "Variable '$value' got invalid value 'fail'; Value cannot represent a "
-        'UUID: "fail". badly formed hexadecimal UUID string'
-        if IS_GQL_32
-        else "Variable '$value' has invalid value: Value cannot represent a "
+        "Variable '$value' has invalid value: Value cannot represent a "
         'UUID: "fail". badly formed hexadecimal UUID string'
     )
     assert result.errors[0].message == expected_message

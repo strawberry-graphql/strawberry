@@ -3,12 +3,9 @@ from inline_snapshot import snapshot
 
 import strawberry
 from strawberry.schema.config import StrawberryConfig
-from tests.conftest import skip_if_gql_32
 from tests.schema.extensions.schema_extensions.conftest import (
     ExampleExtension,
 )
-
-pytestmark = skip_if_gql_32("GraphQL 3.3.0 is required for incremental execution")
 
 
 @pytest.mark.xfail(reason="Not fully supported just yet")

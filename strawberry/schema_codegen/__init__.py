@@ -581,7 +581,7 @@ def _get_class_definition(
                     imports,
                     is_input_field=is_input_type,
                 )
-                for field in definition.fields
+                for field in definition.fields or ()
             ]
         ),
         bases=[cst.Arg(cst.Name(interface)) for interface in interfaces],
@@ -616,7 +616,7 @@ def _get_enum_definition(definition: EnumTypeDefinitionNode) -> Definition:
         name=cst.Name(definition.name.value),
         bases=[cst.Arg(cst.Name("Enum"))],
         body=cst.IndentedBlock(
-            body=[_get_enum_value(value) for value in definition.values]
+            body=[_get_enum_value(value) for value in definition.values or ()]
         ),
         decorators=[decorator],
     )
@@ -697,7 +697,7 @@ def _get_union_definition(definition: UnionTypeDefinitionNode) -> Definition:
     name = definition.name.value
 
     types = cst.parse_expression(
-        " | ".join([type_.name.value for type_ in definition.types])
+        " | ".join([type_.name.value for type_ in definition.types or ()])
     )
 
     simple_statement = cst.SimpleStatementLine(
@@ -725,7 +725,7 @@ def _get_union_definition(definition: UnionTypeDefinitionNode) -> Definition:
         ]
     )
     # Unions must be emitted after their member types.
-    member_names = [type_.name.value for type_ in definition.types]
+    member_names = [type_.name.value for type_ in definition.types or ()]
     return Definition(
         simple_statement,
         member_names,

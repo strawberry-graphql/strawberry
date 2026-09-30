@@ -245,6 +245,58 @@ def test_info_arguments():
     ]
 
 
+def test_info_inline_fragment_without_type_condition():
+    @strawberry.type
+    class Result:
+        ok: bool
+
+    selected_fields = None
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def hello(self, info: strawberry.Info[str, str]) -> Result:
+            nonlocal selected_fields
+            selected_fields = info.selected_fields
+            return Result(ok=True)
+
+    schema = strawberry.Schema(query=Query)
+    query = """
+    query ($flag: Boolean!) {
+        hello {
+            ... @include(if: $flag) {
+                ok
+            }
+        }
+    }
+    """
+    result = schema.execute_sync(query, variable_values={"flag": True})
+
+    assert not result.errors
+    assert selected_fields == [
+        SelectedField(
+            name="hello",
+            directives={},
+            alias=None,
+            arguments={},
+            selections=[
+                InlineFragment(
+                    type_condition=None,
+                    directives={"include": {"if": True}},
+                    selections=[
+                        SelectedField(
+                            name="ok",
+                            directives={},
+                            arguments={},
+                            selections=[],
+                        )
+                    ],
+                ),
+            ],
+        )
+    ]
+
+
 def test_info_selected_fields_undefined_variable():
     @strawberry.type
     class Result:

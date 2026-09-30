@@ -63,12 +63,12 @@ from strawberry.types.execution import (
     PreExecutionError,
 )
 from strawberry.types.graphql import OperationType
-from strawberry.utils import IS_GQL_32, IS_GQL_33
 from strawberry.utils.aio import aclosing
 from strawberry.utils.await_maybe import await_maybe
 
 from . import compat
 from ._graphql_core import (
+    BaseGraphQLExecutionContext,
     GraphQLExecutionContext,
     GraphQLIncrementalExecutionResults,
     GraphQLIncrementalResult,
@@ -266,7 +266,7 @@ class _OperationContextAwareGraphQLResolveInfo(NamedTuple):  # pyright: ignore
     operation_extensions: dict[str, Any]
 
 
-class StrawberryGraphQLCoreExecutionContext(GraphQLExecutionContext):
+class StrawberryGraphQLCoreExecutionContext(BaseGraphQLExecutionContext):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         operation_extensions = kwargs.pop("operation_extensions", None)
 
@@ -274,37 +274,32 @@ class StrawberryGraphQLCoreExecutionContext(GraphQLExecutionContext):
 
         self.operation_extensions = operation_extensions
 
-    if IS_GQL_33:
-
-        def build_resolve_info(
-            self,
-            field_def: GraphQLField,
-            field_nodes: list[FieldNode],
-            parent_type: GraphQLObjectType,
-            path: Path,
-        ) -> GraphQLResolveInfo:
-            fragments = getattr(self, "fragment_definitions", self.fragments)
-            variable_values = getattr(
-                self.variable_values, "coerced", self.variable_values
-            )
-
-            return _OperationContextAwareGraphQLResolveInfo(  # type: ignore
-                field_nodes[0].name.value,
-                field_nodes,
-                field_def.type,
-                parent_type,
-                path,
-                self.schema,
-                fragments,
-                self.root_value,
-                self.operation,
-                variable_values,
-                self.context_value,
-                self.is_awaitable,
-                getattr(self, "abort_signal", None),
-                getattr(self, "async_helpers", None),
-                self.operation_extensions,
-            )
+    def build_resolve_info(
+        self,
+        field_def: GraphQLField,
+        field_nodes: list[FieldNode],
+        parent_type: GraphQLObjectType,
+        path: Path,
+    ) -> GraphQLResolveInfo:
+        return _OperationContextAwareGraphQLResolveInfo(  # type: ignore
+            field_nodes[0].name.value,
+            field_nodes,
+            field_def.type,
+            parent_type,
+            path,
+            self.schema,
+            self.fragment_definitions,
+            self.root_value,
+            self.operation,
+            # Resolvers receive the plain coerced dict rather than graphql-core's
+            # VariableValues container.
+            self.variable_values.coerced,
+            self.context_value,
+            self.is_awaitable,
+            self.abort_signal,
+            self.async_helpers,
+            self.operation_extensions,
+        )
 
 
 class Schema(BaseSchema):
@@ -553,12 +548,12 @@ class Schema(BaseSchema):
             )
 
         if self.config.enable_experimental_incremental_execution:
-            for directive in incremental_execution_directives:
+            for incremental_directive in incremental_execution_directives:
                 _register_graphql_directive(
                     registry,
-                    directive,
-                    directive,
-                    f"the experimental GraphQL directive '@{directive.name}'",
+                    incremental_directive,
+                    incremental_directive,
+                    f"the experimental GraphQL directive '@{incremental_directive.name}'",
                 )
 
         return tuple(directive for directive, _, _ in registry.values())
@@ -591,9 +586,6 @@ class Schema(BaseSchema):
         *,
         sync: bool = False,
     ) -> dict[str, Any]:
-        if not IS_GQL_33:
-            return {}
-
         kwargs: dict[str, Any] = {"operation_extensions": operation_extensions}
         if sync:
             kwargs["is_async_iterable"] = lambda _x: False
@@ -770,7 +762,10 @@ class Schema(BaseSchema):
     ) -> ExecutionResult:
         # TODO: handle this, also, why do we have both GraphQLExecutionResult and ExecutionResult?
         if isinstance(result, GraphQLIncrementalExecutionResults):
-            return result
+            # Incremental delivery returns graphql-core's container as-is; it is
+            # kept out of the public `ExecutionResult` return type while the
+            # feature is experimental.
+            return result  # type: ignore[return-value]
 
         # Set errors on the context so that it's easier
         # to access in extensions
@@ -782,7 +777,9 @@ class Schema(BaseSchema):
             result = ExecutionResult(data=result.data, errors=result.errors)
         result.extensions = await extensions_runner.get_extensions_results(context)
         context.result = result
-        return result
+        # The initial result of incremental delivery (only passed by `stream`) is
+        # returned unconverted so transports keep its `has_next`/`pending`.
+        return result  # type: ignore[return-value]
 
     def _get_execute_function(self) -> Callable[..., Any]:
         """Return the graphql-core execution function for the current config.
@@ -792,11 +789,6 @@ class Schema(BaseSchema):
         graphql-core version guard cannot drift between execution paths.
         """
         if self.config.enable_experimental_incremental_execution:
-            if experimental_execute_incrementally is None:
-                raise RuntimeError(
-                    "Incremental execution is enabled but experimental_execute_incrementally is not available, "
-                    "please install graphql-core>=3.3.0"
-                )
             return experimental_execute_incrementally
         return execute
 
@@ -994,6 +986,15 @@ class Schema(BaseSchema):
                                 "GraphQL execution failed to complete synchronously."
                             )
 
+                        # Subsequent incremental payloads can only be consumed
+                        # asynchronously, so `@defer`/`@stream` can't be honoured.
+                        if isinstance(result, GraphQLIncrementalExecutionResults):
+                            raise GraphQLError(  # noqa: TRY301
+                                "Incremental delivery (@defer and @stream) is not "
+                                "supported with synchronous execution, use "
+                                "`Schema.execute` instead."
+                            )
+
                         result = cast("GraphQLExecutionResult", result)
                         execution_context.result = result
                         # Also set errors on the context so that it's easier
@@ -1081,30 +1082,20 @@ class Schema(BaseSchema):
 
             try:
                 async with extensions_runner.executing():
-                    gql_33_kwargs = {
-                        "middleware": middleware_manager,
-                        "operation_extensions": operation_extensions,
-                        **execution_context_class_kwargs(execution_context_class),
-                    }
-                    try:
-                        # Might not be awaitable for pre-execution errors.
-                        aiter_or_result: OriginSubscriptionResult = await await_maybe(
-                            subscribe(
-                                self._schema,
-                                execution_context.graphql_document,
-                                root_value=execution_context.root_value,
-                                variable_values=execution_context.variables,
-                                operation_name=execution_context.operation_name,
-                                context_value=execution_context.context,
-                                **{} if IS_GQL_32 else gql_33_kwargs,
-                            )
+                    # Might not be awaitable for pre-execution errors.
+                    aiter_or_result: OriginSubscriptionResult = await await_maybe(
+                        subscribe(
+                            self._schema,
+                            execution_context.graphql_document,
+                            root_value=execution_context.root_value,
+                            variable_values=execution_context.variables,
+                            operation_name=execution_context.operation_name,
+                            context_value=execution_context.context,
+                            middleware=middleware_manager,
+                            operation_extensions=operation_extensions,
+                            **execution_context_class_kwargs(execution_context_class),
                         )
-                    # graphql-core 3.2 doesn't handle some of the pre-execution errors.
-                    # see `test_subscription_immediate_error`
-                    except Exception as exc:  # noqa: BLE001
-                        aiter_or_result = OriginalExecutionResult(
-                            data=None, errors=[_coerce_error(exc)]
-                        )
+                    )
 
                 # Handle pre-execution errors.
                 if isinstance(aiter_or_result, OriginalExecutionResult):
@@ -1118,10 +1109,10 @@ class Schema(BaseSchema):
                 else:
                     try:
                         async with aclosing(aiter_or_result):
-                            async for result in aiter_or_result:
+                            async for subscription_result in aiter_or_result:
                                 extension_result = await self._handle_execution_result(
                                     execution_context,
-                                    result,
+                                    subscription_result,
                                     extensions_runner,
                                 )
 

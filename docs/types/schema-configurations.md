@@ -130,8 +130,8 @@ schema = strawberry.Schema(query=Query, config=StrawberryConfig(info_class=Custo
 
 <Note>
 
-This is an experimental feature that requires `graphql-core>=3.3.0a9`. The API
-and behavior may change in future releases.
+This is an experimental feature. The API and behavior may change in future
+releases.
 
 </Note>
 

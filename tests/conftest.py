@@ -3,8 +3,6 @@ import sys
 
 import pytest
 
-from strawberry.utils import IS_GQL_32
-
 
 def pytest_emoji_xfailed(config: pytest.Config) -> tuple[str, str]:
     return "🤷‍♂️ ", "XFAIL 🤷‍♂️ "
@@ -48,10 +46,3 @@ def pytest_ignore_collect(collection_path: pathlib.Path, config: pytest.Config):
     if sys.version_info < (3, 12) and "python_312" in collection_path.parts:
         return True
     return None
-
-
-def skip_if_gql_32(reason: str) -> pytest.MarkDecorator:
-    return pytest.mark.skipif(
-        IS_GQL_32,
-        reason=reason,
-    )

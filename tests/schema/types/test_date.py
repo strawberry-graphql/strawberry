@@ -6,7 +6,6 @@ from graphql import GraphQLError
 import strawberry
 from strawberry.exceptions import StrawberryInputCoercionError
 from strawberry.types.execution import ExecutionResult
-from strawberry.utils import IS_GQL_32
 
 
 def test_serialization():
@@ -134,10 +133,7 @@ def test_serialization_error_message_for_incorrect_date_string():
     result = execute_mutation("2021-13-01")
     assert result.errors
     expected_message = (
-        "Variable '$value' got invalid value '2021-13-01'; Value cannot represent a "
-        'Date: "2021-13-01". month must be in 1..12'
-        if IS_GQL_32
-        else "Variable '$value' has invalid value: Value cannot represent a "
+        "Variable '$value' has invalid value: Value cannot represent a "
         'Date: "2021-13-01". month must be in 1..12'
     )
     assert result.errors[0].message.startswith(

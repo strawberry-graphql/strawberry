@@ -56,7 +56,6 @@ if TYPE_CHECKING:
         GraphQLArgument,
         GraphQLEnumType,
         GraphQLEnumValue,
-        GraphQLInterfaceType,
         GraphQLNamedType,
         GraphQLScalarType,
         GraphQLType,
@@ -684,11 +683,7 @@ def _get_schema_type_names(schema: BaseSchema) -> set[str]:
         stack.extend(getattr(named_type, "interfaces", ()))
         stack.extend(getattr(named_type, "types", ()))
         if is_interface_type(named_type):
-            stack.extend(
-                graphql_schema.get_possible_types(
-                    cast("GraphQLInterfaceType", named_type)
-                )
-            )
+            stack.extend(graphql_schema.get_possible_types(named_type))
 
         for field in getattr(named_type, "fields", {}).values():
             stack.append(field.type)
