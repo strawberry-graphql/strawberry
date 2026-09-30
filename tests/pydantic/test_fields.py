@@ -1,11 +1,20 @@
-from typing import Annotated
+from typing import Annotated, Any
 
 import pydantic
 import pytest
 from inline_snapshot import snapshot
 
 import strawberry
-from strawberry.pydantic.exceptions import UnregisteredTypeException
+from strawberry.exceptions import (
+    InvalidStrawberryFieldAnnotationError,
+    MultipleStrawberryFieldsError,
+)
+from strawberry.permission import PermissionExtension
+from strawberry.pydantic.exceptions import (
+    StrawberryFieldAsDefaultError,
+    UnregisteredTypeException,
+)
+from strawberry.scalars import JSON
 from strawberry.schema_directive import Location
 from strawberry.types.base import get_object_definition
 
@@ -329,3 +338,154 @@ def test_field_directives_graphql_name_override():
 
     # strawberry.field() graphql_name should override Pydantic alias
     assert name_field.graphql_name == "strawberry_name"
+
+
+class IsAdmin(strawberry.BasePermission):
+    message = "Admins only"
+
+    def has_permission(self, source: Any, info: strawberry.Info, **kwargs: Any) -> bool:
+        return False
+
+
+def _query_email(user_type: type, user: object) -> strawberry.types.ExecutionResult:
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def user(self) -> user_type:  # type: ignore[valid-type]
+            return user
+
+    schema = strawberry.Schema(query=Query, types=[user_type])
+
+    return schema.execute_sync("{ user { email } }")
+
+
+def test_annotated_permissions_are_attached_once():
+    @strawberry.pydantic.type
+    class User(pydantic.BaseModel):
+        email: Annotated[str, strawberry.field(permission_classes=[IsAdmin])]
+
+    [email_field] = get_object_definition(User, strict=True).fields
+
+    assert email_field.permission_classes == [IsAdmin]
+    assert [type(extension) for extension in email_field.extensions] == [
+        PermissionExtension
+    ]
+
+
+def test_annotated_permissions_declared_on_a_base_model_are_enforced():
+    class UserBase(pydantic.BaseModel):
+        email: Annotated[str, strawberry.field(permission_classes=[IsAdmin])]
+
+    @strawberry.pydantic.type
+    class User(UserBase):
+        name: str
+
+    result = _query_email(User, User(name="Ada", email="ada@example.com"))
+
+    assert result.data is None
+    assert result.errors
+    assert result.errors[0].message == "Admins only"
+
+
+def test_annotated_permissions_declared_on_a_pydantic_interface_are_enforced():
+    @strawberry.pydantic.interface
+    class Account(pydantic.BaseModel):
+        email: Annotated[str, strawberry.field(permission_classes=[IsAdmin])]
+
+    @strawberry.pydantic.type
+    class User(Account):
+        name: str
+
+    result = _query_email(User, User(name="Ada", email="ada@example.com"))
+
+    assert result.data is None
+    assert result.errors
+    assert result.errors[0].message == "Admins only"
+
+
+def test_fields_declared_on_a_strawberry_interface_keep_their_configuration():
+    @strawberry.interface
+    class Account:
+        email: str = strawberry.field(permission_classes=[IsAdmin])
+
+    @strawberry.pydantic.type
+    class User(pydantic.BaseModel, Account):
+        name: str
+
+    result = _query_email(User, User(name="Ada", email="ada@example.com"))
+
+    assert result.data is None
+    assert result.errors
+    assert result.errors[0].message == "Admins only"
+
+
+def test_redeclared_fields_override_the_strawberry_interface_configuration():
+    # same as @strawberry.type: redeclaring a field replaces the inherited one
+    @strawberry.interface
+    class Account:
+        email: str = strawberry.field(permission_classes=[IsAdmin])
+
+    @strawberry.pydantic.type
+    class User(pydantic.BaseModel, Account):
+        name: str
+        email: str
+
+    result = _query_email(User, User(name="Ada", email="ada@example.com"))
+
+    assert not result.errors
+    assert result.data == {"user": {"email": "ada@example.com"}}
+
+
+def test_annotated_graphql_type_is_used():
+    @strawberry.pydantic.type
+    class Settings(pydantic.BaseModel):
+        values: Annotated[dict[str, Any], strawberry.field(graphql_type=JSON)]
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def settings(self) -> Settings:
+            return Settings(values={"theme": "dark"})
+
+    schema = strawberry.Schema(query=Query)
+
+    assert "values: JSON!" in str(schema)
+
+    result = schema.execute_sync("{ settings { values } }")
+
+    assert not result.errors
+    assert result.data == {"settings": {"values": {"theme": "dark"}}}
+
+
+def test_multiple_strawberry_fields_in_annotated_raise_an_error():
+    with pytest.raises(MultipleStrawberryFieldsError):
+
+        @strawberry.pydantic.type
+        class User(pydantic.BaseModel):
+            name: Annotated[
+                str,
+                strawberry.field(description="first"),
+                strawberry.field(description="second"),
+            ]
+
+
+def test_nested_strawberry_field_in_annotated_raises_an_error():
+    with pytest.raises(InvalidStrawberryFieldAnnotationError):
+
+        @strawberry.pydantic.type
+        class User(pydantic.BaseModel):
+            tags: list[Annotated[str, strawberry.field(description="nested")]]
+
+
+def test_strawberry_field_as_default_value_raises_an_error():
+    with pytest.raises(
+        StrawberryFieldAsDefaultError,
+        match=(
+            r"`strawberry.field\(\)` can't be used as the default value of field "
+            r"`email` on pydantic model `User`"
+        ),
+    ):
+
+        @strawberry.pydantic.type
+        class User(pydantic.BaseModel):
+            email: str = strawberry.field(permission_classes=[IsAdmin])
