@@ -209,6 +209,77 @@ class ApiClient(BaseModel):
 Input types are not affected: clients can still send fields marked with
 `exclude=True`.
 
+### Scalars
+
+Fields can use Strawberry's scalars, such as `strawberry.ID` and `JSON`, and
+[custom scalars](../types/scalars.md), the same way as `@strawberry.type`:
+
+```python
+from typing import NewType
+
+from pydantic import BaseModel
+
+import strawberry
+from strawberry.scalars import JSON
+from strawberry.schema.config import StrawberryConfig
+
+Money = NewType("Money", str)
+
+
+@strawberry.pydantic.type
+class Product(BaseModel):
+    id: strawberry.ID
+    price: Money
+    metadata: JSON
+
+
+schema = strawberry.Schema(
+    query=Query,
+    config=StrawberryConfig(
+        scalar_map={
+            Money: strawberry.scalar(name="Money", serialize=str, parse_value=str)
+        }
+    ),
+)
+```
+
+As with `@strawberry.type`, a `NewType` must be registered as a scalar to be
+used in the schema. To expose it as its base type instead, set the GraphQL type
+of the field:
+
+```python
+from typing import Annotated, NewType
+
+UserId = NewType("UserId", int)
+
+
+@strawberry.pydantic.type
+class User(BaseModel):
+    id: Annotated[UserId, strawberry.field(graphql_type=int)]
+```
+
+The same applies to [file uploads](../guides/file-upload.md): uploaded files are
+the file objects of your integration, which Pydantic can't validate as `Upload`,
+so annotate the field with the file type and use `Upload` as its GraphQL type:
+
+```python
+from typing import Annotated
+
+from pydantic import BaseModel, ConfigDict
+from starlette.datastructures import UploadFile
+
+import strawberry
+from strawberry.file_uploads import Upload
+
+
+@strawberry.pydantic.input
+class CreatePostInput(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    title: str
+    image: Annotated[UploadFile, strawberry.field(graphql_type=Upload)]
+```
+
 ## Advanced Usage
 
 ### Nested Types
