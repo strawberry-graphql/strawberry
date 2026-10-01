@@ -1,3 +1,4 @@
+import datetime
 import io
 from typing import Annotated, NewType
 
@@ -209,3 +210,51 @@ def test_new_types_can_be_exposed_as_their_base_type():
 
     assert not result.errors
     assert result.data == {"user": {"id": 1}}
+
+
+def test_constrained_date_types():
+    @strawberry.pydantic.type
+    class Event(pydantic.BaseModel):
+        created_at: pydantic.AwareDatetime
+        local_time: pydantic.NaiveDatetime
+        born_on: pydantic.PastDate
+        due_on: pydantic.FutureDate
+
+    @strawberry.pydantic.input
+    class EventInput(pydantic.BaseModel):
+        due_on: pydantic.FutureDate
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def event(self, input: EventInput) -> Event:
+            return Event(
+                created_at=datetime.datetime(2020, 1, 1, tzinfo=datetime.timezone.utc),
+                local_time=datetime.datetime(2020, 1, 1),
+                born_on=datetime.date(2000, 1, 1),
+                due_on=input.due_on,
+            )
+
+    schema = strawberry.Schema(query=Query)
+
+    sdl = str(schema)
+
+    assert "createdAt: DateTime!" in sdl
+    assert "localTime: DateTime!" in sdl
+    assert "bornOn: Date!" in sdl
+    assert "dueOn: Date!" in sdl
+
+    result = schema.execute_sync(
+        '{ event(input: {dueOn: "2999-01-01"}) { createdAt dueOn } }'
+    )
+
+    assert not result.errors
+    assert result.data == {
+        "event": {"createdAt": "2020-01-01T00:00:00+00:00", "dueOn": "2999-01-01"}
+    }
+
+    # pydantic still validates the constraint
+    result = schema.execute_sync('{ event(input: {dueOn: "2000-01-01"}) { dueOn } }')
+
+    assert result.errors
+    assert result.errors[0].extensions["validationErrors"][0]["type"] == "date_future"

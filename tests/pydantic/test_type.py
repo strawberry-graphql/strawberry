@@ -67,28 +67,76 @@ def test_basic_type_with_description():
     assert definition.description == "A user model"
 
 
-def test_is_type_of_method():
-    """Test that is_type_of method is added for proper type resolution."""
-
+def test_resolvers_can_return_objects_with_the_same_attributes():
     @strawberry.pydantic.type
     class User(pydantic.BaseModel):
-        age: int
         name: str
 
-    # Check that is_type_of method exists
-    assert hasattr(User, "is_type_of")
-    assert callable(User.is_type_of)
+    class UserRow:
+        # e.g. a row of an ORM
+        name = "Ada"
 
-    # Test type checking
-    user_instance = User(age=25, name="John")
-    assert User.is_type_of(user_instance, None) is True
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def user(self) -> User:
+            return UserRow()  # type: ignore[return-value]
 
-    # Test with different type
-    class Other:
-        pass
+    result = strawberry.Schema(query=Query).execute_sync("{ user { name } }")
 
-    other_instance = Other()
-    assert User.is_type_of(other_instance, None) is False
+    assert not result.errors
+    assert result.data == {"user": {"name": "Ada"}}
+
+
+def test_models_can_define_is_type_of():
+    @strawberry.pydantic.type
+    class User(pydantic.BaseModel):
+        name: str
+
+        @classmethod
+        def is_type_of(cls, obj: object, info: object) -> bool:
+            return isinstance(obj, cls)
+
+    class UserRow:
+        name = "Ada"
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def user(self) -> User:
+            return UserRow()  # type: ignore[return-value]
+
+    result = strawberry.Schema(query=Query).execute_sync("{ user { name } }")
+
+    assert result.errors
+    assert "Expected value of type 'User'" in result.errors[0].message
+
+
+def test_objects_cast_to_a_type_implementing_an_interface():
+    @strawberry.pydantic.interface
+    class Node(pydantic.BaseModel):
+        id: strawberry.ID
+
+    @strawberry.pydantic.type
+    class User(Node):
+        name: str
+
+    class UserRow:
+        id = "1"
+        name = "Ada"
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def node(self) -> Node:
+            return strawberry.cast(User, UserRow())
+
+    result = strawberry.Schema(query=Query, types=[User]).execute_sync(
+        "{ node { id ... on User { name } } }"
+    )
+
+    assert not result.errors
+    assert result.data == {"node": {"id": "1", "name": "Ada"}}
 
 
 def test_schema_generation():
@@ -220,3 +268,41 @@ def test_models_can_only_be_decorated_once():
 
     assert get_object_definition(AddressInput, strict=True).is_input
     assert not get_object_definition(Address, strict=True).is_input
+
+
+async def test_objects_cast_in_unions():
+    @strawberry.pydantic.type
+    class User(pydantic.BaseModel):
+        name: str
+
+    @strawberry.pydantic.input
+    class UserInput(pydantic.BaseModel):
+        name: str = pydantic.Field(min_length=1)
+
+    class UserRow:
+        name = "Ada"
+
+    @strawberry.type
+    class Query:
+        hello: str = "world"
+
+    @strawberry.type
+    class Mutation:
+        @strawberry.mutation
+        async def create_user(
+            self, input: UserInput
+        ) -> User | strawberry.pydantic.ValidationError:
+            return strawberry.cast(User, UserRow())
+
+    schema = strawberry.Schema(
+        query=Query,
+        mutation=Mutation,
+        exception_handlers=[strawberry.pydantic.PydanticValidationErrorHandler()],
+    )
+
+    result = await schema.execute(
+        'mutation { createUser(input: {name: "Ada"}) { ... on User { name } } }'
+    )
+
+    assert not result.errors
+    assert result.data == {"createUser": {"name": "Ada"}}

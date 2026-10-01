@@ -426,3 +426,23 @@ def test_maybe_fields_on_inputs_raise_an_error():
             model_config = pydantic.ConfigDict(arbitrary_types_allowed=True)
 
             name: strawberry.Maybe[str] = None
+
+
+def test_constant_defaults_of_constrained_date_fields_are_published():
+    @strawberry.pydantic.input
+    class EventInput(pydantic.BaseModel):
+        due_on: pydantic.FutureDate = datetime.date(2999, 1, 1)
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def event(self, input: EventInput) -> str:
+            return input.due_on.isoformat()
+
+    schema = strawberry.Schema(query=Query)
+
+    assert _input_sdl(schema, "EventInput") == snapshot("""\
+input EventInput {
+  dueOn: Date! = "2999-01-01"
+}\
+""")

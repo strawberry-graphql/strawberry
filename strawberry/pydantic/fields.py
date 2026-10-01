@@ -21,7 +21,15 @@ from typing import TYPE_CHECKING, Annotated, Any, Optional, get_args, get_origin
 from typing_extensions import Format, get_annotations
 
 from graphql.type.directives import DEFAULT_DEPRECATION_REASON
-from pydantic import BaseModel
+from pydantic import (
+    AwareDatetime,
+    BaseModel,
+    FutureDate,
+    FutureDatetime,
+    NaiveDatetime,
+    PastDate,
+    PastDatetime,
+)
 from pydantic_core import PydanticUndefined
 
 from strawberry.annotation import StrawberryAnnotation
@@ -119,6 +127,16 @@ def _contains_upload(annotation: object) -> bool:
     )
 
 
+# pydantic types that only add validation to a date or datetime
+_CONSTRAINED_DATE_TYPES: dict[type, type] = {
+    AwareDatetime: datetime.datetime,
+    NaiveDatetime: datetime.datetime,
+    PastDatetime: datetime.datetime,
+    FutureDatetime: datetime.datetime,
+    PastDate: datetime.date,
+    FutureDate: datetime.date,
+}
+
 # GraphQL's Int is a 32-bit integer
 _GRAPHQL_INT_RANGE = range(-(2**31), 2**31)
 _CONSTANT_TYPES = (
@@ -141,6 +159,9 @@ def _is_constant_of_type(value: object, annotation: Any) -> bool:
     if is_new_type(annotation):
         # e.g. `strawberry.ID` and scalars registered with `scalar_map`
         return _is_constant_of_type(value, annotation.__supertype__)
+
+    if isinstance(annotation, type) and annotation in _CONSTRAINED_DATE_TYPES:
+        return _is_constant_of_type(value, _CONSTRAINED_DATE_TYPES[annotation])
 
     origin = get_origin(annotation)
     args = get_args(annotation)
@@ -232,6 +253,9 @@ def replace_types_recursively(
     model: type[BaseModel],
 ) -> Any:
     """Recursively replace Pydantic types with their Strawberry equivalents."""
+    if isinstance(type_, type) and type_ in _CONSTRAINED_DATE_TYPES:
+        type_ = _CONSTRAINED_DATE_TYPES[type_]
+
     # NewTypes are resolved by the schema's scalar registry, like with
     # `@strawberry.type`: that's how `strawberry.ID`, `JSON`, `Upload` and
     # `scalar_map` scalars work, so they must not be replaced by their supertype
@@ -351,8 +375,17 @@ def _create_strawberry_field(
     if strawberry_field.type_annotation is None:
         module = sys.modules.get(origin.__module__)
 
+        try:
+            field_type = replace_types_recursively(
+                annotation, is_input, compat=compat, model=cls
+            )
+        except UnregisteredTypeException as exc:
+            raise UnregisteredTypeException(
+                exc.type, cls=cls, field_name=field_name, is_input=is_input
+            ) from None
+
         strawberry_field.type_annotation = StrawberryAnnotation(
-            replace_types_recursively(annotation, is_input, compat=compat, model=cls),
+            field_type,
             namespace=vars(module) if module is not None else None,
         )
     elif strawberry_field.type_annotation.namespace is None:
@@ -380,6 +413,9 @@ def _get_type_var_map(cls: type[BaseModel]) -> dict[str, StrawberryType | type]:
         parameters = metadata["origin"].__pydantic_generic_metadata__["parameters"]
 
         for parameter, argument in zip(parameters, metadata["args"], strict=False):
+            if isinstance(argument, type):
+                argument = _CONSTRAINED_DATE_TYPES.get(argument, argument)  # noqa: PLW2901
+
             type_var_map.setdefault(
                 parameter.__name__, StrawberryAnnotation(argument).resolve()
             )

@@ -768,3 +768,29 @@ def test_input_type_with_optional_fields_and_validation():
     assert result.errors[0].extensions["validationErrors"][0]["type"] == (
         "string_too_long"
     )
+
+
+def test_one_of_inputs():
+    @strawberry.pydantic.input(one_of=True)
+    class UserBy(pydantic.BaseModel):
+        id: strawberry.ID | None = None
+        email: str | None = None
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def user(self, by: UserBy) -> str:
+            return repr(by.model_dump(exclude_unset=True))
+
+    schema = strawberry.Schema(query=Query)
+
+    assert "input UserBy @oneOf {\n  id: ID\n  email: String\n}" in str(schema)
+
+    result = schema.execute_sync('{ user(by: {email: "ada@example.com"}) }')
+
+    assert not result.errors
+    assert result.data == {"user": "{'email': 'ada@example.com'}"}
+
+    result = schema.execute_sync('{ user(by: {id: "1", email: "ada@example.com"}) }')
+
+    assert result.errors
