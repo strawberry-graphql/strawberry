@@ -76,17 +76,24 @@ strawberry codegen --schema schema --output-dir ./output -p python query.graphql
 We'll get the following output inside `output/query.py`:
 
 ```python
-class MyQueryResultUserPost:
+from typing_extensions import TypedDict
+
+
+class MyQueryResultUserPost(TypedDict):
     title: str
 
 
-class MyQueryResultUser:
+class MyQueryResultUser(TypedDict):
     post: MyQueryResultUserPost
 
 
-class MyQueryResult:
+class MyQueryResult(TypedDict):
     user: MyQueryResultUser
 ```
+
+The generated types are `TypedDict` classes, which provide type safety for
+dictionary-like access patterns commonly used when working with JSON responses
+from GraphQL APIs.
 
 ## Why is this useful?
 
