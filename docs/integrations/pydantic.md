@@ -11,11 +11,12 @@ create GraphQL types without writing code twice.
 ## Installation
 
 ```bash
-pip install strawberry-graphql[pydantic]
+pip install 'strawberry-graphql[pydantic]'
 ```
 
-`strawberry.pydantic` requires Pydantic 2.11 or newer. Pydantic v1 models are
-only supported by the
+`strawberry.pydantic` requires Pydantic 2.11 or newer. If an older version is
+installed, upgrade it with `pip install -U 'pydantic>=2.11'`. Pydantic v1 models
+are only supported by the
 [experimental integration](#experimental-pydantic-support-deprecated).
 
 ## Basic Usage
@@ -85,14 +86,13 @@ Creates a GraphQL input type from a Pydantic model:
 class CreateUserInput(BaseModel):
     name: str
     age: int
-    email: str
 
 
 @strawberry.type
 class Mutation:
-    @strawberry.field
+    @strawberry.mutation
     def create_user(self, input: CreateUserInput) -> User:
-        return User(name=input.name, age=input.age, email=input.email)
+        return User(name=input.name, age=input.age)
 ```
 
 Pass `one_of=True` to create a
@@ -190,6 +190,11 @@ class User(BaseModel):
 This also applies to fields named after Python keywords, which are usually
 aliased: `from_: date = Field(alias="from")` is called `from_` in GraphQL,
 unless it is renamed with `Annotated[date, strawberry.field(name="from")]`.
+
+Inputs are validated by field name too, so validators with `mode="before"`
+receive the data keyed by Python field names, not by aliases. A model shared
+with a REST API that reads aliased keys in a `before` validator needs to handle
+both, or use an `after` validator instead.
 
 ### Computed Fields
 
@@ -313,8 +318,9 @@ Defaults shown in the schema are filled in by GraphQL, so they are always part
 of `model_fields_set`, and Pydantic validates them like values sent by the
 client.
 
-`strawberry.Maybe` can't be used in Pydantic inputs, use `model_fields_set` to
-tell omitted fields apart from explicit `null` values instead.
+`strawberry.Maybe` can't be used in Pydantic inputs (Pydantic raises an error
+for it when the model is defined), use `model_fields_set` to tell omitted fields
+apart from explicit `null` values instead.
 
 ### Private Fields
 
@@ -398,18 +404,22 @@ class User(BaseModel):
 ```
 
 The resolvers stay regular methods of the model, so they can be combined with
-other decorators, like `@staticmethod` or `@functools.cache`. They are inherited
-from base models and from Pydantic interfaces, and the field is named after the
-attribute, so `label = strawberry.pydantic.field(get_label)` adds a `label`
-field.
+other decorators, like `@staticmethod`, `@classmethod` or `@functools.cache`
+(which needs a hashable model, for example with
+`model_config = ConfigDict(frozen=True)`). They are inherited from base models
+and from Pydantic interfaces, and the field is named after the attribute, so
+`label = strawberry.pydantic.field(get_label)` adds a `label` field. Pydantic's
+mypy plugin reports this form as an untyped field, so prefer the decorator form
+if you use it, or add `# type: ignore[pydantic-field]`.
 
 Input types can't have fields with a resolver: the ones inherited from a base
-model, for example one shared with an output type, are ignored. Use
-`@strawberry.field` for regular Strawberry types.
+model, for example one shared with an output type, are ignored.
 
-If your model makes Pydantic ignore Strawberry fields, with
-`model_config = ConfigDict(ignored_types=(StrawberryField,))`, you can use
-`strawberry.field` too.
+`@strawberry.field` can't be used in a Pydantic model: Pydantic raises
+`PydanticUserError: A non-annotated attribute was detected` when the model is
+defined. Use `@strawberry.pydantic.field` instead, or make Pydantic ignore
+Strawberry fields with
+`model_config = ConfigDict(ignored_types=(StrawberryField,))`.
 
 <Note>
 
@@ -469,6 +479,18 @@ from strawberry.scalars import JSON
 @strawberry.pydantic.type
 class Settings(BaseModel):
     values: Annotated[dict[str, Any], strawberry.field(graphql_type=JSON)]
+```
+
+`Literal` types aren't supported yet. Expose them with the type of their values,
+Pydantic still validates the values sent by clients:
+
+```python
+from typing import Annotated, Literal
+
+
+@strawberry.pydantic.input
+class PostInput(BaseModel):
+    status: Annotated[Literal["draft", "published"], strawberry.field(graphql_type=str)]
 ```
 
 As with `@strawberry.type`, a `NewType` must be registered as a scalar to be
@@ -621,6 +643,11 @@ errors, at `input.items.0.quantity` and `input.items.2.quantity` for an argument
 named `input`. Validators with `mode="before"` receive nested inputs as data,
 not as model instances.
 
+This only applies to inputs nested in a Pydantic input: each item of an argument
+like `inputs: list[ItemInput]` is validated on its own, and the errors of the
+first invalid item are returned. Wrap the list in a Pydantic input to report the
+errors of all the items.
+
 A Pydantic input nested inside a regular `@strawberry.input` is validated on its
 own, and overriding `model_validate` only affects the outermost input, so prefer
 `@model_validator(mode="before")` to transform the input data.
@@ -769,33 +796,25 @@ instead.
 
 ### Model Config
 
-Pydantic's `model_config` settings are respected during validation:
+Pydantic's `model_config` settings are respected during validation, for example
+`str_strip_whitespace` or `str_to_lower`:
 
 ```python
 from pydantic import ConfigDict
 
 
 @strawberry.pydantic.input
-class StrictUserInput(BaseModel):
-    model_config = ConfigDict(strict=True, extra="forbid")
+class CreateUserInput(BaseModel):
+    model_config = ConfigDict(str_strip_whitespace=True)
 
-    age: int  # Will NOT accept "25" as string
-    name: str
+    name: str  # "  Ada " is validated as "Ada"
 ```
 
-#### Per-Field Strict Mode
-
-You can also enable strict mode on individual fields:
-
-```python
-from pydantic import Field
-
-
-@strawberry.pydantic.input
-class UserInput(BaseModel):
-    age: int = Field(strict=True)  # Must be int, not "25"
-    name: str  # Normal coercion allowed
-```
+GraphQL already checks the types of the values, and doesn't allow unknown
+fields, before Pydantic validates the input, so settings like `strict=True` and
+`extra="forbid"` mostly matter when the model is also used outside of GraphQL.
+One exception: GraphQL lists are sent to Pydantic as Python lists, which strict
+mode doesn't accept for `tuple` fields.
 
 ### Field Directives and Customization
 
@@ -807,18 +826,15 @@ model fields:
 from typing import Annotated
 from pydantic import BaseModel, Field
 import strawberry
+from strawberry.schema_directive import Location
 
 
-@strawberry.schema_directive(
-    locations=[strawberry.schema_directive.Location.FIELD_DEFINITION]
-)
+@strawberry.schema_directive(locations=[Location.FIELD_DEFINITION])
 class Sensitive:
     reason: str
 
 
-@strawberry.schema_directive(
-    locations=[strawberry.schema_directive.Location.FIELD_DEFINITION]
-)
+@strawberry.schema_directive(locations=[Location.FIELD_DEFINITION])
 class Range:
     min: int
     max: int
@@ -876,9 +892,10 @@ subclasses and implementations.
 Field directives work with input types too:
 
 ```python
-@strawberry.schema_directive(
-    locations=[strawberry.schema_directive.Location.INPUT_FIELD_DEFINITION]
-)
+from strawberry.schema_directive import Location
+
+
+@strawberry.schema_directive(locations=[Location.INPUT_FIELD_DEFINITION])
 class Validate:
     pattern: str
 
@@ -893,8 +910,9 @@ class CreateUserInput(BaseModel):
 
 ### TypeAdapter and RootModel
 
-Pydantic's `TypeAdapter` and `RootModel` can be used in resolvers for additional
-validation:
+A `RootModel` holds a single value instead of fields, so it can't be decorated
+as a type or an input, or be the type of a field. Pydantic's `TypeAdapter` and
+`RootModel` can be used in resolvers for additional validation:
 
 ```python
 from pydantic import TypeAdapter, RootModel, Field

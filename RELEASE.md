@@ -12,7 +12,8 @@ social_messages:
     and validates your inputs.
 ---
 
-This release adds first-class support for Pydantic v2 models.
+This release adds first-class support for Pydantic v2 models, with
+`strawberry.pydantic`. It requires Pydantic 2.11 or newer.
 
 Pydantic models can now be decorated directly to become GraphQL types, inputs
 and interfaces, without a separate Strawberry class:
@@ -51,5 +52,5 @@ can be customized with `Annotated[..., strawberry.field(...)]`, and
 schema. See the [Pydantic integration docs](https://strawberry.rocks/docs/integrations/pydantic)
 for everything that's supported.
 
-This release also fixes objects cast with `strawberry.cast` not being resolved
-when they're returned in a union.
+The experimental integration, `strawberry.experimental.pydantic`, is deprecated
+in favour of `strawberry.pydantic`, and will be removed in a future release.
