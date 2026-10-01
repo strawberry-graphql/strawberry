@@ -182,9 +182,10 @@ def test_input_type_with_invalid_email():
     assert result.errors is not None
     assert len(result.errors) == 1
     error_message = result.errors[0].message
-    assert "1 validation error for UserInput" in error_message
-    assert "email" in error_message
-    assert "string_pattern_mismatch" in error_message
+    assert error_message.startswith("Invalid input: input.email:")
+    assert result.errors[0].extensions["validationErrors"][0]["type"] == (
+        "string_pattern_mismatch"
+    )
 
 
 def test_input_type_with_invalid_name_length():
@@ -235,9 +236,10 @@ def test_input_type_with_invalid_name_length():
     assert result.errors is not None
     assert len(result.errors) == 1
     error_message = result.errors[0].message
-    assert "1 validation error for UserInput" in error_message
-    assert "name" in error_message
-    assert "string_too_short" in error_message
+    assert error_message.startswith("Invalid input: input.name:")
+    assert result.errors[0].extensions["validationErrors"][0]["type"] == (
+        "string_too_short"
+    )
 
 
 def test_input_type_with_invalid_age_range():
@@ -288,9 +290,10 @@ def test_input_type_with_invalid_age_range():
     assert result.errors is not None
     assert len(result.errors) == 1
     error_message = result.errors[0].message
-    assert "1 validation error for UserInput" in error_message
-    assert "age" in error_message
-    assert "greater_than_equal" in error_message
+    assert error_message.startswith("Invalid input: input.age:")
+    assert result.errors[0].extensions["validationErrors"][0]["type"] == (
+        "greater_than_equal"
+    )
 
     # Test with age out of range (too high)
     mutation_high_age = """
@@ -311,9 +314,10 @@ def test_input_type_with_invalid_age_range():
     assert result.errors is not None
     assert len(result.errors) == 1
     error_message = result.errors[0].message
-    assert "1 validation error for UserInput" in error_message
-    assert "age" in error_message
-    assert "less_than_equal" in error_message
+    assert error_message.startswith("Invalid input: input.age:")
+    assert result.errors[0].extensions["validationErrors"][0]["type"] == (
+        "less_than_equal"
+    )
 
 
 def test_nested_input_types_with_validation():
@@ -433,9 +437,10 @@ def test_nested_input_types_with_validation():
     assert len(result.errors) == 1
     error_message = result.errors[0].message
     # nested inputs are validated with the outermost one, with their full location
-    assert "1 validation error for UserInput" in error_message
-    assert "address.zipcode" in error_message
-    assert "string_pattern_mismatch" in error_message
+    assert error_message.startswith("Invalid input: input.address.zipcode:")
+    assert result.errors[0].extensions["validationErrors"][0]["type"] == (
+        "string_pattern_mismatch"
+    )
 
     # Test with invalid nested data (underage)
     mutation_underage = """
@@ -464,9 +469,10 @@ def test_nested_input_types_with_validation():
     assert result.errors is not None
     assert len(result.errors) == 1
     error_message = result.errors[0].message
-    assert "1 validation error for UserInput" in error_message
-    assert "age" in error_message
-    assert "greater_than_equal" in error_message
+    assert error_message.startswith("Invalid input: input.age:")
+    assert result.errors[0].extensions["validationErrors"][0]["type"] == (
+        "greater_than_equal"
+    )
 
 
 def test_input_type_with_custom_validators():
@@ -571,8 +577,7 @@ def test_input_type_with_custom_validators():
     assert result.errors is not None
     assert len(result.errors) == 1
     error_message = result.errors[0].message
-    assert "1 validation error for RegistrationInput" in error_message
-    assert "username" in error_message
+    assert error_message.startswith("Invalid input: input.username:")
     assert "Username must be alphanumeric" in error_message
 
     # Test with weak password
@@ -594,8 +599,7 @@ def test_input_type_with_custom_validators():
     assert result.errors is not None
     assert len(result.errors) == 1
     error_message = result.errors[0].message
-    assert "1 validation error for RegistrationInput" in error_message
-    assert "password" in error_message
+    assert error_message.startswith("Invalid input: input.password:")
     assert "Password must be at least 8 characters long" in error_message
 
     # Test with mismatched passwords
@@ -617,8 +621,7 @@ def test_input_type_with_custom_validators():
     assert result.errors is not None
     assert len(result.errors) == 1
     error_message = result.errors[0].message
-    assert "1 validation error for RegistrationInput" in error_message
-    assert "confirm_password" in error_message
+    assert error_message.startswith("Invalid input: input.confirmPassword:")
     assert "Passwords do not match" in error_message
 
     # Test with underage user
@@ -640,8 +643,7 @@ def test_input_type_with_custom_validators():
     assert result.errors is not None
     assert len(result.errors) == 1
     error_message = result.errors[0].message
-    assert "1 validation error for RegistrationInput" in error_message
-    assert "age" in error_message
+    assert error_message.startswith("Invalid input: input.age:")
     assert "Must be at least 13 years old" in error_message
 
 
@@ -739,9 +741,10 @@ def test_input_type_with_optional_fields_and_validation():
     assert result.errors is not None
     assert len(result.errors) == 1
     error_message = result.errors[0].message
-    assert "1 validation error for UpdateProfileInput" in error_message
-    assert "website" in error_message
-    assert "string_pattern_mismatch" in error_message
+    assert error_message.startswith("Invalid input: input.website:")
+    assert result.errors[0].extensions["validationErrors"][0]["type"] == (
+        "string_pattern_mismatch"
+    )
 
     # Test with bio too long
     long_bio = "x" * 201
@@ -761,6 +764,7 @@ def test_input_type_with_optional_fields_and_validation():
     assert result.errors is not None
     assert len(result.errors) == 1
     error_message = result.errors[0].message
-    assert "1 validation error for UpdateProfileInput" in error_message
-    assert "bio" in error_message
-    assert "string_too_long" in error_message
+    assert error_message.startswith("Invalid input: input.bio:")
+    assert result.errors[0].extensions["validationErrors"][0]["type"] == (
+        "string_too_long"
+    )

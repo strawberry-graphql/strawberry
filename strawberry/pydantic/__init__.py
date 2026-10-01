@@ -12,7 +12,12 @@ Example:
 
 # must be imported first: checks that a supported pydantic is installed
 from . import _requirements  # noqa: F401
-from .error import Error, PydanticValidationErrorHandler
+from .error import (
+    InputValidationError,
+    PydanticValidationErrorHandler,
+    ValidationError,
+    ValidationIssue,
+)
 from .object_type import input as input_decorator
 from .object_type import interface
 from .object_type import type as type_decorator
@@ -21,4 +26,12 @@ from .object_type import type as type_decorator
 input = input_decorator
 type = type_decorator
 
-__all__ = ["Error", "PydanticValidationErrorHandler", "input", "interface", "type"]
+__all__ = [
+    "InputValidationError",
+    "PydanticValidationErrorHandler",
+    "ValidationError",
+    "ValidationIssue",
+    "input",
+    "interface",
+    "type",
+]
