@@ -55,26 +55,42 @@ def test_star_import_works_without_pydantic():
 
 
 @pytest.mark.parametrize(
-    "code",
+    ("code", "exception"),
     [
-        "import strawberry\nstrawberry.pydantic",
-        "import strawberry.pydantic",
-        "from strawberry.pydantic import type",
+        ("import strawberry\nstrawberry.pydantic", "AttributeError"),
+        ("import strawberry.pydantic", "ModuleNotFoundError"),
+        ("from strawberry.pydantic import type", "ModuleNotFoundError"),
     ],
 )
 def test_using_strawberry_pydantic_without_pydantic_explains_how_to_install_it(
-    code: str,
+    code: str, exception: str
 ):
     result = _run(code, block_pydantic=True)
 
     assert result.returncode != 0
     assert (
-        "ModuleNotFoundError: strawberry.pydantic requires pydantic. "
+        f"{exception}: strawberry.pydantic requires pydantic. "
         "Install it with `pip install 'strawberry-graphql[pydantic]'`."
     ) in result.stderr
 
 
+def test_strawberry_has_no_pydantic_attribute_without_pydantic():
+    result = _run(
+        """
+        import strawberry
+
+        assert not hasattr(strawberry, "pydantic")
+        assert getattr(strawberry, "pydantic", None) is None
+        """,
+        block_pydantic=True,
+    )
+
+    assert result.returncode == 0, result.stderr
+
+
 def test_strawberry_pydantic_is_imported_on_first_access():
+    pytest.importorskip("pydantic", minversion="2.11")
+
     result = _run(
         """
         import sys
@@ -93,6 +109,8 @@ def test_strawberry_pydantic_is_imported_on_first_access():
 
 
 def test_using_strawberry_pydantic_with_an_old_pydantic_raises_an_error():
+    pytest.importorskip("pydantic")
+
     result = _run(
         """
         import pydantic
