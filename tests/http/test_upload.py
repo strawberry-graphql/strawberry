@@ -300,3 +300,57 @@ async def test_sending_invalid_json_body(enabled_http_client: HttpClient):
         "Unable to parse the multipart body" in response.text
         or "Unable to parse request body as JSON" in response.text
     )
+
+
+@pytest.mark.parametrize(
+    ("operations", "file_map", "message"),
+    [
+        (
+            "null",
+            json.dumps({"textFile": ["variables.textFile"]}),
+            "The `operations` field must be a JSON object or array",
+        ),
+        (
+            json.dumps({"query": "{ hello }", "variables": {"textFile": None}}),
+            json.dumps(["textFile"]),
+            "The `map` field must be a JSON object",
+        ),
+        (
+            json.dumps({"query": "{ hello }", "variables": {"textFile": None}}),
+            json.dumps({"textFile": [1]}),
+            "The `map` field values must be arrays of strings",
+        ),
+        (
+            json.dumps({"query": "{ hello }", "variables": {"textFiles": [None]}}),
+            json.dumps({"textFile": ["variables.textFiles.abc"]}),
+            "Invalid path in the `map` field: variables.textFiles.abc",
+        ),
+        (
+            json.dumps({"query": "{ hello }", "variables": {"textFiles": [None]}}),
+            json.dumps({"textFile": ["variables.textFiles.5"]}),
+            "Invalid path in the `map` field: variables.textFiles.5",
+        ),
+    ],
+)
+async def test_sending_malformed_operations_or_map(
+    enabled_http_client: HttpClient, operations: str, file_map: str, message: str
+):
+    fields = {
+        "operations": operations,
+        "map": file_map,
+        "textFile": ("textFile.txt", b"strawberry", "text/plain"),
+    }
+
+    data, header = _encode_multipart_formdata(fields)
+
+    response = await enabled_http_client.post(
+        "/graphql",
+        data=data,
+        headers={
+            "content-type": header,
+            "content-length": f"{len(data)}",
+        },
+    )
+
+    assert response.status_code == 400
+    assert message in response.text

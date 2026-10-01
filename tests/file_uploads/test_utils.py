@@ -1,6 +1,11 @@
 from io import BytesIO
 
-from strawberry.file_uploads.utils import replace_placeholders_with_files
+import pytest
+
+from strawberry.file_uploads.utils import (
+    InvalidMultipartRequestError,
+    replace_placeholders_with_files,
+)
 
 
 def test_does_deep_copy():
@@ -131,3 +136,48 @@ def test_deep_nesting():
     assert result["query"] == operations["query"]
     assert result["variables"]["a"][0]["files"][0] == file0
     assert result["variables"]["a"][0]["files"][1] == file1
+
+
+@pytest.mark.parametrize("operations", [None, 1, "string", True])
+def test_operations_must_be_an_object_or_array(operations: object):
+    with pytest.raises(
+        InvalidMultipartRequestError,
+        match="The `operations` field must be a JSON object or array",
+    ):
+        replace_placeholders_with_files(operations, {}, {})  # type: ignore[arg-type]
+
+
+@pytest.mark.parametrize("files_map", [None, ["0"], "string", 1])
+def test_files_map_must_be_an_object(files_map: object):
+    with pytest.raises(
+        InvalidMultipartRequestError, match="The `map` field must be a JSON object"
+    ):
+        replace_placeholders_with_files({}, files_map, {})  # type: ignore[arg-type]
+
+
+@pytest.mark.parametrize("operations_paths", ["variables.file", [1], [None], None])
+def test_files_map_values_must_be_arrays_of_strings(operations_paths: object):
+    with pytest.raises(
+        InvalidMultipartRequestError,
+        match="The `map` field values must be arrays of strings",
+    ):
+        replace_placeholders_with_files(
+            {"variables": {"file": None}}, {"0": operations_paths}, {"0": BytesIO()}
+        )
+
+
+@pytest.mark.parametrize(
+    "path",
+    [
+        "variables.files.abc",
+        "variables.files.5",
+        "variables.name.first",
+    ],
+)
+def test_invalid_operations_path(path: str):
+    operations = {"variables": {"files": [None], "name": "strawberry"}}
+
+    with pytest.raises(
+        InvalidMultipartRequestError, match="Invalid path in the `map` field"
+    ):
+        replace_placeholders_with_files(operations, {"0": [path]}, {"0": BytesIO()})
