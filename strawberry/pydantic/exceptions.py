@@ -218,3 +218,42 @@ class ResolverFieldOverridesModelFieldError(StrawberryException):
         return SourceFinder().find_class_attribute_from_object(
             self.cls, self.field_name
         )
+
+
+class ModelAlreadyDecoratedError(StrawberryException):
+    def __init__(self, cls: type, decorator: str) -> None:
+        self.cls = cls
+
+        definition = cls.__strawberry_definition__  # type: ignore[attr-defined]
+        kind = (
+            "an input"
+            if definition.is_input
+            else "an interface"
+            if definition.is_interface
+            else "a type"
+        )
+
+        self.message = (
+            f"`{cls.__name__}` is already {kind}, so it can't be decorated with "
+            f"`strawberry.pydantic.{decorator}`"
+        )
+        self.rich_message = (
+            f"`[underline]{cls.__name__}[/]` is already {kind}, so it can't be "
+            f"decorated with `strawberry.pydantic.{decorator}`"
+        )
+        self.annotation_message = "model decorated twice"
+
+        if definition.is_input == (decorator == "input"):
+            self.suggestion = "Remove one of the decorators."
+        else:
+            self.suggestion = (
+                "To use a model both as an output type and as an input, decorate "
+                "a subclass, for example: `@strawberry.pydantic.input class "
+                "AddressInput(Address): pass`."
+            )
+
+        super().__init__(self.message)
+
+    @cached_property
+    def exception_source(self) -> ExceptionSource | None:
+        return SourceFinder().find_class_from_object(self.cls)

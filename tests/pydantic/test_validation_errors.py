@@ -294,7 +294,7 @@ def test_locations_use_graphql_names():
     result = schema.execute_sync(
         """
         mutation {
-            updateProfile(profileData: {displayName: "", about: "long", homepage: "x"}) {
+            updateProfile(profileData: {displayName: "", about: "long", website: "x"}) {
                 ... on ValidationError { issues { location } }
             }
         }
@@ -307,7 +307,7 @@ def test_locations_use_graphql_names():
             "issues": [
                 {"location": ["profileData", "displayName"]},
                 {"location": ["profileData", "about"]},
-                {"location": ["profileData", "homepage"]},
+                {"location": ["profileData", "website"]},
             ]
         }
     }

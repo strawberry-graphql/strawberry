@@ -294,7 +294,7 @@ def test_pydantic_field_descriptions_in_schema():
 
 
 def test_pydantic_field_aliases_in_execution():
-    """Test that Pydantic field aliases work in GraphQL execution."""
+    """Test that Pydantic field aliases aren't used as GraphQL names."""
 
     @strawberry.pydantic.type
     class User(pydantic.BaseModel):
@@ -310,12 +310,12 @@ def test_pydantic_field_aliases_in_execution():
 
     schema = strawberry.Schema(query=Query)
 
-    # Query using the aliased field names
+    # GraphQL names come from the python names
     query = """
         query {
             getUser {
-                fullName
-                yearsOld
+                name
+                age
             }
         }
     """
@@ -323,7 +323,7 @@ def test_pydantic_field_aliases_in_execution():
     result = schema.execute_sync(query)
 
     assert not result.errors
-    assert result.data == {"getUser": {"fullName": "John", "yearsOld": 30}}
+    assert result.data == {"getUser": {"name": "John", "age": 30}}
 
 
 def test_pydantic_validation_integration():

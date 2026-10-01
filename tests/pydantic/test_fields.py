@@ -1,3 +1,4 @@
+import warnings
 from typing import Annotated, Any
 
 import pydantic
@@ -37,7 +38,7 @@ def test_pydantic_field_descriptions():
 
 
 def test_pydantic_field_aliases():
-    """Test that Pydantic field aliases are used as GraphQL names."""
+    """Test that Pydantic field aliases aren't used as GraphQL names."""
 
     @strawberry.pydantic.type
     class User(pydantic.BaseModel):
@@ -49,8 +50,8 @@ def test_pydantic_field_aliases():
     age_field = next(f for f in definition.fields if f.python_name == "age")
     name_field = next(f for f in definition.fields if f.python_name == "name")
 
-    assert age_field.graphql_name == "userAge"
-    assert name_field.graphql_name == "userName"
+    assert age_field.graphql_name is None
+    assert name_field.graphql_name is None
 
 
 def test_can_use_strawberry_types():
@@ -213,7 +214,7 @@ def test_field_directives_with_pydantic_features():
 
     # Age field should have both Pydantic features and Strawberry directive
     assert age_field.description == "The user's age"
-    assert age_field.graphql_name == "userAge"
+    assert age_field.graphql_name is None
     assert len(age_field.directives) == 1
     assert isinstance(age_field.directives[0], Range)
     assert age_field.directives[0].min == 0
@@ -489,3 +490,63 @@ def test_strawberry_field_as_default_value_raises_an_error():
         @strawberry.pydantic.type
         class User(pydantic.BaseModel):
             email: str = strawberry.field(permission_classes=[IsAdmin])
+
+
+def test_deprecated_fields():
+    @strawberry.pydantic.type
+    class User(pydantic.BaseModel):
+        name: str
+        old_name: str = pydantic.Field(default="", deprecated="Use name")
+        nickname: Annotated[
+            str, strawberry.field(deprecation_reason="Use name, really")
+        ] = pydantic.Field(default="", deprecated="Use name")
+        alias: str = pydantic.Field(default="", deprecated=True)
+
+        @pydantic.computed_field(deprecated="Use name")
+        @property
+        def display_name(self) -> str:
+            return self.name
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def user(self) -> User:
+            return User(name="Ada", old_name="ada", nickname="A")
+
+    schema = strawberry.Schema(query=Query)
+
+    assert str(schema) == snapshot("""\
+type Query {
+  user: User!
+}
+
+type User {
+  name: String!
+  oldName: String! @deprecated(reason: "Use name")
+  nickname: String! @deprecated(reason: "Use name, really")
+  alias: String! @deprecated
+  displayName: String! @deprecated(reason: "Use name")
+}\
+""")
+
+    with warnings.catch_warnings():
+        # pydantic warns when deprecated fields are read
+        warnings.simplefilter("ignore", DeprecationWarning)
+
+        result = schema.execute_sync("{ user { oldName nickname displayName } }")
+
+    assert not result.errors
+    assert result.data == {
+        "user": {"oldName": "ada", "nickname": "A", "displayName": "Ada"}
+    }
+
+
+def test_deprecated_input_fields_are_not_deprecated_in_graphql():
+    # GraphQL doesn't allow deprecating required input fields
+    @strawberry.pydantic.input
+    class UserInput(pydantic.BaseModel):
+        name: str = pydantic.Field(deprecated="Use full_name")
+
+    [field] = get_object_definition(UserInput, strict=True).fields
+
+    assert field.deprecation_reason is None

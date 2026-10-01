@@ -20,7 +20,9 @@ from enum import Enum
 from typing import TYPE_CHECKING, Annotated, Any, Optional, get_args, get_origin
 from typing_extensions import Format, get_annotations
 
+from graphql.type.directives import DEFAULT_DEPRECATION_REASON
 from pydantic import BaseModel
+from pydantic_core import PydanticUndefined
 
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.exceptions import (
@@ -258,16 +260,34 @@ def replace_types_recursively(
     return origin[converted]
 
 
-def get_type_for_field(
-    field: CompatModelField,
-    is_input: bool,
-    compat: PydanticCompat,
-    model: type[BaseModel],
-) -> Any:
-    """Get the GraphQL type for a field of `model`."""
-    return replace_types_recursively(
-        field.outer_type_, is_input, compat=compat, model=model
-    )
+def _get_computed_field_annotation(
+    cls: type[BaseModel], field_name: str
+) -> tuple[Any, StrawberryField | None]:
+    """Return the type of a computed field and its `strawberry.field()`, if any."""
+    computed_field_info = cls.model_computed_fields[field_name]
+    annotation = computed_field_info.return_type
+
+    if annotation is PydanticUndefined:
+        # pydantic couldn't resolve a forward reference yet, Strawberry resolves
+        # the annotation when the schema is built
+        wrapped_property = computed_field_info.wrapped_property
+        getter = (
+            wrapped_property.fget
+            if isinstance(wrapped_property, property)
+            else wrapped_property.func
+        )
+        annotation = get_annotations(getter, format=Format.FORWARDREF)["return"]
+
+    if get_origin(annotation) is not Annotated:
+        return annotation, None
+
+    annotation, *metadata = get_args(annotation)
+    strawberry_fields = [item for item in metadata if isinstance(item, StrawberryField)]
+
+    if len(strawberry_fields) > 1:
+        raise MultipleStrawberryFieldsError(field_name=field_name, cls=cls)
+
+    return annotation, strawberry_fields[0] if strawberry_fields else None
 
 
 def _create_strawberry_field(
@@ -280,11 +300,16 @@ def _create_strawberry_field(
     is_input: bool,
     compat: PydanticCompat,
 ) -> StrawberryField:
-    strawberry_override = (
-        _get_strawberry_field_override(field_info, origin, field_name)
-        if field_info is not None
-        else None
-    )
+    # computed fields don't have a FieldInfo
+    if field_info is not None:
+        annotation = pydantic_field.outer_type_
+        strawberry_override = _get_strawberry_field_override(
+            field_info, origin, field_name
+        )
+    else:
+        annotation, strawberry_override = _get_computed_field_annotation(
+            cls, field_name
+        )
 
     # Start from the user's `strawberry.field()`, so all of its options are
     # kept, and fill in what pydantic knows about the field
@@ -293,20 +318,41 @@ def _create_strawberry_field(
         if strawberry_override is not None
         else StrawberryField()
     )
+    # pydantic aliases describe the model's own (de)serialization, so like with
+    # `@strawberry.type` the GraphQL name comes from the python name, unless set
+    # with `strawberry.field(name=...)`
     strawberry_field.python_name = field_name
     strawberry_field.origin = cls
 
-    if strawberry_field.graphql_name is None:
-        strawberry_field.graphql_name = pydantic_field.alias
-
     if strawberry_field.description is None:
         strawberry_field.description = pydantic_field.description
+
+    deprecated_field_info = (
+        field_info
+        if field_info is not None
+        else cls.model_computed_fields.get(field_name)
+    )
+
+    # GraphQL doesn't allow deprecating required input fields, and deprecated
+    # input fields are hidden by default in introspection, so only fields of
+    # output types are deprecated
+    if (
+        not is_input
+        and strawberry_field.deprecation_reason is None
+        and deprecated_field_info is not None
+        and deprecated_field_info.deprecated
+    ):
+        strawberry_field.deprecation_reason = (
+            DEFAULT_DEPRECATION_REASON
+            if deprecated_field_info.deprecated is True
+            else deprecated_field_info.deprecation_message
+        )
 
     if strawberry_field.type_annotation is None:
         module = sys.modules.get(origin.__module__)
 
         strawberry_field.type_annotation = StrawberryAnnotation(
-            get_type_for_field(pydantic_field, is_input, compat=compat, model=cls),
+            replace_types_recursively(annotation, is_input, compat=compat, model=cls),
             namespace=vars(module) if module is not None else None,
         )
     elif strawberry_field.type_annotation.namespace is None:
@@ -452,7 +498,11 @@ def _get_pydantic_fields(
         # computed fields don't have a FieldInfo
         field_info = field_infos.get(field_name)
 
-        if field_info is not None:
+        if field_info is None:
+            # e.g. `-> strawberry.Private[int]` on a computed field
+            if is_private(cls.model_computed_fields[field_name].return_type):
+                continue
+        else:
             if is_private(field_info.rebuild_annotation()):
                 continue
 

@@ -7,7 +7,10 @@ import pytest
 from inline_snapshot import snapshot
 
 import strawberry
-from strawberry.pydantic.exceptions import NotAPydanticModelError
+from strawberry.pydantic.exceptions import (
+    ModelAlreadyDecoratedError,
+    NotAPydanticModelError,
+)
 from strawberry.types.base import (
     StrawberryOptional,
     get_object_definition,
@@ -194,3 +197,26 @@ def test_decorating_a_pydantic_v1_model_raises_an_error():
         @strawberry.pydantic.type
         class User(pydantic_v1.BaseModel):
             name: str
+
+
+def test_models_can_only_be_decorated_once():
+    @strawberry.pydantic.type
+    class Address(pydantic.BaseModel):
+        street: str
+
+    with pytest.raises(
+        ModelAlreadyDecoratedError,
+        match=(
+            r"`Address` is already a type, so it can't be decorated with "
+            r"`strawberry\.pydantic\.input`"
+        ),
+    ):
+        strawberry.pydantic.input(Address)
+
+    # a subclass can be used as the input
+    @strawberry.pydantic.input
+    class AddressInput(Address):
+        pass
+
+    assert get_object_definition(AddressInput, strict=True).is_input
+    assert not get_object_definition(Address, strict=True).is_input
