@@ -8,10 +8,15 @@ from __future__ import annotations
 
 import copy
 import dataclasses
+import datetime
 import functools
+import math
 import operator
 import sys
-from typing import TYPE_CHECKING, Any, get_args, get_origin
+import uuid
+from decimal import Decimal
+from enum import Enum
+from typing import TYPE_CHECKING, Annotated, Any, Optional, get_args, get_origin
 from typing_extensions import Format, get_annotations
 
 from pydantic import BaseModel
@@ -22,14 +27,15 @@ from strawberry.exceptions import (
     MultipleStrawberryFieldsError,
 )
 from strawberry.experimental.pydantic._compat import PydanticCompat
-from strawberry.experimental.pydantic.utils import get_default_factory_for_field
 from strawberry.file_uploads import Upload
 from strawberry.types.base import StrawberryObjectDefinition
 from strawberry.types.field import StrawberryField, _contains_strawberry_field
+from strawberry.types.maybe import _annotation_is_maybe
 from strawberry.types.private import is_private
 from strawberry.utils.typing import is_generic_alias, is_union
 
 from .exceptions import (
+    MaybeFieldError,
     StrawberryFieldAsDefaultError,
     UnregisteredTypeException,
     UploadFieldError,
@@ -106,6 +112,98 @@ def _contains_upload(annotation: object) -> bool:
     )
 
 
+# GraphQL's Int is a 32-bit integer
+_GRAPHQL_INT_RANGE = range(-(2**31), 2**31)
+_CONSTANT_TYPES = (
+    str,
+    bool,
+    Decimal,
+    datetime.date,
+    datetime.datetime,
+    datetime.time,
+    uuid.UUID,
+)
+
+
+def _is_constant_of_type(value: object, annotation: Any) -> bool:
+    """Return whether `value` is a constant of the field type `annotation`.
+
+    Values pydantic would have to convert first, like a string default for a
+    date field, aren't constants of the field type.
+    """
+    if is_new_type(annotation):
+        # e.g. `strawberry.ID` and scalars registered with `scalar_map`
+        return _is_constant_of_type(value, annotation.__supertype__)
+
+    origin = get_origin(annotation)
+    args = get_args(annotation)
+
+    if origin is Annotated:
+        return _is_constant_of_type(value, args[0])
+
+    if is_union(annotation):
+        types = [arg for arg in args if arg is not type(None)]
+
+        return len(types) == 1 and _is_constant_of_type(value, types[0])
+
+    if origin is list or (origin is tuple and args[1:] == (Ellipsis,)):
+        return isinstance(value, (list, tuple)) and all(
+            _is_constant_of_type(item, args[0]) for item in value
+        )
+
+    if lenient_issubclass(annotation, Enum):
+        return isinstance(value, annotation)
+
+    if annotation is int:
+        return type(value) is int and value in _GRAPHQL_INT_RANGE
+
+    if annotation is float:
+        return (
+            isinstance(value, (int, float))
+            and not isinstance(value, bool)
+            and math.isfinite(value)
+        )
+
+    return annotation in _CONSTANT_TYPES and type(value) is annotation
+
+
+def _get_graphql_default(field_info: FieldInfo) -> object:
+    """Return the default to publish in the GraphQL schema for an input field.
+
+    graphql-core fills in published defaults before pydantic validates the
+    input, so a field with a published default always ends up in
+    `model_fields_set`. Only constants of the field's type are published, as
+    they're part of the API. `None` defaults, default factories and other values
+    are applied by pydantic, so that `model_dump(exclude_unset=True)` only
+    contains what the client sent and factories run for every request.
+    """
+    if field_info.default_factory is not None or not _is_constant_of_type(
+        field_info.default, field_info.annotation
+    ):
+        return dataclasses.MISSING
+
+    return field_info.default
+
+
+def _set_input_default(field: StrawberryField, field_info: FieldInfo) -> None:
+    default = _get_graphql_default(field_info)
+
+    # `StrawberryField.__copy__` builds `default_value` from `default`
+    field.default = default
+    field.default_factory = dataclasses.MISSING
+    field.default_value = default
+
+    # input fields can only be omitted when they're nullable or have a default,
+    # so fields whose default is applied by pydantic become nullable
+    if default is dataclasses.MISSING and not field_info.is_required():
+        assert field.type_annotation is not None
+
+        field.type_annotation = StrawberryAnnotation(
+            Optional[field.type_annotation.raw_annotation],  # noqa: UP045
+            namespace=field.type_annotation.namespace,
+        )
+
+
 def replace_pydantic_types(type_: Any, is_input: bool, model: type[BaseModel]) -> Any:
     """Replace Pydantic types with their Strawberry equivalents for first-class integration."""
     from pydantic import BaseModel
@@ -167,6 +265,57 @@ def get_type_for_field(
     )
 
 
+def _create_strawberry_field(
+    cls: type[BaseModel],
+    origin: type,
+    field_name: str,
+    pydantic_field: CompatModelField,
+    field_info: FieldInfo | None,
+    *,
+    is_input: bool,
+    compat: PydanticCompat,
+) -> StrawberryField:
+    strawberry_override = (
+        _get_strawberry_field_override(field_info, origin, field_name)
+        if field_info is not None
+        else None
+    )
+
+    # Start from the user's `strawberry.field()`, so all of its options are
+    # kept, and fill in what pydantic knows about the field
+    strawberry_field = (
+        copy.copy(strawberry_override)
+        if strawberry_override is not None
+        else StrawberryField()
+    )
+    strawberry_field.python_name = field_name
+    strawberry_field.origin = cls
+
+    if strawberry_field.graphql_name is None:
+        strawberry_field.graphql_name = pydantic_field.alias
+
+    if strawberry_field.description is None:
+        strawberry_field.description = pydantic_field.description
+
+    if strawberry_field.type_annotation is None:
+        module = sys.modules.get(origin.__module__)
+
+        strawberry_field.type_annotation = StrawberryAnnotation(
+            get_type_for_field(pydantic_field, is_input, compat=compat, model=cls),
+            namespace=vars(module) if module is not None else None,
+        )
+    elif strawberry_field.type_annotation.namespace is None:
+        # set by `strawberry.field(graphql_type=...)`
+        strawberry_field.type_annotation.set_namespace_from_field(strawberry_field)
+
+    # pydantic applies defaults when it builds the model
+    strawberry_field.default = dataclasses.MISSING
+    strawberry_field.default_factory = dataclasses.MISSING
+    strawberry_field.default_value = dataclasses.MISSING
+
+    return strawberry_field
+
+
 def _get_pydantic_fields(
     cls: type[BaseModel],
     is_input: bool = False,
@@ -220,49 +369,25 @@ def _get_pydantic_fields(
             if is_input and _contains_upload(field_info.annotation):
                 raise UploadFieldError(field_name=field_name, cls=origin)
 
+            if is_input and _annotation_is_maybe(field_info.annotation):
+                raise MaybeFieldError(field_name=field_name, cls=origin)
+
         if (base_field := _get_strawberry_base_field(origin, field_name)) is not None:
-            fields.append(base_field)
-            continue
-
-        strawberry_override = (
-            _get_strawberry_field_override(field_info, origin, field_name)
-            if field_info is not None
-            else None
-        )
-
-        # Start from the user's `strawberry.field()`, so all of its options are
-        # kept, and fill in what pydantic knows about the field
-        strawberry_field = (
-            copy.copy(strawberry_override)
-            if strawberry_override is not None
-            else StrawberryField()
-        )
-        strawberry_field.python_name = field_name
-        strawberry_field.origin = cls
-
-        if strawberry_field.graphql_name is None:
-            strawberry_field.graphql_name = pydantic_field.alias
-
-        if strawberry_field.description is None:
-            strawberry_field.description = pydantic_field.description
-
-        if strawberry_field.type_annotation is None:
-            module = sys.modules.get(origin.__module__)
-
-            strawberry_field.type_annotation = StrawberryAnnotation(
-                get_type_for_field(pydantic_field, is_input, compat=compat, model=cls),
-                namespace=vars(module) if module is not None else None,
+            # inputs replace the field's default with pydantic's below
+            strawberry_field = copy.copy(base_field) if is_input else base_field
+        else:
+            strawberry_field = _create_strawberry_field(
+                cls,
+                origin,
+                field_name,
+                pydantic_field,
+                field_info,
+                is_input=is_input,
+                compat=compat,
             )
-        elif strawberry_field.type_annotation.namespace is None:
-            # set by `strawberry.field(graphql_type=...)`
-            strawberry_field.type_annotation.set_namespace_from_field(strawberry_field)
 
-        default_factory = get_default_factory_for_field(pydantic_field, compat=compat)
-        strawberry_field.default = dataclasses.MISSING
-        strawberry_field.default_factory = default_factory
-        strawberry_field.default_value = (
-            default_factory() if callable(default_factory) else dataclasses.MISSING
-        )
+        if is_input and field_info is not None:
+            _set_input_default(strawberry_field, field_info)
 
         fields.append(strawberry_field)
 

@@ -139,20 +139,69 @@ class User(BaseModel):
     age: int = Field(alias="yearsOld")
 ```
 
-### Optional Fields
+### Default Values and Partial Updates
 
-Pydantic optional fields are properly handled:
+Input fields with a default can be omitted by clients. Defaults that are
+constants of the field's type, like `20` for an `int` field or an enum member
+for an enum field, are shown in the schema:
 
 ```python
-from typing import Optional
+import uuid
+
+from pydantic import BaseModel, Field
 
 
-@strawberry.pydantic.type
-class User(BaseModel):
-    name: str
-    email: Optional[str] = None
-    age: Optional[int] = None
+@strawberry.pydantic.input
+class SearchInput(BaseModel):
+    query: str
+    page_size: int = 20
+    request_id: uuid.UUID = Field(default_factory=uuid.uuid4)
+    tag: str | None = None
 ```
+
+```graphql
+input SearchInput {
+  query: String!
+  pageSize: Int! = 20
+  requestId: UUID
+  tag: String
+}
+```
+
+Other defaults, like `None`, default factories, model instances or values that
+Pydantic converts to the field's type, are applied by Pydantic and are not shown
+in the schema, so the field becomes nullable. Pydantic validates an explicit
+`null` like any other value.
+
+Fields the client omits whose default is not shown in the schema are not part of
+`model_fields_set`, which makes partial updates work as usual with Pydantic:
+
+```python
+@strawberry.pydantic.input
+class UpdateUserInput(BaseModel):
+    name: str | None = None
+    bio: str | None = None
+
+
+@strawberry.type
+class Mutation:
+    @strawberry.mutation
+    def update_user(self, id: strawberry.ID, input: UpdateUserInput) -> User:
+        user = get_user(id)
+
+        # only the fields sent by the client, an explicit `null` included
+        for field, value in input.model_dump(exclude_unset=True).items():
+            setattr(user, field, value)
+
+        return user
+```
+
+Defaults shown in the schema are filled in by GraphQL, so they are always part
+of `model_fields_set`, and Pydantic validates them like values sent by the
+client.
+
+`strawberry.Maybe` can't be used in Pydantic inputs, use `model_fields_set` to
+tell omitted fields apart from explicit `null` values instead.
 
 ### Private Fields
 
