@@ -15,6 +15,7 @@ from strawberry.types.base import StrawberryObjectDefinition
 from strawberry.types.cast import get_strawberry_type_cast
 from strawberry.utils.str_converters import to_camel_case
 
+from .conversion import build_pydantic_model
 from .exceptions import NotAPydanticModelError
 from .fields import _get_pydantic_fields
 
@@ -103,6 +104,8 @@ def _process_pydantic_type(
         fields=fields,
         is_type_of=is_type_of,
         resolve_type=getattr(cls, "resolve_type", None),
+        # also used by federation to build entities from their representations
+        from_input=None if is_interface else build_pydantic_model,
     )
 
     # Add the is_type_of method to the class for testing purposes

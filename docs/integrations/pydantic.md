@@ -461,6 +461,31 @@ class UserInput(BaseModel):
     email: Email  # Validator runs during GraphQL input processing
 ```
 
+#### Nested Inputs
+
+Pydantic inputs nested inside other Pydantic inputs are validated together with
+the outermost one, so all the errors are reported at once, with their full
+location:
+
+```python
+@strawberry.pydantic.input
+class ItemInput(BaseModel):
+    quantity: int = Field(gt=0)
+
+
+@strawberry.pydantic.input
+class OrderInput(BaseModel):
+    items: list[ItemInput]
+```
+
+Sending `items: [{quantity: 0}, {quantity: 1}, {quantity: -1}]` reports two
+errors, at `items.0.quantity` and `items.2.quantity`. Validators with
+`mode="before"` receive nested inputs as data, not as model instances.
+
+A Pydantic input nested inside a regular `@strawberry.input` is validated on its
+own, and overriding `model_validate` only affects the outermost input, so prefer
+`@model_validator(mode="before")` to transform the input data.
+
 #### Validation Context
 
 Strawberry automatically passes GraphQL context to Pydantic validators, allowing
