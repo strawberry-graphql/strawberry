@@ -14,12 +14,29 @@ if TYPE_CHECKING:
 
 
 class UnregisteredTypeException(Exception):
-    def __init__(self, type: type[BaseModel]) -> None:
-        message = (
-            f"Cannot find a Strawberry Type for {type} did you forget to register it?"
+    """A pydantic model used by a field isn't a Strawberry type."""
+
+    def __init__(
+        self,
+        type: type[BaseModel],
+        *,
+        cls: type | None = None,
+        field_name: str | None = None,
+        is_input: bool = False,
+    ) -> None:
+        self.type = type
+
+        decorator = "input" if is_input else "type"
+        location = (
+            f"`{cls.__name__}.{field_name}` uses `{type.__name__}`, which"
+            if cls is not None and field_name is not None
+            else f"`{type.__name__}`"
         )
 
-        super().__init__(message)
+        super().__init__(
+            f"{location} isn't a Strawberry type: decorate it with "
+            f"`@strawberry.pydantic.{decorator}`"
+        )
 
 
 class StrawberryFieldAsDefaultError(StrawberryException):

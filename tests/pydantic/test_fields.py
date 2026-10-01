@@ -115,7 +115,8 @@ def test_all_models_need_to_marked_as_strawberry_types():
     with pytest.raises(
         UnregisteredTypeException,
         match=(
-            r"Cannot find a Strawberry Type for <class '([^']+)\.([^']+)'> did you forget to register it\?"
+            r"`User\.address` uses `Address`, which isn't a Strawberry type: "
+            r"decorate it with `@strawberry\.pydantic\.type`"
         ),
     ):
 

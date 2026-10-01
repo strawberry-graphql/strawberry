@@ -62,6 +62,20 @@ class User(BaseModel):
     is_active: bool = True
 ```
 
+Like with `@strawberry.type`, resolvers can return other objects with the same
+attributes, like rows of an ORM. Where Strawberry needs to know their type, in
+unions and for types implementing interfaces, wrap them with `strawberry.cast`:
+
+```python
+@strawberry.mutation
+def create_user(self, input: CreateUserInput) -> User | ValidationError:
+    row = db.users.insert(name=input.name)
+
+    return strawberry.cast(User, row)
+```
+
+Define an `is_type_of` class method on the model to only accept some objects.
+
 ### `@strawberry.pydantic.input`
 
 Creates a GraphQL input type from a Pydantic model:
@@ -79,6 +93,17 @@ class Mutation:
     @strawberry.field
     def create_user(self, input: CreateUserInput) -> User:
         return User(name=input.name, age=input.age, email=input.email)
+```
+
+Pass `one_of=True` to create a
+[`oneOf` input](../types/input-types.md#one-of-input-types), where clients set
+exactly one field:
+
+```python
+@strawberry.pydantic.input(one_of=True)
+class UserBy(BaseModel):
+    id: strawberry.ID | None = None
+    email: str | None = None
 ```
 
 ### `@strawberry.pydantic.interface`
@@ -399,7 +424,11 @@ fields. Use a `@strawberry.pydantic.interface` instead.
 ### Scalars
 
 Fields can use Strawberry's scalars, such as `strawberry.ID` and `JSON`, and
-[custom scalars](../types/scalars.md), the same way as `@strawberry.type`:
+[custom scalars](../types/scalars.md), the same way as `@strawberry.type`.
+Pydantic types that only add validation to a scalar, like `EmailStr`, `HttpUrl`,
+`PositiveInt`, `AwareDatetime` or `PastDate`, use the scalar they validate, so
+`scalar_map` entries for `datetime` also apply to `AwareDatetime` fields, and
+`strawberry.field(graphql_type=...)` changes the scalar of a field:
 
 ```python
 from typing import NewType
@@ -428,6 +457,20 @@ schema = strawberry.Schema(
         }
     ),
 )
+```
+
+Types that GraphQL has no scalar for, like `dict`, `Any`, `set` or `bytes`, need
+a GraphQL type too, for example `JSON` or a custom scalar:
+
+```python
+from typing import Annotated, Any
+
+from strawberry.scalars import JSON
+
+
+@strawberry.pydantic.type
+class Settings(BaseModel):
+    values: Annotated[dict[str, Any], strawberry.field(graphql_type=JSON)]
 ```
 
 As with `@strawberry.type`, a `NewType` must be registered as a scalar to be

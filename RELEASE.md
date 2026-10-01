@@ -50,3 +50,6 @@ can be customized with `Annotated[..., strawberry.field(...)]`, and
 `strawberry.Private` or Pydantic's `Field(exclude=True)` hide a field from the
 schema. See the [Pydantic integration docs](https://strawberry.rocks/docs/integrations/pydantic)
 for everything that's supported.
+
+This release also fixes objects cast with `strawberry.cast` not being resolved
+when they're returned in a union.
