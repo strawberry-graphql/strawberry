@@ -90,3 +90,22 @@ def test_strawberry_pydantic_is_imported_on_first_access():
     )
 
     assert result.returncode == 0, result.stderr
+
+
+def test_using_strawberry_pydantic_with_an_old_pydantic_raises_an_error():
+    result = _run(
+        """
+        import pydantic
+
+        pydantic.VERSION = "2.10.6"
+
+        import strawberry.pydantic
+        """,
+        block_pydantic=False,
+    )
+
+    assert result.returncode != 0
+    assert (
+        "ImportError: strawberry.pydantic requires pydantic>=2.11, but pydantic "
+        "2.10.6 is installed. Upgrade it with `pip install -U 'pydantic>=2.11'`."
+    ) in result.stderr

@@ -198,7 +198,7 @@ def _get_pydantic_fields(
 
     compat = PydanticCompat.from_model(cls)
     model_fields = compat.get_model_fields(cls, include_computed=include_computed)
-    field_infos: dict[str, FieldInfo] = getattr(cls, "model_fields", {})
+    field_infos: dict[str, FieldInfo] = cls.model_fields
     origins = _get_field_origins(cls)
 
     for field_name, pydantic_field in model_fields.items():

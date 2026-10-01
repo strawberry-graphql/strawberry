@@ -147,7 +147,32 @@ def test_pydantic_v2(session: nox.Session) -> None:
         "--no-group=integrations",
         env={"UV_PROJECT_ENVIRONMENT": session.virtualenv.location},
     )
-    session.install("pydantic>=2.2")
+    session.install("pydantic>=2.11")
+    session.run(
+        "pytest",
+        "--cov=.",
+        "--cov-append",
+        "-m",
+        "pydantic",
+        "--ignore=tests/cli",
+        "--ignore=tests/benchmarks",
+    )
+
+
+@nox.session(
+    python=["3.10"],
+    name="Pydantic minimum version tests",
+    tags=["tests", "pydantic"],
+)
+def test_pydantic_minimum_version(session: nox.Session) -> None:
+    session.run_install(
+        "uv",
+        "sync",
+        "--no-group=integrations",
+        env={"UV_PROJECT_ENVIRONMENT": session.virtualenv.location},
+    )
+    # the oldest pydantic supported by strawberry.pydantic
+    session.install("pydantic==2.11.*")
     session.run(
         "pytest",
         "--cov=.",
