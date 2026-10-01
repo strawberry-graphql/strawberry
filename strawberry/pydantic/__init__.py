@@ -10,18 +10,8 @@ Example:
         age: int
 """
 
-try:
-    import pydantic as _pydantic  # noqa: F401
-except ModuleNotFoundError as exc:
-    if exc.name != "pydantic":
-        raise
-
-    raise ModuleNotFoundError(
-        "strawberry.pydantic requires pydantic. "
-        "Install it with `pip install 'strawberry-graphql[pydantic]'`.",
-        name="pydantic",
-    ) from exc
-
+# must be imported first: checks that a supported pydantic is installed
+from . import _requirements  # noqa: F401
 from .error import Error, PydanticValidationErrorHandler
 from .object_type import input as input_decorator
 from .object_type import interface

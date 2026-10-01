@@ -1,9 +1,13 @@
+import sys
+from collections.abc import Callable
 from typing import Optional
 
 import pydantic
+import pytest
 from inline_snapshot import snapshot
 
 import strawberry
+from strawberry.pydantic.exceptions import NotAPydanticModelError
 from strawberry.types.base import (
     StrawberryOptional,
     get_object_definition,
@@ -134,3 +138,59 @@ type User {
 }\
 """
     )
+
+
+@pytest.mark.parametrize(
+    "decorator",
+    [
+        strawberry.pydantic.type,
+        strawberry.pydantic.input,
+        strawberry.pydantic.interface,
+    ],
+    ids=["type", "input", "interface"],
+)
+def test_decorating_a_class_that_is_not_a_pydantic_model_raises_an_error(
+    decorator: Callable[[type], type],
+):
+    name = decorator.__name__
+
+    with pytest.raises(
+        NotAPydanticModelError,
+        match=(
+            rf"strawberry\.pydantic\.{name} can only be used with pydantic models, "
+            r"but `User` is not a subclass of `pydantic\.BaseModel`"
+        ),
+    ):
+
+        @decorator
+        class User:
+            name: str
+
+
+def test_decorating_a_pydantic_dataclass_raises_an_error():
+    with pytest.raises(NotAPydanticModelError, match="`User` is not a subclass"):
+
+        @strawberry.pydantic.type
+        @pydantic.dataclasses.dataclass
+        class User:
+            name: str
+
+
+@pytest.mark.skipif(
+    sys.version_info >= (3, 14),
+    reason="Pydantic v1 is not compatible with Python 3.14+",
+)
+def test_decorating_a_pydantic_v1_model_raises_an_error():
+    from pydantic import v1 as pydantic_v1
+
+    with pytest.raises(
+        NotAPydanticModelError,
+        match=(
+            r"`User` is a pydantic v1 model, but strawberry\.pydantic\.type only "
+            r"supports pydantic v2 models"
+        ),
+    ):
+
+        @strawberry.pydantic.type
+        class User(pydantic_v1.BaseModel):
+            name: str

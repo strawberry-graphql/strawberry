@@ -81,3 +81,44 @@ class UploadFieldError(StrawberryException):
         source_finder = SourceFinder()
 
         return source_finder.find_class_attribute_from_object(self.cls, self.field_name)
+
+
+class NotAPydanticModelError(StrawberryException):
+    def __init__(self, obj: object, decorator: str) -> None:
+        self.obj = obj
+
+        obj_name = getattr(obj, "__name__", repr(obj))
+        is_pydantic_v1_model = isinstance(obj, type) and any(
+            base.__module__.startswith("pydantic.v1") for base in obj.__mro__
+        )
+
+        if is_pydantic_v1_model:
+            self.message = (
+                f"`{obj_name}` is a pydantic v1 model, but strawberry.pydantic."
+                f"{decorator} only supports pydantic v2 models"
+            )
+            self.suggestion = (
+                "Migrate the model to pydantic v2 (`from pydantic import "
+                "BaseModel`), or use `strawberry.experimental.pydantic`, which "
+                "supports pydantic v1 models."
+            )
+        else:
+            self.message = (
+                f"strawberry.pydantic.{decorator} can only be used with pydantic "
+                f"models, but `{obj_name}` is not a subclass of `pydantic.BaseModel`"
+            )
+            self.suggestion = (
+                f"Use `strawberry.{decorator}` for classes that aren't pydantic models."
+            )
+
+        self.rich_message = self.message
+        self.annotation_message = "class defined here"
+
+        super().__init__(self.message)
+
+    @cached_property
+    def exception_source(self) -> ExceptionSource | None:
+        if not isinstance(self.obj, type):
+            return None
+
+        return SourceFinder().find_class_from_object(self.obj)

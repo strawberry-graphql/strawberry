@@ -14,6 +14,10 @@ create GraphQL types without writing code twice.
 pip install strawberry-graphql[pydantic]
 ```
 
+`strawberry.pydantic` requires Pydantic 2.11 or newer. Pydantic v1 models are
+only supported by the
+[experimental integration](#experimental-pydantic-support-deprecated).
+
 ## Basic Usage
 
 The simplest way to use Pydantic with Strawberry is to decorate your Pydantic

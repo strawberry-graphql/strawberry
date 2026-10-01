@@ -6,20 +6,22 @@ into GraphQL types, inputs, and interfaces without requiring a separate wrapper 
 
 from __future__ import annotations
 
+import builtins
 from typing import TYPE_CHECKING, Any, TypeVar, overload
 
-if TYPE_CHECKING:
-    import builtins
-    from collections.abc import Callable, Sequence
-
-    from graphql import GraphQLResolveInfo
-    from pydantic import BaseModel
+from pydantic import BaseModel
 
 from strawberry.types.base import StrawberryObjectDefinition
 from strawberry.types.cast import get_strawberry_type_cast
 from strawberry.utils.str_converters import to_camel_case
 
+from .exceptions import NotAPydanticModelError
 from .fields import _get_pydantic_fields
+
+if TYPE_CHECKING:
+    from collections.abc import Callable, Sequence
+
+    from graphql import GraphQLResolveInfo
 
 # The decorators return the class they're given, so type checkers keep the
 # model's own type instead of a plain BaseModel
@@ -63,6 +65,11 @@ def _process_pydantic_type(
     Returns:
         The processed BaseModel class with GraphQL metadata
     """
+    if not (isinstance(cls, builtins.type) and issubclass(cls, BaseModel)):
+        decorator = "input" if is_input else "interface" if is_interface else "type"
+
+        raise NotAPydanticModelError(cls, decorator)
+
     # Get the GraphQL type name
     name = name or to_camel_case(cls.__name__)
 
