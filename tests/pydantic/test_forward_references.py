@@ -7,14 +7,25 @@ import pytest
 import strawberry
 from strawberry.exceptions import UnresolvedFieldTypeError
 
+# Self-referencing models are defined at module level, like real apps do: before
+# Python 3.12 pydantic can leave `list["Category"]` unresolved, and Strawberry then
+# resolves it from the module, as it does for `@strawberry.type`.
+
+
+@strawberry.pydantic.type
+class Category(pydantic.BaseModel):
+    name: str
+    parent: Optional["Category"] = None
+    children: list["Category"] = []
+
+
+@strawberry.pydantic.input
+class Filter(pydantic.BaseModel):
+    name: str | None = None
+    any_of: list["Filter"] = []
+
 
 def test_self_referencing_model():
-    @strawberry.pydantic.type
-    class Category(pydantic.BaseModel):
-        name: str
-        parent: Optional["Category"] = None
-        children: list["Category"] = []
-
     @strawberry.type
     class Query:
         @strawberry.field
@@ -46,11 +57,6 @@ def test_self_referencing_model():
 
 
 def test_self_referencing_input():
-    @strawberry.pydantic.input
-    class Filter(pydantic.BaseModel):
-        name: str | None = None
-        any_of: list["Filter"] = []
-
     @strawberry.type
     class Query:
         @strawberry.field
