@@ -41,6 +41,10 @@ by returning `User | strawberry.pydantic.ValidationError` and registering
 `strawberry.pydantic.PydanticValidationErrorHandler` in the schema's
 `exception_handlers`, as typed results.
 
+GraphQL field names come from the Python field names, as Pydantic aliases only
+affect Pydantic's own (de)serialization: use
+`Annotated[..., strawberry.field(name=...)]` to rename a field. Computed fields
+are included, and deprecated fields are deprecated in GraphQL too.
 Fields with a resolver can be added with `@strawberry.pydantic.field`, fields
 can be customized with `Annotated[..., strawberry.field(...)]`, and
 `strawberry.Private` or Pydantic's `Field(exclude=True)` hide a field from the

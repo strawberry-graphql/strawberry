@@ -226,9 +226,13 @@ def build_pydantic_model(
             validation_context["strawberry_context"] = context.info.context
 
     try:
-        # the data uses the fields' python names, not their aliases
+        # the data uses the fields' python names, aliases would match a field
+        # whose alias is the python name of another one
         result = model.model_validate(
-            data, context=validation_context or None, by_name=True
+            data,
+            context=validation_context or None,
+            by_alias=False,
+            by_name=True,
         )
     except ValidationError as exc:
         issues = [

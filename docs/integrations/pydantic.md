@@ -108,8 +108,23 @@ All decorators accept optional configuration parameters:
     description="A user in the system",  # Add type description
 )
 class User(BaseModel):
-    name: str = Field(alias="fullName")
+    name: str
     age: int
+```
+
+To use the same model as a GraphQL type and as an input, decorate a subclass, as
+a model can only be decorated once:
+
+```python
+@strawberry.pydantic.type
+class Address(BaseModel):
+    street: str
+    city: str
+
+
+@strawberry.pydantic.input
+class AddressInput(Address):
+    pass
 ```
 
 ## Field Features
@@ -128,15 +143,88 @@ class User(BaseModel):
     age: int = Field(description="The user's age in years")
 ```
 
-### Field Aliases
+### Field Names and Aliases
 
-Pydantic field aliases are automatically used as GraphQL field names:
+GraphQL field names come from the Python field names, like with
+`@strawberry.type`. Pydantic aliases describe how the model is (de)serialized,
+for example for a REST API, so they are not used in the GraphQL schema. Use
+`strawberry.field(name=...)` to rename a field:
+
+```python
+from typing import Annotated
+
+from pydantic import Field
+
+
+@strawberry.pydantic.type
+class User(BaseModel):
+    user_name: str = Field(alias="user-name")  # userName in GraphQL
+    age: Annotated[int, strawberry.field(name="yearsOld")]
+```
+
+This also applies to fields named after Python keywords, which are usually
+aliased: `from_: date = Field(alias="from")` is called `from_` in GraphQL,
+unless it is renamed with `Annotated[date, strawberry.field(name="from")]`.
+
+### Computed Fields
+
+Pydantic's computed fields are part of the GraphQL type, like they are part of
+`model_dump()`, with their description or the property's docstring as
+description:
+
+```python
+from typing import Annotated
+
+from pydantic import computed_field
+
+from strawberry.scalars import JSON
+
+
+@strawberry.pydantic.type
+class User(BaseModel):
+    first_name: str
+    last_name: str
+
+    @computed_field
+    @property
+    def full_name(self) -> str:
+        return f"{self.first_name} {self.last_name}"
+
+    @computed_field
+    @property
+    def settings(self) -> Annotated[dict, strawberry.field(graphql_type=JSON)]:
+        return {"theme": "dark"}
+
+    @computed_field
+    @property
+    def risk_score(self) -> strawberry.Private[int]:
+        return 42
+```
+
+Like other fields, they can be customized with `strawberry.field()` in their
+return type, and hidden with `strawberry.Private`. Pass `include_computed=False`
+to the decorator to leave all of them out.
+
+### Deprecated Fields
+
+Fields of output types deprecated with Pydantic's `Field(deprecated=...)` or
+`computed_field(deprecated=...)` are deprecated in the GraphQL schema too.
+Pydantic still emits its `DeprecationWarning` when the field is read, including
+when it's resolved. Input fields are not deprecated in GraphQL, as GraphQL
+doesn't allow deprecating required input fields.
 
 ```python
 @strawberry.pydantic.type
 class User(BaseModel):
-    name: str = Field(alias="fullName")
-    age: int = Field(alias="yearsOld")
+    name: str
+    full_name: str = Field(deprecated="Use name")
+```
+
+```graphql
+type User {
+  name: String!
+  fullName: String! @deprecated(reason: "Use name")
+}
 ```
 
 ### Default Values and Partial Updates
@@ -699,20 +787,6 @@ class UserInput(BaseModel):
     name: str  # Normal coercion allowed
 ```
 
-### Aliases
-
-Pydantic field aliases are supported for both input and output types:
-
-```python
-from pydantic import Field
-
-
-@strawberry.pydantic.type
-class User(BaseModel):
-    user_id: int = Field(alias="userId")
-    full_name: str = Field(validation_alias="fullName")
-```
-
 ### Field Directives and Customization
 
 You can use `strawberry.field()` with `Annotated` types to add GraphQL-specific
@@ -751,7 +825,7 @@ class User(BaseModel):
     # Field with multiple directives and Pydantic features
     age: Annotated[
         int,
-        Field(alias="userAge", description="User's age"),
+        Field(description="User's age"),
         strawberry.field(directives=[Range(min=0, max=150)]),
     ]
 
@@ -777,8 +851,7 @@ When using `strawberry.field()` with Pydantic models, you can specify:
   authorization
 - **`deprecation_reason`**: Mark a field as deprecated with a reason
 - **`description`**: Override the Pydantic field description for GraphQL
-- **`name`**: Override the GraphQL field name (takes precedence over Pydantic
-  aliases)
+- **`name`**: Set the GraphQL field name
 - **`graphql_type`**: Override the GraphQL type of the field
 
 `strawberry.field()` must be used inside `Annotated`. Assigning it as the

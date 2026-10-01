@@ -2,6 +2,7 @@
 
 import pydantic
 from pydantic import AliasChoices, Field
+from pydantic.alias_generators import to_snake
 
 import strawberry
 
@@ -230,11 +231,11 @@ def test_alias_with_populate_by_name():
 
     schema = strawberry.Schema(query=Query, mutation=Mutation)
 
-    # Test with the alias (GraphQL uses alias when present)
+    # GraphQL names come from the python names, not the aliases
     result = schema.execute_sync(
         """
         mutation {
-            createUser(input: { email: "alice@example.com" }) {
+            createUser(input: { emailAddress: "alice@example.com" }) {
                 emailAddress
             }
         }
@@ -326,3 +327,64 @@ def test_alias_generator_function():
     assert not result.errors
     assert result.data["saveData"]["userName"] == "Alice"
     assert result.data["saveData"]["emailAddress"] == "alice@example.com"
+
+
+def test_aliases_are_not_used_as_graphql_names():
+    @strawberry.pydantic.type
+    class ExternalUser(pydantic.BaseModel):
+        model_config = pydantic.ConfigDict(alias_generator=to_snake)
+
+        userName: str  # noqa: N815
+        created_at: str = Field(alias="created-at")
+
+    @strawberry.pydantic.input
+    class ExternalUserInput(pydantic.BaseModel):
+        user_name: str = Field(alias="user-name", min_length=2)
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def user(self, input: ExternalUserInput) -> ExternalUser:
+            return ExternalUser(user_name=input.user_name, **{"created-at": "today"})
+
+    schema = strawberry.Schema(query=Query)
+
+    assert "type ExternalUser {\n  userName: String!\n  createdAt: String!\n}" in str(
+        schema
+    )
+    assert "input ExternalUserInput {\n  userName: String!\n}" in str(schema)
+
+    result = schema.execute_sync(
+        '{ user(input: {userName: "Ada"}) { userName createdAt } }'
+    )
+
+    assert not result.errors
+    assert result.data == {"user": {"userName": "Ada", "createdAt": "today"}}
+
+    result = schema.execute_sync('{ user(input: {userName: "A"}) { userName } }')
+
+    assert result.errors
+    assert result.errors[0].extensions["validationErrors"][0]["location"] == [
+        "input",
+        "userName",
+    ]
+
+
+def test_aliases_matching_other_fields():
+    @strawberry.pydantic.input
+    class SwapInput(pydantic.BaseModel):
+        first: str = Field(alias="second")
+        second: str = Field(alias="first")
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def swap(self, input: SwapInput) -> str:
+            return f"{input.first} {input.second}"
+
+    result = strawberry.Schema(query=Query).execute_sync(
+        '{ swap(input: {first: "F", second: "S"}) }'
+    )
+
+    assert not result.errors
+    assert result.data == {"swap": "F S"}
