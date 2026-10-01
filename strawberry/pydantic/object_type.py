@@ -7,12 +7,13 @@ into GraphQL types, inputs, and interfaces without requiring a separate wrapper 
 from __future__ import annotations
 
 import builtins
-from typing import TYPE_CHECKING, Any, TypeVar, overload
+from typing import TYPE_CHECKING, TypeVar, overload
 
 from pydantic import BaseModel
 
 from strawberry.schema_directives import OneOf
 from strawberry.types.base import StrawberryObjectDefinition
+from strawberry.types.object_type import _get_interfaces
 from strawberry.utils.str_converters import to_camel_case
 
 from .conversion import build_pydantic_model
@@ -26,19 +27,6 @@ if TYPE_CHECKING:
 # The decorators return the class they're given, so type checkers keep the
 # model's own type instead of a plain BaseModel
 ModelT = TypeVar("ModelT", bound="BaseModel")
-
-
-def _get_interfaces(cls: builtins.type[Any]) -> list[StrawberryObjectDefinition]:
-    """Extract interfaces from a class's inheritance hierarchy."""
-    interfaces: list[StrawberryObjectDefinition] = []
-
-    for base in cls.__mro__[1:]:  # Exclude current class
-        if hasattr(base, "__strawberry_definition__"):
-            type_definition = base.__strawberry_definition__
-            if type_definition.is_interface:
-                interfaces.append(type_definition)
-
-    return interfaces
 
 
 def _process_pydantic_type(

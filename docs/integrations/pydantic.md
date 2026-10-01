@@ -113,15 +113,15 @@ Creates a GraphQL interface from a Pydantic model:
 ```python
 @strawberry.pydantic.interface
 class Node(BaseModel):
-    id: str
+    id: strawberry.ID
 
 
 @strawberry.pydantic.type
-class User(BaseModel):
-    id: str
+class User(Node):
     name: str
-    # User implements Node interface
 ```
+
+Types implement a Pydantic interface by subclassing it, and inherit its fields.
 
 ## Configuration Options
 
@@ -343,19 +343,17 @@ type User {
 }
 ```
 
-The private fields are still accessible in Python code for use in resolvers or
-business logic:
+Private fields are still part of the model, so they can be used by resolvers:
 
 ```python
-@strawberry.type
-class Query:
-    @strawberry.field
-    def get_user(self) -> User:
-        user = User(id=1, name="John", password="secret", email="john@example.com")
-        # Can access private field in Python
-        if user.password:
-            return user
-        return None
+@strawberry.pydantic.type
+class User(BaseModel):
+    name: str
+    password_hash: strawberry.Private[str]
+
+    @strawberry.pydantic.field
+    def has_password(self) -> bool:
+        return bool(self.password_hash)
 ```
 
 Fields excluded from Pydantic's serialization with `Field(exclude=True)` are not
@@ -513,23 +511,7 @@ class CreatePostInput(BaseModel):
 
 ## Advanced Usage
 
-### Nested Types
-
-Pydantic models can contain other Pydantic models:
-
-```python
-@strawberry.pydantic.type
-class Address(BaseModel):
-    street: str
-    city: str
-    zipcode: str
-
-
-@strawberry.pydantic.type
-class User(BaseModel):
-    name: str
-    address: Address
-```
+### Self-Referencing Models
 
 Models can reference themselves, and models defined in the same module can
 reference each other:
@@ -548,27 +530,6 @@ import and `model_rebuild()`) are not supported yet. Define them in the same
 module instead.
 
 </Note>
-
-### Lists and Collections
-
-Lists of Pydantic models work seamlessly:
-
-```python
-from typing import List
-
-
-@strawberry.pydantic.type
-class User(BaseModel):
-    name: str
-    age: int
-
-
-@strawberry.type
-class Query:
-    @strawberry.field
-    def get_users(self) -> List[User]:
-        return [User(name="John", age=30), User(name="Jane", age=25)]
-```
 
 ### Validation
 
@@ -666,28 +627,34 @@ own, and overriding `model_validate` only affects the outermost input, so prefer
 
 #### Validation Context
 
-Strawberry automatically passes GraphQL context to Pydantic validators, allowing
-access to request information, user authentication, database sessions, etc:
+Validators receive the GraphQL request in their validation context:
+`info.context["info"]` is Strawberry's `Info`, and
+`info.context["strawberry_context"]` the context of the request. Validators also
+run when the model is created in Python, where there's no validation context:
 
 ```python
-from pydantic import field_validator, ValidationInfo
+from pydantic import ValidationInfo, field_validator
 
 
 @strawberry.pydantic.input
-class CreatePostInput(BaseModel):
-    title: str
+class CreateUserInput(BaseModel):
+    email: str
 
-    @field_validator("title")
+    @field_validator("email")
     @classmethod
-    def check_permissions(cls, v: str, info: ValidationInfo) -> str:
-        # Access GraphQL context passed during validation
-        strawberry_info = info.context.get("info") if info.context else None
-        if strawberry_info:
-            user = strawberry_info.context.get("user")
-            if user and not user.can_create_posts:
-                raise ValueError("User cannot create posts")
-        return v
+    def check_email_is_free(cls, email: str, info: ValidationInfo) -> str:
+        if info.context and email_exists(info.context["strawberry_context"], email):
+            raise ValueError("This email is already used")
+
+        return email
 ```
+
+<Note>
+
+Inputs are validated before the field's permission classes run, so don't use
+validators for authorization.
+
+</Note>
 
 #### Validation Errors
 
@@ -958,95 +925,61 @@ class Mutation:
         return sum(validated.root)
 ```
 
-## Migration from Experimental
-
-If you're using the experimental Pydantic integration, here's how to migrate:
-
-### Before (Experimental)
-
-```python
-from strawberry.experimental.pydantic import type as pydantic_type
-
-
-class UserModel(BaseModel):
-    name: str
-    age: int
-
-
-@pydantic_type(UserModel, all_fields=True)
-class User:
-    pass
-```
-
-### After (First-class)
-
-```python
-@strawberry.pydantic.type
-class User(BaseModel):
-    name: str
-    age: int
-```
-
 ## Complete Example
 
 ```python
 from pydantic import BaseModel, Field, field_validator
-from typing import List, Optional
+
 import strawberry
+from strawberry.pydantic import PydanticValidationErrorHandler, ValidationError
 
 
 @strawberry.pydantic.type
 class User(BaseModel):
-    id: int
+    id: strawberry.ID
     name: str = Field(description="The user's full name")
     email: str
-    age: int = Field(ge=0, description="The user's age in years")
-    is_active: bool = True
-    tags: List[str] = Field(default_factory=list)
+    tags: list[str] = Field(default_factory=list)
+
+    @strawberry.pydantic.field
+    def initials(self) -> str:
+        return "".join(part[0] for part in self.name.split())
 
 
 @strawberry.pydantic.input
 class CreateUserInput(BaseModel):
-    name: str
+    name: str = Field(min_length=1)
     email: str
-    age: int
-    tags: Optional[List[str]] = None
+    tags: list[str] = []
 
-    @field_validator("age")
+    @field_validator("email")
     @classmethod
-    def validate_age(cls, v: int) -> int:
-        if v < 0:
-            raise ValueError("Age must be non-negative")
-        return v
+    def check_email(cls, email: str) -> str:
+        if "@" not in email:
+            raise ValueError("Invalid email")
+
+        return email
 
 
 @strawberry.type
 class Query:
     @strawberry.field
-    def get_user(self, id: int) -> Optional[User]:
-        return User(
-            id=id,
-            name="John Doe",
-            email="john@example.com",
-            age=30,
-            tags=["developer", "python"],
-        )
+    def user(self, id: strawberry.ID) -> User | None:
+        return User(id=id, name="Ada Lovelace", email="ada@example.com")
 
 
 @strawberry.type
 class Mutation:
     @strawberry.mutation
-    def create_user(self, input: CreateUserInput) -> User:
-        return User(
-            id=1,
-            name=input.name,
-            email=input.email,
-            age=input.age,
-            tags=input.tags or [],
-        )
+    def create_user(self, input: CreateUserInput) -> User | ValidationError:
+        return User(id=strawberry.ID("1"), **input.model_dump())
 
 
-schema = strawberry.Schema(query=Query, mutation=Mutation)
+schema = strawberry.Schema(
+    query=Query,
+    mutation=Mutation,
+    exception_handlers=[PydanticValidationErrorHandler()],
+)
 ```
 
 ---
