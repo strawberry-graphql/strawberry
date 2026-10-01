@@ -17,228 +17,199 @@ if TYPE_CHECKING:
 LazyTypeC = Annotated["TypeC", strawberry.lazy("tests.schema.test_lazy.type_c")]
 
 
+@strawberry.type
+class SomeType:
+    foo: Annotated[TypeA, strawberry.lazy("tests.schema.test_lazy.type_a")] | None
+
+
+@strawberry.type
+class AnotherType:
+    foo: TypeA | None = None
+
+
 def test_optional_lazy_type_using_or_operator():
+    @strawberry.type
+    class Query:
+        some_type: SomeType
+        another_type: AnotherType
 
-    global SomeType, AnotherType
+    schema = strawberry.Schema(query=Query)
+    expected = """\
+    type AnotherType {
+      foo: TypeA
+    }
 
-    try:
+    type Query {
+      someType: SomeType!
+      anotherType: AnotherType!
+    }
 
-        @strawberry.type
-        class SomeType:
-            foo: (
-                Annotated[TypeA, strawberry.lazy("tests.schema.test_lazy.type_a")]
-                | None
-            )
+    type SomeType {
+      foo: TypeA
+    }
 
-        @strawberry.type
-        class AnotherType:
-            foo: TypeA | None = None
+    type TypeA {
+      listOfB: [TypeB!]
+      typeB: TypeB!
+    }
 
-        @strawberry.type
-        class Query:
-            some_type: SomeType
-            another_type: AnotherType
+    type TypeB {
+      typeA: TypeA!
+      typeAList: [TypeA!]!
+      typeCList: [TypeC!]!
+    }
 
-        schema = strawberry.Schema(query=Query)
-        expected = """\
-        type AnotherType {
-          foo: TypeA
-        }
+    type TypeC {
+      name: String!
+    }
+    """
+    assert str(schema).strip() == textwrap.dedent(expected).strip()
 
-        type Query {
-          someType: SomeType!
-          anotherType: AnotherType!
-        }
 
-        type SomeType {
-          foo: TypeA
-        }
-
-        type TypeA {
-          listOfB: [TypeB!]
-          typeB: TypeB!
-        }
-
-        type TypeB {
-          typeA: TypeA!
-          typeAList: [TypeA!]!
-          typeCList: [TypeC!]!
-        }
-
-        type TypeC {
-          name: String!
-        }
-        """
-        assert str(schema).strip() == textwrap.dedent(expected).strip()
-    finally:
-        del SomeType, AnotherType
+@strawberry.type
+class BasicLazyType:
+    child: Annotated[TypeC, strawberry.lazy("tests.schema.test_lazy.type_c")]
 
 
 def test_lazy_type_with_type_checking_guard():
     """Basic lazy type using TYPE_CHECKING guard (no runtime import)."""
-    global BasicLazyType
 
-    try:
+    @strawberry.type
+    class Query:
+        my_type: BasicLazyType
 
-        @strawberry.type
-        class BasicLazyType:
-            child: Annotated[TypeC, strawberry.lazy("tests.schema.test_lazy.type_c")]
+    schema = strawberry.Schema(query=Query)
+    expected = """\
+    type BasicLazyType {
+      child: TypeC!
+    }
 
-        @strawberry.type
-        class Query:
-            my_type: BasicLazyType
+    type Query {
+      myType: BasicLazyType!
+    }
 
-        schema = strawberry.Schema(query=Query)
-        expected = """\
-        type BasicLazyType {
-          child: TypeC!
-        }
+    type TypeC {
+      name: String!
+    }
+    """
+    assert str(schema).strip() == textwrap.dedent(expected).strip()
 
-        type Query {
-          myType: BasicLazyType!
-        }
 
-        type TypeC {
-          name: String!
-        }
-        """
-        assert str(schema).strip() == textwrap.dedent(expected).strip()
-    finally:
-        del BasicLazyType
+@strawberry.type
+class OptionalLazyType:
+    child: Optional[
+        Annotated[TypeC, strawberry.lazy("tests.schema.test_lazy.type_c")]
+    ] = None
 
 
 def test_optional_lazy_type_with_type_checking_guard():
     """Optional[Annotated[...]] with TYPE_CHECKING guard."""
-    global OptionalLazyType
 
-    try:
+    @strawberry.type
+    class Query:
+        my_type: OptionalLazyType
 
-        @strawberry.type
-        class OptionalLazyType:
-            child: Optional[
-                Annotated[TypeC, strawberry.lazy("tests.schema.test_lazy.type_c")]
-            ] = None
+    schema = strawberry.Schema(query=Query)
+    expected = """\
+    type OptionalLazyType {
+      child: TypeC
+    }
 
-        @strawberry.type
-        class Query:
-            my_type: OptionalLazyType
+    type Query {
+      myType: OptionalLazyType!
+    }
 
-        schema = strawberry.Schema(query=Query)
-        expected = """\
-        type OptionalLazyType {
-          child: TypeC
-        }
+    type TypeC {
+      name: String!
+    }
+    """
+    assert str(schema).strip() == textwrap.dedent(expected).strip()
 
-        type Query {
-          myType: OptionalLazyType!
-        }
 
-        type TypeC {
-          name: String!
-        }
-        """
-        assert str(schema).strip() == textwrap.dedent(expected).strip()
-    finally:
-        del OptionalLazyType
+@strawberry.type
+class OrNoneLazyType:
+    child: Annotated[TypeC, strawberry.lazy("tests.schema.test_lazy.type_c")] | None = (
+        None
+    )
 
 
 def test_or_none_lazy_type_with_type_checking_guard():
     """Annotated[...] | None with TYPE_CHECKING guard."""
-    global OrNoneLazyType
 
-    try:
+    @strawberry.type
+    class Query:
+        my_type: OrNoneLazyType
 
-        @strawberry.type
-        class OrNoneLazyType:
-            child: (
-                Annotated[TypeC, strawberry.lazy("tests.schema.test_lazy.type_c")]
-                | None
-            ) = None
+    schema = strawberry.Schema(query=Query)
+    expected = """\
+    type OrNoneLazyType {
+      child: TypeC
+    }
 
-        @strawberry.type
-        class Query:
-            my_type: OrNoneLazyType
+    type Query {
+      myType: OrNoneLazyType!
+    }
 
-        schema = strawberry.Schema(query=Query)
-        expected = """\
-        type OrNoneLazyType {
-          child: TypeC
-        }
+    type TypeC {
+      name: String!
+    }
+    """
+    assert str(schema).strip() == textwrap.dedent(expected).strip()
 
-        type Query {
-          myType: OrNoneLazyType!
-        }
 
-        type TypeC {
-          name: String!
-        }
-        """
-        assert str(schema).strip() == textwrap.dedent(expected).strip()
-    finally:
-        del OrNoneLazyType
+@strawberry.type
+class AliasedLazyType:
+    child: LazyTypeC
 
 
 def test_module_level_lazy_alias():
     """Module-level Annotated alias resolves under `from __future__ import annotations`."""
-    global AliasedLazyType
 
-    try:
+    @strawberry.type
+    class Query:
+        my_type: AliasedLazyType
 
-        @strawberry.type
-        class AliasedLazyType:
-            child: LazyTypeC
+    schema = strawberry.Schema(query=Query)
+    expected = """\
+    type AliasedLazyType {
+      child: TypeC!
+    }
 
-        @strawberry.type
-        class Query:
-            my_type: AliasedLazyType
+    type Query {
+      myType: AliasedLazyType!
+    }
 
-        schema = strawberry.Schema(query=Query)
-        expected = """\
-        type AliasedLazyType {
-          child: TypeC!
-        }
+    type TypeC {
+      name: String!
+    }
+    """
+    assert str(schema).strip() == textwrap.dedent(expected).strip()
 
-        type Query {
-          myType: AliasedLazyType!
-        }
 
-        type TypeC {
-          name: String!
-        }
-        """
-        assert str(schema).strip() == textwrap.dedent(expected).strip()
-    finally:
-        del AliasedLazyType
+@strawberry.type
+class AliasedListLazyType:
+    children: list[LazyTypeC]
 
 
 def test_module_level_lazy_alias_in_list():
     """Module-level Annotated alias wrapped in `list[...]` resolves correctly."""
-    global AliasedListLazyType
 
-    try:
+    @strawberry.type
+    class Query:
+        my_type: AliasedListLazyType
 
-        @strawberry.type
-        class AliasedListLazyType:
-            children: list[LazyTypeC]
+    schema = strawberry.Schema(query=Query)
+    expected = """\
+    type AliasedListLazyType {
+      children: [TypeC!]!
+    }
 
-        @strawberry.type
-        class Query:
-            my_type: AliasedListLazyType
+    type Query {
+      myType: AliasedListLazyType!
+    }
 
-        schema = strawberry.Schema(query=Query)
-        expected = """\
-        type AliasedListLazyType {
-          children: [TypeC!]!
-        }
-
-        type Query {
-          myType: AliasedListLazyType!
-        }
-
-        type TypeC {
-          name: String!
-        }
-        """
-        assert str(schema).strip() == textwrap.dedent(expected).strip()
-    finally:
-        del AliasedListLazyType
+    type TypeC {
+      name: String!
+    }
+    """
+    assert str(schema).strip() == textwrap.dedent(expected).strip()
