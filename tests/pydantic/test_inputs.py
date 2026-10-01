@@ -432,8 +432,9 @@ def test_nested_input_types_with_validation():
     assert result.errors is not None
     assert len(result.errors) == 1
     error_message = result.errors[0].message
-    assert "1 validation error for AddressInput" in error_message
-    assert "zipcode" in error_message
+    # nested inputs are validated with the outermost one, with their full location
+    assert "1 validation error for UserInput" in error_message
+    assert "address.zipcode" in error_message
     assert "string_pattern_mismatch" in error_message
 
     # Test with invalid nested data (underage)
