@@ -262,6 +262,52 @@ class ApiClient(BaseModel):
 Input types are not affected: clients can still send fields marked with
 `exclude=True`.
 
+### Resolver Fields
+
+Pydantic doesn't allow `strawberry.field` in a model, so use
+`strawberry.pydantic.field` to add fields with a resolver. It takes the field
+options of `strawberry.field`, like `name`, `description`, `permission_classes`
+or `graphql_type`:
+
+```python
+@strawberry.pydantic.type
+class User(BaseModel):
+    id: strawberry.ID
+    name: str
+
+    @strawberry.pydantic.field
+    def greeting(self, punctuation: str = "!") -> str:
+        return f"Hi {self.name}{punctuation}"
+
+    @strawberry.pydantic.field(permission_classes=[IsAuthenticated])
+    async def posts(self, info: strawberry.Info, first: int = 10) -> list[Post]:
+        posts = await info.context.loaders.posts_by_user.load(self.id)
+
+        return posts[:first]
+```
+
+The resolvers stay regular methods of the model, so they can be combined with
+other decorators, like `@staticmethod` or `@functools.cache`. They are inherited
+from base models and from Pydantic interfaces, and the field is named after the
+attribute, so `label = strawberry.pydantic.field(get_label)` adds a `label`
+field.
+
+Input types can't have fields with a resolver: the ones inherited from a base
+model, for example one shared with an output type, are ignored. Use
+`@strawberry.field` for regular Strawberry types.
+
+If your model makes Pydantic ignore Strawberry fields, with
+`model_config = ConfigDict(ignored_types=(StrawberryField,))`, you can use
+`strawberry.field` too.
+
+<Note>
+
+A regular `@strawberry.interface` with fields that have a resolver can't be used
+as a base of a Pydantic model, as Pydantic would treat these fields as model
+fields. Use a `@strawberry.pydantic.interface` instead.
+
+</Note>
+
 ### Scalars
 
 Fields can use Strawberry's scalars, such as `strawberry.ID` and `JSON`, and

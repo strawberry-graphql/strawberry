@@ -13,6 +13,7 @@ import functools
 import math
 import operator
 import sys
+import types
 import uuid
 from decimal import Decimal
 from enum import Enum
@@ -36,15 +37,19 @@ from strawberry.utils.typing import is_generic_alias, is_union
 
 from .exceptions import (
     MaybeFieldError,
+    ResolverFieldOnInputError,
+    ResolverFieldOverridesModelFieldError,
     StrawberryFieldAsDefaultError,
     UnregisteredTypeException,
     UploadFieldError,
 )
+from .resolver_field import get_resolver_field
 
 if TYPE_CHECKING:
     from pydantic.fields import FieldInfo
 
     from strawberry.experimental.pydantic._compat import CompatModelField
+    from strawberry.types.base import StrawberryType
 
 from strawberry.experimental.pydantic._compat import is_new_type, lenient_issubclass
 
@@ -314,6 +319,98 @@ def _create_strawberry_field(
     strawberry_field.default_value = dataclasses.MISSING
 
     return strawberry_field
+
+
+def _get_type_var_map(cls: type[BaseModel]) -> dict[str, StrawberryType | type]:
+    """Map the type parameters of the generic pydantic models `cls` extends."""
+    type_var_map: dict[str, StrawberryType | type] = {}
+
+    for base in cls.__mro__:
+        metadata = getattr(base, "__pydantic_generic_metadata__", None)
+
+        if not metadata or metadata["origin"] is None:
+            continue
+
+        parameters = metadata["origin"].__pydantic_generic_metadata__["parameters"]
+
+        for parameter, argument in zip(parameters, metadata["args"], strict=False):
+            type_var_map.setdefault(
+                parameter.__name__, StrawberryAnnotation(argument).resolve()
+            )
+
+    return type_var_map
+
+
+def _get_resolver_fields(
+    cls: type[BaseModel], *, is_input: bool
+) -> list[StrawberryField]:
+    """Collect the fields with a resolver of `cls` and of its bases."""
+    for field_name, field_info in cls.model_fields.items():
+        default = field_info.default
+
+        # pydantic uses a method that overrides a field as the field's default,
+        # and removes it from the class. A field that overrides an inherited
+        # method uses it as default too, but the method is still in its class
+        if get_resolver_field(default) is not None and not any(
+            vars(base).get(field_name) is default for base in cls.__mro__
+        ):
+            raise ResolverFieldOverridesModelFieldError(field_name=field_name, cls=cls)
+
+    if is_input:
+        # resolvers inherited from e.g. a base shared with an output type are
+        # ignored, as input types only hold the values sent by the client
+        for attribute, value in vars(cls).items():
+            if (resolver_field := get_resolver_field(value)) is not None:
+                raise ResolverFieldOnInputError(
+                    field_name=attribute, cls=cls, resolver_field=resolver_field
+                )
+
+        return []
+
+    resolver_fields: dict[str, StrawberryField] = {}
+
+    # bases first, so that subclasses can override their fields
+    for base in reversed(cls.__mro__):
+        # e.g. a data field that overrides an inherited resolver field
+        for name in get_annotations(base, format=Format.FORWARDREF):
+            resolver_fields.pop(name, None)
+
+        for attribute, value in list(vars(base).items()):
+            if (resolver_field := get_resolver_field(value)) is not None:
+                resolver_fields[attribute] = resolver_field
+            else:
+                resolver_fields.pop(attribute, None)
+
+    type_var_map = _get_type_var_map(cls)
+    fields = []
+
+    for attribute, resolver_field in resolver_fields.items():
+        field = copy.copy(resolver_field)
+        # e.g. `label = strawberry.pydantic.field(get_label)` is named `label`
+        field.python_name = attribute
+        field.origin = cls
+
+        assert field.base_resolver is not None
+
+        # like `@strawberry.type`, class methods are bound to the class
+        if isinstance(wrapped_func := field.base_resolver.wrapped_func, classmethod):
+            field = field(types.MethodType(wrapped_func.__func__, cls))
+
+        if (
+            field.type_annotation is not None
+            and field.type_annotation.namespace is None
+            and field.base_resolver is not None
+        ):
+            # set by `graphql_type=...`, which is resolved like the resolver's
+            # own annotations
+            field.type_annotation.namespace = field.base_resolver._namespace
+
+        if type_var_map and field.is_graphql_generic:
+            field = field.copy_with(type_var_map)
+
+        fields.append(field)
+
+    return fields
 
 
 def _get_pydantic_fields(

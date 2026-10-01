@@ -17,7 +17,7 @@ from strawberry.utils.str_converters import to_camel_case
 
 from .conversion import build_pydantic_model
 from .exceptions import NotAPydanticModelError
-from .fields import _get_pydantic_fields
+from .fields import _get_pydantic_fields, _get_resolver_fields
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
@@ -76,11 +76,14 @@ def _process_pydantic_type(
 
     # Extract fields using our custom function
     # All fields from the Pydantic model are included by default, except strawberry.Private fields
-    fields = _get_pydantic_fields(
-        cls=cls,
-        is_input=is_input,
-        include_computed=include_computed,
-    )
+    fields = [
+        *_get_pydantic_fields(
+            cls=cls,
+            is_input=is_input,
+            include_computed=include_computed,
+        ),
+        *_get_resolver_fields(cls, is_input=is_input),
+    ]
 
     # Get interfaces from inheritance hierarchy
     interfaces = _get_interfaces(cls)

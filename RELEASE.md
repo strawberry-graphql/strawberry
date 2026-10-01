@@ -41,7 +41,8 @@ by returning `User | strawberry.pydantic.ValidationError` and registering
 `strawberry.pydantic.PydanticValidationErrorHandler` in the schema's
 `exception_handlers`, as typed results.
 
-Fields can be customized with `Annotated[..., strawberry.field(...)]`, and
+Fields with a resolver can be added with `@strawberry.pydantic.field`, fields
+can be customized with `Annotated[..., strawberry.field(...)]`, and
 `strawberry.Private` or Pydantic's `Field(exclude=True)` hide a field from the
 schema. See the [Pydantic integration docs](https://strawberry.rocks/docs/integrations/pydantic)
 for everything that's supported.

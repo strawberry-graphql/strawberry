@@ -21,6 +21,7 @@ from .error import (
 from .object_type import input as input_decorator
 from .object_type import interface
 from .object_type import type as type_decorator
+from .resolver_field import field
 
 # Re-export with proper names
 input = input_decorator
@@ -31,6 +32,7 @@ __all__ = [
     "PydanticValidationErrorHandler",
     "ValidationError",
     "ValidationIssue",
+    "field",
     "input",
     "interface",
     "type",
