@@ -134,6 +134,8 @@ def test_pydantic(session: nox.Session) -> None:
         "pydantic",
         "--ignore=tests/cli",
         "--ignore=tests/benchmarks",
+        # strawberry.pydantic only supports pydantic v2
+        "--ignore=tests/pydantic",
     )
 
 
