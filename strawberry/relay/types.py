@@ -863,7 +863,8 @@ class ListConnection(Connection[NodeType]):
                     # Last was asked without any after/before
                     assert last is not None
                     original_len = len(edges)
-                    edges = edges[-last:]
+                    # edges[-0:] would return every edge, not zero edges
+                    edges = edges[-last:] if last else []
                     has_next_page = False
                     has_previous_page = len(edges) != original_len
                 else:
@@ -927,7 +928,8 @@ class ListConnection(Connection[NodeType]):
             # Last was asked without any after/before
             assert last is not None
             original_len = len(edges)
-            edges = edges[-last:]
+            # edges[-0:] would return every edge, not zero edges
+            edges = edges[-last:] if last else []
             has_next_page = False
             has_previous_page = len(edges) != original_len
         else:

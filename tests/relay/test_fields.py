@@ -1458,6 +1458,60 @@ def test_query_last_higher_than_max_results(query_attr: str):
     assert result.errors[0].message == "Argument 'last' cannot be higher than 100."
 
 
+@pytest.mark.parametrize("query_attr", attrs)
+def test_query_last_zero(query_attr: str):
+    result = schema.execute_sync(
+        fruits_query.format(query_attr),
+        variable_values={"last": 0},
+    )
+    assert result.errors is None
+    assert result.data == {
+        query_attr: {
+            "edges": [],
+            "pageInfo": {
+                "hasNextPage": False,
+                "hasPreviousPage": True,
+                "startCursor": None,
+                "endCursor": None,
+            },
+        }
+    }
+
+
+@pytest.mark.parametrize("query_attr", async_attrs)
+async def test_query_last_zero_async(mocker: MockerFixture, query_attr: str):
+    mocker.patch.object(FruitAsync, "resolve_typename", return_value="Fruit")
+
+    result = await schema.execute(
+        fruits_query.format(query_attr),
+        variable_values={"last": 0},
+    )
+    assert result.errors is None
+    assert result.data == {
+        query_attr: {
+            "edges": [],
+            "pageInfo": {
+                "hasNextPage": False,
+                "hasPreviousPage": True,
+                "startCursor": None,
+                "endCursor": None,
+            },
+        }
+    }
+
+
+@pytest.mark.parametrize("query_attr", attrs)
+def test_query_last_higher_than_total(query_attr: str):
+    result = schema.execute_sync(
+        fruits_query.format(query_attr),
+        variable_values={"last": 10},
+    )
+    assert result.errors is None
+    assert result.data is not None
+    assert len(result.data[query_attr]["edges"]) == 5
+    assert result.data[query_attr]["pageInfo"]["hasPreviousPage"] is False
+
+
 def test_parameters(mocker: MockerFixture):
     class CustomField(StrawberryField):
         @property
