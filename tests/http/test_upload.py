@@ -308,7 +308,12 @@ async def test_sending_invalid_json_body(enabled_http_client: HttpClient):
         (
             "null",
             json.dumps({"textFile": ["variables.textFile"]}),
-            "The `operations` field must be a JSON object or array",
+            "The `operations` field must be a JSON object or an array of objects",
+        ),
+        (
+            "[null]",
+            json.dumps({"textFile": ["0.variables.textFile"]}),
+            "The `operations` field must be a JSON object or an array of objects",
         ),
         (
             json.dumps({"query": "{ hello }", "variables": {"textFile": None}}),
@@ -329,6 +334,16 @@ async def test_sending_invalid_json_body(enabled_http_client: HttpClient):
             json.dumps({"query": "{ hello }", "variables": {"textFiles": [None]}}),
             json.dumps({"textFile": ["variables.textFiles.5"]}),
             "Invalid path in the `map` field: variables.textFiles.5",
+        ),
+        (
+            json.dumps({"query": "{ hello }", "variables": {"textFiles": [None]}}),
+            json.dumps({"textFile": ["variables.textFiles.-1"]}),
+            "Invalid path in the `map` field: variables.textFiles.-1",
+        ),
+        (
+            json.dumps({"query": "{ hello }", "variables": {}}),
+            json.dumps({"textFile": ["variables.missing.textFile"]}),
+            "Invalid path in the `map` field: variables.missing.textFile",
         ),
     ],
 )

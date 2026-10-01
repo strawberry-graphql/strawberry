@@ -14,6 +14,7 @@ This release fixes multipart file upload requests with a malformed `operations`
 or `map` field returning a 500 error.
 
 These requests now get a 400 response describing the problem, for example when
-`operations` isn't a JSON object or array, `map` isn't a JSON object, a `map`
-value isn't an array of strings, or a path in `map` points to an invalid list
-index or into a non-container value.
+`operations` isn't a JSON object or an array of objects, `map` isn't a JSON
+object, a `map` value isn't an array of strings, or a path in `map` is invalid:
+it uses a non-numeric or negative list index, an index out of range, a key that
+doesn't exist, or goes into a non-container value.

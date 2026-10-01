@@ -138,11 +138,13 @@ def test_deep_nesting():
     assert result["variables"]["a"][0]["files"][1] == file1
 
 
-@pytest.mark.parametrize("operations", [None, 1, "string", True])
-def test_operations_must_be_an_object_or_array(operations: object):
+@pytest.mark.parametrize(
+    "operations", [None, 1, "string", True, [None], [1], [{"query": "{ a }"}, "b"]]
+)
+def test_operations_must_be_an_object_or_array_of_objects(operations: object):
     with pytest.raises(
         InvalidMultipartRequestError,
-        match="The `operations` field must be a JSON object or array",
+        match="The `operations` field must be a JSON object or an array of objects",
     ):
         replace_placeholders_with_files(operations, {}, {})  # type: ignore[arg-type]
 
@@ -171,7 +173,9 @@ def test_files_map_values_must_be_arrays_of_strings(operations_paths: object):
     [
         "variables.files.abc",
         "variables.files.5",
+        "variables.files.-1",
         "variables.name.first",
+        "variables.missing.file",
     ],
 )
 def test_invalid_operations_path(path: str):
@@ -181,3 +185,27 @@ def test_invalid_operations_path(path: str):
         InvalidMultipartRequestError, match="Invalid path in the `map` field"
     ):
         replace_placeholders_with_files(operations, {"0": [path]}, {"0": BytesIO()})
+
+
+def test_operations_can_be_any_mapping():
+    class CustomDict(dict):
+        pass
+
+    operations = CustomDict(variables={"file": None})
+    file = BytesIO()
+
+    result = replace_placeholders_with_files(
+        operations, {"0": ["variables.file"]}, {"0": file}
+    )
+    assert result["variables"]["file"] is file
+
+
+def test_batch_operations():
+    operations = [{"variables": {"file": None}}, {"variables": {"file": None}}]
+    file = BytesIO()
+
+    result = replace_placeholders_with_files(
+        operations, {"0": ["1.variables.file"]}, {"0": file}
+    )
+    assert result[0]["variables"]["file"] is None
+    assert result[1]["variables"]["file"] is file

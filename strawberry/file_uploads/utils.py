@@ -7,15 +7,26 @@ class InvalidMultipartRequestError(Exception):
     """The `operations` or `map` field of a multipart request is malformed."""
 
 
+def _list_index(key: str) -> int:
+    # Only non-negative integers are valid list indexes, `int()` would also
+    # accept negative numbers, which index from the end of the list
+    if not (key.isascii() and key.isdigit()):
+        raise ValueError(f"Invalid list index: {key}")
+
+    return int(key)
+
+
 def replace_placeholders_with_files(
     operations_with_placeholders: dict[str, Any],
     files_map: Mapping[str, Any],
     files: Mapping[str, Any],
 ) -> dict[str, Any]:
-    # TODO: test this with missing variables in operations_with_placeholders
-    if not isinstance(operations_with_placeholders, (dict, list)):
+    if not isinstance(operations_with_placeholders, Mapping) and not (
+        isinstance(operations_with_placeholders, list)
+        and all(isinstance(item, Mapping) for item in operations_with_placeholders)
+    ):
         raise InvalidMultipartRequestError(
-            "The `operations` field must be a JSON object or array"
+            "The `operations` field must be a JSON object or an array of objects"
         )
 
     if not isinstance(files_map, Mapping):
@@ -41,15 +52,15 @@ def replace_placeholders_with_files(
                 target_object = operations
                 for key in operations_path_keys:
                     if isinstance(target_object, list):
-                        target_object = target_object[int(key)]
+                        target_object = target_object[_list_index(key)]
                     else:
                         target_object = target_object[key]
 
                 if isinstance(target_object, list):
-                    target_object[int(value_key)] = file_object
+                    target_object[_list_index(value_key)] = file_object
                 else:
                     target_object[value_key] = file_object
-            except (IndexError, TypeError, ValueError) as e:
+            except (IndexError, KeyError, TypeError, ValueError) as e:
                 raise InvalidMultipartRequestError(
                     f"Invalid path in the `map` field: {path}"
                 ) from e
