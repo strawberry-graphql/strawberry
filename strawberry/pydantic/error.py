@@ -78,7 +78,7 @@ class PydanticValidationErrorHandler:
 
     def handle(
         self,
-        exception: Exception,
+        exception: ValidationError,
         *,
         field: StrawberryField,
         info: Info,

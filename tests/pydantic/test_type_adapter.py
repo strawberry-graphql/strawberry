@@ -5,11 +5,18 @@ This is useful for validating scalars, lists, and other types in resolvers.
 """
 
 from typing import Annotated
+from typing_extensions import TypedDict
 
 import pydantic
 from pydantic import Field, TypeAdapter, ValidationError
 
 import strawberry
+
+
+# pydantic only supports `typing_extensions.TypedDict` before Python 3.12
+class UserData(TypedDict):
+    name: str
+    age: int
 
 
 def test_type_adapter_for_scalar_validation():
@@ -135,13 +142,6 @@ def test_type_adapter_for_list_validation():
 
 def test_type_adapter_with_complex_type():
     """Test TypeAdapter with a more complex nested type."""
-
-    from typing import TypedDict
-
-    class UserData(TypedDict):
-        name: str
-        age: int
-
     user_adapter = TypeAdapter(UserData)
 
     @strawberry.pydantic.input
