@@ -33,16 +33,21 @@ def test_pydantic_interface_basic():
     @strawberry.type
     class Query:
         @strawberry.field
-        def get_user(self) -> User:
+        def node(self) -> Node:
             return User(id="user_1", name="John")
 
-    schema = strawberry.Schema(query=Query)
+    schema = strawberry.Schema(query=Query, types=[User])
+
+    assert "type User implements Node" in str(schema)
 
     query = """
         query {
-            getUser {
+            node {
+                __typename
                 id
-                name
+                ... on User {
+                    name
+                }
             }
         }
     """
@@ -50,4 +55,6 @@ def test_pydantic_interface_basic():
     result = schema.execute_sync(query)
 
     assert not result.errors
-    assert result.data == snapshot({"getUser": {"id": "user_1", "name": "John"}})
+    assert result.data == snapshot(
+        {"node": {"__typename": "User", "id": "user_1", "name": "John"}}
+    )

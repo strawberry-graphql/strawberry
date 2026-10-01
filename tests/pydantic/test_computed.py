@@ -167,29 +167,28 @@ def test_computed_field_with_interface():
             return f"Hello, {self.name}!"
 
     @strawberry.pydantic.type(include_computed=True)
-    class User(pydantic.BaseModel):
-        name: str
+    class User(Person):
         email: str
-
-        @computed_field
-        @property
-        def greeting(self) -> str:
-            return f"Hello, {self.name}!"
 
     @strawberry.type
     class Query:
         @strawberry.field
-        def user(self) -> User:
+        def person(self) -> Person:
             return User(name="John", email="john@example.com")
 
-    schema = strawberry.Schema(query=Query)
+    schema = strawberry.Schema(query=Query, types=[User])
 
-    query = "{ user { name email greeting } }"
+    query = "{ person { name greeting ... on User { email } } }"
 
     result = schema.execute_sync(query)
     assert not result.errors
-    assert result.data["user"]["name"] == "John"
-    assert result.data["user"]["greeting"] == "Hello, John!"
+    assert result.data == {
+        "person": {
+            "name": "John",
+            "greeting": "Hello, John!",
+            "email": "john@example.com",
+        }
+    }
 
 
 def test_computed_fields_are_included_by_default():

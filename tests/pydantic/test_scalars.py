@@ -134,6 +134,16 @@ def test_upload_annotations_on_inputs_raise_an_error(annotation: object):
             image: annotation  # type: ignore[valid-type]
 
 
+@pytest.mark.raises_strawberry_exception(
+    UploadFieldError,
+    match="Field `image` on pydantic input `CreatePostInput` can't be typed as `Upload`",
+)
+def test_upload_field_error():
+    @strawberry.pydantic.input
+    class CreatePostInput(pydantic.BaseModel):
+        image: Upload
+
+
 def test_scalar_map_new_types():
     @strawberry.pydantic.type
     class Product(pydantic.BaseModel):

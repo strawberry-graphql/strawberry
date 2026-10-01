@@ -9,7 +9,7 @@ from __future__ import annotations
 import builtins
 from typing import TYPE_CHECKING, TypeVar, overload
 
-from pydantic import BaseModel
+from pydantic import BaseModel, RootModel
 
 from strawberry.schema_directives import OneOf
 from strawberry.types.base import StrawberryObjectDefinition
@@ -17,8 +17,12 @@ from strawberry.types.object_type import _get_interfaces
 from strawberry.utils.str_converters import to_camel_case
 
 from .conversion import build_pydantic_model
-from .exceptions import ModelAlreadyDecoratedError, NotAPydanticModelError
-from .fields import _get_pydantic_fields, _get_resolver_fields
+from .exceptions import (
+    ModelAlreadyDecoratedError,
+    NotAPydanticModelError,
+    UnsupportedRootModelError,
+)
+from .fields import get_pydantic_fields, get_resolver_fields
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
@@ -58,22 +62,22 @@ def _process_pydantic_type(
     if not (isinstance(cls, builtins.type) and issubclass(cls, BaseModel)):
         raise NotAPydanticModelError(cls, decorator)
 
+    if issubclass(cls, RootModel):
+        raise UnsupportedRootModelError(cls, decorator)
+
     if "__strawberry_definition__" in vars(cls):
         raise ModelAlreadyDecoratedError(cls, decorator)
 
-    # Get the GraphQL type name
     name = name or to_camel_case(cls.__name__)
 
-    # Extract fields using our custom function
-    # All fields from the Pydantic model are included by default, except strawberry.Private fields
-    resolver_fields = _get_resolver_fields(cls, is_input=is_input)
+    resolver_fields = get_resolver_fields(cls, is_input=is_input)
     resolver_field_names = {field.python_name for field in resolver_fields}
 
     fields = [
         # e.g. a computed field overridden by a resolver field in a subclass
         *(
             field
-            for field in _get_pydantic_fields(
+            for field in get_pydantic_fields(
                 cls=cls,
                 is_input=is_input,
                 include_computed=include_computed,
@@ -83,10 +87,8 @@ def _process_pydantic_type(
         *resolver_fields,
     ]
 
-    # Get interfaces from inheritance hierarchy
     interfaces = _get_interfaces(cls)
 
-    # Create the GraphQL type definition
     cls.__strawberry_definition__ = StrawberryObjectDefinition(  # type: ignore
         name=name,
         is_input=is_input,

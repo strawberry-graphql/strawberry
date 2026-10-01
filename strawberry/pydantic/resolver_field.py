@@ -10,6 +10,8 @@ from strawberry.exceptions import MissingReturnAnnotationError
 from strawberry.types.field import StrawberryField
 from strawberry.types.field import field as strawberry_field
 
+from .exceptions import ResolverAlreadyUsedError
+
 if TYPE_CHECKING:
     from collections.abc import Callable, Mapping, Sequence
 
@@ -71,10 +73,7 @@ def field(
 
     def wrap(resolver: ResolverT) -> ResolverT:
         if _get_marked_field(resolver) is not None:
-            raise ValueError(
-                f"`{getattr(resolver, '__name__', resolver)}` is already a field, a "
-                "resolver can only be used by one `strawberry.pydantic.field`"
-            )
+            raise ResolverAlreadyUsedError(resolver)
 
         resolver_field = strawberry_field(
             resolver,
