@@ -194,3 +194,91 @@ def test_first_class_pydantic_decorators_keep_the_model_type():
             ),
         ]
     )
+
+
+RESOLVER_FIELD_CODE = """
+import pydantic
+import strawberry
+
+@strawberry.pydantic.type
+class User(pydantic.BaseModel):
+    name: str
+
+    @strawberry.pydantic.field
+    def greeting(self, punctuation: str = "!") -> str:
+        return self.name + punctuation
+
+    @strawberry.pydantic.field(description="Shouted")
+    async def shout(self) -> str:
+        return self.name.upper()
+
+user = User(name="Ada")
+reveal_type(user.greeting)
+reveal_type(user.greeting("?"))
+reveal_type(user.shout)
+"""
+
+
+def test_resolver_fields_keep_the_method_type():
+    results = typecheck(RESOLVER_FIELD_CODE, mypy_plugins=MYPY_PLUGINS)
+
+    assert results.mypy == snapshot(
+        [
+            Result(
+                type="note",
+                message='Revealed type is "def (punctuation: str =) -> str"',
+                line=18,
+                column=13,
+            ),
+            Result(type="note", message='Revealed type is "str"', line=19, column=13),
+            Result(
+                type="note",
+                message='Revealed type is "def () -> typing.Coroutine[Any, Any, str]"',
+                line=20,
+                column=13,
+            ),
+        ]
+    )
+
+    assert results.pyright == snapshot(
+        [
+            Result(
+                type="information",
+                message='Type of "user.greeting" is "(punctuation: str = "!") -> str"',
+                line=18,
+                column=13,
+            ),
+            Result(
+                type="information",
+                message='Type of "user.greeting("?")" is "str"',
+                line=19,
+                column=13,
+            ),
+            Result(
+                type="information",
+                message='Type of "user.shout" is "() -> CoroutineType[Any, Any, str]"',
+                line=20,
+                column=13,
+            ),
+        ]
+    )
+
+    assert results.ty == snapshot(
+        [
+            Result(
+                type="information",
+                message='Revealed type: `bound method User.greeting(punctuation: str = "!") -> str`',
+                line=18,
+                column=13,
+            ),
+            Result(
+                type="information", message="Revealed type: `str`", line=19, column=13
+            ),
+            Result(
+                type="information",
+                message="Revealed type: `bound method User.shout() -> CoroutineType[Any, Any, str]`",
+                line=20,
+                column=13,
+            ),
+        ]
+    )

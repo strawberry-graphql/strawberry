@@ -10,6 +10,7 @@ if TYPE_CHECKING:
     from pydantic import BaseModel
 
     from strawberry.exceptions.exception_source import ExceptionSource
+    from strawberry.types.field import StrawberryField
 
 
 class UnregisteredTypeException(Exception):
@@ -152,3 +153,68 @@ class MaybeFieldError(StrawberryException):
         source_finder = SourceFinder()
 
         return source_finder.find_class_attribute_from_object(self.cls, self.field_name)
+
+
+class ResolverFieldOnInputError(StrawberryException):
+    def __init__(
+        self, field_name: str, cls: type, resolver_field: StrawberryField
+    ) -> None:
+        self.cls = cls
+        self.field_name = field_name
+        self.resolver_field = resolver_field
+
+        self.message = (
+            f"Field `{field_name}` on pydantic input `{cls.__name__}` can't have a "
+            "resolver"
+        )
+        self.rich_message = (
+            f"Field `[underline]{field_name}[/]` on pydantic input "
+            f"`[underline]{cls.__name__}[/]` can't have a resolver"
+        )
+        self.annotation_message = "field with a resolver"
+        self.suggestion = (
+            "Input types only hold the values sent by the client, so remove the "
+            "resolver, or move the field to an output type."
+        )
+
+        super().__init__(self.message)
+
+    @cached_property
+    def exception_source(self) -> ExceptionSource | None:
+        source_finder = SourceFinder()
+
+        if self.resolver_field.base_resolver is not None:
+            return source_finder.find_function_from_object(
+                self.resolver_field.base_resolver._unbound_wrapped_func
+            )
+
+        return source_finder.find_class_from_object(self.cls)
+
+
+class ResolverFieldOverridesModelFieldError(StrawberryException):
+    def __init__(self, field_name: str, cls: type) -> None:
+        self.cls = cls
+        self.field_name = field_name
+
+        self.message = (
+            f"The resolver of `{field_name}` on pydantic model `{cls.__name__}` "
+            f"overrides a model field with the same name"
+        )
+        self.rich_message = (
+            f"The resolver of `[underline]{field_name}[/]` on pydantic model "
+            f"`[underline]{cls.__name__}[/]` overrides a model field with the same "
+            "name"
+        )
+        self.annotation_message = "resolver with the name of a model field"
+        self.suggestion = (
+            "Pydantic would use the resolver as the default value of the field. "
+            "Rename the resolver, or remove the model field."
+        )
+
+        super().__init__(self.message)
+
+    @cached_property
+    def exception_source(self) -> ExceptionSource | None:
+        return SourceFinder().find_class_attribute_from_object(
+            self.cls, self.field_name
+        )
