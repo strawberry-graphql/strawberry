@@ -13,7 +13,7 @@ from strawberry.exceptions import (
 from strawberry.permission import PermissionExtension
 from strawberry.pydantic.exceptions import (
     StrawberryFieldAsDefaultError,
-    UnregisteredTypeException,
+    UnregisteredPydanticTypeError,
 )
 from strawberry.scalars import JSON
 from strawberry.schema_directive import Location
@@ -107,23 +107,22 @@ def test_can_use_strawberry_types():
     )
 
 
+@pytest.mark.raises_strawberry_exception(
+    UnregisteredPydanticTypeError,
+    match=(
+        r"`User\.address` uses `Address`, which isn't a Strawberry type: "
+        r"decorate it with `@strawberry\.pydantic\.type`"
+    ),
+)
 def test_all_models_need_to_marked_as_strawberry_types():
     class Address(pydantic.BaseModel):
         street: str
         city: str
 
-    with pytest.raises(
-        UnregisteredTypeException,
-        match=(
-            r"`User\.address` uses `Address`, which isn't a Strawberry type: "
-            r"decorate it with `@strawberry\.pydantic\.type`"
-        ),
-    ):
-
-        @strawberry.pydantic.type
-        class User(pydantic.BaseModel):
-            name: str
-            address: Address
+    @strawberry.pydantic.type
+    class User(pydantic.BaseModel):
+        name: str
+        address: Address
 
 
 def test_field_directives_basic():
@@ -479,18 +478,17 @@ def test_nested_strawberry_field_in_annotated_raises_an_error():
             tags: list[Annotated[str, strawberry.field(description="nested")]]
 
 
+@pytest.mark.raises_strawberry_exception(
+    StrawberryFieldAsDefaultError,
+    match=(
+        r"`strawberry.field\(\)` can't be used as the default value of field "
+        r"`email` on pydantic model `User`"
+    ),
+)
 def test_strawberry_field_as_default_value_raises_an_error():
-    with pytest.raises(
-        StrawberryFieldAsDefaultError,
-        match=(
-            r"`strawberry.field\(\)` can't be used as the default value of field "
-            r"`email` on pydantic model `User`"
-        ),
-    ):
-
-        @strawberry.pydantic.type
-        class User(pydantic.BaseModel):
-            email: str = strawberry.field(permission_classes=[IsAdmin])
+    @strawberry.pydantic.type
+    class User(pydantic.BaseModel):
+        email: str = strawberry.field(permission_classes=[IsAdmin])
 
 
 def test_deprecated_fields():

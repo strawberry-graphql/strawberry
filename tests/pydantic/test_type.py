@@ -10,6 +10,7 @@ import strawberry
 from strawberry.pydantic.exceptions import (
     ModelAlreadyDecoratedError,
     NotAPydanticModelError,
+    UnsupportedRootModelError,
 )
 from strawberry.types.base import (
     StrawberryOptional,
@@ -218,13 +219,56 @@ def test_decorating_a_class_that_is_not_a_pydantic_model_raises_an_error(
             name: str
 
 
+@pytest.mark.raises_strawberry_exception(
+    NotAPydanticModelError,
+    match=(
+        r"strawberry\.pydantic\.type can only be used with pydantic models, but "
+        r"`User` is not a subclass of `pydantic\.BaseModel`"
+    ),
+)
 def test_decorating_a_pydantic_dataclass_raises_an_error():
-    with pytest.raises(NotAPydanticModelError, match="`User` is not a subclass"):
+    @strawberry.pydantic.type
+    @pydantic.dataclasses.dataclass
+    class User:
+        name: str
 
-        @strawberry.pydantic.type
-        @pydantic.dataclasses.dataclass
-        class User:
-            name: str
+
+@pytest.mark.parametrize(
+    "decorator",
+    [
+        strawberry.pydantic.type,
+        strawberry.pydantic.input,
+        strawberry.pydantic.interface,
+    ],
+    ids=["type", "input", "interface"],
+)
+def test_decorating_a_root_model_raises_an_error(decorator: Callable[[type], type]):
+    name = decorator.__name__
+
+    with pytest.raises(
+        UnsupportedRootModelError,
+        match=(
+            rf"`Tags` is a `RootModel`, which can't be used with "
+            rf"`strawberry\.pydantic\.{name}`"
+        ),
+    ):
+
+        @decorator
+        class Tags(pydantic.RootModel[list[str]]):
+            pass
+
+
+@pytest.mark.raises_strawberry_exception(
+    UnsupportedRootModelError,
+    match=(
+        r"`Tags` is a `RootModel`, which can't be used with "
+        r"`strawberry\.pydantic\.input`"
+    ),
+)
+def test_root_model_error():
+    @strawberry.pydantic.input
+    class Tags(pydantic.RootModel[list[str]]):
+        pass
 
 
 @pytest.mark.skipif(
@@ -245,6 +289,20 @@ def test_decorating_a_pydantic_v1_model_raises_an_error():
         @strawberry.pydantic.type
         class User(pydantic_v1.BaseModel):
             name: str
+
+
+@pytest.mark.raises_strawberry_exception(
+    ModelAlreadyDecoratedError,
+    match=(
+        r"`Address` is already a type, so it can't be decorated with "
+        r"`strawberry\.pydantic\.type`"
+    ),
+)
+def test_decorating_a_model_twice_raises_an_error():
+    @strawberry.pydantic.type
+    @strawberry.pydantic.type
+    class Address(pydantic.BaseModel):
+        street: str
 
 
 def test_models_can_only_be_decorated_once():

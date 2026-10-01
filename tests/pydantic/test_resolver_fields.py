@@ -9,6 +9,7 @@ from inline_snapshot import snapshot
 import strawberry
 from strawberry.exceptions import MissingReturnAnnotationError
 from strawberry.pydantic.exceptions import (
+    ResolverAlreadyUsedError,
     ResolverFieldOnInputError,
     ResolverFieldOverridesModelFieldError,
 )
@@ -191,19 +192,18 @@ def test_strawberry_field_when_pydantic_ignores_it():
     assert result.data == {"admin": {"name": "root", "shout": "ROOT"}}
 
 
+@pytest.mark.raises_strawberry_exception(
+    ResolverFieldOnInputError,
+    match="Field `upper` on pydantic input `NameInput` can't have a resolver",
+)
 def test_resolver_fields_on_inputs_raise_an_error():
-    with pytest.raises(
-        ResolverFieldOnInputError,
-        match="Field `upper` on pydantic input `NameInput` can't have a resolver",
-    ):
+    @strawberry.pydantic.input
+    class NameInput(pydantic.BaseModel):
+        name: str
 
-        @strawberry.pydantic.input
-        class NameInput(pydantic.BaseModel):
-            name: str
-
-            @strawberry.pydantic.field
-            def upper(self) -> str:
-                return self.name.upper()
+        @strawberry.pydantic.field
+        def upper(self) -> str:
+            return self.name.upper()
 
 
 def _query(model_type: type, instance: object, query: str) -> Any:
@@ -301,14 +301,19 @@ def test_fields_are_named_after_their_attribute():
     assert result.data == {"item": {"label": "#1"}}
 
 
+@pytest.mark.raises_strawberry_exception(
+    ResolverAlreadyUsedError,
+    match=(
+        "`get_label` is already the resolver of a field, a resolver can only be "
+        "used by one `strawberry.pydantic.field`"
+    ),
+)
 def test_a_resolver_can_only_be_used_once():
     def get_label(self: Any) -> str:
         return "label"
 
     strawberry.pydantic.field(get_label)
-
-    with pytest.raises(ValueError, match="`get_label` is already a field"):
-        strawberry.pydantic.field(name="title")(get_label)
+    strawberry.pydantic.field(name="title")(get_label)
 
 
 def test_resolvers_need_a_return_annotation():
@@ -325,9 +330,11 @@ def test_data_fields_override_inherited_resolver_fields():
         def name(self) -> str:
             return "from the resolver"
 
-    @strawberry.pydantic.type
-    class Child(Base):
-        name: str  # type: ignore[assignment]
+    with pytest.warns(UserWarning, match="shadows an attribute in parent"):
+
+        @strawberry.pydantic.type
+        class Child(Base):
+            name: str  # type: ignore[assignment]
 
     result = _query(Child, Child(name="from the data"), "{ item { name } }")
 
@@ -335,20 +342,19 @@ def test_data_fields_override_inherited_resolver_fields():
     assert result.data == {"item": {"name": "from the data"}}
 
 
+@pytest.mark.raises_strawberry_exception(
+    ResolverFieldOverridesModelFieldError,
+    match="The resolver of `name` on pydantic model `Child` overrides a model field",
+)
 def test_resolvers_cannot_override_model_fields():
     class Base(pydantic.BaseModel):
         name: str
 
-    with pytest.raises(
-        ResolverFieldOverridesModelFieldError,
-        match="The resolver of `name` on pydantic model `Child` overrides a model field",
-    ):
-
-        @strawberry.pydantic.type
-        class Child(Base):
-            @strawberry.pydantic.field
-            def name(self) -> str:  # type: ignore[override]
-                return "Ada"
+    @strawberry.pydantic.type
+    class Child(Base):
+        @strawberry.pydantic.field
+        def name(self) -> str:  # type: ignore[override]
+            return "Ada"
 
 
 def test_resolvers_of_generic_models():

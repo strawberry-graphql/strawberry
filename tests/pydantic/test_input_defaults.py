@@ -412,20 +412,20 @@ input SearchInput {
     assert result.data == {"search": "['query']"}
 
 
+@pytest.mark.raises_strawberry_exception(
+    MaybeFieldError,
+    match=(
+        r"Field `name` on pydantic input `UpdateUserInput` can't use "
+        r"`strawberry\.Maybe`"
+    ),
+)
 def test_maybe_fields_on_inputs_raise_an_error():
-    with pytest.raises(
-        MaybeFieldError,
-        match=(
-            r"Field `name` on pydantic input `UpdateUserInput` can't use "
-            r"`strawberry\.Maybe`"
-        ),
-    ):
+    @strawberry.pydantic.input
+    class UpdateUserInput(pydantic.BaseModel):
+        # without it pydantic itself rejects `strawberry.Maybe`
+        model_config = pydantic.ConfigDict(arbitrary_types_allowed=True)
 
-        @strawberry.pydantic.input
-        class UpdateUserInput(pydantic.BaseModel):
-            model_config = pydantic.ConfigDict(arbitrary_types_allowed=True)
-
-            name: strawberry.Maybe[str] = None
+        name: strawberry.Maybe[str] = None
 
 
 def test_constant_defaults_of_constrained_date_fields_are_published():

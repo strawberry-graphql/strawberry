@@ -9,17 +9,25 @@ from __future__ import annotations
 import copy
 import dataclasses
 import datetime
-import functools
 import math
-import operator
 import sys
 import types
 import uuid
 from decimal import Decimal
 from enum import Enum
-from typing import TYPE_CHECKING, Annotated, Any, Optional, get_args, get_origin
+from typing import (
+    TYPE_CHECKING,
+    Annotated,
+    Any,
+    Optional,
+    Union,
+    get_args,
+    get_origin,
+)
 from typing_extensions import Format, get_annotations
 
+import pydantic
+import pydantic_core
 from graphql.type.directives import DEFAULT_DEPRECATION_REASON
 from pydantic import (
     AwareDatetime,
@@ -37,20 +45,19 @@ from strawberry.exceptions import (
     InvalidStrawberryFieldAnnotationError,
     MultipleStrawberryFieldsError,
 )
-from strawberry.experimental.pydantic._compat import PydanticCompat
 from strawberry.file_uploads import Upload
 from strawberry.types.base import StrawberryObjectDefinition
 from strawberry.types.field import StrawberryField, _contains_strawberry_field
 from strawberry.types.maybe import _annotation_is_maybe
 from strawberry.types.private import is_private
-from strawberry.utils.typing import is_generic_alias, is_union
+from strawberry.utils.typing import is_union
 
 from .exceptions import (
     MaybeFieldError,
     ResolverFieldOnInputError,
     ResolverFieldOverridesModelFieldError,
     StrawberryFieldAsDefaultError,
-    UnregisteredTypeException,
+    UnregisteredPydanticTypeError,
     UploadFieldError,
 )
 from .resolver_field import get_resolver_field
@@ -58,10 +65,24 @@ from .resolver_field import get_resolver_field
 if TYPE_CHECKING:
     from pydantic.fields import FieldInfo
 
-    from strawberry.experimental.pydantic._compat import CompatModelField
     from strawberry.types.base import StrawberryType
 
-from strawberry.experimental.pydantic._compat import is_new_type, lenient_issubclass
+
+def _is_new_type(annotation: object) -> bool:
+    return callable(annotation) and hasattr(annotation, "__supertype__")
+
+
+class _UnregisteredModel(Exception):
+    def __init__(self, model: type[BaseModel]) -> None:
+        self.model = model
+
+
+def _is_subclass(annotation: object, base: type) -> bool:
+    try:
+        return isinstance(annotation, type) and issubclass(annotation, base)
+    except TypeError:
+        # e.g. generic aliases like `list[int]`, which are types on python 3.10
+        return False
 
 
 def _get_field_origins(cls: type[BaseModel]) -> dict[str, type]:
@@ -137,6 +158,19 @@ _CONSTRAINED_DATE_TYPES: dict[type, type] = {
     FutureDate: datetime.date,
 }
 
+# pydantic types exposed with the GraphQL type of their python equivalent
+_PYDANTIC_TYPES: dict[type, type] = {
+    pydantic.EmailStr: str,
+    pydantic.SecretStr: str,
+    pydantic.SecretBytes: bytes,
+    pydantic.AnyUrl: str,
+    pydantic.AnyHttpUrl: str,
+    pydantic.HttpUrl: str,
+    pydantic.PostgresDsn: str,
+    pydantic.RedisDsn: str,
+    pydantic_core.MultiHostUrl: str,
+}
+
 # GraphQL's Int is a 32-bit integer
 _GRAPHQL_INT_RANGE = range(-(2**31), 2**31)
 _CONSTANT_TYPES = (
@@ -156,7 +190,7 @@ def _is_constant_of_type(value: object, annotation: Any) -> bool:
     Values pydantic would have to convert first, like a string default for a
     date field, aren't constants of the field type.
     """
-    if is_new_type(annotation):
+    if _is_new_type(annotation):
         # e.g. `strawberry.ID` and scalars registered with `scalar_map`
         return _is_constant_of_type(value, annotation.__supertype__)
 
@@ -179,7 +213,7 @@ def _is_constant_of_type(value: object, annotation: Any) -> bool:
             _is_constant_of_type(item, args[0]) for item in value
         )
 
-    if lenient_issubclass(annotation, Enum):
+    if _is_subclass(annotation, Enum):
         return isinstance(value, annotation)
 
     if annotation is int:
@@ -232,56 +266,37 @@ def _set_input_default(field: StrawberryField, field_info: FieldInfo) -> None:
         )
 
 
-def replace_pydantic_types(type_: Any, is_input: bool, model: type[BaseModel]) -> Any:
-    """Replace Pydantic types with their Strawberry equivalents for first-class integration."""
-    from pydantic import BaseModel
+def _replace_pydantic_types(type_: Any, model: type[BaseModel]) -> Any:
+    """Replace the pydantic types in `type_` with the types used by Strawberry.
 
-    if lenient_issubclass(type_, BaseModel):
+    NewTypes are kept: they're resolved by the schema's scalar registry, like with
+    `@strawberry.type`. That's how `strawberry.ID`, `JSON`, `Upload` and
+    `scalar_map` scalars work.
+    """
+    if isinstance(type_, type):
+        type_ = _CONSTRAINED_DATE_TYPES.get(type_, type_)
+        type_ = _PYDANTIC_TYPES.get(type_, type_)
+
+    if _is_subclass(type_, BaseModel):
         # `model` can reference itself, but it's only registered after its fields
         if type_ is model or hasattr(type_, "__strawberry_definition__"):
             return type_
 
-        raise UnregisteredTypeException(type_)
-
-    return type_
-
-
-def replace_types_recursively(
-    type_: Any,
-    is_input: bool,
-    compat: PydanticCompat,
-    model: type[BaseModel],
-) -> Any:
-    """Recursively replace Pydantic types with their Strawberry equivalents."""
-    if isinstance(type_, type) and type_ in _CONSTRAINED_DATE_TYPES:
-        type_ = _CONSTRAINED_DATE_TYPES[type_]
-
-    # NewTypes are resolved by the schema's scalar registry, like with
-    # `@strawberry.type`: that's how `strawberry.ID`, `JSON`, `Upload` and
-    # `scalar_map` scalars work, so they must not be replaced by their supertype
-    basic_type = type_ if is_new_type(type_) else compat.get_basic_type(type_)
-    replaced_type = replace_pydantic_types(basic_type, is_input, model)
+        raise _UnregisteredModel(type_)
 
     origin = get_origin(type_)
 
     if not origin or not hasattr(type_, "__args__"):
-        return replaced_type
+        return type_
 
-    converted = tuple(
-        replace_types_recursively(t, is_input=is_input, compat=compat, model=model)
-        for t in get_args(replaced_type)
-    )
+    args = tuple(_replace_pydantic_types(arg, model) for arg in get_args(type_))
 
-    # Handle special cases for typing generics
-    if is_generic_alias(replaced_type):
-        # Use origin[converted] to reconstruct the generic type
-        return origin[converted]
-    if is_union(replaced_type):
-        # Use functools.reduce with operator.or_ to create X | Y | Z union type
-        return functools.reduce(operator.or_, converted)
+    if is_union(type_):
+        # `X | Y` can't be subscripted, and on python 3.10 forward references
+        # don't support `|`
+        return Union[args]  # noqa: UP007
 
-    # Fallback to origin[converted] for standard generic types
-    return origin[converted]
+    return origin[args]
 
 
 def _get_computed_field_annotation(
@@ -318,15 +333,14 @@ def _create_strawberry_field(
     cls: type[BaseModel],
     origin: type,
     field_name: str,
-    pydantic_field: CompatModelField,
     field_info: FieldInfo | None,
     *,
     is_input: bool,
-    compat: PydanticCompat,
 ) -> StrawberryField:
     # computed fields don't have a FieldInfo
     if field_info is not None:
-        annotation = pydantic_field.outer_type_
+        annotation = field_info.annotation
+        description = field_info.description
         strawberry_override = _get_strawberry_field_override(
             field_info, origin, field_name
         )
@@ -334,6 +348,7 @@ def _create_strawberry_field(
         annotation, strawberry_override = _get_computed_field_annotation(
             cls, field_name
         )
+        description = cls.model_computed_fields[field_name].description
 
     # Start from the user's `strawberry.field()`, so all of its options are
     # kept, and fill in what pydantic knows about the field
@@ -349,7 +364,7 @@ def _create_strawberry_field(
     strawberry_field.origin = cls
 
     if strawberry_field.description is None:
-        strawberry_field.description = pydantic_field.description
+        strawberry_field.description = description
 
     deprecated_field_info = (
         field_info
@@ -376,12 +391,10 @@ def _create_strawberry_field(
         module = sys.modules.get(origin.__module__)
 
         try:
-            field_type = replace_types_recursively(
-                annotation, is_input, compat=compat, model=cls
-            )
-        except UnregisteredTypeException as exc:
-            raise UnregisteredTypeException(
-                exc.type, cls=cls, field_name=field_name, is_input=is_input
+            field_type = _replace_pydantic_types(annotation, model=cls)
+        except _UnregisteredModel as exc:
+            raise UnregisteredPydanticTypeError(
+                exc.model, cls=origin, field_name=field_name, is_input=is_input
             ) from None
 
         strawberry_field.type_annotation = StrawberryAnnotation(
@@ -423,7 +436,7 @@ def _get_type_var_map(cls: type[BaseModel]) -> dict[str, StrawberryType | type]:
     return type_var_map
 
 
-def _get_resolver_fields(
+def get_resolver_fields(
     cls: type[BaseModel], *, is_input: bool
 ) -> list[StrawberryField]:
     """Collect the fields with a resolver of `cls` and of its bases."""
@@ -472,20 +485,20 @@ def _get_resolver_fields(
         field.python_name = attribute
         field.origin = cls
 
-        assert field.base_resolver is not None
+        resolver = field.base_resolver
+        assert resolver is not None
 
         # like `@strawberry.type`, class methods are bound to the class
-        if isinstance(wrapped_func := field.base_resolver.wrapped_func, classmethod):
+        if isinstance(wrapped_func := resolver.wrapped_func, classmethod):
             field = field(types.MethodType(wrapped_func.__func__, cls))
 
         if (
             field.type_annotation is not None
             and field.type_annotation.namespace is None
-            and field.base_resolver is not None
         ):
             # set by `graphql_type=...`, which is resolved like the resolver's
             # own annotations
-            field.type_annotation.namespace = field.base_resolver._namespace
+            field.type_annotation.namespace = resolver._namespace
 
         if type_var_map and field.is_graphql_generic:
             field = field.copy_with(type_var_map)
@@ -495,7 +508,7 @@ def _get_resolver_fields(
     return fields
 
 
-def _get_pydantic_fields(
+def get_pydantic_fields(
     cls: type[BaseModel],
     is_input: bool = False,
     include_computed: bool = False,
@@ -524,15 +537,17 @@ def _get_pydantic_fields(
     """
     fields: list[StrawberryField] = []
 
-    compat = PydanticCompat.from_model(cls)
-    model_fields = compat.get_model_fields(cls, include_computed=include_computed)
-    field_infos: dict[str, FieldInfo] = cls.model_fields
+    field_names = list(cls.model_fields)
+
+    if include_computed:
+        field_names.extend(cls.model_computed_fields)
+
     origins = _get_field_origins(cls)
 
-    for field_name, pydantic_field in model_fields.items():
+    for field_name in field_names:
         origin = origins.get(field_name, cls)
         # computed fields don't have a FieldInfo
-        field_info = field_infos.get(field_name)
+        field_info = cls.model_fields.get(field_name)
 
         if field_info is None:
             # e.g. `-> strawberry.Private[int]` on a computed field
@@ -560,13 +575,7 @@ def _get_pydantic_fields(
             strawberry_field = copy.copy(base_field) if is_input else base_field
         else:
             strawberry_field = _create_strawberry_field(
-                cls,
-                origin,
-                field_name,
-                pydantic_field,
-                field_info,
-                is_input=is_input,
-                compat=compat,
+                cls, origin, field_name, field_info, is_input=is_input
             )
 
         if is_input and field_info is not None:
@@ -577,8 +586,4 @@ def _get_pydantic_fields(
     return fields
 
 
-__all__ = [
-    "_get_pydantic_fields",
-    "replace_pydantic_types",
-    "replace_types_recursively",
-]
+__all__ = ["get_pydantic_fields", "get_resolver_fields"]

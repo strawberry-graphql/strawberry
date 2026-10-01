@@ -8,8 +8,6 @@ from typing import (
     cast,
 )
 
-from pydantic import BaseModel
-
 from strawberry.experimental.pydantic._compat import (
     CompatModelField,
     PydanticCompat,
