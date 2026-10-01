@@ -4,7 +4,7 @@ Strawberry is a Python library for GraphQL that aims to stay close to the GraphQ
 specification and allow for a more natural way of defining GraphQL schemas.
 """
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from . import experimental, federation, relay
 from .directive import directive, directive_field
@@ -31,17 +31,23 @@ from .types.unset import UNSET
 
 if TYPE_CHECKING:
     from . import pydantic as pydantic
+else:
+    # hidden from type checkers, which would otherwise accept any attribute of
+    # the module
+    def __getattr__(name: str) -> object:
+        # `strawberry.pydantic` depends on the optional pydantic package, so we
+        # only import it on first access instead of when importing strawberry
+        if name == "pydantic":
+            import importlib
 
+            try:
+                return importlib.import_module(f"{__name__}.pydantic")
+            except ImportError as exc:
+                # an AttributeError keeps `hasattr` and `getattr` with a default
+                # working when pydantic isn't installed
+                raise AttributeError(str(exc)) from exc
 
-def __getattr__(name: str) -> Any:
-    # `strawberry.pydantic` depends on the optional pydantic package, so we only
-    # import it on first access instead of when importing strawberry
-    if name == "pydantic":
-        import importlib
-
-        return importlib.import_module(f"{__name__}.pydantic")
-
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
 __all__ = [

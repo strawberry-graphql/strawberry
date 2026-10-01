@@ -282,3 +282,49 @@ def test_resolver_fields_keep_the_method_type():
             ),
         ]
     )
+
+
+UNKNOWN_ATTRIBUTE_CODE = """
+import strawberry
+
+strawberry.pydantic.type
+strawberry.feild
+"""
+
+
+def test_lazy_pydantic_module_keeps_unknown_attributes_errors():
+    results = typecheck(UNKNOWN_ATTRIBUTE_CODE, mypy_plugins=MYPY_PLUGINS)
+
+    assert results.mypy == snapshot(
+        [
+            Result(
+                type="error",
+                message='Module has no attribute "feild"; maybe "field"?',
+                line=5,
+                column=1,
+            )
+        ]
+    )
+    assert results.pyright == snapshot(
+        [
+            Result(
+                type="error", message='Type of "feild" is unknown', line=5, column=1
+            ),
+            Result(
+                type="error",
+                message='"feild" is not a known attribute of module "strawberry"',
+                line=5,
+                column=12,
+            ),
+        ]
+    )
+    assert results.ty == snapshot(
+        [
+            Result(
+                type="error",
+                message="Module `strawberry` has no member `feild`",
+                line=5,
+                column=1,
+            )
+        ]
+    )
