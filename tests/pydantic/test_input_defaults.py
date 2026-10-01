@@ -196,7 +196,7 @@ def test_null_for_a_field_with_an_unpublished_default_is_validated_by_pydantic()
     result = schema.execute_sync("{ createOrder(input: {id: null}) }")
 
     assert result.errors
-    assert "1 validation error for CreateOrderInput" in result.errors[0].message
+    assert result.errors[0].message.startswith("Invalid input: input.id:")
 
 
 def test_optional_fields_without_a_default_are_required_by_pydantic():

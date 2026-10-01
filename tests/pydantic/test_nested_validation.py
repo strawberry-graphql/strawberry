@@ -6,7 +6,7 @@ from inline_snapshot import snapshot
 
 import strawberry
 from strawberry.directive import DirectiveLocation, DirectiveValue
-from strawberry.pydantic import Error, PydanticValidationErrorHandler
+from strawberry.pydantic import PydanticValidationErrorHandler, ValidationError
 
 
 def test_errors_of_nested_inputs_are_reported_together():
@@ -34,7 +34,7 @@ def test_errors_of_nested_inputs_are_reported_together():
     @strawberry.type
     class Mutation:
         @strawberry.mutation
-        def create_order(self, input: OrderInput) -> Order | Error:
+        def create_order(self, input: OrderInput) -> Order | ValidationError:
             return Order(id=strawberry.ID("1"))
 
     schema = strawberry.Schema(
@@ -50,7 +50,7 @@ def test_errors_of_nested_inputs_are_reported_together():
                 customer: { name: "" }
                 items: [{ quantity: 0 }, { quantity: 1 }, { quantity: -1 }]
             }) {
-                ... on Error { errors { loc type } }
+                ... on ValidationError { issues { location type } }
             }
         }
         """
@@ -60,10 +60,19 @@ def test_errors_of_nested_inputs_are_reported_together():
     assert result.data == snapshot(
         {
             "createOrder": {
-                "errors": [
-                    {"loc": ["customer", "name"], "type": "string_too_short"},
-                    {"loc": ["items", "0", "quantity"], "type": "greater_than"},
-                    {"loc": ["items", "2", "quantity"], "type": "greater_than"},
+                "issues": [
+                    {
+                        "location": ["input", "customer", "name"],
+                        "type": "string_too_short",
+                    },
+                    {
+                        "location": ["input", "items", "0", "quantity"],
+                        "type": "greater_than",
+                    },
+                    {
+                        "location": ["input", "items", "2", "quantity"],
+                        "type": "greater_than",
+                    },
                 ]
             }
         }
@@ -284,7 +293,7 @@ def test_nested_inputs_not_validated_as_their_model_are_built_first(wrapper: Any
     result = schema.execute_sync("{ order(input: {item: {quantity: 0}}) }")
 
     assert result.errors
-    assert "1 validation error for ItemInput" in result.errors[0].message
+    assert result.errors[0].message.startswith("Invalid input: input.item.quantity:")
 
 
 def test_nested_inputs_with_a_different_graphql_type_are_built_first():
@@ -318,7 +327,7 @@ def test_nested_inputs_with_a_different_graphql_type_are_built_first():
     result = schema.execute_sync('{ user(input: {address: {city: "NY", zip: "x"}}) }')
 
     assert result.errors
-    assert "1 validation error for USAddressInput" in result.errors[0].message
+    assert result.errors[0].message.startswith("Invalid input: input.address.zip:")
 
 
 def test_undecorated_subclasses_are_validated_as_themselves():

@@ -1,86 +1,92 @@
-"""Generic error type for Pydantic validation errors in Strawberry GraphQL.
-
-This module provides a generic Error type that can be used to represent
-Pydantic validation errors in GraphQL responses.
-"""
+"""Errors for pydantic inputs that fail validation."""
 
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from strawberry.exceptions import StrawberryInputCoercionError
+from strawberry.schema.exception_handlers import ExceptionHandler
 from strawberry.types.object_type import type as strawberry_type
 
 if TYPE_CHECKING:
-    from pydantic import ValidationError
-
     from strawberry.types.field import StrawberryField
     from strawberry.types.info import Info
 
 
-def _get_validation_error_types() -> tuple[type[BaseException], ...]:
-    from pydantic import ValidationError
-
-    error_types: list[type[BaseException]] = [ValidationError]
-
-    try:
-        from pydantic.v1 import ValidationError as V1ValidationError
-    except ImportError:
-        pass
-    else:
-        if V1ValidationError is not ValidationError:
-            error_types.append(V1ValidationError)
-
-    return tuple(error_types)
-
-
 @strawberry_type
-class ErrorDetail:
-    """Represents a single validation error detail."""
+class ValidationIssue:
+    """A problem with an input value."""
+
+    location: list[str]
+    """GraphQL location of the value, starting with the argument name."""
+
+    message: str
 
     type: str
-    loc: list[str]
-    msg: str
+    """The pydantic error type, like `string_too_short`."""
 
 
 @strawberry_type
-class Error:
-    """Generic error type for Pydantic validation errors."""
+class ValidationError:
+    """The inputs failed validation."""
 
-    errors: list[ErrorDetail]
+    issues: list[ValidationIssue]
 
-    @staticmethod
-    def from_validation_error(exc: ValidationError) -> Error:
-        """Create an Error instance from a Pydantic ValidationError.
 
-        Args:
-            exc: The Pydantic ValidationError to convert
+# all the issues are in the extensions, the message only summarizes them
+_MAX_ISSUES_IN_MESSAGE = 5
 
-        Returns:
-            An Error instance containing all validation errors
-        """
-        return Error(
-            errors=[
-                ErrorDetail(
-                    type=error["type"],
-                    loc=[str(loc) for loc in error["loc"]],
-                    msg=error["msg"],
-                )
-                for error in exc.errors()
-            ]
+
+class InputValidationError(StrawberryInputCoercionError):
+    """Raised when a pydantic input fails validation.
+
+    It's an input coercion error, so it's returned as a GraphQL error, with the
+    issues in its `validationErrors` extension, unless the field can return a
+    `ValidationError` and `PydanticValidationErrorHandler` is used.
+    """
+
+    def __init__(self, issues: list[ValidationIssue]) -> None:
+        self.issues = issues
+
+        details = "; ".join(
+            f"{'.'.join(issue.location)}: {issue.message}"
+            if issue.location
+            else issue.message
+            for issue in issues[:_MAX_ISSUES_IN_MESSAGE]
+        )
+
+        if len(issues) > _MAX_ISSUES_IN_MESSAGE:
+            details += f" (and {len(issues) - _MAX_ISSUES_IN_MESSAGE} more)"
+
+        super().__init__(
+            f"Invalid input: {details}",
+            extensions={
+                "validationErrors": [
+                    {
+                        "location": issue.location,
+                        "message": issue.message,
+                        "type": issue.type,
+                    }
+                    for issue in issues
+                ]
+            },
         )
 
 
-class PydanticValidationErrorHandler:
-    # ``exception_type`` accepts a single type or a tuple; the GraphQL error
-    # type is a single type, so ``error_type`` must be ``Error``, not a tuple.
-    exception_type = _get_validation_error_types()
-    error_type = Error
+class PydanticValidationErrorHandler(
+    ExceptionHandler[InputValidationError, ValidationError]
+):
+    """Returns `ValidationError` for invalid pydantic inputs.
+
+    Only fields that can return a `ValidationError` are affected, for example
+    `-> User | strawberry.pydantic.ValidationError`.
+    """
 
     def handle(
         self,
-        exception: ValidationError,
+        exception: InputValidationError,
         *,
         field: StrawberryField,
         info: Info,
-    ) -> Error:
-        return Error.from_validation_error(exception)
+    ) -> ValidationError | None:
+        return ValidationError(issues=exception.issues)

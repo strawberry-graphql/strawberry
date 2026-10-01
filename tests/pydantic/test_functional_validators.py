@@ -253,7 +253,7 @@ def test_validator_with_field_constraints():
     )
 
     assert result.errors is not None
-    assert "too_short" in result.errors[0].message
+    assert result.errors[0].extensions["validationErrors"][0]["type"] == "too_short"
 
 
 def test_reusable_annotated_types_across_models():

@@ -35,10 +35,11 @@ class CreateUserInput(BaseModel):
     name: str = Field(min_length=1)
 ```
 
-Inputs are validated by Pydantic when the arguments are converted, and
-validation errors can be returned as a typed `strawberry.pydantic.Error` by
-registering `strawberry.pydantic.PydanticValidationErrorHandler` in the
-schema's `exception_handlers`.
+Inputs are validated by Pydantic when the arguments are converted. Invalid
+inputs are reported as GraphQL errors with a `validationErrors` extension, or,
+by returning `User | strawberry.pydantic.ValidationError` and registering
+`strawberry.pydantic.PydanticValidationErrorHandler` in the schema's
+`exception_handlers`, as typed results.
 
 Fields can be customized with `Annotated[..., strawberry.field(...)]`, and
 `strawberry.Private` or Pydantic's `Field(exclude=True)` hide a field from the

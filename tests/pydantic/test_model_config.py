@@ -396,4 +396,6 @@ def test_multiple_config_options_combined():
     )
 
     assert result.errors is not None
-    assert "string_too_short" in result.errors[0].message
+    assert "string_too_short" in [
+        error["type"] for error in result.errors[0].extensions["validationErrors"]
+    ]

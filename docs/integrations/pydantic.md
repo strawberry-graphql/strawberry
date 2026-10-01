@@ -479,8 +479,9 @@ class OrderInput(BaseModel):
 ```
 
 Sending `items: [{quantity: 0}, {quantity: 1}, {quantity: -1}]` reports two
-errors, at `items.0.quantity` and `items.2.quantity`. Validators with
-`mode="before"` receive nested inputs as data, not as model instances.
+errors, at `input.items.0.quantity` and `input.items.2.quantity` for an argument
+named `input`. Validators with `mode="before"` receive nested inputs as data,
+not as model instances.
 
 A Pydantic input nested inside a regular `@strawberry.input` is validated on its
 own, and overriding `model_validate` only affects the outermost input, so prefer
@@ -511,16 +512,63 @@ class CreatePostInput(BaseModel):
         return v
 ```
 
-#### Typed Validation Errors
+#### Validation Errors
 
-You can return Pydantic validation errors as typed GraphQL union results by
-including `strawberry.pydantic.Error` in the mutation return type and
-registering `PydanticValidationErrorHandler` on the schema:
+When a Pydantic input is invalid, the GraphQL response contains an error with
+each problem in its `validationErrors` extension:
+
+```graphql
+mutation {
+  createUser(input: { name: "J" }) {
+    name
+  }
+}
+```
+
+```json
+{
+  "data": null,
+  "errors": [
+    {
+      "message": "Invalid input: input.name: String should have at least 2 characters",
+      "locations": [{ "line": 2, "column": 3 }],
+      "path": ["createUser"],
+      "extensions": {
+        "validationErrors": [
+          {
+            "location": ["input", "name"],
+            "message": "String should have at least 2 characters",
+            "type": "string_too_short"
+          }
+        ]
+      }
+    }
+  ]
+}
+```
+
+`location` uses the GraphQL names the client sent, starting with the argument,
+and `type` is the
+[Pydantic error type](https://docs.pydantic.dev/latest/errors/validation_errors/).
+The values Pydantic attaches to its errors are not included, but messages come
+from Pydantic and from your validators, so avoid putting sensitive values in
+your validators' messages.
+
+The error is raised as `strawberry.pydantic.InputValidationError`, a
+[`StrawberryInputCoercionError`](../guides/errors.md#strawberry-input-coercion-errors),
+so it can be told apart from server errors. Each argument is validated on its
+own, so when several arguments are invalid, the errors of the first one are
+returned.
+
+To return validation errors as data instead, add
+`strawberry.pydantic.ValidationError` to the field's return type and register
+`PydanticValidationErrorHandler` on the schema:
 
 ```python
 from pydantic import BaseModel, Field
+
 import strawberry
-from strawberry.pydantic import Error, PydanticValidationErrorHandler
+from strawberry.pydantic import PydanticValidationErrorHandler, ValidationError
 
 
 @strawberry.pydantic.input
@@ -536,7 +584,7 @@ class User(BaseModel):
 @strawberry.type
 class Mutation:
     @strawberry.mutation
-    def create_user(self, input: CreateUserInput) -> User | Error:
+    def create_user(self, input: CreateUserInput) -> User | ValidationError:
         return User(name=input.name)
 
 
@@ -551,6 +599,29 @@ schema = strawberry.Schema(
     exception_handlers=[PydanticValidationErrorHandler()],
 )
 ```
+
+```graphql
+mutation {
+  createUser(input: { name: "J" }) {
+    ... on User {
+      name
+    }
+    ... on ValidationError {
+      issues {
+        location
+        message
+        type
+      }
+    }
+  }
+}
+```
+
+Only invalid inputs are returned as `ValidationError`: Pydantic errors raised by
+your resolvers are reported as normal errors, and exception handlers for
+`pydantic.ValidationError` only receive those. Like other exception handlers, it
+doesn't apply to subscriptions and list fields, which return the GraphQL error
+instead.
 
 ### Model Config
 

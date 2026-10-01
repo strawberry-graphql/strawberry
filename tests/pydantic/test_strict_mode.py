@@ -303,7 +303,9 @@ def test_strict_with_constraints():
     )
 
     assert result.errors is not None
-    assert "less_than_equal" in result.errors[0].message
+    assert "less_than_equal" in [
+        error["type"] for error in result.errors[0].extensions["validationErrors"]
+    ]
 
     # Name too long
     long_name = "A" * 51
@@ -319,4 +321,6 @@ def test_strict_with_constraints():
     )
 
     assert result.errors is not None
-    assert "string_too_long" in result.errors[0].message
+    assert "string_too_long" in [
+        error["type"] for error in result.errors[0].extensions["validationErrors"]
+    ]
