@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import dataclasses
 import inspect
 from typing import (
     TYPE_CHECKING,
@@ -29,6 +30,7 @@ if TYPE_CHECKING:
 
     from strawberry.schema.config import StrawberryConfig
     from strawberry.types.base import StrawberryType
+    from strawberry.types.info import Info
     from strawberry.types.scalar import ScalarDefinition, ScalarWrapper
 
 
@@ -169,12 +171,51 @@ def _is_optional_leaf_type(
     return False
 
 
+@dataclasses.dataclass(frozen=True)
+class InputContext:
+    """Passed to `StrawberryObjectDefinition.from_input` when building an input."""
+
+    info: Info | None
+    config: StrawberryConfig
+    scalar_registry: Mapping[object, ScalarWrapper | ScalarDefinition]
+    path: tuple[str | int, ...]
+    """Location of the input value in the arguments, see `convert_argument`."""
+
+    def convert(
+        self,
+        value: object,
+        type_: StrawberryType | type,
+        path: tuple[str | int, ...] | None = None,
+    ) -> object:
+        """Convert a GraphQL input value of `type_` like Strawberry does.
+
+        `path` is the location of `value`, which defaults to the input's location.
+        """
+        return convert_argument(
+            value,
+            type_,
+            self.scalar_registry,
+            self.config,
+            self.info,
+            path=self.path if path is None else path,
+        )
+
+
 def convert_argument(
     value: object,
     type_: StrawberryType | type,
     scalar_registry: Mapping[object, ScalarWrapper | ScalarDefinition],
     config: StrawberryConfig,
+    info: Info | None = None,
+    *,
+    path: tuple[str | int, ...] = (),
 ) -> object:
+    """Convert a GraphQL input value of `type_` to its Python value.
+
+    `path` is the location of the value in the arguments, made of GraphQL field
+    names and list indices. It's passed on to input types that build their own
+    value, see `StrawberryObjectDefinition.from_input`.
+    """
     from strawberry.relay.types import GlobalID
 
     # TODO: move this somewhere else and make it first class
@@ -183,7 +224,9 @@ def convert_argument(
         # Check if this is Maybe[T | None] (has StrawberryOptional as of_type)
         if isinstance(type_.of_type, StrawberryOptional):
             # This is Maybe[T | None] - allows null values
-            res = convert_argument(value, type_.of_type, scalar_registry, config)
+            res = convert_argument(
+                value, type_.of_type, scalar_registry, config, info, path=path
+            )
 
             return Some(res)
 
@@ -199,13 +242,17 @@ def convert_argument(
 
         # This is Maybe[T] - validation for null values is handled by MaybeNullValidationRule
         # Convert the value and wrap in Some()
-        res = convert_argument(value, type_.of_type, scalar_registry, config)
+        res = convert_argument(
+            value, type_.of_type, scalar_registry, config, info, path=path
+        )
 
         return Some(res)
 
     # Handle regular StrawberryOptional (not Maybe)
     if isinstance(type_, StrawberryOptional):
-        return convert_argument(value, type_.of_type, scalar_registry, config)
+        return convert_argument(
+            value, type_.of_type, scalar_registry, config, info, path=path
+        )
 
     if value is None:
         return None
@@ -226,8 +273,10 @@ def convert_argument(
         value_list = cast("Iterable", value)
 
         return [
-            convert_argument(x, type_.of_type, scalar_registry, config)
-            for x in value_list
+            convert_argument(
+                x, type_.of_type, scalar_registry, config, info, path=(*path, index)
+            )
+            for index, x in enumerate(value_list)
         ]
 
     if _is_leaf_type(type_, scalar_registry):
@@ -237,16 +286,34 @@ def convert_argument(
         return value
 
     if isinstance(type_, LazyType):
-        return convert_argument(value, type_.resolve_type(), scalar_registry, config)
+        return convert_argument(
+            value, type_.resolve_type(), scalar_registry, config, info, path=path
+        )
 
     if has_enum_definition(type_):
         enum_definition: StrawberryEnumDefinition = type_.__strawberry_definition__
-        return convert_argument(value, enum_definition, scalar_registry, config)
+        return convert_argument(
+            value, enum_definition, scalar_registry, config, info, path=path
+        )
 
     if has_object_definition(type_):
+        type_definition = type_.__strawberry_definition__
+        type_ = cast("type", type_)
+
+        if type_definition.from_input is not None:
+            return type_definition.from_input(
+                type_,
+                cast("Mapping", value),
+                InputContext(
+                    info=info,
+                    config=config,
+                    scalar_registry=scalar_registry,
+                    path=path,
+                ),
+            )
+
         kwargs = {}
 
-        type_definition = type_.__strawberry_definition__
         for field in type_definition.fields:
             value = cast("Mapping", value)
             graphql_name = config.name_converter.from_field(field)
@@ -257,9 +324,10 @@ def convert_argument(
                     field.resolve_type(type_definition=type_definition),
                     scalar_registry,
                     config,
+                    info,
+                    path=(*path, graphql_name),
                 )
 
-        type_ = cast("type", type_)
         return type_(**kwargs)
 
     raise UnsupportedTypeError(type_)
@@ -270,11 +338,15 @@ def convert_arguments(
     arguments: list[StrawberryArgument],
     scalar_registry: Mapping[object, ScalarWrapper | ScalarDefinition],
     config: StrawberryConfig,
+    info: Info | None = None,
 ) -> dict[str, Any]:
     """Converts a nested dictionary to a dictionary of actual types.
 
     It deals with conversion of input types to proper dataclasses and
     also uses a sentinel value for unset values.
+
+    `info` is passed on to input types that build their own value, see
+    `StrawberryObjectDefinition.from_input`.
     """
     if not arguments:
         return {}
@@ -294,6 +366,8 @@ def convert_arguments(
                 type_=argument.type,
                 config=config,
                 scalar_registry=scalar_registry,
+                info=info,
+                path=(name,),
             )
 
     return kwargs
@@ -351,6 +425,7 @@ def argument(  # noqa: PLR0917
 
 
 __all__ = [
+    "InputContext",
     "StrawberryArgument",
     "StrawberryArgumentAnnotation",
     "argument",

@@ -214,6 +214,7 @@ class Schema(BaseSchema):
                         type_=definition.origin,
                         scalar_registry=scalar_registry,
                         config=config,
+                        info=info,
                     )
                 except Exception:  # noqa: BLE001
                     result = TypeError(f"Unable to resolve reference for {type_name}")
