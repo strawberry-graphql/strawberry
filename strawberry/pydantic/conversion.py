@@ -79,8 +79,12 @@ def _to_python_data(
     model: type[BaseModel],
     value: Mapping[str, Any],
     context: InputContext,
-    path: tuple[str | int, ...],
+    keys: tuple[str | int, ...],
 ) -> dict[str, Any]:
+    """Convert `value` to the data pydantic validates `model` with.
+
+    `keys` are the location of `value` in the outermost input.
+    """
     definition = model.__strawberry_definition__  # type: ignore[attr-defined]
     data: dict[str, Any] = {}
 
@@ -93,7 +97,7 @@ def _to_python_data(
                 field.resolve_type(type_definition=definition),
                 model.model_fields.get(field.python_name),
                 context,
-                (*path, graphql_name),
+                (*keys, graphql_name),
             )
 
     return data
@@ -104,22 +108,22 @@ def _to_python_value(
     type_: StrawberryType | type,
     field_info: FieldInfo | None,
     context: InputContext,
-    path: tuple[str | int, ...],
+    keys: tuple[str | int, ...],
 ) -> Any:
     if value is None:
         return None
 
     if isinstance(type_, StrawberryOptional):
-        return _to_python_value(value, type_.of_type, field_info, context, path)
+        return _to_python_value(value, type_.of_type, field_info, context, keys)
 
     if isinstance(type_, StrawberryList):
         return [
-            _to_python_value(item, type_.of_type, field_info, context, (*path, index))
+            _to_python_value(item, type_.of_type, field_info, context, (*keys, index))
             for index, item in enumerate(value)
         ]
 
     if isinstance(type_, LazyType):
-        return _to_python_value(value, type_.resolve_type(), field_info, context, path)
+        return _to_python_value(value, type_.resolve_type(), field_info, context, keys)
 
     # nested models are validated with the outermost one, so that all their
     # errors are reported, with their full location
@@ -129,9 +133,9 @@ def _to_python_value(
         and not isinstance(value, type_)
         and _validates_field_as(field_info, type_)
     ):
-        return _to_python_data(type_, value, context, path)
+        return _to_python_data(type_, value, context, keys)
 
-    return context.convert(value, type_, path)
+    return context.convert(value, type_, *keys)
 
 
 def _get_pydantic_keys(field_info: FieldInfo) -> set[str]:
@@ -215,7 +219,7 @@ def build_pydantic_model(
     model: type[BaseModel], value: Mapping[str, Any], context: InputContext
 ) -> BaseModel:
     """The `from_input` hook of `strawberry.pydantic` types."""
-    data = _to_python_data(model, value, context, context.path)
+    data = _to_python_data(model, value, context, ())
 
     validation_context: dict[str, Any] = {}
 
