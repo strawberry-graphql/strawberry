@@ -12,38 +12,35 @@ social_messages:
     the location of the value in the arguments.
 ---
 
-This release adds a `from_input` hook to `StrawberryObjectDefinition`, so input
-types can build their own value from a GraphQL input value.
+This release adds a `from_input` hook to `StrawberryObjectDefinition`, for
+integrations that create their own type definitions, like the first-class
+Pydantic integration. It lets them build input values their own way, for example
+to validate a whole input with the request's info. It isn't meant to be set on
+types defined with `@strawberry.input`.
 
-When a type definition sets `from_input`, Strawberry calls it with the class to
-build, the input value keyed by GraphQL field names, and an `InputContext`,
-instead of converting the fields and passing them to the class:
+An integration passes the hook when it creates the type definition. Strawberry
+then calls it with the class to build, the input value keyed by GraphQL field
+names, and an `InputContext`, instead of converting the fields and passing them
+to the class:
 
 ```python
 from collections.abc import Mapping
 from typing import Any
 
-import strawberry
 from strawberry.types.arguments import InputContext
-from strawberry.types.base import get_object_definition
+from strawberry.types.base import StrawberryObjectDefinition
 
 
-@strawberry.input
-class Range:
-    start: int
-    end: int
+def build_model(cls: type, value: Mapping[str, Any], context: InputContext) -> Any:
+    return cls.model_validate(value, context={"info": context.info})
 
 
-def build_range(cls: type, value: Mapping[str, Any], context: InputContext) -> Any:
-    if value["start"] > value["end"]:
-        location = ".".join(map(str, context.path))
-
-        raise ValueError(f"{location}: start must be before end")
-
-    return cls(start=value["start"], end=value["end"])
-
-
-get_object_definition(Range, strict=True).from_input = build_range
+definition = StrawberryObjectDefinition(
+    name="UserInput",
+    is_input=True,
+    # the other arguments of the definition
+    from_input=build_model,
+)
 ```
 
 `InputContext` has the request's `info`, the schema config and scalar registry,

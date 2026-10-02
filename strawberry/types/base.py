@@ -295,6 +295,9 @@ class StrawberryObjectDefinition(StrawberryType):
     from_input: Callable[[type, Mapping[str, Any], InputContext], Any] | None = None
     """Builds a value of this type from a GraphQL input value.
 
+    It's meant for integrations that create their own type definitions, like
+    `strawberry.pydantic`, which pass it when they create the definition.
+
     It's called with the class to build, which can be a subclass of `origin`, and
     the whole input value, keyed by GraphQL field names, so it's also responsible
     for converting the values of the fields (see `InputContext.convert`). Fields
