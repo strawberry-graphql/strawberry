@@ -37,6 +37,14 @@ if TYPE_CHECKING:
 _NOT_VALIDATED_AS_MODEL = (InstanceOf, PlainValidator, SkipValidation)
 
 
+def _skips_model_validation(metadata: object) -> bool:
+    # `SkipValidation` and `InstanceOf` also work as bare classes, as in
+    # `Annotated[Model, SkipValidation]`
+    return isinstance(metadata, _NOT_VALIDATED_AS_MODEL) or (
+        isinstance(metadata, type) and issubclass(metadata, _NOT_VALIDATED_AS_MODEL)
+    )
+
+
 def _is_validated_as(annotation: Any, model: type[BaseModel]) -> bool:
     if annotation is model:
         return True
@@ -46,7 +54,7 @@ def _is_validated_as(annotation: Any, model: type[BaseModel]) -> bool:
 
     if origin is Annotated:
         return not any(
-            isinstance(item, _NOT_VALIDATED_AS_MODEL) for item in args[1:]
+            _skips_model_validation(item) for item in args[1:]
         ) and _is_validated_as(args[0], model)
 
     if is_union(annotation):
@@ -68,9 +76,7 @@ def _validates_field_as(field_info: FieldInfo | None, model: type[BaseModel]) ->
     """
     return (
         field_info is not None
-        and not any(
-            isinstance(item, _NOT_VALIDATED_AS_MODEL) for item in field_info.metadata
-        )
+        and not any(_skips_model_validation(item) for item in field_info.metadata)
         and _is_validated_as(field_info.annotation, model)
     )
 

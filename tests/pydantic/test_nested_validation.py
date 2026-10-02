@@ -264,18 +264,27 @@ def test_strawberry_inputs_with_a_model_validate_method_are_not_pydantic():
 
 
 @pytest.mark.parametrize(
-    "wrapper",
-    [pydantic.SkipValidation, pydantic.InstanceOf],
-    ids=["skip-validation", "instance-of"],
+    "annotation",
+    [
+        lambda model: Annotated[
+            pydantic.SkipValidation[model], strawberry.field(graphql_type=model)
+        ],
+        lambda model: Annotated[
+            pydantic.InstanceOf[model], strawberry.field(graphql_type=model)
+        ],
+        lambda model: Annotated[model, pydantic.SkipValidation],
+        lambda model: Annotated[model, pydantic.InstanceOf],
+    ],
+    ids=["skip-validation", "instance-of", "bare-skip-validation", "bare-instance-of"],
 )
-def test_nested_inputs_not_validated_as_their_model_are_built_first(wrapper: Any):
+def test_nested_inputs_not_validated_as_their_model_are_built_first(annotation: Any):
     @strawberry.pydantic.input
     class ItemInput(pydantic.BaseModel):
         quantity: int = pydantic.Field(gt=0)
 
     @strawberry.pydantic.input
     class OrderInput(pydantic.BaseModel):
-        item: Annotated[wrapper[ItemInput], strawberry.field(graphql_type=ItemInput)]
+        item: annotation(ItemInput)  # type: ignore[valid-type]
 
     @strawberry.type
     class Query:
