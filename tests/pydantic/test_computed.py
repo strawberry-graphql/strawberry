@@ -4,9 +4,11 @@ import textwrap
 from typing import Annotated, Any, Optional
 
 import pydantic
+import pytest
 from pydantic import computed_field
 
 import strawberry
+from strawberry.pydantic.exceptions import UnregisteredPydanticTypeError
 from strawberry.scalars import JSON
 from strawberry.types.base import get_object_definition
 
@@ -189,6 +191,28 @@ def test_computed_field_with_interface():
             "email": "john@example.com",
         }
     }
+
+
+@pytest.mark.raises_strawberry_exception(
+    UnregisteredPydanticTypeError,
+    match=(
+        r"`Base\.pet` uses `Pet`, which isn't a Strawberry type: decorate it with "
+        r"`@strawberry\.pydantic\.type`"
+    ),
+)
+def test_unregistered_types_of_inherited_computed_fields_raise_an_error():
+    class Pet(pydantic.BaseModel):
+        name: str
+
+    class Base(pydantic.BaseModel):
+        @computed_field
+        @property
+        def pet(self) -> Pet:
+            return Pet(name="Rex")
+
+    @strawberry.pydantic.type
+    class Owner(Base):
+        name: str
 
 
 def test_computed_fields_are_included_by_default():

@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import functools
 import inspect
+import re
 from functools import cached_property
 from typing import TYPE_CHECKING, Any
 
@@ -14,6 +16,37 @@ if TYPE_CHECKING:
 
     from strawberry.exceptions.exception_source import ExceptionSource
     from strawberry.types.field import StrawberryField
+
+
+_MARKUP_TAG = re.compile(r"(\\*)(\[[a-z#/@][^[]*?])")
+
+
+def _escape_markup(text: str) -> str:
+    """Escape text that rich would read as markup, like `RootModel[list[str]]`.
+
+    The same as `rich.markup.escape`, as rich is an optional dependency.
+    """
+    text = _MARKUP_TAG.sub(r"\1\1\\\2", text)
+
+    if text.endswith("\\") and not text.endswith("\\\\"):
+        text += "\\"
+
+    return text
+
+
+def _find_field_source(cls: type, field_name: str) -> ExceptionSource | None:
+    source_finder = SourceFinder()
+    attribute = vars(cls).get(field_name)
+
+    # computed fields are properties, not annotated attributes
+    if isinstance(attribute, property):
+        getter = attribute.fget
+    elif isinstance(attribute, functools.cached_property):
+        getter = attribute.func
+    else:
+        return source_finder.find_class_attribute_from_object(cls, field_name)
+
+    return source_finder.find_function_from_object(getter) if getter else None
 
 
 class UnregisteredPydanticTypeError(StrawberryException):
@@ -30,20 +63,22 @@ class UnregisteredPydanticTypeError(StrawberryException):
             f"`{cls.__name__}.{field_name}` uses `{type_.__name__}`, which isn't a "
             f"Strawberry type: decorate it with `{decorator}`"
         )
+        # the names of parametrized generic models, like `Box[str]`, look like
+        # rich markup
+        type_name = _escape_markup(type_.__name__)
+
         self.rich_message = (
             f"`[underline]{cls.__name__}.{field_name}[/]` uses "
-            f"`[underline]{type_.__name__}[/]`, which isn't a Strawberry type"
+            f"`[underline]{type_name}[/]`, which isn't a Strawberry type"
         )
-        self.annotation_message = f"field using {type_.__name__}"
-        self.suggestion = f"Decorate `{type_.__name__}` with `{decorator}`."
+        self.annotation_message = f"field using {type_name}"
+        self.suggestion = f"Decorate `{type_name}` with `{decorator}`."
 
         super().__init__(self.message)
 
     @cached_property
     def exception_source(self) -> ExceptionSource | None:
-        source_finder = SourceFinder()
-
-        return source_finder.find_class_attribute_from_object(self.cls, self.field_name)
+        return _find_field_source(self.cls, self.field_name)
 
 
 class StrawberryFieldAsDefaultError(StrawberryException):
@@ -150,19 +185,47 @@ class NotAPydanticModelError(StrawberryException):
 
 
 class UnsupportedRootModelError(StrawberryException):
-    def __init__(self, cls: type, decorator: str) -> None:
-        self.cls = cls
+    """A `RootModel` is decorated, or used by a field of a pydantic type."""
 
-        self.message = (
-            f"`{cls.__name__}` is a `RootModel`, which can't be used with "
-            f"`strawberry.pydantic.{decorator}`"
-        )
-        self.rich_message = (
-            f"`[underline]{cls.__name__}[/]` is a `RootModel`, which can't be used "
-            f"with `strawberry.pydantic.{decorator}`"
-        )
-        self.annotation_message = "RootModel defined here"
-        self.suggestion = (
+    def __init__(
+        self,
+        root_model: type,
+        *,
+        decorator: str | None = None,
+        cls: type | None = None,
+        field_name: str | None = None,
+    ) -> None:
+        self.root_model = root_model
+        self.cls = cls
+        self.field_name = field_name
+
+        # parametrized root models are named like `RootModel[list[int]]`
+        name = root_model.__name__
+        rich_name = _escape_markup(name)
+
+        if cls is not None and field_name is not None:
+            self.message = (
+                f"`{cls.__name__}.{field_name}` uses `{name}`, which is a "
+                "`RootModel` and can't be a GraphQL type"
+            )
+            self.rich_message = (
+                f"`[underline]{cls.__name__}.{field_name}[/]` uses "
+                f"`[underline]{rich_name}[/]`, which is a `RootModel` and can't be "
+                "a GraphQL type"
+            )
+            self.annotation_message = f"field using {rich_name}"
+        else:
+            self.message = (
+                f"`{name}` is a `RootModel`, which can't be used with "
+                f"`strawberry.pydantic.{decorator}`"
+            )
+            self.rich_message = (
+                f"`[underline]{rich_name}[/]` is a `RootModel`, which can't be used "
+                f"with `strawberry.pydantic.{decorator}`"
+            )
+            self.annotation_message = "RootModel defined here"
+
+        self.suggestion = _escape_markup(
             "A `RootModel` holds a single value instead of fields, so it can't be "
             "a GraphQL object type. Use the type of its value instead, for example "
             "`list[str]` for `RootModel[list[str]]`."
@@ -172,7 +235,10 @@ class UnsupportedRootModelError(StrawberryException):
 
     @cached_property
     def exception_source(self) -> ExceptionSource | None:
-        return SourceFinder().find_class_from_object(self.cls)
+        if self.cls is not None and self.field_name is not None:
+            return _find_field_source(self.cls, self.field_name)
+
+        return SourceFinder().find_class_from_object(self.root_model)
 
 
 class MaybeFieldError(StrawberryException):

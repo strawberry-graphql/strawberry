@@ -271,6 +271,43 @@ def test_root_model_error():
         pass
 
 
+class Tags(pydantic.RootModel[list[str]]):
+    pass
+
+
+@pytest.mark.raises_strawberry_exception(
+    UnsupportedRootModelError,
+    match=(
+        r"`Post\.tags` uses `Tags`, which is a `RootModel` and can't be a GraphQL "
+        r"type"
+    ),
+)
+def test_root_model_fields_raise_an_error():
+    @strawberry.pydantic.type
+    class Post(pydantic.BaseModel):
+        tags: Tags
+
+
+def test_root_model_errors_render_brackets():
+    rich_console = pytest.importorskip("rich.console")
+
+    with pytest.raises(UnsupportedRootModelError) as exc_info:
+
+        @strawberry.pydantic.input
+        class PostInput(pydantic.BaseModel):
+            ids: pydantic.RootModel[list[int]]
+
+    console = rich_console.Console(width=200, color_system=None)
+
+    with console.capture() as capture:
+        console.print(exc_info.value)
+
+    output = capture.get()
+
+    assert "`PostInput.ids` uses `RootModel[list[int]]`" in output
+    assert "for example `list[str]` for `RootModel[list[str]]`" in output
+
+
 @pytest.mark.skipif(
     sys.version_info >= (3, 14),
     reason="Pydantic v1 is not compatible with Python 3.14+",
