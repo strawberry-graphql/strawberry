@@ -1,6 +1,32 @@
 CHANGELOG
 =========
 
+0.328.1 - 2026-10-02
+--------------------
+
+This release fixes unions with the same name but different types.
+
+Strawberry reused a union by its name without checking its types, so a union
+whose generated name matched another union, for example `Ok | Error` with two
+different `Error` types, was silently replaced by the first one, and returning
+the second `Error` failed at runtime:
+
+```python
+@strawberry.type
+class Query:
+    @strawberry.field
+    def a(self) -> Ok | Error: ...
+
+    @strawberry.field
+    def b(self) -> Ok | OtherError: ...  # also named OkError
+```
+
+Building this schema now raises `DuplicatedTypeName`, like other types with the
+same name do. Explicitly named unions, such as
+`Annotated[A | B, strawberry.union("AB")]`, are checked too.
+
+This release was contributed by [@patrick91](https://github.com/patrick91) in [#4657](https://github.com/strawberry-graphql/strawberry/pull/4657)
+
 0.328.0 - 2026-09-30
 --------------------
 
