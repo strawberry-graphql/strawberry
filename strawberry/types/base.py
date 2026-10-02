@@ -25,6 +25,7 @@ if TYPE_CHECKING:
 
     from graphql import GraphQLAbstractType, GraphQLResolveInfo
 
+    from strawberry.types.arguments import InputContext
     from strawberry.types.field import StrawberryField
 
 
@@ -291,6 +292,24 @@ class StrawberryObjectDefinition(StrawberryType):
         default_factory=dict
     )
 
+    from_input: Callable[[type, Mapping[str, Any], InputContext], Any] | None = None
+    """Builds a value of this type from a GraphQL input value.
+
+    It's meant for integrations that create their own type definitions, like
+    `strawberry.pydantic`, which pass it when they create the definition.
+
+    It's called with the class to build, which can be a subclass of `origin`, and
+    the whole input value, keyed by GraphQL field names, so it's also responsible
+    for converting the values of the fields (see `InputContext.convert`). Fields
+    the client omitted contain their default when it's published in the schema,
+    and are missing otherwise, e.g. when they default to `UNSET`. Defaults of
+    arguments and input fields are built with it too, as Strawberry converts them
+    to input values when it builds the schema.
+
+    When it's not set, the fields are converted first and passed to the class as
+    keyword arguments.
+    """
+
     def __post_init__(self) -> None:
         # resolve `Self` annotation with the origin type
         for index, field in enumerate(self.fields):
@@ -334,6 +353,7 @@ class StrawberryObjectDefinition(StrawberryType):
             fields=fields,
             concrete_of=self,
             type_var_map=type_var_map,
+            from_input=self.from_input,
         )
 
         new_type = type(
