@@ -37,6 +37,7 @@ from pydantic import (
     NaiveDatetime,
     PastDate,
     PastDatetime,
+    RootModel,
 )
 from pydantic_core import PydanticUndefined
 
@@ -50,6 +51,7 @@ from strawberry.types.base import StrawberryObjectDefinition
 from strawberry.types.field import StrawberryField, _contains_strawberry_field
 from strawberry.types.maybe import _annotation_is_maybe
 from strawberry.types.private import is_private
+from strawberry.types.union import StrawberryUnion
 from strawberry.utils.typing import is_union
 
 from .exceptions import (
@@ -58,11 +60,14 @@ from .exceptions import (
     ResolverFieldOverridesModelFieldError,
     StrawberryFieldAsDefaultError,
     UnregisteredPydanticTypeError,
+    UnsupportedRootModelError,
     UploadFieldError,
 )
 from .resolver_field import get_resolver_field
 
 if TYPE_CHECKING:
+    from collections.abc import Iterable
+
     from pydantic.fields import FieldInfo
 
     from strawberry.types.base import StrawberryType
@@ -299,8 +304,21 @@ def _replace_pydantic_types(type_: Any, model: type[BaseModel]) -> Any:
     return origin[args]
 
 
+def _with_strawberry_metadata(annotation: Any, metadata: Iterable[object]) -> Any:
+    """Add back the Strawberry metadata of `Annotated`, like `strawberry.union()`.
+
+    Pydantic keeps the metadata of a field's `Annotated` apart from its type.
+    """
+    unions = [item for item in metadata if isinstance(item, StrawberryUnion)]
+
+    if not unions:
+        return annotation
+
+    return Annotated[(annotation, *unions)]
+
+
 def _get_computed_field_annotation(
-    cls: type[BaseModel], field_name: str
+    cls: type[BaseModel], origin: type, field_name: str
 ) -> tuple[Any, StrawberryField | None]:
     """Return the type of a computed field and its `strawberry.field()`, if any."""
     computed_field_info = cls.model_computed_fields[field_name]
@@ -324,9 +342,12 @@ def _get_computed_field_annotation(
     strawberry_fields = [item for item in metadata if isinstance(item, StrawberryField)]
 
     if len(strawberry_fields) > 1:
-        raise MultipleStrawberryFieldsError(field_name=field_name, cls=cls)
+        raise MultipleStrawberryFieldsError(field_name=field_name, cls=origin)
 
-    return annotation, strawberry_fields[0] if strawberry_fields else None
+    return (
+        _with_strawberry_metadata(annotation, metadata),
+        strawberry_fields[0] if strawberry_fields else None,
+    )
 
 
 def _create_strawberry_field(
@@ -339,14 +360,16 @@ def _create_strawberry_field(
 ) -> StrawberryField:
     # computed fields don't have a FieldInfo
     if field_info is not None:
-        annotation = field_info.annotation
+        annotation = _with_strawberry_metadata(
+            field_info.annotation, field_info.metadata
+        )
         description = field_info.description
         strawberry_override = _get_strawberry_field_override(
             field_info, origin, field_name
         )
     else:
         annotation, strawberry_override = _get_computed_field_annotation(
-            cls, field_name
+            cls, origin, field_name
         )
         description = cls.model_computed_fields[field_name].description
 
@@ -393,6 +416,11 @@ def _create_strawberry_field(
         try:
             field_type = _replace_pydantic_types(annotation, model=cls)
         except _UnregisteredModel as exc:
+            if issubclass(exc.model, RootModel):
+                raise UnsupportedRootModelError(
+                    exc.model, cls=origin, field_name=field_name
+                ) from None
+
             raise UnregisteredPydanticTypeError(
                 exc.model, cls=origin, field_name=field_name, is_input=is_input
             ) from None
@@ -545,9 +573,16 @@ def get_pydantic_fields(
     origins = _get_field_origins(cls)
 
     for field_name in field_names:
-        origin = origins.get(field_name, cls)
         # computed fields don't have a FieldInfo
         field_info = cls.model_fields.get(field_name)
+
+        if field_info is None:
+            # computed fields are properties, not annotations
+            origin = next(
+                (base for base in cls.__mro__ if field_name in vars(base)), cls
+            )
+        else:
+            origin = origins.get(field_name, cls)
 
         if field_info is None:
             # e.g. `-> strawberry.Private[int]` on a computed field

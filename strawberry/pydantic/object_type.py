@@ -63,7 +63,7 @@ def _process_pydantic_type(
         raise NotAPydanticModelError(cls, decorator)
 
     if issubclass(cls, RootModel):
-        raise UnsupportedRootModelError(cls, decorator)
+        raise UnsupportedRootModelError(cls, decorator=decorator)
 
     if "__strawberry_definition__" in vars(cls):
         raise ModelAlreadyDecoratedError(cls, decorator)
