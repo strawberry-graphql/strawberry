@@ -10,6 +10,8 @@ from typing import (
     cast,
 )
 
+from graphql import GraphQLError
+
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.printer import print_schema
 from strawberry.schema import Schema as BaseSchema
@@ -182,7 +184,7 @@ class Schema(BaseSchema):
     ) -> list[FederationAny]:
         results = []
 
-        for representation in representations:
+        for index, representation in enumerate(representations):
             type_name = representation.pop("__typename")  # type: ignore[attr-defined]
             type_ = self.schema_converter.type_map[type_name]
 
@@ -215,7 +217,12 @@ class Schema(BaseSchema):
                         scalar_registry=scalar_registry,
                         config=config,
                         info=info,
+                        path=("representations", index),
                     )
+                except GraphQLError as error:
+                    # e.g. raised on purpose by input types that validate their
+                    # value, so the client gets the reason
+                    result = error
                 except Exception:  # noqa: BLE001
                     result = TypeError(f"Unable to resolve reference for {type_name}")
 

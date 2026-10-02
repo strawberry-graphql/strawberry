@@ -18,6 +18,7 @@ from strawberry.types.base import (
     StrawberryList,
     StrawberryMaybe,
     StrawberryOptional,
+    StrawberryType,
     has_object_definition,
 )
 from strawberry.types.enum import StrawberryEnumDefinition, has_enum_definition
@@ -29,7 +30,6 @@ if TYPE_CHECKING:
     from collections.abc import Iterable, Mapping
 
     from strawberry.schema.config import StrawberryConfig
-    from strawberry.types.base import StrawberryType
     from strawberry.types.info import Info
     from strawberry.types.scalar import ScalarDefinition, ScalarWrapper
 
@@ -182,22 +182,30 @@ class InputContext:
     """Location of the input value in the arguments, see `convert_argument`."""
 
     def convert(
-        self,
-        value: object,
-        type_: StrawberryType | type,
-        path: tuple[str | int, ...] | None = None,
+        self, value: object, type_: StrawberryType | type, *keys: str | int
     ) -> object:
         """Convert a GraphQL input value of `type_` like Strawberry does.
 
-        `path` is the location of `value`, which defaults to the input's location.
+        `keys` are the location of `value` in this input, as GraphQL field names
+        and list indices, so that inputs nested in it know their location:
+
+        ```python
+        context.convert(value["items"][0], Item, "items", 0)
+        ```
+
+        `type_` can be a Strawberry type, like `field.resolve_type()`, or a Python
+        annotation, like `list[Item]`.
         """
+        if not isinstance(type_, StrawberryType) and get_origin(type_) is not None:
+            type_ = cast("StrawberryType", StrawberryAnnotation(type_).resolve())
+
         return convert_argument(
             value,
             type_,
             self.scalar_registry,
             self.config,
             self.info,
-            path=self.path if path is None else path,
+            path=(*self.path, *keys),
         )
 
 

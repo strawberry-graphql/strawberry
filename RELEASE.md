@@ -49,6 +49,17 @@ get_object_definition(Range, strict=True).from_input = build_range
 `InputContext` has the request's `info`, the schema config and scalar registry,
 the `path` of the value in the arguments, made of GraphQL field names and list
 indices, like `("input", "items", 0)`, and a `convert()` method that converts
-nested values like Strawberry does. The hook is used for field arguments,
-directive arguments and federation entities, and for argument and input field
-defaults, which Strawberry converts to input values when it builds the schema.
+nested values like Strawberry does, given a Strawberry type or an annotation
+like `list[Item]`. Its keys are the location of the value in the input, so inputs
+nested in it know their own location:
+
+```python
+context.convert(value["items"][0], Item, "items", 0)
+```
+
+The hook is used for field arguments, directive arguments and federation
+entities, and for argument and input field defaults, which Strawberry converts
+to input values when it builds the schema. Federation entities have the location
+of their representation, like `("representations", 0)`, and GraphQL errors
+raised while building them are now returned to the client, instead of a generic
+"Unable to resolve reference" error.
