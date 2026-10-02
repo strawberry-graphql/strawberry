@@ -1,5 +1,7 @@
 from typing import Generic, TypeVar
 
+import pytest
+
 import strawberry
 from strawberry.types.cast import get_strawberry_type_cast
 
@@ -208,3 +210,100 @@ def test_objects_cast_to_an_interface_in_unions():
 
     assert not result.errors
     assert result.data == {"user": {"__typename": "User", "name": "Ada"}}
+
+
+@pytest.mark.parametrize("implements_an_interface", [True, False])
+def test_ambiguous_casts_to_a_generic_type_in_unions(implements_an_interface: bool):
+    T = TypeVar("T")
+
+    @strawberry.interface
+    class Node:
+        id: strawberry.ID
+
+    @strawberry.type
+    class Edge(*((Node,) if implements_an_interface else ()), Generic[T]):  # type: ignore[misc]
+        node: T
+
+    class Row:
+        id = "1"
+        node = 1
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def edge(self) -> Edge[int] | Edge[str]:
+            return strawberry.cast(Edge, Row())
+
+    schema = strawberry.Schema(query=Query)
+
+    result = schema.execute_sync("{ edge { __typename } }")
+
+    assert result.errors
+    assert result.errors[0].message == (
+        'The object returned for the field "edge" is cast to "Edge", which matches '
+        "more than one of its possible types: IntEdge, StrEdge. Return an instance "
+        "of one of these types instead."
+    )
+
+
+def test_ambiguous_casts_to_a_generic_type_in_interfaces():
+    T = TypeVar("T")
+
+    @strawberry.interface
+    class Node:
+        id: strawberry.ID
+
+    @strawberry.type
+    class Edge(Node, Generic[T]):
+        node: T
+
+    class Row:
+        id = "1"
+        node = 1
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def node(self) -> Node:
+            return strawberry.cast(Edge, Row())
+
+    schema = strawberry.Schema(query=Query, types=[Edge[int], Edge[str]])
+
+    result = schema.execute_sync("{ node { __typename } }")
+
+    assert result.errors
+    assert result.errors[0].message.startswith(
+        'The object returned for the field "node" is cast to "Edge", which matches '
+        "more than one of its possible types: IntEdge, StrEdge."
+    )
+
+
+def test_objects_cast_to_a_type_are_resolved_through_interfaces():
+    @strawberry.interface
+    class Node:
+        id: strawberry.ID
+
+    @strawberry.type
+    class User(Node):
+        name: str
+
+    @strawberry.type
+    class Admin(Node):
+        name: str
+
+    class Row:
+        id = "1"
+        name = "Ada"
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def node(self) -> Node:
+            return strawberry.cast(Admin, Row())
+
+    schema = strawberry.Schema(query=Query, types=[User, Admin])
+
+    result = schema.execute_sync("{ node { __typename } }")
+
+    assert not result.errors
+    assert result.data == {"node": {"__typename": "Admin"}}

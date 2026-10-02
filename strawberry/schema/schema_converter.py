@@ -68,7 +68,7 @@ from strawberry.types.base import (
     get_object_definition,
     has_object_definition,
 )
-from strawberry.types.cast import get_strawberry_type_cast
+from strawberry.types.cast import get_cast_type_name, get_strawberry_type_cast
 from strawberry.types.enum import StrawberryEnumDefinition, has_enum_definition
 from strawberry.types.field import UNRESOLVED
 from strawberry.types.lazy_type import LazyType
@@ -720,6 +720,18 @@ class GraphQLCoreConverter:
             def resolve_type(
                 obj: Any, info: GraphQLResolveInfo, abstract_type: GraphQLAbstractType
             ) -> Awaitable[str | None] | str | None:
+                # like in unions, objects cast with `strawberry.cast` resolve to
+                # the type they're cast to
+                if (
+                    cast_type_name := get_cast_type_name(
+                        obj,
+                        info.schema.get_possible_types(abstract_type),
+                        self.type_map,
+                        info.field_name,
+                    )
+                ) is not None:
+                    return cast_type_name
+
                 if isinstance(obj, interface.origin):
                     type_definition = get_object_definition(obj, strict=True)
 

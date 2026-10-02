@@ -63,6 +63,22 @@ class UnallowedReturnTypeForUnion(Exception):
         super().__init__(message)
 
 
+class AmbiguousCastError(Exception):
+    """An object cast with `strawberry.cast` matches more than one possible type."""
+
+    def __init__(self, field_name: str, cast_type: type, type_names: list[str]) -> None:
+        formatted_type_names = ", ".join(sorted(type_names))
+
+        message = (
+            f'The object returned for the field "{field_name}" is cast to '
+            f'"{cast_type.__name__}", which matches more than one of its possible '
+            f"types: {formatted_type_names}. Return an instance of one of these "
+            "types instead."
+        )
+
+        super().__init__(message)
+
+
 # TODO: this doesn't seem to be tested
 class InvalidTypeInputForUnion(Exception):
     def __init__(self, annotation: GraphQLInputObjectType) -> None:
@@ -197,6 +213,7 @@ class PermissionReturnedAwaitableInSyncContextError(Exception):
 
 
 __all__ = [
+    "AmbiguousCastError",
     "ConflictingArgumentsError",
     "DuplicatedTypeName",
     "FieldWithResolverAndDefaultFactoryError",

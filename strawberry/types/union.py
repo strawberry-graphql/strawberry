@@ -28,7 +28,7 @@ from strawberry.types.base import (
     StrawberryType,
     has_object_definition,
 )
-from strawberry.types.cast import get_strawberry_type_cast
+from strawberry.types.cast import get_cast_type_name
 from strawberry.types.lazy_type import LazyType
 
 if TYPE_CHECKING:
@@ -174,20 +174,14 @@ class StrawberryUnion(StrawberryType):
             assert isinstance(type_, GraphQLUnionType)
 
             # objects cast with `strawberry.cast` resolve to the type they're cast
-            # to, as they're usually not instances of it. When the cast doesn't
-            # pick exactly one type of the union (e.g. it's a cast to an interface)
-            # we resolve the object as if it wasn't cast
-            if (type_cast := get_strawberry_type_cast(root)) is not None:
-                cast_types = [
-                    inner_type.name
-                    for inner_type in type_.types
-                    if _is_definition_of(
-                        type_map[inner_type.name].definition, type_cast
-                    )
-                ]
-
-                if len(cast_types) == 1:
-                    return cast_types[0]
+            # to, as they're usually not instances of it. A cast to none of the
+            # union's types (e.g. a cast to an interface) is ignored
+            if (
+                cast_type_name := get_cast_type_name(
+                    root, type_.types, type_map, info.field_name
+                )
+            ) is not None:
+                return cast_type_name
 
             # If the type given is not an Object type, try resolving using `is_type_of`
             # defined on the union's inner types
@@ -258,17 +252,6 @@ class StrawberryUnion(StrawberryType):
             return True
 
         return get_origin(type_) is Annotated
-
-
-def _is_definition_of(definition: object, type_: type) -> bool:
-    """Whether `definition` defines the object type `type_` or a specialization of it."""
-    if not isinstance(definition, StrawberryObjectDefinition):
-        return False
-
-    if definition.origin is type_:
-        return True
-
-    return definition.concrete_of is not None and definition.concrete_of.origin is type_
 
 
 def union(

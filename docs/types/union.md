@@ -172,7 +172,10 @@ class Query:
 ```
 
 For a generic type, cast to the generic class, for example
-`strawberry.cast(Edge, row)` for an `Edge[int]` member of the union.
+`strawberry.cast(Edge, row)` for an `Edge[int]` member of the union. When the
+union has more than one type made from the same generic class, like
+`Edge[int] | Edge[str]`, the cast can't tell them apart, and Strawberry raises
+an error.
 
 ## Single member union
 
