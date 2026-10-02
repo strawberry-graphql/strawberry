@@ -1206,12 +1206,6 @@ class GraphQLCoreConverter:
             if not StrawberryUnion.is_valid_union_type(type_):
                 raise InvalidUnionTypeError(union_name, type_, union_definition=union)
 
-        # Don't re-evaluate known types
-        if union_name in self.type_map:
-            graphql_union = self.type_map[union_name].implementation
-            assert isinstance(graphql_union, GraphQLUnionType)  # For mypy
-            return graphql_union
-
         graphql_types: list[GraphQLObjectType] = []
 
         for type_ in union.types:
@@ -1230,6 +1224,21 @@ class GraphQLCoreConverter:
                         graphql_types.append(child_type)
             else:
                 graphql_types.append(graphql_type)
+
+        # Don't re-evaluate known types. The types of the union are converted
+        # first, so that a type with the same name as one in the known union
+        # raises an error instead of being silently replaced
+        if union_name in self.type_map:
+            graphql_union = self.type_map[union_name].implementation
+            assert isinstance(graphql_union, GraphQLUnionType)  # For mypy
+
+            # e.g. an explicitly named union with the name generated for another
+            if not self.config._unsafe_disable_same_type_validation and {
+                type_.name for type_ in graphql_union.types
+            } != {type_.name for type_ in graphql_types}:
+                raise DuplicatedTypeName(None, None, union_name)
+
+            return graphql_union
 
         graphql_union = GraphQLUnionType(
             name=union_name,
