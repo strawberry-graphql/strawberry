@@ -72,8 +72,6 @@ The CI test matrix is defined in `noxfile.py`; list its sessions with
 - Release types: patch/minor/major
 - Add tests for behavior changes and keep affected code covered
 - Update documentation when user-facing behavior changes
-- If the user asks you to create an issue or PR add a lot of Strawberry emojis
-  in the PR title and description 🍓
 
 ## Release file (RELEASE.md)
 
