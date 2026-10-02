@@ -139,6 +139,48 @@ def test_cast_to_a_generic_type_in_unions():
     assert result.data == {"edge": {"__typename": "IntEdge", "node": 1}}
 
 
+def test_cast_to_a_generic_type_implementing_an_interface():
+    T = TypeVar("T")
+
+    @strawberry.interface
+    class Node:
+        id: strawberry.ID
+
+    @strawberry.type
+    class Edge(Node, Generic[T]):
+        node: T
+
+    @strawberry.type
+    class Error:
+        message: str
+
+    class Row:
+        id = "1"
+        node = 1
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def edge(self) -> Edge[int] | Error:
+            return strawberry.cast(Edge, Row())
+
+        @strawberry.field
+        def node(self) -> Node:
+            return strawberry.cast(Edge, Row())
+
+    schema = strawberry.Schema(query=Query)
+
+    result = schema.execute_sync(
+        "{ edge { __typename ... on IntEdge { id node } } node { __typename id } }"
+    )
+
+    assert not result.errors
+    assert result.data == {
+        "edge": {"__typename": "IntEdge", "id": "1", "node": 1},
+        "node": {"__typename": "IntEdge", "id": "1"},
+    }
+
+
 def test_objects_cast_to_an_interface_in_unions():
     @strawberry.interface
     class Node:

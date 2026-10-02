@@ -809,9 +809,17 @@ class GraphQLCoreConverter:
                 object_type.origin,
             )
 
+            # objects can be cast to a generic type, like `strawberry.cast(Edge, row)`,
+            # to return them as one of its specializations
+            possible_cast_types = (
+                (*possible_types, object_type.concrete_of.origin)
+                if object_type.concrete_of
+                else possible_types
+            )
+
             def is_type_of(obj: Any, _info: GraphQLResolveInfo) -> bool:
                 if (type_cast := get_strawberry_type_cast(obj)) is not None:
-                    return type_cast in possible_types
+                    return type_cast in possible_cast_types
 
                 if object_type.concrete_of and (
                     has_object_definition(obj)

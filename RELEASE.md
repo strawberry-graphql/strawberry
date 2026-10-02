@@ -26,6 +26,7 @@ class Query:
 ```
 
 Casts to a generic type work too, like `strawberry.cast(Edge, row)` for an
-`Edge[int]` member. The cast takes precedence over the types' `is_type_of`, and
+`Edge[int]` member, also when it's returned through an interface that `Edge`
+implements. The cast takes precedence over the types' `is_type_of`, and
 when it doesn't match exactly one type of the union, for example a cast to an
 interface, the object is resolved as before.
