@@ -202,3 +202,47 @@ async def test_returns_error_when_trying_too_many_operations(
 
     assert response.status_code == 400
     assert "Too many operations" in response.text
+
+
+@pytest.mark.parametrize("item", [None, 0, "string", ["array"]])
+async def test_returns_error_when_an_operation_is_not_an_object(
+    batching_http_client: HttpClient, item: object
+):
+    response = await batching_http_client.post(
+        url="/graphql",
+        json=[{"query": "{ hello }"}, item],
+        headers={"content-type": "application/json"},
+    )
+
+    assert response.status_code == 400
+    assert response.data == b"The GraphQL request must be a JSON object."
+
+
+@pytest.mark.parametrize(
+    ("operation", "message"),
+    [
+        (
+            {"query": 1},
+            b"The GraphQL operation's `query` must be a string or null, if provided.",
+        ),
+        (
+            {"query": "{ hello }", "variables": [1]},
+            b"The GraphQL operation's `variables` must be an object or null, if provided.",
+        ),
+        (
+            {"query": "{ hello }", "extensions": "string"},
+            b"The GraphQL operation's `extensions` must be an object or null, if provided.",
+        ),
+    ],
+)
+async def test_returns_error_when_an_operation_is_invalid(
+    batching_http_client: HttpClient, operation: dict[str, object], message: bytes
+):
+    response = await batching_http_client.post(
+        url="/graphql",
+        json=[{"query": "{ hello }"}, operation],
+        headers={"content-type": "application/json"},
+    )
+
+    assert response.status_code == 400
+    assert response.data == message

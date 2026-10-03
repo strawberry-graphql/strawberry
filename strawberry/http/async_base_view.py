@@ -593,45 +593,9 @@ class AsyncBaseHTTPView(
 
         if isinstance(data, list):
             self._validate_batch_request(data, protocol=protocol)
-            return [
-                GraphQLRequestData(
-                    query=item.get("query"),
-                    variables=item.get("variables"),
-                    operation_name=item.get("operationName"),
-                    extensions=item.get("extensions"),
-                    protocol=protocol,
-                )
-                for item in data
-            ]
+            return [self._parse_request_data(item, protocol) for item in data]
 
-        query = data.get("query")
-        if not isinstance(query, (str, type(None))):
-            raise HTTPException(
-                400,
-                "The GraphQL operation's `query` must be a string or null, if provided.",
-            )
-
-        variables = data.get("variables")
-        if not isinstance(variables, (dict, type(None))):
-            raise HTTPException(
-                400,
-                "The GraphQL operation's `variables` must be an object or null, if provided.",
-            )
-
-        extensions = data.get("extensions")
-        if not isinstance(extensions, (dict, type(None))):
-            raise HTTPException(
-                400,
-                "The GraphQL operation's `extensions` must be an object or null, if provided.",
-            )
-
-        return GraphQLRequestData(
-            query=query,
-            variables=variables,
-            operation_name=data.get("operationName"),
-            extensions=extensions,
-            protocol=protocol,
-        )
+        return self._parse_request_data(data, protocol)
 
     async def process_result(
         self, request: Request, result: ExecutionResult
