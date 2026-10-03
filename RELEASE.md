@@ -42,6 +42,11 @@ by returning `User | strawberry.pydantic.ValidationError` and registering
 `strawberry.pydantic.PydanticValidationErrorHandler` in the schema's
 `exception_handlers`, as typed results.
 
+Partial updates work as usual with Pydantic's `model_fields_set` and
+`model_dump(exclude_unset=True)`, including when a model is the default of an
+argument: only the fields that were set on it are part of the default shown in
+the schema.
+
 GraphQL field names come from the Python field names, as Pydantic aliases only
 affect Pydantic's own (de)serialization: use
 `Annotated[..., strawberry.field(name=...)]` to rename a field. Computed fields

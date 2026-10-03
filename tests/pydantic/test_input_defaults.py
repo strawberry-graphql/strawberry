@@ -180,6 +180,72 @@ input CreateUserInput {
     assert result.data == {"createUser": "Rome"}
 
 
+def test_model_argument_defaults_only_include_the_fields_that_were_set():
+    @strawberry.pydantic.input
+    class UpdateUserInput(pydantic.BaseModel):
+        name: str | None = None
+        email: str | None = None
+        bio: str | None = None
+        role: str = "user"
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def update_user(
+            self, input: UpdateUserInput = UpdateUserInput(name="Ada", bio=None)
+        ) -> str:
+            return repr(input.model_dump(exclude_unset=True))
+
+    schema = strawberry.Schema(query=Query)
+
+    assert (
+        'updateUser(input: UpdateUserInput! = { name: "Ada", bio: null }): String!'
+        in str(schema)
+    )
+
+    # the model has the same fields set as the default, so PATCH-style updates
+    # don't overwrite the others
+    result = schema.execute_sync("{ updateUser }")
+
+    assert not result.errors
+    assert result.data == {"updateUser": "{'name': 'Ada', 'bio': None}"}
+
+
+def test_nested_model_argument_defaults_only_include_the_fields_that_were_set():
+    @strawberry.pydantic.input
+    class PaginationInput(pydantic.BaseModel):
+        page_size: int | None = None
+        cursor: str | None = None
+
+    @strawberry.pydantic.input
+    class SearchInput(pydantic.BaseModel):
+        query: str
+        pagination: PaginationInput | None = None
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def search(
+            self,
+            input: SearchInput = SearchInput(
+                query="jam", pagination=PaginationInput(page_size=5)
+            ),
+        ) -> str:
+            return repr(input.model_dump(exclude_unset=True))
+
+    schema = strawberry.Schema(query=Query)
+
+    assert (
+        'search(input: SearchInput! = { query: "jam", pagination: { pageSize: 5 } }): '
+        "String!" in str(schema)
+    )
+
+    result = schema.execute_sync("{ search }")
+
+    assert not result.errors
+    assert result.data == {"search": "{'query': 'jam', 'pagination': {'page_size': 5}}"}
+
+
 def test_null_for_a_field_with_an_unpublished_default_is_validated_by_pydantic():
     @strawberry.pydantic.input
     class CreateOrderInput(pydantic.BaseModel):
