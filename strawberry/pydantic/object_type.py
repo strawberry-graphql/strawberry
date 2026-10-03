@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING, TypeVar, overload
 
 from pydantic import BaseModel, RootModel
 
+from strawberry.exceptions import InvalidSuperclassInterfaceError
 from strawberry.schema_directives import OneOf
 from strawberry.types.base import StrawberryObjectDefinition
 from strawberry.types.object_type import _get_interfaces
@@ -88,6 +89,11 @@ def _process_pydantic_type(
     ]
 
     interfaces = _get_interfaces(cls)
+
+    if is_input and interfaces:
+        raise InvalidSuperclassInterfaceError(
+            cls=cls, input_name=name, interfaces=interfaces
+        )
 
     cls.__strawberry_definition__ = StrawberryObjectDefinition(  # type: ignore
         name=name,
