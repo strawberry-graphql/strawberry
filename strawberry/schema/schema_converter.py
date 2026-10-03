@@ -612,7 +612,8 @@ class GraphQLCoreConverter:
         passes them to resolvers when the client omits the value, and Strawberry
         builds the input type from them like from values sent by clients, so each
         request gets its own instance of it. Input types can be given as
-        instances or as dicts keyed by GraphQL or python names.
+        instances, converted with their type's `to_input` hook when it has one,
+        or as dicts keyed by GraphQL or python names.
         """
         if isinstance(value, Some):
             value = value.value
@@ -643,12 +644,20 @@ class GraphQLCoreConverter:
     def _to_input_object_value(
         self, value: Any, type_definition: StrawberryObjectDefinition
     ) -> dict[str, Any]:
+        python_values: Mapping[str, Any] | None = None
+
+        # e.g. only the fields that were set on the instance
+        if type_definition.to_input is not None and has_object_definition(value):
+            python_values = type_definition.to_input(value)
+
         field_values = []
 
         for field in type_definition.fields:
             graphql_name = self.config.name_converter.from_field(field)
 
-            if isinstance(value, Mapping):
+            if python_values is not None:
+                field_value = python_values.get(field.python_name, dataclasses.MISSING)
+            elif isinstance(value, Mapping):
                 field_value = value.get(
                     graphql_name, value.get(field.python_name, dataclasses.MISSING)
                 )
@@ -666,7 +675,8 @@ class GraphQLCoreConverter:
 
             field_type = field.resolve_type(type_definition=type_definition)
 
-            if field_value is None:
+            # the fields `to_input` returns are all kept, explicit nulls included
+            if field_value is None and python_values is None:
                 if isinstance(field_type, StrawberryMaybe):
                     # a `Maybe` attribute set to `None` wasn't provided, while
                     # `None` in a dict is an explicit null, like `Some(None)`

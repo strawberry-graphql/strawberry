@@ -310,6 +310,29 @@ class StrawberryObjectDefinition(StrawberryType):
     keyword arguments.
     """
 
+    to_input: Callable[[Any], Mapping[str, Any]] | None = None
+    """Returns the fields of an instance of this type that make its input value.
+
+    It's the counterpart of `from_input`, meant for integrations that create
+    their own type definitions, like `strawberry.pydantic`, which pass it when
+    they create the definition.
+
+    Strawberry calls it when it converts an instance to a GraphQL input value,
+    which it does for argument and input field defaults when it builds the
+    schema. It returns the values of the fields, keyed by their python names,
+    as it doesn't know the names the schema gives them. Every field it returns
+    is part of the input value, with `None` as an explicit null, unless its
+    value is `UNSET`, and nested instances are converted with their own type's
+    hook.
+
+    The fields it leaves out aren't part of the input value, so `from_input`
+    doesn't get them when the default is used, even when their default is
+    published in the schema, as GraphQL only fills those in for values sent by
+    clients.
+
+    When it's not set, all the fields of the instance are used.
+    """
+
     def __post_init__(self) -> None:
         # resolve `Self` annotation with the origin type
         for index, field in enumerate(self.fields):
@@ -354,6 +377,7 @@ class StrawberryObjectDefinition(StrawberryType):
             concrete_of=self,
             type_var_map=type_var_map,
             from_input=self.from_input,
+            to_input=self.to_input,
         )
 
         new_type = type(
