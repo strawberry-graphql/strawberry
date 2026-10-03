@@ -1,3 +1,5 @@
+import re
+from collections.abc import Iterable
 from dataclasses import dataclass
 from typing import Any
 
@@ -5,6 +7,8 @@ import pytest
 from pytest_mock import MockerFixture
 
 import strawberry
+from strawberry import relay
+from strawberry.exceptions import InvalidSuperclassInterfaceError
 from strawberry.types.base import StrawberryObjectDefinition
 
 
@@ -243,6 +247,167 @@ def test_duplicated_interface_in_multi_inheritance():
     assert origins == [InterfaceA, InterfaceB, Base]
 
     strawberry.Schema(Query)  # Final sanity check to ensure schema compiles
+
+
+def test_interface_inherited_through_undecorated_classes():
+    @strawberry.interface
+    class Node:
+        id: strawberry.ID
+
+    class Timestamped(Node): ...
+
+    class Versioned(Timestamped): ...
+
+    @strawberry.type
+    class Fruit(Timestamped):
+        name: str
+
+    @strawberry.type
+    class Vegetable(Versioned):
+        name: str
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def nodes(self) -> list[Node]:
+            return [Fruit(id="1", name="Apple"), Vegetable(id="2", name="Carrot")]
+
+    for type_ in (Fruit, Vegetable):
+        interfaces = type_.__strawberry_definition__.interfaces
+        assert [interface.origin for interface in interfaces] == [Node]
+
+    schema = strawberry.Schema(Query, types=[Fruit, Vegetable])
+    result = schema.execute_sync("{ nodes { __typename id } }")
+
+    assert not result.errors
+    assert result.data == {
+        "nodes": [
+            {"__typename": "Fruit", "id": "1"},
+            {"__typename": "Vegetable", "id": "2"},
+        ]
+    }
+
+
+def test_interface_implementing_an_interface_through_an_undecorated_class():
+    @strawberry.interface
+    class Node:
+        id: strawberry.ID
+
+    class Timestamped(Node): ...
+
+    @strawberry.interface
+    class Named(Timestamped):
+        name: str
+
+    @strawberry.type
+    class Fruit(Named): ...
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def named(self) -> Named:
+            return Fruit(id="1", name="Apple")
+
+    named_interfaces = Named.__strawberry_definition__.interfaces
+    assert [interface.origin for interface in named_interfaces] == [Node]
+
+    fruit_interfaces = Fruit.__strawberry_definition__.interfaces
+    assert [interface.origin for interface in fruit_interfaces] == [Named, Node]
+
+    schema = strawberry.Schema(Query, types=[Fruit])
+    result = schema.execute_sync("{ named { __typename id name } }")
+
+    assert not result.errors
+    assert result.data == {"named": {"__typename": "Fruit", "id": "1", "name": "Apple"}}
+
+
+def test_interface_inherited_through_an_undecorated_class_and_another_base():
+    @strawberry.interface
+    class Node:
+        id: strawberry.ID
+
+    class Timestamped(Node): ...
+
+    @strawberry.interface
+    class Named(Node):
+        name: str
+
+    @strawberry.type
+    class Fruit(Timestamped, Named): ...
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def node(self) -> Node:
+            return Fruit(id="1", name="Apple")
+
+    # Interfaces keep the order of the MRO: Fruit, Timestamped, Named, Node
+    interfaces = Fruit.__strawberry_definition__.interfaces
+    assert [interface.origin for interface in interfaces] == [Named, Node]
+
+    schema = strawberry.Schema(Query, types=[Fruit])
+    result = schema.execute_sync("{ node { __typename id ... on Named { name } } }")
+
+    assert not result.errors
+    assert result.data == {"node": {"__typename": "Fruit", "id": "1", "name": "Apple"}}
+
+
+def test_relay_node_inherited_through_an_undecorated_class():
+    class InMemoryNode(relay.Node):
+        @classmethod
+        def resolve_nodes(
+            cls,
+            *,
+            info: strawberry.Info,
+            node_ids: Iterable[str],
+            required: bool = False,
+        ) -> list[Any]:
+            return [cls(id=node_id) for node_id in node_ids]
+
+    @strawberry.type
+    class Fruit(InMemoryNode):
+        id: relay.NodeID[str]
+
+    @strawberry.type
+    class Vegetable(InMemoryNode):
+        id: relay.NodeID[str]
+
+    @strawberry.type
+    class Query:
+        node: relay.Node = relay.node()
+
+    for type_ in (Fruit, Vegetable):
+        interfaces = type_.__strawberry_definition__.interfaces
+        assert [interface.origin for interface in interfaces] == [relay.Node]
+
+    schema = strawberry.Schema(Query, types=[Fruit, Vegetable])
+    query = "query ($id: ID!) { node(id: $id) { __typename id } }"
+
+    for type_name in ("Fruit", "Vegetable"):
+        global_id = relay.to_base64(type_name, "1")
+        result = schema.execute_sync(query, variable_values={"id": global_id})
+
+        assert not result.errors
+        assert result.data == {"node": {"__typename": type_name, "id": global_id}}
+
+
+@pytest.mark.raises_strawberry_exception(
+    InvalidSuperclassInterfaceError,
+    match=re.escape(
+        "Input class 'SomeInput' cannot inherit from interface(s): SomeInterface"
+    )
+    + "$",
+)
+def test_input_cannot_inherit_from_interface_through_an_undecorated_class():
+    @strawberry.interface
+    class SomeInterface:
+        some_arg: str
+
+    class SomeMixin(SomeInterface): ...
+
+    @strawberry.input
+    class SomeInput(SomeMixin):
+        another_arg: str
 
 
 def test_interface_resolve_type(mocker: MockerFixture):
