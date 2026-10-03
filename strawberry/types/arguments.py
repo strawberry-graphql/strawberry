@@ -276,10 +276,14 @@ def convert_argument(
         ) or _is_optional_leaf_type(
             type_.of_type, scalar_registry, skip_classes=(GlobalID,)
         ):
-            # the items don't need converting, but the list is still copied:
-            # graphql-core gives the same default to every request that omits
-            # the value, so changes to it would leak into the next requests
-            return list(value_list)
+            # the items don't need converting, so the lists graphql-core builds
+            # for each request are used as they are, while defaults, which are
+            # shared by the requests, are tuples (see `_to_input_value`) that
+            # are copied into lists
+            if isinstance(value_list, tuple):
+                return list(value_list)
+
+            return value_list
 
         return [
             convert_argument(

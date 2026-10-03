@@ -101,6 +101,30 @@ class LaziestType:
     something: bool
 
 
+def test_lists_of_scalars_are_only_copied_when_they_are_defaults():
+    argument = StrawberryArgument(
+        graphql_name="ids",
+        python_name="ids",
+        type_annotation=StrawberryAnnotation(list[int]),
+    )
+    config = StrawberryConfig()
+
+    # the lists graphql-core builds for each request are used as they are
+    ids = [1, 2]
+    converted = convert_arguments(
+        {"ids": ids}, [argument], DEFAULT_SCALAR_REGISTRY, config
+    )
+
+    assert converted["ids"] is ids
+
+    # defaults are tuples shared by the requests, so each one gets its own list
+    converted = convert_arguments(
+        {"ids": (1, 2)}, [argument], DEFAULT_SCALAR_REGISTRY, config
+    )
+
+    assert converted["ids"] == [1, 2]
+
+
 def test_lazy():
     LazierType = Annotated["LaziestType", strawberry.lazy(__name__)]
 

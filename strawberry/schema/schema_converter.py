@@ -631,8 +631,11 @@ class GraphQLCoreConverter:
         if isinstance(type_, StrawberryOptional):
             return self._to_input_value(value, type_.of_type)
 
+        # graphql-core gives the same default to every request that omits the
+        # value, so lists are kept as tuples, which can't be changed, and
+        # `convert_argument` copies them into lists
         if isinstance(type_, StrawberryList) and isinstance(value, (list, tuple)):
-            return [self._to_input_value(item, type_.of_type) for item in value]
+            return tuple(self._to_input_value(item, type_.of_type) for item in value)
 
         if has_object_definition(type_) and (
             has_object_definition(value) or isinstance(value, Mapping)

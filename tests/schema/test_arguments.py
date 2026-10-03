@@ -7,6 +7,7 @@ import pytest
 
 import strawberry
 from strawberry import relay
+from strawberry.directive import DirectiveLocation, DirectiveValue
 from strawberry.types.unset import UNSET
 
 
@@ -476,6 +477,29 @@ def test_each_request_gets_its_own_list_argument_defaults(query: str):
 
         assert not result.errors
         assert result.data == {"search": [["base", "added"]] * 5}
+
+    assert str(schema) == printed_schema
+
+
+def test_each_request_gets_its_own_list_directive_argument_defaults():
+    @strawberry.directive(locations=[DirectiveLocation.FIELD])
+    def tag(value: DirectiveValue[str], tags: list[str] = ["base"]) -> str:  # noqa: B006
+        tags.append("added")
+
+        return f"{value} {tags}"
+
+    @strawberry.type
+    class Query:
+        name: str = "jam"
+
+    schema = strawberry.Schema(query=Query, directives=[tag])
+    printed_schema = str(schema)
+
+    for _ in range(2):
+        result = schema.execute_sync("{ name @tag }", root_value=Query())
+
+        assert not result.errors
+        assert result.data == {"name": "jam ['base', 'added']"}
 
     assert str(schema) == printed_schema
 

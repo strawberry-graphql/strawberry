@@ -39,6 +39,11 @@ class Query:
 ```
 
 Each `{ search(filter: {}) }` request now returns `["base", "added"]`, instead
-of one more `"added"` than the previous one. Strawberry copies these lists again
-when it converts the arguments, like it did before 0.275.5, which also covers
-nested and optional lists and lists in input type defaults.
+of one more `"added"` than the previous one. This also applies to nested and
+optional lists, lists in input type defaults and directive arguments.
+
+Strawberry now keeps list defaults as tuples, which can't be changed, and gives
+each request its own list when it converts the arguments. Lists sent by clients
+are still used as they are, without copying them. Code that reads the defaults
+before Strawberry converts them, like `info.variable_values` or a `from_input`
+hook, gets them as tuples.
