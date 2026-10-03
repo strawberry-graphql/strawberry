@@ -157,3 +157,46 @@ def example(info: strawberry.Info) -> None:
             ),
         ]
     )
+
+
+def test_optional_info():
+    CODE = """
+import strawberry
+
+
+def example(info: strawberry.Info | None = None) -> None:
+    reveal_type(info)
+"""
+
+    results = typecheck(CODE)
+
+    assert results.pyright == snapshot(
+        [
+            Result(
+                type="information",
+                message='Type of "info" is "Info[Any, Any] | None"',
+                line=6,
+                column=17,
+            ),
+        ]
+    )
+    assert results.mypy == snapshot(
+        [
+            Result(
+                type="note",
+                message='Revealed type is "strawberry.types.info.Info[Any, Any] | None"',
+                line=6,
+                column=17,
+            ),
+        ]
+    )
+    assert results.ty == snapshot(
+        [
+            Result(
+                type="information",
+                message="Revealed type: `Info[Any, Any] | None`",
+                line=6,
+                column=17,
+            ),
+        ]
+    )
