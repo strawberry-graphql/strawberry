@@ -276,9 +276,10 @@ def convert_argument(
         ) or _is_optional_leaf_type(
             type_.of_type, scalar_registry, skip_classes=(GlobalID,)
         ):
-            return value_list
-
-        value_list = cast("Iterable", value)
+            # the items don't need converting, but the list is still copied:
+            # graphql-core gives the same default to every request that omits
+            # the value, so changes to it would leak into the next requests
+            return list(value_list)
 
         return [
             convert_argument(
