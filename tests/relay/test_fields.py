@@ -1,7 +1,7 @@
 import dataclasses
 import textwrap
 import warnings
-from collections.abc import Iterable
+from collections.abc import AsyncIterator, Iterable, Iterator
 from typing import Annotated
 from typing_extensions import Self
 
@@ -1456,6 +1456,112 @@ def test_query_last_higher_than_max_results(query_attr: str):
     )
     assert result.errors is not None
     assert result.errors[0].message == "Argument 'last' cannot be higher than 100."
+
+
+@pytest.mark.parametrize("query_attr", attrs)
+def test_query_last_zero(query_attr: str):
+    result = schema.execute_sync(
+        fruits_query.format(query_attr),
+        variable_values={"last": 0},
+    )
+    assert result.errors is None
+    assert result.data == {
+        query_attr: {
+            "edges": [],
+            "pageInfo": {
+                "hasNextPage": False,
+                "hasPreviousPage": True,
+                "startCursor": None,
+                "endCursor": None,
+            },
+        }
+    }
+
+
+@pytest.mark.parametrize("query_attr", async_attrs)
+async def test_query_last_zero_async(mocker: MockerFixture, query_attr: str):
+    mocker.patch.object(FruitAsync, "resolve_typename", return_value="Fruit")
+
+    result = await schema.execute(
+        fruits_query.format(query_attr),
+        variable_values={"last": 0},
+    )
+    assert result.errors is None
+    assert result.data == {
+        query_attr: {
+            "edges": [],
+            "pageInfo": {
+                "hasNextPage": False,
+                "hasPreviousPage": True,
+                "startCursor": None,
+                "endCursor": None,
+            },
+        }
+    }
+
+
+@pytest.mark.parametrize("query_attr", attrs)
+def test_query_last_higher_than_total(query_attr: str):
+    result = schema.execute_sync(
+        fruits_query.format(query_attr),
+        variable_values={"last": 10},
+    )
+    assert result.errors is None
+    assert result.data is not None
+    assert len(result.data[query_attr]["edges"]) == 5
+    assert result.data[query_attr]["pageInfo"]["hasPreviousPage"] is False
+
+
+def test_query_last_zero_does_not_consume_the_whole_source():
+    consumed = 0
+
+    @strawberry.type
+    class Item(relay.Node):
+        code: relay.NodeID[int]
+
+    @strawberry.type
+    class Query:
+        @relay.connection(relay.ListConnection[Item])
+        def items(self) -> Iterator[Item]:
+            nonlocal consumed
+            for i in range(100):
+                consumed += 1
+                yield Item(code=i)
+
+    result = strawberry.Schema(Query).execute_sync(
+        "{ items(last: 0) { edges { node { id } } pageInfo { hasPreviousPage } } }"
+    )
+    assert result.errors is None
+    assert result.data == {
+        "items": {"edges": [], "pageInfo": {"hasPreviousPage": True}}
+    }
+    assert consumed == 1
+
+
+async def test_query_last_zero_does_not_consume_the_whole_source_async():
+    consumed = 0
+
+    @strawberry.type
+    class Item(relay.Node):
+        code: relay.NodeID[int]
+
+    @strawberry.type
+    class Query:
+        @relay.connection(relay.ListConnection[Item])
+        async def items(self) -> AsyncIterator[Item]:
+            nonlocal consumed
+            for i in range(100):
+                consumed += 1
+                yield Item(code=i)
+
+    result = await strawberry.Schema(Query).execute(
+        "{ items(last: 0) { edges { node { id } } pageInfo { hasPreviousPage } } }"
+    )
+    assert result.errors is None
+    assert result.data == {
+        "items": {"edges": [], "pageInfo": {"hasPreviousPage": True}}
+    }
+    assert consumed == 1
 
 
 def test_parameters(mocker: MockerFixture):
