@@ -3,8 +3,11 @@ from enum import Enum
 from textwrap import dedent
 from typing import Annotated, Generic, Optional, TypeVar
 
+import pytest
+
 import strawberry
 from strawberry import relay
+from strawberry.directive import DirectiveLocation, DirectiveValue
 from strawberry.types.unset import UNSET
 
 
@@ -383,6 +386,122 @@ def test_each_request_gets_its_own_input_instance_default():
 
         assert not result.errors
         assert result.data == {"limit": 5}
+
+
+@pytest.mark.parametrize(
+    ("query", "variables"),
+    [
+        ("{ search(filter: {}) }", None),
+        ("query ($filter: Filter!) { search(filter: $filter) }", {"filter": {}}),
+    ],
+    ids=["inline", "variables"],
+)
+def test_each_request_gets_its_own_list_input_field_defaults(
+    query: str, variables: dict[str, object] | None
+):
+    @strawberry.input
+    class Filter:
+        tags: list[str] = strawberry.field(default_factory=lambda: ["base"])
+        groups: list[list[str]] = strawberry.field(default_factory=lambda: [["base"]])
+        labels: list[str | None] | None = strawberry.field(
+            default_factory=lambda: ["base"]
+        )
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def search(self, filter: Filter) -> list[list[str | None]]:
+            assert filter.labels is not None
+
+            for value in (filter.tags, filter.groups[0], filter.labels):
+                value.append("added")
+
+            return [filter.tags, *filter.groups, filter.labels]
+
+    schema = strawberry.Schema(query=Query)
+    printed_schema = str(schema)
+
+    for _ in range(2):
+        result = schema.execute_sync(query, variable_values=variables)
+
+        assert not result.errors
+        assert result.data == {"search": [["base", "added"]] * 3}
+
+    assert str(schema) == printed_schema
+
+
+@pytest.mark.parametrize(
+    "query",
+    [
+        "{ search }",
+        """
+        query ($tags: [String!], $groups: [[String!]!], $labels: [String],
+               $filter: Filter) {
+            search(tags: $tags, groups: $groups, labels: $labels, filter: $filter)
+        }
+        """,
+    ],
+    ids=["inline", "variables"],
+)
+def test_each_request_gets_its_own_list_argument_defaults(query: str):
+    @strawberry.input
+    class Filter:
+        tags: list[str]
+        labels: strawberry.Maybe[list[str]]
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def search(
+            self,
+            tags: list[str] = ["base"],  # noqa: B006
+            groups: list[list[str]] = [["base"]],  # noqa: B006
+            labels: list[str | None] | None = ["base"],  # noqa: B006
+            filter: Filter = Filter(tags=["base"], labels=strawberry.Some(["base"])),
+        ) -> list[list[str | None]]:
+            assert labels is not None
+            assert filter.labels is not None
+
+            values = [tags, *groups, labels, filter.tags, filter.labels.value]
+
+            for value in values:
+                value.append("added")
+
+            return values
+
+    schema = strawberry.Schema(query=Query)
+    printed_schema = str(schema)
+
+    for _ in range(2):
+        result = schema.execute_sync(query, variable_values={})
+
+        assert not result.errors
+        assert result.data == {"search": [["base", "added"]] * 5}
+
+    assert str(schema) == printed_schema
+
+
+def test_each_request_gets_its_own_list_directive_argument_defaults():
+    @strawberry.directive(locations=[DirectiveLocation.FIELD])
+    def tag(value: DirectiveValue[str], tags: list[str] = ["base"]) -> str:  # noqa: B006
+        tags.append("added")
+
+        return f"{value} {tags}"
+
+    @strawberry.type
+    class Query:
+        name: str = "jam"
+
+    schema = strawberry.Schema(query=Query, directives=[tag])
+    printed_schema = str(schema)
+
+    for _ in range(2):
+        result = schema.execute_sync("{ name @tag }", root_value=Query())
+
+        assert not result.errors
+        assert result.data == {"name": "jam ['base', 'added']"}
+
+    assert str(schema) == printed_schema
 
 
 def test_generic_input_instances_as_defaults():

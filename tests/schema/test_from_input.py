@@ -260,3 +260,30 @@ def test_convert_accepts_python_annotations():
 
     assert not result.errors
     assert result.data == {"names": ["a"]}
+
+
+def test_converted_list_defaults_are_not_shared_between_requests():
+    @strawberry.input
+    class Filter:
+        tags: list[str] = strawberry.field(default_factory=lambda: ["base"])
+
+    def build_filter(cls: type, value: Any, context: InputContext) -> Any:
+        return cls(tags=context.convert(value["tags"], list[str], "tags"))
+
+    get_object_definition(Filter, strict=True).from_input = build_filter
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def search(self, filter: Filter) -> list[str]:
+            filter.tags.append("added")
+
+            return filter.tags
+
+    schema = strawberry.Schema(query=Query)
+
+    for _ in range(2):
+        result = schema.execute_sync("{ search(filter: {}) }")
+
+        assert not result.errors
+        assert result.data == {"search": ["base", "added"]}
