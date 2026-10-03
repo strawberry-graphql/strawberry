@@ -3,7 +3,6 @@ import copy
 import dataclasses
 import inspect
 import sys
-import types
 from collections.abc import Callable, Sequence
 from typing import (
     Annotated,
@@ -279,7 +278,7 @@ def _process_type(
             cls=cls, input_name=name, interfaces=interfaces
         )
 
-    cls.__strawberry_definition__ = StrawberryObjectDefinition(  # type: ignore[attr-defined]
+    definition = StrawberryObjectDefinition(
         name=name,
         is_input=is_input,
         is_interface=is_interface,
@@ -292,27 +291,32 @@ def _process_type(
         is_type_of=is_type_of,
         resolve_type=resolve_type,
     )
+    cls.__strawberry_definition__ = definition  # type: ignore[attr-defined]
 
-    # dataclasses removes attributes from the class here:
-    # https://github.com/python/cpython/blob/577d7c4e/Lib/dataclasses.py#L873-L880
-    # so we need to restore them, this will change in future, but for now this
-    # solution should suffice
-    for field_ in fields:
-        if field_.base_resolver and field_.python_name:
-            wrapped_func = field_.base_resolver.wrapped_func
+    for index, field_ in enumerate(definition.fields):
+        resolver = field_.base_resolver
+        if resolver is None or not field_.python_name:
+            continue
 
-            # Bind the functions to the class object. This is necessary because when
-            # the @strawberry.field decorator is used on @staticmethod/@classmethods,
-            # we get the raw staticmethod/classmethod objects before class evaluation
-            # binds them to the class. We need to do this manually.
-            if isinstance(wrapped_func, staticmethod):
-                bound_method = wrapped_func.__get__(cls)
-                field_.base_resolver.wrapped_func = bound_method
-            elif isinstance(wrapped_func, classmethod):
-                bound_method = types.MethodType(wrapped_func.__func__, cls)
-                field_.base_resolver.wrapped_func = bound_method
+        bound_resolver = resolver.bind(cls)
+        if bound_resolver is not resolver:
+            # The classmethod resolver is bound to another type using the field,
+            # like the parent this type inherits it from, so this type gets its
+            # own copy of the field
+            field_copy = copy.copy(field_)
+            field_copy.base_resolver = bound_resolver
+            definition.fields[index] = field_copy
 
-            setattr(cls, field_.python_name, wrapped_func)
+        # dataclasses removes attributes from the class here:
+        # https://github.com/python/cpython/blob/577d7c4e/Lib/dataclasses.py#L873-L880
+        # so we need to restore them, this will change in future, but for now this
+        # solution should suffice. Staticmethods and classmethods are restored as
+        # they were defined, so that Python binds them for subclasses and instances
+        attribute = bound_resolver._descriptor
+        if attribute is None:
+            attribute = bound_resolver.wrapped_func
+
+        setattr(cls, field_.python_name, attribute)
 
     return cls
 
