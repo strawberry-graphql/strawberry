@@ -16,7 +16,7 @@ from strawberry.types.base import StrawberryObjectDefinition
 from strawberry.types.object_type import _get_interfaces
 from strawberry.utils.str_converters import to_camel_case
 
-from .conversion import build_pydantic_model
+from .conversion import build_pydantic_model, dump_pydantic_model
 from .exceptions import (
     ModelAlreadyDecoratedError,
     NotAPydanticModelError,
@@ -105,6 +105,7 @@ def _process_pydantic_type(
         resolve_type=getattr(cls, "resolve_type", None),
         # also used by federation to build entities from their representations
         from_input=None if is_interface else build_pydantic_model,
+        to_input=dump_pydantic_model if is_input else None,
     )
 
     return cls

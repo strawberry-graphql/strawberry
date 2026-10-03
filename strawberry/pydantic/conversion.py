@@ -1,4 +1,4 @@
-"""Building pydantic models from GraphQL input values."""
+"""Converting between pydantic models and GraphQL input values."""
 
 from __future__ import annotations
 
@@ -219,6 +219,20 @@ def _get_location(
         type_ = field.resolve_type(type_definition=definition)
 
     return location
+
+
+def dump_pydantic_model(model: BaseModel) -> dict[str, Any]:
+    """The `to_input` hook of `strawberry.pydantic` inputs.
+
+    A model used as a default only includes the fields that were set on it, like
+    the data a client sends, so that the model built from the default has the
+    same `model_fields_set`.
+    """
+    return {
+        name: getattr(model, name)
+        for name in type(model).model_fields
+        if name in model.model_fields_set
+    }
 
 
 def build_pydantic_model(

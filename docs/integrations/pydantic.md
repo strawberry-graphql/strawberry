@@ -314,9 +314,16 @@ class Mutation:
         return user
 ```
 
-Defaults shown in the schema are filled in by GraphQL, so they are always part
-of `model_fields_set`, and Pydantic validates them like values sent by the
-client.
+Defaults shown in the schema are filled in by GraphQL in the inputs clients
+send, so they are always part of their `model_fields_set`, and Pydantic
+validates them like values sent by the client.
+
+When a model is the default of an argument, only the fields that were set on it
+are part of the default shown in the schema, and the model the resolver gets
+when the client omits the argument has the same `model_fields_set`. For example,
+the default of `input: UpdateUserInput = UpdateUserInput(name="Ada")` is
+`{ name: "Ada" }`, so a partial update doesn't overwrite the other fields with
+`None`.
 
 `strawberry.Maybe` can't be used in Pydantic inputs (Pydantic raises an error
 for it when the model is defined), use `model_fields_set` to tell omitted fields
