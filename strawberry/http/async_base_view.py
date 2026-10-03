@@ -15,7 +15,10 @@ from cross_web import AsyncHTTPRequestAdapter, HTTPException
 from graphql import GraphQLError
 
 from strawberry.exceptions import MissingQueryError
-from strawberry.file_uploads.utils import replace_placeholders_with_files
+from strawberry.file_uploads.utils import (
+    InvalidMultipartRequestError,
+    replace_placeholders_with_files,
+)
 from strawberry.http import (
     GraphQLHTTPResponse,
     GraphQLRequestData,
@@ -291,6 +294,8 @@ class AsyncBaseHTTPView(
             return replace_placeholders_with_files(operations, files_map, files)
         except KeyError as e:
             raise HTTPException(400, "File(s) missing in form data") from e
+        except InvalidMultipartRequestError as e:
+            raise HTTPException(400, str(e)) from e
 
     def _handle_errors(
         self, errors: list[GraphQLError], response_data: GraphQLHTTPResponse
