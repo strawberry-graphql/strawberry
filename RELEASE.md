@@ -45,7 +45,7 @@ definition = StrawberryObjectDefinition(
 )
 ```
 
-The hook returns the values of the fields, keyed by their Python names. They're
-converted like the values of a dict default, so `None` is an explicit null, and
-nested input instances use their own type's `to_input`. The fields it leaves out
-aren't part of the default.
+The hook returns the values of the fields, keyed by their Python names. Every
+field it returns is part of the default, with `None` as an explicit null, unless
+its value is `UNSET`, and nested input instances use their own type's
+`to_input`. The fields it leaves out aren't part of the default.

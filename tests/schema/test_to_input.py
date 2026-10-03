@@ -1,6 +1,6 @@
 """Tests for input types that choose their fields with `to_input`."""
 
-from collections.abc import Mapping
+from collections.abc import Iterator, Mapping
 from typing import Any, Generic, TypeVar
 
 import strawberry
@@ -152,23 +152,73 @@ def test_to_input_is_kept_for_generic_specializations():
 
 
 def test_none_returned_by_to_input_is_an_explicit_null():
+    received: list[dict[str, Any]] = []
+
     @strawberry.input
     class Patch:
         name: strawberry.Maybe[str | None]
         bio: strawberry.Maybe[str | None]
+        email: str | None = None
+        phone: str | None = None
 
-    get_object_definition(Patch, strict=True).to_input = lambda patch: {"name": None}
+    def build(cls: type, value: Mapping[str, Any], context: InputContext) -> Any:
+        received.append(dict(value))
+
+        return cls(**value)
+
+    definition = get_object_definition(Patch, strict=True)
+    definition.from_input = build
+    definition.to_input = lambda patch: {
+        "name": None,
+        "email": None,
+        # left out, like the fields it doesn't return
+        "phone": strawberry.UNSET,
+    }
 
     @strawberry.type
     class Query:
         @strawberry.field
         def update(self, patch: Patch = Patch(name=None, bio=None)) -> str:
-            return f"{patch.name} {patch.bio}"
+            return f"{patch.name} {patch.bio} {patch.email}"
 
     schema = strawberry.Schema(query=Query)
 
-    assert _query_default(schema) == "{ name: null }"
-    assert schema.execute_sync("{ update }").data == {"update": "Some(None) None"}
+    # without the hook, the instance's `name` (a `Maybe` attribute) and `email`
+    # (its default) would be left out, but the hook decides which fields are kept
+    assert _query_default(schema) == "{ name: null, email: null }"
+    assert schema.execute_sync("{ update }").data == {"update": "None None None"}
+    assert received == [{"name": None, "email": None}]
+
+
+def test_to_input_is_used_for_instances_that_are_mappings():
+    @strawberry.input
+    class Filter(Mapping):
+        limit: int = 10
+        query: str = "all"
+
+        def __getitem__(self, key: str) -> Any:
+            return getattr(self, key)
+
+        def __iter__(self) -> Iterator[str]:
+            return iter(("limit", "query"))
+
+        def __len__(self) -> int:
+            return 2
+
+    get_object_definition(Filter, strict=True).to_input = lambda instance: {
+        "limit": instance.limit
+    }
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def search(self, filter: Filter = Filter(limit=5, query="jam")) -> str:
+            return f"{filter.limit} {filter.query}"
+
+    schema = strawberry.Schema(query=Query)
+
+    assert _query_default(schema) == "{ limit: 5 }"
+    assert schema.execute_sync("{ search }").data == {"search": "5 all"}
 
 
 def test_fields_left_out_by_to_input_are_not_passed_to_from_input():

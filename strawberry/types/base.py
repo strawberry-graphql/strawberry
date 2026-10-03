@@ -320,9 +320,10 @@ class StrawberryObjectDefinition(StrawberryType):
     Strawberry calls it when it converts an instance to a GraphQL input value,
     which it does for argument and input field defaults when it builds the
     schema. It returns the values of the fields, keyed by their python names,
-    as it doesn't know the names the schema gives them. They're converted like
-    the values of a dict default: `None` is an explicit null, and nested
-    instances are converted with their own type's hook.
+    as it doesn't know the names the schema gives them. Every field it returns
+    is part of the input value, with `None` as an explicit null, unless its
+    value is `UNSET`, and nested instances are converted with their own type's
+    hook.
 
     The fields it leaves out aren't part of the input value, so `from_input`
     doesn't get them when the default is used, even when their default is

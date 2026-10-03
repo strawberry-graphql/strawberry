@@ -647,7 +647,7 @@ class GraphQLCoreConverter:
         python_values: Mapping[str, Any] | None = None
 
         # e.g. only the fields that were set on the instance
-        if type_definition.to_input is not None and not isinstance(value, Mapping):
+        if type_definition.to_input is not None and has_object_definition(value):
             python_values = type_definition.to_input(value)
 
         field_values = []
@@ -675,12 +675,12 @@ class GraphQLCoreConverter:
 
             field_type = field.resolve_type(type_definition=type_definition)
 
-            if field_value is None:
+            # the fields `to_input` returns are all kept, explicit nulls included
+            if field_value is None and python_values is None:
                 if isinstance(field_type, StrawberryMaybe):
                     # a `Maybe` attribute set to `None` wasn't provided, while
-                    # `None` in a dict or returned by `to_input` is an explicit
-                    # null, like `Some(None)`
-                    if python_values is None and not isinstance(value, Mapping):
+                    # `None` in a dict is an explicit null, like `Some(None)`
+                    if not isinstance(value, Mapping):
                         continue
                 elif field.default_value is None:
                     # omitting it gives the same value, and keeps the printed
