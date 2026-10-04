@@ -28,6 +28,8 @@ def _run(code: str, *, block_pydantic: bool) -> subprocess.CompletedProcess[str]
         capture_output=True,
         text=True,
         check=False,
+        # fails the test instead of hanging the test run
+        timeout=60,
     )
 
 
@@ -300,7 +302,7 @@ def test_pydantic_error_extension_waits_for_pydantic_imported_by_another_thread(
 
             test = sys.modules["__main__"]
             test.pydantic_import_started.set()
-            test.finish_pydantic_import.wait()
+            assert test.finish_pydantic_import.wait(timeout=10)
 
             class ValidationError(Exception):
                 pass
@@ -333,7 +335,7 @@ def test_pydantic_error_extension_waits_for_pydantic_imported_by_another_thread(
 
         importer = threading.Thread(target=lambda: __import__("pydantic"))
         importer.start()
-        pydantic_import_started.wait()
+        assert pydantic_import_started.wait(timeout=10)
 
         results = []
         operation = threading.Thread(
@@ -345,8 +347,8 @@ def test_pydantic_error_extension_waits_for_pydantic_imported_by_another_thread(
         # gives the operation time to finish while pydantic is still importing
         operation.join(timeout=0.2)
         finish_pydantic_import.set()
-        operation.join()
-        importer.join()
+        operation.join(timeout=10)
+        importer.join(timeout=10)
 
         (result,) = results
         print(result.data, [error.message for error in result.errors])
@@ -356,3 +358,33 @@ def test_pydantic_error_extension_waits_for_pydantic_imported_by_another_thread(
 
     assert result.returncode == 0, result.stderr
     assert result.stdout.strip() == "{'hello': 'world', 'fail': None} ['failed']"
+
+
+def test_pydantic_error_extension_keeps_errors_with_a_stubbed_pydantic():
+    result = _run(
+        """
+        import sys
+        import types
+
+        # e.g. a test double without ValidationError
+        sys.modules["pydantic"] = types.ModuleType("pydantic")
+
+        import strawberry
+        from strawberry.extensions import PydanticErrorExtension
+
+        @strawberry.type
+        class Query:
+            @strawberry.field
+            def fail(self) -> str | None:
+                raise ValueError("failed")
+
+        schema = strawberry.Schema(query=Query, extensions=[PydanticErrorExtension])
+        result = schema.execute_sync("{ fail }")
+
+        print(result.data, [error.message for error in result.errors])
+        """,
+        block_pydantic=False,
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert result.stdout.strip() == "{'fail': None} ['failed']"
