@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING, TypeVar, overload
 from pydantic import BaseModel, RootModel
 
 from strawberry.exceptions import InvalidSuperclassInterfaceError
+from strawberry.relay.types import Node
 from strawberry.schema_directives import OneOf
 from strawberry.types.base import StrawberryObjectDefinition
 from strawberry.types.object_type import _get_interfaces
@@ -21,6 +22,7 @@ from .conversion import build_pydantic_model, dump_pydantic_model
 from .exceptions import (
     ModelAlreadyDecoratedError,
     NotAPydanticModelError,
+    UnsupportedRelayNodeError,
     UnsupportedRootModelError,
 )
 from .fields import get_pydantic_fields, get_resolver_fields
@@ -68,6 +70,15 @@ def _process_pydantic_type(
 
     if "__strawberry_definition__" in vars(cls):
         raise ModelAlreadyDecoratedError(cls, decorator)
+
+    # pydantic types don't get the `id` resolver of `relay.Node`, a regular
+    # Strawberry interface, and `relay.NodeID` hides the model's own `id` field,
+    # so the type wouldn't implement the interface. Models with their own `id`
+    # resolver field would, but are rejected too, so that support can be added
+    # later without changing how they behave. Inputs can't implement interfaces
+    # at all, which is checked below
+    if not is_input and issubclass(cls, Node):
+        raise UnsupportedRelayNodeError(cls, decorator)
 
     name = name or to_camel_case(cls.__name__)
 

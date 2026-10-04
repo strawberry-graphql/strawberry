@@ -1,6 +1,6 @@
 import functools
 from collections.abc import Callable
-from typing import Any, Generic, TypeVar
+from typing import Annotated, Any, Generic, TypeVar
 
 import pydantic
 import pytest
@@ -9,6 +9,7 @@ from inline_snapshot import snapshot
 import strawberry
 from strawberry.exceptions import MissingReturnAnnotationError
 from strawberry.pydantic.exceptions import (
+    PydanticFieldWithoutResolverError,
     ResolverAlreadyUsedError,
     ResolverFieldOnInputError,
     ResolverFieldOverridesModelFieldError,
@@ -204,6 +205,78 @@ def test_resolver_fields_on_inputs_raise_an_error():
         @strawberry.pydantic.field
         def upper(self) -> str:
             return self.name.upper()
+
+
+# `strawberry.pydantic.field` itself, and what it returns when given options
+PYDANTIC_FIELD_DECORATORS = pytest.mark.parametrize(
+    "decorator",
+    [strawberry.pydantic.field, strawberry.pydantic.field(name="yearsOld")],
+    ids=["bare", "with-options"],
+)
+
+
+@PYDANTIC_FIELD_DECORATORS
+@pytest.mark.raises_strawberry_exception(
+    PydanticFieldWithoutResolverError,
+    match=(
+        "Field `age` on pydantic model `User` uses `strawberry.pydantic.field`, "
+        "which is only for fields with a resolver$"
+    ),
+)
+def test_pydantic_field_in_the_annotation_of_a_model_field_raises_an_error(
+    decorator: Any,
+):
+    @strawberry.pydantic.type
+    class User(pydantic.BaseModel):
+        age: Annotated[int, decorator]
+
+
+@PYDANTIC_FIELD_DECORATORS
+@pytest.mark.raises_strawberry_exception(
+    PydanticFieldWithoutResolverError,
+    match=(
+        "Field `age` on pydantic model `UserInput` uses "
+        "`strawberry.pydantic.field`, which is only for fields with a resolver$"
+    ),
+)
+def test_pydantic_field_as_the_default_of_a_model_field_raises_an_error(
+    decorator: Any,
+):
+    @strawberry.pydantic.input
+    class UserInput(pydantic.BaseModel):
+        age: int = decorator
+
+
+@PYDANTIC_FIELD_DECORATORS
+@pytest.mark.raises_strawberry_exception(
+    PydanticFieldWithoutResolverError,
+    match=(
+        "Field `age` on pydantic model `User` uses `strawberry.pydantic.field`, "
+        "which is only for fields with a resolver$"
+    ),
+)
+def test_pydantic_field_nested_in_the_annotation_of_a_model_field_raises_an_error(
+    decorator: Any,
+):
+    @strawberry.pydantic.type
+    class User(pydantic.BaseModel):
+        age: Annotated[int, decorator] | None = None
+
+
+@pytest.mark.raises_strawberry_exception(
+    PydanticFieldWithoutResolverError,
+    match=(
+        "Field `age` on pydantic model `User` uses `strawberry.pydantic.field`, "
+        "which is only for fields with a resolver$"
+    ),
+)
+def test_pydantic_field_in_the_annotation_of_a_computed_field_raises_an_error():
+    @strawberry.pydantic.type
+    class User(pydantic.BaseModel):
+        @pydantic.computed_field  # type: ignore[prop-decorator]
+        @property
+        def age(self) -> Annotated[int, strawberry.pydantic.field(name="yearsOld")]:
+            return 1
 
 
 def _query(model_type: type, instance: object, query: str) -> Any:

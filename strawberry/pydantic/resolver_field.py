@@ -21,6 +21,8 @@ if TYPE_CHECKING:
 ResolverT = TypeVar("ResolverT", bound="Callable[..., Any]")
 
 _FIELD_ATTRIBUTE = "__strawberry_field__"
+# marks the decorator returned by `strawberry.pydantic.field(...)`
+_DECORATOR_ATTRIBUTE = "__strawberry_pydantic_field__"
 
 
 @overload
@@ -103,9 +105,23 @@ def field(
         return resolver
 
     if resolver is None:
+        setattr(wrap, _DECORATOR_ATTRIBUTE, True)
+
         return wrap
 
     return wrap(resolver)
+
+
+def is_field_decorator(value: object) -> bool:
+    """Return whether `value` is `strawberry.pydantic.field` without a resolver.
+
+    That's `strawberry.pydantic.field` itself, or what it returns when it's
+    called with options only, e.g. when it's used on a model field.
+    """
+    return value is field or (
+        isinstance(value, FunctionType)
+        and getattr(value, _DECORATOR_ATTRIBUTE, False) is True
+    )
 
 
 def _get_marked_field(value: object) -> StrawberryField | None:

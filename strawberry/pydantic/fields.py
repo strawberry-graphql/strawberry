@@ -6,6 +6,7 @@ classes, converting them to StrawberryField instances that can be used in GraphQ
 
 from __future__ import annotations
 
+import ast
 import copy
 import dataclasses
 import datetime
@@ -20,6 +21,7 @@ from typing import (
     TYPE_CHECKING,
     Annotated,
     Any,
+    ForwardRef,
     Optional,
     Union,
     get_args,
@@ -50,24 +52,27 @@ from strawberry.exceptions import (
 from strawberry.file_uploads import Upload
 from strawberry.types.base import StrawberryObjectDefinition
 from strawberry.types.field import StrawberryField, _contains_strawberry_field
+from strawberry.types.lazy_type import StrawberryLazyReference, lazy
 from strawberry.types.maybe import _annotation_is_maybe
-from strawberry.types.private import is_private
-from strawberry.types.union import StrawberryUnion
+from strawberry.types.private import StrawberryPrivate, is_private
+from strawberry.types.union import StrawberryUnion, union
 from strawberry.utils.typing import is_union
 
 from .exceptions import (
     MaybeFieldError,
+    PydanticFieldWithoutResolverError,
     ResolverFieldOnInputError,
     ResolverFieldOverridesModelFieldError,
     StrawberryFieldAsDefaultError,
     UnregisteredPydanticTypeError,
+    UnresolvedAnnotatedFieldError,
     UnsupportedRootModelError,
     UploadFieldError,
 )
-from .resolver_field import get_resolver_field
+from .resolver_field import get_resolver_field, is_field_decorator
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable
+    from collections.abc import Iterable, Iterator
 
     from pydantic.fields import FieldInfo
 
@@ -124,16 +129,115 @@ def _get_strawberry_base_field(origin: type, field_name: str) -> StrawberryField
     )
 
 
+def _get_annotated_metadata(annotation: object) -> Iterator[object]:
+    """Yield the metadata of the `Annotated` types in `annotation`, at any depth."""
+    if get_origin(annotation) is Annotated:
+        annotation, *metadata = get_args(annotation)
+
+        yield from metadata
+        yield from _get_annotated_metadata(annotation)
+    else:
+        for arg in get_args(annotation):
+            yield from _get_annotated_metadata(arg)
+
+
+_TYPE_METADATA = (StrawberryLazyReference, StrawberryPrivate, StrawberryUnion)
+
+
+def _lookup(node: ast.expr, namespace: dict[str, Any]) -> object:
+    """Return the value of a name like `Hidden` or `strawberry.lazy`, if any."""
+    if isinstance(node, ast.Name):
+        return namespace.get(node.id)
+
+    if isinstance(node, ast.Attribute):
+        return getattr(_lookup(node.value, namespace), node.attr, None)
+
+    return None
+
+
+def _has_annotated_options(node: ast.AST, namespace: dict[str, Any]) -> bool:
+    """Return whether `node` is an `Annotated` type with options for the field.
+
+    `strawberry.lazy()`, `strawberry.union()` and `strawberry.Private` aren't
+    options: Strawberry reads them from the type when it resolves it.
+    """
+    if isinstance(node, ast.Subscript) and (
+        getattr(node.value, "id", None) == "Annotated"
+        or getattr(node.value, "attr", None) == "Annotated"
+        or _lookup(node.value, namespace) is Annotated
+    ):
+        # e.g. `Annotated[Account, strawberry.lazy("app.accounts")]`
+        metadata = node.slice.elts[1:] if isinstance(node.slice, ast.Tuple) else []
+
+        return not all(
+            isinstance(item, ast.Call)
+            and _lookup(item.func, namespace) in (lazy, union)
+            for item in metadata
+        )
+
+    # an alias, e.g. `Hidden = Annotated[T, pydantic.Field(exclude=True)]`
+    return isinstance(node, (ast.Name, ast.Attribute)) and any(
+        not isinstance(item, _TYPE_METADATA)
+        for item in _get_annotated_metadata(_lookup(node, namespace))
+    )
+
+
+def _check_annotated_is_resolved(
+    annotation: object, *, cls: type, model: type, field_name: str
+) -> None:
+    """Fail when pydantic couldn't read the `Annotated` options of a field yet.
+
+    Pydantic keeps an annotation that uses names that aren't defined yet, like a
+    model defined further down the module, as a string, and only reads its
+    `Annotated` metadata once the model is rebuilt. Strawberry reads the field
+    when the model is decorated, so options like the permissions of
+    `strawberry.field()` or `Field(exclude=True)` would silently be lost.
+    """
+    if isinstance(annotation, ForwardRef):
+        annotation = annotation.__forward_arg__
+
+    if not isinstance(annotation, str):
+        return
+
+    try:
+        tree = ast.parse(annotation, mode="eval")
+    except SyntaxError:
+        return
+
+    module = sys.modules.get(cls.__module__)
+    namespace = vars(module) if module is not None else {}
+
+    if any(_has_annotated_options(node, namespace) for node in ast.walk(tree)):
+        raise UnresolvedAnnotatedFieldError(field_name=field_name, cls=cls, model=model)
+
+
 def _get_strawberry_field_override(
-    field_info: FieldInfo, cls: type, field_name: str
+    field_info: FieldInfo, cls: type, field_name: str, *, model: type
 ) -> StrawberryField | None:
-    """Return the `strawberry.field()` from `Annotated[T, strawberry.field()]`."""
+    """Return the `strawberry.field()` from `Annotated[T, strawberry.field()]`.
+
+    `cls` is the class that declares the field, and `model` the decorated model.
+    """
     # Pydantic treats a `strawberry.field()` assigned as the default like a
     # dataclass field: it keeps its default and discards everything else. The
     # original object is only kept on a private attribute, so this check is best
     # effort.
     if isinstance(getattr(field_info, "_original_assignment", None), StrawberryField):
         raise StrawberryFieldAsDefaultError(field_name=field_name, cls=cls)
+
+    _check_annotated_is_resolved(
+        field_info.annotation, cls=cls, model=model, field_name=field_name
+    )
+
+    # `strawberry.pydantic.field` is only for fields with a resolver
+    if is_field_decorator(field_info.default) or any(
+        is_field_decorator(item)
+        for item in (
+            *field_info.metadata,
+            *_get_annotated_metadata(field_info.annotation),
+        )
+    ):
+        raise PydanticFieldWithoutResolverError(field_name=field_name, cls=cls)
 
     if _contains_strawberry_field(field_info.annotation):
         raise InvalidStrawberryFieldAnnotationError(field_name=field_name, cls=cls)
@@ -313,16 +417,22 @@ def _replace_pydantic_types(type_: Any, model: type[BaseModel]) -> Any:
 
 
 def _with_strawberry_metadata(annotation: Any, metadata: Iterable[object]) -> Any:
-    """Add back the Strawberry metadata of `Annotated`, like `strawberry.union()`.
+    """Add back the Strawberry metadata of `Annotated`.
 
-    Pydantic keeps the metadata of a field's `Annotated` apart from its type.
+    Pydantic keeps the metadata of a field's `Annotated` apart from its type, but
+    the type needs `strawberry.union()`, and `strawberry.lazy()` to resolve a
+    quoted type from another module.
     """
-    unions = [item for item in metadata if isinstance(item, StrawberryUnion)]
+    strawberry_metadata = [
+        item
+        for item in metadata
+        if isinstance(item, (StrawberryUnion, StrawberryLazyReference))
+    ]
 
-    if not unions:
+    if not strawberry_metadata:
         return annotation
 
-    return Annotated[(annotation, *unions)]
+    return Annotated[(annotation, *strawberry_metadata)]
 
 
 def _get_computed_field_annotation(
@@ -342,6 +452,13 @@ def _get_computed_field_annotation(
             else wrapped_property.func
         )
         annotation = get_annotations(getter, format=Format.FORWARDREF)["return"]
+        _check_annotated_is_resolved(
+            annotation, cls=origin, model=cls, field_name=field_name
+        )
+
+    # `strawberry.pydantic.field` is only for fields with a resolver
+    if any(is_field_decorator(item) for item in _get_annotated_metadata(annotation)):
+        raise PydanticFieldWithoutResolverError(field_name=field_name, cls=origin)
 
     if get_origin(annotation) is not Annotated:
         return annotation, None
@@ -373,7 +490,7 @@ def _create_strawberry_field(
         )
         description = field_info.description
         strawberry_override = _get_strawberry_field_override(
-            field_info, origin, field_name
+            field_info, origin, field_name, model=cls
         )
     else:
         annotation, strawberry_override = _get_computed_field_annotation(

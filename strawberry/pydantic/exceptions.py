@@ -4,15 +4,15 @@ import functools
 import inspect
 import re
 from functools import cached_property
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, get_args, get_origin
+
+from pydantic import BaseModel
 
 from strawberry.exceptions.exception import StrawberryException
 from strawberry.exceptions.utils.source_finder import SourceFinder
 
 if TYPE_CHECKING:
     from collections.abc import Callable
-
-    from pydantic import BaseModel
 
     from strawberry.exceptions.exception_source import ExceptionSource
     from strawberry.types.field import StrawberryField
@@ -32,6 +32,17 @@ def _escape_markup(text: str) -> str:
         text += "\\"
 
     return text
+
+
+def _format_base(base: Any) -> str:
+    """Return a base class like it's written in a class statement."""
+    if args := get_args(base):
+        # e.g. `Generic[T]`
+        origin = _format_base(get_origin(base))
+
+        return f"{origin}[{', '.join(_format_base(arg) for arg in args)}]"
+
+    return getattr(base, "__name__", repr(base))
 
 
 def _find_field_source(cls: type, field_name: str) -> ExceptionSource | None:
@@ -109,6 +120,76 @@ class StrawberryFieldAsDefaultError(StrawberryException):
         source_finder = SourceFinder()
 
         return source_finder.find_class_attribute_from_object(self.cls, self.field_name)
+
+
+class PydanticFieldWithoutResolverError(StrawberryException):
+    def __init__(self, field_name: str, cls: type) -> None:
+        self.cls = cls
+        self.field_name = field_name
+
+        self.message = (
+            f"Field `{field_name}` on pydantic model `{cls.__name__}` uses "
+            "`strawberry.pydantic.field`, which is only for fields with a resolver"
+        )
+        self.rich_message = (
+            f"Field `[underline]{field_name}[/]` on pydantic model "
+            f"`[underline]{cls.__name__}[/]` uses `strawberry.pydantic.field`, "
+            "which is only for fields with a resolver"
+        )
+        self.annotation_message = "strawberry.pydantic.field used on a model field"
+        self.suggestion = (
+            "`strawberry.pydantic.field` decorates methods to add fields with a "
+            "resolver. To configure a model field, use `strawberry.field()` in its "
+            f"annotation instead: `{field_name}: Annotated[..., "
+            "strawberry.field(...)]`."
+        )
+
+        super().__init__(self.message)
+
+    @cached_property
+    def exception_source(self) -> ExceptionSource | None:
+        return _find_field_source(self.cls, self.field_name)
+
+
+class UnresolvedAnnotatedFieldError(StrawberryException):
+    """The `Annotated` options of a field can't be read yet.
+
+    `cls` declares the field, and `model` is the decorated model, which can be a
+    subclass of it.
+    """
+
+    def __init__(self, field_name: str, cls: type, *, model: type) -> None:
+        self.cls = cls
+        self.field_name = field_name
+
+        self.message = (
+            f"The `Annotated` options of field `{field_name}` on pydantic model "
+            f"`{cls.__name__}` can't be read because its annotation uses names "
+            "that aren't defined yet"
+        )
+        self.rich_message = (
+            f"The `Annotated` options of field `[underline]{field_name}[/]` on "
+            f"pydantic model `[underline]{cls.__name__}[/]` can't be read because "
+            "its annotation uses names that aren't defined yet"
+        )
+        self.annotation_message = "annotation using names that aren't defined yet"
+        self.suggestion = (
+            "Strawberry reads the options when the model is decorated, but Pydantic "
+            "only reads them once it can resolve the annotation, so options like "
+            "the permissions of `strawberry.field()` or `Field(exclude=True)` "
+            "would be lost. Define the models the annotation references before "
+            f"`{cls.__name__}`, or decorate `{model.__name__}` later: once they're "
+            f"defined, call `{model.__name__}.model_rebuild()` and then decorate "
+            "it. In a module without `from __future__ import annotations`, you can "
+            'also quote only the types, like `Annotated["Account", '
+            "strawberry.field(...)]`."
+        )
+
+        super().__init__(self.message)
+
+    @cached_property
+    def exception_source(self) -> ExceptionSource | None:
+        return _find_field_source(self.cls, self.field_name)
 
 
 class UploadFieldError(StrawberryException):
@@ -239,6 +320,34 @@ class UnsupportedRootModelError(StrawberryException):
             return _find_field_source(self.cls, self.field_name)
 
         return SourceFinder().find_class_from_object(self.root_model)
+
+
+class UnsupportedRelayNodeError(StrawberryException):
+    def __init__(self, cls: type, decorator: str) -> None:
+        self.cls = cls
+
+        self.message = (
+            f"`{cls.__name__}` implements `relay.Node`, which isn't supported by "
+            f"`strawberry.pydantic.{decorator}` yet"
+        )
+        self.rich_message = (
+            f"`[underline]{cls.__name__}[/]` implements `relay.Node`, which isn't "
+            f"supported by `strawberry.pydantic.{decorator}` yet"
+        )
+        self.annotation_message = "model implementing relay.Node"
+        self.suggestion = (
+            "Pydantic types don't get the `id` field that `relay.Node` resolves "
+            "from the `relay.NodeID` field. Use a `@strawberry.type` that "
+            "implements `relay.Node` for the node instead, and create it from the "
+            f"model, e.g. with `{cls.__name__}(**dict(model))`. Pydantic types can "
+            "still be the nodes of connections, like `relay.ListConnection`."
+        )
+
+        super().__init__(self.message)
+
+    @cached_property
+    def exception_source(self) -> ExceptionSource | None:
+        return SourceFinder().find_class_from_object(self.cls)
 
 
 class MaybeFieldError(StrawberryException):
@@ -397,6 +506,34 @@ class ModelAlreadyDecoratedError(StrawberryException):
 
         if definition.is_input == (decorator == "input"):
             self.suggestion = "Remove one of the decorators."
+        elif decorator == "input" and (
+            definition.is_interface or definition.interfaces
+        ):
+            # a subclass would inherit the interface, and inputs can't implement
+            # interfaces
+            name = cls.__name__
+            # `__orig_bases__` has the parameters of generic bases, like
+            # `Generic[T]`, it's only set when there are some
+            bases = ", ".join(
+                [
+                    f"{name}Base",
+                    *(
+                        _format_base(base)
+                        for base in vars(cls).get("__orig_bases__", cls.__bases__)
+                        if base is not BaseModel
+                    ),
+                ]
+            )
+            current_decorator = "interface" if definition.is_interface else "type"
+
+            self.suggestion = _escape_markup(
+                f"Inputs can't implement interfaces, so `{name}` can't be "
+                "subclassed for an input. Move the fields to share to an "
+                "undecorated base model used by both instead, for example: "
+                f"`class {name}Base(BaseModel)`, with "
+                f"`@strawberry.pydantic.{current_decorator} class {name}({bases})` "
+                f"and `@strawberry.pydantic.input class {name}Input({name}Base)`."
+            )
         else:
             self.suggestion = (
                 "To use a model both as an output type and as an input, decorate "

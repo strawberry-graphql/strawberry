@@ -353,8 +353,12 @@ def test_models_can_only_be_decorated_once():
             r"`Address` is already a type, so it can't be decorated with "
             r"`strawberry\.pydantic\.input`"
         ),
-    ):
+    ) as exc_info:
         strawberry.pydantic.input(Address)
+
+    assert exc_info.value.suggestion.startswith(
+        "To use a model both as an output type and as an input, decorate a subclass"
+    )
 
     # a subclass can be used as the input
     @strawberry.pydantic.input
