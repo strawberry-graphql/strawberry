@@ -1,7 +1,16 @@
 import dataclasses
 import textwrap
 import types
-from typing import Any, ClassVar, ForwardRef, no_type_check
+from typing import (
+    Annotated,
+    Any,
+    ClassVar,
+    ForwardRef,
+    Generic,
+    TypeVar,
+    no_type_check,
+)
+from typing_extensions import Self
 
 import pytest
 
@@ -13,6 +22,7 @@ from strawberry.exceptions import (
 )
 from strawberry.parent import Parent
 from strawberry.scalars import JSON
+from strawberry.types.field import StrawberryField
 from strawberry.types.fields.resolver import (
     INFO_PARAMSPEC,
     Signature,
@@ -102,6 +112,340 @@ def test_classmethod_resolver_fields():
 
     assert Query.val() == "thingy"
     assert Query().val() == "thingy"
+
+
+def test_classmethod_resolver_on_subclass():
+    @strawberry.type
+    class Animal:
+        sound: ClassVar[str] = "..."
+
+        @strawberry.field
+        @classmethod
+        def says(cls) -> str:
+            return f"{cls.__name__} says {cls.sound}"
+
+    @strawberry.type
+    class Dog(Animal):
+        sound: ClassVar[str] = "woof"
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def animal(self) -> Animal:
+            return Animal()
+
+        @strawberry.field
+        def dog(self) -> Dog:
+            return Dog()
+
+    schema = strawberry.Schema(query=Query)
+    result = schema.execute_sync("{ animal { says } dog { says } }")
+
+    assert not result.errors
+    assert result.data == {
+        "animal": {"says": "Animal says ..."},
+        "dog": {"says": "Dog says woof"},
+    }
+
+    assert Animal.says() == "Animal says ..."
+    assert Animal().says() == "Animal says ..."
+    assert Dog.says() == "Dog says woof"
+    assert Dog().says() == "Dog says woof"
+
+    animal_field = Animal.__strawberry_definition__.get_field("says")
+    dog_field = Dog.__strawberry_definition__.get_field("says")
+
+    assert animal_field.base_resolver() == "Animal says ..."
+    assert dog_field.base_resolver() == "Dog says woof"
+
+
+def test_classmethod_resolver_inherited_from_interface():
+    @strawberry.interface
+    class Animal:
+        sound: ClassVar[str] = "..."
+
+        @strawberry.field
+        @classmethod
+        def says(cls) -> str:
+            return f"{cls.__name__} says {cls.sound}"
+
+    @strawberry.type
+    class Dog(Animal):
+        sound: ClassVar[str] = "woof"
+
+    @strawberry.type
+    class Cat(Animal):
+        sound: ClassVar[str] = "meow"
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def animals(self) -> list[Animal]:
+            return [Dog(), Cat()]
+
+    schema = strawberry.Schema(query=Query, types=[Dog, Cat])
+    result = schema.execute_sync("{ animals { says } }")
+
+    assert not result.errors
+    assert result.data == {
+        "animals": [{"says": "Dog says woof"}, {"says": "Cat says meow"}]
+    }
+
+    assert Animal.says() == "Animal says ..."
+    assert Dog.says() == "Dog says woof"
+    assert Cat.says() == "Cat says meow"
+
+
+def test_classmethod_resolver_overridden_in_subclass():
+    @strawberry.type
+    class Animal:
+        sound: ClassVar[str] = "..."
+
+        @strawberry.field
+        @classmethod
+        def says(cls) -> str:
+            return f"{cls.__name__} says {cls.sound}"
+
+    @strawberry.type
+    class Dog(Animal):
+        sound: ClassVar[str] = "woof"
+
+        @strawberry.field
+        @classmethod
+        def says(cls) -> str:
+            return f"{cls.__name__} barks {cls.sound}"
+
+    @strawberry.type
+    class Puppy(Dog):
+        sound: ClassVar[str] = "yip"
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def animal(self) -> Animal:
+            return Animal()
+
+        @strawberry.field
+        def dog(self) -> Dog:
+            return Dog()
+
+        @strawberry.field
+        def puppy(self) -> Puppy:
+            return Puppy()
+
+    schema = strawberry.Schema(query=Query)
+    result = schema.execute_sync("{ animal { says } dog { says } puppy { says } }")
+
+    assert not result.errors
+    assert result.data == {
+        "animal": {"says": "Animal says ..."},
+        "dog": {"says": "Dog barks woof"},
+        "puppy": {"says": "Puppy barks yip"},
+    }
+
+    assert Animal.says() == "Animal says ..."
+    assert Dog.says() == "Dog barks woof"
+    assert Puppy.says() == "Puppy barks yip"
+
+
+def test_classmethod_resolver_on_generic_subclass():
+    T = TypeVar("T")
+
+    @strawberry.type
+    class Box(Generic[T]):
+        kind: ClassVar[str] = "box"
+        value: T
+
+        @strawberry.field
+        @classmethod
+        def label(cls) -> str:
+            return cls.kind
+
+    @strawberry.type
+    class IntBox(Box[int]):
+        kind: ClassVar[str] = "int box"
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def int_box(self) -> IntBox:
+            return IntBox(value=1)
+
+        @strawberry.field
+        def str_box(self) -> Box[str]:
+            return Box(value="a")
+
+    schema = strawberry.Schema(query=Query)
+    result = schema.execute_sync("{ intBox { value label } strBox { value label } }")
+
+    assert not result.errors
+    assert result.data == {
+        "intBox": {"value": 1, "label": "int box"},
+        "strBox": {"value": "a", "label": "box"},
+    }
+
+    assert Box.label() == "box"
+    assert IntBox.label() == "int box"
+
+
+def test_staticmethod_resolver_on_subclass():
+    @strawberry.type
+    class Base:
+        @strawberry.field
+        @staticmethod
+        def name() -> str:
+            return "Name"
+
+    @strawberry.type
+    class Sub(Base):
+        pass
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def sub(self) -> Sub:
+            return Sub()
+
+    schema = strawberry.Schema(query=Query)
+    result = schema.execute_sync("{ sub { name } }")
+
+    assert not result.errors
+    assert result.data == {"sub": {"name": "Name"}}
+
+    assert Base.name() == "Name"
+    assert Base().name() == "Name"
+    assert Sub.name() == "Name"
+    assert Sub().name() == "Name"
+
+
+def test_resolvers_in_diamond_inheritance():
+    @strawberry.type
+    class Base:
+        @strawberry.field
+        def name(self) -> str:
+            return "Base"
+
+        @strawberry.field
+        @classmethod
+        def says(cls) -> str:
+            return f"Base says {cls.__name__}"
+
+    @strawberry.type
+    class Left(Base):
+        pass
+
+    @strawberry.type
+    class Right(Base):
+        @strawberry.field
+        def name(self) -> str:
+            return "Right"
+
+        @strawberry.field
+        @classmethod
+        def says(cls) -> str:
+            return f"Right says {cls.__name__}"
+
+    @strawberry.type
+    class Both(Left, Right):
+        pass
+
+    class PlainLeft(Base):
+        pass
+
+    @strawberry.type
+    class PlainBoth(PlainLeft, Right):
+        pass
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def both(self) -> Both:
+            return Both()
+
+        @strawberry.field
+        def plain_both(self) -> PlainBoth:
+            return PlainBoth()
+
+    # dataclasses takes the fields from the left parent, which inherits them from
+    # Base, so Python uses the same resolvers as the schema
+    schema = strawberry.Schema(query=Query)
+    result = schema.execute_sync("{ both { name says } plainBoth { name says } }")
+
+    assert not result.errors
+    assert result.data == {
+        "both": {"name": "Base", "says": "Base says Both"},
+        "plainBoth": {"name": "Base", "says": "Base says PlainBoth"},
+    }
+
+    assert Both().name() == "Base"
+    assert Both.says() == "Base says Both"
+    assert PlainBoth().name() == "Base"
+    assert PlainBoth.says() == "Base says PlainBoth"
+
+
+def test_classmethod_resolver_reused_by_types():
+    def get_kind(cls) -> str:
+        return cls.__name__
+
+    Kind = Annotated[str, strawberry.field(resolver=classmethod(get_kind))]
+
+    @strawberry.type
+    class Dog:
+        kind: Kind
+
+    @strawberry.type
+    class Cat:
+        kind: Kind
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def dog(self) -> Dog:
+            return Dog()
+
+        @strawberry.field
+        def cat(self) -> Cat:
+            return Cat()
+
+    schema = strawberry.Schema(query=Query)
+    result = schema.execute_sync("{ dog { kind } cat { kind } }")
+
+    assert not result.errors
+    assert result.data == {"dog": {"kind": "Dog"}, "cat": {"kind": "Cat"}}
+
+    assert Dog.kind() == "Dog"
+    assert Cat.kind() == "Cat"
+
+
+def test_classmethod_resolver_on_subclass_with_custom_field():
+    class CachedField(StrawberryField):
+        def __init__(self, *args: Any, ttl: int = 0, **kwargs: Any) -> None:
+            super().__init__(*args, **kwargs)
+            self.ttl = ttl
+
+        def __copy__(self) -> Self:
+            new_field = super().__copy__()
+            new_field.ttl = self.ttl
+            return new_field
+
+    @strawberry.type
+    class Animal:
+        @CachedField(ttl=60)
+        @classmethod
+        def says(cls) -> str:
+            return cls.__name__
+
+    @strawberry.type
+    class Dog(Animal):
+        pass
+
+    # Dog gets a copy of the field, made with `copy.copy` like the copies of
+    # fields of generic types, so custom fields keep their state with `__copy__`
+    field = Dog.__strawberry_definition__.get_field("says")
+
+    assert isinstance(field, CachedField)
+    assert field.ttl == 60
+    assert field.base_resolver() == "Dog"
 
 
 @pytest.mark.raises_strawberry_exception(
