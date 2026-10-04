@@ -23,6 +23,7 @@ from .object_is_not_an_enum import ObjectIsNotAnEnumError
 from .private_strawberry_field import PrivateStrawberryFieldError
 from .scalar_already_registered import ScalarAlreadyRegisteredError
 from .unresolved_field_type import UnresolvedFieldTypeError
+from .unresolved_strawberry_field import UnresolvedStrawberryFieldError
 
 if TYPE_CHECKING:
     from graphql import GraphQLInputObjectType, GraphQLObjectType
@@ -244,6 +245,7 @@ __all__ = [
     "UnableToFindExceptionSource",
     "UnallowedReturnTypeForUnion",
     "UnresolvedFieldTypeError",
+    "UnresolvedStrawberryFieldError",
     "UnsupportedTypeError",
     "WrongNumberOfResultsReturned",
     "WrongReturnTypeForUnion",
