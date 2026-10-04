@@ -1,6 +1,25 @@
 CHANGELOG
 =========
 
+0.331.1 - 2026-10-04
+--------------------
+
+This release fixes `import strawberry` importing pydantic whenever it's
+installed, which slowed down the startup of every app, including the ones that
+don't use pydantic, and made Strawberry impossible to import when the installed
+pydantic was broken.
+
+The experimental pydantic integration is now imported the first time it's
+used, and `PydanticErrorExtension` no longer imports pydantic. With pydantic
+installed, importing Strawberry now loads about 60 fewer modules.
+
+`strawberry.experimental.pydantic` keeps working the same way, whether it's
+imported with `import strawberry.experimental.pydantic`, with
+`from strawberry.experimental import pydantic`, or accessed as an attribute of
+`strawberry.experimental`.
+
+This release was contributed by [@patrick91](https://github.com/patrick91) in [#4665](https://github.com/strawberry-graphql/strawberry/pull/4665)
+
 0.331.0 - 2026-10-04
 --------------------
 
