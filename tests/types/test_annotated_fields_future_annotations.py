@@ -386,6 +386,10 @@ def admin_only() -> Any:
     return strawberry.field(permission_classes=[AllowAll])
 
 
+def with_permission(permission: Any) -> Any:
+    return strawberry.field(permission_classes=[permission])
+
+
 @skip_if_options_of_later_types_are_read
 def test_field_from_a_helper_on_a_type_not_defined_yet_raises_error():
     with pytest.raises(UnresolvedStrawberryFieldError):
@@ -393,6 +397,28 @@ def test_field_from_a_helper_on_a_type_not_defined_yet_raises_error():
         @strawberry.type
         class Query:
             value: Annotated[NotDefinedYet, admin_only()]
+
+
+@skip_if_options_of_later_types_are_read
+def test_field_from_a_helper_using_names_not_defined_yet_raises_error():
+    # the helper can't be called yet, so it could return a `strawberry.field()`
+    with pytest.raises(
+        UnresolvedStrawberryFieldError,
+        match=r"because `NotDefinedYet` isn't defined yet",
+    ):
+
+        @strawberry.type
+        class Query:
+            value: Annotated[NotDefinedYet, with_permission(NotDefinedYet)]
+
+
+@skip_if_options_of_later_types_are_read
+def test_nested_annotated_alias_on_a_type_not_defined_yet_raises_error():
+    with pytest.raises(InvalidStrawberryFieldAnnotationError):
+
+        @strawberry.type
+        class Query:
+            values: list[Described[NotDefinedYet]]
 
 
 @skip_if_options_of_later_types_are_read

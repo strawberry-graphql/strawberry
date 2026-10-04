@@ -54,22 +54,26 @@ def _lookup(node: ast.expr, namespace: dict[str, Any]) -> object:
     return None
 
 
-def _is_field_metadata(node: ast.expr, namespace: dict[str, Any]) -> bool:
-    """Return whether an item of `Annotated` metadata is a `strawberry.field()`."""
-    from strawberry.federation.field import field as federation_field
+def _is_field_metadata(node: ast.expr, namespace: dict[str, Any]) -> bool | None:
+    """Return whether an item of `Annotated` metadata is a `strawberry.field()`.
 
+    It's `None` when the item can't be evaluated yet, e.g. a helper that returns
+    a `strawberry.field()` called with names that aren't defined yet.
+    """
     try:
         # e.g. a helper that returns a `strawberry.field()`, or `relay.node()`
         value = eval(ast.unparse(node), dict(namespace))  # noqa: S307
     except Exception:  # noqa: BLE001
-        # e.g. options that use names that aren't defined yet
-        return any(
-            isinstance(item, ast.Call)
-            and _lookup(item.func, namespace) in (field, federation_field)
-            for item in ast.walk(node)
-        )
+        return None
 
     return isinstance(value, StrawberryField)
+
+
+def _is_field_alias(value: object) -> bool:
+    """Return whether `value` is an alias like `Annotated[T, strawberry.field()]`."""
+    return get_origin(value) is Annotated and any(
+        isinstance(item, StrawberryField) for item in get_args(value)[1:]
+    )
 
 
 def _get_annotated_metadata(
@@ -95,26 +99,15 @@ def _check_unresolved_annotation(
     like a type defined further down the module, can't be evaluated when the
     type is created. Its type is resolved when the schema is built, but the
     options of a `strawberry.field()` in it, like permissions, would silently be
-    ignored, so this fails instead.
+    ignored, so this fails instead, including when an item of `Annotated` can't
+    be evaluated, as it could be a field.
     """
     try:
         expression = ast.parse(annotation, mode="eval").body
     except SyntaxError:
         return
 
-    metadata = _get_annotated_metadata(expression, namespace) or []
-    alias = (
-        _lookup(expression.value, namespace)
-        if isinstance(expression, ast.Subscript)
-        else None
-    )
-
-    # e.g. `Annotated[Account, strawberry.field(...)]`, or an alias with one like
-    # `AdminOnly[Account]`
-    if any(_is_field_metadata(item, namespace) for item in metadata) or (
-        get_origin(alias) is Annotated
-        and any(isinstance(item, StrawberryField) for item in get_args(alias)[1:])
-    ):
+    def unresolved() -> UnresolvedStrawberryFieldError:
         names = set()
 
         for node in ast.walk(expression):
@@ -132,22 +125,36 @@ def _check_unresolved_annotation(
             and not hasattr(builtins, name)
         }
 
-        raise UnresolvedStrawberryFieldError(
+        return UnresolvedStrawberryFieldError(
             field_name=field_name, cls=cls, undefined_names=sorted(undefined_names)
         )
 
-    # `strawberry.field()` is only allowed in the outermost `Annotated`
-    for node in ast.walk(expression):
-        nested_metadata = (
-            _get_annotated_metadata(node, namespace)
-            if isinstance(node, ast.expr) and node is not expression
-            else None
-        )
+    # e.g. `Annotated[Account, strawberry.field(...)]`, or an alias with one like
+    # `AdminOnly[Account]`
+    metadata = _get_annotated_metadata(expression, namespace) or []
 
-        if nested_metadata and any(
-            _is_field_metadata(item, namespace) for item in nested_metadata
-        ):
+    if any(_is_field_metadata(item, namespace) is not False for item in metadata) or (
+        isinstance(expression, ast.Subscript)
+        and _is_field_alias(_lookup(expression.value, namespace))
+    ):
+        raise unresolved()
+
+    # `strawberry.field()` is only allowed in the outermost `Annotated`, e.g. not
+    # in `list[Annotated[Account, strawberry.field()]]` or `list[AdminOnly[...]]`
+    for node in ast.walk(expression):
+        if node is expression or not isinstance(node, ast.Subscript):
+            continue
+
+        nested = [
+            _is_field_metadata(item, namespace)
+            for item in _get_annotated_metadata(node, namespace) or []
+        ]
+
+        if True in nested or _is_field_alias(_lookup(node.value, namespace)):
             raise InvalidStrawberryFieldAnnotationError(field_name=field_name, cls=cls)
+
+        if None in nested:
+            raise unresolved()
 
 
 def _process_annotated_fields(cls: T) -> dict[str, StrawberryAnnotation]:
