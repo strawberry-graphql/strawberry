@@ -71,15 +71,48 @@ def _sign_up_schema() -> strawberry.Schema:
 def test_schema():
     schema = _sign_up_schema()
 
-    assert "union UserValidationError = User | ValidationError" in str(schema)
-    assert "type ValidationError {\n  issues: [ValidationIssue!]!\n}" in str(schema)
-    assert (
-        "type ValidationIssue {\n"
-        "  location: [String!]!\n"
-        "  message: String!\n"
-        "  type: String!\n"
-        "}"
-    ) in str(schema)
+    assert str(schema) == snapshot('''\
+input AddressInput {
+  zipCode: String!
+}
+
+type Mutation {
+  signUp(input: SignUpInput!): UserValidationError!
+}
+
+type Query {
+  hello: String!
+}
+
+input SignUpInput {
+  password: String!
+  address: AddressInput
+}
+
+type User {
+  name: String!
+}
+
+union UserValidationError = User | ValidationError
+
+"""The inputs failed validation."""
+type ValidationError {
+  """The problems with the input values."""
+  issues: [ValidationIssue!]!
+}
+
+"""A problem with an input value."""
+type ValidationIssue {
+  """The argument, then the fields and list indexes leading to the value."""
+  location: [String!]!
+
+  """The reason the value is invalid."""
+  message: String!
+
+  """The Pydantic error type, like `string_too_short`."""
+  type: String!
+}\
+''')
 
 
 def test_valid_input():

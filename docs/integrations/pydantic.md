@@ -137,6 +137,10 @@ class User(BaseModel):
     age: int
 ```
 
+They also take `directives`, a list of
+[schema directives](../types/schema-directives.md) for the type, like the
+[federation](#federation) ones.
+
 To use the same model as a GraphQL type and as an input, decorate a subclass, as
 a model can only be decorated once:
 
@@ -149,6 +153,33 @@ class Address(BaseModel):
 
 @strawberry.pydantic.input
 class AddressInput(Address):
+    pass
+```
+
+This doesn't work for an interface, or for a type that implements one, as inputs
+can't implement interfaces: an input that subclasses them raises an
+[`InvalidSuperclassInterfaceError`](../errors/invalid-superclass-interface.md).
+Move the fields to share to an undecorated base model instead, and extend it
+from both the output type and the input:
+
+```python
+@strawberry.pydantic.interface
+class Node(BaseModel):
+    id: strawberry.ID
+
+
+class UserBase(BaseModel):
+    name: str
+    email: str
+
+
+@strawberry.pydantic.type
+class User(UserBase, Node):
+    pass
+
+
+@strawberry.pydantic.input
+class UserInput(UserBase):
     pass
 ```
 
@@ -172,8 +203,9 @@ class User(BaseModel):
 
 GraphQL field names come from the Python field names, like with
 `@strawberry.type`. Pydantic aliases describe how the model is (de)serialized,
-for example for a REST API, so they are not used in the GraphQL schema. Use
-`strawberry.field(name=...)` to rename a field:
+for example for a REST API, so they are not used in the GraphQL schema (unlike
+in the [experimental integration](#moving-from-the-experimental-integration)).
+Use `strawberry.field(name=...)` to rename a field:
 
 ```python
 from typing import Annotated
@@ -183,13 +215,14 @@ from pydantic import Field
 
 @strawberry.pydantic.type
 class User(BaseModel):
-    user_name: str = Field(alias="user-name")  # userName in GraphQL
+    user_name: Annotated[str, Field(alias="user-name")]  # userName in GraphQL
     age: Annotated[int, strawberry.field(name="yearsOld")]
 ```
 
 This also applies to fields named after Python keywords, which are usually
-aliased: `from_: date = Field(alias="from")` is called `from_` in GraphQL,
-unless it is renamed with `Annotated[date, strawberry.field(name="from")]`.
+aliased: `from_: Annotated[date, Field(alias="from")]` is called `from_` in
+GraphQL, unless it is renamed with
+`Annotated[date, Field(alias="from"), strawberry.field(name="from")]`.
 
 Inputs are validated by field name too, so validators with `mode="before"`
 receive the data keyed by Python field names, not by aliases. A model shared
@@ -323,7 +356,9 @@ are part of the default shown in the schema, and the model the resolver gets
 when the client omits the argument has the same `model_fields_set`. For example,
 the default of `input: UpdateUserInput = UpdateUserInput(name="Ada")` is
 `{ name: "Ada" }`, so a partial update doesn't overwrite the other fields with
-`None`.
+`None`. Like the values sent by clients, the default is validated again for
+every request that uses it, so its validators run again, with the request's
+[validation context](#validation-context).
 
 `strawberry.Maybe` can't be used in Pydantic inputs (Pydantic raises an error
 for it when the model is defined), use `model_fields_set` to tell omitted fields
@@ -370,8 +405,7 @@ class User(BaseModel):
 ```
 
 Fields excluded from Pydantic's serialization with `Field(exclude=True)` are not
-exposed on GraphQL types and interfaces either, so GraphQL never returns more
-than `model_dump()` does:
+exposed on GraphQL types and interfaces either:
 
 ```python
 from pydantic import BaseModel, Field
@@ -385,6 +419,24 @@ class ApiClient(BaseModel):
 
 Input types are not affected: clients can still send fields marked with
 `exclude=True`.
+
+Other serialization settings don't apply to GraphQL: output fields are resolved
+from the model's attributes, not from `model_dump()`, so Pydantic's serializers
+(`field_serializer`, `PlainSerializer`, `WrapSerializer` and
+`model_serializer`), serialization aliases and `Field(exclude_if=...)` are not
+applied. To hide or redact a value, use `strawberry.Private`,
+`Field(exclude=True)` or a [resolver field](#resolver-fields):
+
+```python
+@strawberry.pydantic.type
+class Customer(BaseModel):
+    name: str
+    email: strawberry.Private[str]
+
+    @strawberry.pydantic.field
+    def masked_email(self) -> str:
+        return f"{self.email[0]}***"
+```
 
 ### Resolver Fields
 
@@ -421,6 +473,13 @@ if you use it, or add `# type: ignore[pydantic-field]`.
 
 Input types can't have fields with a resolver: the ones inherited from a base
 model, for example one shared with an output type, are ignored.
+
+`strawberry.pydantic.field` is only for fields with a resolver. To customize a
+field of the model, use `strawberry.field()` in its annotation instead, like
+`age: Annotated[int, strawberry.field(name="yearsOld")]` (see
+[Field Directives and Customization](#field-directives-and-customization)):
+using `strawberry.pydantic.field` there raises a
+[`PydanticFieldWithoutResolverError`](../errors/pydantic-field-without-resolver.md).
 
 `@strawberry.field` can't be used in a Pydantic model: Pydantic raises
 `PydanticUserError: A non-annotated attribute was detected` when the model is
@@ -552,13 +611,99 @@ class Category(BaseModel):
     children: list["Category"] = []
 ```
 
+When the annotation of a field is a string that uses a model defined later, for
+example with `from __future__ import annotations`, Pydantic only reads its
+`Annotated` options once that model is defined. Until then, the field can't use
+options like `strawberry.field()` or `Field(exclude=True)`: decorating the model
+raises an
+[`UnresolvedAnnotatedFieldError`](../errors/unresolved-annotated-field.md),
+whose page shows the workarounds: defining the referenced model first, quoting
+only the type, like `Annotated[list["Post"], strawberry.field(...)]`, in a
+module without `from __future__ import annotations`, or decorating the model
+after calling `model_rebuild()`.
+
+Models from other modules can be referenced with
+[`strawberry.lazy()`](../types/lazy.md), for example when two modules import
+each other:
+
+```python
+# authors.py
+from typing import TYPE_CHECKING, Annotated
+
+import strawberry
+from pydantic import BaseModel
+
+if TYPE_CHECKING:
+    from .books import Book
+
+
+@strawberry.pydantic.type
+class Author(BaseModel):
+    name: str
+    books: list[Annotated["Book", strawberry.lazy(".books")]] = []
+```
+
+```python
+# books.py
+import strawberry
+from pydantic import BaseModel
+
+from .authors import Author
+
+
+@strawberry.pydantic.type
+class Book(BaseModel):
+    title: str
+    author: Author | None = None
+
+
+# like any Pydantic model that uses a type defined later
+Author.model_rebuild()
+```
+
 <Note>
 
-Models in different modules that import each other (using a `TYPE_CHECKING`
-import and `model_rebuild()`) are not supported yet. Define them in the same
-module instead.
+Models in different modules that import each other without `strawberry.lazy()`
+(using a `TYPE_CHECKING` import and `model_rebuild()` only) are not supported
+yet. Use `strawberry.lazy()` for the types imported with `TYPE_CHECKING`, or
+define the models in the same module.
 
 </Note>
+
+### Generic Models
+
+To use a generic model, decorate a subclass of it with concrete types:
+
+```python
+from typing import Generic, TypeVar
+
+T = TypeVar("T")
+
+
+class Page(BaseModel, Generic[T]):
+    items: list[T]
+    total: int
+
+
+@strawberry.pydantic.type
+class User(BaseModel):
+    name: str
+
+
+@strawberry.pydantic.type
+class UserPage(Page[User]):
+    pass
+
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def users(self) -> UserPage:
+        return UserPage(items=[User(name="Ada")], total=1)
+```
+
+Using the parametrized model directly, like `-> Page[User]`, isn't supported
+yet.
 
 ### Validation
 
@@ -663,8 +808,9 @@ own, and overriding `model_validate` only affects the outermost input, so prefer
 
 Validators receive the GraphQL request in their validation context:
 `info.context["info"]` is Strawberry's `Info`, and
-`info.context["strawberry_context"]` the context of the request. Validators also
-run when the model is created in Python, where there's no validation context:
+`info.context["strawberry_context"]` the context of the request, when it has
+one. Validators also run when the model is created in Python, where there's no
+validation context:
 
 ```python
 from pydantic import ValidationInfo, field_validator
@@ -677,7 +823,9 @@ class CreateUserInput(BaseModel):
     @field_validator("email")
     @classmethod
     def check_email_is_free(cls, email: str, info: ValidationInfo) -> str:
-        if info.context and email_exists(info.context["strawberry_context"], email):
+        request_context = (info.context or {}).get("strawberry_context")
+
+        if request_context is not None and email_exists(request_context, email):
             raise ValueError("This email is already used")
 
         return email
@@ -693,7 +841,15 @@ validators for authorization.
 #### Validation Errors
 
 When a Pydantic input is invalid, the GraphQL response contains an error with
-each problem in its `validationErrors` extension:
+each problem in its `validationErrors` extension. For example, with this input:
+
+```python
+@strawberry.pydantic.input
+class CreateUserInput(BaseModel):
+    name: str = Field(min_length=2)
+```
+
+a `createUser` mutation that receives an invalid `input`:
 
 ```graphql
 mutation {
@@ -702,6 +858,8 @@ mutation {
   }
 }
 ```
+
+returns:
 
 ```json
 {
@@ -728,15 +886,21 @@ mutation {
 `location` uses the GraphQL names the client sent, starting with the argument,
 and `type` is the
 [Pydantic error type](https://docs.pydantic.dev/latest/errors/validation_errors/).
-The values Pydantic attaches to its errors are not included, but messages come
-from Pydantic and from your validators, so avoid putting sensitive values in
-your validators' messages.
+Errors raised by model validators are located at the model they validate: the
+`DateRangeInput` check above is reported at `["range"]` for an argument named
+`range`, or at `["input", "dates"]` when it's the `dates` field of an `input`
+argument. The values Pydantic attaches to its errors are not included, but
+messages come from Pydantic and from your validators, so avoid putting sensitive
+values in your validators' messages.
 
 The error is raised as `strawberry.pydantic.InputValidationError`, a
 [`StrawberryInputCoercionError`](../guides/errors.md#strawberry-input-coercion-errors),
-so it can be told apart from server errors. Each argument is validated on its
-own, so when several arguments are invalid, the errors of the first one are
-returned.
+so it can be told apart from server errors. Its `issues` attribute is the list
+of `ValidationIssue`s, each with the `location`, `message` and `type` of a
+problem, which you can use for example in your own
+[exception handler](../guides/errors.md#mapping-expected-exceptions-to-union-results).
+Each argument is validated on its own, so when several arguments are invalid,
+the errors of the first one are returned.
 
 To return validation errors as data instead, add
 `strawberry.pydantic.ValidationError` to the field's return type and register
@@ -795,11 +959,12 @@ mutation {
 }
 ```
 
-Only invalid inputs are returned as `ValidationError`: Pydantic errors raised by
-your resolvers are reported as normal errors, and exception handlers for
-`pydantic.ValidationError` only receive those. Like other exception handlers, it
-doesn't apply to subscriptions and list fields, which return the GraphQL error
-instead.
+Only `InputValidationError`s are returned as `ValidationError`: Pydantic errors
+raised by your resolvers are reported as normal errors, and exception handlers
+for `pydantic.ValidationError` only receive those (see
+[TypeAdapter and RootModel](#typeadapter-and-rootmodel) to report them like
+invalid inputs). Like other exception handlers, it doesn't apply to
+subscriptions and list fields, which return the GraphQL error instead.
 
 ### Model Config
 
@@ -950,6 +1115,140 @@ class Mutation:
         return sum(validated.root)
 ```
 
+These errors aren't input errors: a Pydantic `ValidationError` raised by a
+resolver is reported as a regular GraphQL error, whose message is Pydantic's,
+which includes the input values, like
+`Input should be greater than 0 [type=greater_than, input_value=-3, input_type=int]`.
+The [`PydanticErrorExtension`](../extensions/pydantic_error_extension.md) adds
+these errors to the response in a `validation_errors` extension, with a
+different shape than invalid inputs: a `field` and a `message` for each error.
+
+To report them like invalid inputs, raise a
+`strawberry.pydantic.InputValidationError` with a `ValidationIssue` for each
+error. It's returned with a `validationErrors` extension, or as a
+`ValidationError` when the field can return one and
+[`PydanticValidationErrorHandler`](#validation-errors) is registered:
+
+```python
+from pydantic import ValidationError as PydanticValidationError
+
+from strawberry.pydantic import InputValidationError, ValidationError, ValidationIssue
+
+
+def to_input_error(
+    error: PydanticValidationError, argument: str
+) -> InputValidationError:
+    return InputValidationError(
+        [
+            ValidationIssue(
+                location=[argument, *(str(part) for part in issue["loc"])],
+                message=issue["msg"],
+                type=issue["type"],
+            )
+            for issue in error.errors(include_url=False, include_input=False)
+        ]
+    )
+
+
+@strawberry.type
+class Total:
+    value: int
+
+
+@strawberry.type
+class Mutation:
+    @strawberry.mutation
+    def process_items(self, items: list[int]) -> Total | ValidationError:
+        try:
+            validated = BoundedList.model_validate(items)
+        except PydanticValidationError as error:
+            # Pydantic's error has the input values, don't chain it
+            raise to_input_error(error, "items") from None
+
+        return Total(value=sum(validated.root))
+```
+
+The locations of Pydantic's errors use the fields' aliases, or their Python
+names when validating by name, so map them to the GraphQL names when they
+differ.
+
+### Relay
+
+Pydantic types can be the nodes of [connections](../guides/relay.md), like
+`relay.ListConnection`:
+
+```python
+from strawberry import relay
+
+
+@strawberry.pydantic.type
+class Fruit(BaseModel):
+    name: str
+
+
+@strawberry.type
+class Query:
+    @relay.connection(relay.ListConnection[Fruit])
+    def fruits(self) -> list[Fruit]:
+        return [Fruit(name="Strawberry"), Fruit(name="Apple")]
+```
+
+They can't implement `relay.Node` yet: it raises an
+[`UnsupportedRelayNodeError`](../errors/unsupported-relay-node.md), whose page
+shows how to expose the nodes with a regular `@strawberry.type` created from the
+model instead.
+
+### Federation
+
+Pydantic types can be [federation](../guides/federation.md) entities. There are
+no `strawberry.federation` versions of the decorators, so pass the federation
+directives, like `Key`, with `directives`:
+
+```python
+from pydantic import BaseModel
+
+import strawberry
+from strawberry.federation.schema_directives import Key
+
+
+@strawberry.pydantic.type(directives=[Key(fields="id")])
+class Product(BaseModel):
+    id: strawberry.ID
+
+    @strawberry.pydantic.field
+    def reviews(self) -> list["Review"]:
+        return get_reviews(product_id=self.id)
+
+
+@strawberry.pydantic.type(directives=[Key(fields="id")])
+class Review(BaseModel):
+    id: strawberry.ID
+    body: str
+
+    @classmethod
+    def resolve_reference(cls, id: strawberry.ID) -> "Review":
+        return get_review(id)
+
+
+schema = strawberry.federation.Schema(query=Query, types=[Product])
+```
+
+Like other entities, they are resolved with their `resolve_reference` class
+method. Entities without one, like `Product`, are built by validating the
+representation sent by the router with Pydantic. A router only sends the key
+fields of an entity, and the fields that `@requires` asks for, so the model's
+other fields need a default. An invalid representation is reported like an
+invalid input: the entity is `null`, with an error that has a `validationErrors`
+extension.
+
+<Note>
+
+The `ValidationError` and `ValidationIssue` types aren't `@shareable` yet, so
+two subgraphs that both use them don't compose: composition fails with
+`INVALID_FIELD_SHARING` errors.
+
+</Note>
+
 ## Complete Example
 
 ```python
@@ -1013,6 +1312,23 @@ schema = strawberry.Schema(
 
 The experimental Pydantic integration is deprecated in favor of the first-class
 support above. The experimental integration will be removed in a future version.
+
+## Moving from the experimental integration
+
+The same model can give a different schema with `strawberry.pydantic`, which can
+break existing clients:
+
+- Pydantic aliases were the GraphQL names of the fields by default, now the
+  Python names are, on types and inputs. An alias like `userName` for
+  `user_name` gives the same name, but one like `login` doesn't: keep it as the
+  GraphQL name with
+  `Annotated[str, Field(alias="login"), strawberry.field(name="login")]`.
+- Fields excluded with `Field(exclude=True)` are no longer exposed on output
+  types.
+- Computed fields are included in output types, unless `include_computed=False`
+  is passed to the decorator.
+- Fields deprecated with `Field(deprecated=...)` are deprecated in GraphQL with
+  `@deprecated`.
 
 ## Experimental Usage
 
@@ -1169,9 +1485,9 @@ class User:
 
 ```graphql
 type User {
+  age: Int!
   id: Int!
   name: String!
-  age: Int!
 }
 ```
 
@@ -1264,7 +1580,8 @@ class UserInput:
 
 input_data = UserInput(id="abc", name="Jake")
 
-# this will run pydantic's validation
+# this will run pydantic's validation, which raises a ValidationError here, as
+# "abc" isn't an integer
 instance = input_data.to_pydantic()
 ```
 
@@ -1476,7 +1793,7 @@ class UserType:
 
 user = User(id="abc", content={ContentType.NAME: "Bob"})
 print(UserType.from_pydantic(user))
-# UserType(id='abc', content_name='Bob', content_description=None)
+# UserType(content_name='Bob', content_description=None, id='abc')
 
 user_type = UserType(id="abc", content_name="Bob", content_description=None)
 print(user_type.to_pydantic())

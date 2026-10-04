@@ -4,7 +4,7 @@ social_messages:
   x: >-
     {project_name} {version} is out! Pydantic models can now be used directly as
     GraphQL types, inputs and interfaces with strawberry.pydantic, including
-    validation of inputs. 🍓 https://strawberry.rocks/release/{version}
+    validation of inputs. https://strawberry.rocks/release/{version}
   linkedin: >-
     {project_name} {version} is out. Pydantic v2 models can now be decorated
     directly with strawberry.pydantic.type, strawberry.pydantic.input and
@@ -52,9 +52,10 @@ affect Pydantic's own (de)serialization: use
 `Annotated[..., strawberry.field(name=...)]` to rename a field. Computed fields
 are included, and deprecated fields are deprecated in GraphQL too.
 Fields with a resolver can be added with `@strawberry.pydantic.field`, fields
-can be customized with `Annotated[..., strawberry.field(...)]`, and
-`strawberry.Private` or Pydantic's `Field(exclude=True)` hide a field from the
-schema. See the [Pydantic integration docs](https://strawberry.rocks/docs/integrations/pydantic)
+can be customized with `Annotated[..., strawberry.field(...)]`,
+`strawberry.Private` hides a field from the schema, and Pydantic's
+`Field(exclude=True)` hides it from output types (inputs still accept it). See
+the [Pydantic integration docs](https://strawberry.rocks/docs/integrations/pydantic)
 for everything that's supported.
 
 The experimental integration, `strawberry.experimental.pydantic`, is deprecated

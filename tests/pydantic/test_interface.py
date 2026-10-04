@@ -195,6 +195,46 @@ def test_shared_base_suggestion_keeps_the_parameters_of_generic_bases():
     )
 
 
+def test_shared_base_suggestion_reuses_the_existing_undecorated_bases():
+    @strawberry.pydantic.interface
+    class Node(pydantic.BaseModel):
+        id: strawberry.ID
+
+    class UserBase(pydantic.BaseModel):
+        name: str
+
+    class Timestamps(pydantic.BaseModel):
+        created_at: str
+
+    @strawberry.pydantic.type
+    class User(UserBase, Node):
+        email: str
+
+    @strawberry.pydantic.type
+    class Admin(UserBase, Timestamps, Node):
+        pass
+
+    with pytest.raises(ModelAlreadyDecoratedError) as exc_info:
+        strawberry.pydantic.input(User)
+
+    assert exc_info.value.suggestion == (
+        "Inputs can't implement interfaces, so `User` can't be subclassed for an "
+        "input. Extend its undecorated base model instead, and move any other "
+        "fields to share to it, for example: "
+        "`@strawberry.pydantic.input class UserInput(UserBase)`."
+    )
+
+    with pytest.raises(ModelAlreadyDecoratedError) as exc_info:
+        strawberry.pydantic.input(Admin)
+
+    assert exc_info.value.suggestion == (
+        "Inputs can't implement interfaces, so `Admin` can't be subclassed for an "
+        "input. Extend its undecorated base models instead, and move any other "
+        "fields to share to them, for example: "
+        "`@strawberry.pydantic.input class AdminInput(UserBase, Timestamps)`."
+    )
+
+
 def test_interfaces_and_inputs_can_share_an_undecorated_base():
     @strawberry.pydantic.interface
     class Node(pydantic.BaseModel):
