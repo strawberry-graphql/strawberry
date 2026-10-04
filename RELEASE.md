@@ -1,5 +1,5 @@
 ---
-release type: patch
+release type: minor
 social_messages:
   x: >-
     {project_name} {version} is out! This release fixes strawberry.field()
