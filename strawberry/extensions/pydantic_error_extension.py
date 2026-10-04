@@ -18,8 +18,6 @@ class PydanticErrorExtension(SchemaExtension):
         if sys.modules.get("pydantic") is None:
             return
 
-        # an import (unlike reading sys.modules) waits for pydantic to be fully
-        # initialized when another thread is still importing it
         from pydantic import ValidationError
 
         for error in result.errors:
