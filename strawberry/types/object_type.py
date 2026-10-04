@@ -1,3 +1,4 @@
+import ast
 import builtins
 import copy
 import dataclasses
@@ -29,6 +30,7 @@ from strawberry.exceptions import (
     MissingReturnAnnotationError,
     MultipleStrawberryFieldsError,
     ObjectIsNotClassError,
+    UnresolvedStrawberryFieldError,
 )
 from strawberry.types.maybe import Some, _annotation_is_maybe
 from strawberry.types.unset import UNSET
@@ -39,6 +41,120 @@ from .field import StrawberryField, _contains_strawberry_field, field
 from .type_resolver import _get_fields
 
 T = TypeVar("T", bound=builtins.type)
+
+
+def _lookup(node: ast.expr, namespace: dict[str, Any]) -> object:
+    """Return the value of a name like `Annotated` or `strawberry.field`, if any."""
+    if isinstance(node, ast.Name):
+        return namespace.get(node.id, getattr(builtins, node.id, None))
+
+    if isinstance(node, ast.Attribute):
+        return getattr(_lookup(node.value, namespace), node.attr, None)
+
+    return None
+
+
+def _is_field_metadata(node: ast.expr, namespace: dict[str, Any]) -> bool | None:
+    """Return whether an item of `Annotated` metadata is a `strawberry.field()`.
+
+    It's `None` when the item can't be evaluated yet, e.g. a helper that returns
+    a `strawberry.field()` called with names that aren't defined yet.
+    """
+    try:
+        # e.g. a helper that returns a `strawberry.field()`, or `relay.node()`
+        value = eval(ast.unparse(node), dict(namespace))  # noqa: S307
+    except Exception:  # noqa: BLE001
+        return None
+
+    return isinstance(value, StrawberryField)
+
+
+def _is_field_alias(value: object) -> bool:
+    """Return whether `value` is an alias like `Annotated[T, strawberry.field()]`."""
+    return get_origin(value) is Annotated and any(
+        isinstance(item, StrawberryField) for item in get_args(value)[1:]
+    )
+
+
+def _get_annotated_metadata(
+    node: ast.expr, namespace: dict[str, Any]
+) -> list[ast.expr] | None:
+    """Return the metadata of `node` when it's an `Annotated[...]` subscript."""
+    if (
+        isinstance(node, ast.Subscript)
+        and _lookup(node.value, namespace) is Annotated
+        and isinstance(node.slice, ast.Tuple)
+    ):
+        return node.slice.elts[1:]
+
+    return None
+
+
+def _check_unresolved_annotation(
+    cls: builtins.type, field_name: str, annotation: str, namespace: dict[str, Any]
+) -> None:
+    """Fail when the `strawberry.field()` options of an annotation can't be read.
+
+    Before Python 3.14, an annotation that uses names that aren't defined yet,
+    like a type defined further down the module, can't be evaluated when the
+    type is created. Its type is resolved when the schema is built, but the
+    options of a `strawberry.field()` in it, like permissions, would silently be
+    ignored, so this fails instead, including when an item of `Annotated` can't
+    be evaluated, as it could be a field.
+    """
+    try:
+        expression = ast.parse(annotation, mode="eval").body
+    except SyntaxError:
+        return
+
+    def unresolved() -> UnresolvedStrawberryFieldError:
+        names = set()
+
+        for node in ast.walk(expression):
+            if isinstance(node, ast.Name):
+                names.add(node.id)
+            # e.g. a quoted type, like `Annotated["Account", ...]`
+            elif isinstance(node, ast.Constant) and isinstance(node.value, str):
+                names.add(node.value)
+
+        undefined_names = {
+            name
+            for name in names
+            if name.isidentifier()
+            and name not in namespace
+            and not hasattr(builtins, name)
+        }
+
+        return UnresolvedStrawberryFieldError(
+            field_name=field_name, cls=cls, undefined_names=sorted(undefined_names)
+        )
+
+    # e.g. `Annotated[Account, strawberry.field(...)]`, or an alias with one like
+    # `AdminOnly[Account]`
+    metadata = _get_annotated_metadata(expression, namespace) or []
+
+    if any(_is_field_metadata(item, namespace) is not False for item in metadata) or (
+        isinstance(expression, ast.Subscript)
+        and _is_field_alias(_lookup(expression.value, namespace))
+    ):
+        raise unresolved()
+
+    # `strawberry.field()` is only allowed in the outermost `Annotated`, e.g. not
+    # in `list[Annotated[Account, strawberry.field()]]` or `list[AdminOnly[...]]`
+    for node in ast.walk(expression):
+        if node is expression or not isinstance(node, ast.Subscript):
+            continue
+
+        nested = [
+            _is_field_metadata(item, namespace)
+            for item in _get_annotated_metadata(node, namespace) or []
+        ]
+
+        if True in nested or _is_field_alias(_lookup(node.value, namespace)):
+            raise InvalidStrawberryFieldAnnotationError(field_name=field_name, cls=cls)
+
+        if None in nested:
+            raise unresolved()
 
 
 def _process_annotated_fields(cls: T) -> dict[str, StrawberryAnnotation]:
@@ -65,7 +181,20 @@ def _process_annotated_fields(cls: T) -> dict[str, StrawberryAnnotation]:
                         namespace=module_namespace,
                     ).evaluate()
             except (NameError, TypeError):
-                continue
+                try:
+                    # like when the schema is built, e.g. for a quoted type with
+                    # `strawberry.lazy()`, or a field named like the type it uses
+                    annotation = StrawberryAnnotation(
+                        raw_annotation,
+                        namespace=module_namespace,
+                    ).evaluate()
+                except (NameError, TypeError):
+                    # the type is resolved when the schema is built, but the
+                    # options of a `strawberry.field()` in it would be lost
+                    _check_unresolved_annotation(
+                        cls, field_name, raw_annotation, module_namespace
+                    )
+                    continue
         else:
             annotation = raw_annotation
 

@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import sys
+from datetime import date
 from enum import Enum
-from typing import TYPE_CHECKING, Annotated, Any
+from typing import TYPE_CHECKING, Annotated, Any, TypeVar
 
 import pytest
 
@@ -11,7 +12,7 @@ from strawberry.exceptions import (
     InvalidStrawberryFieldAnnotationError,
     MultipleStrawberryFieldsError,
     PrivateStrawberryFieldError,
-    UnresolvedFieldTypeError,
+    UnresolvedStrawberryFieldError,
 )
 from strawberry.extensions import FieldExtension
 from strawberry.permission import BasePermission, PermissionExtension
@@ -21,6 +22,7 @@ from strawberry.types.lazy_type import LazyType
 
 if TYPE_CHECKING:
     from tests.schema.test_lazy.type_c import TypeC
+    from tests.schema.test_lazy.type_c import TypeC as NotDefinedYet
     from tests.schema.test_lazy.type_c import TypeC as UnresolvableType
 
 
@@ -49,6 +51,14 @@ ConfiguredName = Annotated[
     ),
 ]
 Tags = Annotated[list[str], strawberry.field(default_factory=list)]
+
+T = TypeVar("T")
+Described = Annotated[T, strawberry.field(description="Described")]
+DESCRIBED = strawberry.field(description="Described")
+
+# Python 3.14 evaluates the annotations of types defined later partially, so
+# their `strawberry.field()` options can be read
+READS_OPTIONS_OF_LATER_TYPES = sys.version_info >= (3, 14)
 
 
 @strawberry.type
@@ -267,16 +277,8 @@ def test_nested_annotated_field_with_later_forward_reference_raises_error():
         globals().pop("LaterWithNestedField", None)
 
 
-def test_nested_annotated_field_with_unresolvable_type_raises_unresolved_error():
-    if sys.version_info >= (3, 14):
-        with pytest.raises(InvalidStrawberryFieldAnnotationError):
-
-            @strawberry.type
-            class Query:
-                values: list[
-                    Annotated[UnresolvableType, strawberry.field(description="Nested")]
-                ]
-    else:
+def test_nested_annotated_field_with_unresolvable_type_raises_error():
+    with pytest.raises(InvalidStrawberryFieldAnnotationError):
 
         @strawberry.type
         class Query:
@@ -284,21 +286,229 @@ def test_nested_annotated_field_with_unresolvable_type_raises_unresolved_error()
                 Annotated[UnresolvableType, strawberry.field(description="Nested")]
             ]
 
-        with pytest.raises(UnresolvedFieldTypeError):
-            strawberry.Schema(query=Query)
+
+def test_field_options_with_a_type_only_imported_for_type_checking():
+    def create_type() -> type:
+        @strawberry.type
+        class Query:
+            values: Annotated[
+                list[NotDefinedYet],
+                strawberry.field(description="The list field"),
+            ]
+
+        return Query
+
+    if not READS_OPTIONS_OF_LATER_TYPES:
+        with pytest.raises(
+            UnresolvedStrawberryFieldError,
+            match=(
+                r"The `strawberry.field\(\)` options of field `values` on type "
+                r"`Query` can't be read, because `NotDefinedYet` isn't defined yet"
+            ),
+        ):
+            create_type()
+
+        return
+
+    field = get_object_definition(create_type(), strict=True).fields[0]
+
+    assert field.description == "The list field"
 
 
-def test_field_owned_metadata_with_unresolved_forward_reference_is_not_rejected():
+def test_field_options_with_strawberry_lazy_are_read():
     @strawberry.type
     class Query:
-        values: Annotated[
-            list[TypeC],
-            strawberry.field(description="The list field"),
+        value: Annotated[
+            TypeC,
+            strawberry.lazy("tests.schema.test_lazy.type_c"),
+            strawberry.field(description="The value"),
         ]
 
-    field = get_object_definition(Query).fields[0]
+    field = get_object_definition(Query, strict=True).fields[0]
 
-    assert field.python_name == "values"
+    assert field.description == "The value"
+    assert isinstance(field.type, LazyType)
+    assert field.type.resolve_type().__name__ == "TypeC"
+
+
+skip_if_options_of_later_types_are_read = pytest.mark.skipif(
+    READS_OPTIONS_OF_LATER_TYPES,
+    reason="Python 3.14 reads the options of types defined later",
+)
+
+
+@skip_if_options_of_later_types_are_read
+def test_permissions_on_a_type_not_defined_yet_raise_error():
+    # `NotDefinedYet` is only imported for type checking, like a type defined later
+    with pytest.raises(
+        UnresolvedStrawberryFieldError,
+        match=(
+            r"The `strawberry.field\(\)` options of field `value` on type `Query` "
+            r"can't be read, because `NotDefinedYet` isn't defined yet"
+        ),
+    ):
+
+        @strawberry.type
+        class Query:
+            value: Annotated[
+                NotDefinedYet, strawberry.field(permission_classes=[AllowAll])
+            ]
+
+
+@skip_if_options_of_later_types_are_read
+def test_shared_field_on_a_type_not_defined_yet_raises_error():
+    with pytest.raises(UnresolvedStrawberryFieldError):
+
+        @strawberry.type
+        class Query:
+            value: Annotated[NotDefinedYet, DESCRIBED]
+
+
+@skip_if_options_of_later_types_are_read
+def test_annotated_alias_on_a_type_not_defined_yet_raises_error():
+    with pytest.raises(UnresolvedStrawberryFieldError):
+
+        @strawberry.type
+        class Query:
+            value: Described[NotDefinedYet]
+
+
+@skip_if_options_of_later_types_are_read
+def test_federation_field_on_a_type_not_defined_yet_raises_error():
+    with pytest.raises(UnresolvedStrawberryFieldError):
+
+        @strawberry.type
+        class Query:
+            value: Annotated[NotDefinedYet, strawberry.federation.field(shareable=True)]
+
+
+def admin_only() -> Any:
+    return strawberry.field(permission_classes=[AllowAll])
+
+
+def with_permission(permission: Any) -> Any:
+    return strawberry.field(permission_classes=[permission])
+
+
+@skip_if_options_of_later_types_are_read
+def test_field_from_a_helper_on_a_type_not_defined_yet_raises_error():
+    with pytest.raises(UnresolvedStrawberryFieldError):
+
+        @strawberry.type
+        class Query:
+            value: Annotated[NotDefinedYet, admin_only()]
+
+
+@skip_if_options_of_later_types_are_read
+def test_field_from_a_helper_using_names_not_defined_yet_raises_error():
+    # the helper can't be called yet, so it could return a `strawberry.field()`
+    with pytest.raises(
+        UnresolvedStrawberryFieldError,
+        match=r"because `NotDefinedYet` isn't defined yet",
+    ):
+
+        @strawberry.type
+        class Query:
+            value: Annotated[NotDefinedYet, with_permission(NotDefinedYet)]
+
+
+@skip_if_options_of_later_types_are_read
+def test_nested_annotated_alias_on_a_type_not_defined_yet_raises_error():
+    with pytest.raises(InvalidStrawberryFieldAnnotationError):
+
+        @strawberry.type
+        class Query:
+            values: list[Described[NotDefinedYet]]
+
+
+@skip_if_options_of_later_types_are_read
+def test_self_reference_with_field_options_raises_error():
+    with pytest.raises(
+        UnresolvedStrawberryFieldError,
+        match=r"because `SelfReference` isn't defined yet",
+    ):
+
+        @strawberry.type
+        class SelfReference:
+            parent: Annotated[
+                SelfReference | None, strawberry.field(description="The parent")
+            ] = None
+
+
+def test_field_options_as_the_default_of_a_type_not_defined_yet():
+    global Tree
+
+    try:
+
+        @strawberry.type
+        class Tree:
+            parent: Tree | None = strawberry.field(
+                description="The parent", default=None
+            )
+
+        field = get_object_definition(Tree, strict=True).fields[0]
+
+        assert field.description == "The parent"
+        assert "parent: Tree" in str(strawberry.Schema(query=Tree))
+    finally:
+        globals().pop("Tree", None)
+
+
+def test_quoted_lazy_type_with_field_options():
+    @strawberry.type
+    class Query:
+        value: Annotated[
+            "TypeC",  # noqa: UP037
+            strawberry.lazy("tests.schema.test_lazy.type_c"),
+            strawberry.field(description="The value"),
+        ]
+
+    field = get_object_definition(Query, strict=True).fields[0]
+
+    assert field.description == "The value"
+    assert field.type.resolve_type().__name__ == "TypeC"
+
+
+def test_fields_named_like_the_types_they_use_are_not_rejected():
+    @strawberry.type
+    class Event:
+        @strawberry.field
+        def date(self) -> date:
+            return date(2026, 1, 1)
+
+        previous: date | None = None
+
+    schema = strawberry.Schema(query=Event)
+
+    assert "previous: Date" in str(schema)
+    assert schema.execute_sync("{ date previous }", root_value=Event()).data == {
+        "date": "2026-01-01",
+        "previous": None,
+    }
+
+
+def test_types_not_defined_yet_without_field_options_are_not_rejected():
+    global LaterWithoutOptions
+
+    try:
+
+        @strawberry.type
+        class Query:
+            value: LaterWithoutOptions
+            optional: LaterWithoutOptions | None = None
+            values: list[LaterWithoutOptions] = strawberry.field(default_factory=list)
+
+        @strawberry.type
+        class LaterWithoutOptions:
+            name: str
+
+        schema = strawberry.Schema(query=Query)
+
+        assert "value: LaterWithoutOptions!" in str(schema)
+        assert "optional: LaterWithoutOptions" in str(schema)
+        assert "values: [LaterWithoutOptions!]!" in str(schema)
+    finally:
+        globals().pop("LaterWithoutOptions", None)
 
 
 def test_nested_lazy_metadata_is_preserved():
@@ -317,7 +527,7 @@ def test_nested_lazy_metadata_is_preserved():
 
 
 @pytest.mark.skipif(
-    sys.version_info < (3, 14),
+    not READS_OPTIONS_OF_LATER_TYPES,
     reason="partial forward-reference evaluation requires Python 3.14",
 )
 def test_annotated_field_with_unresolved_forward_reference():
