@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Annotated, Any, get_args, get_origin
+from collections import abc
+from typing import TYPE_CHECKING, Annotated, Any, TypeGuard, get_args, get_origin
 
 from pydantic import (
     AliasChoices,
@@ -36,6 +37,11 @@ if TYPE_CHECKING:
 # Annotations that make pydantic validate a field without validating its model
 _NOT_VALIDATED_AS_MODEL = (InstanceOf, PlainValidator, SkipValidation)
 
+# Generics Strawberry exposes as GraphQL lists (see `StrawberryAnnotation._is_list`)
+# whose items pydantic validates as their type. Subclasses of `list` are GraphQL
+# lists too, but pydantic only validates their items with a core schema they define
+_LIST_ORIGINS = (list, tuple, abc.Sequence)
+
 
 def _skips_model_validation(metadata: object) -> bool:
     # `SkipValidation` and `InstanceOf` also work as bare classes, as in
@@ -62,7 +68,9 @@ def _is_validated_as(annotation: Any, model: type[BaseModel]) -> bool:
 
         return len(types) == 1 and _is_validated_as(types[0], model)
 
-    if origin in (list, tuple):
+    # pydantic validates the items of bare `typing.List` and `typing.Sequence`
+    # as `Any`
+    if origin in _LIST_ORIGINS and args:
         return _is_validated_as(args[0], model)
 
     return False
@@ -79,6 +87,36 @@ def _validates_field_as(field_info: FieldInfo | None, model: type[BaseModel]) ->
         and not any(_skips_model_validation(item) for item in field_info.metadata)
         and _is_validated_as(field_info.annotation, model)
     )
+
+
+def _is_nested_model(
+    type_: object, field_info: FieldInfo | None
+) -> TypeGuard[type[BaseModel]]:
+    """Return whether `type_` is a model pydantic validates as part of the field.
+
+    Values of nested models are passed to pydantic as data, so that they're
+    validated with the outermost model and all their errors are reported, with
+    their full location.
+    """
+    return (
+        isinstance(type_, type)
+        and issubclass(type_, BaseModel)
+        and _validates_field_as(field_info, type_)
+    )
+
+
+def _get_item_type(type_: StrawberryList) -> StrawberryType | type:
+    """Return the type of the innermost items of a list, e.g. of nested lists."""
+    item_type = type_.of_type
+
+    while isinstance(item_type, (StrawberryOptional, StrawberryList, LazyType)):
+        item_type = (
+            item_type.resolve_type()
+            if isinstance(item_type, LazyType)
+            else item_type.of_type
+        )
+
+    return item_type
 
 
 def _to_python_data(
@@ -123,6 +161,12 @@ def _to_python_value(
         return _to_python_value(value, type_.of_type, field_info, context, keys)
 
     if isinstance(type_, StrawberryList):
+        # only lists of nested models are converted item by item, other lists
+        # are converted at once like Strawberry does, which e.g. only copies
+        # lists of scalars
+        if not _is_nested_model(_get_item_type(type_), field_info):
+            return context.convert(value, type_, *keys)
+
         return [
             _to_python_value(item, type_.of_type, field_info, context, (*keys, index))
             for index, item in enumerate(value)
@@ -131,14 +175,7 @@ def _to_python_value(
     if isinstance(type_, LazyType):
         return _to_python_value(value, type_.resolve_type(), field_info, context, keys)
 
-    # nested models are validated with the outermost one, so that all their
-    # errors are reported, with their full location
-    if (
-        isinstance(type_, type)
-        and issubclass(type_, BaseModel)
-        and not isinstance(value, type_)
-        and _validates_field_as(field_info, type_)
-    ):
+    if _is_nested_model(type_, field_info) and not isinstance(value, type_):
         return _to_python_data(type_, value, context, keys)
 
     return context.convert(value, type_, *keys)

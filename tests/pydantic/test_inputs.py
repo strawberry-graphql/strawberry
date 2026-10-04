@@ -1,9 +1,13 @@
+from enum import Enum
 from typing import Annotated, Optional
 
 import pydantic
 from inline_snapshot import snapshot
+from pytest_mock import MockerFixture
 
 import strawberry
+from strawberry import relay
+from strawberry.types.arguments import InputContext
 from strawberry.types.base import get_object_definition
 
 
@@ -794,3 +798,97 @@ def test_one_of_inputs():
     result = schema.execute_sync('{ user(by: {id: "1", email: "ada@example.com"}) }')
 
     assert result.errors
+
+
+def test_list_items_are_converted_like_in_strawberry_inputs():
+    @strawberry.enum
+    class Color(Enum):
+        RED = "red"
+        BLUE = "blue"
+
+    @strawberry.input
+    class TagInput:
+        name: str
+
+    @strawberry.pydantic.input
+    class FilterInput(pydantic.BaseModel):
+        colors: list[Color]
+        ids: list[relay.GlobalID]
+        scores: list[float | None]
+        grid: list[list[int]]
+        tags: list[TagInput]
+
+    received: list[FilterInput] = []
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def search(self, filter: FilterInput) -> bool:
+            received.append(filter)
+
+            return True
+
+    schema = strawberry.Schema(query=Query)
+
+    result = schema.execute_sync(
+        """
+        query ($filter: FilterInput!) {
+            search(filter: $filter)
+        }
+        """,
+        variable_values={
+            "filter": {
+                "colors": ["RED", "BLUE"],
+                "ids": [str(relay.GlobalID("Fruit", "1"))],
+                "scores": [0.5, None],
+                "grid": [[1, 2], [], [3]],
+                "tags": [{"name": "jam"}],
+            }
+        },
+    )
+
+    assert not result.errors
+    assert received == [
+        FilterInput(
+            colors=[Color.RED, Color.BLUE],
+            ids=[relay.GlobalID("Fruit", "1")],
+            scores=[0.5, None],
+            grid=[[1, 2], [], [3]],
+            tags=[TagInput(name="jam")],
+        )
+    ]
+
+
+def test_only_lists_of_nested_models_are_converted_item_by_item(
+    mocker: MockerFixture,
+):
+    @strawberry.pydantic.input
+    class ItemInput(pydantic.BaseModel):
+        quantity: int
+
+    @strawberry.pydantic.input
+    class OrderInput(pydantic.BaseModel):
+        ids: list[int]
+        items: list[ItemInput]
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def order(self, input: OrderInput) -> bool:
+            return True
+
+    schema = strawberry.Schema(query=Query)
+    convert = mocker.spy(InputContext, "convert")
+
+    result = schema.execute_sync(
+        "{ order(input: {ids: [1, 2, 3], items: [{quantity: 1}, {quantity: 2}]}) }"
+    )
+
+    assert not result.errors
+    # other lists are converted with a single call, which is a lot faster for
+    # long lists of scalars
+    assert [call.args[3:] for call in convert.call_args_list] == [
+        ("ids",),
+        ("items", 0, "quantity"),
+        ("items", 1, "quantity"),
+    ]

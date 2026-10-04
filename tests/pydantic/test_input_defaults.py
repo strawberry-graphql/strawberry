@@ -1,6 +1,8 @@
 import datetime
 import decimal
+import typing
 import uuid
+from collections.abc import Sequence
 from enum import Enum
 from typing import Annotated, Any
 from typing_extensions import Self
@@ -40,6 +42,7 @@ def test_constant_defaults_are_published():
         exact: bool = False
         size: Size = Size.SMALL
         tags: list[str] = ["new"]
+        labels: Sequence[str] = ["sale"]
 
     @strawberry.type
     class Query:
@@ -57,6 +60,7 @@ input SearchInput {
   exact: Boolean! = false
   size: Size! = SMALL
   tags: [String!]! = ["new"]
+  labels: [String!]! = ["sale"]
 }\
 """)
 
@@ -66,7 +70,7 @@ input SearchInput {
     assert result.data == {
         "search": (
             '{"query":"","page_size":20,"min_score":0.5,"exact":false,'
-            '"size":"small","tags":["new"]}'
+            '"size":"small","tags":["new"],"labels":["sale"]}'
         )
     }
 
@@ -345,6 +349,8 @@ def test_constants_of_other_types_are_applied_by_pydantic():
         # pydantic converts these values to the field type
         since: datetime.date = "2020-01-02"  # type: ignore[assignment]
         color: Color = "red"  # type: ignore[assignment]
+        # GraphQL passes a list, which pydantic doesn't convert to a tuple
+        labels: Sequence[str] = ("sale",)
 
     @strawberry.type
     class Query:
@@ -361,6 +367,7 @@ input EventInput {
   ratio: Float
   since: Date
   color: Color
+  labels: [String!]
 }\
 """)
 
@@ -403,6 +410,11 @@ def test_graphql_type_overrides_follow_the_same_rules():
             pydantic.Field(default_factory=dict)
         )
         limit: Annotated[int, strawberry.field(graphql_type=int)] = 10
+        # the type of the items of bare lists isn't known
+        tags: Annotated[
+            typing.List,  # noqa: UP006
+            strawberry.field(graphql_type=list[str]),
+        ] = ["new"]
 
     @strawberry.type
     class Query:
@@ -416,6 +428,7 @@ def test_graphql_type_overrides_follow_the_same_rules():
 input SettingsInput {
   extra: JSON
   limit: Int! = 10
+  tags: [String!]
 }\
 """)
 

@@ -1,3 +1,5 @@
+import typing
+from collections.abc import Sequence
 from typing import Annotated, Any
 
 import pydantic
@@ -8,8 +10,16 @@ import strawberry
 from strawberry.directive import DirectiveLocation, DirectiveValue
 from strawberry.pydantic import PydanticValidationErrorHandler, ValidationError
 
+# annotations that Strawberry exposes as GraphQL lists
+LIST_ANNOTATIONS = [
+    pytest.param(lambda item: list[item], id="list"),
+    pytest.param(lambda item: tuple[item, ...], id="tuple"),
+    pytest.param(lambda item: Sequence[item], id="sequence"),
+]
 
-def test_errors_of_nested_inputs_are_reported_together():
+
+@pytest.mark.parametrize("list_of", LIST_ANNOTATIONS)
+def test_errors_of_nested_inputs_are_reported_together(list_of: Any):
     @strawberry.pydantic.input
     class ItemInput(pydantic.BaseModel):
         quantity: int = pydantic.Field(gt=0)
@@ -21,7 +31,7 @@ def test_errors_of_nested_inputs_are_reported_together():
     @strawberry.pydantic.input
     class OrderInput(pydantic.BaseModel):
         customer: CustomerInput
-        items: list[ItemInput]
+        items: list_of(ItemInput)  # type: ignore[valid-type]
 
     @strawberry.type
     class Order:
@@ -79,7 +89,8 @@ def test_errors_of_nested_inputs_are_reported_together():
     )
 
 
-def test_validators_of_nested_inputs_run_once():
+@pytest.mark.parametrize("list_of", LIST_ANNOTATIONS)
+def test_validators_of_nested_inputs_run_once(list_of: Any):
     calls: list[int] = []
 
     @strawberry.pydantic.input
@@ -94,7 +105,7 @@ def test_validators_of_nested_inputs_run_once():
 
     @strawberry.pydantic.input
     class OrderInput(pydantic.BaseModel):
-        items: list[ItemInput]
+        items: list_of(ItemInput)  # type: ignore[valid-type]
 
     @strawberry.type
     class Query:
@@ -305,6 +316,56 @@ def test_nested_inputs_not_validated_as_their_model_are_built_first(annotation: 
     assert result.errors[0].message.startswith("Invalid input: input.item.quantity:")
 
 
+def test_inputs_in_lists_that_are_built_first_have_their_location():
+    @strawberry.pydantic.input
+    class ItemInput(pydantic.BaseModel):
+        quantity: int = pydantic.Field(gt=0)
+
+    @strawberry.input
+    class LineInput:
+        item: ItemInput
+
+    @strawberry.pydantic.input
+    class OrderInput(pydantic.BaseModel):
+        lines: list[LineInput] = []
+        extras: list[Annotated[ItemInput, pydantic.SkipValidation]] = []
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def order(self, input: OrderInput) -> list[str]:
+            return [repr(line.item) for line in input.lines] + [
+                repr(extra) for extra in input.extras
+            ]
+
+    schema = strawberry.Schema(query=Query)
+
+    result = schema.execute_sync(
+        "{ order(input: {lines: [{item: {quantity: 1}}], extras: [{quantity: 2}]}) }"
+    )
+
+    assert not result.errors
+    assert result.data == {"order": ["ItemInput(quantity=1)", "ItemInput(quantity=2)"]}
+
+    result = schema.execute_sync(
+        "{ order(input: {lines: [{item: {quantity: 1}}, {item: {quantity: 0}}]}) }"
+    )
+
+    assert result.errors
+    assert result.errors[0].message.startswith(
+        "Invalid input: input.lines.1.item.quantity:"
+    )
+
+    result = schema.execute_sync(
+        "{ order(input: {extras: [{quantity: 1}, {quantity: 0}]}) }"
+    )
+
+    assert result.errors
+    assert result.errors[0].message.startswith(
+        "Invalid input: input.extras.1.quantity:"
+    )
+
+
 def test_nested_inputs_with_a_different_graphql_type_are_built_first():
     @strawberry.pydantic.input
     class AddressInput(pydantic.BaseModel):
@@ -337,6 +398,44 @@ def test_nested_inputs_with_a_different_graphql_type_are_built_first():
 
     assert result.errors
     assert result.errors[0].message.startswith("Invalid input: input.address.zip:")
+
+
+@pytest.mark.parametrize(
+    "annotation",
+    [typing.List, typing.Sequence],  # noqa: UP006
+    ids=["list", "sequence"],
+)
+def test_nested_inputs_in_untyped_lists_are_built_first(annotation: Any):
+    @strawberry.pydantic.input
+    class ItemInput(pydantic.BaseModel):
+        quantity: int = pydantic.Field(gt=0)
+
+    @strawberry.pydantic.input
+    class OrderInput(pydantic.BaseModel):
+        # pydantic validates the items of bare lists as `Any`
+        items: Annotated[  # type: ignore[valid-type]
+            annotation, strawberry.field(graphql_type=list[ItemInput])
+        ]
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def order(self, input: OrderInput) -> str:
+            return repr(input.items)
+
+    schema = strawberry.Schema(query=Query)
+
+    result = schema.execute_sync("{ order(input: {items: [{quantity: 1}]}) }")
+
+    assert not result.errors
+    assert result.data == {"order": "[ItemInput(quantity=1)]"}
+
+    result = schema.execute_sync(
+        "{ order(input: {items: [{quantity: 1}, {quantity: 0}]}) }"
+    )
+
+    assert result.errors
+    assert result.errors[0].message.startswith("Invalid input: input.items.1.quantity:")
 
 
 def test_undecorated_subclasses_are_validated_as_themselves():

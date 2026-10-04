@@ -13,6 +13,7 @@ import math
 import sys
 import types
 import uuid
+from collections import abc
 from decimal import Decimal
 from enum import Enum
 from typing import (
@@ -213,8 +214,15 @@ def _is_constant_of_type(value: object, annotation: Any) -> bool:
 
         return len(types) == 1 and _is_constant_of_type(value, types[0])
 
-    if origin is list or (origin is tuple and args[1:] == (Ellipsis,)):
-        return isinstance(value, (list, tuple)) and all(
+    # bare `typing.List` and `typing.Sequence` don't have an item type
+    if args and (
+        origin in (list, abc.Sequence) or (origin is tuple and args[1:] == (Ellipsis,))
+    ):
+        # GraphQL passes lists, which pydantic keeps as they are for sequences, so
+        # a tuple default of a sequence would reach resolvers as a list
+        containers = list if origin is abc.Sequence else (list, tuple)
+
+        return isinstance(value, containers) and all(
             _is_constant_of_type(item, args[0]) for item in value
         )
 
