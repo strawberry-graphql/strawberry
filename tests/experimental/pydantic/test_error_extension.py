@@ -1,3 +1,6 @@
+import sys
+
+import pytest
 from pydantic import BaseModel, Field
 
 import strawberry
@@ -19,6 +22,10 @@ class UserInput:
 @strawberry.type
 class Query:
     hello: str = "hi"
+
+    @strawberry.field
+    def fail(self) -> str:
+        raise ValueError("failed")
 
 
 @strawberry.type
@@ -73,3 +80,31 @@ def test_multiple_validation_errors():
     assert "age" in fields
     assert "score" in fields
     assert len(errors) == 2
+
+
+def test_successful_operations_are_left_alone():
+    result = schema.execute_sync("{ hello }", root_value=Query())
+
+    assert result.errors is None
+    assert result.data == {"hello": "hi"}
+
+
+def test_other_errors_are_left_alone():
+    result = schema.execute_sync("{ fail }")
+
+    assert result.errors is not None
+    assert "validation_errors" not in (result.errors[0].extensions or {})
+
+
+def test_errors_are_left_alone_when_pydantic_was_never_imported(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    # the extension looks pydantic up in sys.modules instead of importing it, so a
+    # `None` entry there makes it behave like in an app that never imported pydantic
+    monkeypatch.setitem(sys.modules, "pydantic", None)
+
+    result = schema.execute_sync("{ fail }")
+
+    assert result.errors is not None
+    assert result.errors[0].message == "failed"
+    assert "validation_errors" not in (result.errors[0].extensions or {})
