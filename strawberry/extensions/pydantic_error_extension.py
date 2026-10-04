@@ -20,11 +20,7 @@ class PydanticErrorExtension(SchemaExtension):
 
         # an import (unlike reading sys.modules) waits for pydantic to be fully
         # initialized when another thread is still importing it
-        try:
-            from pydantic import ValidationError
-        except ImportError:
-            # e.g. a stub of pydantic, which can't have raised these errors
-            return
+        from pydantic import ValidationError
 
         for error in result.errors:
             original_error = getattr(error, "original_error", None)

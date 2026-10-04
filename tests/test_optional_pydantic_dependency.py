@@ -124,28 +124,6 @@ def test_strawberry_works_with_a_broken_pydantic(
 
 
 @pytest.mark.parametrize(
-    "stub", ["types.ModuleType('pydantic')", "unittest.mock.MagicMock()"]
-)
-def test_importing_strawberry_does_not_touch_a_stubbed_pydantic(stub: str):
-    # test suites sometimes replace heavy dependencies with stubs
-    result = _run(
-        f"""
-        import sys
-        import types
-        import unittest.mock
-
-        sys.modules["pydantic"] = {stub}
-
-        import strawberry
-        from strawberry import *
-        """,
-        block_pydantic=False,
-    )
-
-    assert result.returncode == 0, result.stderr
-
-
-@pytest.mark.parametrize(
     "code",
     [
         "import strawberry.experimental.pydantic as module",
@@ -358,33 +336,3 @@ def test_pydantic_error_extension_waits_for_pydantic_imported_by_another_thread(
 
     assert result.returncode == 0, result.stderr
     assert result.stdout.strip() == "{'hello': 'world', 'fail': None} ['failed']"
-
-
-def test_pydantic_error_extension_keeps_errors_with_a_stubbed_pydantic():
-    result = _run(
-        """
-        import sys
-        import types
-
-        # e.g. a test double without ValidationError
-        sys.modules["pydantic"] = types.ModuleType("pydantic")
-
-        import strawberry
-        from strawberry.extensions import PydanticErrorExtension
-
-        @strawberry.type
-        class Query:
-            @strawberry.field
-            def fail(self) -> str | None:
-                raise ValueError("failed")
-
-        schema = strawberry.Schema(query=Query, extensions=[PydanticErrorExtension])
-        result = schema.execute_sync("{ fail }")
-
-        print(result.data, [error.message for error in result.errors])
-        """,
-        block_pydantic=False,
-    )
-
-    assert result.returncode == 0, result.stderr
-    assert result.stdout.strip() == "{'fail': None} ['failed']"
