@@ -1,30 +1,29 @@
+import sys
 from collections.abc import Iterator
 
 from strawberry.extensions.base_extension import SchemaExtension
-
-try:
-    from pydantic import ValidationError as PydanticValidationError
-
-    _PYDANTIC_AVAILABLE = True
-except ImportError:
-    _PYDANTIC_AVAILABLE = False
 
 
 class PydanticErrorExtension(SchemaExtension):
     def on_operation(self) -> Iterator[None]:
         yield
 
-        if not _PYDANTIC_AVAILABLE:
-            return
-
         result = self.execution_context.result
         if not result or not result.errors:
             return
 
+        # pydantic is optional and slow to import, so we don't import it unless
+        # something else already did: if it was never imported, none of the
+        # errors can be a pydantic ValidationError
+        if sys.modules.get("pydantic") is None:
+            return
+
+        from pydantic import ValidationError
+
         for error in result.errors:
             original_error = getattr(error, "original_error", None)
 
-            if not isinstance(original_error, PydanticValidationError):
+            if not isinstance(original_error, ValidationError):
                 continue
 
             formatted = [
