@@ -1,6 +1,28 @@
 CHANGELOG
 =========
 
+0.331.6 - 2026-10-05
+--------------------
+
+This release fixes some errors in client input not being reported as
+`StrawberryInputCoercionError`, the exception Strawberry uses for invalid input
+values, so that error handling, like `MaskErrors`, can tell them apart from
+server errors:
+
+- `null` for a `strawberry.Maybe` field or argument that doesn't accept it,
+  whether it's sent in the query or in variables;
+- a relay `GlobalID` that can't be parsed, which raises the new
+  `strawberry.relay.InvalidGlobalIDError`. It's also a `GlobalIDValueError`, so
+  code that handles that keeps working, and its message is now
+  `Value cannot represent a GlobalID: "...".`, like the built-in scalars,
+  instead of the base64 or UTF-8 decoding error.
+
+The other messages are unchanged. As these errors are now `GraphQLError`s,
+exception handlers registered for `StrawberryGraphQLError` or `GraphQLError`
+also handle invalid `GlobalID` arguments, like other input errors.
+
+This release was contributed by [@patrick91](https://github.com/patrick91) in [#4675](https://github.com/strawberry-graphql/strawberry/pull/4675)
+
 0.331.5 - 2026-10-05
 --------------------
 
