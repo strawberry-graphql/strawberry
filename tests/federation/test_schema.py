@@ -7,6 +7,8 @@ from graphql import build_schema
 
 import strawberry
 from strawberry.federation.types import FieldSet, LinkImport, LinkPurpose
+from strawberry.schema.config import StrawberryConfig
+from strawberry.schema.name_converter import HasGraphQLName, NameConverter
 from strawberry.schema_directive import Location
 
 
@@ -329,6 +331,188 @@ def test_service():
     """
 
     assert result.data == {"_service": {"sdl": textwrap.dedent(sdl).strip()}}
+
+
+def test_query_fields_named_like_federation_resolvers_are_kept():
+    @strawberry.federation.type(keys=["id"])
+    class Product:
+        id: strawberry.ID
+
+    @strawberry.type
+    class Query:
+        product: Product
+
+        @strawberry.field
+        def service(self) -> str:
+            return "service"
+
+        @strawberry.field
+        def entities_resolver(self) -> str:
+            return "entities"
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        schema = strawberry.federation.Schema(query=Query)
+
+    expected = """
+        type Query {
+          _entities(representations: [_Any!]!): [_Entity]!
+          _service: _Service!
+          product: Product!
+          service: String!
+          entitiesResolver: String!
+        }
+    """
+
+    assert textwrap.dedent(expected).strip() in str(schema)
+
+    result = schema.execute_sync("{ service entitiesResolver }")
+
+    assert not result.errors
+    assert result.data == {"service": "service", "entitiesResolver": "entities"}
+
+
+def test_query_fields_with_federation_python_names_are_kept():
+    @strawberry.federation.type(keys=["id"])
+    class Product:
+        id: strawberry.ID
+
+    @strawberry.type
+    class Query:
+        product: Product
+
+        @strawberry.field(name="serviceInfo")
+        def _service(self) -> str:
+            return "service"
+
+        @strawberry.field(name="entitiesInfo")
+        def _entities(self) -> str:
+            return "entities"
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        schema = strawberry.federation.Schema(query=Query)
+
+    expected = """
+        type Query {
+          _entities(representations: [_Any!]!): [_Entity]!
+          _service: _Service!
+          product: Product!
+          serviceInfo: String!
+          entitiesInfo: String!
+        }
+    """
+
+    assert textwrap.dedent(expected).strip() in str(schema)
+
+    result = schema.execute_sync("{ serviceInfo entitiesInfo }")
+
+    assert not result.errors
+    assert result.data == {"serviceInfo": "service", "entitiesInfo": "entities"}
+
+
+def test_query_can_define_its_own_service_field():
+    @strawberry.type(name="_Service")
+    class CustomService:
+        sdl: str
+
+    @strawberry.type
+    class Query:
+        hello: str
+
+        @strawberry.field(name="_service")
+        def custom_service(self) -> CustomService:
+            return CustomService(sdl="custom sdl")
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        schema = strawberry.federation.Schema(query=Query)
+
+    result = schema.execute_sync("{ _service { sdl } }")
+
+    assert not result.errors
+    assert result.data == {"_service": {"sdl": "custom sdl"}}
+
+
+def test_query_can_define_its_own_service_and_entities_fields():
+    @strawberry.federation.type(keys=["id"])
+    class Product:
+        id: strawberry.ID
+
+    @strawberry.type(name="_Service")
+    class CustomService:
+        sdl: str
+
+    @strawberry.type
+    class Query:
+        product: Product
+
+        @strawberry.field(name="_service")
+        def custom_service(self) -> CustomService:
+            return CustomService(sdl="custom sdl")
+
+        @strawberry.field(name="_entities")
+        def custom_entities(self) -> list[Product]:
+            return [Product(id=strawberry.ID("1"))]
+
+    schema = strawberry.federation.Schema(query=Query)
+
+    expected = """
+        schema @link(url: "https://specs.apollo.dev/federation/v2.11", import: ["@key"]) {
+          query: Query
+        }
+
+        type Product @key(fields: "id") {
+          id: ID!
+        }
+
+        type Query {
+          product: Product!
+          _service: _Service!
+          _entities: [Product!]!
+        }
+
+        scalar _Any
+
+        type _Service {
+          sdl: String!
+        }
+    """
+
+    assert str(schema) == textwrap.dedent(expected).strip()
+
+    result = schema.execute_sync("{ _service { sdl } _entities { id } }")
+
+    assert not result.errors
+    assert result.data == {
+        "_service": {"sdl": "custom sdl"},
+        "_entities": [{"id": "1"}],
+    }
+
+
+def test_query_fields_are_matched_with_the_name_converter():
+    class UpperCaseNameConverter(NameConverter):
+        def get_graphql_name(self, obj: HasGraphQLName) -> str:
+            return super().get_graphql_name(obj).upper()
+
+    @strawberry.type(name="_Service")
+    class CustomService:
+        sdl: str
+
+    @strawberry.type
+    class Query:
+        @strawberry.field(name="_service")
+        def custom_service(self) -> CustomService:
+            return CustomService(sdl="custom sdl")
+
+    schema = strawberry.federation.Schema(
+        query=Query, config=StrawberryConfig(name_converter=UpperCaseNameConverter())
+    )
+
+    result = schema.execute_sync("{ _SERVICE { SDL } }")
+
+    assert not result.errors
+    assert result.data == {"_SERVICE": {"SDL": "custom sdl"}}
 
 
 def test_using_generics():
