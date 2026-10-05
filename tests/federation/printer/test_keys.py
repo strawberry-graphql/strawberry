@@ -13,7 +13,13 @@ def test_keys_federation_2():
     class User:
         username: str
 
-    @strawberry.federation.type(keys=[Key(fields="upc", resolvable=True)], extend=True)
+    @strawberry.federation.type(
+        keys=[
+            Key(fields="upc", resolvable=True),
+            Key(fields="upc", resolvable=False),
+        ],
+        extend=True,
+    )
     class Product:
         upc: str = strawberry.federation.field(external=True)
         reviews: list["Review"]
@@ -37,7 +43,7 @@ def test_keys_federation_2():
           query: Query
         }
 
-        extend type Product @key(fields: "upc", resolvable: true) {
+        extend type Product @key(fields: "upc", resolvable: true) @key(fields: "upc", resolvable: false) {
           upc: String! @external
           reviews: [Review!]!
         }
