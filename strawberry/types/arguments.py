@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import dataclasses
 import inspect
+from dataclasses import MISSING
 from typing import (
     TYPE_CHECKING,
     Annotated,
@@ -321,7 +322,18 @@ def convert_argument(
                 ),
             )
 
-        kwargs = {}
+        kwargs: dict[str, object | None] = {}
+        if type_definition.is_input:
+            # Set an implicit default of None for all input fields so that we can construct
+            # input types with nullable fields that don't specify explicit default values.
+            # graphql-core should already have validated that all non-nullable (required)
+            # input fields are present in value, so those None values will be overwritten
+            # by the loop below.
+            kwargs = {
+                field.python_name: None
+                for field in type_definition.fields
+                if field.default_value is MISSING and field.default_factory is MISSING
+            }
 
         for field in type_definition.fields:
             value = cast("Mapping", value)
