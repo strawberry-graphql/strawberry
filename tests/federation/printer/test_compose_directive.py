@@ -223,3 +223,52 @@ def test_composes_directives_attached_to_arguments():
     """
 
     assert schema.as_str() == textwrap.dedent(expected_type).strip()
+
+
+def test_composes_each_directive_once_when_applied_multiple_times():
+    @strawberry.federation.schema_directive(
+        locations=[Location.FIELD_DEFINITION], repeatable=True, compose=True
+    )
+    class Tag:
+        name: str
+
+    @strawberry.federation.schema_directive(
+        locations=[Location.FIELD_DEFINITION], name="cacheControl", compose=True
+    )
+    class CacheControl:
+        max_age: int
+
+    @strawberry.type
+    class Query:
+        a: str = strawberry.field(directives=[Tag(name="x")])
+        b: str = strawberry.field(directives=[Tag(name="y"), CacheControl(max_age=20)])
+        c: str = strawberry.field(directives=[Tag(name="x"), Tag(name="z")])
+        d: str = strawberry.field(directives=[CacheControl(max_age=10)])
+
+    schema = strawberry.federation.Schema(query=Query)
+
+    expected_type = """
+    directive @cacheControl(maxAge: Int!) on FIELD_DEFINITION
+
+    directive @tag(name: String!) repeatable on FIELD_DEFINITION
+
+    schema @composeDirective(name: "@tag") @composeDirective(name: "@cacheControl") @link(url: "https://directives.strawberry.rocks/tag/v0.1", import: ["@tag"]) @link(url: "https://directives.strawberry.rocks/cacheControl/v0.1", import: ["@cacheControl"]) @link(url: "https://specs.apollo.dev/federation/v2.11", import: ["@composeDirective"]) {
+      query: Query
+    }
+
+    type Query {
+      _service: _Service!
+      a: String! @tag(name: "x")
+      b: String! @tag(name: "y") @cacheControl(maxAge: 20)
+      c: String! @tag(name: "x") @tag(name: "z")
+      d: String! @cacheControl(maxAge: 10)
+    }
+
+    scalar _Any
+
+    type _Service {
+      sdl: String!
+    }
+    """
+
+    assert schema.as_str() == textwrap.dedent(expected_type).strip()
