@@ -144,7 +144,6 @@ class Schema(BaseSchema):
         """
         import strawberry
         from strawberry.tools.create_type import create_type
-        from strawberry.tools.merge_types import merge_types
 
         @strawberry.type(name="_Service")
         class Service:
@@ -199,13 +198,14 @@ class Schema(BaseSchema):
         if fields:
             bases = (create_type(name="Query", fields=fields), query)
 
-        query_type = merge_types("Query", bases)
-
-        # TODO: this should be probably done in merge_types
-        if query_definition.extend:
-            query_type.__strawberry_definition__.extend = True  # type: ignore
-
-        return query_type
+        # Subclassing merges the fields, but the type's description, directives
+        # and extend flag have to be passed on, or they'd be lost
+        return strawberry.type(
+            type("Query", bases, {}),
+            description=query_definition.description,
+            directives=query_definition.directives,
+            extend=query_definition.extend,
+        )
 
     def entities_resolver(
         self, info: Info, representations: list[FederationAny]
@@ -333,6 +333,7 @@ class Schema(BaseSchema):
         from .schema_directives import ComposeDirective
 
         compose_directives: list[ComposeDirective] = []
+        composed_names: set[str] = set()
 
         for directive in self.schema_directives_in_use:
             definition = directive.__strawberry_directive__  # type: ignore
@@ -344,6 +345,12 @@ class Schema(BaseSchema):
             if is_federation_schema_directive and definition.compose_options:
                 name = self.config.name_converter.from_directive(definition)
 
+                # schema_directives_in_use has one entry per application, but
+                # each directive only needs to be composed once
+                if name in composed_names:
+                    continue
+
+                composed_names.add(name)
                 compose_directives.append(
                     ComposeDirective(
                         name=f"@{name}",

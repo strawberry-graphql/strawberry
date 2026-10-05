@@ -635,6 +635,46 @@ def test_can_create_schema_without_query():
     )
 
 
+def test_keeps_description_and_directives_of_query_type():
+    @strawberry.federation.schema_directive(
+        locations=[Location.OBJECT], name="cacheControl", compose=True
+    )
+    class CacheControl:
+        max_age: int
+
+    @strawberry.federation.type(
+        description="The root query",
+        shareable=True,
+        directives=[CacheControl(max_age=10)],
+    )
+    class Query:
+        hello: str
+
+    schema = strawberry.federation.Schema(query=Query)
+
+    expected = '''
+        directive @cacheControl(maxAge: Int!) on OBJECT
+
+        schema @composeDirective(name: "@cacheControl") @link(url: "https://directives.strawberry.rocks/cacheControl/v0.1", import: ["@cacheControl"]) @link(url: "https://specs.apollo.dev/federation/v2.11", import: ["@composeDirective", "@shareable"]) {
+          query: Query
+        }
+
+        """The root query"""
+        type Query @cacheControl(maxAge: 10) @shareable {
+          _service: _Service!
+          hello: String!
+        }
+
+        scalar _Any
+
+        type _Service {
+          sdl: String!
+        }
+    '''
+
+    assert str(schema) == textwrap.dedent(expected).strip()
+
+
 def test_federation_schema_warning():
     @strawberry.federation.type(keys=["upc"])
     class ProductFed:
