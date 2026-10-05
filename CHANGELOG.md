@@ -1,6 +1,46 @@
 CHANGELOG
 =========
 
+0.331.5 - 2026-10-05
+--------------------
+
+This release fixes two issues with how federation schemas print the root
+`Query` type and composed directives.
+
+The description and directives of the `Query` type were dropped, because
+`strawberry.federation.Schema` rebuilds that type to add the `_service` and
+`_entities` fields. Directives like `@shareable` and composed custom directives
+on `Query` are now kept, along with the `@link` and `@composeDirective` they
+need:
+
+```python
+@strawberry.federation.type(shareable=True, description="The root query")
+class Query:
+    hello: str
+```
+
+Directives defined with `compose=True` also added one `@composeDirective` to the
+schema for every place they were used, instead of one per directive:
+
+```python
+@strawberry.federation.schema_directive(
+    locations=[Location.FIELD_DEFINITION], repeatable=True, compose=True
+)
+class Tag:
+    name: str
+
+
+@strawberry.type
+class Query:
+    a: str = strawberry.field(directives=[Tag(name="x")])
+    b: str = strawberry.field(directives=[Tag(name="y")])
+```
+
+This schema used to print `@composeDirective(name: "@tag")` twice. It now prints
+it once.
+
+This release was contributed by [@patrick91](https://github.com/patrick91) in [#4670](https://github.com/strawberry-graphql/strawberry/pull/4670)
+
 0.331.4 - 2026-10-05
 --------------------
 
