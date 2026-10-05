@@ -107,6 +107,10 @@ Supported versions: 2.0 - 2.11
 We defined two types: `Book` and `Query`, where `Query` has only one field that
 allows us to fetch all the books.
 
+Fields on other object types can return `Query`, for example to let callers query
+the schema from a mutation result. These fields refer to the query type with the
+federation fields attached.
+
 Notice that the `Book` type is using the `strawberry.federation.type` decorator,
 as opposed to the normal `strawberry.type`, this new decorator extends the base
 one and allows us to define federation-specific attributes on the type.

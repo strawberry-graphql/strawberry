@@ -173,6 +173,10 @@ class Schema(BaseSchema):
             (FederationQuery, query),
         )
 
+        # Keep the original type identity so fields returning the user's query
+        # type resolve to the query with federation fields attached.
+        query_type.__strawberry_definition__.origin = query  # type: ignore
+
         # TODO: this should be probably done in merge_types
         if query.__strawberry_definition__.extend:
             query_type.__strawberry_definition__.extend = True  # type: ignore
