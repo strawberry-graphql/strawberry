@@ -6,10 +6,16 @@ title: Unresolved Strawberry Field Error
 
 ## Description
 
-This error is raised on Python 3.10 to 3.13 when a field's annotation has
-`strawberry.field()` options, but uses a type that isn't defined yet when the
-Strawberry type is created. For example, a type defined further down the module,
-in a module with `from __future__ import annotations`:
+This error is raised when Strawberry can't read the `strawberry.field()` options
+in a field's annotation when the type is created:
+
+- on Python 3.10 to 3.13, when the annotation uses a type that isn't defined
+  yet;
+- on every Python version, when the options themselves use names that aren't
+  defined yet, like a permission class defined after the type.
+
+For example, a type defined further down the module, in a module with
+`from __future__ import annotations`:
 
 ```python
 from __future__ import annotations
@@ -104,6 +110,26 @@ class User:
 ```
 
 Python 3.14 and newer read the options of these annotations without any change.
+
+The names used by the options themselves, like a permission class, a directive
+or a default value, have to be defined before the type on every Python version,
+as the options are evaluated when the type is created:
+
+```python
+from __future__ import annotations
+
+from typing import Annotated
+
+import strawberry
+
+
+class IsAdmin(BasePermission): ...  # defined before `User`
+
+
+@strawberry.type
+class User:
+    account: Annotated[Account, strawberry.field(permission_classes=[IsAdmin])]
+```
 
 An `Annotated` alias with `strawberry.field()`, like `AdminOnly[Account]`, has
 to be defined before the types that use it, on every Python version.

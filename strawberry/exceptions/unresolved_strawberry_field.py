@@ -14,7 +14,12 @@ if TYPE_CHECKING:
 
 class UnresolvedStrawberryFieldError(StrawberryException):
     def __init__(
-        self, field_name: str, cls: type, undefined_names: Sequence[str]
+        self,
+        field_name: str,
+        cls: type,
+        undefined_names: Sequence[str],
+        *,
+        in_options: bool = False,
     ) -> None:
         self.cls = cls
         self.field_name = field_name
@@ -37,13 +42,20 @@ class UnresolvedStrawberryFieldError(StrawberryException):
             f"on type `[underline]{cls.__name__}[/]` can't be read, because {reason}"
         )
         self.annotation_message = "annotation using names that aren't defined yet"
-        self.suggestion = (
-            "Before Python 3.14, Strawberry can only read the options of an "
-            "annotation it can evaluate when the type is created. Pass the options "
-            f"as the field's default instead, like `{field_name}: ... = "
-            "strawberry.field(...)`, define the types it uses before "
-            f"`{cls.__name__}`, or use `strawberry.lazy()` for them."
-        )
+        if in_options:
+            # e.g. a permission class defined after the type
+            self.suggestion = (
+                "The options are evaluated when the type is created, so define "
+                f"the names they use before `{cls.__name__}`."
+            )
+        else:
+            self.suggestion = (
+                "Before Python 3.14, Strawberry can only read the options of an "
+                "annotation it can evaluate when the type is created. Pass the "
+                f"options as the field's default instead, like `{field_name}: ... "
+                "= strawberry.field(...)`, define the types it uses before "
+                f"`{cls.__name__}`, or use `strawberry.lazy()` for them."
+            )
 
         super().__init__(self.message)
 
