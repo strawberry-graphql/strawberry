@@ -1,6 +1,48 @@
 CHANGELOG
 =========
 
+0.331.2 - 2026-10-05
+--------------------
+
+This release fixes a bug with nullable input fields.
+
+Given the following Strawberry schema:
+```python
+@strawberry.input
+class RunInput:
+    required: int
+    optional: str | None
+
+
+@strawberry.type
+class Mutation:
+    @strawberry.mutation
+    def run(self, input: RunInput) -> int: ...
+```
+
+and the following GraphQL query:
+```graphql
+mutation {
+    run(input: {required: 42})
+}
+```
+
+Previous versions of Strawberry raised a `TypeError: RunInput.__init__() missing 1 required keyword-only argument: 'optional'`.
+This meant that clients had to  explicitly specify nullable fields as `null`:
+```graphql
+mutation {
+    run(input: {required: 42, optional: null})
+}
+```
+
+However, according to the [GraphQL spec](https://spec.graphql.org/draft/#sec-Non-Null.Nullable-vs-Optional), nullable input fields are always optional:
+
+> Nullable types are always optional and non-null types are always required.
+
+This release fixes the `TypeError` and now correctly treats nullable input fields as optional.
+
+This release was contributed by [@flo-zimmermann](https://github.com/flo-zimmermann) in [#4568](https://github.com/strawberry-graphql/strawberry/pull/4568)
+
 0.331.1 - 2026-10-04
 --------------------
 
