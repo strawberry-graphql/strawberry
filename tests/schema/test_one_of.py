@@ -1,9 +1,13 @@
-from typing import Any
+from typing import Any, Optional
 
 import pytest
 
 import strawberry
-from strawberry.exceptions import StrawberryInputCoercionError
+from strawberry.exceptions import (
+    InvalidOneOfInputFieldError,
+    StrawberryInputCoercionError,
+    UnresolvedFieldTypeError,
+)
 from strawberry.schema_directives import OneOf
 
 
@@ -340,3 +344,107 @@ def test_introspection_builtin():
     assert not result.errors
 
     assert result.data == {"__type": {"name": "String", "isOneOf": False}}
+
+
+def _schema_with(input_type: type) -> strawberry.Schema:
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def find(self, by: input_type) -> str:  # type: ignore[valid-type]
+            return "found"
+
+    return strawberry.Schema(query=Query)
+
+
+@pytest.mark.raises_strawberry_exception(
+    InvalidOneOfInputFieldError,
+    match="Field `name` of the OneOf input type `SearchBy` can't have a default value",
+)
+def test_one_of_field_with_a_none_default_raises_error():
+    # GraphQL would fill in `null` for `name` when a client sets `email`, so no
+    # request could set exactly one key
+    @strawberry.input(one_of=True)
+    class SearchBy:
+        name: str | None = None
+        email: str | None = None
+
+    _schema_with(SearchBy)
+
+
+@pytest.mark.raises_strawberry_exception(
+    InvalidOneOfInputFieldError,
+    match="Field `email` of the OneOf input type `SearchBy` can't have a default value",
+)
+def test_one_of_field_with_a_default_raises_error():
+    @strawberry.input(one_of=True)
+    class SearchBy:
+        name: strawberry.Maybe[str]
+        email: str | None = strawberry.field(default="me@example.com")
+
+    _schema_with(SearchBy)
+
+
+@pytest.mark.raises_strawberry_exception(
+    InvalidOneOfInputFieldError,
+    match="Field `name` of the OneOf input type `SearchBy` must be nullable",
+)
+def test_required_one_of_field_raises_error():
+    @strawberry.input(one_of=True)
+    class SearchBy:
+        name: str
+        email: strawberry.Maybe[str]
+
+    _schema_with(SearchBy)
+
+
+def test_one_of_fields_without_a_default_are_valid():
+    @strawberry.input(one_of=True)
+    class SearchBy:
+        name: strawberry.Maybe[str]
+        email: str | None = strawberry.UNSET
+
+    schema = _schema_with(SearchBy)
+
+    for query in ('{ find(by: { name: "Patrick" }) }', '{ find(by: { email: "a" }) }'):
+        result = schema.execute_sync(query)
+
+        assert not result.errors
+        assert result.data == {"find": "found"}
+
+
+def test_one_of_fields_hidden_from_the_schema_are_not_checked():
+    @strawberry.input(one_of=True)
+    class SearchBy:
+        name: strawberry.Maybe[str]
+        legacy_name: str | None = strawberry.field(
+            default=None, metadata={"internal": True}
+        )
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def find(self, by: SearchBy) -> str:
+            return "found"
+
+    class PublicSchema(strawberry.Schema):
+        def get_fields(self, type_definition: Any) -> list[Any]:
+            return [
+                field
+                for field in type_definition.fields
+                if not field.metadata.get("internal")
+            ]
+
+    schema = PublicSchema(query=Query)
+
+    assert "legacy_name" not in str(schema)
+    assert schema.execute_sync('{ find(by: { name: "x" }) }').data == {"find": "found"}
+
+
+def test_one_of_field_with_an_unresolvable_type_raises_unresolved_error():
+    @strawberry.input(one_of=True)
+    class SearchBy:
+        name: strawberry.Maybe[str]
+        other: Optional["DoesNotExist"] = strawberry.UNSET  # noqa: F821
+
+    with pytest.raises(UnresolvedFieldTypeError):
+        _schema_with(SearchBy)

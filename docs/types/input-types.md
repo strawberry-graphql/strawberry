@@ -187,6 +187,10 @@ OneOf inputs use `strawberry.Maybe` to distinguish between fields that are
 explicitly not provided versus those that might be set to null. See the
 [Maybe documentation](./maybe.md) for more details on this usage pattern.
 
+GraphQL requires the fields of a OneOf input to be nullable and without a
+default value, so Strawberry raises an error when the schema is built if one of
+them is required or has a default, like `name: str | None = None`.
+
 </Note>
 
 ## Deprecating fields

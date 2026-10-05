@@ -10,6 +10,7 @@ from typing import (
     Annotated,
     Any,
     Generic,
+    Literal,
     TypeVar,
     cast,
 )
@@ -42,6 +43,7 @@ from graphql.language.directive_locations import DirectiveLocation
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.exceptions import (
     DuplicatedTypeName,
+    InvalidOneOfInputFieldError,
     InvalidTypeInputForUnion,
     InvalidUnionTypeError,
     MissingTypesForGenericError,
@@ -750,6 +752,9 @@ class GraphQLCoreConverter:
             assert isinstance(graphql_object_type, GraphQLInputObjectType)  # For mypy
             return graphql_object_type
 
+        if type_definition.is_input and type_definition.is_one_of:
+            self.validate_one_of_fields(type_definition, type_name)
+
         def check_one_of(value: dict[str, Any]) -> dict[str, Any]:
             if len(value) != 1:
                 raise StrawberryInputCoercionError(
@@ -786,6 +791,44 @@ class GraphQLCoreConverter:
         )
 
         return graphql_object_type
+
+    def validate_one_of_fields(
+        self, type_definition: StrawberryObjectDefinition, type_name: str
+    ) -> None:
+        """Check that clients can set each field of a OneOf input type on its own.
+
+        GraphQL requires them to be nullable and without a default value: a
+        default would be filled in when a client sets another field.
+        """
+        # the fields the type publishes, see `_get_thunk_mapping`, which also
+        # reports the ones whose type can't be resolved
+        for field in self.get_fields(type_definition):
+            if field.type is UNRESOLVED or is_private(field.type):
+                continue
+
+            field_type = field.resolve_type(type_definition=type_definition)
+            problem: Literal["required", "default"]
+
+            if not isinstance(field_type, StrawberryOptional):
+                problem = "required"
+            # like the default `from_input_field` publishes
+            elif not isinstance(field.type, StrawberryMaybe) and (
+                field.default_value is not UNSET
+                and field.default_value is not dataclasses.MISSING
+            ):
+                problem = "default"
+            else:
+                continue
+
+            raise InvalidOneOfInputFieldError(
+                field_name=field.python_name,
+                # e.g. a field inherited from another class
+                cls=field.origin
+                if isinstance(field.origin, type)
+                else type_definition.origin,
+                type_name=type_name,
+                problem=problem,
+            )
 
     def from_interface(
         self, interface: StrawberryObjectDefinition
