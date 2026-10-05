@@ -10,6 +10,8 @@ import sys
 import types
 from typing import Annotated
 
+import pytest
+
 import strawberry
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.types.base import get_object_definition
@@ -57,6 +59,20 @@ def test_lazy_type_consistent_across_multiple_resolutions():
     assert resolved2 is User
     assert resolved3 is User
     assert resolved1 is resolved2 is resolved3
+
+
+def test_lazy_type_can_resolve_after_type_is_defined(monkeypatch):
+    module = types.ModuleType("tests.types.pending_lazy_type")
+    monkeypatch.setitem(sys.modules, module.__name__, module)
+
+    lazy_type = LazyType("User", module.__name__)
+
+    with pytest.raises(KeyError, match=r"^'User'$"):
+        lazy_type.resolve_type()
+
+    module.User = User
+
+    assert lazy_type.resolve_type() is User
 
 
 def test_lazy_type_with_package():

@@ -62,7 +62,13 @@ class LazyType(Generic[TypeName, Module]):
                         is_samefile = False
                     module = main_module if is_samefile else module
 
-        return module.__dict__[self.type_name]
+        # Preserve KeyError for types that are not defined yet during circular imports.
+        if self.type_name not in module.__dict__:
+            raise KeyError(self.type_name)
+
+        # Attribute access resolves native lazy imports on Python 3.15+;
+        # looking up the name in module.__dict__ would return the import proxy.
+        return getattr(module, self.type_name)
 
     def __call__(self) -> None:  # pragma: no cover
         # this empty call method allows LazyTypes to be used in generic types
