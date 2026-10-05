@@ -487,6 +487,109 @@ def test_fields_named_like_the_types_they_use_are_not_rejected():
     }
 
 
+NOT_DEFINED_YET_MESSAGE = r"because `NotDefinedYet` isn't defined yet"
+
+
+# on Python 3.14 the options get forward references instead of failing to
+# evaluate, but they're rejected the same way
+def test_permission_class_not_defined_yet_raises_error():
+    with pytest.raises(UnresolvedStrawberryFieldError, match=NOT_DEFINED_YET_MESSAGE):
+
+        @strawberry.type
+        class Query:
+            value: Annotated[str, strawberry.field(permission_classes=[NotDefinedYet])]
+
+
+def test_directive_not_defined_yet_raises_error():
+    with pytest.raises(UnresolvedStrawberryFieldError, match=NOT_DEFINED_YET_MESSAGE):
+
+        @strawberry.type
+        class Query:
+            value: Annotated[str, strawberry.field(directives=[NotDefinedYet()])]
+
+
+def test_extension_not_defined_yet_raises_error():
+    with pytest.raises(UnresolvedStrawberryFieldError, match=NOT_DEFINED_YET_MESSAGE):
+
+        @strawberry.type
+        class Query:
+            value: Annotated[str, strawberry.field(extensions=[NotDefinedYet()])]
+
+
+def test_default_not_defined_yet_raises_error():
+    with pytest.raises(UnresolvedStrawberryFieldError, match=NOT_DEFINED_YET_MESSAGE):
+
+        @strawberry.type
+        class Query:
+            value: Annotated[str, strawberry.field(default=NotDefinedYet.value)]
+
+
+def test_permission_class_list_not_defined_yet_raises_error():
+    with pytest.raises(UnresolvedStrawberryFieldError, match=NOT_DEFINED_YET_MESSAGE):
+
+        @strawberry.type
+        class Query:
+            value: Annotated[str, strawberry.field(permission_classes=NotDefinedYet)]
+
+
+def test_unpacked_permission_class_list_not_defined_yet_raises_error():
+    with pytest.raises(UnresolvedStrawberryFieldError, match=NOT_DEFINED_YET_MESSAGE):
+
+        @strawberry.type
+        class Query:
+            value: Annotated[str, strawberry.field(permission_classes=[*NotDefinedYet])]
+
+
+def test_description_not_defined_yet_raises_error():
+    with pytest.raises(UnresolvedStrawberryFieldError, match=NOT_DEFINED_YET_MESSAGE):
+
+        @strawberry.type
+        class Query:
+            value: Annotated[str, strawberry.field(description=NotDefinedYet)]
+
+
+def test_metadata_not_defined_yet_raises_error():
+    with pytest.raises(UnresolvedStrawberryFieldError, match=NOT_DEFINED_YET_MESSAGE):
+
+        @strawberry.type
+        class Query:
+            value: Annotated[str, strawberry.field(metadata={"key": NotDefinedYet})]
+
+
+def test_strings_in_the_options_are_not_reported_as_names():
+    with pytest.raises(
+        UnresolvedStrawberryFieldError,
+        match=r"because `NotDefinedYet` isn't defined yet$",
+    ):
+
+        @strawberry.type
+        class Query:
+            value: Annotated[
+                str,
+                strawberry.federation.field(tags=["admin"], description=NotDefinedYet),
+            ]
+
+
+@pytest.mark.skipif(
+    not READS_OPTIONS_OF_LATER_TYPES,
+    reason="only Python 3.14 reads the options of types defined later",
+)
+def test_graphql_type_and_names_bound_in_the_options_are_not_rejected():
+    @strawberry.type
+    class Query:
+        values: Annotated[
+            NotDefinedYet,
+            strawberry.field(
+                graphql_type=list[NotDefinedYet],
+                default_factory=lambda: [item * 2 for item in range(2)],
+            ),
+        ]
+
+    field = get_object_definition(Query, strict=True).fields[0]
+
+    assert field.default_factory() == [0, 2]
+
+
 def test_types_not_defined_yet_without_field_options_are_not_rejected():
     global LaterWithoutOptions
 

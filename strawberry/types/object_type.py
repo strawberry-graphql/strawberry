@@ -4,7 +4,7 @@ import copy
 import dataclasses
 import inspect
 import sys
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Iterable, Iterator, Sequence
 from typing import (
     Annotated,
     Any,
@@ -107,31 +107,44 @@ def _check_unresolved_annotation(
     except SyntaxError:
         return
 
-    def unresolved() -> UnresolvedStrawberryFieldError:
-        names = set()
-
-        for node in ast.walk(expression):
-            if isinstance(node, ast.Name):
-                names.add(node.id)
-            # e.g. a quoted type, like `Annotated["Account", ...]`
-            elif isinstance(node, ast.Constant) and isinstance(node.value, str):
-                names.add(node.value)
-
-        undefined_names = {
-            name
-            for name in names
-            if name.isidentifier()
-            and name not in namespace
-            and not hasattr(builtins, name)
-        }
-
-        return UnresolvedStrawberryFieldError(
-            field_name=field_name, cls=cls, undefined_names=sorted(undefined_names)
-        )
-
     # e.g. `Annotated[Account, strawberry.field(...)]`, or an alias with one like
     # `AdminOnly[Account]`
     metadata = _get_annotated_metadata(expression, namespace) or []
+
+    def unresolved() -> UnresolvedStrawberryFieldError:
+        options_names = _get_undefined_names(
+            (item for node in metadata for item in [node, *_walk_options(node)]),
+            namespace,
+        )
+        undefined_names = _get_undefined_names(ast.walk(expression), namespace)
+
+        # e.g. a quoted type, like `Annotated["Account", ...]`, but not strings in
+        # the options, like `tags=["admin"]`
+        type_node = (
+            expression.slice.elts[0]
+            if metadata
+            and isinstance(expression, ast.Subscript)
+            and isinstance(expression.slice, ast.Tuple)
+            else expression
+        )
+        undefined_names |= {
+            node.value
+            for node in ast.walk(type_node)
+            if isinstance(node, ast.Constant)
+            and isinstance(node.value, str)
+            and node.value.isidentifier()
+            and node.value not in namespace
+            and not hasattr(builtins, node.value)
+        }
+
+        return UnresolvedStrawberryFieldError(
+            field_name=field_name,
+            cls=cls,
+            undefined_names=sorted(undefined_names),
+            # e.g. a permission class defined after the type, while the type
+            # itself is defined
+            in_options=bool(undefined_names) and undefined_names <= options_names,
+        )
 
     if any(_is_field_metadata(item, namespace) is not False for item in metadata) or (
         isinstance(expression, ast.Subscript)
@@ -155,6 +168,72 @@ def _check_unresolved_annotation(
 
         if None in nested:
             raise unresolved()
+
+
+def _walk_options(node: ast.AST) -> Iterator[ast.AST]:
+    """Walk the options in `Annotated` metadata, except types like `graphql_type`.
+
+    Types are resolved when the schema is built, like the annotation itself.
+    """
+    for child in ast.iter_child_nodes(node):
+        if isinstance(child, ast.keyword) and child.arg == "graphql_type":
+            continue
+
+        yield child
+        yield from _walk_options(child)
+
+
+def _get_undefined_names(
+    nodes: Iterable[ast.AST], namespace: dict[str, Any]
+) -> set[str]:
+    """Return the names used in `nodes` that aren't defined in `namespace`.
+
+    Names bound in them, like the arguments of a lambda, count as defined.
+    """
+    used: set[str] = set()
+    bound: set[str] = set()
+
+    for node in nodes:
+        if isinstance(node, ast.arg):
+            bound.add(node.arg)
+        elif isinstance(node, ast.Name):
+            (used if isinstance(node.ctx, ast.Load) else bound).add(node.id)
+
+    return {
+        name
+        for name in used - bound
+        if name not in namespace and not hasattr(builtins, name)
+    }
+
+
+def _check_field_options(
+    cls: builtins.type, field_name: str, annotation: str, namespace: dict[str, Any]
+) -> None:
+    """Fail when the options in an annotation use names that aren't defined yet.
+
+    Python 3.14 evaluates annotations partially, so a `strawberry.field()` in an
+    annotation is created even when its options use names that aren't defined
+    yet, like a permission class defined after the type, and they get forward
+    references instead.
+    """
+    try:
+        expression = ast.parse(annotation, mode="eval").body
+    except SyntaxError:
+        return
+
+    metadata = _get_annotated_metadata(expression, namespace) or []
+    undefined_names = _get_undefined_names(
+        (item for node in metadata for item in [node, *_walk_options(node)]),
+        namespace,
+    )
+
+    if undefined_names:
+        raise UnresolvedStrawberryFieldError(
+            field_name=field_name,
+            cls=cls,
+            undefined_names=sorted(undefined_names),
+            in_options=True,
+        )
 
 
 def _process_annotated_fields(cls: T) -> dict[str, StrawberryAnnotation]:
@@ -220,6 +299,11 @@ def _process_annotated_fields(cls: T) -> dict[str, StrawberryAnnotation]:
 
         if not strawberry_fields:
             continue
+
+        if isinstance(raw_annotation, str):
+            _check_field_options(
+                cls, field_name, raw_annotation, {**module_namespace, **vars(cls)}
+            )
 
         source_field = strawberry_fields[0]
         field = copy.copy(source_field)
