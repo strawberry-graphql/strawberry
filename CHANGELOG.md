@@ -1,6 +1,39 @@
 CHANGELOG
 =========
 
+0.331.3 - 2026-10-05
+--------------------
+
+This release fixes `strawberry.field()` options in `Annotated` that use names
+that aren't defined yet when the type is created, on Python 3.14. For example, a
+permission class defined after the type:
+
+```python
+from __future__ import annotations
+
+from typing import Annotated
+
+import strawberry
+
+
+@strawberry.type
+class User:
+    account: Annotated[Account, strawberry.field(permission_classes=[IsAdmin])]
+
+
+class IsAdmin(BasePermission): ...
+```
+
+In modules with `from __future__ import annotations`, Strawberry reads these
+annotations partially on Python 3.14, so the options got forward references
+instead of the names they use. Depending on the option, building the schema then
+failed with an unclear `TypeError` or `AttributeError`, a query failed, or the
+option was silently wrong, like a description or a directive argument. This now
+raises an `UnresolvedStrawberryFieldError` when the type is created, like on older
+Python versions, which says to define the names the options use before the type.
+
+This release was contributed by [@patrick91](https://github.com/patrick91) in [#4666](https://github.com/strawberry-graphql/strawberry/pull/4666)
+
 0.331.2 - 2026-10-05
 --------------------
 
