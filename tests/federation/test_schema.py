@@ -6,8 +6,38 @@ import pytest
 from graphql import build_schema
 
 import strawberry
+from strawberry.exceptions import DuplicatedTypeName
 from strawberry.federation.types import FieldSet, LinkImport, LinkPurpose
 from strawberry.schema_directive import Location
+
+
+def test_mutation_result_can_reference_query():
+    @strawberry.type
+    class Query:
+        value: int = 42
+
+    @strawberry.type
+    class MutationResult:
+        query: Query
+
+    @strawberry.type
+    class Mutation:
+        @strawberry.mutation
+        def update(self) -> MutationResult:
+            return MutationResult(query=Query())
+
+    schema_error = None
+    try:
+        schema = strawberry.federation.Schema(query=Query, mutation=Mutation)
+    except DuplicatedTypeName as error:
+        schema_error = error
+
+    assert schema_error is None, str(schema_error)
+
+    result = schema.execute_sync("mutation { update { query { value } } }")
+
+    assert not result.errors
+    assert result.data == {"update": {"query": {"value": 42}}}
 
 
 def test_entities_type_when_no_type_has_keys():
