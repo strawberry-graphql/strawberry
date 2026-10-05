@@ -30,6 +30,7 @@ from typing import (
 )
 from typing_extensions import Self
 
+from strawberry.exceptions import StrawberryInputCoercionError
 from strawberry.relay.exceptions import NodeIDAnnotationError
 from strawberry.types.base import (
     StrawberryContainer,
@@ -69,6 +70,14 @@ PREFIX = "arrayconnection"
 
 class GlobalIDValueError(ValueError):
     """GlobalID value error, usually related to parsing or serialization."""
+
+
+class InvalidGlobalIDError(StrawberryInputCoercionError, GlobalIDValueError):
+    """A GlobalID sent by a client can't be parsed.
+
+    It's an input error, and also a `GlobalIDValueError`, so handlers of either
+    catch it.
+    """
 
 
 @dataclasses.dataclass(order=True, frozen=True)
@@ -950,6 +959,7 @@ __all__ = [
     "Edge",
     "GlobalID",
     "GlobalIDValueError",
+    "InvalidGlobalIDError",
     "ListConnection",
     "Node",
     "NodeID",
