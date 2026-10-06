@@ -324,6 +324,12 @@ Pydantic converts to the field's type, are applied by Pydantic and are not shown
 in the schema, so the field becomes nullable. Pydantic validates an explicit
 `null` like any other value.
 
+A nullable field without a default, like `nickname: str | None`, is optional for
+clients too, as GraphQL requires for nullable input fields. When a client leaves
+it out, Pydantic gets `None` for it, as if the client had sent `null`: the field
+is part of `model_fields_set`, and validators see `None`. Give the field a
+default, like `= None`, to tell the two apart, for example for partial updates.
+
 Fields the client omits whose default is not shown in the schema are not part of
 `model_fields_set`, which makes partial updates work as usual with Pydantic:
 
@@ -361,8 +367,9 @@ every request that uses it, so its validators run again, with the request's
 [validation context](#validation-context).
 
 `strawberry.Maybe` can't be used in Pydantic inputs (Pydantic raises an error
-for it when the model is defined), use `model_fields_set` to tell omitted fields
-apart from explicit `null` values instead.
+for it when the model is defined), give the field a default and use
+`model_fields_set` to tell omitted fields apart from explicit `null` values
+instead.
 
 ### Private Fields
 

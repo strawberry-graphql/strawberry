@@ -59,6 +59,7 @@ from strawberry.types.union import StrawberryUnion, union
 from strawberry.utils.typing import is_union
 
 from .exceptions import (
+    InheritedDefaultFactoryError,
     MaybeFieldError,
     PydanticFieldWithoutResolverError,
     ResolverFieldOnInputError,
@@ -731,6 +732,19 @@ def get_pydantic_fields(
                 raise MaybeFieldError(field_name=field_name, cls=origin)
 
         if (base_field := _get_strawberry_base_field(origin, field_name)) is not None:
+            # dataclasses don't keep a default factory on the class, so pydantic
+            # doesn't see it and requires the field, which clients can omit when
+            # it's nullable
+            if (
+                is_input
+                and field_info is not None
+                and field_info.is_required()
+                and base_field.default_factory is not dataclasses.MISSING
+            ):
+                raise InheritedDefaultFactoryError(
+                    field_name=field_name, cls=cls, base=origin
+                )
+
             # inputs replace the field's default with pydantic's below
             strawberry_field = copy.copy(base_field) if is_input else base_field
         else:

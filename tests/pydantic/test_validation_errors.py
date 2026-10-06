@@ -411,7 +411,7 @@ def test_locations_of_renamed_fields():
             min_length=3
         )
         nickname: Annotated[str | None, strawberry.field(name="handle")] = (
-            pydantic.Field(alias="nick")
+            pydantic.Field(alias="nick", min_length=3)
         )
 
     @strawberry.type
@@ -429,7 +429,7 @@ def test_locations_of_renamed_fields():
     result = schema.execute_sync(
         """
         mutation {
-            update(data: {name: "a fine legacy name", displayName: "x"}) {
+            update(data: {name: "a fine legacy name", displayName: "x", handle: "y"}) {
                 ... on ValidationError { issues { location type } }
             }
         }
@@ -441,8 +441,7 @@ def test_locations_of_renamed_fields():
         "update": {
             "issues": [
                 {"location": ["data", "displayName"], "type": "string_too_short"},
-                # missing fields are reported by pydantic with their alias
-                {"location": ["data", "handle"], "type": "missing"},
+                {"location": ["data", "handle"], "type": "string_too_short"},
             ]
         }
     }

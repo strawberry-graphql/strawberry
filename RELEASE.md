@@ -47,6 +47,10 @@ Partial updates work as usual with Pydantic's `model_fields_set` and
 argument: only the fields that were set on it are part of the default shown in
 the schema.
 
+Nullable fields without a default, like `nickname: str | None`, are optional for
+clients, like in other input types: Pydantic gets `None` for them when they're
+left out, as if the client had sent `null`.
+
 GraphQL field names come from the Python field names, as Pydantic aliases only
 affect Pydantic's own (de)serialization: use
 `Annotated[..., strawberry.field(name=...)]` to rename a field. Computed fields

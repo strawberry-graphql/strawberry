@@ -6,8 +6,6 @@ from collections import abc
 from typing import TYPE_CHECKING, Annotated, Any, TypeGuard, get_args, get_origin
 
 from pydantic import (
-    AliasChoices,
-    AliasPath,
     BaseModel,
     InstanceOf,
     PlainValidator,
@@ -31,8 +29,7 @@ if TYPE_CHECKING:
     from pydantic.fields import FieldInfo
 
     from strawberry.types.arguments import InputContext
-    from strawberry.types.base import StrawberryObjectDefinition, StrawberryType
-    from strawberry.types.field import StrawberryField
+    from strawberry.types.base import StrawberryType
 
 # Annotations that make pydantic validate a field without validating its model
 _NOT_VALIDATED_AS_MODEL = (InstanceOf, PlainValidator, SkipValidation)
@@ -134,15 +131,21 @@ def _to_python_data(
 
     for field in definition.fields:
         graphql_name = context.config.name_converter.from_field(field)
+        field_info = model.model_fields.get(field.python_name)
 
         if graphql_name in value:
             data[field.python_name] = _to_python_value(
                 value[graphql_name],
                 field.resolve_type(type_definition=definition),
-                model.model_fields.get(field.python_name),
+                field_info,
                 context,
                 (*keys, graphql_name),
             )
+        # nullable fields are optional for clients, like in other input types, so
+        # pydantic gets `None` for a missing one it requires, e.g. `str | None`
+        # without a default (GraphQL validates that non-null fields are sent)
+        elif field_info is not None and field_info.is_required():
+            data[field.python_name] = None
 
     return data
 
@@ -181,41 +184,6 @@ def _to_python_value(
     return context.convert(value, type_, *keys)
 
 
-def _get_pydantic_keys(field_info: FieldInfo) -> set[str]:
-    """Keys pydantic can use in error locations for a field, besides its name."""
-    keys = set()
-
-    for alias in (field_info.alias, field_info.validation_alias):
-        choices = alias.choices if isinstance(alias, AliasChoices) else [alias]
-
-        for choice in choices:
-            key = choice.path[0] if isinstance(choice, AliasPath) else choice
-
-            if isinstance(key, str):
-                keys.add(key)
-
-    return keys
-
-
-def _find_field(
-    definition: StrawberryObjectDefinition, segment: str
-) -> StrawberryField | None:
-    if field := definition.get_field(segment):
-        return field
-
-    # e.g. missing fields are reported with their alias
-    if isinstance(definition.origin, type) and issubclass(definition.origin, BaseModel):
-        model_fields = definition.origin.model_fields
-
-        for field in definition.fields:
-            field_info = model_fields.get(field.python_name)
-
-            if field_info is not None and segment in _get_pydantic_keys(field_info):
-                return field
-
-    return None
-
-
 def _get_location(
     model: type[BaseModel], loc: tuple[str | int, ...], context: InputContext
 ) -> list[str]:
@@ -244,7 +212,7 @@ def _get_location(
 
         definition = get_object_definition(type_)
         field = (
-            _find_field(definition, segment)
+            definition.get_field(segment)
             if definition is not None and isinstance(segment, str)
             else None
         )
