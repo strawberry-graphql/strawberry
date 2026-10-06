@@ -30,13 +30,14 @@ from strawberry.exceptions import (
     MissingReturnAnnotationError,
     MultipleStrawberryFieldsError,
     ObjectIsNotClassError,
+    ResolverFieldOnInputError,
     UnresolvedStrawberryFieldError,
 )
 from strawberry.types.maybe import Some, _annotation_is_maybe
 from strawberry.types.unset import UNSET
 from strawberry.utils.str_converters import to_camel_case
 
-from .base import StrawberryObjectDefinition
+from .base import StrawberryObjectDefinition, has_object_definition
 from .field import StrawberryField, _contains_strawberry_field, field
 from .type_resolver import _get_fields
 
@@ -471,6 +472,24 @@ def _inject_default_for_maybe_annotations(cls: T, annotations: dict[str, Any]) -
                 attr.default = None
 
 
+def _get_base_with_field(
+    cls: builtins.type, strawberry_field: StrawberryField
+) -> builtins.type | None:
+    """Return the first base type that has `strawberry_field`, if it's inherited."""
+    return next(
+        (
+            base
+            for base in cls.__mro__[1:]
+            if has_object_definition(base)
+            and any(
+                base_field is strawberry_field
+                for base_field in base.__strawberry_definition__.fields
+            )
+        ),
+        None,
+    )
+
+
 def _process_type(
     cls: T,
     *,
@@ -494,6 +513,25 @@ def _process_type(
         raise InvalidSuperclassInterfaceError(
             cls=cls, input_name=name, interfaces=interfaces
         )
+
+    if is_input:
+        dataclass_fields = {field_.name: field_ for field_ in dataclasses.fields(cls)}
+
+        for field_ in fields:
+            # the resolver would never run, and requests using the input would
+            # fail, as the field isn't an argument of the input's `__init__`. An
+            # inherited field hidden with `strawberry.Private` isn't one of the
+            # class's fields anymore, so it's left alone
+            if (
+                field_.base_resolver is not None
+                and dataclass_fields.get(field_.python_name) is field_
+            ):
+                raise ResolverFieldOnInputError(
+                    field_name=field_.python_name,
+                    cls=cls,
+                    resolver_field=field_,
+                    inherited_from=_get_base_with_field(cls, field_),
+                )
 
     definition = StrawberryObjectDefinition(
         name=name,

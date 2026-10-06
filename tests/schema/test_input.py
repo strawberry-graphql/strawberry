@@ -4,7 +4,10 @@ import textwrap
 import pytest
 
 import strawberry
-from strawberry.exceptions import InvalidSuperclassInterfaceError
+from strawberry.exceptions import (
+    InvalidSuperclassInterfaceError,
+    ResolverFieldOnInputError,
+)
 from strawberry.printer import print_schema
 
 
@@ -119,6 +122,100 @@ def test_input_cannot_inherit_from_interface():
     @strawberry.input
     class SomeInput(SomeInterface):
         another_arg: str
+
+
+@pytest.mark.raises_strawberry_exception(
+    ResolverFieldOnInputError,
+    match=re.escape(
+        "Field `upper_name` on input type `UserInput` can't have a resolver"
+    ),
+)
+def test_input_fields_cannot_have_a_resolver():
+    @strawberry.input
+    class UserInput:
+        name: str
+
+        # it would be a required input field, whose resolver never runs
+        @strawberry.field
+        def upper_name(self) -> str:
+            return self.name.upper()
+
+
+@pytest.mark.raises_strawberry_exception(
+    ResolverFieldOnInputError,
+    match=re.escape(
+        "Field `upper_name` on input type `UserInput` can't have a resolver"
+    ),
+)
+def test_input_fields_cannot_have_a_resolver_passed_to_field():
+    def get_upper_name() -> str:
+        return "ADA"
+
+    @strawberry.input
+    class UserInput:
+        name: str
+        upper_name: str = strawberry.field(resolver=get_upper_name)
+
+
+@pytest.mark.raises_strawberry_exception(
+    ResolverFieldOnInputError,
+    match=re.escape(
+        "Field `upper_name` on input type `UserInput`, inherited from `User`, "
+        "can't have a resolver"
+    ),
+)
+def test_input_cannot_inherit_fields_with_a_resolver():
+    @strawberry.type
+    class User:
+        name: str
+
+        @strawberry.field
+        def upper_name(self) -> str:
+            return self.name.upper()
+
+    @strawberry.input
+    class UserInput(User):
+        pass
+
+
+def test_error_for_a_lambda_resolver_points_at_the_field():
+    with pytest.raises(ResolverFieldOnInputError) as exc_info:
+
+        @strawberry.input
+        class UserInput:
+            name: str
+            upper_name: str = strawberry.field(resolver=lambda: "ADA")
+
+    source = exc_info.value.exception_source
+
+    assert source is not None
+    assert "upper_name" in source.code.splitlines()[source.error_line - 1]
+
+
+def test_inherited_resolver_fields_hidden_with_private_are_allowed():
+    @strawberry.type
+    class User:
+        name: str
+
+        @strawberry.field
+        def upper_name(self) -> str | None:
+            return self.name.upper()
+
+    @strawberry.input
+    class UserInput(User):
+        upper_name: strawberry.Private[str | None] = None
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def hello(self, input: UserInput) -> str:
+            return f"{input.name}/{input.upper_name}"
+
+    schema = strawberry.Schema(query=Query)
+
+    assert schema.execute_sync('{ hello(input: {name: "ada"}) }').data == {
+        "hello": "ada/None"
+    }
 
 
 @pytest.mark.raises_strawberry_exception(
