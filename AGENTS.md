@@ -77,21 +77,13 @@ The CI test matrix is defined in `noxfile.py`; list its sessions with
 
 Release type is one of: `patch`, `minor`, or `major` (semver). Release notes
 should start with `This release adds ...` or `This release fixes ...` and lead
-with the user-visible behavior. Include natural X and LinkedIn announcements;
-the X message must include the release URL template.
+with the user-visible behavior.
 
 Example:
 
 ```markdown
 ---
 release type: patch
-social_messages:
-  x: >-
-    {project_name} {version} is out! This release fixes schema printing for
-    nullable input defaults. 🍓 https://strawberry.rocks/release/{version}
-  linkedin: >-
-    {project_name} {version} is out. This release fixes schema printing for
-    nullable input defaults, so generated SDL keeps explicit null values.
 ---
 
 This release fixes schema printing for nullable input defaults.
