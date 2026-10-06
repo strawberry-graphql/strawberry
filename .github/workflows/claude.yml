@@ -66,9 +66,9 @@ jobs:
             Base branch: ${{ github.event.pull_request.base.ref }}
             Head SHA: ${{ github.event.pull_request.head.sha }}
 
-            Review only the release note and social announcement copy. Do not
-            review implementation correctness except to check whether the copy
-            makes unsupported claims. Do not modify files, create commits, push
+            Review only the release note. Do not review implementation
+            correctness except to check whether the release note makes
+            unsupported claims. Do not modify files, create commits, push
             branches, or open pull requests.
 
             Inspect the PR metadata and diff. Pay special attention to
@@ -84,27 +84,6 @@ jobs:
             - it avoids vague wording such as "improves support" unless the
               exact behavior follows immediately
 
-            Check social copy when present:
-            - social_messages includes useful x and linkedin entries
-            - the X copy starts naturally, preferably with
-              "{project_name} {version} is out!"
-            - the LinkedIn copy starts naturally, preferably with
-              "{project_name} {version} is out."
-            - each post reads like a release announcement, not a compressed
-              changelog entry or implementation-first summary
-            - if the change is mainly useful for integration or framework
-              authors, the copy says that instead of implying every Strawberry
-              application needs to adopt it
-            - the X copy is no longer than 280 characters after template
-              variables are considered
-            - the X copy includes the website release URL template
-              `https://strawberry.rocks/release/{version}`
-            - LinkedIn copy is clear as a standalone post
-            - detailed semantics, ordering rules, warnings, and edge cases stay
-              in the release note or docs unless they are the central
-              user-facing change
-            - neither post leaks raw Markdown link syntax like [label](url)
-
             Deliver the review in up to three ways:
 
             1. Inline suggestions (only when RELEASE.md exists and a specific
@@ -116,29 +95,6 @@ jobs:
                from `gh pr diff` (the added file is numbered from 1). Prefer a
                small suggestion over describing the change in prose.
 
-               Adding social_messages: when RELEASE.md exists but has no
-               social_messages block and a release announcement is warranted,
-               add one as an acceptable suggestion rather than only quoting it.
-               social_messages belongs INSIDE the `---` frontmatter, right after
-               the `release type:` line. Anchor a single-line suggestion on the
-               `release type:` line, and make the suggestion body repeat that
-               same line and then add the block, so accepting it inserts a valid
-               frontmatter. The suggestion body looks like:
-                   release type: <the existing value>
-                   social_messages:
-                     x: >-
-                       {project_name} {version} is out! <one natural sentence
-                       about the user-facing change>. 🍓
-                       https://strawberry.rocks/release/{version}
-                     linkedin: >-
-                       {project_name} {version} is out. <one or two natural
-                       sentences about what changed, who benefits, and why it
-                       matters.>
-               Use the {project_name} and {version} placeholders verbatim. Use
-               the exact X URL template
-               `https://strawberry.rocks/release/{version}`, and keep the x
-               copy under 280 characters once placeholders are filled in.
-
             2. One sticky summary comment (always). Publish an overall summary
                as a single PR comment - actually post it, do not just return it
                as your reply, since a returned-only reply is never shown to
@@ -149,10 +105,10 @@ jobs:
                  **Status:** ✅ Looks good
                  **Status:** ⚠️ Needs edits
                  **Status:** 📝 No RELEASE.md
-               - then short sections under bold labels such as **RELEASE.md**
-                 and **Social copy**, each only a sentence or two; skip a
-                 section when you have nothing useful to add, and do not repeat
-                 edits already filed as inline suggestions
+               - then short sections under bold labels such as **RELEASE.md**,
+                 each only a sentence or two; skip a section when you have
+                 nothing useful to add, and do not repeat edits already filed as
+                 inline suggestions
                - wrap any long proposed snippet in a collapsed
                  `<details><summary>...</summary>` block so the comment stays
                  compact. Never nest triple-backtick fences: if a wrapped

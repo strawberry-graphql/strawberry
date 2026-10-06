@@ -179,22 +179,7 @@ git-username = "Botberry"
 git-email = "bot@strawberry.rocks"
 project-name = "🍓"
 append-github-contributor = true
-plugins = [
-  "autopub.plugins.github",
-  "autopub.plugins.uv",
-  "strawberry_autopub_plugins.typefully:TypefullyPlugin",
-]
-
-[tool.autopub.plugin_config.typefully]
-project-name = "Strawberry GraphQL"
-platforms = ["x", "linkedin", "bluesky", "mastodon"]
-publish-mode = "next-free-slot"
-require-social-message = true
-required-social-platforms = ["x", "linkedin"]
-required-message-substrings = { x = [
-  "https://strawberry.rocks/release/{version}",
-] }
-require-release-note-lead = true
+plugins = ["autopub.plugins.github", "autopub.plugins.uv"]
 
 [tool.pyright]
 # include = ["strawberry"]
