@@ -27,8 +27,8 @@ clients couldn't set another field instead.
 
 ## How to fix this error
 
-Declare the fields with `strawberry.Maybe`, which makes them nullable and
-without a default:
+Make the fields nullable and remove their defaults. Strawberry sets the fields
+that the client didn't set to `None`:
 
 ```python
 import strawberry
@@ -36,6 +36,6 @@ import strawberry
 
 @strawberry.input(one_of=True)
 class SearchBy:
-    name: strawberry.Maybe[str]
-    email: strawberry.Maybe[str]
+    name: str | None
+    email: str | None
 ```

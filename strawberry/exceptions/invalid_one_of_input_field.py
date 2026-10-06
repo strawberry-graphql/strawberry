@@ -45,7 +45,7 @@ class InvalidOneOfInputFieldError(StrawberryException):
             "Clients set exactly one field of a OneOf input type, so GraphQL "
             "requires its fields to be nullable and without a default value. Make "
             "it nullable and remove its default, for example by declaring it as "
-            f"`{field_name}: strawberry.Maybe[...]`."
+            f"`{field_name}: T | None`."
         )
 
         super().__init__(self.message)

@@ -675,6 +675,10 @@ class GraphQLCoreConverter:
             if field_value is UNSET:
                 continue
 
+            # a field of a OneOf input type can't be null, so `None` means it isn't set
+            if field_value is None and type_definition.is_one_of:
+                continue
+
             field_type = field.resolve_type(type_definition=type_definition)
 
             # the fields `to_input` returns are all kept, explicit nulls included

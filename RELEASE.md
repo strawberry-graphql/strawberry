@@ -34,11 +34,21 @@ like `name: str`, made the input only work with that field. The printed schema
 was also invalid for other GraphQL tools.
 
 Strawberry now raises an `InvalidOneOfInputFieldError` when the schema is built
-instead. Declare the fields with `strawberry.Maybe`, as the docs show:
+instead. Declare the fields as nullable and without a default, and Strawberry
+sets the ones that the client didn't set to `None`:
 
 ```python
 @strawberry.input(one_of=True)
 class SearchBy:
-    name: strawberry.Maybe[str]
-    email: strawberry.Maybe[str]
+    name: str | None
+    email: str | None
 ```
+
+Default values of OneOf input types now leave out the fields set to `None`, so
+`by: SearchBy = SearchBy(name="Patrick", email=None)` prints as
+`{ name: "Patrick" }` instead of `{ name: "Patrick", email: null }`, which isn't
+a valid OneOf value.
+
+The OneOf docs now use this style instead of `strawberry.Maybe`, which still
+works: OneOf fields can't be set to `null`, so `Maybe` doesn't add anything
+there.

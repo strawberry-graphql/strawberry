@@ -1,6 +1,7 @@
 from typing import Any, Optional
 
 import pytest
+from graphql import build_schema, validate_schema
 
 import strawberry
 from strawberry.exceptions import (
@@ -410,6 +411,61 @@ def test_one_of_fields_without_a_default_are_valid():
 
         assert not result.errors
         assert result.data == {"find": "found"}
+
+
+def test_optional_one_of_fields_without_a_default_are_none_when_not_set():
+    @strawberry.input(one_of=True)
+    class SearchBy:
+        name: str | None
+        email: str | None
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def find(self, by: SearchBy) -> str:
+            return f"name={by.name} email={by.email}"
+
+    schema = strawberry.Schema(query=Query)
+
+    assert "  name: String\n  email: String\n" in str(schema)
+    assert schema.execute_sync('{ find(by: { name: "Patrick" }) }').data == {
+        "find": "name=Patrick email=None"
+    }
+    assert schema.execute_sync('{ find(by: { email: "a" }) }').data == {
+        "find": "name=None email=a"
+    }
+
+
+def test_one_of_defaults_leave_out_fields_set_to_none():
+    @strawberry.input(one_of=True)
+    class SearchBy:
+        name: str | None
+        email: str | None
+
+    @strawberry.input
+    class Filter:
+        by: SearchBy = strawberry.field(
+            default_factory=lambda: SearchBy(name="Patrick", email=None)
+        )
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def find(self, by: SearchBy = SearchBy(name="Patrick", email=None)) -> str:
+            return f"name={by.name} email={by.email}"
+
+        @strawberry.field
+        def search(self, filter: Filter) -> str:
+            return "found"
+
+    schema = strawberry.Schema(query=Query)
+    sdl = str(schema)
+
+    # a OneOf field can't be null, so `email: null` would be an invalid default
+    assert 'find(by: SearchBy! = { name: "Patrick" }): String!' in sdl
+    assert '  by: SearchBy! = { name: "Patrick" }\n' in sdl
+    assert validate_schema(build_schema(sdl)) == []
+    assert schema.execute_sync("{ find }").data == {"find": "name=Patrick email=None"}
 
 
 def test_one_of_fields_hidden_from_the_schema_are_not_checked():
