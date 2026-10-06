@@ -183,6 +183,33 @@ class StrawberryUnion(StrawberryType):
             ) is not None:
                 return cast_type_name
 
+            # Union members that are (or inherit from) an interface with a custom
+            # `resolve_type` classmethod don't get it called automatically, unlike
+            # when the interface is used directly as a field's return type (see
+            # `from_interface` in `schema_converter.py`). Mirror that here by
+            # trying each distinct `resolve_type` found on the union's members
+            # before falling back to `is_type_of`/structural matching below,
+            # since a user who defined `resolve_type` usually did so precisely
+            # because the automatic matching can't tell the member types apart
+            # (e.g. identically-shaped ORM-backed types).
+            seen_resolvers: set[int] = set()
+
+            for inner_type in type_.types:
+                definition = type_map[inner_type.name].definition
+                if not isinstance(definition, StrawberryObjectDefinition):
+                    continue
+
+                resolve_type = definition.resolve_type
+                if resolve_type is None or id(resolve_type) in seen_resolvers:
+                    continue
+                seen_resolvers.add(id(resolve_type))
+
+                resolved_name = resolve_type(root, info, type_)
+                if resolved_name is not None and any(
+                    t.name == resolved_name for t in type_.types
+                ):
+                    return resolved_name
+
             # If the type given is not an Object type, try resolving using `is_type_of`
             # defined on the union's inner types
             if not has_object_definition(root):
