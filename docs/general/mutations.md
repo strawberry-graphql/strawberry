@@ -89,7 +89,7 @@ type Mutation {
 <Note>
 
 Mutations with void-result go against
-[this community-created guide on GQL best practices](https://graphql-rules.com/rules/mutation-payload).
+[this community-created guide on GQL best practices](https://github.com/graphql-rules/graphql-rules/blob/master/docs/rules/06-mutations/mutation-payload.md).
 
 </Note>
 
