@@ -168,8 +168,8 @@ import strawberry
 
 @strawberry.input(one_of=True)
 class SearchBy:
-    name: strawberry.Maybe[str]
-    email: strawberry.Maybe[str]
+    name: str | None
+    email: str | None
 ```
 
 ```graphql
@@ -181,11 +181,17 @@ input SearchBy @oneOf {
 
 </CodeGrid>
 
+Clients set exactly one field, which can't be `null`, and Strawberry sets the
+other fields to `None`.
+
 <Note>
 
-OneOf inputs use `strawberry.Maybe` to distinguish between fields that are
-explicitly not provided versus those that might be set to null. See the
-[Maybe documentation](./maybe.md) for more details on this usage pattern.
+GraphQL requires the fields of a OneOf input to be nullable and without a
+default value, so Strawberry raises an error when the schema is built if one of
+them is required or has a default, like `name: str | None = None`.
+
+Fields declared with `strawberry.Maybe` work too, but as OneOf fields can't be
+set to `null`, the `Some` wrapper doesn't add anything here.
 
 </Note>
 
