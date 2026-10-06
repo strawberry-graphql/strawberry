@@ -1,15 +1,5 @@
 ---
 release type: minor
-social_messages:
-  x: >-
-    {project_name} {version} is out! Pydantic models can now be used directly as
-    GraphQL types, inputs and interfaces with strawberry.pydantic, including
-    validation of inputs. https://strawberry.rocks/release/{version}
-  linkedin: >-
-    {project_name} {version} is out. Pydantic v2 models can now be decorated
-    directly with strawberry.pydantic.type, strawberry.pydantic.input and
-    strawberry.pydantic.interface, so the same model defines your GraphQL schema
-    and validates your inputs.
 ---
 
 This release adds first-class support for Pydantic v2 models, with
