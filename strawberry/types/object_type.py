@@ -518,12 +518,15 @@ def _process_type(
         dataclass_fields = {field_.name: field_ for field_ in dataclasses.fields(cls)}
 
         for field_ in fields:
-            # the resolver would never run, and requests using the input would
-            # fail, as the field isn't an argument of the input's `__init__`. An
-            # inherited field hidden with `strawberry.Private` isn't one of the
-            # class's fields anymore, so it's left alone
+            # a field with a resolver isn't an argument of the input's `__init__`,
+            # so requests using the input would fail, and the resolver would never
+            # run. Integrations that handle such fields themselves make them
+            # `__init__` arguments, like strawberry-django's filter and order
+            # methods. An inherited field hidden with `strawberry.Private` isn't
+            # one of the class's fields anymore, so it's left alone too
             if (
                 field_.base_resolver is not None
+                and not field_.init
                 and dataclass_fields.get(field_.python_name) is field_
             ):
                 raise ResolverFieldOnInputError(

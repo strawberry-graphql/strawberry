@@ -26,3 +26,7 @@ happened to input types inheriting from an output type with resolvers.
 
 Strawberry now raises a `ResolverFieldOnInputError` pointing at the resolver
 instead. Remove the resolver, or move the field to an output type.
+
+Fields that integrations handle themselves, like strawberry-django's filter and
+order methods, aren't affected: they're arguments of the input type's
+`__init__`, so the input type can be built.

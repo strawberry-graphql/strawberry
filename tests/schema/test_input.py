@@ -192,6 +192,23 @@ def test_error_for_a_lambda_resolver_points_at_the_field():
     assert "upper_name" in source.code.splitlines()[source.error_line - 1]
 
 
+def test_resolver_fields_that_are_init_arguments_are_allowed():
+    # integrations can handle fields with a resolver on input types themselves,
+    # like strawberry-django's filter methods, by making them `__init__` arguments
+    def search() -> str | None:
+        return None
+
+    search_field = strawberry.field(resolver=search)
+    search_field.init = True
+
+    @strawberry.input
+    class Filter:
+        name: str
+        search: str | None = search_field
+
+    assert Filter(name="ada", search="ad").search == "ad"
+
+
 def test_inherited_resolver_fields_hidden_with_private_are_allowed():
     @strawberry.type
     class User:
