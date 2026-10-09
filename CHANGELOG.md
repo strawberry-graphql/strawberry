@@ -1,6 +1,18 @@
 CHANGELOG
 =========
 
+0.332.1 - 2026-10-09
+--------------------
+
+This release fixes `strawberry.lazy` references to types re-exported through
+Python 3.15 native lazy imports.
+
+Strawberry now resolves these imports when building a schema, instead of passing
+an unresolved import proxy to the schema converter. Both `lazy from` imports and
+imports made lazy through `__lazy_modules__` are supported.
+
+This release was contributed by [@patrick91](https://github.com/patrick91) in [#4684](https://github.com/strawberry-graphql/strawberry/pull/4684)
+
 0.332.0 - 2026-10-06
 --------------------
 

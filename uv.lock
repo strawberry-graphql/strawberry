@@ -1,5 +1,5 @@
 version = 1
-revision = 3
+revision = 5
 requires-python = ">=3.10, <4.0"
 resolution-markers = [
     "python_full_version >= '3.15'",
@@ -3968,8 +3968,9 @@ wheels = [
 
 [[package]]
 name = "strawberry-graphql"
-version = "0.332.0"
+version = "0.332.1"
 source = { editable = "." }
+default-groups = ["dev", "integrations"]
 dependencies = [
     { name = "cross-web" },
     { name = "graphql-core" },
