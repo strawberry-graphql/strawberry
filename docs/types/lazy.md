@@ -49,3 +49,18 @@ class User:
 of the module of the type we want to use, this allows us to leverage Python's
 type hints, while preventing circular imports and preserving type safety by
 using `TYPE_CHECKING` to tell type checkers where to look for the type.
+
+## Python 3.15 lazy imports
+
+On Python 3.15+, `strawberry.lazy` can reference a module that re-exports a type
+using Python's native lazy imports:
+
+```python
+# exported_types.py (Python 3.15+)
+lazy from .users import User
+```
+
+Use `Annotated["User", strawberry.lazy(".exported_types")]` to reference this
+re-export. Strawberry resolves the native lazy import when it needs the type to
+build the schema. This also works for imports made lazy through
+`__lazy_modules__`.
