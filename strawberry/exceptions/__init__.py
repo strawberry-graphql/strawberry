@@ -22,6 +22,7 @@ from .multiple_strawberry_fields import MultipleStrawberryFieldsError
 from .object_is_not_a_class import ObjectIsNotClassError
 from .object_is_not_an_enum import ObjectIsNotAnEnumError
 from .private_strawberry_field import PrivateStrawberryFieldError
+from .resolver_field_on_input import ResolverFieldOnInputError
 from .scalar_already_registered import ScalarAlreadyRegisteredError
 from .unresolved_field_type import UnresolvedFieldTypeError
 from .unresolved_strawberry_field import UnresolvedStrawberryFieldError
@@ -240,6 +241,7 @@ __all__ = [
     "ObjectIsNotClassError",
     "PermissionReturnedAwaitableInSyncContextError",
     "PrivateStrawberryFieldError",
+    "ResolverFieldOnInputError",
     "ScalarAlreadyRegisteredError",
     "StrawberryException",
     "StrawberryGraphQLError",

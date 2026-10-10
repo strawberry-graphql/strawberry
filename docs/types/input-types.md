@@ -89,6 +89,10 @@ completely absent (common in update operations), you can use `strawberry.Maybe`.
 See the [Maybe documentation](./maybe.md) for comprehensive examples and usage
 patterns.
 
+Input types only hold the values sent by the client, so their fields can't have
+resolvers. Strawberry raises an error when an input type has a field with a
+resolver, including one inherited from an output type.
+
 ## Input instances as default values
 
 An input type instance can be used as the default value of a resolver argument
