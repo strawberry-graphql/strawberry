@@ -438,3 +438,31 @@ async def test_listen_to_channel_group_twice(ws: WebsocketCommunicator):
 
     await ws.send_json_to(CompleteMessage({"id": "sub1", "type": "complete"}))
     await ws.send_json_to(CompleteMessage({"id": "sub2", "type": "complete"}))
+
+
+async def test_listen_to_channel_group_ref_counted():
+    """Completing one listener must not discard a group a sibling still shares."""
+    from channels.layers import get_channel_layer
+
+    from strawberry.channels.handlers.base import ChannelsConsumer
+
+    consumer = ChannelsConsumer()
+    consumer.channel_layer = get_channel_layer()
+    consumer.channel_name = "test-channel-shared-group"
+
+    async with consumer.listen_to_channel("test.message", groups=["shared"]) as gen1:
+        async with consumer.listen_to_channel("test.message", groups=["shared"]):
+            pass
+
+        # The second listener's context exited; the first is still active and
+        # still shares "shared", so the group must not have been discarded.
+        await consumer.channel_layer.group_send(
+            "shared", {"type": "test.message", "text": "hello"}
+        )
+        # Simulate the ASGI protocol server delivering the group message.
+        await consumer.dispatch(
+            await consumer.channel_layer.receive(consumer.channel_name)
+        )
+
+        message = await asyncio.wait_for(gen1.__anext__(), timeout=1)
+        assert message == {"type": "test.message", "text": "hello"}

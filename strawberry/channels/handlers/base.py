@@ -1,6 +1,6 @@
 import asyncio
 import contextlib
-from collections import defaultdict
+from collections import Counter, defaultdict
 from collections.abc import AsyncGenerator, Awaitable, Callable, Sequence
 from typing import (
     Any,
@@ -59,6 +59,7 @@ class ChannelsConsumer(AsyncConsumer):
         self.listen_queues: defaultdict[str, WeakSet[asyncio.Queue]] = defaultdict(
             WeakSet
         )
+        self._group_refs: Counter[str] = Counter()
         super().__init__(*args, **kwargs)
 
     async def dispatch(self, message: ChannelsMessage) -> None:
@@ -117,15 +118,21 @@ class ChannelsConsumer(AsyncConsumer):
         # Subscribe to all groups but return generator object to allow user
         # code to run before blocking on incoming messages
         for group in groups:
-            await self.channel_layer.group_add(group, self.channel_name)
+            # Only the first subscriber actually joins the group - others share it.
+            if not self._group_refs[group]:
+                await self.channel_layer.group_add(group, self.channel_name)
+            self._group_refs[group] += 1
             added_groups.append(group)
         try:
             yield self._listen_to_channel_generator(queue, timeout)
         finally:
             # Code to release resource (Channels subscriptions)
             for group in added_groups:
-                with contextlib.suppress(Exception):
-                    await self.channel_layer.group_discard(group, self.channel_name)
+                self._group_refs[group] -= 1
+                if self._group_refs[group] <= 0:
+                    del self._group_refs[group]
+                    with contextlib.suppress(Exception):
+                        await self.channel_layer.group_discard(group, self.channel_name)
 
     async def _listen_to_channel_generator(
         self, queue: asyncio.Queue, timeout: float | None
