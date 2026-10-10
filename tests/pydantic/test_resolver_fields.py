@@ -7,11 +7,13 @@ import pytest
 from inline_snapshot import snapshot
 
 import strawberry
-from strawberry.exceptions import MissingReturnAnnotationError
+from strawberry.exceptions import (
+    MissingReturnAnnotationError,
+    ResolverFieldOnInputError,
+)
 from strawberry.pydantic.exceptions import (
     PydanticFieldWithoutResolverError,
     ResolverAlreadyUsedError,
-    ResolverFieldOnInputError,
     ResolverFieldOverridesModelFieldError,
 )
 from strawberry.scalars import JSON
@@ -195,7 +197,7 @@ def test_strawberry_field_when_pydantic_ignores_it():
 
 @pytest.mark.raises_strawberry_exception(
     ResolverFieldOnInputError,
-    match="Field `upper` on pydantic input `NameInput` can't have a resolver",
+    match="Field `upper` on input type `NameInput` can't have a resolver$",
 )
 def test_resolver_fields_on_inputs_raise_an_error():
     @strawberry.pydantic.input

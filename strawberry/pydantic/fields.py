@@ -48,6 +48,7 @@ from strawberry.annotation import StrawberryAnnotation
 from strawberry.exceptions import (
     InvalidStrawberryFieldAnnotationError,
     MultipleStrawberryFieldsError,
+    ResolverFieldOnInputError,
 )
 from strawberry.file_uploads import Upload
 from strawberry.types.base import StrawberryObjectDefinition
@@ -62,7 +63,6 @@ from .exceptions import (
     InheritedDefaultFactoryError,
     MaybeFieldError,
     PydanticFieldWithoutResolverError,
-    ResolverFieldOnInputError,
     ResolverFieldOverridesModelFieldError,
     StrawberryFieldAsDefaultError,
     UnregisteredPydanticTypeError,

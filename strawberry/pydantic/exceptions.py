@@ -16,7 +16,6 @@ if TYPE_CHECKING:
     from collections.abc import Callable
 
     from strawberry.exceptions.exception_source import ExceptionSource
-    from strawberry.types.field import StrawberryField
 
 
 _MARKUP_TAG = re.compile(r"(\\*)(\[[a-z#/@][^[]*?])")
@@ -421,42 +420,6 @@ class InheritedDefaultFactoryError(StrawberryException):
         source_finder = SourceFinder()
 
         return source_finder.find_class_attribute_from_object(self.cls, self.field_name)
-
-
-class ResolverFieldOnInputError(StrawberryException):
-    def __init__(
-        self, field_name: str, cls: type, resolver_field: StrawberryField
-    ) -> None:
-        self.cls = cls
-        self.field_name = field_name
-        self.resolver_field = resolver_field
-
-        self.message = (
-            f"Field `{field_name}` on pydantic input `{cls.__name__}` can't have a "
-            "resolver"
-        )
-        self.rich_message = (
-            f"Field `[underline]{field_name}[/]` on pydantic input "
-            f"`[underline]{cls.__name__}[/]` can't have a resolver"
-        )
-        self.annotation_message = "field with a resolver"
-        self.suggestion = (
-            "Input types only hold the values sent by the client, so remove the "
-            "resolver, or move the field to an output type."
-        )
-
-        super().__init__(self.message)
-
-    @cached_property
-    def exception_source(self) -> ExceptionSource | None:
-        source_finder = SourceFinder()
-
-        if self.resolver_field.base_resolver is not None:
-            return source_finder.find_function_from_object(
-                self.resolver_field.base_resolver._unbound_wrapped_func
-            )
-
-        return source_finder.find_class_from_object(self.cls)
 
 
 class ResolverFieldOverridesModelFieldError(StrawberryException):

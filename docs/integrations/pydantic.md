@@ -478,8 +478,10 @@ and from Pydantic interfaces, and the field is named after the attribute, so
 mypy plugin reports this form as an untyped field, so prefer the decorator form
 if you use it, or add `# type: ignore[pydantic-field]`.
 
-Input types can't have fields with a resolver: the ones inherited from a base
-model, for example one shared with an output type, are ignored.
+Input types can't have fields with a resolver, and defining one raises a
+[`ResolverFieldOnInputError`](../errors/resolver-field-on-input.md). The ones
+inherited from a base model, for example one shared with an output type, are
+ignored.
 
 `strawberry.pydantic.field` is only for fields with a resolver. To customize a
 field of the model, use `strawberry.field()` in its annotation instead, like
