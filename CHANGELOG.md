@@ -1,6 +1,41 @@
 CHANGELOG
 =========
 
+0.333.0 - 2026-10-10
+--------------------
+
+This release adds an error for input types with fields that have resolvers,
+raised when the input type is created:
+
+```python
+import strawberry
+
+
+@strawberry.input
+class UserInput:
+    name: str
+
+    @strawberry.field
+    def upper_name(self) -> str:
+        return self.name.upper()
+```
+
+Input types only hold the values sent by the client, so the resolver never ran:
+the schema published `upperName: String!` as an input field, so requests that
+left it out failed, and requests that sent it failed with
+`UserInput.__init__() got an unexpected keyword argument 'upper_name'`. The same
+happened to input types inheriting from an output type with resolvers.
+
+Strawberry now raises a `ResolverFieldOnInputError` pointing at the resolver
+instead. Remove the resolver, or move the field to an output type.
+
+If you use strawberry-django, update it too: its filter and order methods were
+fields with resolvers on input types, which
+[strawberry-django#972](https://github.com/strawberry-graphql/strawberry-django/pull/972)
+changes.
+
+This release was contributed by [@patrick91](https://github.com/patrick91) in [#4682](https://github.com/strawberry-graphql/strawberry/pull/4682)
+
 0.332.1 - 2026-10-09
 --------------------
 
