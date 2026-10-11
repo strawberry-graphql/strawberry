@@ -5,7 +5,7 @@ from collections.abc import Callable
 from types import TracebackType
 from typing import Any, cast
 
-from .exception import StrawberryException, UnableToFindExceptionSource
+from .exception import StrawberryException
 
 original_threading_exception_hook = threading.excepthook
 
@@ -40,9 +40,12 @@ def _get_handler(exception_type: type[BaseException]) -> ExcepthookHandler:
                 try:
                     rich.print(exception)
 
-                # we check if weren't able to find the exception source
-                # in that case we fallback to the original exception handler
-                except UnableToFindExceptionSource:
+                # rendering the rich error is best effort: if we weren't able
+                # to find the exception source (UnableToFindExceptionSource)
+                # or rendering fails for any other reason, we fallback to the
+                # original exception handler, so the user still sees their
+                # error instead of a crash in the exception hook
+                except Exception:  # noqa: BLE001
                     sys.__excepthook__(exception_type, exception, traceback)
 
             return _handler

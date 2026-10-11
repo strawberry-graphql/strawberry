@@ -2,6 +2,22 @@ from dataclasses import dataclass
 from pathlib import Path
 
 
+def path_relative_to_cwd(path: Path) -> Path:
+    """Return ``path`` relative to the current working directory when possible.
+
+    Paths outside the current working directory (for example a script run
+    with ``python ../app.py``, or a module in site-packages) are returned
+    unchanged.
+    """
+    if not path.is_absolute():
+        return path
+
+    try:
+        return path.relative_to(Path.cwd())
+    except ValueError:
+        return path
+
+
 @dataclass
 class ExceptionSource:
     path: Path
@@ -14,7 +30,4 @@ class ExceptionSource:
 
     @property
     def path_relative_to_cwd(self) -> Path:
-        if self.path.is_absolute():
-            return self.path.relative_to(Path.cwd())
-
-        return self.path
+        return path_relative_to_cwd(self.path)

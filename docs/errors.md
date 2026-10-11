@@ -52,5 +52,9 @@ install Strawberry with errors enabled by running:
 pip install "strawberry-graphql[cli]"
 ```
 
+When Strawberry can't find the source code of the error, for example for code
+run with `python -c` or in the interactive interpreter, the standard Python
+traceback is shown instead.
+
 If you want to disable the errors you can do so by setting the
 `STRAWBERRY_DISABLE_RICH_ERRORS` environment variable to `1`.
