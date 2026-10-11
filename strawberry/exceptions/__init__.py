@@ -24,6 +24,7 @@ from .object_is_not_an_enum import ObjectIsNotAnEnumError
 from .private_strawberry_field import PrivateStrawberryFieldError
 from .resolver_field_on_input import ResolverFieldOnInputError
 from .scalar_already_registered import ScalarAlreadyRegisteredError
+from .undecorated_subclass import UndecoratedSubclassError
 from .unresolved_field_type import UnresolvedFieldTypeError
 from .unresolved_strawberry_field import UnresolvedStrawberryFieldError
 
@@ -248,6 +249,7 @@ __all__ = [
     "StrawberryInputCoercionError",
     "UnableToFindExceptionSource",
     "UnallowedReturnTypeForUnion",
+    "UndecoratedSubclassError",
     "UnresolvedFieldTypeError",
     "UnresolvedStrawberryFieldError",
     "UnsupportedTypeError",

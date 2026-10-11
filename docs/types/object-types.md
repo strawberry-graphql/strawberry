@@ -90,6 +90,45 @@ type Book {
 
 </CodeGrid>
 
+Object types can subclass other object types to reuse their fields, as long as
+the subclass is decorated too:
+
+<CodeGrid>
+
+```python
+import strawberry
+
+
+@strawberry.type
+class Character:
+    name: str
+    age: int
+
+
+@strawberry.type
+class Wizard(Character):
+    house: str
+```
+
+```graphql
+type Character {
+  name: String!
+  age: Int!
+}
+
+type Wizard {
+  name: String!
+  age: Int!
+  house: String!
+}
+```
+
+</CodeGrid>
+
+An undecorated subclass would be published as its parent type, without its own
+fields, so Strawberry raises an error when one is used in the schema. The same
+applies to input types and interfaces.
+
 ## Customizing fields with `Annotated`
 
 You can configure fields by adding `strawberry.field()` to

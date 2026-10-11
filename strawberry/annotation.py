@@ -26,6 +26,7 @@ from strawberry.types.base import (
     StrawberryObjectDefinition,
     StrawberryOptional,
     StrawberryTypeVar,
+    check_is_not_undecorated_subclass,
     get_object_definition,
     has_object_definition,
 )
@@ -228,6 +229,10 @@ class StrawberryAnnotation:
         self.__resolve_cache__ = None  # Invalidate cache to allow re-evaluation
 
     def create_concrete_type(self, evaled_type: type) -> type:
+        # e.g. `Edge[int]`, where `Edge` is an undecorated subclass of a generic
+        # type, which would be specialized as its parent type
+        check_is_not_undecorated_subclass(get_origin(evaled_type))
+
         if has_object_definition(evaled_type):
             return evaled_type.__strawberry_definition__.resolve_generic(evaled_type)
         raise ValueError(f"Not supported {evaled_type}")
