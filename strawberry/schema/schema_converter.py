@@ -68,6 +68,7 @@ from strawberry.types.base import (
     StrawberryObjectDefinition,
     StrawberryOptional,
     StrawberryType,
+    check_is_not_undecorated_subclass,
     get_object_definition,
     has_object_definition,
 )
@@ -1315,6 +1316,10 @@ class GraphQLCoreConverter:
         return GraphQLNonNull(self.from_type(type_))
 
     def from_type(self, type_: StrawberryType | type) -> GraphQLNullableType:
+        # Every type used in the schema is converted here, so this covers fields,
+        # arguments, union members, lazy types and `Schema(types=[...])`
+        check_is_not_undecorated_subclass(type_)
+
         if compat.is_graphql_generic(type_):
             raise MissingTypesForGenericError(type_)
 

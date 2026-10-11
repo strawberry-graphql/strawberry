@@ -55,6 +55,7 @@ from strawberry.schema.validation_rules.one_of import OneOfInputValidationRule
 from strawberry.types.base import (
     StrawberryObjectDefinition,
     WithStrawberryObjectDefinition,
+    check_is_not_undecorated_subclass,
     has_object_definition,
 )
 from strawberry.types.execution import (
@@ -397,6 +398,9 @@ class Schema(BaseSchema):
 
         self.directives = tuple(directives)
         self.schema_directives = list(schema_directives)
+
+        for root_type in (query, mutation, subscription):
+            check_is_not_undecorated_subclass(root_type)
 
         query_type = self.schema_converter.from_object(
             cast(

@@ -265,6 +265,33 @@ def get_object_definition(
     return definition
 
 
+def check_is_not_undecorated_subclass(type_: object) -> None:
+    """Raise if `type_` only inherits its object definition from a base class.
+
+    Python inherits `__strawberry_definition__`, so an undecorated subclass of a
+    Strawberry type passes `has_object_definition`, and would be published as its
+    parent type. This is meant for types used in the schema (annotations, root
+    types, `types=[...]`), not for runtime values: resolvers can return instances
+    of undecorated subclasses of the type they're annotated with.
+
+    Generic aliases like `Edge[int]` aren't classes, so they're left alone, and
+    the classes they're resolved to have their own definition.
+    """
+    if not isinstance(type_, type) or "__strawberry_definition__" in vars(type_):
+        return
+
+    if not has_object_definition(type_):
+        return
+
+    from strawberry.exceptions import UndecoratedSubclassError
+
+    for base in type_.__mro__[1:]:
+        definition = vars(base).get("__strawberry_definition__")
+
+        if isinstance(definition, StrawberryObjectDefinition):
+            raise UndecoratedSubclassError(type_, base, definition)
+
+
 @dataclasses.dataclass(eq=False)
 class StrawberryObjectDefinition(StrawberryType):
     """Encapsulates definitions for Input / Object / interface GraphQL Types.
@@ -532,6 +559,7 @@ __all__ = [
     "StrawberryType",
     "StrawberryTypeVar",
     "WithStrawberryObjectDefinition",
+    "check_is_not_undecorated_subclass",
     "get_object_definition",
     "has_object_definition",
 ]

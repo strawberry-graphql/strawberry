@@ -21,6 +21,7 @@ from strawberry.types.base import (
     StrawberryContainer,
     StrawberryObjectDefinition,
     WithStrawberryObjectDefinition,
+    check_is_not_undecorated_subclass,
     get_object_definition,
 )
 from strawberry.types.info import Info
@@ -174,6 +175,10 @@ class Schema(BaseSchema):
 
         if query is None:
             return create_type(name="Query", fields=fields)
+
+        # The query type is subclassed below, so the base schema can't tell if it
+        # was decorated
+        check_is_not_undecorated_subclass(query)
 
         query_definition = query.__strawberry_definition__
         query_field_names = {
