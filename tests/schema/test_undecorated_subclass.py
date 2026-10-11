@@ -250,6 +250,26 @@ def test_undecorated_subclass_of_a_specialized_generic_type_raises():
         strawberry.Schema(query=Query)
 
 
+def test_undecorated_generic_subclass_used_by_a_generic_type_raises():
+    @strawberry.type
+    class Edge(Generic[T]):
+        node: T
+
+    class NamedEdge(Edge[T]):
+        cursor: str
+
+    # `NamedEdge[T]` keeps its type variable until `Connection` is specialized,
+    # which would copy `Edge`'s definition
+    with pytest.raises(
+        UndecoratedSubclassError,
+        match="`NamedEdge` subclasses the Strawberry type `Edge`",
+    ):
+
+        @strawberry.type
+        class Connection(Generic[T]):
+            edges: list[NamedEdge[T]]
+
+
 def test_decorated_subclasses_are_allowed():
     @strawberry.interface
     class Node:

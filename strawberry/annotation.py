@@ -199,6 +199,13 @@ class StrawberryAnnotation:
             return self.create_maybe(evaled_type)
 
         if self._is_graphql_generic(evaled_type):
+            # e.g. `Edge[int]` or `Edge[T]`, where `Edge` is an undecorated
+            # subclass of a generic type, which would be specialized as its
+            # parent type. Aliases with type variables are only specialized
+            # later, when the generic type using them is, so they're checked
+            # before they're returned
+            check_is_not_undecorated_subclass(get_origin(evaled_type))
+
             if any(is_type_var(type_) for type_ in get_args(evaled_type)):
                 return evaled_type
             return self.create_concrete_type(evaled_type)
@@ -229,10 +236,6 @@ class StrawberryAnnotation:
         self.__resolve_cache__ = None  # Invalidate cache to allow re-evaluation
 
     def create_concrete_type(self, evaled_type: type) -> type:
-        # e.g. `Edge[int]`, where `Edge` is an undecorated subclass of a generic
-        # type, which would be specialized as its parent type
-        check_is_not_undecorated_subclass(get_origin(evaled_type))
-
         if has_object_definition(evaled_type):
             return evaled_type.__strawberry_definition__.resolve_generic(evaled_type)
         raise ValueError(f"Not supported {evaled_type}")
