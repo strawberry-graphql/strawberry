@@ -3,6 +3,7 @@ from __future__ import annotations
 import importlib
 import importlib.util
 import sys
+import tokenize
 from dataclasses import dataclass
 from functools import cached_property
 from pathlib import Path
@@ -13,6 +14,7 @@ from strawberry.exceptions.exception_source import ExceptionSource
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
     from inspect import Traceback
+    from types import ModuleType
 
     from libcst import BinaryOperation, Call, CSTNode, FunctionDef
 
@@ -26,6 +28,54 @@ class SourcePath:
     code: str
 
 
+def _get_module_file(module: ModuleType) -> str | None:
+    """Return the path of the file a module was loaded from, if there is one.
+
+    ``__file__`` is optional: modules created by the REPL or ``python -c``,
+    frozen modules and modules from some custom loaders don't have it. Some
+    CPython versions (3.13.15+, 3.14.7+ and 3.15) also remove ``__file__``
+    from ``__main__`` before an uncaught exception from a script reaches
+    ``sys.excepthook``, but they leave a file loader on ``__loader__``.
+    """
+    file = getattr(module, "__file__", None)
+
+    if isinstance(file, str):
+        return file
+
+    spec = getattr(module, "__spec__", None)
+
+    if spec is not None and spec.has_location and isinstance(spec.origin, str):
+        return spec.origin
+
+    get_filename = getattr(getattr(module, "__loader__", None), "get_filename", None)
+
+    if get_filename is None:
+        return None
+
+    try:
+        filename = get_filename(module.__name__)
+    except ImportError:
+        return None
+
+    return filename if isinstance(filename, str) else None
+
+
+def _read_source(path: Path) -> str | None:
+    """Read a source file, returning None if it can't be read.
+
+    The file is decoded with its declared source encoding, like Python does,
+    which is UTF-8 unless a coding comment says otherwise. Paths taken from code
+    objects and frames can be pseudo-filenames such as ``<string>`` or
+    ``<stdin>``, and files can be moved or deleted after they were imported.
+    """
+    try:
+        with tokenize.open(path) as file:
+            return file.read()
+    # `SyntaxError` is raised for an invalid coding comment
+    except (OSError, SyntaxError, UnicodeDecodeError):
+        return None
+
+
 class LibCSTSourceFinder:
     def __init__(self) -> None:
         self.cst = importlib.import_module("libcst")
@@ -35,23 +85,31 @@ class LibCSTSourceFinder:
 
         source_module = sys.modules.get(module)
 
-        path = None
+        filename = None
 
         if source_module is None:
-            spec = importlib.util.find_spec(module)
+            try:
+                spec = importlib.util.find_spec(module)
+            except (ImportError, ValueError):
+                spec = None
 
-            if spec is not None and spec.origin is not None:
-                path = Path(spec.origin)
-        elif source_module.__file__ is not None:
-            path = Path(source_module.__file__)
+            if spec is not None and spec.has_location:
+                filename = spec.origin
+        else:
+            filename = _get_module_file(source_module)
 
-        if path is None:
+        if filename is None:
             return None
 
-        if not path.exists() or path.suffix != ".py":
-            return None  # pragma: no cover
+        path = Path(filename)
 
-        source = path.read_text(encoding="utf-8")
+        if path.suffix != ".py":
+            return None
+
+        source = _read_source(path)
+
+        if source is None:
+            return None
 
         return SourcePath(path=path, code=source)
 
@@ -266,7 +324,10 @@ class LibCSTSourceFinder:
     ) -> ExceptionSource | None:
         import libcst.matchers as m
 
-        source = path.read_text()
+        source = _read_source(path)
+
+        if source is None:
+            return None
 
         invalid_type_name = getattr(invalid_type, "__name__", None)
 
@@ -343,7 +404,10 @@ class LibCSTSourceFinder:
         import libcst.matchers as m
 
         path = Path(frame.filename)
-        source = path.read_text()
+        source = _read_source(path)
+
+        if source is None:
+            return None
 
         other_name = getattr(other, "__name__", None)
 
@@ -384,7 +448,10 @@ class LibCSTSourceFinder:
         import libcst.matchers as m
 
         path = Path(union_definition._source_file)
-        source = path.read_text()
+        source = _read_source(path)
+
+        if source is None:
+            return None
 
         matcher = m.Subscript(
             value=m.Name(value="Annotated"),
@@ -510,7 +577,10 @@ class LibCSTSourceFinder:
         import libcst.matchers as m
 
         path = Path(scalar_definition._source_file)
-        source = path.read_text()
+        source = _read_source(path)
+
+        if source is None:
+            return None
 
         # Try to find direct strawberry.scalar() calls with name parameter
         direct_matcher = m.Call(
