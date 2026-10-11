@@ -3,6 +3,7 @@ from __future__ import annotations
 import importlib
 import importlib.util
 import sys
+import tokenize
 from dataclasses import dataclass
 from functools import cached_property
 from pathlib import Path
@@ -62,13 +63,16 @@ def _get_module_file(module: ModuleType) -> str | None:
 def _read_source(path: Path) -> str | None:
     """Read a source file, returning None if it can't be read.
 
-    Paths taken from code objects and frames can be pseudo-filenames such as
-    ``<string>`` or ``<stdin>``, and files can be moved or deleted after they
-    were imported.
+    The file is decoded with its declared source encoding, like Python does,
+    which is UTF-8 unless a coding comment says otherwise. Paths taken from code
+    objects and frames can be pseudo-filenames such as ``<string>`` or
+    ``<stdin>``, and files can be moved or deleted after they were imported.
     """
     try:
-        return path.read_text(encoding="utf-8")
-    except (OSError, UnicodeDecodeError):
+        with tokenize.open(path) as file:
+            return file.read()
+    # `SyntaxError` is raised for an invalid coding comment
+    except (OSError, SyntaxError, UnicodeDecodeError):
         return None
 
 

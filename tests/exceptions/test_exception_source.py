@@ -58,6 +58,39 @@ def test_returns_absolute_path_when_outside_cwd(mocker):
     assert source.path_relative_to_cwd == Path("/home/user/scripts/main.py")
 
 
+def test_returns_absolute_path_when_relative_path_is_outside_cwd(mocker):
+    mocker.patch.object(Path, "cwd", return_value=Path("/home/user/project/"))
+
+    source = ExceptionSource(
+        path=Path("../scripts/main.py"),
+        code="",
+        start_line=1,
+        end_line=1,
+        error_line=1,
+        error_column=1,
+        error_column_end=1,
+    )
+
+    assert source.path_relative_to_cwd == Path("/home/user/scripts/main.py")
+
+
+def test_returns_absolute_path_when_path_leaves_cwd_with_dotdot(mocker):
+    # e.g. the `__file__` of a script run with `python ../main.py`
+    mocker.patch.object(Path, "cwd", return_value=Path("/home/user/project/"))
+
+    source = ExceptionSource(
+        path=Path("/home/user/project/../main.py"),
+        code="",
+        start_line=1,
+        end_line=1,
+        error_line=1,
+        error_column=1,
+        error_column_end=1,
+    )
+
+    assert source.path_relative_to_cwd == Path("/home/user/main.py")
+
+
 def test_scalar_already_registered_error_with_other_scalar_outside_cwd(mocker):
     mocker.patch.object(Path, "cwd", return_value=Path("/home/user/project/"))
 

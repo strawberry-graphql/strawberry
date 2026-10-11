@@ -1,3 +1,4 @@
+import os
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -6,16 +7,19 @@ def path_relative_to_cwd(path: Path) -> Path:
     """Return ``path`` relative to the current working directory when possible.
 
     Paths outside the current working directory (for example a script run
-    with ``python ../app.py``, or a module in site-packages) are returned
-    unchanged.
+    with ``python ../app.py``, or a module in site-packages) are returned as
+    absolute paths. Paths are normalized first, as script paths can contain
+    ``..``, like ``/project/src/../app.py``, and relative paths can come from
+    relative ``sys.path`` entries.
     """
-    if not path.is_absolute():
-        return path
+    cwd = Path.cwd()
+    # `cwd / path` is `path` itself when it's absolute
+    absolute = Path(os.path.normpath(cwd / path))
 
     try:
-        return path.relative_to(Path.cwd())
+        return absolute.relative_to(cwd)
     except ValueError:
-        return path
+        return absolute
 
 
 @dataclass

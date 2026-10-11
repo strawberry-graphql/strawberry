@@ -149,3 +149,31 @@ def test_returns_none_for_union_call_without_a_source_file(filename: str):
     source = SourceFinder().find_union_call(Path(filename), "Union", int)
 
     assert source is None
+
+
+def test_finds_source_declaring_a_non_utf8_encoding(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    path = tmp_path / "app.py"
+    source = (
+        '# -*- coding: latin-1 -*-\n# café\n\n\ndef hello(self):\n    return "hi"\n'
+    )
+    path.write_bytes(source.encode("latin-1"))
+
+    module = types.ModuleType("__main__")
+    module.__loader__ = importlib.machinery.SourceFileLoader("__main__", str(path))
+    module.__spec__ = None
+    exec(compile(source, str(path), "exec"), module.__dict__)  # noqa: S102
+    monkeypatch.setitem(sys.modules, "__main__", module)
+
+    exception_source = _find_function(module)
+
+    assert exception_source is not None
+    assert "# café" in exception_source.code
+
+
+def test_returns_none_for_an_invalid_encoding_declaration(tmp_path: Path):
+    path = tmp_path / "app.py"
+    path.write_text("# -*- coding: not-an-encoding -*-\n", encoding="utf-8")
+
+    assert SourceFinder().find_union_call(path, "Union", int) is None
