@@ -16,7 +16,7 @@ from .error import (
     InputValidationError,
     PydanticValidationErrorHandler,
     ValidationError,
-    ValidationIssue,
+    ValidationErrorDetail,
 )
 from .object_type import input, type  # noqa: A004
 
@@ -24,7 +24,7 @@ __all__ = [
     "InputValidationError",
     "PydanticValidationErrorHandler",
     "ValidationError",
-    "ValidationIssue",
+    "ValidationErrorDetail",
     "input",
     "type",
 ]

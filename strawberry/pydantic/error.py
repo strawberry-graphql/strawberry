@@ -15,13 +15,11 @@ if TYPE_CHECKING:
 
 
 @strawberry_type(description="A problem with an input value.")
-class ValidationIssue:
+class ValidationErrorDetail:
     """A problem with an input value."""
 
     location: list[str] = field(
-        description=(
-            "The argument, then the fields and list indexes leading to the value."
-        )
+        description=("The argument, then field names and list indexes, all as strings.")
     )
     message: str = field(description="The reason the value is invalid.")
     type: str = field(description="The Pydantic error type, like `string_too_short`.")
@@ -31,48 +29,48 @@ class ValidationIssue:
 class ValidationError:
     """The inputs failed validation."""
 
-    issues: list[ValidationIssue] = field(
+    errors: list[ValidationErrorDetail] = field(
         description="The problems with the input values."
     )
 
 
-# all the issues are in the extensions, the message only summarizes them
-_MAX_ISSUES_IN_MESSAGE = 5
+# all the errors are in the extensions, the message only summarizes them
+_MAX_ERRORS_IN_MESSAGE = 5
 
 
 class InputValidationError(StrawberryInputCoercionError):
     """Raised when a pydantic input fails validation.
 
     It's an input coercion error, so it's returned as a GraphQL error, with the
-    issues in its `validationErrors` extension, unless the field can return a
+    errors in its `validationErrors` extension, unless the field can return a
     `ValidationError` and `PydanticValidationErrorHandler` is used.
 
-    Its `issues` are the `ValidationIssue`s of the problems with the input.
+    Its `errors` are the `ValidationErrorDetail`s of the problems with the input.
     """
 
-    def __init__(self, issues: list[ValidationIssue]) -> None:
-        self.issues = issues
+    def __init__(self, errors: list[ValidationErrorDetail]) -> None:
+        self.errors = errors
 
         details = "; ".join(
-            f"{'.'.join(issue.location)}: {issue.message}"
-            if issue.location
-            else issue.message
-            for issue in issues[:_MAX_ISSUES_IN_MESSAGE]
+            f"{'.'.join(error.location)}: {error.message}"
+            if error.location
+            else error.message
+            for error in errors[:_MAX_ERRORS_IN_MESSAGE]
         )
 
-        if len(issues) > _MAX_ISSUES_IN_MESSAGE:
-            details += f" (and {len(issues) - _MAX_ISSUES_IN_MESSAGE} more)"
+        if len(errors) > _MAX_ERRORS_IN_MESSAGE:
+            details += f" (and {len(errors) - _MAX_ERRORS_IN_MESSAGE} more)"
 
         super().__init__(
             f"Invalid input: {details}",
             extensions={
                 "validationErrors": [
                     {
-                        "location": issue.location,
-                        "message": issue.message,
-                        "type": issue.type,
+                        "location": error.location,
+                        "message": error.message,
+                        "type": error.type,
                     }
-                    for issue in issues
+                    for error in errors
                 ]
             },
         )
@@ -94,4 +92,4 @@ class PydanticValidationErrorHandler(
         field: StrawberryField,
         info: Info,
     ) -> ValidationError | None:
-        return ValidationError(issues=exception.issues)
+        return ValidationError(errors=exception.errors)

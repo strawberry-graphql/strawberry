@@ -4,6 +4,7 @@ from typing import Annotated
 import pydantic
 import pytest
 from inline_snapshot import snapshot
+from pydantic_core import PydanticCustomError
 
 import strawberry
 from strawberry.exceptions import StrawberryInputCoercionError
@@ -12,7 +13,7 @@ from strawberry.pydantic import (
     InputValidationError,
     PydanticValidationErrorHandler,
     ValidationError,
-    ValidationIssue,
+    ValidationErrorDetail,
 )
 
 
@@ -44,11 +45,11 @@ class Query:
     hello: str = "world"
 
 
-ISSUES_QUERY = """
+ERRORS_QUERY = """
     mutation SignUp($input: SignUpInput!) {
         signUp(input: $input) {
             ... on User { name }
-            ... on ValidationError { issues { location message type } }
+            ... on ValidationError { errors { location message type } }
         }
     }
 """
@@ -98,12 +99,12 @@ union UserValidationError = User | ValidationError
 """The inputs failed validation."""
 type ValidationError {
   """The problems with the input values."""
-  issues: [ValidationIssue!]!
+  errors: [ValidationErrorDetail!]!
 }
 
 """A problem with an input value."""
-type ValidationIssue {
-  """The argument, then the fields and list indexes leading to the value."""
+type ValidationErrorDetail {
+  """The argument, then field names and list indexes, all as strings."""
   location: [String!]!
 
   """The reason the value is invalid."""
@@ -117,7 +118,7 @@ type ValidationIssue {
 
 def test_valid_input():
     result = _sign_up_schema().execute_sync(
-        ISSUES_QUERY, variable_values={"input": {"password": "a long password"}}
+        ERRORS_QUERY, variable_values={"input": {"password": "a long password"}}
     )
 
     assert not result.errors
@@ -126,7 +127,7 @@ def test_valid_input():
 
 def test_invalid_input_is_returned_as_a_validation_error():
     result = _sign_up_schema().execute_sync(
-        ISSUES_QUERY,
+        ERRORS_QUERY,
         variable_values={"input": {"password": "short", "address": {"zipCode": "x"}}},
     )
 
@@ -134,7 +135,7 @@ def test_invalid_input_is_returned_as_a_validation_error():
     assert result.data == snapshot(
         {
             "signUp": {
-                "issues": [
+                "errors": [
                     {
                         "location": ["input", "password"],
                         "message": "String should have at least 12 characters",
@@ -153,16 +154,16 @@ def test_invalid_input_is_returned_as_a_validation_error():
 
 def test_model_errors_are_located_at_the_input():
     result = _sign_up_schema().execute_sync(
-        ISSUES_QUERY, variable_values={"input": {"password": "password1234"}}
+        ERRORS_QUERY, variable_values={"input": {"password": "password1234"}}
     )
 
     assert not result.errors
     assert result.data == {
         "signUp": {
-            "issues": [
+            "errors": [
                 {
                     "location": ["input"],
-                    "message": "Value error, password is too common",
+                    "message": "password is too common",
                     "type": "value_error",
                 }
             ]
@@ -184,13 +185,13 @@ async def test_invalid_input_is_returned_as_a_validation_error_async():
     )
 
     result = await schema.execute(
-        ISSUES_QUERY, variable_values={"input": {"password": "short"}}
+        ERRORS_QUERY, variable_values={"input": {"password": "short"}}
     )
 
     assert not result.errors
     assert result.data == {
         "signUp": {
-            "issues": [
+            "errors": [
                 {
                     "location": ["input", "password"],
                     "message": "String should have at least 12 characters",
@@ -289,7 +290,7 @@ def test_locations_go_through_lists_and_strawberry_inputs():
         """
         mutation {
             createOrders(orders: [{items: []}, {items: [{quantity: 1}, {quantity: 0}]}]) {
-                ... on ValidationError { issues { location } }
+                ... on ValidationError { errors { location } }
             }
         }
         """
@@ -298,7 +299,7 @@ def test_locations_go_through_lists_and_strawberry_inputs():
     assert not result.errors
     assert result.data == {
         "createOrders": {
-            "issues": [{"location": ["orders", "1", "items", "1", "quantity"]}]
+            "errors": [{"location": ["orders", "1", "items", "1", "quantity"]}]
         }
     }
 
@@ -328,7 +329,7 @@ def test_locations_use_graphql_names():
         """
         mutation {
             updateProfile(profileData: {displayName: "", about: "long", website: "x"}) {
-                ... on ValidationError { issues { location } }
+                ... on ValidationError { errors { location } }
             }
         }
         """
@@ -337,7 +338,7 @@ def test_locations_use_graphql_names():
     assert not result.errors
     assert result.data == {
         "updateProfile": {
-            "issues": [
+            "errors": [
                 {"location": ["profileData", "displayName"]},
                 {"location": ["profileData", "about"]},
                 {"location": ["profileData", "website"]},
@@ -374,15 +375,15 @@ def test_validation_errors_are_returned_before_permissions_run():
     )
 
     result = schema.execute_sync(
-        ISSUES_QUERY, variable_values={"input": {"password": "short"}}
+        ERRORS_QUERY, variable_values={"input": {"password": "short"}}
     )
 
     assert not result.errors
-    assert result.data["signUp"]["issues"][0]["type"] == "string_too_short"
+    assert result.data["signUp"]["errors"][0]["type"] == "string_too_short"
     assert permission_ran is False
 
 
-def test_submitted_values_are_not_logged(caplog: pytest.LogCaptureFixture):
+def test_pydantic_input_payload_is_not_logged(caplog: pytest.LogCaptureFixture):
     @strawberry.type
     class Mutation:
         @strawberry.mutation
@@ -400,6 +401,66 @@ def test_submitted_values_are_not_logged(caplog: pytest.LogCaptureFixture):
     assert result.errors
     assert "Invalid input" in caplog.text
     assert "hunter2" not in caplog.text
+    error = result.errors[0].original_error
+    assert isinstance(error, InputValidationError)
+    assert error.__cause__ is None
+    assert error.__context__ is None
+
+
+@pytest.mark.parametrize(
+    ("error", "message"),
+    [
+        (
+            ValueError("Rejected value: 'original value'"),
+            "Rejected value: 'original value'",
+        ),
+        (ValueError("Value error, intentional"), "Value error, intentional"),
+        (
+            PydanticCustomError("value_error", "Value error, custom"),
+            "Value error, custom",
+        ),
+    ],
+)
+def test_validator_messages_are_preserved_verbatim_as_data(error, message):
+    @strawberry.pydantic.input
+    class MessageInput(pydantic.BaseModel):
+        text: str
+
+        @pydantic.field_validator("text")
+        @classmethod
+        def reject(cls, value: str) -> str:
+            raise error
+
+    @strawberry.type
+    class Mutation:
+        @strawberry.mutation
+        def submit(self, input: MessageInput) -> User | ValidationError:
+            return User(name="Ada")
+
+    schema = strawberry.Schema(
+        query=Query,
+        mutation=Mutation,
+        exception_handlers=[PydanticValidationErrorHandler()],
+    )
+    result = schema.execute_sync(
+        'mutation { submit(input: {text: "original value"}) { '
+        "... on ValidationError { errors { location message type } } } }"
+    )
+
+    # Input payloads are excluded, but messages are not redacted, even when
+    # a validator deliberately includes the submitted value in its message.
+    assert not result.errors
+    assert result.data == {
+        "submit": {
+            "errors": [
+                {
+                    "location": ["input", "text"],
+                    "message": message,
+                    "type": "value_error",
+                }
+            ]
+        }
+    }
 
 
 def test_locations_of_renamed_fields():
@@ -430,7 +491,7 @@ def test_locations_of_renamed_fields():
         """
         mutation {
             update(data: {name: "a fine legacy name", displayName: "x", handle: "y"}) {
-                ... on ValidationError { issues { location type } }
+                ... on ValidationError { errors { location type } }
             }
         }
         """
@@ -439,7 +500,7 @@ def test_locations_of_renamed_fields():
     assert not result.errors
     assert result.data == {
         "update": {
-            "issues": [
+            "errors": [
                 {"location": ["data", "displayName"], "type": "string_too_short"},
                 {"location": ["data", "handle"], "type": "string_too_short"},
             ]
@@ -474,7 +535,7 @@ def test_locations_end_at_values_that_are_not_part_of_the_schema():
         """
         mutation {
             transfer(transfer: {amount: 1}) {
-                ... on ValidationError { issues { location type } }
+                ... on ValidationError { errors { location type } }
             }
         }
         """
@@ -482,23 +543,27 @@ def test_locations_end_at_values_that_are_not_part_of_the_schema():
 
     assert not result.errors
     assert result.data == {
-        "transfer": {"issues": [{"location": ["transfer"], "type": "int_parsing"}]}
+        "transfer": {"errors": [{"location": ["transfer"], "type": "int_parsing"}]}
     }
 
 
 def test_error_message():
-    def issue(location: list[str]) -> ValidationIssue:
-        return ValidationIssue(location=location, message="Invalid", type="invalid")
+    def detail(location: list[str]) -> ValidationErrorDetail:
+        return ValidationErrorDetail(
+            location=location, message="Invalid", type="invalid"
+        )
 
-    assert InputValidationError([issue(["input", "name"]), issue([])]).message == (
+    assert InputValidationError([detail(["input", "name"]), detail([])]).message == (
         "Invalid input: input.name: Invalid; Invalid"
     )
 
-    # the issues are all in the extensions
-    error = InputValidationError([issue(["input", str(index)]) for index in range(7)])
+    # the errors are all in the extensions
+    error = InputValidationError([detail(["input", str(index)]) for index in range(7)])
 
     assert error.message == (
         "Invalid input: input.0: Invalid; input.1: Invalid; input.2: Invalid; "
         "input.3: Invalid; input.4: Invalid (and 2 more)"
     )
     assert len(error.extensions["validationErrors"]) == 7
+    assert len(error.errors) == 7
+    assert error.errors[6].location == ["input", "6"]
