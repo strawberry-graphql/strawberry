@@ -1,41 +1,25 @@
-"""Field processing utilities for Pydantic models in Strawberry GraphQL.
-
-This module provides functions to extract and process fields from Pydantic BaseModel
-classes, converting them to StrawberryField instances that can be used in GraphQL schemas.
-"""
+"""Read the fields of Pydantic models as Strawberry fields."""
 
 from __future__ import annotations
 
 import copy
 import dataclasses
 import sys
-from typing import TYPE_CHECKING, Any, Union, get_args, get_origin
+from typing import TYPE_CHECKING, Annotated, Any, get_args
 from typing_extensions import Format, get_annotations
 
 from graphql.type.directives import DEFAULT_DEPRECATION_REASON
 from pydantic import BaseModel
 
 from strawberry.annotation import StrawberryAnnotation
-from strawberry.exceptions import (
-    InvalidStrawberryFieldAnnotationError,
-    MultipleStrawberryFieldsError,
-)
 from strawberry.types.base import StrawberryObjectDefinition
-from strawberry.types.field import StrawberryField, _contains_strawberry_field
+from strawberry.types.field import StrawberryField, get_annotated_field
 from strawberry.types.private import is_private
-from strawberry.utils.typing import is_union
 
 from .exceptions import MisplacedFieldError, UnregisteredPydanticTypeError
 
 if TYPE_CHECKING:
     from pydantic.fields import FieldInfo
-
-    from strawberry.exceptions import StrawberryException
-
-
-class _UnregisteredModel(Exception):
-    def __init__(self, model: type[BaseModel]) -> None:
-        self.model = model
 
 
 def _is_subclass(annotation: object, base: type | tuple[type, ...]) -> bool:
@@ -69,10 +53,7 @@ def _get_strawberry_base_field(origin: type, field_name: str) -> StrawberryField
     if not isinstance(definition, StrawberryObjectDefinition):
         return None
 
-    return next(
-        (field for field in definition.fields if field.python_name == field_name),
-        None,
-    )
+    return definition.get_field(field_name)
 
 
 def _get_strawberry_field_override(
@@ -89,49 +70,41 @@ def _get_strawberry_field_override(
     if isinstance(getattr(field_info, "_original_assignment", None), StrawberryField):
         raise MisplacedFieldError(field_name=field_name, cls=cls)
 
-    if _contains_strawberry_field(field_info.annotation):
-        raise InvalidStrawberryFieldAnnotationError(field_name=field_name, cls=cls)
+    # pydantic keeps the metadata of the field's `Annotated` apart from its type
+    annotation = (
+        Annotated[(field_info.annotation, *field_info.metadata)]
+        if field_info.metadata
+        else field_info.annotation
+    )
+    _, strawberry_field = get_annotated_field(
+        annotation, cls=cls, field_name=field_name
+    )
 
-    strawberry_fields = [
-        item for item in field_info.metadata if isinstance(item, StrawberryField)
-    ]
-
-    if len(strawberry_fields) > 1:
-        raise MultipleStrawberryFieldsError(field_name=field_name, cls=cls)
-
-    return strawberry_fields[0] if strawberry_fields else None
+    return strawberry_field
 
 
-def _replace_pydantic_types(type_: Any, model: type[BaseModel]) -> Any:
-    """Replace the pydantic types in `type_` with the types used by Strawberry.
-
-    NewTypes are kept: they're resolved by the schema's scalar registry, like with
-    `@strawberry.type`. That's how `strawberry.ID`, `JSON`, `Upload` and
-    `scalar_map` scalars work.
-    """
+def _find_unregistered_model(
+    type_: Any, model: type[BaseModel]
+) -> type[BaseModel] | None:
+    """Return a model used in `type_` that doesn't have a GraphQL type, if any."""
     if _is_subclass(type_, BaseModel):
         # `model` can reference itself, but it's only registered after its
         # fields. The definition is inherited by subclasses, which would
         # otherwise be the GraphQL type of their decorated base, and by
         # parametrized generic models, like `Page[User]`
         if type_ is model or "__strawberry_definition__" in vars(type_):
-            return type_
+            return None
 
-        raise _UnregisteredModel(type_)
-
-    origin = get_origin(type_)
-
-    if not origin or not hasattr(type_, "__args__"):
         return type_
 
-    args = tuple(_replace_pydantic_types(arg, model) for arg in get_args(type_))
-
-    if is_union(type_):
-        # `X | Y` can't be subscripted, and on python 3.10 forward references
-        # don't support `|`
-        return Union[args]  # noqa: UP007
-
-    return origin[args]
+    return next(
+        (
+            unregistered
+            for arg in get_args(type_)
+            if (unregistered := _find_unregistered_model(arg, model)) is not None
+        ),
+        None,
+    )
 
 
 def _create_strawberry_field(
@@ -172,15 +145,13 @@ def _create_strawberry_field(
     namespace = vars(module) if module is not None else None
 
     if strawberry_field.type_annotation is None:
-        try:
-            field_type = _replace_pydantic_types(annotation, model=cls)
-        except _UnregisteredModel as exc:
-            raise _unregistered_model_error(
-                exc.model, cls=origin, field_name=field_name
-            ) from None
+        if (unregistered := _find_unregistered_model(annotation, cls)) is not None:
+            raise UnregisteredPydanticTypeError(
+                unregistered, cls=origin, field_name=field_name
+            )
 
         strawberry_field.type_annotation = StrawberryAnnotation(
-            field_type, namespace=namespace
+            annotation, namespace=namespace
         )
     else:
         # set by `strawberry.field(graphql_type=...)`, whose annotation can be
@@ -198,15 +169,8 @@ def _create_strawberry_field(
     return strawberry_field
 
 
-def _unregistered_model_error(
-    model: type[BaseModel], *, cls: type, field_name: str
-) -> StrawberryException:
-    """The error for a field using a model without a GraphQL definition."""
-    return UnregisteredPydanticTypeError(model, cls=cls, field_name=field_name)
-
-
 def get_pydantic_fields(cls: type[BaseModel]) -> list[StrawberryField]:
-    """Extract StrawberryFields from a Pydantic BaseModel class.
+    """Return the Strawberry fields of a Pydantic model.
 
     Pydantic is the source of truth for which fields exist: its `model_fields`
     already resolved string annotations and merged inherited fields. Fields are
@@ -219,12 +183,6 @@ def get_pydantic_fields(cls: type[BaseModel]) -> list[StrawberryField]:
     class User(BaseModel):
         name: str
         age: Annotated[int, strawberry.field(directives=[SomeDirective()])]
-
-    Args:
-        cls: The Pydantic BaseModel class to extract fields from
-
-    Returns:
-        List of StrawberryField instances
     """
     fields: list[StrawberryField] = []
 
