@@ -75,3 +75,48 @@ class User(UserBase):
 class UserInput(UserBase):
     pass
 ```
+
+## Pydantic inputs
+
+`strawberry.pydantic.input` raises this error too, for fields with a resolver
+defined on the input model:
+
+```python
+import pydantic
+import strawberry
+
+
+@strawberry.pydantic.input
+class UserInput(pydantic.BaseModel):
+    name: str
+
+    @strawberry.pydantic.field
+    def upper_name(self) -> str:
+        return self.name.upper()
+```
+
+Fields with a resolver inherited from a base model, for example one shared with
+an output type, are ignored by Pydantic inputs, so they don't raise this error:
+
+```python
+import pydantic
+import strawberry
+
+
+class UserBase(pydantic.BaseModel):
+    name: str
+
+    @strawberry.pydantic.field
+    def upper_name(self) -> str:
+        return self.name.upper()
+
+
+@strawberry.pydantic.type
+class User(UserBase):
+    pass
+
+
+@strawberry.pydantic.input
+class UserInput(UserBase):
+    pass
+```
