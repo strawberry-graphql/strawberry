@@ -53,7 +53,7 @@ from .exceptions import (
 from .resolver_field import get_resolver_field, is_field_decorator
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator
+    from collections.abc import Collection, Iterator
 
     from pydantic.fields import FieldInfo
 
@@ -578,6 +578,7 @@ def get_pydantic_fields(
     cls: type[BaseModel],
     is_input: bool = False,
     include_computed: bool = False,
+    resolver_field_names: Collection[str] = (),
 ) -> list[StrawberryField]:
     """Return the Strawberry fields of a Pydantic model.
 
@@ -592,13 +593,22 @@ def get_pydantic_fields(
     class User(BaseModel):
         name: str
         age: Annotated[int, strawberry.field(directives=[SomeDirective()])]
+
+    `resolver_field_names` are the names of the resolver fields of `cls`, which
+    replace the computed fields with the same name.
     """
     fields: list[StrawberryField] = []
 
     field_names = list(cls.model_fields)
 
     if include_computed:
-        field_names.extend(cls.model_computed_fields)
+        # replaced computed fields are left out before their type is resolved,
+        # as it doesn't have to be a Strawberry type
+        field_names.extend(
+            name
+            for name in cls.model_computed_fields
+            if name not in resolver_field_names
+        )
 
     origins = _get_field_origins(cls)
 
