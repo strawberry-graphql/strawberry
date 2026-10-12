@@ -67,18 +67,14 @@ def _process_pydantic_type(
     resolver_fields = get_resolver_fields(
         cls, is_input=is_input, include_computed=include_computed
     )
-    resolver_field_names = {field.python_name for field in resolver_fields}
 
     fields = [
-        # e.g. a computed field overridden by a resolver field in a subclass
-        *(
-            field
-            for field in get_pydantic_fields(
-                cls=cls,
-                is_input=is_input,
-                include_computed=include_computed,
-            )
-            if field.python_name not in resolver_field_names
+        *get_pydantic_fields(
+            cls=cls,
+            is_input=is_input,
+            include_computed=include_computed,
+            # e.g. a computed field overridden by a resolver field in a subclass
+            resolver_field_names={field.python_name for field in resolver_fields},
         ),
         *resolver_fields,
     ]

@@ -295,6 +295,38 @@ def test_computed_fields_can_be_customized():
     assert result.errors[0].message == "Admins only"
 
 
+def test_computed_fields_overridden_by_resolver_fields_can_use_any_model():
+    class Address(pydantic.BaseModel):
+        city: str
+
+    class Base(pydantic.BaseModel):
+        name: str
+
+        @computed_field
+        @property
+        def address(self) -> Address:
+            return Address(city="Rome")
+
+    # the computed field isn't part of the GraphQL type, so its type doesn't
+    # have to be a Strawberry type
+    @strawberry.pydantic.type
+    class Child(Base):
+        @strawberry.pydantic.field
+        def address(self) -> str:  # type: ignore[override]
+            return "Rome"
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def child(self) -> Child:
+            return Child(name="Ada")
+
+    result = strawberry.Schema(query=Query).execute_sync("{ child { address } }")
+
+    assert not result.errors
+    assert result.data == {"child": {"address": "Rome"}}
+
+
 def test_computed_fields_overridden_by_resolver_fields():
     class Base(pydantic.BaseModel):
         name: str
