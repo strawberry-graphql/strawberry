@@ -1,6 +1,6 @@
 import asyncio
 import inspect
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from functools import lru_cache
 from typing import (
     Any,
@@ -130,4 +130,93 @@ def get_specialized_type_var_map(cls: type) -> dict[str, type] | None:
     }
 
 
-__all__ = ["get_func_args", "get_specialized_type_var_map", "in_async_context"]
+def _split_generic_alias(base: Any) -> tuple[Any, tuple[Any, ...]]:
+    """Return the class of a base and its arguments, like `(Page, (int,))`."""
+    return get_origin(base) or base, get_args(base)
+
+
+def _replace_type_vars(type_: Any, type_vars: Mapping[Any, Any]) -> Any:
+    """Replace the type parameters in `type_`, like `U` in `list[U]`."""
+    if isinstance(type_, TypeVar):
+        return type_vars.get(type_, type_)
+
+    # only aliases like `list[U]` have parameters to replace: a generic class
+    # like `Page` stands for `Page[Any]`
+    parameters = (
+        getattr(type_, "__parameters__", ()) if get_origin(type_) is not None else ()
+    )
+
+    if not any(parameter in type_vars for parameter in parameters):
+        return type_
+
+    return type_[tuple(type_vars.get(parameter, parameter) for parameter in parameters)]
+
+
+def get_generic_arguments(
+    cls: Any,
+    split_base: Callable[[Any], tuple[Any, tuple[Any, ...]]] = _split_generic_alias,
+) -> dict[type, dict[Any, Any]]:
+    """Return the arguments `cls` gives to the type parameters of its generic bases.
+
+    They're grouped by the generic class declaring the type parameters, so the
+    type parameters of different bases don't get mixed up, even when they have
+    the same name or are the same `TypeVar`:
+
+    ```python
+    class Page(Generic[T]): ...
+
+
+    class Label(Generic[T]): ...
+
+
+    class Wrapper(Page[list[U]], Generic[U]): ...
+
+
+    class IntWrapper(Wrapper[int], Label[str]): ...
+
+
+    get_generic_arguments(IntWrapper)
+    # {IntWrapper: {}, Wrapper: {~U: int}, Page: {~T: list[int]}, Label: {~T: str}}
+    ```
+
+    Arguments that use the type parameters of the class extending the base, like
+    `list[U]`, get that class's arguments. `split_base` returns the class and the
+    arguments of a base, like `(Page, (int,))` for `Page[int]`, and can be
+    replaced for classes that aren't parametrized with `typing` aliases, like
+    Pydantic's generic models.
+    """
+    arguments: dict[type, dict[Any, Any]] = {}
+
+    def add(base: Any, type_vars: Mapping[Any, Any]) -> None:
+        origin, args = split_base(base)
+
+        # e.g. `Generic[T]`, which declares the parameters of the class extending it
+        if not isinstance(origin, type) or origin in (Generic, Protocol):
+            return
+
+        # like the MRO, the first base wins
+        if origin in arguments:
+            return
+
+        parameters = getattr(origin, "__parameters__", ())
+        arguments[origin] = origin_arguments = {
+            parameter: _replace_type_vars(argument, type_vars)
+            for parameter, argument in zip(parameters, args, strict=False)
+        }
+
+        # the class's own bases, as `__orig_bases__` is inherited by subclasses
+        # that don't define it
+        for origin_base in vars(origin).get("__orig_bases__", origin.__bases__):
+            add(origin_base, origin_arguments)
+
+    add(cls, {})
+
+    return arguments
+
+
+__all__ = [
+    "get_func_args",
+    "get_generic_arguments",
+    "get_specialized_type_var_map",
+    "in_async_context",
+]

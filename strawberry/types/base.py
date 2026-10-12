@@ -16,7 +16,10 @@ from typing import (
 )
 from typing_extensions import Protocol, Self
 
-from strawberry.utils.inspect import get_specialized_type_var_map
+from strawberry.utils.inspect import (
+    get_generic_arguments,
+    get_specialized_type_var_map,
+)
 from strawberry.utils.typing import is_concrete_generic
 from strawberry.utils.typing import is_generic as is_type_generic
 
@@ -441,6 +444,25 @@ class StrawberryObjectDefinition(StrawberryType):
     @property
     def specialized_type_var_map(self) -> dict[str, type] | None:
         return get_specialized_type_var_map(self.origin)
+
+    def get_base_type_var_map(self, base: type) -> dict[str, Any] | None:
+        """Return the arguments this type gives to the type parameters of `base`.
+
+        `base` is a generic class this type extends, like `Page` for a field
+        inherited from `Page[int]`. Unlike `specialized_type_var_map`, the type
+        parameters of other bases aren't mixed in, even when they have the same
+        name.
+        """
+        arguments = get_generic_arguments(self.origin).get(base)
+
+        if not arguments:
+            return None
+
+        return {
+            parameter.__name__: argument
+            for parameter, argument in arguments.items()
+            if not isinstance(argument, TypeVar)
+        }
 
     @property
     def is_object_type(self) -> bool:

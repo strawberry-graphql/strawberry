@@ -1,9 +1,12 @@
-from typing import Generic, TypeVar
+from typing import Any, Generic, TypeVar
 
 import pytest
 
 import strawberry
-from strawberry.utils.inspect import get_specialized_type_var_map
+from strawberry.utils.inspect import (
+    get_generic_arguments,
+    get_specialized_type_var_map,
+)
 
 _T = TypeVar("_T")
 _K = TypeVar("_K")
@@ -149,3 +152,52 @@ def test_get_specialized_type_var_map_multiple_inheritance_subclass():
         "_T": int,
         "_K": str,
     }
+
+
+def test_get_generic_arguments_by_base():
+    class Foo(Generic[_T]): ...
+
+    class Bar(Generic[_T]): ...
+
+    class Bin(Foo[list[_K]], Generic[_K]): ...
+
+    class Baz(Bin[int], Bar[str]): ...
+
+    arguments = get_generic_arguments(Baz)
+
+    assert arguments[Baz] == {}
+    assert arguments[Bin] == {_K: int}
+    assert arguments[Foo] == {_T: list[int]}
+    assert arguments[Bar] == {_T: str}
+
+
+def test_get_generic_arguments_of_an_alias():
+    class Foo(Generic[_T]): ...
+
+    assert get_generic_arguments(Foo[int])[Foo] == {_T: int}
+
+
+def test_get_generic_arguments_of_unspecialized_generics():
+    class Foo(Generic[_T]): ...
+
+    class Bar(Foo): ...
+
+    assert get_generic_arguments(Bar)[Foo] == {}
+
+
+def test_get_generic_arguments_with_split_base():
+    class Foo(Generic[_T]): ...
+
+    # parametrized with a subclass that keeps its arguments, like Pydantic does
+    class IntFoo(Foo):
+        arguments = (int,)
+
+    class Bar(IntFoo): ...
+
+    def split_base(base: Any) -> tuple[Any, tuple[Any, ...]]:
+        if "arguments" in vars(base):
+            return base.__bases__[0], base.arguments
+
+        return base, ()
+
+    assert get_generic_arguments(Bar, split_base)[Foo] == {_T: int}

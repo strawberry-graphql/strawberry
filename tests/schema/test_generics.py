@@ -1264,3 +1264,101 @@ def test_generic_with_union_typevar_in_outer_union():
         "things": {"items": [{"name": "Dog"}, {"name": "Rose"}]},
         "failingThings": {"message": "something went wrong"},
     }
+
+
+def test_generic_bases_with_type_parameters_of_the_same_name():
+    T = TypeVar("T")
+    # e.g. a type parameter of another module
+    OtherT = TypeVar("T")  # noqa: PLC0132
+
+    @strawberry.type
+    class Page(Generic[T]):
+        first: T
+
+    @strawberry.type
+    class Label(Generic[OtherT]):
+        @strawberry.field
+        def label(self) -> OtherT:
+            return "Ada"  # type: ignore[return-value]
+
+    @strawberry.type
+    class LabelledPage(Page[int], Label[str]): ...
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def page(self) -> LabelledPage:
+            return LabelledPage(first=1)
+
+    schema = strawberry.Schema(query=Query)
+
+    assert "label: String!" in str(schema)
+    assert "first: Int!" in str(schema)
+
+    result = schema.execute_sync("{ page { first label } }")
+
+    assert not result.errors
+    assert result.data == {"page": {"first": 1, "label": "Ada"}}
+
+
+def test_generic_bases_sharing_a_type_parameter():
+    T = TypeVar("T")
+
+    @strawberry.type
+    class Page(Generic[T]):
+        first: T
+
+    @strawberry.type
+    class Label(Generic[T]):
+        label: T
+
+    @strawberry.type
+    class LabelledPage(Page[int], Label[str]): ...
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def page(self) -> LabelledPage:
+            return LabelledPage(first=1, label="Ada")
+
+    schema = strawberry.Schema(query=Query)
+
+    assert "label: String!" in str(schema)
+    assert "first: Int!" in str(schema)
+
+    result = schema.execute_sync("{ page { first label } }")
+
+    assert not result.errors
+    assert result.data == {"page": {"first": 1, "label": "Ada"}}
+
+
+def test_generic_base_with_a_type_parameter_of_its_subclass():
+    T = TypeVar("T")
+    U = TypeVar("U")
+
+    @strawberry.type
+    class Box(Generic[T]):
+        @strawberry.field
+        def content(self) -> T:
+            return [1, 2]  # type: ignore[return-value]
+
+    @strawberry.type
+    class ListBox(Box[list[U]], Generic[U]): ...
+
+    @strawberry.type
+    class IntListBox(ListBox[int]): ...
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def box(self) -> IntListBox:
+            return IntListBox()
+
+    schema = strawberry.Schema(query=Query)
+
+    assert "content: [Int!]!" in str(schema)
+
+    result = schema.execute_sync("{ box { content } }")
+
+    assert not result.errors
+    assert result.data == {"box": {"content": [1, 2]}}
