@@ -633,6 +633,11 @@ def test_deprecated_fields():
         ] = pydantic.Field(default="", deprecated="Use name")
         alias: str = pydantic.Field(default="", deprecated=True)
 
+        @pydantic.computed_field(deprecated="Use name")
+        @property
+        def display_name(self) -> str:
+            return self.name
+
     @strawberry.type
     class Query:
         @strawberry.field
@@ -651,6 +656,7 @@ type User {
   oldName: String! @deprecated(reason: "Use name")
   nickname: String! @deprecated(reason: "Use name, really")
   alias: String! @deprecated
+  displayName: String! @deprecated(reason: "Use name")
 }\
 """)
 
@@ -658,10 +664,12 @@ type User {
         # pydantic warns when deprecated fields are read
         warnings.simplefilter("ignore", DeprecationWarning)
 
-        result = schema.execute_sync("{ user { oldName nickname } }")
+        result = schema.execute_sync("{ user { oldName nickname displayName } }")
 
     assert not result.errors
-    assert result.data == {"user": {"oldName": "ada", "nickname": "A"}}
+    assert result.data == {
+        "user": {"oldName": "ada", "nickname": "A", "displayName": "Ada"}
+    }
 
 
 def test_deprecated_input_fields():
