@@ -10,6 +10,7 @@ import strawberry
 from strawberry.pydantic.exceptions import (
     ModelAlreadyDecoratedError,
     NotAPydanticModelError,
+    UnsupportedRootModelError,
 )
 from strawberry.types.base import (
     StrawberryOptional,
@@ -230,6 +231,81 @@ def test_decorating_a_pydantic_dataclass_raises_an_error():
     @pydantic.dataclasses.dataclass
     class User:
         name: str
+
+
+@pytest.mark.parametrize(
+    "decorator",
+    [
+        strawberry.pydantic.type,
+        strawberry.pydantic.input,
+        strawberry.pydantic.interface,
+    ],
+    ids=["type", "input", "interface"],
+)
+def test_decorating_a_root_model_raises_an_error(decorator: Callable[[type], type]):
+    name = decorator.__name__
+
+    with pytest.raises(
+        UnsupportedRootModelError,
+        match=(
+            rf"`Tags` is a `RootModel`, which can't be used with "
+            rf"`strawberry\.pydantic\.{name}`"
+        ),
+    ):
+
+        @decorator
+        class Tags(pydantic.RootModel[list[str]]):
+            pass
+
+
+@pytest.mark.raises_strawberry_exception(
+    UnsupportedRootModelError,
+    match=(
+        r"`Tags` is a `RootModel`, which can't be used with "
+        r"`strawberry\.pydantic\.input`"
+    ),
+)
+def test_root_model_error():
+    @strawberry.pydantic.input
+    class Tags(pydantic.RootModel[list[str]]):
+        pass
+
+
+class Tags(pydantic.RootModel[list[str]]):
+    pass
+
+
+@pytest.mark.raises_strawberry_exception(
+    UnsupportedRootModelError,
+    match=(
+        r"`Post\.tags` uses `Tags`, which is a `RootModel` and can't be a GraphQL "
+        r"type"
+    ),
+)
+def test_root_model_fields_raise_an_error():
+    @strawberry.pydantic.type
+    class Post(pydantic.BaseModel):
+        tags: Tags
+
+
+def test_root_model_errors_render_brackets():
+    rich_console = pytest.importorskip("rich.console")
+
+    with pytest.raises(UnsupportedRootModelError) as exc_info:
+
+        @strawberry.pydantic.input
+        class PostInput(pydantic.BaseModel):
+            ids: pydantic.RootModel[list[int]]
+
+    console = rich_console.Console(width=200, color_system=None)
+
+    with console.capture() as capture:
+        console.print(exc_info.value)
+
+    output = capture.get()
+
+    assert "`PostInput.ids` uses `RootModel[list[int]]`" in output
+    assert "for example `list[str]` for `RootModel[list[str]]`" in output
 
 
 @pytest.mark.skipif(
