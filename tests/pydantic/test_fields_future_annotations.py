@@ -102,6 +102,7 @@ T = TypeVar("T")
 AdminOnly = Annotated[T, strawberry.field(permission_classes=[IsAdmin])]
 # `Account` is defined by the test that uses the alias
 HiddenAccount = Annotated[Optional["Account"], pydantic.Field(exclude=True)]  # noqa: F821
+ADMIN_ONLY = strawberry.field(permission_classes=[IsAdmin])
 
 
 def _unresolved_annotated(field_name: str, model_name: str) -> str:
@@ -309,6 +310,19 @@ def test_computed_field_with_an_annotated_alias_raises_an_error():
         @property
         def account(self) -> AdminOnly[Account]:
             return Account(iban="secret")
+
+    @strawberry.pydantic.type
+    class Account(pydantic.BaseModel):
+        iban: str
+
+
+@pytest.mark.raises_strawberry_exception(
+    UnresolvedAnnotatedFieldError, match=_unresolved_annotated("account", "Owner")
+)
+def test_options_assigned_to_a_name_with_a_model_defined_later_raise_an_error():
+    @strawberry.pydantic.type
+    class Owner(pydantic.BaseModel):
+        account: Annotated[Account, ADMIN_ONLY]
 
     @strawberry.pydantic.type
     class Account(pydantic.BaseModel):
