@@ -4,18 +4,13 @@ from __future__ import annotations
 
 import copy
 import dataclasses
-import datetime as dt
-import math
 import sys
-import uuid
-from collections import abc
-from decimal import Decimal
-from enum import Enum
-from typing import TYPE_CHECKING, Annotated, Any, Optional, get_args, get_origin
+from typing import TYPE_CHECKING, Annotated, Any, Optional, get_args
 from typing_extensions import Format, get_annotations
 
 from graphql.type.directives import DEFAULT_DEPRECATION_REASON
 from pydantic import BaseModel
+from pydantic_core import PydanticUndefined
 
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.file_uploads import Upload
@@ -23,7 +18,6 @@ from strawberry.types.base import StrawberryObjectDefinition
 from strawberry.types.field import StrawberryField, get_annotated_field
 from strawberry.types.maybe import _annotation_is_maybe
 from strawberry.types.private import is_private
-from strawberry.utils.typing import is_union
 
 from .exceptions import (
     MaybeFieldError,
@@ -35,10 +29,6 @@ from .exceptions import (
 
 if TYPE_CHECKING:
     from pydantic.fields import FieldInfo
-
-
-def _is_new_type(annotation: object) -> bool:
-    return callable(annotation) and hasattr(annotation, "__supertype__")
 
 
 def _is_subclass(annotation: object, base: type | tuple[type, ...]) -> bool:
@@ -108,97 +98,23 @@ def _contains_upload(annotation: object) -> bool:
     )
 
 
-# GraphQL's Int is a 32-bit integer
-_GRAPHQL_INT_RANGE = range(-(2**31), 2**31)
-_CONSTANT_TYPES = (
-    str,
-    bool,
-    Decimal,
-    dt.date,
-    dt.datetime,
-    dt.time,
-    uuid.UUID,
-)
-
-
-def _is_constant_of_type(value: object, annotation: Any) -> bool:
-    """Return whether `value` is a constant of the field type `annotation`.
-
-    Values pydantic would have to convert first, like a string default for a
-    date field, aren't constants of the field type.
-    """
-    if _is_new_type(annotation):
-        # e.g. `strawberry.ID` and scalars registered with `scalar_map`
-        return _is_constant_of_type(value, annotation.__supertype__)
-
-    origin = get_origin(annotation)
-    args = get_args(annotation)
-
-    if origin is Annotated:
-        return _is_constant_of_type(value, args[0])
-
-    if is_union(annotation):
-        types = [arg for arg in args if arg is not type(None)]
-
-        return len(types) == 1 and _is_constant_of_type(value, types[0])
-
-    # bare `typing.List` and `typing.Sequence` don't have an item type
-    if args and (
-        origin in (list, abc.Sequence) or (origin is tuple and args[1:] == (Ellipsis,))
-    ):
-        # GraphQL passes lists, which pydantic keeps as they are for sequences, so
-        # a tuple default of a sequence would reach resolvers as a list
-        containers = list if origin is abc.Sequence else (list, tuple)
-
-        return isinstance(value, containers) and all(
-            _is_constant_of_type(item, args[0]) for item in value
-        )
-
-    if _is_subclass(annotation, Enum):
-        return isinstance(value, annotation)
-
-    if annotation is int:
-        return type(value) is int and value in _GRAPHQL_INT_RANGE
-
-    if annotation is float:
-        return (
-            isinstance(value, (int, float))
-            and not isinstance(value, bool)
-            and math.isfinite(value)
-        )
-
-    return annotation in _CONSTANT_TYPES and type(value) is annotation
-
-
-def _get_graphql_default(field_info: FieldInfo) -> object:
-    """Return the default to publish in the GraphQL schema for an input field.
-
-    graphql-core fills in published defaults before pydantic validates the
-    input, so a field with a published default always ends up in
-    `model_fields_set`. Only constants of the field's type are published, as
-    they're part of the API. `None` defaults, default factories and other values
-    are applied by pydantic, so that `model_dump(exclude_unset=True)` only
-    contains what the client sent and factories run for every request.
-    """
-    if field_info.default_factory is not None or not _is_constant_of_type(
-        field_info.default, field_info.annotation
-    ):
-        return dataclasses.MISSING
-
-    return field_info.default
-
-
 def _set_input_default(field: StrawberryField, field_info: FieldInfo) -> None:
-    default = _get_graphql_default(field_info)
+    # Let Strawberry's schema converter handle explicit defaults, including
+    # None and model instances, using the field's actual GraphQL type.
+    default = (
+        dataclasses.MISSING
+        if field_info.default is PydanticUndefined
+        else field_info.default
+    )
 
     # `StrawberryField.__copy__` builds `default_value` from `default`
     field.default = default
     field.default_factory = dataclasses.MISSING
     field.default_value = default
 
-    # input fields can only be omitted when they're nullable or have a default,
-    # so fields whose default is applied by pydantic become nullable
-    if default is dataclasses.MISSING and not field_info.is_required():
+    # Factories belong to Pydantic: they run for each input and may need the
+    # other validated fields. Nullable GraphQL fields allow clients to omit them.
+    if field_info.default_factory is not None:
         assert field.type_annotation is not None
 
         field.type_annotation = StrawberryAnnotation(

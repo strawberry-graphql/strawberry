@@ -87,7 +87,7 @@ type Query {
 
 input SignUpInput {
   password: String!
-  address: AddressInput
+  address: AddressInput = null
 }
 
 type User {
