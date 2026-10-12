@@ -11,6 +11,8 @@ import strawberry
 if TYPE_CHECKING:
     from .account import Account
 
+LazyAccount = strawberry.lazy("tests.pydantic.lazy.account")
+
 
 @strawberry.pydantic.type
 class Owner(pydantic.BaseModel):
@@ -19,3 +21,4 @@ class Owner(pydantic.BaseModel):
     accounts: list[
         Annotated[Account, strawberry.lazy("tests.pydantic.lazy.account")]
     ] = []
+    savings: list[Annotated[Account, LazyAccount]] = []

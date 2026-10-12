@@ -225,7 +225,9 @@ def test_lazy_type_with_future_annotations():
         def owner(self) -> Owner:
             account = Account(iban="NL01")
 
-            return Owner(name="Ada", account=account, accounts=[account])
+            return Owner(
+                name="Ada", account=account, accounts=[account], savings=[account]
+            )
 
     schema = strawberry.Schema(query=Query)
 
@@ -238,6 +240,7 @@ def test_lazy_type_with_future_annotations():
       name: String!
       account: Account!
       accounts: [Account!]!
+      savings: [Account!]!
     }
 
     type Query {
@@ -247,11 +250,17 @@ def test_lazy_type_with_future_annotations():
 
     assert str(schema) == textwrap.dedent(expected_schema).strip()
 
-    result = schema.execute_sync("{ owner { account { iban } accounts { iban } } }")
+    result = schema.execute_sync(
+        "{ owner { account { iban } accounts { iban } savings { iban } } }"
+    )
 
     assert not result.errors
     assert result.data == {
-        "owner": {"account": {"iban": "NL01"}, "accounts": [{"iban": "NL01"}]}
+        "owner": {
+            "account": {"iban": "NL01"},
+            "accounts": [{"iban": "NL01"}],
+            "savings": [{"iban": "NL01"}],
+        }
     }
 
 
