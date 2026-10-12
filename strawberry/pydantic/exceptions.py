@@ -201,7 +201,8 @@ class MisplacedFieldError(StrawberryException):
                 "Use `@strawberry.pydantic.field` to add a field with a resolver to a "
                 "pydantic model."
                 if is_model
-                else f"Use `@strawberry.pydantic.field` on `{cls.__name__}` instead."
+                else "Use `@strawberry.pydantic.field`, or decorate "
+                f"`{cls.__name__}` with `@strawberry.type` or `@strawberry.interface`."
             )
 
         self.message, self.rich_message = _format_message(
@@ -330,26 +331,45 @@ class MaybeFieldError(StrawberryException):
 
 
 class UnsupportedInheritedFieldError(StrawberryException):
-    def __init__(self, field_name: str, cls: type, base: type) -> None:
+    def __init__(
+        self,
+        field_name: str,
+        cls: type,
+        base: type,
+        *,
+        reason: Literal["default_factory", "resolver"],
+    ) -> None:
         self.cls = base
         self.field_name = field_name
 
-        self.message = (
-            f"Pydantic input `{cls.__name__}` can't use the default factory of "
-            f"field `{field_name}`, inherited from `{base.__name__}`"
-        )
-        self.rich_message = (
-            f"Pydantic input `[underline]{cls.__name__}[/]` can't use the default "
-            f"factory of field `[underline]{field_name}[/]`, inherited from "
-            f"`[underline]{base.__name__}[/]`"
-        )
-        self.annotation_message = "default factory that pydantic doesn't see"
-        self.suggestion = (
-            "Strawberry types are dataclasses, which don't keep a field's default "
-            "factory on the class, so pydantic doesn't see it and the field would "
-            "be required. Declare the field on the pydantic model instead, e.g. "
-            f"`{field_name}: list[str] | None = "
-            "pydantic.Field(default_factory=list)`."
+        if reason == "default_factory":
+            template = (
+                "Pydantic input `{cls}` can't use the default factory of field "
+                "`{field}`, inherited from `{base}`"
+            )
+            self.annotation_message = "default factory that pydantic doesn't see"
+            self.suggestion = (
+                "Strawberry types are dataclasses, which don't keep a field's default "
+                "factory on the class, so pydantic doesn't see it and the field would "
+                "be required. Declare the field on the pydantic model instead, e.g. "
+                f"`{field_name}: list[str] | None = "
+                "pydantic.Field(default_factory=list)`."
+            )
+        else:
+            template = (
+                "Pydantic type `{cls}` can't inherit field `{field}` from `{base}`, "
+                "as it has a resolver"
+            )
+            self.annotation_message = "field with a resolver that pydantic sees as data"
+            self.suggestion = (
+                "Pydantic would make it a field of the model, with the resolver as its "
+                "default value. Declare the field as a method with `@strawberry.field` "
+                "instead, which Pydantic doesn't see, for example: "
+                f"`@strawberry.field def {field_name}(self) -> ...`."
+            )
+
+        self.message, self.rich_message = _format_message(
+            template, field=field_name, cls=cls.__name__, base=base.__name__
         )
 
         super().__init__(self.message)
@@ -417,6 +437,53 @@ class UnsupportedFieldOverrideError(StrawberryException):
         return SourceFinder().find_class_attribute_from_object(
             self.cls, self.field_name
         )
+
+
+class StrawberryBaseBeforeModelError(StrawberryException):
+    def __init__(self, cls: type, base: type, decorator: str) -> None:
+        self.cls = cls
+
+        definition = base.__strawberry_definition__  # type: ignore[attr-defined]
+        kind = (
+            "input"
+            if definition.is_input
+            else "interface"
+            if definition.is_interface
+            else "type"
+        )
+        bases = vars(cls).get("__orig_bases__", cls.__bases__)
+        reordered = ", ".join(
+            _format_base(base)
+            for base in sorted(
+                bases,
+                # the models first, keeping the order of the other bases
+                key=lambda base: (
+                    not (isinstance(base, type) and issubclass(base, BaseModel))
+                ),
+            )
+        )
+
+        self.message = (
+            f"Pydantic {decorator} `{cls.__name__}` extends the Strawberry {kind} "
+            f"`{base.__name__}` before a Pydantic model"
+        )
+        self.rich_message = (
+            f"Pydantic {decorator} `[underline]{cls.__name__}[/]` extends the "
+            f"Strawberry {kind} `[underline]{base.__name__}[/]` before a Pydantic "
+            "model"
+        )
+        self.annotation_message = "Strawberry base before the Pydantic model"
+        self.suggestion = _escape_markup(
+            f"The `__init__` of `{base.__name__}` would replace Pydantic's, so the "
+            "model couldn't be created. List the Pydantic models first: "
+            f"`class {cls.__name__}({reordered})`."
+        )
+
+        super().__init__(self.message)
+
+    @cached_property
+    def exception_source(self) -> ExceptionSource | None:
+        return SourceFinder().find_class_from_object(self.cls)
 
 
 class ResolverAlreadyUsedError(StrawberryException):
