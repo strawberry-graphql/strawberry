@@ -339,19 +339,11 @@ def _process_annotated_fields(cls: T) -> dict[str, StrawberryAnnotation]:
             if remaining_metadata
             else field_type
         )
-        type_annotation = (
-            field.type_annotation
-            if field.type_annotation is not None and not remaining_metadata
-            else StrawberryAnnotation(
-                field_type,
-                namespace=(
-                    field.type_annotation.namespace
-                    if field.type_annotation is not None
-                    and field.type_annotation.namespace is not None
-                    else module_namespace
-                ),
-            )
-        )
+        # a new annotation for each class, as the `strawberry.field()` can be
+        # shared by several classes, e.g. through a type alias, and each class
+        # resolves its type, like `graphql_type="Foo"`, in its own module, even
+        # if something else set the namespace of the shared annotation
+        type_annotation = StrawberryAnnotation(field_type, namespace=module_namespace)
         field.type_annotation = type_annotation
 
         setattr(cls, field_name, field)
