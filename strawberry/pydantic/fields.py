@@ -7,6 +7,7 @@ import copy
 import dataclasses
 import datetime as dt
 import functools
+import ipaddress
 import math
 import sys
 import uuid
@@ -312,6 +313,18 @@ _URL_TYPES: tuple[type, ...] = (
 )
 
 
+# What pydantic validates the types exposed as strings to, so the defaults that
+# can be published for them. `SecretStr` defaults aren't published, as they'd be
+# part of the schema
+_PYDANTIC_VALUE_TYPES: dict[object, tuple[type, ...]] = {
+    pydantic.EmailStr: (str,),
+    pydantic.NameEmail: (pydantic.NameEmail,),
+    pydantic.IPvAnyAddress: (ipaddress.IPv4Address, ipaddress.IPv6Address),
+    pydantic.IPvAnyInterface: (ipaddress.IPv4Interface, ipaddress.IPv6Interface),
+    pydantic.IPvAnyNetwork: (ipaddress.IPv4Network, ipaddress.IPv6Network),
+}
+
+
 def _get_pydantic_type_equivalent(type_: type) -> type:
     """Return the type Strawberry exposes a pydantic type as, or `type_`."""
     if type_ in _PYDANTIC_TYPES:
@@ -348,6 +361,13 @@ def _is_constant_of_type(value: object, annotation: Any) -> bool:
 
     if isinstance(annotation, type) and annotation in _CONSTRAINED_DATE_TYPES:
         return _is_constant_of_type(value, _CONSTRAINED_DATE_TYPES[annotation])
+
+    if isinstance(annotation, type) and annotation in _PYDANTIC_VALUE_TYPES:
+        return type(value) in _PYDANTIC_VALUE_TYPES[annotation]
+
+    # e.g. an `HttpUrl` default, but not a string that pydantic would convert
+    if _is_subclass(annotation, _URL_TYPES):
+        return type(value) is annotation
 
     origin = get_origin(annotation)
     args = get_args(annotation)

@@ -368,6 +368,11 @@ Pydantic converts to the field's type, are applied by Pydantic and are not shown
 in the schema, so the field becomes nullable. Pydantic validates an explicit
 `null` like any other value.
 
+Pydantic types exposed as strings follow the same rule: `"ada@example.com"` is
+shown for an `EmailStr` field and `HttpUrl("https://example.com")` for an
+`HttpUrl` field, but not a string that Pydantic converts to an `HttpUrl`.
+`SecretStr` defaults are never shown, as the schema would reveal them.
+
 A nullable field without a default, like `nickname: str | None`, is optional for
 clients too, as GraphQL requires for nullable input fields. When a client leaves
 it out, Pydantic gets `None` for it, as if the client had sent `null`: the field
