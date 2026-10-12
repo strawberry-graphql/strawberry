@@ -18,7 +18,7 @@ from .error import (
     ValidationError,
     ValidationIssue,
 )
-from .object_type import input, type  # noqa: A004
+from .object_type import input, interface, type  # noqa: A004
 
 __all__ = [
     "InputValidationError",
@@ -26,5 +26,6 @@ __all__ = [
     "ValidationError",
     "ValidationIssue",
     "input",
+    "interface",
     "type",
 ]

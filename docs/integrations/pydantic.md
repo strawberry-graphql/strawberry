@@ -65,8 +65,8 @@ class User(BaseModel):
 ```
 
 Like with `@strawberry.type`, resolvers can return other objects with the same
-attributes, like rows of an ORM. In unions, where Strawberry needs to know their
-type, wrap them with `strawberry.cast`:
+attributes, like rows of an ORM. Where Strawberry needs to know their type, in
+unions and for types implementing interfaces, wrap them with `strawberry.cast`:
 
 ```python
 @strawberry.mutation
@@ -107,6 +107,23 @@ class UserBy(BaseModel):
     email: str | None = None
 ```
 
+### `@strawberry.pydantic.interface`
+
+Creates a GraphQL interface from a Pydantic model:
+
+```python
+@strawberry.pydantic.interface
+class Node(BaseModel):
+    id: strawberry.ID
+
+
+@strawberry.pydantic.type
+class User(Node):
+    name: str
+```
+
+Types implement a Pydantic interface by subclassing it, and inherit its fields.
+
 ## Configuration Options
 
 All decorators accept optional configuration parameters:
@@ -136,6 +153,33 @@ class Address(BaseModel):
 
 @strawberry.pydantic.input
 class AddressInput(Address):
+    pass
+```
+
+This doesn't work for an interface, or for a type that implements one, as inputs
+can't implement interfaces: an input that subclasses them raises an
+[`InvalidSuperclassInterfaceError`](../errors/invalid-superclass-interface.md).
+Move the fields to share to an undecorated base model instead, and extend it
+from both the output type and the input:
+
+```python
+@strawberry.pydantic.interface
+class Node(BaseModel):
+    id: strawberry.ID
+
+
+class UserBase(BaseModel):
+    name: str
+    email: str
+
+
+@strawberry.pydantic.type
+class User(UserBase, Node):
+    pass
+
+
+@strawberry.pydantic.input
+class UserInput(UserBase):
     pass
 ```
 
@@ -330,7 +374,7 @@ type User {
 ```
 
 Fields excluded from Pydantic's serialization with `Field(exclude=True)` are not
-exposed on GraphQL types either:
+exposed on GraphQL types and interfaces either:
 
 ```python
 from pydantic import BaseModel, Field
@@ -791,7 +835,8 @@ When using `strawberry.field()` with Pydantic models, you can specify:
 default value (`email: str = strawberry.field(...)`) raises an error, because
 Pydantic would keep only its default and discard the rest of its configuration.
 
-Customizations declared on a base model are inherited by its subclasses.
+Customizations declared on a base model or on an interface are inherited by its
+subclasses and implementations.
 
 #### Input Types with Directives
 

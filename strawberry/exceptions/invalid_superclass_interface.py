@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 class InvalidSuperclassInterfaceError(StrawberryException):
     def __init__(
         self,
-        cls: type[type],
+        cls: type,
         input_name: str,
         interfaces: Iterable[StrawberryObjectDefinition],
     ) -> None:

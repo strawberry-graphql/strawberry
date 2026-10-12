@@ -3,14 +3,15 @@ from __future__ import annotations
 import functools
 import re
 from functools import cached_property
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, get_args, get_origin
+
+from pydantic import BaseModel
 
 from strawberry.exceptions.exception import StrawberryException
 from strawberry.exceptions.utils.source_finder import SourceFinder
+from strawberry.types.base import has_object_definition
 
 if TYPE_CHECKING:
-    from pydantic import BaseModel
-
     from strawberry.exceptions.exception_source import ExceptionSource
 
 
@@ -28,6 +29,27 @@ def _escape_markup(text: str) -> str:
         text += "\\"
 
     return text
+
+
+def _format_base(base: Any) -> str:
+    """Return a base class like it's written in a class statement."""
+    if args := get_args(base):
+        # e.g. `Generic[T]`
+        origin = _format_base(get_origin(base))
+
+        return f"{origin}[{', '.join(_format_base(arg) for arg in args)}]"
+
+    return getattr(base, "__name__", repr(base))
+
+
+def _is_undecorated_model(base: Any) -> bool:
+    """Whether a base class is a pydantic model without a GraphQL definition."""
+    return (
+        isinstance(base, type)
+        and issubclass(base, BaseModel)
+        and base is not BaseModel
+        and not has_object_definition(base)
+    )
 
 
 def _find_field_source(cls: type, field_name: str) -> ExceptionSource | None:
@@ -308,6 +330,56 @@ class ModelAlreadyDecoratedError(StrawberryException):
 
         if definition.is_input == (decorator == "input"):
             self.suggestion = "Remove one of the decorators."
+        elif decorator == "input" and (
+            definition.is_interface or definition.interfaces
+        ):
+            # a subclass would inherit the interface, and inputs can't implement
+            # interfaces
+            name = cls.__name__
+            # `__orig_bases__` has the parameters of generic bases, like
+            # `Generic[T]`, it's only set when there are some
+            bases = vars(cls).get("__orig_bases__", cls.__bases__)
+            shared_bases = [base for base in bases if _is_undecorated_model(base)]
+
+            if shared_bases:
+                # the model already shares its fields with an undecorated base
+                # model, which the input can extend too
+                shared = ", ".join(_format_base(base) for base in shared_bases)
+                noun, pronoun = (
+                    ("base model", "it")
+                    if len(shared_bases) == 1
+                    else ("base models", "them")
+                )
+
+                self.suggestion = _escape_markup(
+                    f"Inputs can't implement interfaces, so `{name}` can't be "
+                    f"subclassed for an input. Extend its undecorated {noun} "
+                    f"instead, and move any other fields to share to {pronoun}, "
+                    f"for example: `@strawberry.pydantic.input class "
+                    f"{name}Input({shared})`."
+                )
+            else:
+                new_bases = ", ".join(
+                    [
+                        f"{name}Base",
+                        *(
+                            _format_base(base)
+                            for base in bases
+                            if base is not BaseModel
+                        ),
+                    ]
+                )
+                current_decorator = "interface" if definition.is_interface else "type"
+
+                self.suggestion = _escape_markup(
+                    f"Inputs can't implement interfaces, so `{name}` can't be "
+                    "subclassed for an input. Move the fields to share to an "
+                    "undecorated base model used by both instead, for example: "
+                    f"`class {name}Base(BaseModel)`, with "
+                    f"`@strawberry.pydantic.{current_decorator} "
+                    f"class {name}({new_bases})` "
+                    f"and `@strawberry.pydantic.input class {name}Input({name}Base)`."
+                )
         else:
             self.suggestion = (
                 "To use a model both as an output type and as an input, decorate "
