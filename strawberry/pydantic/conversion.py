@@ -137,6 +137,15 @@ def _to_python_data(
                 python_value = _to_tuples(python_value, field_info.annotation)
 
             data[field.python_name] = python_value
+        # nullable fields are optional for clients, like in other input types, so
+        # pydantic gets `None` for a missing one it requires, e.g. `str | None`
+        # without a default
+        elif (
+            field_info is not None
+            and field_info.is_required()
+            and isinstance(field_type, StrawberryOptional)
+        ):
+            data[field.python_name] = None
 
     return data
 
@@ -214,6 +223,22 @@ def _get_location(
         type_ = field.resolve_type(type_definition=definition)
 
     return location
+
+
+def dump_pydantic_model(model: BaseModel) -> dict[str, Any]:
+    """The `to_input` hook of `strawberry.pydantic` inputs.
+
+    A model used as a default only includes the fields that were set on it, like
+    the data a client sends, so that the model built from the default has the
+    same `model_fields_set`.
+    """
+    # the values are read like `model_dump` does, as reading a deprecated field
+    # with `getattr` emits pydantic's warning
+    return {
+        name: model.__dict__[name]
+        for name in type(model).model_fields
+        if name in model.model_fields_set
+    }
 
 
 def build_pydantic_model(
