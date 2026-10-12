@@ -27,7 +27,7 @@ def _input_sdl(schema: strawberry.Schema, name: str) -> str:
     sdl = str(schema)
     start = sdl.index(f"input {name} ")
 
-    return sdl[start : sdl.index("}", start) + 1]
+    return sdl[start : sdl.index("\n}", start) + 2]
 
 
 def test_constant_defaults_are_published():
@@ -77,7 +77,7 @@ input SearchInput {
     }
 
 
-def test_omitted_fields_with_none_defaults_are_not_set():
+def test_none_defaults_match_strawberry_inputs():
     @strawberry.pydantic.input
     class UpdateUserInput(pydantic.BaseModel):
         name: str | None = None
@@ -93,22 +93,37 @@ def test_omitted_fields_with_none_defaults_are_not_set():
 
     assert _input_sdl(schema, "UpdateUserInput") == snapshot("""\
 input UpdateUserInput {
-  name: String
-  bio: String
+  name: String = null
+  bio: String = null
 }\
 """)
 
-    # omitted fields aren't set, so PATCH-style updates don't overwrite them
+    @strawberry.input(name="UpdateUserInput")
+    class PlainInput:
+        name: str | None = None
+        bio: str | None = None
+
+    @strawberry.type
+    class PlainQuery:
+        @strawberry.field
+        def update_user(self, input: PlainInput) -> str:
+            return repr(input)
+
+    assert _input_sdl(schema, "UpdateUserInput") == _input_sdl(
+        strawberry.Schema(query=PlainQuery), "UpdateUserInput"
+    )
+
+    # GraphQL supplies published defaults before Pydantic validates the input.
     result = schema.execute_sync('{ updateUser(input: {bio: "Hi"}) }')
 
     assert not result.errors
-    assert result.data == {"updateUser": "{'bio': 'Hi'}"}
+    assert result.data == {"updateUser": "{'name': None, 'bio': 'Hi'}"}
 
     # an explicit null is set, so it can be used to clear a value
     result = schema.execute_sync("{ updateUser(input: {name: null}) }")
 
     assert not result.errors
-    assert result.data == {"updateUser": "{'name': None}"}
+    assert result.data == {"updateUser": "{'name': None, 'bio': None}"}
 
 
 def test_default_factories_run_for_every_request():
@@ -124,6 +139,7 @@ def test_default_factories_run_for_every_request():
     class CreateOrderInput(pydantic.BaseModel):
         id: uuid.UUID = pydantic.Field(default_factory=uuid.uuid4)
         number: int = pydantic.Field(default_factory=next_number)
+        reference: str = pydantic.Field(default_factory=lambda data: str(data["id"]))
 
     # factories are applied by pydantic, not when the class is decorated
     assert calls == 0
@@ -132,7 +148,7 @@ def test_default_factories_run_for_every_request():
     class Query:
         @strawberry.field
         def create_order(self, input: CreateOrderInput) -> str:
-            return f"{input.id} {input.number}"
+            return f"{input.id} {input.number} {input.reference}"
 
     schema = strawberry.Schema(query=Query)
 
@@ -141,6 +157,7 @@ def test_default_factories_run_for_every_request():
 input CreateOrderInput {
   id: UUID
   number: Int
+  reference: String
 }\
 """)
 
@@ -150,14 +167,15 @@ input CreateOrderInput {
     assert not first.errors
     assert not second.errors
 
-    first_id, first_number = first.data["createOrder"].split()
-    second_id, second_number = second.data["createOrder"].split()
+    first_id, first_number, first_reference = first.data["createOrder"].split()
+    second_id, second_number, second_reference = second.data["createOrder"].split()
 
     assert first_id != second_id
     assert (first_number, second_number) == ("1", "2")
+    assert (first_reference, second_reference) == (first_id, second_id)
 
 
-def test_model_defaults_are_applied_by_pydantic():
+def test_model_defaults_are_published():
     @strawberry.pydantic.input
     class AddressInput(pydantic.BaseModel):
         city: str
@@ -176,7 +194,7 @@ def test_model_defaults_are_applied_by_pydantic():
 
     assert _input_sdl(schema, "CreateUserInput") == snapshot("""\
 input CreateUserInput {
-  address: AddressInput
+  address: AddressInput! = { city: "Rome" }
 }\
 """)
 
@@ -209,8 +227,7 @@ def test_model_argument_defaults_only_include_the_fields_that_were_set():
         in str(schema)
     )
 
-    # the model has the same fields set as the default, so PATCH-style updates
-    # don't overwrite the others
+    # The explicitly constructed argument default is validated again.
     result = schema.execute_sync("{ updateUser }")
 
     assert not result.errors
@@ -295,24 +312,28 @@ def test_omitted_nullable_fields_without_a_default_are_none():
     assert _input_sdl(schema, "ProfileInput") == snapshot("""\
 input ProfileInput {
   nickname: String
-  bio: String
-  address: AddressInput
+  bio: String = null
+  address: AddressInput = null
 }\
 """)
 
-    # pydantic requires `nickname` and `line2`, so they're set to `None`, while
-    # `bio` keeps its default and isn't set
+    # Required nullable fields become None; GraphQL supplies explicit defaults.
     result = schema.execute_sync('{ profile(input: {address: {city: "Rome"}}) }')
 
     assert not result.errors
     assert result.data == {
-        "profile": "{'nickname': None, 'address': {'city': 'Rome', 'line2': None}}"
+        "profile": (
+            "{'nickname': None, 'bio': None, "
+            "'address': {'city': 'Rome', 'line2': None}}"
+        )
     }
 
     result = schema.execute_sync('{ profile(input: {nickname: "ada"}) }')
 
     assert not result.errors
-    assert result.data == {"profile": "{'nickname': 'ada'}"}
+    assert result.data == {
+        "profile": "{'nickname': 'ada', 'bio': None, 'address': None}"
+    }
 
 
 def test_unset_defaults_are_not_published():
@@ -355,41 +376,34 @@ def test_output_types_keep_their_nullability():
     assert "color: Color!" in str(schema)
 
 
-def test_constants_of_other_types_are_applied_by_pydantic():
+@pytest.mark.parametrize(
+    ("annotation", "default", "message"),
+    [
+        (int, 5 * 1024**3, "Int cannot represent non 32-bit signed integer value"),
+        (float, float("inf"), "Float cannot represent non numeric value"),
+        (str, "abc", "Int cannot represent non-integer value"),
+    ],
+)
+def test_invalid_defaults_are_not_silently_hidden(annotation, default, message):
+    from graphql import GraphQLError
+
     @strawberry.pydantic.input
     class EventInput(pydantic.BaseModel):
-        # GraphQL can't represent these values
-        max_bytes: int = 5 * 1024**3
-        ratio: float = float("inf")
-        # pydantic converts these values to the field type
-        since: dt.date = "2020-01-02"  # type: ignore[assignment]
-        color: Color = "red"  # type: ignore[assignment]
-        # GraphQL passes a list, which pydantic doesn't convert to a tuple
-        labels: Sequence[str] = ("sale",)
+        value: Annotated[
+            annotation,
+            strawberry.field(graphql_type=float if annotation is float else int),
+        ] = default
 
     @strawberry.type
     class Query:
         @strawberry.field
         def event(self, input: EventInput) -> bool:
-            # the defaults are the ones pydantic applies
-            return input == EventInput()
+            return True
 
     schema = strawberry.Schema(query=Query)
 
-    assert _input_sdl(schema, "EventInput") == snapshot("""\
-input EventInput {
-  maxBytes: Int
-  ratio: Float
-  since: Date
-  color: Color
-  labels: [String!]
-}\
-""")
-
-    result = schema.execute_sync("{ event(input: {}) }")
-
-    assert not result.errors
-    assert result.data == {"event": True}
+    with pytest.raises(GraphQLError, match=message):
+        str(schema)
 
 
 def test_typed_constants_are_published():
@@ -418,6 +432,34 @@ input PaymentInput {
 """)
 
 
+def test_tuple_defaults_are_published():
+    @strawberry.pydantic.input
+    class ProductInput(pydantic.BaseModel):
+        # in strict mode, pydantic doesn't accept the lists of GraphQL for tuples
+        model_config = pydantic.ConfigDict(strict=True)
+
+        labels: tuple[str, ...] = ("sale",)
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def product(self, input: ProductInput) -> str:
+            return repr(input.labels)
+
+    schema = strawberry.Schema(query=Query)
+
+    assert _input_sdl(schema, "ProductInput") == snapshot("""\
+input ProductInput {
+  labels: [String!]! = ["sale"]
+}\
+""")
+
+    result = schema.execute_sync("{ product(input: {}) }")
+
+    assert not result.errors
+    assert result.data == {"product": "('sale',)"}
+
+
 def test_graphql_type_overrides_follow_the_same_rules():
     @strawberry.pydantic.input
     class SettingsInput(pydantic.BaseModel):
@@ -443,14 +485,14 @@ def test_graphql_type_overrides_follow_the_same_rules():
 input SettingsInput {
   extra: JSON
   limit: Int! = 10
-  tags: [String!]
+  tags: [String!]! = ["new"]
 }\
 """)
 
     result = schema.execute_sync("{ settings(input: {}) }")
 
     assert not result.errors
-    assert result.data == {"settings": "{'limit': 10}"}
+    assert result.data == {"settings": "{'limit': 10, 'tags': ['new']}"}
 
 
 def test_published_defaults_are_kept_when_fields_are_copied():
@@ -495,15 +537,15 @@ def test_fields_from_strawberry_input_bases_follow_the_same_rules():
 
     assert _input_sdl(schema, "SearchInput") == snapshot("""\
 input SearchInput {
-  cursor: String
-  query: String
+  cursor: String = null
+  query: String = null
 }\
 """)
 
     result = schema.execute_sync('{ search(input: {query: "jam"}) }')
 
     assert not result.errors
-    assert result.data == {"search": "['query']"}
+    assert result.data == {"search": "['cursor', 'query']"}
 
 
 @pytest.mark.raises_strawberry_exception(

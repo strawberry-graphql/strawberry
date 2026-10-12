@@ -1,11 +1,13 @@
 from enum import Enum
 
 import pydantic
+import pytest
 from inline_snapshot import snapshot
 from pytest_mock import MockerFixture
 
 import strawberry
 from strawberry import relay
+from strawberry.exceptions import InvalidOneOfInputFieldError
 from strawberry.types.arguments import InputContext
 from strawberry.types.base import get_object_definition
 
@@ -137,7 +139,7 @@ def test_input_type_with_valid_data():
     )
 
 
-def test_one_of_inputs():
+def test_one_of_inputs_reject_defaults_like_strawberry_inputs():
     @strawberry.pydantic.input(one_of=True)
     class UserBy(pydantic.BaseModel):
         id: strawberry.ID | None = None
@@ -149,18 +151,8 @@ def test_one_of_inputs():
         def user(self, by: UserBy) -> str:
             return repr(by.model_dump(exclude_unset=True))
 
-    schema = strawberry.Schema(query=Query)
-
-    assert "input UserBy @oneOf {\n  id: ID\n  email: String\n}" in str(schema)
-
-    result = schema.execute_sync('{ user(by: {email: "ada@example.com"}) }')
-
-    assert not result.errors
-    assert result.data == {"user": "{'email': 'ada@example.com'}"}
-
-    result = schema.execute_sync('{ user(by: {id: "1", email: "ada@example.com"}) }')
-
-    assert result.errors
+    with pytest.raises(InvalidOneOfInputFieldError):
+        strawberry.Schema(query=Query)
 
 
 def test_one_of_inputs_with_fields_without_a_default():
@@ -183,6 +175,10 @@ def test_one_of_inputs_with_fields_without_a_default():
 
     assert not result.errors
     assert result.data == {"user": "UserBy(id=None, email='ada@example.com')"}
+
+    result = schema.execute_sync('{ user(by: {id: "1", email: "ada@example.com"}) }')
+
+    assert result.errors
 
 
 def test_list_items_are_converted_like_in_strawberry_inputs():

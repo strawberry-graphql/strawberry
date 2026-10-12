@@ -228,9 +228,9 @@ def _get_location(
 def dump_pydantic_model(model: BaseModel) -> dict[str, Any]:
     """The `to_input` hook of `strawberry.pydantic` inputs.
 
-    A model used as a default only includes the fields that were set on it, like
-    the data a client sends, so that the model built from the default has the
-    same `model_fields_set`.
+    A model used as a default only includes the fields that were set on it.
+    GraphQL default coercion and validation may set additional fields when the
+    model is rebuilt, so this does not preserve `model_fields_set`.
     """
     # the values are read like `model_dump` does, as reading a deprecated field
     # with `getattr` emits pydantic's warning
