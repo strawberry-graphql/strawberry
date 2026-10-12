@@ -207,7 +207,7 @@ type User {
 
 input UserInput {
   name: String!
-  fullName: String @deprecated(reason: "Use name")
+  fullName: String! = "" @deprecated(reason: "Use name")
 }
 ```
 
@@ -216,6 +216,86 @@ deprecated: fields with a default, or nullable ones. GraphQL doesn't allow
 deprecating required input fields, so deprecating `name` above would make the
 schema fail to build with
 `Required input field UserInput.name cannot be deprecated.`
+
+### Default Values and Partial Updates
+
+Input fields with a default can be omitted by clients. Defaults that are
+constants of the field's type, like `20` for an `int` field or an enum member
+for an enum field, are shown in the schema:
+
+```python
+import uuid
+
+from pydantic import BaseModel, Field
+
+
+@strawberry.pydantic.input
+class SearchInput(BaseModel):
+    query: str
+    page_size: int = 20
+    request_id: uuid.UUID = Field(default_factory=uuid.uuid4)
+    tag: str | None = None
+```
+
+```graphql
+input SearchInput {
+  query: String!
+  pageSize: Int! = 20
+  requestId: UUID
+  tag: String
+}
+```
+
+Other defaults, like `None`, default factories, model instances or values that
+Pydantic converts to the field's type, are applied by Pydantic and are not shown
+in the schema, so the field becomes nullable. Pydantic validates an explicit
+`null` like any other value.
+
+A nullable field without a default, like `nickname: str | None`, is optional for
+clients too, as GraphQL requires for nullable input fields. When a client leaves
+it out, Pydantic gets `None` for it, as if the client had sent `null`: the field
+is part of `model_fields_set`, and validators see `None`. Give the field a
+default, like `= None`, to tell the two apart, for example for partial updates.
+
+Fields the client omits whose default is not shown in the schema are not part of
+`model_fields_set`, which makes partial updates work as usual with Pydantic:
+
+```python
+@strawberry.pydantic.input
+class UpdateUserInput(BaseModel):
+    name: str | None = None
+    bio: str | None = None
+
+
+@strawberry.type
+class Mutation:
+    @strawberry.mutation
+    def update_user(self, id: strawberry.ID, input: UpdateUserInput) -> User:
+        user = get_user(id)
+
+        # only the fields sent by the client, an explicit `null` included
+        for field, value in input.model_dump(exclude_unset=True).items():
+            setattr(user, field, value)
+
+        return user
+```
+
+Defaults shown in the schema are filled in by GraphQL in the inputs clients
+send, so they are always part of their `model_fields_set`, and Pydantic
+validates them like values sent by the client.
+
+When a model is the default of an argument, only the fields that were set on it
+are part of the default shown in the schema, and the model the resolver gets
+when the client omits the argument has the same `model_fields_set`. For example,
+the default of `input: UpdateUserInput = UpdateUserInput(name="Ada")` is
+`{ name: "Ada" }`, so a partial update doesn't overwrite the other fields with
+`None`. Like the values sent by clients, the default is validated again for
+every request that uses it.
+
+`strawberry.Maybe` can't be used in Pydantic inputs (Pydantic raises an error
+for it when the model is defined), give the field a default and use
+`model_fields_set` to tell omitted fields apart from explicit `null` values
+instead.
 
 ### Private Fields
 
