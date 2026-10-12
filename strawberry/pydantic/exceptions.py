@@ -46,12 +46,14 @@ def _find_field_source(cls: type, field_name: str) -> ExceptionSource | None:
 
 
 class UnregisteredPydanticTypeError(StrawberryException):
-    def __init__(self, type_: type[BaseModel], *, cls: type, field_name: str) -> None:
+    def __init__(
+        self, type_: type[BaseModel], *, cls: type, field_name: str, is_input: bool
+    ) -> None:
         self.type = type_
         self.cls = cls
         self.field_name = field_name
 
-        decorator = "@strawberry.pydantic.type"
+        decorator = f"@strawberry.pydantic.{'input' if is_input else 'type'}"
         generic_metadata = getattr(type_, "__pydantic_generic_metadata__", {})
         # the decorated base the model inherits its definition from, which
         # isn't its own GraphQL type
@@ -146,6 +148,38 @@ class MisplacedFieldError(StrawberryException):
         return source_finder.find_class_attribute_from_object(self.cls, self.field_name)
 
 
+class UploadFieldError(StrawberryException):
+    def __init__(self, field_name: str, cls: type) -> None:
+        self.cls = cls
+        self.field_name = field_name
+
+        self.message = (
+            f"Field `{field_name}` on pydantic input `{cls.__name__}` can't be typed "
+            "as `Upload`"
+        )
+        self.rich_message = (
+            f"Field `[underline]{field_name}[/]` on pydantic input "
+            f"`[underline]{cls.__name__}[/]` can't be typed as `Upload`"
+        )
+        self.annotation_message = "field typed as Upload"
+        self.suggestion = (
+            "Uploaded files are the file objects of your integration, which "
+            "Pydantic can't validate as `Upload`. Annotate the field with the file "
+            "type and use `Upload` as its GraphQL type, for example: "
+            f"`{field_name}: Annotated[UploadFile, "
+            "strawberry.field(graphql_type=Upload)]` "
+            "(with `arbitrary_types_allowed=True` in `model_config`)."
+        )
+
+        super().__init__(self.message)
+
+    @cached_property
+    def exception_source(self) -> ExceptionSource | None:
+        source_finder = SourceFinder()
+
+        return source_finder.find_class_attribute_from_object(self.cls, self.field_name)
+
+
 class NotAPydanticModelError(StrawberryException):
     def __init__(self, obj: object, decorator: str) -> None:
         self.obj = obj
@@ -210,7 +244,14 @@ class ModelAlreadyDecoratedError(StrawberryException):
         )
         self.annotation_message = "model decorated twice"
 
-        self.suggestion = "Remove one of the decorators."
+        if definition.is_input == (decorator == "input"):
+            self.suggestion = "Remove one of the decorators."
+        else:
+            self.suggestion = (
+                "To use a model both as an output type and as an input, decorate "
+                "a subclass, for example: `@strawberry.pydantic.input class "
+                "AddressInput(Address): pass`."
+            )
 
         super().__init__(self.message)
 
