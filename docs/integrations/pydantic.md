@@ -180,6 +180,11 @@ aliased: `from_: Annotated[date, Field(alias="from")]` is called `from_` in
 GraphQL, unless it is renamed with
 `Annotated[date, Field(alias="from"), strawberry.field(name="from")]`.
 
+Inputs are validated by field name too, so validators with `mode="before"`
+receive the data keyed by Python field names, not by aliases. A model shared
+with a REST API that reads aliased keys in a `before` validator needs to handle
+both, or use an `after` validator instead.
+
 ### Deprecated Fields
 
 Fields deprecated with Pydantic's `Field(deprecated=...)` are deprecated in the
@@ -471,7 +476,71 @@ yet.
 
 ### Validation
 
-Pydantic validation is automatically applied to input types.
+Pydantic validation is automatically applied to input types. Strawberry supports
+all Pydantic v2 validation features including field validators, model
+validators, and functional validators.
+
+#### Field Validators
+
+```python
+from pydantic import field_validator
+
+
+@strawberry.pydantic.input
+class CreateUserInput(BaseModel):
+    name: str
+    age: int
+
+    @field_validator("age")
+    @classmethod
+    def validate_age(cls, v: int) -> int:
+        if v < 0:
+            raise ValueError("Age must be non-negative")
+        return v
+```
+
+#### Model Validators
+
+Cross-field validation using `@model_validator`:
+
+```python
+from pydantic import model_validator
+
+
+@strawberry.pydantic.input
+class DateRangeInput(BaseModel):
+    start_date: date
+    end_date: date
+
+    @model_validator(mode="after")
+    def check_dates(self) -> "DateRangeInput":
+        if self.start_date > self.end_date:
+            raise ValueError("start_date must be before end_date")
+        return self
+```
+
+#### Functional Validators
+
+Reusable validation with `Annotated` types:
+
+```python
+from typing import Annotated
+from pydantic import AfterValidator
+
+
+def validate_email(v: str) -> str:
+    if "@" not in v:
+        raise ValueError("Invalid email")
+    return v.lower()
+
+
+Email = Annotated[str, AfterValidator(validate_email)]
+
+
+@strawberry.pydantic.input
+class UserInput(BaseModel):
+    email: Email  # Validator runs during GraphQL input processing
+```
 
 #### Nested Inputs
 
@@ -492,7 +561,8 @@ class OrderInput(BaseModel):
 
 Sending `items: [{quantity: 0}, {quantity: 1}, {quantity: -1}]` reports two
 errors, at `input.items.0.quantity` and `input.items.2.quantity` for an argument
-named `input`.
+named `input`. Validators with `mode="before"` receive nested inputs as data,
+not as model instances.
 
 This only applies to inputs nested in a Pydantic input: each item of an argument
 like `inputs: list[ItemInput]` is validated on its own, and the errors of the
@@ -500,7 +570,8 @@ first invalid item are returned. Wrap the list in a Pydantic input to report the
 errors of all the items.
 
 A Pydantic input nested inside a regular `@strawberry.input` is validated on its
-own.
+own, and overriding `model_validate` only affects the outermost input, so prefer
+`@model_validator(mode="before")` to transform the input data.
 
 #### Validation Errors
 
@@ -550,7 +621,12 @@ returns:
 `location` uses the GraphQL names the client sent, starting with the argument,
 and `type` is the
 [Pydantic error type](https://docs.pydantic.dev/latest/errors/validation_errors/).
-The values Pydantic attaches to its errors are not included.
+Errors raised by model validators are located at the model they validate: the
+`DateRangeInput` check above is reported at `["range"]` for an argument named
+`range`, or at `["input", "dates"]` when it's the `dates` field of an `input`
+argument. The values Pydantic attaches to its errors are not included, but
+messages come from Pydantic and from your validators, so avoid putting sensitive
+values in your validators' messages.
 
 The error is raised as `strawberry.pydantic.InputValidationError`, a
 [`StrawberryInputCoercionError`](../guides/errors.md#strawberry-input-coercion-errors),
@@ -620,9 +696,32 @@ mutation {
 
 Only `InputValidationError`s are returned as `ValidationError`: Pydantic errors
 raised by your resolvers are reported as normal errors, and exception handlers
-for `pydantic.ValidationError` only receive those. Like other exception
-handlers, it doesn't apply to subscriptions and list fields, which return the
-GraphQL error instead.
+for `pydantic.ValidationError` only receive those (see
+[TypeAdapter and RootModel](#typeadapter-and-rootmodel) to report them like
+invalid inputs). Like other exception handlers, it doesn't apply to
+subscriptions and list fields, which return the GraphQL error instead.
+
+### Model Config
+
+Pydantic's `model_config` settings are respected during validation, for example
+`str_strip_whitespace` or `str_to_lower`:
+
+```python
+from pydantic import ConfigDict
+
+
+@strawberry.pydantic.input
+class CreateUserInput(BaseModel):
+    model_config = ConfigDict(str_strip_whitespace=True)
+
+    name: str  # "  Ada " is validated as "Ada"
+```
+
+GraphQL already checks the types of the values, and doesn't allow unknown
+fields, before Pydantic validates the input, so settings like `strict=True` and
+`extra="forbid"` mostly matter when the model is also used outside of GraphQL.
+One exception: GraphQL lists are sent to Pydantic as Python lists, which strict
+mode doesn't accept for `tuple` fields.
 
 ### Field Directives and Customization
 
@@ -714,6 +813,48 @@ class CreateUserInput(BaseModel):
         str, strawberry.field(directives=[Validate(pattern=r"^[^@]+@[^@]+\.[^@]+")])
     ]
 ```
+
+### TypeAdapter and RootModel
+
+Pydantic's `TypeAdapter` and `RootModel` can be used in resolvers for additional
+validation:
+
+```python
+from pydantic import TypeAdapter, RootModel, Field
+from typing import Annotated
+
+# Using TypeAdapter for scalar validation
+PositiveInt = Annotated[int, Field(gt=0)]
+positive_adapter = TypeAdapter(PositiveInt)
+
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def validate_positive(self, value: int) -> int:
+        return positive_adapter.validate_python(value)
+
+
+# Using RootModel for list validation
+class BoundedList(RootModel[Annotated[list[int], Field(min_length=1, max_length=5)]]):
+    pass
+
+
+@strawberry.type
+class Mutation:
+    @strawberry.mutation
+    def process_items(self, items: list[int]) -> int:
+        validated = BoundedList.model_validate(items)
+        return sum(validated.root)
+```
+
+These errors aren't input errors: a Pydantic `ValidationError` raised by a
+resolver is reported as a regular GraphQL error, whose message is Pydantic's,
+which includes the input values, like
+`Input should be greater than 0 [type=greater_than, input_value=-3, input_type=int]`.
+The [`PydanticErrorExtension`](../extensions/pydantic_error_extension.md) adds
+these errors to the response in a `validation_errors` extension, with a
+different shape than invalid inputs: a `field` and a `message` for each error.
 
 ---
 
