@@ -119,9 +119,20 @@ def test_model_validator_before_mode():
     assert not result.errors
     assert result.data["createUser"]["username"] == "alice_custom"
 
-    # Test with auto-generated username - note: this won't work with GraphQL
-    # since GraphQL requires the field to be provided. This is more for
-    # programmatic usage where the validator can add missing fields.
+    # Test with auto-generated username
+    result = schema.execute_sync(
+        """
+        mutation {
+            createUser(input: { email: "alice@example.com", username: "" }) {
+                email
+                username
+            }
+        }
+        """
+    )
+
+    assert not result.errors
+    assert result.data["createUser"]["username"] == "alice"
 
 
 def test_model_validator_password_confirmation():

@@ -1,18 +1,26 @@
 """Tests for Pydantic per-field strict mode with first-class integration."""
 
+from typing import Annotated
+
 import pydantic
 from pydantic import Field
 
 import strawberry
+from strawberry.scalars import JSON
 
 
 def test_strict_field_rejects_wrong_type():
     """Test that Field(strict=True) enforces exact types."""
 
+    # GraphQL rejects values of the wrong type before they reach pydantic, but
+    # it doesn't validate the values of JSON scalars
     @strawberry.pydantic.input
     class MixedInput(pydantic.BaseModel):
-        strict_age: int = Field(strict=True)
-        flexible_count: int  # Not strict - allows coercion
+        strict_age: Annotated[int, strawberry.field(graphql_type=JSON)] = Field(
+            strict=True
+        )
+        # Not strict - allows coercion
+        flexible_count: Annotated[int, strawberry.field(graphql_type=JSON)]
 
     @strawberry.pydantic.type
     class Result(pydantic.BaseModel):
@@ -50,6 +58,39 @@ def test_strict_field_rejects_wrong_type():
     assert not result.errors
     assert result.data["process"]["strictAge"] == 25
     assert result.data["process"]["flexibleCount"] == 10
+
+    # Only the non-strict field converts a string
+    result = schema.execute_sync(
+        """
+        mutation {
+            process(input: { strictAge: 25, flexibleCount: "10" }) {
+                flexibleCount
+            }
+        }
+        """
+    )
+
+    assert not result.errors
+    assert result.data["process"]["flexibleCount"] == 10
+
+    result = schema.execute_sync(
+        """
+        mutation {
+            process(input: { strictAge: "25", flexibleCount: 10 }) {
+                strictAge
+            }
+        }
+        """
+    )
+
+    assert result.errors is not None
+    assert result.errors[0].extensions["validationErrors"] == [
+        {
+            "location": ["input", "strictAge"],
+            "message": "Input should be a valid integer",
+            "type": "int_type",
+        }
+    ]
 
 
 def test_strict_string_field():

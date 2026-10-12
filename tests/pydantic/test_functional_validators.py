@@ -75,8 +75,8 @@ def test_before_validator_transforms_input():
 
     def parse_tags(v: Any) -> list[str]:
         if isinstance(v, str):
-            return [tag.strip() for tag in v.split(",")]
-        return v
+            v = v.split(",")
+        return [tag.strip().lower() for tag in v]
 
     TagList = Annotated[list[str], BeforeValidator(parse_tags)]
 
@@ -108,7 +108,7 @@ def test_before_validator_transforms_input():
     result = schema.execute_sync(
         """
         mutation {
-            createPost(input: { title: "Hello", tags: ["python", "graphql"] }) {
+            createPost(input: { title: "Hello", tags: [" Python", "GraphQL "] }) {
                 title
                 tags
             }

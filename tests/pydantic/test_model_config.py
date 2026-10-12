@@ -1,9 +1,12 @@
 """Tests for Pydantic model_config support with first-class integration."""
 
+from typing import Annotated
+
 import pydantic
 from pydantic import ConfigDict
 
 import strawberry
+from strawberry.scalars import JSON
 
 
 def test_strict_mode_rejects_type_coercion():
@@ -15,6 +18,8 @@ def test_strict_mode_rejects_type_coercion():
 
         age: int
         name: str
+        # GraphQL doesn't validate the values of JSON scalars
+        score: Annotated[int, strawberry.field(graphql_type=JSON)]
 
     @strawberry.pydantic.type
     class User(pydantic.BaseModel):
@@ -39,7 +44,7 @@ def test_strict_mode_rejects_type_coercion():
     result = schema.execute_sync(
         """
         mutation {
-            createUser(input: { age: 25, name: "Alice" }) {
+            createUser(input: { age: 25, name: "Alice", score: 1 }) {
                 age
                 name
             }
@@ -50,17 +55,32 @@ def test_strict_mode_rejects_type_coercion():
     assert not result.errors
     assert result.data["createUser"]["age"] == 25
 
-    # Note: GraphQL handles type coercion at the schema level, so
-    # passing "25" as a string would be rejected by GraphQL itself before
-    # reaching Pydantic. This test verifies the model config is respected
-    # when values reach Pydantic.
+    # GraphQL rejects a string for `age` before it reaches Pydantic, but not
+    # for `score`, which Pydantic doesn't convert in strict mode
+    result = schema.execute_sync(
+        """
+        mutation {
+            createUser(input: { age: 25, name: "Alice", score: "1" }) {
+                age
+            }
+        }
+        """
+    )
+
+    assert result.errors is not None
+    assert result.errors[0].extensions["validationErrors"] == [
+        {
+            "location": ["input", "score"],
+            "message": "Input should be a valid integer",
+            "type": "int_type",
+        }
+    ]
 
 
-def test_extra_forbid_rejects_unknown_fields():
-    """Test that extra='forbid' rejects unknown fields at Pydantic level.
+def test_extra_forbid_works_with_graphql_inputs():
+    """Test that inputs with extra='forbid' accept valid GraphQL inputs.
 
-    Note: GraphQL schemas already enforce known fields, but this ensures
-    Pydantic's extra='forbid' is respected if data comes from other sources.
+    GraphQL already rejects unknown fields, so they never reach Pydantic.
     """
 
     @strawberry.pydantic.input
@@ -105,8 +125,11 @@ def test_extra_forbid_rejects_unknown_fields():
     assert result.data["createUser"]["name"] == "Alice"
 
 
-def test_extra_allow_stores_extra_fields():
-    """Test that extra='allow' stores extra fields in __pydantic_extra__."""
+def test_extra_allow_works_with_graphql_inputs():
+    """Test that inputs with extra='allow' accept valid GraphQL inputs.
+
+    GraphQL rejects unknown fields, so there are no extra fields to store.
+    """
 
     @strawberry.pydantic.input
     class FlexibleInput(pydantic.BaseModel):
@@ -134,8 +157,6 @@ def test_extra_allow_stores_extra_fields():
 
     schema = strawberry.Schema(query=Query, mutation=Mutation)
 
-    # GraphQL won't allow unknown fields at query level,
-    # but the config should still be applied
     result = schema.execute_sync(
         """
         mutation {
@@ -208,24 +229,24 @@ def test_validate_default_runs_validators_on_defaults():
     class ConfigInput(pydantic.BaseModel):
         model_config = ConfigDict(validate_default=True)
 
-        count: int = 10
+        # constant defaults are published in the schema and sent by GraphQL
+        # like other values, default factories are applied by Pydantic
+        tags: list[str] = pydantic.Field(default_factory=lambda: [" Draft "])
 
-        @pydantic.field_validator("count")
+        @pydantic.field_validator("tags")
         @classmethod
-        def check_count(cls, v: int) -> int:
-            if v < 0:
-                raise ValueError("count must be non-negative")
-            return v
+        def normalize_tags(cls, v: list[str]) -> list[str]:
+            return [tag.strip().lower() for tag in v]
 
     @strawberry.pydantic.type
     class Config(pydantic.BaseModel):
-        count: int
+        tags: list[str]
 
     @strawberry.type
     class Mutation:
         @strawberry.mutation
         def create_config(self, input: ConfigInput) -> Config:
-            return Config(count=input.count)
+            return Config(tags=input.tags)
 
     @strawberry.type
     class Query:
@@ -235,29 +256,32 @@ def test_validate_default_runs_validators_on_defaults():
 
     schema = strawberry.Schema(query=Query, mutation=Mutation)
 
-    # Using default value - should work (10 is valid)
     result = schema.execute_sync(
         """
         mutation {
             createConfig(input: {}) {
-                count
+                tags
             }
         }
         """
     )
 
     assert not result.errors
-    assert result.data["createConfig"]["count"] == 10
+    assert result.data["createConfig"]["tags"] == ["draft"]
 
 
-def test_populate_by_name_allows_field_name_or_alias():
-    """Test that populate_by_name=True allows using either field name or alias."""
+def test_populate_by_name_works_with_graphql_inputs():
+    """Test that inputs with populate_by_name=True accept valid GraphQL inputs.
+
+    GraphQL names come from the Python names, and inputs are always validated
+    by name, so the setting only matters when the model is validated directly.
+    """
 
     @strawberry.pydantic.input
     class FlexibleNameInput(pydantic.BaseModel):
         model_config = ConfigDict(populate_by_name=True)
 
-        user_name: str = pydantic.Field(alias="userName")
+        user_name: str = pydantic.Field(alias="login")
 
     @strawberry.pydantic.type
     class User(pydantic.BaseModel):
@@ -277,7 +301,6 @@ def test_populate_by_name_allows_field_name_or_alias():
 
     schema = strawberry.Schema(query=Query, mutation=Mutation)
 
-    # GraphQL uses the alias (userName) for the field name
     result = schema.execute_sync(
         """
         mutation {
@@ -290,6 +313,9 @@ def test_populate_by_name_allows_field_name_or_alias():
 
     assert not result.errors
     assert result.data["createUser"]["userName"] == "Alice"
+
+    assert FlexibleNameInput.model_validate({"login": "Bob"}).user_name == "Bob"
+    assert FlexibleNameInput.model_validate({"user_name": "Bob"}).user_name == "Bob"
 
 
 def test_str_strip_whitespace_config():
