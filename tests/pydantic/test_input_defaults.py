@@ -418,6 +418,34 @@ input PaymentInput {
 """)
 
 
+def test_tuple_defaults_are_published():
+    @strawberry.pydantic.input
+    class ProductInput(pydantic.BaseModel):
+        # in strict mode, pydantic doesn't accept the lists of GraphQL for tuples
+        model_config = pydantic.ConfigDict(strict=True)
+
+        labels: tuple[str, ...] = ("sale",)
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def product(self, input: ProductInput) -> str:
+            return repr(input.labels)
+
+    schema = strawberry.Schema(query=Query)
+
+    assert _input_sdl(schema, "ProductInput") == snapshot("""\
+input ProductInput {
+  labels: [String!]! = ["sale"]
+}\
+""")
+
+    result = schema.execute_sync("{ product(input: {}) }")
+
+    assert not result.errors
+    assert result.data == {"product": "('sale',)"}
+
+
 def test_graphql_type_overrides_follow_the_same_rules():
     @strawberry.pydantic.input
     class SettingsInput(pydantic.BaseModel):
