@@ -11,7 +11,7 @@ import dataclasses
 import functools
 from typing import TYPE_CHECKING, TypeVar, overload
 
-from pydantic import BaseModel
+from pydantic import BaseModel, RootModel
 
 from strawberry.exceptions import InvalidSuperclassInterfaceError
 from strawberry.schema_directives import OneOf
@@ -24,6 +24,7 @@ from .exceptions import (
     ModelAlreadyDecoratedError,
     NotAPydanticModelError,
     StrawberryBaseBeforeModelError,
+    UnsupportedRootModelError,
 )
 from .fields import (
     check_serializers,
@@ -137,6 +138,9 @@ def _process_pydantic_type(
     if not (isinstance(cls, builtins.type) and issubclass(cls, BaseModel)):
         raise NotAPydanticModelError(cls, decorator)
 
+    if issubclass(cls, RootModel):
+        raise UnsupportedRootModelError(cls, decorator=decorator)
+
     generic_metadata = cls.__pydantic_generic_metadata__
 
     # before the check for decorated models, as they can already be specialized
@@ -217,7 +221,8 @@ def _process_pydantic_type(
         # instances of the model, e.g. ORM rows, unless it defines `is_type_of`
         is_type_of=getattr(cls, "is_type_of", None),
         resolve_type=getattr(cls, "resolve_type", None),
-        from_input=build_pydantic_model if is_input else None,
+        # also used by federation to build entities from their representations
+        from_input=None if is_interface else build_pydantic_model,
         to_input=dump_pydantic_model if is_input else None,
         # named like the specialized types of generic Strawberry types, e.g.
         # `UserPage` for `Page[User]`, by the schema's name converter
