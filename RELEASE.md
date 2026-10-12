@@ -2,12 +2,13 @@
 release type: patch
 ---
 
-This release fixes generic types that extend several generic types whose type
-parameters have the same name.
+This release fixes the types of fields inherited from generic types, when the
+generic types use the same name for their type parameters, or when they're
+given a type like `list[T]` or `User | None`.
 
-Strawberry looked up the arguments of type parameters by name across all the
-generic bases of a type, so the fields of every base got the arguments of the
-first one:
+Strawberry looked up type parameters by name across all the generic types a
+type extends, so when two of them called their type parameter `T`, the fields
+of both got the type given to the first one:
 
 ```python
 T = TypeVar("T")
@@ -15,22 +16,40 @@ T = TypeVar("T")
 
 @strawberry.type
 class Page(Generic[T]):
-    first: T
+    items: list[T]
 
 
 @strawberry.type
-class Label(Generic[T]):
-    label: T
+class Sorted(Generic[T]):
+    sorted_by: T
 
 
 @strawberry.type
-class LabelledPage(Page[int], Label[str]):  # `label` was `Int!`, now `String!`
+class UserPage(Page[User], Sorted[UserOrder]):  # `sortedBy` was `User!`
     pass
 ```
 
-Each field now gets the arguments of the generic type that declares it. This
-also adds support for generic bases whose arguments use the type parameters of
-the type extending them, like `class ListBox(Box[list[U]], Generic[U])`, and
-fixes fields that wrap a type parameter, like `content: list[T]`, when a
-subclass gives it a type like `list[int]`, `int | None` or a lazy type, as in
-`class IntListBox(Box[list[int]])`.
+Each inherited field now gets the type given to the generic type that declares
+it, so `sortedBy` is `UserOrder!`. This also fixes types that are given to a
+type parameter wrapped in a list or an optional:
+
+```python
+@strawberry.type
+class Result(Generic[T]):
+    data: T
+
+
+@strawberry.type
+class ListResult(Result[list[T]], Generic[T]):
+    total: int
+
+
+@strawberry.type
+class UserListResult(ListResult[User]):  # `data` was `User!`, now `[User!]!`
+    pass
+
+
+@strawberry.type
+class MaybeUserPage(Page[User | None]):  # failed, now `items: [User]!`
+    pass
+```
