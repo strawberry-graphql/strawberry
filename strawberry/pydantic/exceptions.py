@@ -444,6 +444,36 @@ class AttributeOverridesResolverFieldError(StrawberryException):
         )
 
 
+class AttributeOverridesComputedFieldError(StrawberryException):
+    def __init__(self, field_name: str, cls: type) -> None:
+        self.cls = cls
+        self.field_name = field_name
+
+        self.message = (
+            f"`{field_name}` on `{cls.__name__}` overrides an inherited computed "
+            "field, but isn't a field itself"
+        )
+        self.rich_message = (
+            f"`[underline]{field_name}[/]` on `[underline]{cls.__name__}[/]` "
+            "overrides an inherited computed field, but isn't a field itself"
+        )
+        self.annotation_message = "attribute overriding a computed field"
+        self.suggestion = (
+            "Pydantic keeps the computed field, with the method as its value. To "
+            "change the field, make the method a computed field with "
+            "`@computed_field` and `@property`, or a field with a resolver with "
+            "`@strawberry.pydantic.field`. Otherwise rename the method."
+        )
+
+        super().__init__(self.message)
+
+    @cached_property
+    def exception_source(self) -> ExceptionSource | None:
+        return SourceFinder().find_class_attribute_from_object(
+            self.cls, self.field_name
+        )
+
+
 class ResolverNotAFunctionError(StrawberryException):
     def __init__(self, resolver: object) -> None:
         self.resolver = resolver

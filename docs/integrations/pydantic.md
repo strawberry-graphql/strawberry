@@ -268,6 +268,12 @@ Like other fields, they can be customized with `strawberry.field()` in their
 return type, and hidden with `strawberry.Private`. Pass `include_computed=False`
 to the decorator to leave all of them out.
 
+A subclass can override an inherited computed field with another computed field
+or a property, or replace it with a field with a resolver (see
+[Resolver Fields](#resolver-fields)). Overriding it with a method raises an
+[`AttributeOverridesComputedFieldError`](../errors/attribute-overrides-computed-field.md),
+as Pydantic would use the method itself as the value of the field.
+
 ### Deprecated Fields
 
 Fields deprecated with Pydantic's `Field(deprecated=...)` or
