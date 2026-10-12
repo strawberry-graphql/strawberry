@@ -19,9 +19,7 @@ class ValidationIssue:
     """A problem with an input value."""
 
     location: list[str] = field(
-        description=(
-            "The argument, then the fields and list indexes leading to the value."
-        )
+        description=("The argument, then field names and list indexes, all as strings.")
     )
     message: str = field(description="The reason the value is invalid.")
     type: str = field(description="The Pydantic error type, like `string_too_short`.")

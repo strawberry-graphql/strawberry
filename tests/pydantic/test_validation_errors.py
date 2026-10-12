@@ -4,6 +4,7 @@ from typing import Annotated
 import pydantic
 import pytest
 from inline_snapshot import snapshot
+from pydantic_core import PydanticCustomError
 
 import strawberry
 from strawberry.exceptions import StrawberryInputCoercionError
@@ -103,7 +104,7 @@ type ValidationError {
 
 """A problem with an input value."""
 type ValidationIssue {
-  """The argument, then the fields and list indexes leading to the value."""
+  """The argument, then field names and list indexes, all as strings."""
   location: [String!]!
 
   """The reason the value is invalid."""
@@ -162,7 +163,7 @@ def test_model_errors_are_located_at_the_input():
             "issues": [
                 {
                     "location": ["input"],
-                    "message": "Value error, password is too common",
+                    "message": "password is too common",
                     "type": "value_error",
                 }
             ]
@@ -382,7 +383,7 @@ def test_validation_errors_are_returned_before_permissions_run():
     assert permission_ran is False
 
 
-def test_submitted_values_are_not_logged(caplog: pytest.LogCaptureFixture):
+def test_pydantic_input_payload_is_not_logged(caplog: pytest.LogCaptureFixture):
     @strawberry.type
     class Mutation:
         @strawberry.mutation
@@ -400,6 +401,66 @@ def test_submitted_values_are_not_logged(caplog: pytest.LogCaptureFixture):
     assert result.errors
     assert "Invalid input" in caplog.text
     assert "hunter2" not in caplog.text
+    error = result.errors[0].original_error
+    assert isinstance(error, InputValidationError)
+    assert error.__cause__ is None
+    assert error.__context__ is None
+
+
+@pytest.mark.parametrize(
+    ("error", "message"),
+    [
+        (
+            ValueError("Rejected value: 'original value'"),
+            "Rejected value: 'original value'",
+        ),
+        (ValueError("Value error, intentional"), "Value error, intentional"),
+        (
+            PydanticCustomError("value_error", "Value error, custom"),
+            "Value error, custom",
+        ),
+    ],
+)
+def test_validator_messages_are_preserved_verbatim_as_data(error, message):
+    @strawberry.pydantic.input
+    class MessageInput(pydantic.BaseModel):
+        text: str
+
+        @pydantic.field_validator("text")
+        @classmethod
+        def reject(cls, value: str) -> str:
+            raise error
+
+    @strawberry.type
+    class Mutation:
+        @strawberry.mutation
+        def submit(self, input: MessageInput) -> User | ValidationError:
+            return User(name="Ada")
+
+    schema = strawberry.Schema(
+        query=Query,
+        mutation=Mutation,
+        exception_handlers=[PydanticValidationErrorHandler()],
+    )
+    result = schema.execute_sync(
+        'mutation { submit(input: {text: "original value"}) { '
+        "... on ValidationError { issues { location message type } } } }"
+    )
+
+    # Input payloads are excluded, but messages are not redacted, even when
+    # a validator deliberately includes the submitted value in its message.
+    assert not result.errors
+    assert result.data == {
+        "submit": {
+            "issues": [
+                {
+                    "location": ["input", "text"],
+                    "message": message,
+                    "type": "value_error",
+                }
+            ]
+        }
+    }
 
 
 def test_locations_of_renamed_fields():

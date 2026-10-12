@@ -5,13 +5,7 @@ from __future__ import annotations
 from collections import abc
 from typing import TYPE_CHECKING, Annotated, Any, TypeGuard, get_args, get_origin
 
-from pydantic import (
-    BaseModel,
-    InstanceOf,
-    PlainValidator,
-    SkipValidation,
-    ValidationError,
-)
+from pydantic import BaseModel, ValidationError
 
 from strawberry.types.base import (
     StrawberryList,
@@ -26,13 +20,8 @@ from .error import InputValidationError, ValidationIssue
 if TYPE_CHECKING:
     from collections.abc import Mapping
 
-    from pydantic.fields import FieldInfo
-
     from strawberry.types.arguments import InputContext
     from strawberry.types.base import StrawberryType
-
-# Annotations that make pydantic validate a field without validating its model
-_NOT_VALIDATED_AS_MODEL = (InstanceOf, PlainValidator, SkipValidation)
 
 # Generics Strawberry exposes as GraphQL lists (see `StrawberryAnnotation._is_list`)
 # whose items pydantic validates as their type. Subclasses of `list` are GraphQL
@@ -40,66 +29,68 @@ _NOT_VALIDATED_AS_MODEL = (InstanceOf, PlainValidator, SkipValidation)
 _LIST_ORIGINS = (list, tuple, abc.Sequence)
 
 
-def _skips_model_validation(metadata: object) -> bool:
-    # `SkipValidation` and `InstanceOf` also work as bare classes, as in
-    # `Annotated[Model, SkipValidation]`
-    return isinstance(metadata, _NOT_VALIDATED_AS_MODEL) or (
-        isinstance(metadata, type) and issubclass(metadata, _NOT_VALIDATED_AS_MODEL)
-    )
+def _is_nested_model(type_: object) -> TypeGuard[type[BaseModel]]:
+    """Return whether `type_` is a pydantic model.
+
+    Nested inputs are always passed as data. The outermost model's annotations
+    and validators, not the GraphQL types, decide how that data is validated.
+    """
+    return isinstance(type_, type) and issubclass(type_, BaseModel)
 
 
-def _is_validated_as(annotation: Any, model: type[BaseModel]) -> bool:
-    if annotation is model:
+def _unwrap_annotation(annotation: Any) -> Any:
+    """Return `annotation` without `Annotated` and `None`.
+
+    e.g. `list[int]` for `Annotated[list[int] | None, Field(min_length=1)]`.
+    """
+    while True:
+        if get_origin(annotation) is Annotated:
+            annotation = get_args(annotation)[0]
+        elif is_union(annotation):
+            types = [arg for arg in get_args(annotation) if arg is not type(None)]
+
+            if len(types) != 1:
+                return annotation
+
+            annotation = types[0]
+        else:
+            return annotation
+
+
+def _is_tuple(annotation: Any) -> bool:
+    return annotation is tuple or get_origin(annotation) is tuple
+
+
+def _has_tuples(annotation: Any) -> bool:
+    """Return whether pydantic validates a GraphQL list, or lists in it, as tuples."""
+    annotation = _unwrap_annotation(annotation)
+
+    if _is_tuple(annotation):
         return True
 
-    origin = get_origin(annotation)
     args = get_args(annotation)
 
-    if origin is Annotated:
-        return not any(
-            _skips_model_validation(item) for item in args[1:]
-        ) and _is_validated_as(args[0], model)
-
-    if is_union(annotation):
-        types = [arg for arg in args if arg is not type(None)]
-
-        return len(types) == 1 and _is_validated_as(types[0], model)
-
-    # pydantic validates the items of bare `typing.List` and `typing.Sequence`
-    # as `Any`
-    if origin in _LIST_ORIGINS and args:
-        return _is_validated_as(args[0], model)
-
-    return False
-
-
-def _validates_field_as(field_info: FieldInfo | None, model: type[BaseModel]) -> bool:
-    """Return whether pydantic validates the field's values as `model`.
-
-    For example, a field annotated with `SkipValidation[Model]` or a base class of
-    `model` isn't.
-    """
     return (
-        field_info is not None
-        and not any(_skips_model_validation(item) for item in field_info.metadata)
-        and _is_validated_as(field_info.annotation, model)
+        get_origin(annotation) in _LIST_ORIGINS and bool(args) and _has_tuples(args[0])
     )
 
 
-def _is_nested_model(
-    type_: object, field_info: FieldInfo | None
-) -> TypeGuard[type[BaseModel]]:
-    """Return whether `type_` is a model pydantic validates as part of the field.
+def _to_tuples(value: Any, annotation: Any) -> Any:
+    """Convert the lists in `value` that pydantic validates as tuples to tuples.
 
-    Values of nested models are passed to pydantic as data, so that they're
-    validated with the outermost model and all their errors are reported, with
-    their full location.
+    GraphQL lists are converted to lists, but in strict mode pydantic only
+    accepts tuples for tuple fields.
     """
-    return (
-        isinstance(type_, type)
-        and issubclass(type_, BaseModel)
-        and _validates_field_as(field_info, type_)
-    )
+    if not isinstance(value, list):
+        return value
+
+    annotation = _unwrap_annotation(annotation)
+    args = get_args(annotation)
+    # like Strawberry, which exposes `tuple[int, int]` as a list of `Int`
+    item_annotation = args[0] if args else Any
+    items = [_to_tuples(item, item_annotation) for item in value]
+
+    return tuple(items) if _is_tuple(annotation) else items
 
 
 def _get_item_type(type_: StrawberryList) -> StrawberryType | type:
@@ -135,13 +126,17 @@ def _to_python_data(
         field_type = field.resolve_type(type_definition=definition)
 
         if graphql_name in value:
-            data[field.python_name] = _to_python_value(
+            python_value = _to_python_value(
                 value[graphql_name],
                 field_type,
-                field_info,
                 context,
                 (*keys, graphql_name),
             )
+
+            if field_info is not None and _has_tuples(field_info.annotation):
+                python_value = _to_tuples(python_value, field_info.annotation)
+
+            data[field.python_name] = python_value
 
     return data
 
@@ -149,7 +144,6 @@ def _to_python_data(
 def _to_python_value(
     value: Any,
     type_: StrawberryType | type,
-    field_info: FieldInfo | None,
     context: InputContext,
     keys: tuple[str | int, ...],
 ) -> Any:
@@ -157,24 +151,24 @@ def _to_python_value(
         return None
 
     if isinstance(type_, StrawberryOptional):
-        return _to_python_value(value, type_.of_type, field_info, context, keys)
+        return _to_python_value(value, type_.of_type, context, keys)
 
     if isinstance(type_, StrawberryList):
         # only lists of nested models are converted item by item, other lists
         # are converted at once like Strawberry does, which e.g. only copies
         # lists of scalars
-        if not _is_nested_model(_get_item_type(type_), field_info):
+        if not _is_nested_model(_get_item_type(type_)):
             return context.convert(value, type_, *keys)
 
         return [
-            _to_python_value(item, type_.of_type, field_info, context, (*keys, index))
+            _to_python_value(item, type_.of_type, context, (*keys, index))
             for index, item in enumerate(value)
         ]
 
     if isinstance(type_, LazyType):
-        return _to_python_value(value, type_.resolve_type(), field_info, context, keys)
+        return _to_python_value(value, type_.resolve_type(), context, keys)
 
-    if _is_nested_model(type_, field_info) and not isinstance(value, type_):
+    if _is_nested_model(type_) and not isinstance(value, type_):
         return _to_python_data(type_, value, context, keys)
 
     return context.convert(value, type_, *keys)
@@ -240,7 +234,12 @@ def build_pydantic_model(
         issues = [
             ValidationIssue(
                 location=_get_location(model, error["loc"], context),
-                message=error["msg"],
+                message=(
+                    str(error["ctx"]["error"])
+                    if error["type"] == "value_error"
+                    and isinstance(error.get("ctx", {}).get("error"), ValueError)
+                    else error["msg"]
+                ),
                 type=error["type"],
             )
             for error in exc.errors(include_url=False, include_input=False)
@@ -248,6 +247,7 @@ def build_pydantic_model(
     else:
         return result
 
-    # pydantic's error isn't chained, as its message includes the input values,
-    # which would end up in the logs
+    # Don't chain pydantic's error, whose rendering includes input values.
+    # Removing Pydantic's ValueError prefix does not redact messages, which
+    # may contain values included by pydantic or user-defined validators.
     raise InputValidationError(issues) from None
