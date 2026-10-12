@@ -81,6 +81,7 @@ class UnregisteredPydanticTypeError(StrawberryException):
         self.field_name = field_name
 
         decorator = f"@strawberry.pydantic.{'input' if is_input else 'type'}"
+        attributes = vars(type_)
         generic_metadata = getattr(type_, "__pydantic_generic_metadata__", {})
         # the decorated base the model inherits its definition from, which
         # isn't its own GraphQL type
@@ -108,6 +109,13 @@ class UnregisteredPydanticTypeError(StrawberryException):
                 f"Decorate a subclass of it instead, for example: `{decorator} "
                 f"class {subclass}({type_.__name__}): pass`."
             )
+        elif "_strawberry_type" in attributes or "_strawberry_input_type" in attributes:
+            # set on the model by `strawberry.experimental.pydantic`, whose
+            # types can't be used by `strawberry.pydantic` types. Subclasses
+            # inherit them, but don't have an experimental type of their own
+            problem = "which only has a `strawberry.experimental.pydantic` type"
+            fix = f"decorate it with `{decorator}`"
+            suggestion = f"Decorate `{type_.__name__}` with `{decorator}`."
         elif decorated_base is not None:
             problem = (
                 "which isn't a Strawberry type, even though it extends "
@@ -364,6 +372,63 @@ class NotAPydanticModelError(StrawberryException):
             return None
 
         return SourceFinder().find_class_from_object(self.obj)
+
+
+class UnsupportedRootModelError(StrawberryException):
+    """A `RootModel` is decorated, or used by a field of a pydantic type."""
+
+    def __init__(
+        self,
+        root_model: type,
+        *,
+        decorator: str | None = None,
+        cls: type | None = None,
+        field_name: str | None = None,
+    ) -> None:
+        self.root_model = root_model
+        self.cls = cls
+        self.field_name = field_name
+
+        # parametrized root models are named like `RootModel[list[int]]`
+        name = root_model.__name__
+        rich_name = _escape_markup(name)
+
+        if cls is not None and field_name is not None:
+            self.message = (
+                f"`{cls.__name__}.{field_name}` uses `{name}`, which is a "
+                "`RootModel` and can't be a GraphQL type"
+            )
+            self.rich_message = (
+                f"`[underline]{cls.__name__}.{field_name}[/]` uses "
+                f"`[underline]{rich_name}[/]`, which is a `RootModel` and can't be "
+                "a GraphQL type"
+            )
+            self.annotation_message = f"field using {rich_name}"
+        else:
+            self.message = (
+                f"`{name}` is a `RootModel`, which can't be used with "
+                f"`strawberry.pydantic.{decorator}`"
+            )
+            self.rich_message = (
+                f"`[underline]{rich_name}[/]` is a `RootModel`, which can't be used "
+                f"with `strawberry.pydantic.{decorator}`"
+            )
+            self.annotation_message = "RootModel defined here"
+
+        self.suggestion = _escape_markup(
+            "A `RootModel` holds a single value instead of fields, so it can't be "
+            "a GraphQL object type. Use the type of its value instead, for example "
+            "`list[str]` for `RootModel[list[str]]`."
+        )
+
+        super().__init__(self.message)
+
+    @cached_property
+    def exception_source(self) -> ExceptionSource | None:
+        if self.cls is not None and self.field_name is not None:
+            return _find_field_source(self.cls, self.field_name)
+
+        return SourceFinder().find_class_from_object(self.root_model)
 
 
 class MaybeFieldError(StrawberryException):

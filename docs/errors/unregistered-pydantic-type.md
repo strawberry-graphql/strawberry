@@ -93,3 +93,32 @@ class UserPage(Page[User]):
 class Directory(pydantic.BaseModel):
     users: UserPage
 ```
+
+If the model has a type from the experimental integration,
+`strawberry.experimental.pydantic`, the error says it only has a
+`strawberry.experimental.pydantic` type: the two integrations can't use each
+other's types. Decorate the model with `@strawberry.pydantic.type` too, with a
+different name if its experimental type is also in the schema:
+
+```python
+import pydantic
+import strawberry
+
+
+class AddressModel(pydantic.BaseModel):
+    street: str
+
+
+@strawberry.experimental.pydantic.type(model=AddressModel, all_fields=True)
+class Address:
+    pass
+
+
+strawberry.pydantic.type(AddressModel, name="NewAddress")
+
+
+@strawberry.pydantic.type
+class User(pydantic.BaseModel):
+    name: str
+    address: AddressModel
+```
