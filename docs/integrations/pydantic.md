@@ -124,6 +124,28 @@ class User(Node):
 
 Types implement a Pydantic interface by subclassing it, and inherit its fields.
 
+They can also implement a regular `@strawberry.interface`, including its fields
+with a resolver, by extending it after `BaseModel`:
+
+```python
+@strawberry.interface
+class Named:
+    name: str
+
+    @strawberry.field
+    def display_name(self) -> str:
+        return self.name.title()
+
+
+@strawberry.pydantic.type
+class Product(BaseModel, Named):
+    price: float
+```
+
+The Pydantic model has to come first: the interface's `__init__` would otherwise
+replace Pydantic's, so listing the interface first raises a
+[`StrawberryBaseBeforeModelError`](../errors/strawberry-base-before-model.md).
+
 ## Configuration Options
 
 All decorators accept optional configuration parameters:
@@ -520,6 +542,20 @@ using `strawberry.pydantic.field` there raises a
 `@strawberry.field` can't be used in a Pydantic model: Pydantic raises
 `PydanticUserError: A non-annotated attribute was detected` when the model is
 defined. Use `@strawberry.pydantic.field` instead.
+
+Fields with a resolver are also inherited from regular Strawberry types and
+interfaces, when they're methods decorated with `@strawberry.field` (see
+[`@strawberry.pydantic.interface`](#strawberrypydanticinterface)).
+
+<Note>
+
+Fields like `label: str = strawberry.field(resolver=get_label)` can't be
+inherited from a regular Strawberry type or interface: Pydantic sees their
+annotation and makes them fields of the model, so they raise an
+[`InheritedStrawberryResolverError`](../errors/inherited-strawberry-resolver.md).
+Declare them as methods with `@strawberry.field` instead.
+
+</Note>
 
 ### Scalars
 

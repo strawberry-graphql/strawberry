@@ -15,10 +15,12 @@ from strawberry.exceptions import (
 from strawberry.pydantic.exceptions import (
     AttributeOverridesComputedFieldError,
     AttributeOverridesResolverFieldError,
+    InheritedStrawberryResolverError,
     PydanticFieldWithoutResolverError,
     ResolverAlreadyUsedError,
     ResolverFieldOverridesModelFieldError,
     ResolverNotAFunctionError,
+    StrawberryBaseBeforeModelError,
     StrawberryFieldInModelError,
     UnregisteredPydanticTypeError,
 )
@@ -340,6 +342,287 @@ def test_properties_can_override_inherited_computed_fields():
     assert result.data == {"item": {"double": 6}}
 
 
+@pytest.mark.raises_strawberry_exception(
+    InheritedStrawberryResolverError,
+    match=(
+        "Pydantic type `Item` can't inherit field `label` from `Labelled`, as it "
+        "has a resolver"
+    ),
+)
+def test_fields_with_a_resolver_inherited_from_strawberry_types_raise_an_error():
+    def get_label() -> str:
+        return "label"
+
+    @strawberry.interface
+    class Labelled:
+        label: str = strawberry.field(resolver=get_label)
+
+    @strawberry.pydantic.type
+    class Item(pydantic.BaseModel, Labelled):
+        id: int
+
+
+async def test_resolver_fields_inherited_from_strawberry_interfaces():
+    @strawberry.interface
+    class Node:
+        id: strawberry.ID
+
+        @strawberry.field
+        def display_name(self) -> str:
+            return f"Node {self.id}"
+
+        @strawberry.field
+        async def label(self, prefix: str = "#") -> str:
+            return f"{prefix}{self.id}"
+
+    @strawberry.pydantic.type
+    class Product(pydantic.BaseModel, Node):
+        title: str
+
+    @strawberry.type
+    class Article(Node):
+        body: str
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def nodes(self) -> list[Node]:
+            return [
+                Product(id=strawberry.ID("1"), title="Jam"),
+                Article(id=strawberry.ID("2"), body="Hi"),
+            ]
+
+    schema = strawberry.Schema(query=Query, types=[Product, Article])
+
+    assert str(schema) == snapshot("""\
+type Article implements Node {
+  id: ID!
+  displayName: String!
+  label(prefix: String! = "#"): String!
+  body: String!
+}
+
+interface Node {
+  id: ID!
+  displayName: String!
+  label(prefix: String! = "#"): String!
+}
+
+type Product implements Node {
+  id: ID!
+  title: String!
+  displayName: String!
+  label(prefix: String! = "#"): String!
+}
+
+type Query {
+  nodes: [Node!]!
+}\
+""")
+
+    result = await schema.execute(
+        '{ nodes { id displayName label(prefix: "n") '
+        "... on Product { title } ... on Article { body } } }"
+    )
+
+    assert not result.errors
+    assert result.data == {
+        "nodes": [
+            {"id": "1", "displayName": "Node 1", "label": "n1", "title": "Jam"},
+            {"id": "2", "displayName": "Node 2", "label": "n2", "body": "Hi"},
+        ]
+    }
+    # the resolvers aren't fields of the model
+    assert list(Product.model_fields) == ["id", "title"]
+
+
+def test_resolver_fields_inherited_from_strawberry_types_keep_their_options():
+    @strawberry.type
+    class Account:
+        @strawberry.field(name="secret", permission_classes=[IsAdmin])
+        def get_secret(self) -> str:
+            return "hunter2"
+
+    @strawberry.pydantic.type
+    class User(pydantic.BaseModel, Account):
+        name: str
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def user(self) -> User:
+            return User(name="Ada")
+
+    schema = strawberry.Schema(query=Query)
+
+    result = schema.execute_sync("{ user { secret } }", context_value={"admin": False})
+
+    assert result.errors
+    assert result.errors[0].message == "Admins only"
+
+    result = schema.execute_sync("{ user { secret } }", context_value={"admin": True})
+
+    assert not result.errors
+    assert result.data == {"user": {"secret": "hunter2"}}
+
+
+def test_static_and_class_methods_inherited_from_strawberry_types_are_bound():
+    @strawberry.interface
+    class Versioned:
+        @strawberry.field
+        @staticmethod
+        def version() -> int:
+            return 2
+
+        @strawberry.field
+        @classmethod
+        def kind(cls) -> str:
+            return cls.__name__
+
+    @strawberry.pydantic.type
+    class Item(pydantic.BaseModel, Versioned):
+        id: int
+
+    result = _query(Item, Item(id=1), "{ item { version kind } }")
+
+    assert not result.errors
+    # like with `@strawberry.type`, the class method gets the type using it
+    assert result.data == {"item": {"version": 2, "kind": "Item"}}
+
+
+def test_resolver_fields_inherited_from_strawberry_types_can_be_overridden():
+    @strawberry.interface
+    class Named:
+        @strawberry.field
+        def name(self) -> str:
+            return "named"
+
+    @strawberry.pydantic.type
+    class Product(pydantic.BaseModel, Named):
+        @strawberry.pydantic.field
+        def name(self) -> str:
+            return "product"
+
+    @strawberry.pydantic.type
+    class Person(pydantic.BaseModel, Named):
+        name: str
+
+    result = _query(Product, Product(), "{ item { name } }")
+
+    assert not result.errors
+    assert result.data == {"item": {"name": "product"}}
+
+    result = _query(Person, Person(name="Ada"), "{ item { name } }")
+
+    assert not result.errors
+    assert result.data == {"item": {"name": "Ada"}}
+
+
+@pytest.mark.raises_strawberry_exception(
+    AttributeOverridesResolverFieldError,
+    match=(
+        "`name` on `Product` overrides an inherited field with a resolver, but "
+        "isn't a field itself"
+    ),
+)
+def test_methods_overriding_resolver_fields_of_strawberry_types_raise_an_error():
+    @strawberry.interface
+    class Named:
+        @strawberry.field
+        def name(self) -> str:
+            return "named"
+
+    @strawberry.pydantic.type
+    class Product(pydantic.BaseModel, Named):
+        def name(self) -> str:
+            return "product"
+
+
+def test_pydantic_interfaces_can_extend_strawberry_interfaces():
+    @strawberry.interface
+    class Node:
+        id: strawberry.ID
+
+        @strawberry.field
+        def display_name(self) -> str:
+            return f"Node {self.id}"
+
+    @strawberry.pydantic.interface
+    class Named(pydantic.BaseModel, Node):
+        name: str
+
+    @strawberry.pydantic.type
+    class Person(Named):
+        email: str
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def node(self) -> Node:
+            return Person(id=strawberry.ID("1"), name="Ada", email="ada@example.com")
+
+    schema = strawberry.Schema(query=Query, types=[Person])
+
+    assert "type Person implements Named & Node {" in str(schema)
+
+    result = schema.execute_sync(
+        "{ node { id displayName ... on Named { name } ... on Person { email } } }"
+    )
+
+    assert not result.errors
+    assert result.data == {
+        "node": {
+            "id": "1",
+            "displayName": "Node 1",
+            "name": "Ada",
+            "email": "ada@example.com",
+        }
+    }
+
+
+@pytest.mark.raises_strawberry_exception(
+    StrawberryBaseBeforeModelError,
+    match=(
+        "Pydantic type `Product` extends the Strawberry interface `Node` before a "
+        "Pydantic model$"
+    ),
+)
+def test_strawberry_bases_before_the_model_raise_an_error():
+    @strawberry.interface
+    class Node:
+        id: strawberry.ID
+
+    # `Node`'s dataclass `__init__` would replace Pydantic's
+    @strawberry.pydantic.type
+    class Product(Node, pydantic.BaseModel):
+        title: str
+
+
+def test_strawberry_bases_before_the_model_suggest_listing_the_models_first():
+    @strawberry.input
+    class Pagination:
+        first: int = 10
+
+    class SearchBase(pydantic.BaseModel):
+        query: str
+
+    with pytest.raises(StrawberryBaseBeforeModelError) as exc_info:
+
+        @strawberry.pydantic.input
+        class SearchInput(Pagination, SearchBase):
+            pass
+
+    assert str(exc_info.value) == (
+        "Pydantic input `SearchInput` extends the Strawberry input `Pagination` "
+        "before a Pydantic model"
+    )
+    assert exc_info.value.suggestion == (
+        "The `__init__` of `Pagination` would replace Pydantic's, so the model "
+        "couldn't be created. List the Pydantic models first: "
+        "`class SearchInput(SearchBase, Pagination)`."
+    )
+
+
 def test_subclasses_can_define_fields_overridden_by_their_bases():
     class Greeter(pydantic.BaseModel):
         name: str
@@ -441,7 +724,8 @@ def test_strawberry_fields_of_undecorated_classes_raise_an_error():
         "pydantic types only read from Strawberry types and interfaces"
     )
     assert exc_info.value.suggestion == (
-        "Use `@strawberry.pydantic.field` on `Shouting` instead."
+        "Use `@strawberry.pydantic.field`, or decorate `Shouting` with "
+        "`@strawberry.type` or `@strawberry.interface`."
     )
 
 

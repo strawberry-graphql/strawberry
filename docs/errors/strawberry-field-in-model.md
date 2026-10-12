@@ -51,3 +51,7 @@ class User(pydantic.BaseModel):
     def shout(self) -> str:
         return self.name.upper()
 ```
+
+For a base class that isn't a Pydantic model, you can also decorate it with
+`@strawberry.type` or `@strawberry.interface`, as Pydantic types inherit the
+fields with a resolver of regular Strawberry types and interfaces.

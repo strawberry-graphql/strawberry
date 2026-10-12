@@ -18,11 +18,34 @@ from strawberry.types.object_type import _get_interfaces
 from strawberry.utils.str_converters import to_camel_case
 
 from .conversion import build_pydantic_model, dump_pydantic_model
-from .exceptions import ModelAlreadyDecoratedError, NotAPydanticModelError
+from .exceptions import (
+    ModelAlreadyDecoratedError,
+    NotAPydanticModelError,
+    StrawberryBaseBeforeModelError,
+)
 from .fields import get_pydantic_fields, get_resolver_fields
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
+
+
+def _find_strawberry_base_before_model(
+    cls: builtins.type[BaseModel],
+) -> builtins.type | None:
+    """Return a regular Strawberry type that comes before the Pydantic models.
+
+    For example `Node` in `class Product(Node, BaseModel)`. Its dataclass
+    `__init__` comes before Pydantic's in the MRO, so the model can't be created.
+    """
+    for base in cls.__mro__[1:]:
+        if issubclass(base, BaseModel):
+            return None
+
+        # only the class's own definition, not one inherited from its bases
+        if "__strawberry_definition__" in vars(base):
+            return base
+
+    return None
 
 
 # The decorators return the class they're given, so type checkers keep the
@@ -61,6 +84,9 @@ def _process_pydantic_type(
 
     if "__strawberry_definition__" in vars(cls):
         raise ModelAlreadyDecoratedError(cls, decorator)
+
+    if (base := _find_strawberry_base_before_model(cls)) is not None:
+        raise StrawberryBaseBeforeModelError(cls, base=base, decorator=decorator)
 
     name = name or to_camel_case(cls.__name__)
 

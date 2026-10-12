@@ -228,7 +228,8 @@ class StrawberryFieldInModelError(StrawberryException):
             "Use `@strawberry.pydantic.field` to add a field with a resolver to a "
             "pydantic model."
             if is_model
-            else f"Use `@strawberry.pydantic.field` on `{cls.__name__}` instead."
+            else "Use `@strawberry.pydantic.field`, or decorate "
+            f"`{cls.__name__}` with `@strawberry.type` or `@strawberry.interface`."
         )
 
         super().__init__(self.message)
@@ -472,6 +473,84 @@ class AttributeOverridesComputedFieldError(StrawberryException):
         return SourceFinder().find_class_attribute_from_object(
             self.cls, self.field_name
         )
+
+
+class InheritedStrawberryResolverError(StrawberryException):
+    def __init__(self, field_name: str, cls: type, base: type) -> None:
+        self.cls = base
+        self.field_name = field_name
+
+        self.message = (
+            f"Pydantic type `{cls.__name__}` can't inherit field `{field_name}` "
+            f"from `{base.__name__}`, as it has a resolver"
+        )
+        self.rich_message = (
+            f"Pydantic type `[underline]{cls.__name__}[/]` can't inherit field "
+            f"`[underline]{field_name}[/]` from `[underline]{base.__name__}[/]`, "
+            "as it has a resolver"
+        )
+        self.annotation_message = "field with a resolver that pydantic sees as data"
+        self.suggestion = (
+            "Pydantic would make it a field of the model, with the resolver as its "
+            "default value. Declare the field as a method with `@strawberry.field` "
+            "instead, which Pydantic doesn't see, for example: "
+            f"`@strawberry.field def {field_name}(self) -> ...`."
+        )
+
+        super().__init__(self.message)
+
+    @cached_property
+    def exception_source(self) -> ExceptionSource | None:
+        return SourceFinder().find_class_attribute_from_object(
+            self.cls, self.field_name
+        )
+
+
+class StrawberryBaseBeforeModelError(StrawberryException):
+    def __init__(self, cls: type, base: type, decorator: str) -> None:
+        self.cls = cls
+
+        definition = base.__strawberry_definition__  # type: ignore[attr-defined]
+        kind = (
+            "input"
+            if definition.is_input
+            else "interface"
+            if definition.is_interface
+            else "type"
+        )
+        bases = vars(cls).get("__orig_bases__", cls.__bases__)
+        reordered = ", ".join(
+            _format_base(base)
+            for base in sorted(
+                bases,
+                # the models first, keeping the order of the other bases
+                key=lambda base: (
+                    not (isinstance(base, type) and issubclass(base, BaseModel))
+                ),
+            )
+        )
+
+        self.message = (
+            f"Pydantic {decorator} `{cls.__name__}` extends the Strawberry {kind} "
+            f"`{base.__name__}` before a Pydantic model"
+        )
+        self.rich_message = (
+            f"Pydantic {decorator} `[underline]{cls.__name__}[/]` extends the "
+            f"Strawberry {kind} `[underline]{base.__name__}[/]` before a Pydantic "
+            "model"
+        )
+        self.annotation_message = "Strawberry base before the Pydantic model"
+        self.suggestion = _escape_markup(
+            f"The `__init__` of `{base.__name__}` would replace Pydantic's, so the "
+            "model couldn't be created. List the Pydantic models first: "
+            f"`class {cls.__name__}({reordered})`."
+        )
+
+        super().__init__(self.message)
+
+    @cached_property
+    def exception_source(self) -> ExceptionSource | None:
+        return SourceFinder().find_class_from_object(self.cls)
 
 
 class ResolverNotAFunctionError(StrawberryException):
