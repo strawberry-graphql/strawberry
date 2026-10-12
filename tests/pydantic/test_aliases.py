@@ -1,7 +1,9 @@
 """Tests for Pydantic v2 alias features with first-class integration."""
 
+from typing import Annotated
+
 import pydantic
-from pydantic import AliasChoices, Field
+from pydantic import AliasChoices, AliasPath, Field
 from pydantic.alias_generators import to_snake
 
 import strawberry
@@ -127,7 +129,7 @@ def test_alias_path_for_nested_extraction():
     @strawberry.pydantic.input
     class SettingsInput(pydantic.BaseModel):
         # This is useful when the model is constructed directly, not from GraphQL
-        theme: str = Field(default="light")
+        theme: str = Field(validation_alias=AliasPath("preferences", "theme"))
 
     @strawberry.pydantic.type
     class Settings(pydantic.BaseModel):
@@ -159,6 +161,10 @@ def test_alias_path_for_nested_extraction():
 
     assert not result.errors
     assert result.data["updateSettings"]["theme"] == "dark"
+
+    settings = SettingsInput.model_validate({"preferences": {"theme": "light"}})
+
+    assert settings.theme == "light"
 
 
 def test_combined_validation_and_serialization_alias():
@@ -251,30 +257,39 @@ def test_strawberry_name_overrides_pydantic_alias():
 
     @strawberry.pydantic.type
     class Product(pydantic.BaseModel):
-        # Pydantic alias for serialization
-        internal_id: str = Field(serialization_alias="id")
+        internal_id: Annotated[str, strawberry.field(name="productId")] = Field(
+            alias="id"
+        )
+
+    @strawberry.pydantic.input
+    class ProductInput(pydantic.BaseModel):
+        internal_id: Annotated[str, strawberry.field(name="productId")] = Field(
+            alias="id"
+        )
 
     @strawberry.type
     class Query:
         @strawberry.field
-        def product(self) -> Product:
-            return Product(internal_id="P123")
+        def product(self, input: ProductInput) -> Product:
+            return Product(id=input.internal_id)
 
     schema = strawberry.Schema(query=Query)
 
-    # GraphQL schema uses the Python field name converted to camelCase
+    assert "type Product {\n  productId: String!\n}" in str(schema)
+    assert "input ProductInput {\n  productId: String!\n}" in str(schema)
+
     result = schema.execute_sync(
         """
         query {
-            product {
-                internalId
+            product(input: { productId: "P123" }) {
+                productId
             }
         }
         """
     )
 
     assert not result.errors
-    assert result.data["product"]["internalId"] == "P123"
+    assert result.data["product"]["productId"] == "P123"
 
 
 def test_alias_generator_function():
