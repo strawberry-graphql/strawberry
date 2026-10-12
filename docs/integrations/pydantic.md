@@ -488,6 +488,21 @@ class Customer(BaseModel):
         return f"{self.email[0]}***"
 ```
 
+Pydantic's `SecretStr` fields are exposed as strings with their masked value,
+`"**********"`, and `SecretBytes` fields aren't supported yet. Secrets usually
+don't belong in the schema at all, so mark them with `strawberry.Private`:
+
+```python
+from pydantic import BaseModel, SecretBytes, SecretStr
+
+
+@strawberry.pydantic.type
+class Account(BaseModel):
+    username: str
+    password: strawberry.Private[SecretStr]
+    signing_key: strawberry.Private[SecretBytes]
+```
+
 ### Resolver Fields
 
 Pydantic doesn't allow `strawberry.field` in a model, so use
@@ -567,7 +582,13 @@ Declare them as methods with `@strawberry.field` instead.
 ### Scalars
 
 Fields can use Strawberry's scalars, such as `strawberry.ID` and `JSON`, and
-[custom scalars](../types/scalars.md), the same way as `@strawberry.type`:
+[custom scalars](../types/scalars.md), the same way as `@strawberry.type`.
+Pydantic types that only add validation to a scalar, like `EmailStr`, `HttpUrl`,
+`PositiveInt`, `AwareDatetime` or `PastDate`, use the scalar they validate, so
+`scalar_map` entries for `datetime` also apply to `AwareDatetime` fields, and
+`strawberry.field(graphql_type=...)` changes the scalar of a field. Pydantic's
+URL and DSN types (including your own subclasses of them), `NameEmail` and the
+`IPvAny*` types are strings, which Pydantic validates on inputs:
 
 ```python
 from typing import NewType
@@ -612,6 +633,18 @@ class Settings(BaseModel):
     values: Annotated[dict[str, Any], strawberry.field(graphql_type=JSON)]
 ```
 
+`Literal` types aren't supported yet. Expose them with the type of their values,
+Pydantic still validates the values sent by clients:
+
+```python
+from typing import Annotated, Literal
+
+
+@strawberry.pydantic.input
+class PostInput(BaseModel):
+    status: Annotated[Literal["draft", "published"], strawberry.field(graphql_type=str)]
+```
+
 As with `@strawberry.type`, a `NewType` must be registered as a scalar to be
 used in the schema. To expose it as its base type instead, set the GraphQL type
 of the field:
@@ -651,6 +684,77 @@ class CreatePostInput(BaseModel):
 ```
 
 ## Advanced Usage
+
+### Self-Referencing Models
+
+Models can reference themselves, and models defined in the same module can
+reference each other:
+
+```python
+@strawberry.pydantic.type
+class Category(BaseModel):
+    name: str
+    children: list["Category"] = []
+```
+
+When the annotation of a field is a string that uses a model defined later, for
+example with `from __future__ import annotations`, Pydantic only reads its
+`Annotated` options once that model is defined. Until then, the field can't use
+options like `strawberry.field()` or `Field(exclude=True)`: decorating the model
+raises an
+[`UnresolvedAnnotatedFieldError`](../errors/unresolved-annotated-field.md),
+whose page shows the workarounds: defining the referenced model first, quoting
+only the type, like `Annotated[list["Post"], strawberry.field(...)]`, in a
+module without `from __future__ import annotations`, or decorating the model
+after calling `model_rebuild()`.
+
+Models from other modules can be referenced with
+[`strawberry.lazy()`](../types/lazy.md), for example when two modules import
+each other:
+
+```python
+# authors.py
+from typing import TYPE_CHECKING, Annotated
+
+import strawberry
+from pydantic import BaseModel
+
+if TYPE_CHECKING:
+    from .books import Book
+
+
+@strawberry.pydantic.type
+class Author(BaseModel):
+    name: str
+    books: list[Annotated["Book", strawberry.lazy(".books")]] = []
+```
+
+```python
+# books.py
+import strawberry
+from pydantic import BaseModel
+
+from .authors import Author
+
+
+@strawberry.pydantic.type
+class Book(BaseModel):
+    title: str
+    author: Author | None = None
+
+
+# like any Pydantic model that uses a type defined later
+Author.model_rebuild()
+```
+
+<Note>
+
+Models in different modules that import each other without `strawberry.lazy()`
+(using a `TYPE_CHECKING` import and `model_rebuild()` only) are not supported
+yet. Use `strawberry.lazy()` for the types imported with `TYPE_CHECKING`, or
+define the models in the same module.
+
+</Note>
 
 ### Generic Models
 
