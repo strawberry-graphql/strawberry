@@ -1075,6 +1075,34 @@ def test_resolvers_of_generic_models():
     assert result.data == {"items": {"first": {"name": "jam"}}, "numbers": {"first": 1}}
 
 
+def test_resolvers_of_generic_models_use_the_graphql_type_of_pydantic_types():
+    class Page(pydantic.BaseModel, Generic[T]):
+        items: list[T]
+
+        @strawberry.pydantic.field
+        def first(self) -> T:
+            return self.items[0]
+
+    @strawberry.pydantic.type
+    class UrlPage(Page[pydantic.HttpUrl]):
+        pass
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def page(self) -> UrlPage:
+            return UrlPage.model_validate({"items": ["https://example.com"]})
+
+    schema = strawberry.Schema(query=Query)
+
+    assert "first: String!" in str(schema)
+
+    result = schema.execute_sync("{ page { first } }")
+
+    assert not result.errors
+    assert result.data == {"page": {"first": "https://example.com/"}}
+
+
 @pytest.mark.raises_strawberry_exception(
     UnregisteredPydanticTypeError,
     match=(
