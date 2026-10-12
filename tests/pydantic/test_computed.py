@@ -115,7 +115,7 @@ def test_computed_field_with_description():
 
     # Check schema contains the description
     schema_str = str(schema)
-    assert "nextAge" in schema_str
+    assert '"""The user\'s age next year"""\n  nextAge: Int!' in schema_str
 
 
 def test_multiple_computed_fields():
