@@ -6,7 +6,6 @@ import copy
 import dataclasses
 import functools
 import sys
-import types
 from typing import (
     TYPE_CHECKING,
     Annotated,
@@ -90,6 +89,25 @@ def _get_strawberry_base_field(origin: type, field_name: str) -> StrawberryField
 def _is_strawberry_resolver_field(value: object) -> TypeGuard[StrawberryField]:
     """Whether `value` is a `strawberry.field()` with a resolver."""
     return isinstance(value, StrawberryField) and value.base_resolver is not None
+
+
+def _get_strawberry_base_resolver_fields(base: type) -> list[StrawberryField] | None:
+    """Return the fields with a resolver of a regular Strawberry type or interface.
+
+    Returns `None` for other classes. Strawberry keeps the resolvers of its types
+    on the class as plain functions, so only the type's definition knows that
+    they're fields.
+    """
+    if issubclass(base, BaseModel):
+        return None
+
+    # only the class's own definition, not one inherited from its bases
+    definition = vars(base).get("__strawberry_definition__")
+
+    if not isinstance(definition, StrawberryObjectDefinition):
+        return None
+
+    return [field for field in definition.fields if field.base_resolver is not None]
 
 
 def _get_annotated_metadata(annotation: object) -> Iterator[object]:
@@ -430,6 +448,17 @@ def get_resolver_fields(
             computed_fields.discard(name)
             overridden_by.pop(name, None)
 
+        # e.g. the `@strawberry.field` methods of a regular Strawberry interface
+        if (base_fields := _get_strawberry_base_resolver_fields(base)) is not None:
+            for base_field in base_fields:
+                assert base_field.python_name is not None
+
+                resolver_fields[base_field.python_name] = base_field
+                computed_fields.discard(base_field.python_name)
+                overridden_by.pop(base_field.python_name, None)
+
+            continue
+
         for attribute, value in list(vars(base).items()):
             # pydantic types only read `strawberry.field()` from Strawberry types,
             # but a model that makes pydantic ignore `StrawberryField`, or a class
@@ -482,9 +511,9 @@ def get_resolver_fields(
         resolver = field.base_resolver
         assert resolver is not None
 
-        # like `@strawberry.type`, class methods are bound to the class
-        if isinstance(wrapped_func := resolver.wrapped_func, classmethod):
-            field = field(types.MethodType(wrapped_func.__func__, cls))
+        # like `@strawberry.type`, static and class methods are bound to the
+        # class, also when they're inherited from a regular Strawberry type
+        field.base_resolver = resolver = resolver.bind(cls)
 
         if (
             field.type_annotation is not None
@@ -580,6 +609,14 @@ def get_pydantic_fields(
                 raise MaybeFieldError(field_name=field_name, cls=origin)
 
         if (base_field := _get_strawberry_base_field(origin, field_name)) is not None:
+            # pydantic sees the annotation of a field with a resolver, like
+            # `label: str = strawberry.field(resolver=get_label)`, and makes it a
+            # field of the model, with the resolver as its default value
+            if base_field.base_resolver is not None:
+                raise UnsupportedInheritedFieldError(
+                    field_name=field_name, cls=cls, base=origin, reason="resolver"
+                )
+
             # dataclasses don't keep a default factory on the class, so pydantic
             # doesn't see it and requires the field, which clients can omit when
             # it's nullable
@@ -590,7 +627,10 @@ def get_pydantic_fields(
                 and base_field.default_factory is not dataclasses.MISSING
             ):
                 raise UnsupportedInheritedFieldError(
-                    field_name=field_name, cls=cls, base=origin
+                    field_name=field_name,
+                    cls=cls,
+                    base=origin,
+                    reason="default_factory",
                 )
 
             # inputs replace the field's default with pydantic's below
