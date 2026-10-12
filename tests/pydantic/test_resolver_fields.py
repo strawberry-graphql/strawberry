@@ -292,6 +292,50 @@ def test_methods_cannot_override_resolver_fields_named_like_computed_fields():
             return 0
 
 
+@pytest.mark.raises_strawberry_exception(
+    UnsupportedFieldOverrideError,
+    match=(
+        "`double` on `Child` overrides an inherited computed field, but isn't a "
+        "field itself"
+    ),
+)
+def test_methods_cannot_override_inherited_computed_fields():
+    class Base(pydantic.BaseModel):
+        value: int
+
+        @pydantic.computed_field  # type: ignore[prop-decorator]
+        @property
+        def double(self) -> int:
+            return self.value * 2
+
+    @strawberry.pydantic.type
+    class Child(Base):
+        def double(self) -> int:  # type: ignore[override]
+            return 0
+
+
+def test_properties_can_override_inherited_computed_fields():
+    class Base(pydantic.BaseModel):
+        value: int
+
+        @pydantic.computed_field  # type: ignore[prop-decorator]
+        @property
+        def double(self) -> int:
+            return self.value * 2
+
+    # pydantic reads the value of the computed field from the new property
+    @strawberry.pydantic.type
+    class Child(Base):
+        @property
+        def double(self) -> int:  # type: ignore[override]
+            return self.value * 3
+
+    result = _query(Child, Child(value=2), "{ item { double } }")
+
+    assert not result.errors
+    assert result.data == {"item": {"double": 6}}
+
+
 def test_subclasses_can_define_fields_overridden_by_their_bases():
     class Greeter(pydantic.BaseModel):
         name: str

@@ -11,6 +11,7 @@ from typing import (
     TYPE_CHECKING,
     Annotated,
     Any,
+    Literal,
     Optional,
     TypeGuard,
     get_args,
@@ -413,15 +414,20 @@ def get_resolver_fields(
         return []
 
     resolver_fields: dict[str, StrawberryField] = {}
-    # resolver fields overridden by an attribute that isn't a field, like a
-    # method without `strawberry.pydantic.field`, and the base defining it
-    overridden_by: dict[str, type] = {}
+    computed_fields: set[str] = set()
+    # fields overridden by an attribute that isn't a field, like a method
+    # without `strawberry.pydantic.field`, with the base defining it and the
+    # kind of field it overrides
+    overridden_by: dict[
+        str, tuple[type, Literal["resolver_field", "computed_field"]]
+    ] = {}
 
     # bases first, so that subclasses can override their fields
     for base in reversed(cls.__mro__):
         # e.g. a data field that overrides an inherited resolver field
         for name in get_annotations(base, format=Format.FORWARDREF):
             resolver_fields.pop(name, None)
+            computed_fields.discard(name)
             overridden_by.pop(name, None)
 
         for attribute, value in list(vars(base).items()):
@@ -435,22 +441,31 @@ def get_resolver_fields(
 
             if (resolver_field := get_resolver_field(value)) is not None:
                 resolver_fields[attribute] = resolver_field
+                computed_fields.discard(attribute)
                 overridden_by.pop(attribute, None)
             elif include_computed and _is_computed_field(base, attribute, value):
                 # computed fields replace resolver fields, like data fields
                 resolver_fields.pop(attribute, None)
+                computed_fields.add(attribute)
                 overridden_by.pop(attribute, None)
             elif attribute in resolver_fields:
                 del resolver_fields[attribute]
-                overridden_by[attribute] = base
+                overridden_by[attribute] = (base, "resolver_field")
+            # a property only changes the value of a computed field, but pydantic
+            # would use e.g. a method itself as the value
+            elif attribute in computed_fields and not isinstance(
+                value, (property, functools.cached_property)
+            ):
+                computed_fields.discard(attribute)
+                overridden_by[attribute] = (base, "computed_field")
 
     # checked once the bases have been walked, as a subclass can define the
     # field again
     if overridden_by:
-        attribute, base = next(iter(overridden_by.items()))
+        attribute, (base, overridden) = next(iter(overridden_by.items()))
 
         raise UnsupportedFieldOverrideError(
-            field_name=attribute, cls=base, overridden="resolver_field"
+            field_name=attribute, cls=base, overridden=overridden
         )
 
     type_var_map, unregistered_models = _get_type_var_map(cls)
