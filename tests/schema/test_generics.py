@@ -1364,6 +1364,36 @@ def test_generic_base_with_a_type_parameter_of_its_subclass():
     assert result.data == {"box": {"content": [1, 2]}}
 
 
+def test_generic_base_given_a_type_parameter_of_the_same_name():
+    T = TypeVar("T")
+
+    @strawberry.type
+    class Result(Generic[T]):
+        data: T
+
+    @strawberry.type
+    class ListResult(Result[list[T]], Generic[T]):
+        total: int
+
+    @strawberry.type
+    class IntListResult(ListResult[int]): ...
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def result(self) -> IntListResult:
+            return IntListResult(data=[1, 2], total=2)
+
+    schema = strawberry.Schema(query=Query)
+
+    assert "data: [Int!]!" in str(schema)
+
+    result = schema.execute_sync("{ result { data total } }")
+
+    assert not result.errors
+    assert result.data == {"result": {"data": [1, 2], "total": 2}}
+
+
 def test_generic_base_wrapping_a_type_parameter_of_its_subclass():
     T = TypeVar("T")
     U = TypeVar("U")
