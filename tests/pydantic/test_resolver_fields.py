@@ -1241,13 +1241,6 @@ def test_resolvers_of_generic_models_use_the_graphql_type_of_pydantic_types():
     assert result.data == {"page": {"first": "https://example.com/"}}
 
 
-@pytest.mark.raises_strawberry_exception(
-    UnregisteredPydanticTypeError,
-    match=(
-        r"`AddressLookup\.value` uses `Address`, which isn't a Strawberry type: "
-        r"decorate it with `@strawberry\.pydantic\.type`"
-    ),
-)
 def test_resolvers_of_generic_models_using_undecorated_models_raise_an_error():
     class Address(pydantic.BaseModel):
         city: str
@@ -1262,6 +1255,21 @@ def test_resolvers_of_generic_models_using_undecorated_models_raise_an_error():
     @strawberry.pydantic.type
     class AddressLookup(Lookup[Address]):
         pass
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def lookup(self) -> AddressLookup:
+            return AddressLookup(key="home")
+
+    with pytest.raises(
+        UnregisteredPydanticTypeError,
+        match=(
+            r"`AddressLookup\.value` uses `Address`, which isn't a Strawberry type: "
+            r"decorate it with `@strawberry\.pydantic\.type`"
+        ),
+    ):
+        strawberry.Schema(query=Query)
 
 
 def test_resolvers_of_generic_models_with_type_parameters_of_the_same_name():

@@ -10,6 +10,7 @@ import pytest
 
 import strawberry
 from strawberry import Private
+from strawberry.exceptions import InvalidStrawberryFieldAnnotationError
 from strawberry.pydantic.exceptions import UnresolvedAnnotatedFieldError
 from strawberry.types.base import get_object_definition
 
@@ -95,6 +96,18 @@ class Wallet(pydantic.BaseModel):
 
 Customer.model_rebuild()
 strawberry.pydantic.type(Customer)
+
+
+# Options nested in the type, like the ones of the list's items, don't configure
+# the field, so `Bookcase` can be decorated before `Shelf` is defined
+@strawberry.pydantic.type
+class Bookcase(pydantic.BaseModel):
+    shelves: list[Annotated[Shelf, pydantic.Field(description="A shelf")]]
+
+
+@strawberry.pydantic.type
+class Shelf(pydantic.BaseModel):
+    label: str
 
 
 T = TypeVar("T")
@@ -228,8 +241,13 @@ def test_field_description_with_a_model_defined_later_raises_an_error():
         iban: str
 
 
+# like once `Account` is defined, `strawberry.field()` can't be nested in the type
 @pytest.mark.raises_strawberry_exception(
-    UnresolvedAnnotatedFieldError, match=_unresolved_annotated("account", "Owner")
+    InvalidStrawberryFieldAnnotationError,
+    match=(
+        r"`strawberry.field\(\)` for field `account` on type `Owner` must be placed "
+        r"at the top level of the field annotation"
+    ),
 )
 def test_nested_annotated_with_a_model_defined_later_raises_an_error():
     @strawberry.pydantic.type
@@ -241,6 +259,23 @@ def test_nested_annotated_with_a_model_defined_later_raises_an_error():
     @strawberry.pydantic.type
     class Account(pydantic.BaseModel):
         iban: str
+
+
+def test_nested_options_with_a_model_defined_later():
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def bookcase(self) -> Bookcase:
+            return Bookcase(shelves=[Shelf(label="Sci-fi")])
+
+    schema = strawberry.Schema(query=Query)
+
+    assert "shelves: [Shelf!]!" in str(schema)
+
+    result = schema.execute_sync("{ bookcase { shelves { label } } }")
+
+    assert not result.errors
+    assert result.data == {"bookcase": {"shelves": [{"label": "Sci-fi"}]}}
 
 
 @pytest.mark.raises_strawberry_exception(

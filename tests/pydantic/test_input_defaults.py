@@ -31,6 +31,17 @@ def _input_sdl(schema: strawberry.Schema, name: str) -> str:
     return sdl[start : sdl.index("\n}", start) + 2]
 
 
+@pytest.mark.parametrize("options", [{"default": 7}, {"default_factory": lambda: 7}])
+def test_defaults_in_strawberry_metadata_are_not_silently_discarded(options):
+    with pytest.raises(
+        TypeError, match=r"Define the default for `Input.count` on the Pydantic field"
+    ):
+
+        @strawberry.pydantic.input
+        class Input(pydantic.BaseModel):
+            count: Annotated[int, strawberry.field(**options)]
+
+
 def test_constant_defaults_are_published():
     @strawberry.enum
     class Size(Enum):
