@@ -19,12 +19,14 @@ from .error import (
     ValidationIssue,
 )
 from .object_type import input, interface, type  # noqa: A004
+from .resolver_field import field
 
 __all__ = [
     "InputValidationError",
     "PydanticValidationErrorHandler",
     "ValidationError",
     "ValidationIssue",
+    "field",
     "input",
     "interface",
     "type",

@@ -19,7 +19,7 @@ from strawberry.utils.str_converters import to_camel_case
 
 from .conversion import build_pydantic_model, dump_pydantic_model
 from .exceptions import ModelAlreadyDecoratedError, NotAPydanticModelError
-from .fields import get_pydantic_fields
+from .fields import get_pydantic_fields, get_resolver_fields
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
@@ -38,6 +38,7 @@ def _process_pydantic_type(
     is_interface: bool = False,
     description: str | None = None,
     directives: Sequence[object] | None = (),
+    include_computed: bool = True,
 ) -> builtins.type[ModelT]:
     """Process a Pydantic BaseModel class and add GraphQL metadata.
 
@@ -48,6 +49,7 @@ def _process_pydantic_type(
         is_interface: Whether this is an interface type
         description: The GraphQL type description
         directives: GraphQL directives to apply
+        include_computed: Whether to include computed fields
 
     Returns:
         The processed BaseModel class with GraphQL metadata
@@ -61,6 +63,25 @@ def _process_pydantic_type(
         raise ModelAlreadyDecoratedError(cls, decorator)
 
     name = name or to_camel_case(cls.__name__)
+
+    resolver_fields = get_resolver_fields(
+        cls, is_input=is_input, include_computed=include_computed
+    )
+    resolver_field_names = {field.python_name for field in resolver_fields}
+
+    fields = [
+        # e.g. a computed field overridden by a resolver field in a subclass
+        *(
+            field
+            for field in get_pydantic_fields(
+                cls=cls,
+                is_input=is_input,
+                include_computed=include_computed,
+            )
+            if field.python_name not in resolver_field_names
+        ),
+        *resolver_fields,
+    ]
 
     interfaces = _get_interfaces(cls)
 
@@ -78,7 +99,7 @@ def _process_pydantic_type(
         directives=directives,
         origin=cls,
         extend=False,
-        fields=get_pydantic_fields(cls, is_input=is_input),
+        fields=fields,
         # like `@strawberry.type`, resolvers can return objects that aren't
         # instances of the model, e.g. ORM rows, unless it defines `is_type_of`
         is_type_of=getattr(cls, "is_type_of", None),
@@ -97,6 +118,7 @@ def type(
     name: str | None = None,
     description: str | None = None,
     directives: Sequence[object] | None = (),
+    include_computed: bool = True,
 ) -> builtins.type[ModelT]: ...
 
 
@@ -106,6 +128,7 @@ def type(
     name: str | None = None,
     description: str | None = None,
     directives: Sequence[object] | None = (),
+    include_computed: bool = True,
 ) -> Callable[[builtins.type[ModelT]], builtins.type[ModelT]]: ...
 
 
@@ -115,6 +138,7 @@ def type(
     name: str | None = None,
     description: str | None = None,
     directives: Sequence[object] | None = (),
+    include_computed: bool = True,
 ) -> builtins.type[ModelT] | Callable[[builtins.type[ModelT]], builtins.type[ModelT]]:
     """Decorator to convert a Pydantic BaseModel directly into a GraphQL type.
 
@@ -126,6 +150,7 @@ def type(
         name: The GraphQL type name (defaults to class name)
         description: The GraphQL type description
         directives: GraphQL directives to apply to the type
+        include_computed: Whether to include computed fields
 
     Returns:
         The decorated BaseModel class with GraphQL metadata
@@ -153,6 +178,7 @@ def type(
             is_interface=False,
             description=description,
             directives=directives,
+            include_computed=include_computed,
         )
 
     if cls is None:
@@ -224,6 +250,7 @@ def input(
             is_interface=False,
             description=description,
             directives=directives,
+            include_computed=False,  # Input types don't need computed fields
         )
 
     if cls is None:
@@ -239,6 +266,7 @@ def interface(
     name: str | None = None,
     description: str | None = None,
     directives: Sequence[object] | None = (),
+    include_computed: bool = True,
 ) -> builtins.type[ModelT]: ...
 
 
@@ -248,6 +276,7 @@ def interface(
     name: str | None = None,
     description: str | None = None,
     directives: Sequence[object] | None = (),
+    include_computed: bool = True,
 ) -> Callable[[builtins.type[ModelT]], builtins.type[ModelT]]: ...
 
 
@@ -257,6 +286,7 @@ def interface(
     name: str | None = None,
     description: str | None = None,
     directives: Sequence[object] | None = (),
+    include_computed: bool = True,
 ) -> builtins.type[ModelT] | Callable[[builtins.type[ModelT]], builtins.type[ModelT]]:
     """Decorator to convert a Pydantic BaseModel directly into a GraphQL interface.
 
@@ -268,6 +298,7 @@ def interface(
         name: The GraphQL interface name (defaults to class name)
         description: The GraphQL interface description
         directives: GraphQL directives to apply to the interface
+        include_computed: Whether to include computed fields
 
     Returns:
         The decorated BaseModel class with GraphQL interface metadata
@@ -286,6 +317,7 @@ def interface(
             is_interface=True,
             description=description,
             directives=directives,
+            include_computed=include_computed,
         )
 
     if cls is None:
