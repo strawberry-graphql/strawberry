@@ -30,8 +30,9 @@ and `Address` hasn't been converted to a GraphQL type.
 
 ## How to fix this error
 
-You can fix this error by decorating the model used by the field with
-`@strawberry.pydantic.type`:
+You can fix this error by decorating the model used by the field, with
+`@strawberry.pydantic.type` for output types and `@strawberry.pydantic.input`
+for inputs:
 
 ```python
 import pydantic

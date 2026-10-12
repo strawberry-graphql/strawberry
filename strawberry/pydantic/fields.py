@@ -5,18 +5,23 @@ from __future__ import annotations
 import copy
 import dataclasses
 import sys
-from typing import TYPE_CHECKING, Annotated, Any, get_args
+from typing import TYPE_CHECKING, Annotated, Any, Optional, get_args
 from typing_extensions import Format, get_annotations
 
 from graphql.type.directives import DEFAULT_DEPRECATION_REASON
 from pydantic import BaseModel
 
 from strawberry.annotation import StrawberryAnnotation
+from strawberry.file_uploads import Upload
 from strawberry.types.base import StrawberryObjectDefinition
 from strawberry.types.field import StrawberryField, get_annotated_field
 from strawberry.types.private import is_private
 
-from .exceptions import StrawberryFieldAsDefaultError, UnregisteredPydanticTypeError
+from .exceptions import (
+    StrawberryFieldAsDefaultError,
+    UnregisteredPydanticTypeError,
+    UploadFieldError,
+)
 
 if TYPE_CHECKING:
     from pydantic.fields import FieldInfo
@@ -83,6 +88,29 @@ def _get_strawberry_field_override(
     return strawberry_field
 
 
+def _contains_upload(annotation: object) -> bool:
+    return annotation is Upload or any(
+        _contains_upload(arg) for arg in get_args(annotation)
+    )
+
+
+def _set_input_default(field: StrawberryField, field_info: FieldInfo) -> None:
+    # pydantic applies the defaults of input fields when it validates the input
+    field.default = dataclasses.MISSING
+    field.default_factory = dataclasses.MISSING
+    field.default_value = dataclasses.MISSING
+
+    # input fields can only be omitted when they're nullable or have a default,
+    # so fields with a default become nullable
+    if not field_info.is_required():
+        assert field.type_annotation is not None
+
+        field.type_annotation = StrawberryAnnotation(
+            Optional[field.type_annotation.raw_annotation],  # noqa: UP045
+            namespace=field.type_annotation.namespace,
+        )
+
+
 def _find_unregistered_model(
     type_: Any, model: type[BaseModel]
 ) -> type[BaseModel] | None:
@@ -112,6 +140,8 @@ def _create_strawberry_field(
     origin: type,
     field_name: str,
     field_info: FieldInfo,
+    *,
+    is_input: bool,
 ) -> StrawberryField:
     annotation = field_info.annotation
     description = field_info.description
@@ -133,6 +163,8 @@ def _create_strawberry_field(
     if strawberry_field.description is None:
         strawberry_field.description = description
 
+    # like `strawberry.field(deprecation_reason=...)`, deprecating a required
+    # input field fails schema validation, as GraphQL doesn't allow it
     if strawberry_field.deprecation_reason is None and field_info.deprecated:
         strawberry_field.deprecation_reason = (
             DEFAULT_DEPRECATION_REASON
@@ -147,7 +179,7 @@ def _create_strawberry_field(
     if strawberry_field.type_annotation is None:
         if (unregistered := _find_unregistered_model(annotation, cls)) is not None:
             raise UnregisteredPydanticTypeError(
-                unregistered, cls=origin, field_name=field_name
+                unregistered, cls=origin, field_name=field_name, is_input=is_input
             )
 
         strawberry_field.type_annotation = StrawberryAnnotation(
@@ -169,13 +201,15 @@ def _create_strawberry_field(
     return strawberry_field
 
 
-def get_pydantic_fields(cls: type[BaseModel]) -> list[StrawberryField]:
+def get_pydantic_fields(
+    cls: type[BaseModel], is_input: bool = False
+) -> list[StrawberryField]:
     """Return the Strawberry fields of a Pydantic model.
 
     Pydantic is the source of truth for which fields exist: its `model_fields`
     already resolved string annotations and merged inherited fields. Fields are
-    excluded from the schema when they are marked with `strawberry.Private` or
-    with pydantic's `Field(exclude=True)`.
+    excluded from the schema when they are marked with `strawberry.Private` or,
+    for output types, with pydantic's `Field(exclude=True)`.
 
     Fields can be customized using `Annotated`, like with `@strawberry.type`:
 
@@ -196,15 +230,24 @@ def get_pydantic_fields(cls: type[BaseModel]) -> list[StrawberryField]:
 
         # `exclude=True` hides a field from pydantic's serialization, so we
         # hide it from the GraphQL output too
-        if field_info.exclude is True:
+        if field_info.exclude is True and not is_input:
             continue
 
+        # Uploads are the integration's file objects, which pydantic would
+        # reject on every request when validating them as `Upload` (bytes)
+        if is_input and _contains_upload(field_info.annotation):
+            raise UploadFieldError(field_name=field_name, cls=origin)
+
         if (base_field := _get_strawberry_base_field(origin, field_name)) is not None:
-            strawberry_field = base_field
+            # inputs replace the field's default with pydantic's below
+            strawberry_field = copy.copy(base_field) if is_input else base_field
         else:
             strawberry_field = _create_strawberry_field(
-                cls, origin, field_name, field_info
+                cls, origin, field_name, field_info, is_input=is_input
             )
+
+        if is_input:
+            _set_input_default(strawberry_field, field_info)
 
         fields.append(strawberry_field)
 

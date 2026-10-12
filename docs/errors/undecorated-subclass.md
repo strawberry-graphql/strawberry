@@ -47,7 +47,7 @@ subscription types.
 You can fix this error by decorating the subclass, with `@strawberry.type` for
 types and interfaces, or with `@strawberry.input` for input types. Subclasses of
 [Pydantic](../integrations/pydantic.md) models are decorated with
-`@strawberry.pydantic.type` instead:
+`@strawberry.pydantic.type` or `@strawberry.pydantic.input` instead:
 
 ```python
 import strawberry
