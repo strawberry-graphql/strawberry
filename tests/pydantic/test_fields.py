@@ -1,5 +1,5 @@
 import warnings
-from typing import Annotated, Any, Generic, TypeVar
+from typing import Annotated, Any, Generic, Optional, TypeVar, Union
 
 import pydantic
 import pytest
@@ -255,6 +255,75 @@ def test_unregistered_generic_model_names_are_rendered():
         console.print(exc_info.value)
 
     assert "`User.box` uses `Box[str]`" in capture.get()
+
+
+def test_union_names():
+    @strawberry.type
+    class Cat:
+        name: str
+
+    @strawberry.type
+    class Dog:
+        name: str
+
+    Pet = Annotated[Union[Cat, Dog], strawberry.union("Pet")]
+
+    @strawberry.pydantic.type
+    class Owner(pydantic.BaseModel):
+        model_config = pydantic.ConfigDict(arbitrary_types_allowed=True)
+
+        pet: Pet
+        previous_pet: Annotated[
+            Optional[Union[Cat, Dog]], strawberry.union("PreviousPet")
+        ] = None
+        pets: list[Pet] = []
+
+        @pydantic.computed_field
+        @property
+        def favorite_pet(self) -> Pet:
+            return self.pet
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def owner(self) -> Owner:
+            return Owner(pet=Dog(name="Rex"))
+
+    schema = strawberry.Schema(query=Query)
+
+    assert str(schema) == snapshot("""\
+type Cat {
+  name: String!
+}
+
+type Dog {
+  name: String!
+}
+
+type Owner {
+  pet: Pet!
+  previousPet: PreviousPet
+  pets: [Pet!]!
+  favoritePet: Pet!
+}
+
+union Pet = Cat | Dog
+
+union PreviousPet = Cat | Dog
+
+type Query {
+  owner: Owner!
+}\
+""")
+
+    result = schema.execute_sync(
+        "{ owner { pet { __typename } favoritePet { __typename } } }"
+    )
+
+    assert not result.errors
+    assert result.data == {
+        "owner": {"pet": {"__typename": "Dog"}, "favoritePet": {"__typename": "Dog"}}
+    }
 
 
 def test_field_directives_basic():
