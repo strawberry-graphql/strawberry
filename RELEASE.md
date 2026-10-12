@@ -30,4 +30,7 @@ class LabelledPage(Page[int], Label[str]):  # `label` was `Int!`, now `String!`
 
 Each field now gets the arguments of the generic type that declares it. This
 also adds support for generic bases whose arguments use the type parameters of
-the type extending them, like `class ListBox(Box[list[U]], Generic[U])`.
+the type extending them, like `class ListBox(Box[list[U]], Generic[U])`, and
+fixes fields that wrap a type parameter, like `content: list[T]`, when a
+subclass gives it a type like `list[int]`, `int | None` or a lazy type, as in
+`class IntListBox(Box[list[int]])`.

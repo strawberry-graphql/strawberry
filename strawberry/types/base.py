@@ -445,21 +445,29 @@ class StrawberryObjectDefinition(StrawberryType):
     def specialized_type_var_map(self) -> dict[str, type] | None:
         return get_specialized_type_var_map(self.origin)
 
-    def get_base_type_var_map(self, base: type) -> dict[str, Any] | None:
+    def get_base_type_var_map(
+        self, base: type
+    ) -> dict[str, StrawberryType | type] | None:
         """Return the arguments this type gives to the type parameters of `base`.
 
         `base` is a generic class this type extends, like `Page` for a field
         inherited from `Page[int]`. Unlike `specialized_type_var_map`, the type
         parameters of other bases aren't mixed in, even when they have the same
         name.
+
+        Like the arguments of `Page[int]` used in an annotation, they're resolved
+        to Strawberry types, so that fields wrapping a type parameter, like
+        `list[T]`, get them too.
         """
+        from strawberry.annotation import StrawberryAnnotation
+
         arguments = get_generic_arguments(self.origin).get(base)
 
         if not arguments:
             return None
 
         return {
-            parameter.__name__: argument
+            parameter.__name__: StrawberryAnnotation(argument).resolve()
             for parameter, argument in arguments.items()
             if not isinstance(argument, TypeVar)
         }

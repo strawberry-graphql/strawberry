@@ -1362,3 +1362,110 @@ def test_generic_base_with_a_type_parameter_of_its_subclass():
 
     assert not result.errors
     assert result.data == {"box": {"content": [1, 2]}}
+
+
+def test_generic_base_wrapping_a_type_parameter_of_its_subclass():
+    T = TypeVar("T")
+    U = TypeVar("U")
+
+    @strawberry.type
+    class Box(Generic[T]):
+        content: list[T]
+
+    @strawberry.type
+    class ListBox(Box[list[U]], Generic[U]): ...
+
+    @strawberry.type
+    class IntListBox(ListBox[int]): ...
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def box(self) -> IntListBox:
+            return IntListBox(content=[[1, 2]])
+
+    schema = strawberry.Schema(query=Query)
+
+    assert "content: [[Int!]!]!" in str(schema)
+
+    result = schema.execute_sync("{ box { content } }")
+
+    assert not result.errors
+    assert result.data == {"box": {"content": [[1, 2]]}}
+
+
+def test_generic_bases_with_wrapped_arguments():
+    T = TypeVar("T")
+
+    @strawberry.type
+    class Edge(Generic[T]):
+        node: T
+
+    @strawberry.type
+    class Box(Generic[T]):
+        content: list[T]
+
+    @strawberry.type
+    class IntListBox(Box[list[int]]): ...
+
+    @strawberry.type
+    class OptionalIntBox(Box[int | None]): ...
+
+    @strawberry.type
+    class EdgeBox(Box[Edge[int]]): ...
+
+    @strawberry.type
+    class Query:
+        int_list_box: IntListBox
+        optional_int_box: OptionalIntBox
+        edge_box: EdgeBox
+
+    schema = strawberry.Schema(query=Query)
+
+    expected_schema = """
+    type EdgeBox {
+      content: [IntEdge!]!
+    }
+
+    type IntEdge {
+      node: Int!
+    }
+
+    type IntListBox {
+      content: [[Int!]!]!
+    }
+
+    type OptionalIntBox {
+      content: [Int]!
+    }
+
+    type Query {
+      intListBox: IntListBox!
+      optionalIntBox: OptionalIntBox!
+      edgeBox: EdgeBox!
+    }
+    """
+
+    assert str(schema) == textwrap.dedent(expected_schema).strip()
+
+    result = schema.execute_sync(
+        """
+        {
+          intListBox { content }
+          optionalIntBox { content }
+          edgeBox { content { node } }
+        }
+        """,
+        root_value=Query(
+            int_list_box=IntListBox(content=[[1, 2]]),
+            optional_int_box=OptionalIntBox(content=[None, 1]),
+            edge_box=EdgeBox(content=[Edge(node=1)]),
+        ),
+    )
+
+    assert not result.errors
+    assert result.data == {
+        "intListBox": {"content": [[1, 2]]},
+        "optionalIntBox": {"content": [None, 1]},
+        "edgeBox": {"content": [{"node": 1}]},
+    }
