@@ -1,6 +1,6 @@
 import functools
-import operator
-from collections.abc import Callable
+import inspect
+from collections.abc import AsyncIterator, Callable
 from typing import Annotated, Any, Generic, TypeVar
 
 import pydantic
@@ -14,7 +14,6 @@ from strawberry.exceptions import (
 )
 from strawberry.pydantic.exceptions import (
     MisplacedFieldError,
-    ResolverAlreadyUsedError,
     StrawberryBaseBeforeModelError,
     UnregisteredPydanticTypeError,
     UnsupportedFieldOverrideError,
@@ -922,61 +921,214 @@ def test_fields_are_named_after_their_attribute():
     assert result.data == {"item": {"label": "#1"}}
 
 
-@pytest.mark.raises_strawberry_exception(
-    ResolverAlreadyUsedError,
-    match=(
-        "`get_label` is already the resolver of a field, a resolver can only be "
-        "used by one `strawberry.pydantic.field`"
-    ),
-)
-def test_a_resolver_can_only_be_used_once():
-    def get_label(self: Any) -> str:
-        return "label"
+@pytest.mark.parametrize("asynchronous", [False, True])
+@pytest.mark.parametrize("binding", [None, staticmethod, classmethod])
+async def test_resolvers_can_be_reused(asynchronous, binding):
+    def get_label(self: Any, suffix: str = "!") -> str:
+        return f"{self.id}{suffix}"
 
-    strawberry.pydantic.field(get_label)
-    strawberry.pydantic.field(name="title")(get_label)
+    if binding is staticmethod:
 
+        def get_label(suffix: str = "!") -> str:
+            return f"static{suffix}"
 
-class _Formatter:
-    def label(self, root: Any) -> str:
-        return f"#{root.id}"
+    elif binding is classmethod:
 
+        def get_label(cls: type, suffix: str = "!") -> str:
+            return f"{cls.__name__}{suffix}"
 
-@pytest.mark.parametrize(
-    ("resolver", "description"),
-    [
-        (len, "the built-in function `len`"),
-        (operator.itemgetter("id"), "a `itemgetter` object"),
-        (_Formatter().label, "the bound method `_Formatter.label`"),
-    ],
-)
-def test_resolvers_need_to_be_functions(resolver: Any, description: str):
-    with pytest.raises(TypeError) as exc_info:
-        strawberry.pydantic.field(description="A label")(resolver)
+    resolver = get_label
+    if asynchronous:
 
-    assert str(exc_info.value) == (
-        "`strawberry.pydantic.field` only accepts functions as resolvers, but got "
-        f"{description}. Pydantic only allows functions in the class body of a "
-        "model: add a method to the model that calls it instead."
-    )
+        @functools.wraps(get_label)
+        async def resolver(*args: Any, **kwargs: Any) -> str:
+            return get_label(*args, **kwargs)
 
-
-def test_partials_can_be_resolvers():
-    def get_label(prefix: str, root: Any) -> str:
-        return f"{prefix}{root.id}"
+    if binding:
+        resolver = binding(resolver)
 
     @strawberry.pydantic.type
     class Ticket(pydantic.BaseModel):
         id: int
 
-        label = strawberry.pydantic.field(graphql_type=str)(
-            functools.partial(get_label, "#")
+        label = strawberry.pydantic.field(description="Public label")(resolver)
+        protected = strawberry.pydantic.field(
+            name="title", description="Private title", permission_classes=[IsAdmin]
+        )(resolver)
+
+    @strawberry.pydantic.type
+    class Issue(pydantic.BaseModel):
+        id: int
+
+        label = strawberry.pydantic.field(resolver)
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def ticket(self) -> Ticket:
+            return Ticket(id=7)
+
+        @strawberry.field
+        def issue(self) -> Issue:
+            return Issue(id=9)
+
+    schema = strawberry.Schema(query=Query)
+    prefix = "static" if binding is staticmethod else "Ticket" if binding else "7"
+    result = await schema.execute(
+        '{ ticket { label title(suffix: "?") } }', context_value={"admin": True}
+    )
+    assert not result.errors
+    assert result.data == {"ticket": {"label": f"{prefix}!", "title": f"{prefix}?"}}
+    result = await schema.execute(
+        "{ ticket { label } }", context_value={"admin": False}
+    )
+    assert not result.errors
+    assert result.data == {"ticket": {"label": f"{prefix}!"}}
+    result = await schema.execute(
+        "{ ticket { title } }", context_value={"admin": False}
+    )
+    assert result.errors
+    assert result.errors[0].message == "Admins only"
+    assert '"""Public label"""' in str(schema)
+    assert '"""Private title"""' in str(schema)
+
+    result = await schema.execute("{ issue { label } }", context_value={"admin": False})
+    issue_prefix = "static" if binding is staticmethod else "Issue" if binding else "9"
+    assert not result.errors
+    assert result.data == {"issue": {"label": f"{issue_prefix}!"}}
+
+    value = Ticket(id=7).label(".")
+    if asynchronous:
+        value = await value
+    assert value == f"{prefix}."
+
+
+@pytest.mark.parametrize("kind", ["bound", "callable", "partial"])
+@pytest.mark.parametrize("asynchronous", [False, True])
+async def test_callable_resolvers_preserve_binding_and_per_field_options(
+    kind, asynchronous
+):
+    class Formatter:
+        def __init__(self, prefix: str):
+            self.prefix = prefix
+
+        def __call__(self, suffix: str = "!") -> str:
+            return f"{self.prefix}{suffix}"
+
+    class AsyncFormatter(Formatter):
+        async def __call__(self, suffix: str = "!") -> str:
+            return super().__call__(suffix)
+
+    resolver = AsyncFormatter("label") if asynchronous else Formatter("label")
+    if kind == "bound":
+        resolver = resolver.__call__
+    elif kind == "partial":
+        resolver = functools.partial(resolver)
+
+    @strawberry.pydantic.type
+    class Ticket(pydantic.BaseModel):
+        label = strawberry.pydantic.field(resolver=resolver, description="Public")
+        protected = strawberry.pydantic.field(
+            resolver,
+            name="title",
+            description="Private",
+            permission_classes=[IsAdmin],
         )
+
+    @strawberry.pydantic.type
+    class Issue(pydantic.BaseModel):
+        label = strawberry.pydantic.field(resolver)
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def ticket(self) -> Ticket:
+            return Ticket()
+
+        @strawberry.field
+        def issue(self) -> Issue:
+            return Issue()
+
+    schema = strawberry.Schema(query=Query)
+    result = await schema.execute(
+        '{ ticket { label title(suffix: "?") } issue { label } }',
+        context_value={"admin": True},
+    )
+    assert not result.errors
+    assert result.data == {
+        "ticket": {"label": "label!", "title": "label?"},
+        "issue": {"label": "label!"},
+    }
+    if not asynchronous:
+        synchronous = schema.execute_sync("{ ticket { label } }")
+        assert not synchronous.errors
+        assert synchronous.data == {"ticket": {"label": "label!"}}
+    result = await schema.execute(
+        "{ ticket { label } issue { label } }", context_value={"admin": False}
+    )
+    assert not result.errors
+    result = await schema.execute(
+        "{ ticket { title } }", context_value={"admin": False}
+    )
+    assert result.errors
+    assert result.errors[0].message == "Admins only"
+    assert '"""Public"""' in str(schema)
+    assert '"""Private"""' in str(schema)
+    assert not hasattr(resolver, "__strawberry_field__")
+    assert Ticket().model_dump() == {}
+
+    for owner in (Ticket, Ticket(), Issue, Issue()):
+        assert inspect.iscoroutinefunction(owner.label) is asynchronous
+        value = owner.label(".")
+        if asynchronous:
+            value = await value
+        assert value == "label."
+
+
+async def test_async_generator_callable_resolver():
+    class Events:
+        async def __call__(self, count: int = 2) -> AsyncIterator[int]:
+            for value in range(count):
+                yield value
+
+    @strawberry.pydantic.type
+    class Feed(pydantic.BaseModel):
+        events = strawberry.pydantic.field(resolver=Events())
+
+    definition = get_object_definition(Feed, strict=True)
+    assert definition.fields[0].is_async
+    assert inspect.isasyncgenfunction(Feed().events)
+    assert [value async for value in Feed().events(3)] == [0, 1, 2]
+
+
+@pytest.mark.parametrize("kind", ["partial", "bound", "callable"])
+def test_callable_resolvers_with_explicit_root(kind):
+    def get_label(prefix: str, root: Any) -> str:
+        return f"{prefix}{root.id}"
+
+    class Formatter:
+        def __call__(self, root: Any) -> str:
+            return get_label("#", root)
+
+    resolver = functools.partial(get_label, "#")
+    if kind == "bound":
+        resolver = Formatter().__call__
+    elif kind == "callable":
+        resolver = Formatter()
+
+    @strawberry.pydantic.type
+    class Ticket(pydantic.BaseModel):
+        id: int
+
+        label = strawberry.pydantic.field(graphql_type=str)(resolver)
 
     result = _query(Ticket, Ticket(id=1), "{ item { label } }")
 
     assert not result.errors
     assert result.data == {"item": {"label": "#1"}}
+
+    # These aren't model methods: callers still supply the explicit root.
+    assert Ticket(id=2).label(Ticket(id=3)) == "#3"
 
 
 def test_resolvers_need_a_return_annotation():
@@ -1082,6 +1234,69 @@ def test_resolvers_of_generic_models_using_undecorated_models_raise_an_error():
     @strawberry.pydantic.type
     class AddressLookup(Lookup[Address]):
         pass
+
+
+def test_resolvers_of_generic_models_with_type_parameters_of_the_same_name():
+    class Page(pydantic.BaseModel, Generic[T]):
+        @strawberry.pydantic.field
+        def first(self) -> T:
+            return 1  # type: ignore[return-value]
+
+    class Sorted(pydantic.BaseModel, Generic[T]):
+        @strawberry.pydantic.field
+        def sorted_by(self) -> T:
+            return "name"  # type: ignore[return-value]
+
+    @strawberry.pydantic.type
+    class SortedPage(Page[int], Sorted[str]):
+        pass
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def page(self) -> SortedPage:
+            return SortedPage()
+
+    schema = strawberry.Schema(query=Query)
+
+    assert "first: Int!" in str(schema)
+    assert "sortedBy: String!" in str(schema)
+
+    result = schema.execute_sync("{ page { first sortedBy } }")
+
+    assert not result.errors
+    assert result.data == {"page": {"first": 1, "sortedBy": "name"}}
+
+
+def test_resolvers_of_generic_models_given_a_type_parameter_of_their_subclass():
+    class Page(pydantic.BaseModel, Generic[T]):
+        items: list[T]
+
+        @strawberry.pydantic.field
+        def first(self) -> T | None:
+            return self.items[0] if self.items else None
+
+    class ListPage(Page[list[T]], Generic[T]):
+        pass
+
+    @strawberry.pydantic.type
+    class IntListPage(ListPage[int]):
+        pass
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def page(self) -> IntListPage:
+            return IntListPage(items=[[1, 2]])
+
+    schema = strawberry.Schema(query=Query)
+
+    assert "first: [Int!]\n" in str(schema)
+
+    result = schema.execute_sync("{ page { first items } }")
+
+    assert not result.errors
+    assert result.data == {"page": {"first": [1, 2], "items": [[1, 2]]}}
 
 
 def test_graphql_type_forward_references():

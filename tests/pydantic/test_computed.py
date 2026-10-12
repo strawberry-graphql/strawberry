@@ -8,6 +8,10 @@ import pytest
 from pydantic import computed_field
 
 import strawberry
+from strawberry.exceptions import (
+    InvalidStrawberryFieldAnnotationError,
+    MultipleStrawberryFieldsError,
+)
 from strawberry.pydantic.exceptions import UnregisteredPydanticTypeError
 from strawberry.scalars import JSON
 from strawberry.types.base import get_object_definition
@@ -293,6 +297,40 @@ def test_computed_fields_can_be_customized():
 
     assert result.errors
     assert result.errors[0].message == "Admins only"
+
+
+def test_multiple_strawberry_fields_in_a_computed_field_raise_an_error():
+    with pytest.raises(MultipleStrawberryFieldsError):
+
+        @strawberry.pydantic.type
+        class Account(pydantic.BaseModel):
+            balance: int
+
+            @computed_field
+            @property
+            def label(
+                self,
+            ) -> Annotated[
+                str,
+                strawberry.field(description="first"),
+                strawberry.field(description="second"),
+            ]:
+                return f"{self.balance} EUR"
+
+
+def test_nested_strawberry_field_in_a_computed_field_raises_an_error():
+    with pytest.raises(InvalidStrawberryFieldAnnotationError):
+
+        @strawberry.pydantic.type
+        class Account(pydantic.BaseModel):
+            balance: int
+
+            @computed_field
+            @property
+            def labels(
+                self,
+            ) -> list[Annotated[str, strawberry.field(description="nested")]]:
+                return [f"{self.balance} EUR"]
 
 
 def test_computed_fields_overridden_by_resolver_fields_can_use_any_model():

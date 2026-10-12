@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import functools
-import inspect
 import re
 from functools import cached_property
 from typing import TYPE_CHECKING, Any, Literal, get_args, get_origin
@@ -13,7 +12,6 @@ from strawberry.exceptions.utils.source_finder import SourceFinder
 from strawberry.types.base import has_object_definition
 
 if TYPE_CHECKING:
-
     from strawberry.exceptions.exception_source import ExceptionSource
     from strawberry.types.field import StrawberryField
 
@@ -483,42 +481,6 @@ class StrawberryBaseBeforeModelError(StrawberryException):
     @cached_property
     def exception_source(self) -> ExceptionSource | None:
         return SourceFinder().find_class_from_object(self.cls)
-
-
-class ResolverAlreadyUsedError(StrawberryException):
-    def __init__(self, resolver: Callable[..., Any]) -> None:
-        self.resolver = resolver
-
-        name = getattr(resolver, "__name__", repr(resolver))
-
-        self.message = (
-            f"`{name}` is already the resolver of a field, a resolver can only be "
-            "used by one `strawberry.pydantic.field`"
-        )
-        self.rich_message = (
-            f"`[underline]{name}[/]` is already the resolver of a field, a resolver "
-            "can only be used by one `strawberry.pydantic.field`"
-        )
-        self.annotation_message = "resolver used by more than one field"
-        self.suggestion = (
-            "`strawberry.pydantic.field` stores the field on the function, so each "
-            f"field needs its own function. Add a function that calls `{name}` for "
-            "the other field."
-        )
-
-        super().__init__(self.message)
-
-    @cached_property
-    def exception_source(self) -> ExceptionSource | None:
-        resolver = self.resolver
-
-        if isinstance(resolver, (staticmethod, classmethod)):
-            resolver = resolver.__func__
-
-        if not inspect.isfunction(resolver):
-            return None
-
-        return SourceFinder().find_function_from_object(resolver)
 
 
 class ModelAlreadyDecoratedError(StrawberryException):

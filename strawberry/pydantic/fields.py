@@ -13,6 +13,7 @@ from typing import (
     Literal,
     Optional,
     TypeGuard,
+    TypeVar,
     get_args,
     get_origin,
 )
@@ -24,7 +25,6 @@ from pydantic_core import PydanticUndefined
 
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.exceptions import (
-    MultipleStrawberryFieldsError,
     ResolverFieldOnInputError,
 )
 from strawberry.file_uploads import Upload
@@ -32,6 +32,7 @@ from strawberry.types.base import StrawberryObjectDefinition
 from strawberry.types.field import StrawberryField, get_annotated_field
 from strawberry.types.maybe import _annotation_is_maybe
 from strawberry.types.private import is_private
+from strawberry.utils.inspect import get_generic_arguments
 
 from .exceptions import (
     MaybeFieldError,
@@ -44,7 +45,7 @@ from .exceptions import (
 from .resolver_field import get_resolver_field, is_field_decorator
 
 if TYPE_CHECKING:
-    from collections.abc import Collection, Iterator
+    from collections.abc import Collection, Iterator, Mapping
 
     from pydantic.fields import FieldInfo
 
@@ -227,19 +228,7 @@ def _get_computed_field_annotation(
             field_name=field_name, cls=origin, usage="model_field"
         )
 
-    if get_origin(annotation) is not Annotated:
-        return annotation, None
-
-    annotation, *metadata = get_args(annotation)
-    strawberry_fields = [item for item in metadata if isinstance(item, StrawberryField)]
-
-    if len(strawberry_fields) > 1:
-        raise MultipleStrawberryFieldsError(field_name=field_name, cls=origin)
-
-    return (
-        annotation,
-        strawberry_fields[0] if strawberry_fields else None,
-    )
+    return get_annotated_field(annotation, cls=origin, field_name=field_name)
 
 
 def _create_strawberry_field(
@@ -336,10 +325,28 @@ def _unregistered_model_error(
     )
 
 
+def _split_pydantic_base(base: Any) -> tuple[Any, tuple[Any, ...]]:
+    """Return the class and the arguments of a base of a pydantic model.
+
+    Pydantic parametrizes generic models with subclasses, like `Page[int]`, and
+    returns the model itself for `Page[T]` when `T` is its own type parameter,
+    like in `class Wrapper(Page[T], Generic[T])`.
+    """
+    metadata = getattr(base, "__pydantic_generic_metadata__", None)
+
+    if metadata is None:
+        return get_origin(base) or base, get_args(base)
+
+    if metadata["origin"] is None:
+        return base, tuple(metadata["parameters"])
+
+    return metadata["origin"], tuple(metadata["args"])
+
+
 def _get_type_var_map(
-    cls: type[BaseModel],
+    cls: type[BaseModel], arguments: Mapping[TypeVar, Any]
 ) -> tuple[dict[str, StrawberryType | type], dict[str, type[BaseModel]]]:
-    """Map the type parameters of the generic pydantic models `cls` extends.
+    """Map the type parameters of a generic model to the arguments `cls` gives them.
 
     The arguments are converted like the types of data fields, so fields with a
     resolver typed with a type parameter get the same GraphQL type. Arguments
@@ -349,22 +356,15 @@ def _get_type_var_map(
     type_var_map: dict[str, StrawberryType | type] = {}
     unregistered_models: dict[str, type[BaseModel]] = {}
 
-    for base in cls.__mro__:
-        metadata = getattr(base, "__pydantic_generic_metadata__", None)
-
-        if not metadata or metadata["origin"] is None:
+    for parameter, argument in arguments.items():
+        # e.g. the type parameter of a generic model that isn't parametrized
+        if isinstance(argument, TypeVar):
             continue
 
-        parameters = metadata["origin"].__pydantic_generic_metadata__["parameters"]
+        if (unregistered := _find_unregistered_model(argument, cls)) is not None:
+            unregistered_models[parameter.__name__] = unregistered
 
-        for parameter, argument in zip(parameters, metadata["args"], strict=False):
-            if parameter.__name__ in type_var_map:
-                continue
-
-            if (unregistered := _find_unregistered_model(argument, cls)) is not None:
-                unregistered_models[parameter.__name__] = unregistered
-
-            type_var_map[parameter.__name__] = StrawberryAnnotation(argument).resolve()
+        type_var_map[parameter.__name__] = StrawberryAnnotation(argument).resolve()
 
     return type_var_map, unregistered_models
 
@@ -432,6 +432,8 @@ def get_resolver_fields(
         return []
 
     resolver_fields: dict[str, StrawberryField] = {}
+    # the model declaring each resolver, whose type parameters it uses
+    declared_in: dict[str, type] = {}
     computed_fields: set[str] = set()
     # fields overridden by an attribute that isn't a field, like a method
     # without `strawberry.pydantic.field`, with the base defining it and the
@@ -454,6 +456,7 @@ def get_resolver_fields(
                 assert base_field.python_name is not None
 
                 resolver_fields[base_field.python_name] = base_field
+                declared_in[base_field.python_name] = base
                 computed_fields.discard(base_field.python_name)
                 overridden_by.pop(base_field.python_name, None)
 
@@ -470,6 +473,7 @@ def get_resolver_fields(
 
             if (resolver_field := get_resolver_field(value)) is not None:
                 resolver_fields[attribute] = resolver_field
+                declared_in[attribute] = base
                 computed_fields.discard(attribute)
                 overridden_by.pop(attribute, None)
             elif include_computed and _is_computed_field(base, attribute, value):
@@ -497,7 +501,7 @@ def get_resolver_fields(
             field_name=attribute, cls=base, overridden=overridden
         )
 
-    type_var_map, unregistered_models = _get_type_var_map(cls)
+    generic_arguments = get_generic_arguments(cls, _split_pydantic_base)
     fields = []
 
     for attribute, resolver_field in resolver_fields.items():
@@ -523,14 +527,21 @@ def get_resolver_fields(
             # own annotations
             field.type_annotation.namespace = resolver._namespace
 
-        if type_var_map and field.is_graphql_generic:
-            for type_var in field.type_params:
-                if (model := unregistered_models.get(type_var.__name__)) is not None:
-                    raise _unregistered_model_error(
-                        model, cls=cls, field_name=attribute, is_input=False
-                    )
+        if field.is_graphql_generic:
+            type_var_map, unregistered_models = _get_type_var_map(
+                cls, generic_arguments.get(declared_in[attribute], {})
+            )
+            type_params = [type_var.__name__ for type_var in field.type_params]
 
-            field = field.copy_with(type_var_map)
+            # e.g. a resolver of a generic model that isn't parametrized
+            if all(name in type_var_map for name in type_params):
+                for name in type_params:
+                    if (model := unregistered_models.get(name)) is not None:
+                        raise _unregistered_model_error(
+                            model, cls=cls, field_name=attribute, is_input=False
+                        )
+
+                field = field.copy_with(type_var_map)
 
         fields.append(field)
 
