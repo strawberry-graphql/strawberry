@@ -11,8 +11,10 @@ from typing import TYPE_CHECKING, TypeVar, overload
 
 from pydantic import BaseModel
 
+from strawberry.exceptions import InvalidSuperclassInterfaceError
 from strawberry.schema_directives import OneOf
 from strawberry.types.base import StrawberryObjectDefinition
+from strawberry.types.object_type import _get_interfaces
 from strawberry.utils.str_converters import to_camel_case
 
 from .conversion import build_pydantic_model, dump_pydantic_model
@@ -33,6 +35,7 @@ def _process_pydantic_type(
     *,
     name: str | None = None,
     is_input: bool = False,
+    is_interface: bool = False,
     description: str | None = None,
     directives: Sequence[object] | None = (),
 ) -> builtins.type[ModelT]:
@@ -42,13 +45,14 @@ def _process_pydantic_type(
         cls: The Pydantic BaseModel class to process
         name: The GraphQL type name (defaults to class name)
         is_input: Whether this is an input type
+        is_interface: Whether this is an interface type
         description: The GraphQL type description
         directives: GraphQL directives to apply
 
     Returns:
         The processed BaseModel class with GraphQL metadata
     """
-    decorator = "input" if is_input else "type"
+    decorator = "input" if is_input else "interface" if is_interface else "type"
 
     if not (isinstance(cls, builtins.type) and issubclass(cls, BaseModel)):
         raise NotAPydanticModelError(cls, decorator)
@@ -58,11 +62,18 @@ def _process_pydantic_type(
 
     name = name or to_camel_case(cls.__name__)
 
+    interfaces = _get_interfaces(cls)
+
+    if is_input and interfaces:
+        raise InvalidSuperclassInterfaceError(
+            cls=cls, input_name=name, interfaces=interfaces
+        )
+
     cls.__strawberry_definition__ = StrawberryObjectDefinition(  # type: ignore
         name=name,
         is_input=is_input,
-        is_interface=False,
-        interfaces=[],
+        is_interface=is_interface,
+        interfaces=interfaces,
         description=description,
         directives=directives,
         origin=cls,
@@ -139,6 +150,7 @@ def type(
             cls,
             name=name,
             is_input=False,
+            is_interface=False,
             description=description,
             directives=directives,
         )
@@ -209,6 +221,7 @@ def input(
             cls,
             name=name,
             is_input=True,
+            is_interface=False,
             description=description,
             directives=directives,
         )
@@ -219,4 +232,66 @@ def input(
     return wrap(cls)
 
 
-__all__ = ["input", "type"]
+@overload
+def interface(
+    cls: builtins.type[ModelT],
+    *,
+    name: str | None = None,
+    description: str | None = None,
+    directives: Sequence[object] | None = (),
+) -> builtins.type[ModelT]: ...
+
+
+@overload
+def interface(
+    *,
+    name: str | None = None,
+    description: str | None = None,
+    directives: Sequence[object] | None = (),
+) -> Callable[[builtins.type[ModelT]], builtins.type[ModelT]]: ...
+
+
+def interface(
+    cls: builtins.type[ModelT] | None = None,
+    *,
+    name: str | None = None,
+    description: str | None = None,
+    directives: Sequence[object] | None = (),
+) -> builtins.type[ModelT] | Callable[[builtins.type[ModelT]], builtins.type[ModelT]]:
+    """Decorator to convert a Pydantic BaseModel directly into a GraphQL interface.
+
+    This decorator allows you to use Pydantic models directly as GraphQL interfaces
+    without needing to create a separate wrapper class.
+
+    Args:
+        cls: The Pydantic BaseModel class to convert
+        name: The GraphQL interface name (defaults to class name)
+        description: The GraphQL interface description
+        directives: GraphQL directives to apply to the interface
+
+    Returns:
+        The decorated BaseModel class with GraphQL interface metadata
+
+    Example:
+        @strawberry.pydantic.interface
+        class Node(BaseModel):
+            id: str
+    """
+
+    def wrap(cls: builtins.type[ModelT]) -> builtins.type[ModelT]:
+        return _process_pydantic_type(
+            cls,
+            name=name,
+            is_input=False,
+            is_interface=True,
+            description=description,
+            directives=directives,
+        )
+
+    if cls is None:
+        return wrap
+
+    return wrap(cls)
+
+
+__all__ = ["input", "interface", "type"]
