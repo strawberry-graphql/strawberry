@@ -1098,6 +1098,69 @@ def test_resolvers_of_generic_models_using_undecorated_models_raise_an_error():
         pass
 
 
+def test_resolvers_of_generic_models_with_type_parameters_of_the_same_name():
+    class Page(pydantic.BaseModel, Generic[T]):
+        @strawberry.pydantic.field
+        def first(self) -> T:
+            return 1  # type: ignore[return-value]
+
+    class Sorted(pydantic.BaseModel, Generic[T]):
+        @strawberry.pydantic.field
+        def sorted_by(self) -> T:
+            return "name"  # type: ignore[return-value]
+
+    @strawberry.pydantic.type
+    class SortedPage(Page[int], Sorted[str]):
+        pass
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def page(self) -> SortedPage:
+            return SortedPage()
+
+    schema = strawberry.Schema(query=Query)
+
+    assert "first: Int!" in str(schema)
+    assert "sortedBy: String!" in str(schema)
+
+    result = schema.execute_sync("{ page { first sortedBy } }")
+
+    assert not result.errors
+    assert result.data == {"page": {"first": 1, "sortedBy": "name"}}
+
+
+def test_resolvers_of_generic_models_given_a_type_parameter_of_their_subclass():
+    class Page(pydantic.BaseModel, Generic[T]):
+        items: list[T]
+
+        @strawberry.pydantic.field
+        def first(self) -> T | None:
+            return self.items[0] if self.items else None
+
+    class ListPage(Page[list[T]], Generic[T]):
+        pass
+
+    @strawberry.pydantic.type
+    class IntListPage(ListPage[int]):
+        pass
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def page(self) -> IntListPage:
+            return IntListPage(items=[[1, 2]])
+
+    schema = strawberry.Schema(query=Query)
+
+    assert "first: [Int!]\n" in str(schema)
+
+    result = schema.execute_sync("{ page { first items } }")
+
+    assert not result.errors
+    assert result.data == {"page": {"first": [1, 2], "items": [[1, 2]]}}
+
+
 def test_graphql_type_forward_references():
     @strawberry.pydantic.type
     class Author(pydantic.BaseModel):
