@@ -892,3 +892,56 @@ def test_only_lists_of_nested_models_are_converted_item_by_item(
         ("items", 0, "quantity"),
         ("items", 1, "quantity"),
     ]
+
+
+def test_tuple_fields_get_tuples():
+    # in strict mode, pydantic doesn't accept the lists of GraphQL for tuples
+    @strawberry.pydantic.input
+    class ItemInput(pydantic.BaseModel):
+        model_config = pydantic.ConfigDict(strict=True)
+
+        quantity: int
+
+    @strawberry.pydantic.input
+    class OrderInput(pydantic.BaseModel):
+        model_config = pydantic.ConfigDict(strict=True)
+
+        labels: tuple[str, ...]
+        size: tuple[int, int] | None
+        grid: list[tuple[int, ...]]
+        items: tuple[ItemInput, ...]
+
+    received: list[OrderInput] = []
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def order(self, input: OrderInput) -> bool:
+            received.append(input)
+
+            return True
+
+    schema = strawberry.Schema(query=Query)
+
+    result = schema.execute_sync(
+        """
+        {
+            order(input: {
+                labels: ["sale"]
+                size: [2, 3]
+                grid: [[1, 2], []]
+                items: [{quantity: 1}]
+            })
+        }
+        """
+    )
+
+    assert not result.errors
+    assert received == [
+        OrderInput(
+            labels=("sale",),
+            size=(2, 3),
+            grid=[(1, 2), ()],
+            items=(ItemInput(quantity=1),),
+        )
+    ]

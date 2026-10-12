@@ -102,6 +102,61 @@ def _is_nested_model(
     )
 
 
+def _unwrap_annotation(annotation: Any) -> Any:
+    """Return `annotation` without `Annotated` and `None`.
+
+    e.g. `list[int]` for `Annotated[list[int] | None, Field(min_length=1)]`.
+    """
+    while True:
+        if get_origin(annotation) is Annotated:
+            annotation = get_args(annotation)[0]
+        elif is_union(annotation):
+            types = [arg for arg in get_args(annotation) if arg is not type(None)]
+
+            if len(types) != 1:
+                return annotation
+
+            annotation = types[0]
+        else:
+            return annotation
+
+
+def _is_tuple(annotation: Any) -> bool:
+    return annotation is tuple or get_origin(annotation) is tuple
+
+
+def _has_tuples(annotation: Any) -> bool:
+    """Return whether pydantic validates a GraphQL list, or lists in it, as tuples."""
+    annotation = _unwrap_annotation(annotation)
+
+    if _is_tuple(annotation):
+        return True
+
+    args = get_args(annotation)
+
+    return (
+        get_origin(annotation) in _LIST_ORIGINS and bool(args) and _has_tuples(args[0])
+    )
+
+
+def _to_tuples(value: Any, annotation: Any) -> Any:
+    """Convert the lists in `value` that pydantic validates as tuples to tuples.
+
+    GraphQL lists are converted to lists, but in strict mode pydantic only
+    accepts tuples for tuple fields.
+    """
+    if not isinstance(value, list):
+        return value
+
+    annotation = _unwrap_annotation(annotation)
+    args = get_args(annotation)
+    # like Strawberry, which exposes `tuple[int, int]` as a list of `Int`
+    item_annotation = args[0] if args else Any
+    items = [_to_tuples(item, item_annotation) for item in value]
+
+    return tuple(items) if _is_tuple(annotation) else items
+
+
 def _get_item_type(type_: StrawberryList) -> StrawberryType | type:
     """Return the type of the innermost items of a list, e.g. of nested lists."""
     item_type = type_.of_type
@@ -135,13 +190,18 @@ def _to_python_data(
         field_type = field.resolve_type(type_definition=definition)
 
         if graphql_name in value:
-            data[field.python_name] = _to_python_value(
+            python_value = _to_python_value(
                 value[graphql_name],
                 field_type,
                 field_info,
                 context,
                 (*keys, graphql_name),
             )
+
+            if field_info is not None and _has_tuples(field_info.annotation):
+                python_value = _to_tuples(python_value, field_info.annotation)
+
+            data[field.python_name] = python_value
 
     return data
 
