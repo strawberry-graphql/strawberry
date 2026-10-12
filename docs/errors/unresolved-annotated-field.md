@@ -46,15 +46,20 @@ of an `Annotated` type, like `AdminOnly[Account]` with
 `AdminOnly = Annotated[T, strawberry.field(permission_classes=[IsAdmin])]`.
 
 The error is thrown for any field whose annotation Pydantic couldn't resolve yet
-and that uses `Annotated` at any depth, like `Annotated[Account, ...] | None`,
-directly or through an alias defined before the model. This includes options
-that only Pydantic uses, like `pydantic.Field(min_length=1)`, validators like
-`pydantic.AfterValidator(...)`, or constrained types like `pydantic.PositiveInt`
-(an alias of `Annotated[int, Gt(0)]`): Pydantic would apply them once the model
-is rebuilt, but Strawberry doesn't tell them apart from the options it uses, so
+and that has options in its outermost `Annotated`, directly or through an alias
+defined before the model. This includes options that only Pydantic uses, like
+`pydantic.Field(min_length=1)` or validators like
+`pydantic.AfterValidator(...)`: Pydantic would apply them once the model is
+rebuilt, but Strawberry doesn't tell them apart from the options it uses, so
 they need the same fix. `strawberry.lazy()`, `strawberry.union()` and
 `strawberry.Private` are fine on their own, as Strawberry reads them when it
 resolves the annotation.
+
+`Annotated` types nested in the type, like the items of
+`list[Annotated[Account, pydantic.Field(...)]]` or a member of a union, are fine
+too: like Pydantic, Strawberry only reads the options of a field from its
+outermost `Annotated`. A nested `strawberry.field()` raises an error, like with
+`@strawberry.type`.
 
 ## How to fix this error
 

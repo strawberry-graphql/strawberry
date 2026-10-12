@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import ast
 import copy
 import dataclasses
 import datetime as dt
@@ -50,10 +49,11 @@ from strawberry.exceptions import (
 from strawberry.file_uploads import Upload
 from strawberry.types.base import StrawberryObjectDefinition
 from strawberry.types.field import StrawberryField, get_annotated_field
-from strawberry.types.lazy_type import StrawberryLazyReference, lazy
+from strawberry.types.lazy_type import StrawberryLazyReference
 from strawberry.types.maybe import _annotation_is_maybe
 from strawberry.types.private import StrawberryPrivate, is_private
-from strawberry.types.union import StrawberryUnion, union
+from strawberry.types.union import StrawberryUnion
+from strawberry.types.unresolved_annotations import find_unresolved_options
 from strawberry.utils.inspect import get_generic_arguments
 from strawberry.utils.typing import is_union
 
@@ -156,47 +156,13 @@ def _get_annotated_metadata(annotation: object) -> Iterator[object]:
             yield from _get_annotated_metadata(arg)
 
 
+# Strawberry reads these from the type when it resolves it, while other metadata,
+# like `strawberry.field()` or Pydantic's `Field()`, configures the field
 _TYPE_METADATA = (StrawberryLazyReference, StrawberryPrivate, StrawberryUnion)
 
 
-def _lookup(node: ast.expr, namespace: dict[str, Any]) -> object:
-    """Return the value of a name like `Hidden` or `strawberry.lazy`, if any."""
-    if isinstance(node, ast.Name):
-        return namespace.get(node.id)
-
-    if isinstance(node, ast.Attribute):
-        return getattr(_lookup(node.value, namespace), node.attr, None)
-
-    return None
-
-
-def _has_annotated_options(node: ast.AST, namespace: dict[str, Any]) -> bool:
-    """Return whether `node` is an `Annotated` type with options for the field.
-
-    `strawberry.lazy()`, `strawberry.union()` and `strawberry.Private` aren't
-    options: Strawberry reads them from the type when it resolves it.
-    """
-    if isinstance(node, ast.Subscript) and (
-        getattr(node.value, "id", None) == "Annotated"
-        or getattr(node.value, "attr", None) == "Annotated"
-        or _lookup(node.value, namespace) is Annotated
-    ):
-        # e.g. `Annotated[Account, strawberry.lazy("app.accounts")]`, or with
-        # a name for the lazy reference, like `Annotated[Account, LazyAccount]`
-        metadata = node.slice.elts[1:] if isinstance(node.slice, ast.Tuple) else []
-
-        return not all(
-            _lookup(item.func, namespace) in (lazy, union)
-            if isinstance(item, ast.Call)
-            else isinstance(_lookup(item, namespace), _TYPE_METADATA)
-            for item in metadata
-        )
-
-    # an alias, e.g. `Hidden = Annotated[T, pydantic.Field(exclude=True)]`
-    return isinstance(node, (ast.Name, ast.Attribute)) and any(
-        not isinstance(item, _TYPE_METADATA)
-        for item in _get_annotated_metadata(_lookup(node, namespace))
-    )
+def _is_option(value: object) -> bool:
+    return not isinstance(value, _TYPE_METADATA)
 
 
 def _check_annotated_is_resolved(
@@ -216,15 +182,15 @@ def _check_annotated_is_resolved(
     if not isinstance(annotation, str):
         return
 
-    try:
-        tree = ast.parse(annotation, mode="eval")
-    except SyntaxError:
-        return
-
     module = sys.modules.get(cls.__module__)
     namespace = vars(module) if module is not None else {}
 
-    if any(_has_annotated_options(node, namespace) for node in ast.walk(tree)):
+    if (
+        find_unresolved_options(
+            annotation, namespace, cls=cls, field_name=field_name, is_option=_is_option
+        )
+        is not None
+    ):
         raise UnresolvedAnnotatedFieldError(field_name=field_name, cls=cls, model=model)
 
 
