@@ -367,7 +367,7 @@ class UnsupportedFieldOverrideError(StrawberryException):
         field_name: str,
         cls: type,
         *,
-        overridden: Literal["model_field", "resolver_field"],
+        overridden: Literal["model_field", "resolver_field", "computed_field"],
     ) -> None:
         self.cls = cls
         self.field_name = field_name
@@ -382,7 +382,7 @@ class UnsupportedFieldOverrideError(StrawberryException):
                 "Pydantic would use the resolver as the default value of the field. "
                 "Rename the resolver, or remove the model field."
             )
-        else:
+        elif overridden == "resolver_field":
             template = (
                 "`{field}` on `{cls}` overrides an inherited field with a resolver, "
                 "but isn't a field itself"
@@ -392,6 +392,18 @@ class UnsupportedFieldOverrideError(StrawberryException):
                 "The field would be removed from the GraphQL type. To change its "
                 "resolver, decorate the method with `@strawberry.pydantic.field`, or "
                 "rename the method to keep the inherited field."
+            )
+        else:
+            template = (
+                "`{field}` on `{cls}` overrides an inherited computed field, but "
+                "isn't a field itself"
+            )
+            self.annotation_message = "attribute overriding a computed field"
+            self.suggestion = (
+                "Pydantic keeps the computed field, with the method as its value. To "
+                "change the field, make the method a computed field with "
+                "`@computed_field` and `@property`, or a field with a resolver with "
+                "`@strawberry.pydantic.field`. Otherwise rename the method."
             )
 
         self.message, self.rich_message = _format_message(

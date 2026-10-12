@@ -34,12 +34,17 @@ class Admin(User):
 This happens because the method replaces the inherited one, so `Admin` wouldn't
 have a `greeting` field anymore, even though it most likely should.
 
-The same error is thrown when a field with a resolver has the name of a field
-of the model, as Pydantic would use the method as the default value of the
-field, and never call the resolver.
+The same error is thrown when:
+
+- a field with a resolver has the name of a field of the model, as Pydantic
+  would use the method as the default value of the field, and never call the
+  resolver.
+- a method overrides an inherited computed field, as Pydantic would keep the
+  computed field, and use the method itself as its value.
 
 Fields of the model and computed fields can still override inherited fields with
-a resolver, unless computed fields are left out with `include_computed=False`.
+a resolver, unless computed fields are left out with `include_computed=False`,
+and properties can override computed fields.
 
 ## How to fix this error
 
@@ -66,6 +71,10 @@ class Admin(User):
     def greeting(self) -> str:
         return f"Welcome back, {self.name}"
 ```
+
+To change a computed field, make the method a computed field too, with
+`@pydantic.computed_field` and `@property`, or a field with a resolver, which
+can take arguments, with `@strawberry.pydantic.field`.
 
 If the method isn't meant to be part of the GraphQL type, rename it, so that the
 inherited field is kept. A resolver with the name of a field of the model needs
