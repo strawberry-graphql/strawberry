@@ -1,6 +1,6 @@
 import datetime as dt
 import io
-from typing import Annotated, NewType
+from typing import Annotated, Generic, NewType, TypeVar
 
 import pydantic
 import pytest
@@ -8,7 +8,6 @@ from inline_snapshot import snapshot
 
 import strawberry
 from strawberry.file_uploads import Upload
-from strawberry.pydantic.exceptions import UploadFieldError
 from strawberry.scalars import JSON
 from strawberry.schema.config import StrawberryConfig
 
@@ -119,29 +118,38 @@ def test_upload_fields_on_inputs():
 
 
 @pytest.mark.parametrize(
-    "annotation",
-    [Upload, list[Upload], Upload | None],
-    ids=["upload", "list", "optional"],
+    "custom_validator",
+    [False, True],
 )
-def test_upload_annotations_on_inputs_raise_an_error(annotation: object):
-    with pytest.raises(
-        UploadFieldError,
-        match="Field `image` on pydantic input `CreatePostInput` can't be typed as `Upload`",
-    ):
+def test_upload_validation_belongs_to_pydantic(custom_validator):
+    annotation = (
+        Annotated[Upload, pydantic.PlainValidator(lambda value: value)]
+        if custom_validator
+        else Upload
+    )
 
-        @strawberry.pydantic.input
-        class CreatePostInput(pydantic.BaseModel):
-            image: annotation  # type: ignore[valid-type]
-
-
-@pytest.mark.raises_strawberry_exception(
-    UploadFieldError,
-    match="Field `image` on pydantic input `CreatePostInput` can't be typed as `Upload`",
-)
-def test_upload_field_error():
     @strawberry.pydantic.input
     class CreatePostInput(pydantic.BaseModel):
-        image: Upload
+        images: list[annotation]
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def read(self, data: CreatePostInput) -> str:
+            return data.images[0].read().decode()
+
+    result = strawberry.Schema(query=Query).execute_sync(
+        "query($data: CreatePostInput!) { read(data: $data) }",
+        variable_values={"data": {"images": [io.BytesIO(b"image content")]}},
+    )
+    if custom_validator:
+        assert not result.errors
+        assert result.data == {"read": "image content"}
+    else:
+        assert result.errors
+        assert (
+            result.errors[0].extensions["validationErrors"][0]["type"] == "bytes_type"
+        )
 
 
 def test_scalar_map_new_types():
@@ -396,3 +404,108 @@ def test_secret_bytes_fields_are_not_supported():
 
     with pytest.raises(TypeError, match=r"Unexpected type .*SecretBytes"):
         strawberry.Schema(query=Query)
+
+
+class CustomUrl(pydantic.HttpUrl):
+    pass
+
+
+@pytest.mark.parametrize(
+    ("annotation", "value"),
+    [
+        (pydantic.EmailStr, "ada@example.com"),
+        (pydantic.HttpUrl, "https://example.com/"),
+        (CustomUrl, "https://example.com/"),
+        (pydantic.AwareDatetime, "2024-02-03 04:05:00+00:00"),
+        (pydantic.PastDate, "2024-02-03"),
+    ],
+)
+def test_explicit_scalar_maps_override_pydantic_fallbacks(annotation, value):
+    T = TypeVar("T")
+
+    @strawberry.pydantic.input
+    class Input(pydantic.BaseModel):
+        values: list[annotation | None]
+
+    @strawberry.pydantic.type
+    class Output(pydantic.BaseModel, Generic[T]):
+        values: list[T | None]
+
+        @pydantic.computed_field
+        @property
+        def first(self) -> T | None:
+            return self.values[0]
+
+    @strawberry.pydantic.type
+    class SpecializedOutput(Output[annotation]):
+        pass
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def echo(self, data: Input) -> SpecializedOutput:
+            return SpecializedOutput(values=data.values)
+
+    ordinary_sdl = str(strawberry.Schema(query=Query))
+    schema = strawberry.Schema(
+        query=Query,
+        config=StrawberryConfig(
+            scalar_map={
+                annotation: strawberry.scalar(
+                    name="Encoded",
+                    serialize=lambda value: f"encoded:{value}",
+                    parse_value=lambda value: value.removeprefix("encoded:"),
+                )
+            }
+        ),
+    )
+    assert "values: [Encoded]!" in str(schema)
+    result = schema.execute_sync(
+        "query($data: Input!) { echo(data: $data) { values first } }",
+        variable_values={"data": {"values": [f"encoded:{value}", None]}},
+    )
+    assert not result.errors
+    assert result.data == {
+        "echo": {"values": [f"encoded:{value}", None], "first": f"encoded:{value}"}
+    }
+    assert str(strawberry.Schema(query=Query)) == ordinary_sdl
+
+
+@pytest.mark.parametrize("return_instance", [False, True])
+def test_undecorated_models_can_be_scalar_map_keys(return_instance):
+    class Token(pydantic.BaseModel):
+        value: str
+
+    @strawberry.pydantic.input
+    class Input(pydantic.BaseModel):
+        tokens: list[Token | None]
+
+    @strawberry.pydantic.type
+    class Output(pydantic.BaseModel):
+        tokens: list[Token | None]
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def echo(self, data: Input) -> Output:
+            return Output(tokens=data.tokens)
+
+    schema = strawberry.Schema(
+        query=Query,
+        config=StrawberryConfig(
+            scalar_map={
+                Token: strawberry.scalar(
+                    name="Token",
+                    serialize=lambda token: token.value,
+                    parse_value=lambda value: (
+                        Token(value=value) if return_instance else {"value": value}
+                    ),
+                )
+            }
+        ),
+    )
+    result = schema.execute_sync(
+        '{ echo(data: {tokens: ["opaque", null]}) { tokens } }'
+    )
+    assert not result.errors
+    assert result.data == {"echo": {"tokens": ["opaque", None]}}

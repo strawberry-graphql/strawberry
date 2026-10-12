@@ -265,38 +265,6 @@ class UnresolvedAnnotatedFieldError(StrawberryException):
         return _find_field_source(self.cls, self.field_name)
 
 
-class UploadFieldError(StrawberryException):
-    def __init__(self, field_name: str, cls: type) -> None:
-        self.cls = cls
-        self.field_name = field_name
-
-        self.message = (
-            f"Field `{field_name}` on pydantic input `{cls.__name__}` can't be typed "
-            "as `Upload`"
-        )
-        self.rich_message = (
-            f"Field `[underline]{field_name}[/]` on pydantic input "
-            f"`[underline]{cls.__name__}[/]` can't be typed as `Upload`"
-        )
-        self.annotation_message = "field typed as Upload"
-        self.suggestion = (
-            "Uploaded files are the file objects of your integration, which "
-            "Pydantic can't validate as `Upload`. Annotate the field with the file "
-            "type and use `Upload` as its GraphQL type, for example: "
-            f"`{field_name}: Annotated[UploadFile, "
-            "strawberry.field(graphql_type=Upload)]` "
-            "(with `arbitrary_types_allowed=True` in `model_config`)."
-        )
-
-        super().__init__(self.message)
-
-    @cached_property
-    def exception_source(self) -> ExceptionSource | None:
-        source_finder = SourceFinder()
-
-        return source_finder.find_class_attribute_from_object(self.cls, self.field_name)
-
-
 class NotAPydanticModelError(StrawberryException):
     def __init__(self, obj: object, decorator: str) -> None:
         self.obj = obj
@@ -353,10 +321,10 @@ class MaybeFieldError(StrawberryException):
         )
         self.annotation_message = "field typed as strawberry.Maybe"
         self.suggestion = (
-            "Pydantic inputs tell omitted fields apart from explicit nulls with "
-            "`model_fields_set`: give the field a `None` default, e.g. "
-            f"`{field_name}: str | None = None`, and use "
-            "`model_dump(exclude_unset=True)` to get the fields the client sent."
+            "Use a regular `@strawberry.input` with `strawberry.Maybe` to "
+            "distinguish omission from explicit null. GraphQL fills in schema "
+            "defaults before Pydantic validation, so `model_fields_set` does "
+            "not identify only client-submitted fields."
         )
 
         super().__init__(self.message)

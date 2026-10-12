@@ -200,7 +200,7 @@ def test_computed_field_with_interface():
 @pytest.mark.raises_strawberry_exception(
     UnregisteredPydanticTypeError,
     match=(
-        r"`Base\.pet` uses `Pet`, which isn't a Strawberry type: decorate it with "
+        r"`Owner\.pet` uses `Pet`, which isn't a Strawberry type: decorate it with "
         r"`@strawberry\.pydantic\.type`"
     ),
 )
@@ -217,6 +217,8 @@ def test_unregistered_types_of_inherited_computed_fields_raise_an_error():
     @strawberry.pydantic.type
     class Owner(Base):
         name: str
+
+    strawberry.Schema(query=Owner)
 
 
 def test_computed_fields_are_included_by_default():

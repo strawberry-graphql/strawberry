@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Annotated, Any, TypeGuard, get_args, get_origi
 
 from pydantic import BaseModel, ValidationError
 
+from strawberry.scalars import is_scalar
 from strawberry.types.base import (
     StrawberryList,
     StrawberryOptional,
@@ -162,11 +163,17 @@ def _to_python_value(
     if isinstance(type_, StrawberryOptional):
         return _to_python_value(value, type_.of_type, context, keys)
 
+    if is_scalar(type_, context.scalar_registry):
+        return context.convert(value, type_, *keys)
+
     if isinstance(type_, StrawberryList):
         # only lists of nested models are converted item by item, other lists
         # are converted at once like Strawberry does, which e.g. only copies
         # lists of scalars
-        if not _is_nested_model(_get_item_type(type_)):
+        item_type = _get_item_type(type_)
+        if is_scalar(item_type, context.scalar_registry) or not _is_nested_model(
+            item_type
+        ):
             return context.convert(value, type_, *keys)
 
         return [
@@ -208,6 +215,9 @@ def _get_location(
             type_ = type_.of_type
 
             continue
+
+        if is_scalar(type_, context.scalar_registry):
+            break
 
         definition = get_object_definition(type_)
         field = (
