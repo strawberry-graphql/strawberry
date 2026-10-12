@@ -167,12 +167,14 @@ def _has_annotated_options(node: ast.AST, namespace: dict[str, Any]) -> bool:
         or getattr(node.value, "attr", None) == "Annotated"
         or _lookup(node.value, namespace) is Annotated
     ):
-        # e.g. `Annotated[Account, strawberry.lazy("app.accounts")]`
+        # e.g. `Annotated[Account, strawberry.lazy("app.accounts")]`, or with
+        # a name for the lazy reference, like `Annotated[Account, LazyAccount]`
         metadata = node.slice.elts[1:] if isinstance(node.slice, ast.Tuple) else []
 
         return not all(
-            isinstance(item, ast.Call)
-            and _lookup(item.func, namespace) in (lazy, union)
+            _lookup(item.func, namespace) in (lazy, union)
+            if isinstance(item, ast.Call)
+            else isinstance(_lookup(item, namespace), _TYPE_METADATA)
             for item in metadata
         )
 
