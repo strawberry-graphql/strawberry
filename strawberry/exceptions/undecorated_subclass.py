@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import sys
 from functools import cached_property
 from typing import TYPE_CHECKING
 
@@ -31,11 +32,17 @@ class UndecoratedSubclassError(StrawberryException):
         self.parent = parent
 
         if parent_definition.is_input:
-            kind, decorator = "input type", "@strawberry.input"
+            kind, decorator = "input type", "input"
         elif parent_definition.is_interface:
-            kind, decorator = "interface", "@strawberry.type"
+            kind, decorator = "interface", "type"
         else:
-            kind, decorator = "type", "@strawberry.type"
+            kind, decorator = "type", "type"
+
+        decorator = (
+            f"@strawberry.pydantic.{decorator}"
+            if _is_pydantic_model(parent)
+            else f"@strawberry.{decorator}"
+        )
 
         self.message = (
             f"`{cls.__name__}` subclasses the Strawberry {kind} "
@@ -61,3 +68,10 @@ class UndecoratedSubclassError(StrawberryException):
     def exception_source(self) -> ExceptionSource | None:
         source_finder = SourceFinder()
         return source_finder.find_class_from_object(self.cls)
+
+
+def _is_pydantic_model(cls: type) -> bool:
+    # pydantic is optional, and a model's module has imported it
+    pydantic = sys.modules.get("pydantic")
+
+    return pydantic is not None and issubclass(cls, pydantic.BaseModel)

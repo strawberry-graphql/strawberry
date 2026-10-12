@@ -1,9 +1,9 @@
 from inline_snapshot import snapshot
 
-from .utils.marks import requires_mypy, requires_pyright, skip_on_windows
+from .utils.marks import requires_mypy, requires_pyright, requires_ty, skip_on_windows
 from .utils.typecheck import Result, typecheck
 
-pytestmark = [skip_on_windows, requires_pyright, requires_mypy]
+pytestmark = [skip_on_windows, requires_pyright, requires_mypy, requires_ty]
 
 MYPY_PLUGINS = ["pydantic.mypy", "strawberry.ext.mypy_plugin"]
 
@@ -78,3 +78,119 @@ def test_pydantic_type():
 
     # TY doesn't properly support this yet
     # assert results.ty == snapshot(...)  # noqa: ERA001
+
+
+FIRST_CLASS_CODE = """
+import pydantic
+import strawberry
+
+@strawberry.pydantic.type
+class User(pydantic.BaseModel):
+    age: int
+    name: str
+
+user = User(age=1, name="abc")
+reveal_type(user)
+reveal_type(user.age)
+"""
+
+
+def test_first_class_pydantic_decorators_keep_the_model_type():
+    results = typecheck(FIRST_CLASS_CODE, mypy_plugins=MYPY_PLUGINS)
+
+    assert results.mypy == snapshot(
+        [
+            Result(
+                type="note",
+                message='Revealed type is "mypy_test.User"',
+                line=11,
+                column=13,
+            ),
+            Result(
+                type="note",
+                message='Revealed type is "int"',
+                line=12,
+                column=13,
+            ),
+        ]
+    )
+
+    assert results.pyright == snapshot(
+        [
+            Result(
+                type="information",
+                message='Type of "user" is "User"',
+                line=11,
+                column=13,
+            ),
+            Result(
+                type="information",
+                message='Type of "user.age" is "int"',
+                line=12,
+                column=13,
+            ),
+        ]
+    )
+
+    assert results.ty == snapshot(
+        [
+            Result(
+                type="information",
+                message="Revealed type: `User`",
+                line=11,
+                column=13,
+            ),
+            Result(
+                type="information",
+                message="Revealed type: `int`",
+                line=12,
+                column=13,
+            ),
+        ]
+    )
+
+
+UNKNOWN_ATTRIBUTE_CODE = """
+import strawberry
+
+strawberry.pydantic.type
+strawberry.feild
+"""
+
+
+def test_lazy_pydantic_module_keeps_unknown_attributes_errors():
+    results = typecheck(UNKNOWN_ATTRIBUTE_CODE, mypy_plugins=MYPY_PLUGINS)
+
+    assert results.mypy == snapshot(
+        [
+            Result(
+                type="error",
+                message='Module has no attribute "feild"; maybe "field"?',
+                line=5,
+                column=1,
+            )
+        ]
+    )
+    assert results.pyright == snapshot(
+        [
+            Result(
+                type="error", message='Type of "feild" is unknown', line=5, column=1
+            ),
+            Result(
+                type="error",
+                message='"feild" is not a known attribute of module "strawberry"',
+                line=5,
+                column=12,
+            ),
+        ]
+    )
+    assert results.ty == snapshot(
+        [
+            Result(
+                type="error",
+                message="Module `strawberry` has no member `feild`",
+                line=5,
+                column=1,
+            )
+        ]
+    )
