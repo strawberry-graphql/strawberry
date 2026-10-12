@@ -4,7 +4,7 @@ import copy
 import dataclasses
 import inspect
 import sys
-from collections.abc import Callable, Iterable, Iterator, Sequence
+from collections.abc import Callable, Sequence
 from typing import (
     Annotated,
     Any,
@@ -24,7 +24,6 @@ from typing_extensions import (
 
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.exceptions import (
-    InvalidStrawberryFieldAnnotationError,
     InvalidSuperclassInterfaceError,
     MissingFieldAnnotationError,
     MissingReturnAnnotationError,
@@ -38,57 +37,15 @@ from strawberry.types.unset import UNSET
 from strawberry.utils.str_converters import to_camel_case
 
 from .base import StrawberryObjectDefinition, has_object_definition
-from .field import StrawberryField, _contains_strawberry_field, field
+from .field import StrawberryField, field, get_annotated_field
 from .type_resolver import _get_fields
+from .unresolved_annotations import (
+    find_unresolved_options,
+    get_annotated_metadata,
+    get_undefined_option_names,
+)
 
 T = TypeVar("T", bound=builtins.type)
-
-
-def _lookup(node: ast.expr, namespace: dict[str, Any]) -> object:
-    """Return the value of a name like `Annotated` or `strawberry.field`, if any."""
-    if isinstance(node, ast.Name):
-        return namespace.get(node.id, getattr(builtins, node.id, None))
-
-    if isinstance(node, ast.Attribute):
-        return getattr(_lookup(node.value, namespace), node.attr, None)
-
-    return None
-
-
-def _is_field_metadata(node: ast.expr, namespace: dict[str, Any]) -> bool | None:
-    """Return whether an item of `Annotated` metadata is a `strawberry.field()`.
-
-    It's `None` when the item can't be evaluated yet, e.g. a helper that returns
-    a `strawberry.field()` called with names that aren't defined yet.
-    """
-    try:
-        # e.g. a helper that returns a `strawberry.field()`, or `relay.node()`
-        value = eval(ast.unparse(node), dict(namespace))  # noqa: S307
-    except Exception:  # noqa: BLE001
-        return None
-
-    return isinstance(value, StrawberryField)
-
-
-def _is_field_alias(value: object) -> bool:
-    """Return whether `value` is an alias like `Annotated[T, strawberry.field()]`."""
-    return get_origin(value) is Annotated and any(
-        isinstance(item, StrawberryField) for item in get_args(value)[1:]
-    )
-
-
-def _get_annotated_metadata(
-    node: ast.expr, namespace: dict[str, Any]
-) -> list[ast.expr] | None:
-    """Return the metadata of `node` when it's an `Annotated[...]` subscript."""
-    if (
-        isinstance(node, ast.Subscript)
-        and _lookup(node.value, namespace) is Annotated
-        and isinstance(node.slice, ast.Tuple)
-    ):
-        return node.slice.elts[1:]
-
-    return None
 
 
 def _check_unresolved_annotation(
@@ -103,108 +60,17 @@ def _check_unresolved_annotation(
     ignored, so this fails instead, including when an item of `Annotated` can't
     be evaluated, as it could be a field.
     """
-    try:
-        expression = ast.parse(annotation, mode="eval").body
-    except SyntaxError:
-        return
+    unresolved = find_unresolved_options(
+        annotation, namespace, cls=cls, field_name=field_name
+    )
 
-    # e.g. `Annotated[Account, strawberry.field(...)]`, or an alias with one like
-    # `AdminOnly[Account]`
-    metadata = _get_annotated_metadata(expression, namespace) or []
-
-    def unresolved() -> UnresolvedStrawberryFieldError:
-        options_names = _get_undefined_names(
-            (item for node in metadata for item in [node, *_walk_options(node)]),
-            namespace,
-        )
-        undefined_names = _get_undefined_names(ast.walk(expression), namespace)
-
-        # e.g. a quoted type, like `Annotated["Account", ...]`, but not strings in
-        # the options, like `tags=["admin"]`
-        type_node = (
-            expression.slice.elts[0]
-            if metadata
-            and isinstance(expression, ast.Subscript)
-            and isinstance(expression.slice, ast.Tuple)
-            else expression
-        )
-        undefined_names |= {
-            node.value
-            for node in ast.walk(type_node)
-            if isinstance(node, ast.Constant)
-            and isinstance(node.value, str)
-            and node.value.isidentifier()
-            and node.value not in namespace
-            and not hasattr(builtins, node.value)
-        }
-
-        return UnresolvedStrawberryFieldError(
+    if unresolved is not None:
+        raise UnresolvedStrawberryFieldError(
             field_name=field_name,
             cls=cls,
-            undefined_names=sorted(undefined_names),
-            # e.g. a permission class defined after the type, while the type
-            # itself is defined
-            in_options=bool(undefined_names) and undefined_names <= options_names,
+            undefined_names=unresolved.undefined_names,
+            in_options=unresolved.in_options,
         )
-
-    if any(_is_field_metadata(item, namespace) is not False for item in metadata) or (
-        isinstance(expression, ast.Subscript)
-        and _is_field_alias(_lookup(expression.value, namespace))
-    ):
-        raise unresolved()
-
-    # `strawberry.field()` is only allowed in the outermost `Annotated`, e.g. not
-    # in `list[Annotated[Account, strawberry.field()]]` or `list[AdminOnly[...]]`
-    for node in ast.walk(expression):
-        if node is expression or not isinstance(node, ast.Subscript):
-            continue
-
-        nested = [
-            _is_field_metadata(item, namespace)
-            for item in _get_annotated_metadata(node, namespace) or []
-        ]
-
-        if True in nested or _is_field_alias(_lookup(node.value, namespace)):
-            raise InvalidStrawberryFieldAnnotationError(field_name=field_name, cls=cls)
-
-        if None in nested:
-            raise unresolved()
-
-
-def _walk_options(node: ast.AST) -> Iterator[ast.AST]:
-    """Walk the options in `Annotated` metadata, except types like `graphql_type`.
-
-    Types are resolved when the schema is built, like the annotation itself.
-    """
-    for child in ast.iter_child_nodes(node):
-        if isinstance(child, ast.keyword) and child.arg == "graphql_type":
-            continue
-
-        yield child
-        yield from _walk_options(child)
-
-
-def _get_undefined_names(
-    nodes: Iterable[ast.AST], namespace: dict[str, Any]
-) -> set[str]:
-    """Return the names used in `nodes` that aren't defined in `namespace`.
-
-    Names bound in them, like the arguments of a lambda, count as defined.
-    """
-    used: set[str] = set()
-    bound: set[str] = set()
-
-    for node in nodes:
-        if isinstance(node, ast.arg):
-            bound.add(node.arg)
-        elif isinstance(node, ast.Name):
-            (used if isinstance(node.ctx, ast.Load) else bound).add(node.id)
-
-    return {
-        name
-        for name in used - bound
-        if name not in namespace and not hasattr(builtins, name)
-    }
 
 
 def _check_field_options(
@@ -222,10 +88,8 @@ def _check_field_options(
     except SyntaxError:
         return
 
-    metadata = _get_annotated_metadata(expression, namespace) or []
-    undefined_names = _get_undefined_names(
-        (item for node in metadata for item in [node, *_walk_options(node)]),
-        namespace,
+    undefined_names = get_undefined_option_names(
+        get_annotated_metadata(expression, namespace) or [], namespace
     )
 
     if undefined_names:
@@ -278,35 +142,22 @@ def _process_annotated_fields(cls: T) -> dict[str, StrawberryAnnotation]:
         else:
             annotation = raw_annotation
 
-        if get_origin(annotation) is Annotated:
-            first, *rest = get_args(annotation)
-        else:
-            first = annotation
-            rest = []
+        field_type, source_field = get_annotated_field(
+            annotation, cls=cls, field_name=field_name
+        )
 
-        strawberry_fields = [arg for arg in rest if isinstance(arg, StrawberryField)]
-
-        if len(strawberry_fields) > 1 or (
-            strawberry_fields
-            and isinstance(cls.__dict__.get(field_name), StrawberryField)
-        ):
-            raise MultipleStrawberryFieldsError(field_name=field_name, cls=cls)
-
-        if _contains_strawberry_field(annotation):
-            raise InvalidStrawberryFieldAnnotationError(
-                field_name=field_name,
-                cls=cls,
-            )
-
-        if not strawberry_fields:
+        if source_field is None:
             continue
+
+        # e.g. `Annotated[int, strawberry.field()]` with `= strawberry.field()`
+        if isinstance(cls.__dict__.get(field_name), StrawberryField):
+            raise MultipleStrawberryFieldsError(field_name=field_name, cls=cls)
 
         if isinstance(raw_annotation, str):
             _check_field_options(
                 cls, field_name, raw_annotation, {**module_namespace, **vars(cls)}
             )
 
-        source_field = strawberry_fields[0]
         field = copy.copy(source_field)
 
         default = cls.__dict__.get(field_name, dataclasses.MISSING)
@@ -326,19 +177,15 @@ def _process_annotated_fields(cls: T) -> dict[str, StrawberryAnnotation]:
                 field.default = default
                 field.default_value = default
 
-        remaining_metadata = [
-            arg for arg in rest if not isinstance(arg, StrawberryField)
-        ]
-        field_type = (
-            field.type_annotation.raw_annotation
-            if field.type_annotation is not None
-            else first
-        )
-        field_type = (
-            Annotated[(field_type, *remaining_metadata)]
-            if remaining_metadata
-            else field_type
-        )
+        if field.type_annotation is not None:
+            # `graphql_type=...` replaces the type, but not the rest of the metadata
+            graphql_type = field.type_annotation.raw_annotation
+            field_type = (
+                Annotated[(graphql_type, *get_args(field_type)[1:])]
+                if get_origin(field_type) is Annotated
+                else graphql_type
+            )
+
         # a new annotation for each class, as the `strawberry.field()` can be
         # shared by several classes, e.g. through a type alias, and each class
         # resolves its type, like `graphql_type="Foo"`, in its own module, even
