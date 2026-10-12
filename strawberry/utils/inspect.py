@@ -166,24 +166,36 @@ def get_generic_arguments(
     class Page(Generic[T]): ...
 
 
-    class Label(Generic[T]): ...
+    class Sorted(Generic[T]): ...
 
 
-    class Wrapper(Page[list[U]], Generic[U]): ...
+    class UserPage(Page[User], Sorted[UserOrder]): ...
 
 
-    class IntWrapper(Wrapper[int], Label[str]): ...
-
-
-    get_generic_arguments(IntWrapper)
-    # {IntWrapper: {}, Wrapper: {~U: int}, Page: {~T: list[int]}, Label: {~T: str}}
+    get_generic_arguments(UserPage)
+    # {UserPage: {}, Page: {~T: User}, Sorted: {~T: UserOrder}}
     ```
 
     Arguments that use the type parameters of the class extending the base, like
-    `list[U]`, get that class's arguments. `split_base` returns the class and the
-    arguments of a base, like `(Page, (int,))` for `Page[int]`, and can be
-    replaced for classes that aren't parametrized with `typing` aliases, like
-    Pydantic's generic models.
+    `list[T]`, get that class's arguments:
+
+    ```python
+    class Result(Generic[T]): ...
+
+
+    class ListResult(Result[list[T]], Generic[T]): ...
+
+
+    class UserListResult(ListResult[User]): ...
+
+
+    get_generic_arguments(UserListResult)
+    # {UserListResult: {}, ListResult: {~T: User}, Result: {~T: list[User]}}
+    ```
+
+    `split_base` returns the class and the arguments of a base, like
+    `(Page, (User,))` for `Page[User]`, and can be replaced for classes that
+    aren't parametrized with `typing` aliases, like Pydantic's generic models.
     """
     arguments: dict[type, dict[Any, Any]] = {}
 
