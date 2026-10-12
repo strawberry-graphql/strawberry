@@ -3,17 +3,17 @@
 from __future__ import annotations
 
 import copy
-from types import BuiltinFunctionType, FunctionType, MethodType
-from typing import TYPE_CHECKING, Any, TypeVar, overload
+import inspect
+from functools import partial, wraps
+from types import FunctionType
+from typing import TYPE_CHECKING, Any, TypeVar, cast, overload
 
 from strawberry.exceptions import MissingReturnAnnotationError
 from strawberry.types.field import StrawberryField
 from strawberry.types.field import field as strawberry_field
 
-from .exceptions import ResolverAlreadyUsedError
-
 if TYPE_CHECKING:
-    from collections.abc import Callable, Mapping, Sequence
+    from collections.abc import AsyncIterator, Callable, Mapping, Sequence
 
     from strawberry.extensions.field_extension import FieldExtension
     from strawberry.permission import BasePermission
@@ -26,7 +26,18 @@ _DECORATOR_ATTRIBUTE = "__strawberry_pydantic_field__"
 
 
 @overload
-def field(resolver: ResolverT, /) -> ResolverT: ...
+def field(
+    resolver: ResolverT,
+    *,
+    name: str | None = None,
+    description: str | None = None,
+    permission_classes: list[type[BasePermission]] | None = None,
+    deprecation_reason: str | None = None,
+    metadata: Mapping[Any, Any] | None = None,
+    directives: Sequence[object] | None = (),
+    extensions: list[FieldExtension] | None = None,
+    graphql_type: Any | None = None,
+) -> ResolverT: ...
 
 
 @overload
@@ -45,7 +56,6 @@ def field(
 
 def field(
     resolver: ResolverT | None = None,
-    /,
     *,
     name: str | None = None,
     description: str | None = None,
@@ -59,7 +69,7 @@ def field(
     """Add a field with a resolver to a `strawberry.pydantic` type.
 
     It takes the field options of `strawberry.field`. Pydantic doesn't allow
-    `strawberry.field` in a model, so this decorator returns the method as it is,
+    `strawberry.field` in a model, so this decorator returns a method wrapper,
     and `strawberry.pydantic.type` adds the field to the GraphQL type:
 
     ```python
@@ -74,18 +84,8 @@ def field(
     """
 
     def wrap(resolver: ResolverT) -> ResolverT:
-        # the resolver stays in the model, which only allows functions, and
-        # holds the field
-        if not _is_function(resolver):
-            raise TypeError(
-                "`strawberry.pydantic.field` only accepts functions as resolvers, "
-                f"but got {_describe(resolver)}. Pydantic only allows functions in "
-                "the class body of a model: add a method to the model that calls "
-                "it instead."
-            )
-
-        if _get_marked_field(resolver) is not None:
-            raise ResolverAlreadyUsedError(resolver)
+        # Each decoration owns its metadata without mutating the shared resolver.
+        resolver = _wrap_resolver(resolver)
 
         resolver_field = strawberry_field(
             resolver,
@@ -122,6 +122,49 @@ def field(
     return wrap(resolver)
 
 
+def _wrap_resolver(resolver: ResolverT) -> ResolverT:
+    if isinstance(resolver, (staticmethod, classmethod)):
+        return cast("ResolverT", type(resolver)(_wrap_resolver(resolver.__func__)))
+
+    # inspect recognizes async functions and partials, but not callable objects.
+    async_target: Callable[..., Any] = resolver
+    while isinstance(async_target, partial):
+        async_target = async_target.func
+    if not inspect.isroutine(async_target):
+        async_target = async_target.__call__  # type: ignore[operator]
+
+    wrapper: Callable[..., Any]
+    if inspect.isasyncgenfunction(async_target):
+
+        @wraps(resolver)
+        async def async_generator(*args: Any, **kwargs: Any) -> AsyncIterator[Any]:
+            async for item in resolver(*args, **kwargs):
+                yield item
+
+        wrapper = async_generator
+    elif inspect.iscoroutinefunction(async_target):
+
+        @wraps(resolver)
+        async def asynchronous(*args: Any, **kwargs: Any) -> Any:
+            return await resolver(*args, **kwargs)
+
+        wrapper = asynchronous
+    else:
+
+        @wraps(resolver)
+        def synchronous(*args: Any, **kwargs: Any) -> Any:
+            return resolver(*args, **kwargs)
+
+        wrapper = synchronous
+
+    # A function wrapper would otherwise inject the model as `self` into an
+    # already-bound method, a partial, or a callable instance.
+    if inspect.ismethod(resolver) or not hasattr(type(resolver), "__get__"):
+        return cast("ResolverT", staticmethod(wrapper))
+
+    return cast("ResolverT", wrapper)
+
+
 def is_field_decorator(value: object) -> bool:
     """Return whether `value` is `strawberry.pydantic.field` without a resolver.
 
@@ -134,34 +177,12 @@ def is_field_decorator(value: object) -> bool:
     )
 
 
-def _is_function(value: object) -> bool:
-    """Whether `value` can be the resolver of a `strawberry.pydantic.field`.
-
-    That's a function, a static or class method, or a `functools` wrapper,
-    like `functools.partial`.
-    """
-    return (
-        isinstance(value, (FunctionType, staticmethod, classmethod))
-        or type(value).__module__ == "functools"
-    )
-
-
-def _describe(value: object) -> str:
-    """Describe a resolver that isn't a function, for error messages."""
-    name = getattr(value, "__qualname__", None) or getattr(value, "__name__", None)
-
-    if isinstance(value, MethodType):
-        return f"the bound method `{name}`"
-
-    if isinstance(value, BuiltinFunctionType):
-        return f"the built-in function `{name}`"
-
-    return f"a `{type(value).__name__}` object"
-
-
 def _get_marked_field(value: object) -> StrawberryField | None:
     # only look at what can be a method, other objects may not like getattr
-    if not _is_function(value):
+    if not (
+        isinstance(value, (FunctionType, staticmethod, classmethod))
+        or type(value).__module__ == "functools"
+    ):
         return None
 
     marked_field = getattr(value, _FIELD_ATTRIBUTE, None)

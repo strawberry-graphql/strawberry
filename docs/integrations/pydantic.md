@@ -523,6 +523,11 @@ allows functions in the class body of a model. Pydantic's mypy plugin reports
 this form as an untyped field, so prefer the decorator form if you use it, or
 add `# type: ignore[pydantic-field]`.
 
+The same resolver can be used by multiple fields, including on different models.
+Each call to `strawberry.pydantic.field` creates its own method wrapper, so
+names, descriptions and permissions are independent without changing the
+original function.
+
 To override an inherited field with a resolver, decorate the new method with
 `@strawberry.pydantic.field` too. Overriding it with a method that isn't
 decorated would remove the field, so it raises an
