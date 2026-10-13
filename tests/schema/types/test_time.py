@@ -1,4 +1,4 @@
-import datetime
+import datetime as dt
 
 import pytest
 from graphql import GraphQLError
@@ -11,8 +11,8 @@ def test_serialization():
     @strawberry.type
     class Query:
         @strawberry.field
-        def serialize(self) -> datetime.time:
-            return datetime.time(13, 37)
+        def serialize(self) -> dt.time:
+            return dt.time(13, 37)
 
     schema = strawberry.Schema(Query)
 
@@ -28,7 +28,7 @@ def test_deserialization():
         deserialized = None
 
         @strawberry.field
-        def deserialize(self, arg: datetime.time) -> bool:
+        def deserialize(self, arg: dt.time) -> bool:
             Query.deserialized = arg
             return True
 
@@ -40,7 +40,7 @@ def test_deserialization():
     result = schema.execute_sync(query, variable_values={"value": "13:37:00"})
 
     assert not result.errors
-    assert Query.deserialized == datetime.time(13, 37)
+    assert Query.deserialized == dt.time(13, 37)
 
 
 def test_deserialization_with_parse_literal():
@@ -49,7 +49,7 @@ def test_deserialization_with_parse_literal():
         deserialized = None
 
         @strawberry.field
-        def deserialize(self, arg: datetime.time) -> bool:
+        def deserialize(self, arg: dt.time) -> bool:
             Query.deserialized = arg
             return True
 
@@ -61,7 +61,7 @@ def test_deserialization_with_parse_literal():
     result = schema.execute_sync(query)
 
     assert not result.errors
-    assert Query.deserialized == datetime.time(13, 37)
+    assert Query.deserialized == dt.time(13, 37)
 
 
 def execute_mutation(value) -> ExecutionResult:
@@ -72,8 +72,8 @@ def execute_mutation(value) -> ExecutionResult:
     @strawberry.type
     class Mutation:
         @strawberry.mutation
-        def time_input(self, time_input: datetime.time) -> datetime.time:
-            assert isinstance(time_input, datetime.time)
+        def time_input(self, time_input: dt.time) -> dt.time:
+            assert isinstance(time_input, dt.time)
             return time_input
 
     schema = strawberry.Schema(query=Query, mutation=Mutation)

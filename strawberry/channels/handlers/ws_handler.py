@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import asyncio
-import datetime
+import datetime as dt
 import json
 from typing import (
     TYPE_CHECKING,
@@ -111,11 +111,11 @@ class GraphQLWSConsumer(
             GRAPHQL_TRANSPORT_WS_PROTOCOL,
             GRAPHQL_WS_PROTOCOL,
         ),
-        connection_init_wait_timeout: datetime.timedelta | None = None,
+        connection_init_wait_timeout: dt.timedelta | None = None,
         max_subscriptions_per_connection: int | None = 100,
     ) -> None:
         if connection_init_wait_timeout is None:
-            connection_init_wait_timeout = datetime.timedelta(minutes=1)
+            connection_init_wait_timeout = dt.timedelta(minutes=1)
         self.connection_init_wait_timeout = connection_init_wait_timeout
         self.schema = schema
         self.keep_alive = keep_alive

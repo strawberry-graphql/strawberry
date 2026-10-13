@@ -1,4 +1,4 @@
-import datetime
+import datetime as dt
 import json
 from decimal import Decimal
 from uuid import UUID
@@ -23,9 +23,7 @@ def test_default_json_encoding_preserves_django_types(view_class, batch):
     payload = {
         "data": {
             "amount": Decimal("12.30"),
-            "created": datetime.datetime(
-                2026, 9, 6, 12, 30, tzinfo=datetime.timezone.utc
-            ),
+            "created": dt.datetime(2026, 9, 6, 12, 30, tzinfo=dt.timezone.utc),
             "id": UUID("12345678-1234-5678-1234-567812345678"),
             "message": "café 🍓, :",
         },

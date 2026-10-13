@@ -1,4 +1,4 @@
-import datetime
+import datetime as dt
 import decimal
 import enum
 import random
@@ -95,9 +95,9 @@ class Query:
     float: float
     boolean: bool
     uuid: UUID
-    date: datetime.date
-    datetime: datetime.datetime
-    time: datetime.time
+    date: dt.date
+    datetime: dt.datetime
+    time: dt.time
     decimal: decimal.Decimal
     optional_int: int | None
     list_of_int: list[int]
