@@ -1,8 +1,10 @@
-class OperationNameResultLazy:
+from typing_extensions import TypedDict
+
+class OperationNameResultLazy(TypedDict):
     # alias for something
     lazy: bool
 
-class OperationNameResult:
+class OperationNameResult(TypedDict):
     id: str
     # alias for id
     second_id: str
