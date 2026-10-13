@@ -73,9 +73,11 @@ thresholds or change the repository's existing CodSpeed gate settings.
   because entity resolution consumes the representation's `__typename` key.
 - The stadium and application workloads intentionally construct resolver data.
   The matched execution workload reuses prepared objects to isolate execution.
-- Schema construction starts from already-decorated types. The process-startup
-  case intentionally includes interpreter launch, import, decoration, schema
-  construction and a small verified query.
+- Schema construction starts from already-decorated types and builds ten schemas
+  per measurement. CodSpeed's simulation starts each measurement with empty CPU
+  caches, and unrelated changes moved the estimate of a single small build by up
+  to 13%. The process-startup case intentionally includes interpreter launch,
+  import, decoration, schema construction and a small verified query.
 - HTTP uses an in-process HTTPX ASGI transport. It includes client/transport work,
   request parsing, execution, JSON encoding and response consumption, but no
   socket, network or external database. Fixed requests use compact JSON responses;
@@ -117,6 +119,7 @@ Functions renamed with `_v2` intentionally start new series:
 - Subscription measurements close streams and collect results for complete validation.
 - Parser-cache cases have explicit uncached/cold/warm contracts, and optionally
   include the validation cache.
+- Schema construction builds ten schemas per measurement instead of one.
 
 Existing synchronous execution and exception-handler timings keep their names
 because their new assertions run outside the measured callback. The awaitable
