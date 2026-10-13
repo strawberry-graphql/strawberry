@@ -1,4 +1,4 @@
-import datetime
+import datetime as dt
 
 import pytest
 from graphql import GraphQLError
@@ -12,8 +12,8 @@ def test_serialization():
     @strawberry.type
     class Query:
         @strawberry.field
-        def serialize(self) -> datetime.date:
-            return datetime.date(2019, 10, 25)
+        def serialize(self) -> dt.date:
+            return dt.date(2019, 10, 25)
 
     schema = strawberry.Schema(Query)
 
@@ -29,7 +29,7 @@ def test_deserialization():
         deserialized = None
 
         @strawberry.field
-        def deserialize(self, arg: datetime.date) -> bool:
+        def deserialize(self, arg: dt.date) -> bool:
             Query.deserialized = arg
             return True
 
@@ -41,7 +41,7 @@ def test_deserialization():
     result = schema.execute_sync(query, variable_values={"value": "2019-10-25"})
 
     assert not result.errors
-    assert Query.deserialized == datetime.date(2019, 10, 25)
+    assert Query.deserialized == dt.date(2019, 10, 25)
 
 
 def test_deserialization_with_parse_literal():
@@ -50,7 +50,7 @@ def test_deserialization_with_parse_literal():
         deserialized = None
 
         @strawberry.field
-        def deserialize(self, arg: datetime.date) -> bool:
+        def deserialize(self, arg: dt.date) -> bool:
             Query.deserialized = arg
             return True
 
@@ -62,7 +62,7 @@ def test_deserialization_with_parse_literal():
     result = schema.execute_sync(query)
 
     assert not result.errors
-    assert Query.deserialized == datetime.date(2019, 10, 25)
+    assert Query.deserialized == dt.date(2019, 10, 25)
 
 
 @pytest.mark.parametrize("value", ['"2021-13-01"', "12345"])
@@ -70,7 +70,7 @@ def test_invalid_literal_is_classifiable(value: str):
     @strawberry.type
     class Query:
         @strawberry.field
-        def deserialize(self, arg: datetime.date) -> bool:  # pragma: no cover
+        def deserialize(self, arg: dt.date) -> bool:  # pragma: no cover
             return True
 
     schema = strawberry.Schema(Query)
@@ -90,8 +90,8 @@ def execute_mutation(value) -> ExecutionResult:
     @strawberry.type
     class Mutation:
         @strawberry.mutation
-        def date_input(self, date_input: datetime.date) -> datetime.date:
-            assert isinstance(date_input, datetime.date)
+        def date_input(self, date_input: dt.date) -> dt.date:
+            assert isinstance(date_input, dt.date)
             return date_input
 
     schema = strawberry.Schema(query=Query, mutation=Mutation)

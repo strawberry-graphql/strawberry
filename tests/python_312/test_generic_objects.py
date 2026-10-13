@@ -1,4 +1,4 @@
-import datetime
+import datetime as dt
 import sys
 from typing import Annotated
 
@@ -136,7 +136,7 @@ def test_generics_nested_in_list():
 def test_list_inside_generic():
     @strawberry.type
     class Value[T]:
-        valuation_date: datetime.date
+        valuation_date: dt.date
         value: T
 
     @strawberry.type
