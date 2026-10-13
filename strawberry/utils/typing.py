@@ -82,7 +82,7 @@ def is_union(annotation: object) -> bool:
     if isinstance(annotation, UnionType):
         return True
 
-    # unions declared as Union[A, B] fall through to this check, even on python 3.10+
+    # unions declared as Union[A, B] fall through to this check
 
     annotation_origin = getattr(annotation, "__origin__", None)
 
@@ -365,8 +365,7 @@ def eval_type(
             if len(args) == 1:
                 return args[0]
 
-        # python 3.10 will return UnionType for origin, and it cannot be
-        # subscripted like Union[Foo, Bar]
+        # `A | B` has UnionType as origin, which can't be subscripted like Union
         if origin is UnionType:
             origin = Union
 

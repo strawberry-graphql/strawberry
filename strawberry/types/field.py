@@ -37,8 +37,7 @@ from .fields.resolver import StrawberryResolver
 
 if TYPE_CHECKING:
     import builtins
-    from typing import Literal
-    from typing_extensions import Self
+    from typing import Literal, Self
 
     from strawberry.extensions.field_extension import FieldExtension
     from strawberry.permission import BasePermission

@@ -9,12 +9,13 @@ from typing import (
     ClassVar,
     Generic,
     Literal,
+    Self,
     TypeGuard,
     TypeVar,
     get_origin,
     overload,
 )
-from typing_extensions import Protocol, Self
+from typing_extensions import Protocol
 
 from strawberry.utils.inspect import (
     get_generic_arguments,

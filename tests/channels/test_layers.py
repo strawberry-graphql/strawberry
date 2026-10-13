@@ -123,7 +123,7 @@ async def test_listen_to_channel_generator_throw_timeout_at_yield_propagates():
 
     # Throw TimeoutError — it should propagate, not be caught internally
     with pytest.raises(asyncio.TimeoutError):
-        await gen.athrow(asyncio.TimeoutError())
+        await gen.athrow(TimeoutError())
 
 
 @pytest.mark.django_db

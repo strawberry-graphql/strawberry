@@ -9,7 +9,7 @@ title: Unresolved Strawberry Field Error
 This error is raised when Strawberry can't read the `strawberry.field()` options
 in a field's annotation when the type is created:
 
-- on Python 3.10 to 3.13, when the annotation uses a type that isn't defined
+- on Python 3.11 to 3.13, when the annotation uses a type that isn't defined
   yet;
 - on every Python version, when the options themselves use names that aren't
   defined yet, like a permission class defined after the type.

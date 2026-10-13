@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import dataclasses
-import sys
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -244,22 +243,12 @@ def type(
         if hasattr(cls, "resolve_reference"):
             namespace["resolve_reference"] = cls.resolve_reference
 
-        kwargs: dict[str, object] = {}
-
-        # Python 3.10.1 introduces the kw_only param to `make_dataclass`.
-        # If we're on an older version then generate our own custom init function
-        # Note: Python 3.10.0 added the `kw_only` param to dataclasses, it was
-        # just missed from the `make_dataclass` function:
-        # https://github.com/python/cpython/issues/89961
-        if sys.version_info >= (3, 10, 1):
-            kwargs["kw_only"] = dataclasses.MISSING
-
         cls = dataclasses.make_dataclass(
             cls.__name__,
             [field.to_tuple() for field in all_model_fields],
             bases=cls.__bases__,
             namespace=namespace,
-            **kwargs,  # type: ignore
+            kw_only=dataclasses.MISSING,  # type: ignore
         )
 
         _process_type(

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import dataclasses
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from inspect import isawaitable
 from typing import TYPE_CHECKING, Any
 
@@ -93,7 +93,7 @@ class ApolloTracingExtension(SchemaExtension):
         now = self.now()
         self.start_timestamp: int = now
         self.end_timestamp: int = now
-        self.start_time: datetime = datetime.now(timezone.utc)
+        self.start_time: datetime = datetime.now(UTC)
         self.end_time: datetime = self.start_time
         self._start_parsing: int = now
         self._end_parsing: int = now
@@ -103,12 +103,12 @@ class ApolloTracingExtension(SchemaExtension):
     def on_operation(self) -> Generator[None, None, None]:
         self._resolver_stats = []
         self.start_timestamp = self.now()
-        self.start_time = datetime.now(timezone.utc)
+        self.start_time = datetime.now(UTC)
         try:
             yield
         finally:
             self.end_timestamp = self.now()
-            self.end_time = datetime.now(timezone.utc)
+            self.end_time = datetime.now(UTC)
 
     def on_parse(self) -> Generator[None, None, None]:
         self._start_parsing = self.now()

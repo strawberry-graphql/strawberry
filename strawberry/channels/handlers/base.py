@@ -141,7 +141,7 @@ class ChannelsConsumer(AsyncConsumer):
                 awaitable = asyncio.wait_for(awaitable, timeout)
             try:
                 result = await awaitable
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 # TODO: shall we add log here and maybe in the suppress below?
                 return
             # WARNING: do not refactor back to ``yield await awaitable``.

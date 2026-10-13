@@ -1,5 +1,5 @@
 import textwrap
-from enum import Enum
+from enum import Enum, StrEnum
 from typing import Annotated, Any
 
 import strawberry
@@ -399,7 +399,7 @@ def test_prints_with_scalar():
 
 def test_prints_with_enum():
     @strawberry.enum
-    class Reason(str, Enum):
+    class Reason(StrEnum):
         EXAMPLE = "example"
 
         __slots__ = ()
@@ -604,7 +604,7 @@ def test_print_directive_on_enum():
         reason: str
 
     @strawberry.enum(directives=[Sensitive(reason="example")])
-    class SomeEnum(str, Enum):
+    class SomeEnum(StrEnum):
         EXAMPLE = "example"
 
         __slots__ = ()

@@ -11,10 +11,10 @@ from typing import (
     Annotated,
     Any,
     NamedTuple,
+    Self,
     TypeAlias,
     cast,
 )
-from typing_extensions import Self
 
 import strawberry
 from strawberry import relay

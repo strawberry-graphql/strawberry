@@ -47,7 +47,7 @@ The CI test matrix is defined in `noxfile.py`; list its sessions with
 
 ## Code Style
 
-- Ruff for linting/formatting (line length 88, Python 3.10 target)
+- Ruff for linting/formatting (line length 88, Python 3.11 target)
 - Keep production code fully typed. The repository's mypy configuration is not
   globally strict, so follow the surrounding code and avoid introducing new
   untyped definitions.

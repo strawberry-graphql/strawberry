@@ -8,10 +8,6 @@ from strawberry.types.base import (
     has_object_definition,
 )
 
-# TypeGuard is only available in typing_extensions => 3.10, we don't want
-# to force updates to the typing_extensions package so we only use it when
-# TYPE_CHECKING is enabled.
-
 if TYPE_CHECKING:
     from collections.abc import Mapping
     from typing import TypeGuard
