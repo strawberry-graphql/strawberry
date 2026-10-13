@@ -24,6 +24,7 @@ from strawberry.exceptions import (
     InvalidArgumentTypeError,
     InvalidDefaultFactoryError,
     InvalidStrawberryFieldAnnotationError,
+    MultipleStrawberryFieldsError,
 )
 from strawberry.types.base import (
     StrawberryType,
@@ -449,6 +450,37 @@ def _contains_strawberry_field(
     )
 
 
+def get_annotated_field(
+    annotation: object, *, cls: type, field_name: str
+) -> tuple[object, StrawberryField | None]:
+    """Split an annotation into its type and its `strawberry.field()`, if any.
+
+    For `Annotated[int, strawberry.field(name="age"), Doc("...")]` that's
+    `Annotated[int, Doc("...")]` and the field, as the rest of the metadata, like
+    `strawberry.lazy()`, is kept. A `strawberry.field()` can only be used once,
+    in the outermost `Annotated`.
+    """
+    if get_origin(annotation) is Annotated:
+        type_, *metadata = get_args(annotation)
+    else:
+        type_, metadata = annotation, []
+
+    fields = [item for item in metadata if isinstance(item, StrawberryField)]
+
+    if len(fields) > 1:
+        raise MultipleStrawberryFieldsError(field_name=field_name, cls=cls)
+
+    if _contains_strawberry_field(annotation):
+        raise InvalidStrawberryFieldAnnotationError(field_name=field_name, cls=cls)
+
+    if not fields:
+        return annotation, None
+
+    metadata = [item for item in metadata if not isinstance(item, StrawberryField)]
+
+    return (Annotated[(type_, *metadata)] if metadata else type_), fields[0]
+
+
 # NOTE: we are separating the sync and async resolvers because using both
 # in the same function will cause mypy to raise an error. Not sure if it is a bug
 
@@ -627,4 +659,4 @@ def field(
     return field_
 
 
-__all__ = ["StrawberryField", "field"]
+__all__ = ["StrawberryField", "field", "get_annotated_field"]
