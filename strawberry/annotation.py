@@ -148,8 +148,14 @@ class StrawberryAnnotation:
         self,
         *,
         type_definition: StrawberryObjectDefinition | None = None,
+        origin: type | None = None,
     ) -> StrawberryType | type:
-        """Return resolved (transformed) annotation."""
+        """Return resolved (transformed) annotation.
+
+        A generic annotation is resolved with the arguments `type_definition`
+        gives to the type parameters, starting with the ones of `origin`, the
+        generic class declaring the annotation.
+        """
         if (resolved := self.__resolve_cache__) is None:
             resolved = self._resolve()
             self.__resolve_cache__ = resolved
@@ -159,8 +165,30 @@ class StrawberryAnnotation:
         if self._is_type_generic(resolved) and type_definition is not None:
             from strawberry.types.base import StrawberryType
 
+            # the type parameters of the class declaring the field, so that fields
+            # of different generic bases get their own arguments, even when their
+            # type parameters have the same name
+            base_type_var_map = (
+                type_definition.get_base_type_var_map(origin)
+                if origin is not None
+                else None
+            )
+            if (
+                base_type_var_map
+                and isinstance(resolved, StrawberryType)
+                and all(
+                    type_param.__name__ in base_type_var_map
+                    for type_param in resolved.type_params
+                )
+            ):
+                resolved = resolved.copy_with(base_type_var_map)
+
             specialized_type_var_map = type_definition.specialized_type_var_map
-            if specialized_type_var_map and isinstance(resolved, StrawberryType):
+            if (
+                self._is_type_generic(resolved)
+                and specialized_type_var_map
+                and isinstance(resolved, StrawberryType)
+            ):
                 resolved = resolved.copy_with(specialized_type_var_map)
 
             # If the field is still generic, try to resolve it from the type_definition
