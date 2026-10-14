@@ -1,6 +1,6 @@
 import asyncio
 import contextlib
-from collections import defaultdict
+from collections import Counter, defaultdict
 from collections.abc import AsyncGenerator, Awaitable, Callable, Sequence
 from typing import (
     Any,
@@ -59,6 +59,9 @@ class ChannelsConsumer(AsyncConsumer):
         self.listen_queues: defaultdict[str, WeakSet[asyncio.Queue]] = defaultdict(
             WeakSet
         )
+        self._group_refs: Counter[str] = Counter()
+        # Prevents a concurrent join/leave of the same group from interleaving.
+        self._group_lock = asyncio.Lock()
         super().__init__(*args, **kwargs)
 
     async def dispatch(self, message: ChannelsMessage) -> None:
@@ -107,25 +110,35 @@ class ChannelsConsumer(AsyncConsumer):
                 "for more information"
             )
 
-        added_groups = []
+        added_groups: list[str] = []
         # This queue will receive incoming messages for this generator instance
         queue: asyncio.Queue = asyncio.Queue()
         # Create a weak reference to the queue. Once we leave the current scope, it
         # will be garbage collected
         self.listen_queues[type].add(queue)
 
-        # Subscribe to all groups but return generator object to allow user
-        # code to run before blocking on incoming messages
-        for group in groups:
-            await self.channel_layer.group_add(group, self.channel_name)
-            added_groups.append(group)
         try:
+            # Subscribe to all groups but return generator object to allow user
+            # code to run before blocking on incoming messages
+            for group in groups:
+                async with self._group_lock:
+                    # Always add - group membership can expire on its own TTL and needs refreshing per join.
+                    await self.channel_layer.group_add(group, self.channel_name)
+                    self._group_refs[group] += 1
+                added_groups.append(group)
+
             yield self._listen_to_channel_generator(queue, timeout)
         finally:
             # Code to release resource (Channels subscriptions)
             for group in added_groups:
-                with contextlib.suppress(Exception):
-                    await self.channel_layer.group_discard(group, self.channel_name)
+                async with self._group_lock:
+                    self._group_refs[group] -= 1
+                    if self._group_refs[group] <= 0:
+                        del self._group_refs[group]
+                        with contextlib.suppress(Exception):
+                            await self.channel_layer.group_discard(
+                                group, self.channel_name
+                            )
 
     async def _listen_to_channel_generator(
         self, queue: asyncio.Queue, timeout: float | None
