@@ -1,6 +1,16 @@
 CHANGELOG
 =========
 
+0.335.0 - 2026-10-14
+--------------------
+
+This release drops support for Python 3.10, which reached end of life in
+October 2026. The minimum supported Python version is now 3.11.
+
+The unused `strawberry.ext.dataclasses` module is removed.
+
+This release was contributed by [@bellini666](https://github.com/bellini666) in [#4706](https://github.com/strawberry-graphql/strawberry/pull/4706)
+
 0.334.4 - 2026-10-13
 --------------------
 
