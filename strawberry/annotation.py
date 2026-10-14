@@ -11,13 +11,13 @@ from typing import (
     Annotated,
     Any,
     ForwardRef,
+    Self,
     TypeVar,
     Union,
     cast,
     get_args,
     get_origin,
 )
-from typing_extensions import Self
 
 from strawberry.streamable import StrawberryStreamable
 from strawberry.types.base import (

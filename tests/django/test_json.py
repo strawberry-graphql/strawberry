@@ -23,7 +23,7 @@ def test_default_json_encoding_preserves_django_types(view_class, batch):
     payload = {
         "data": {
             "amount": Decimal("12.30"),
-            "created": dt.datetime(2026, 9, 6, 12, 30, tzinfo=dt.timezone.utc),
+            "created": dt.datetime(2026, 9, 6, 12, 30, tzinfo=dt.UTC),
             "id": UUID("12345678-1234-5678-1234-567812345678"),
             "message": "café 🍓, :",
         },

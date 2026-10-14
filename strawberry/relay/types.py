@@ -20,6 +20,7 @@ from typing import (
     ForwardRef,
     Generic,
     Literal,
+    Self,
     TypeAlias,
     TypeVar,
     Union,
@@ -28,7 +29,6 @@ from typing import (
     get_origin,
     overload,
 )
-from typing_extensions import Self
 
 from strawberry.exceptions import StrawberryInputCoercionError
 from strawberry.relay.exceptions import NodeIDAnnotationError

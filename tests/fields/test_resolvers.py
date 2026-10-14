@@ -7,10 +7,10 @@ from typing import (
     ClassVar,
     ForwardRef,
     Generic,
+    Self,
     TypeVar,
     no_type_check,
 )
-from typing_extensions import Self
 
 import pytest
 

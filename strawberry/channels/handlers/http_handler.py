@@ -3,8 +3,7 @@ from __future__ import annotations
 import dataclasses
 from functools import cached_property
 from io import BytesIO
-from typing import TYPE_CHECKING, Any, TypeGuard
-from typing_extensions import assert_never
+from typing import TYPE_CHECKING, Any, TypeGuard, assert_never
 from urllib.parse import parse_qs
 
 from channels.db import database_sync_to_async

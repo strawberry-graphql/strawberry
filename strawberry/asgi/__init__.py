@@ -64,7 +64,7 @@ class ASGIWebSocketAdapter(AsyncWebSocketAdapter):
                 try:
                     text = await self.ws.receive_text()
                     yield self.view.decode_json(text)
-                except JSONDecodeError as e:  # noqa: PERF203
+                except JSONDecodeError as e:
                     if not ignore_parsing_errors:
                         raise NonJsonMessageReceived from e
         except KeyError as e:

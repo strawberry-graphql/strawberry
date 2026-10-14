@@ -155,7 +155,7 @@ All `strawberry.field()` options are supported. In particular, `default` and
 `default_factory` also configure the generated dataclass constructor, so
 `User(name="Patrick")` in the example above gets a new empty `tags` list.
 
-On Python 3.10 through 3.13, Strawberry can only read the `strawberry.field()`
+On Python 3.11 through 3.13, Strawberry can only read the `strawberry.field()`
 options when it can evaluate the annotation when the type is created. When the
 field type is defined further down the module, or only imported under
 `TYPE_CHECKING`, pass the options as the field's default

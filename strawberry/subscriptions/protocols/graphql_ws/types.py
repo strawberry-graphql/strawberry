@@ -1,5 +1,4 @@
-from typing import Literal, TypeAlias, TypedDict
-from typing_extensions import NotRequired
+from typing import Literal, NotRequired, TypeAlias, TypedDict
 
 from graphql import GraphQLFormattedError
 

@@ -1,7 +1,6 @@
 import typing_extensions
 from collections.abc import AsyncGenerator, AsyncIterable
-from typing import Any, Optional, Union, cast
-from typing_extensions import assert_type
+from typing import Any, Optional, Union, assert_type, cast
 from unittest.mock import MagicMock
 
 import pytest

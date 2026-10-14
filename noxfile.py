@@ -4,7 +4,7 @@ nox.options.reuse_existing_virtualenvs = True
 nox.options.error_on_external_run = True
 nox.options.default_venv_backend = "uv"
 
-PYTHON_VERSIONS = ["3.15", "3.14", "3.13", "3.12", "3.11", "3.10"]
+PYTHON_VERSIONS = ["3.15", "3.14", "3.13", "3.12", "3.11"]
 
 COMMON_PYTEST_OPTIONS = [
     "--cov=.",
@@ -114,7 +114,7 @@ def tests_integrations(session: nox.Session, integration: str) -> None:
 
 
 @nox.session(
-    python=["3.10", "3.11", "3.12", "3.13"],
+    python=["3.11", "3.12", "3.13"],
     name="Pydantic V1 tests",
     tags=["tests", "pydantic"],
 )
