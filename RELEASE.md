@@ -52,6 +52,25 @@ can be customized with `Annotated[..., strawberry.field(...)]`,
 the [Pydantic integration docs](https://strawberry.rocks/docs/integrations/pydantic)
 for everything that's supported.
 
+Pydantic types can also extend regular Strawberry types and implement regular
+`@strawberry.interface`s, including their `@strawberry.field` methods, as long
+as the Pydantic model comes first in the bases:
+
+```python
+@strawberry.interface
+class Node:
+    id: strawberry.ID
+
+    @strawberry.field
+    def display_name(self) -> str:
+        return f"Node {self.id}"
+
+
+@strawberry.pydantic.type
+class Product(BaseModel, Node):
+    title: str
+```
+
 The experimental integration, `strawberry.experimental.pydantic`, keeps working
 as before, next to `strawberry.pydantic`. The two integrations can't use each
 other's types, so models that reference each other need to use the same
