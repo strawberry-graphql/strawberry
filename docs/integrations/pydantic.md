@@ -1215,24 +1215,46 @@ different shape than invalid inputs: a `field` and a `message` for each error.
 
 ### Relay
 
-Pydantic types can be the nodes of [connections](../guides/relay.md), like
-`relay.ListConnection`:
+Pydantic types can implement [`relay.Node`](../guides/relay.md) like regular
+Strawberry types: annotate the field that holds the ID with `relay.NodeID`,
+which Pydantic validates like any other field and the schema leaves out, as
+`relay.Node` exposes it as a global ID, and resolve the nodes with a
+`resolve_nodes` class method:
 
 ```python
+from collections.abc import Iterable
+
 from strawberry import relay
 
 
 @strawberry.pydantic.type
-class Fruit(BaseModel):
+class Fruit(BaseModel, relay.Node):
+    id: relay.NodeID[int]
     name: str
+
+    @classmethod
+    def resolve_nodes(
+        cls,
+        *,
+        info: strawberry.Info,
+        node_ids: Iterable[str],
+        required: bool = False,
+    ) -> list["Fruit | None"]:
+        return [get_fruit(int(node_id)) for node_id in node_ids]
 
 
 @strawberry.type
 class Query:
+    node: relay.Node = relay.node()
+
     @relay.connection(relay.ListConnection[Fruit])
     def fruits(self) -> list[Fruit]:
-        return [Fruit(name="Strawberry"), Fruit(name="Apple")]
+        return get_fruits()
 ```
+
+Like other regular Strawberry interfaces, `relay.Node` comes after `BaseModel`
+in the bases. Pydantic types that don't implement `relay.Node` can be the nodes
+of connections too.
 
 ### Federation
 

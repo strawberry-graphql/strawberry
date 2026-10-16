@@ -71,6 +71,9 @@ class Product(BaseModel, Node):
     title: str
 ```
 
+This includes `relay.Node`, with a `relay.NodeID` field and a `resolve_nodes`
+class method, like on regular Strawberry types.
+
 The experimental integration, `strawberry.experimental.pydantic`, keeps working
 as before, next to `strawberry.pydantic`. The two integrations can't use each
 other's types, so models that reference each other need to use the same
