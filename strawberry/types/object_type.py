@@ -214,18 +214,22 @@ def _get_interfaces(cls: builtins.type[Any]) -> list[StrawberryObjectDefinition]
     return interfaces
 
 
-def _check_field_annotations(cls: builtins.type[Any]) -> None:
+def _check_field_annotations(cls: builtins.type[Any]) -> set[str]:
     """Are any of the dataclass Fields missing type annotations?
 
     This is similar to the check that dataclasses do during creation, but allows us to
     manually add fields to cls' __annotations__ or raise proper Strawberry exceptions if
     necessary
 
+    Returns the names of the annotations added for fields with a resolver, which
+    are only needed while the dataclass is created.
+
     https://github.com/python/cpython/blob/6fed3c85402c5ca704eb3f3189ca3f5c67a08d19/Lib/dataclasses.py#L881-L884
     """
     cls_annotations = get_annotations(cls)
     # TODO: do we need this?
     cls.__annotations__ = cls_annotations
+    added: set[str] = set()
 
     for field_name, field_ in cls.__dict__.items():
         if not isinstance(field_, (StrawberryField, dataclasses.Field)):
@@ -240,6 +244,7 @@ def _check_field_annotations(cls: builtins.type[Any]) -> None:
             if field_.type_annotation is not None:
                 if field_name not in cls_annotations:
                     cls_annotations[field_name] = field_.type_annotation.annotation
+                    added.add(field_name)
                 continue
 
             # Make sure the cls has an annotation
@@ -266,6 +271,7 @@ def _check_field_annotations(cls: builtins.type[Any]) -> None:
 
                 if field_name not in cls_annotations:
                     cls_annotations[field_name] = field_.base_resolver.type_annotation
+                    added.add(field_name)
 
             # TODO: Make sure the cls annotation agrees with the field's type
             # >>> if cls_annotations[field_name] != field.base_resolver.type:
@@ -279,14 +285,23 @@ def _check_field_annotations(cls: builtins.type[Any]) -> None:
             # Field object exists but did not get an annotation
             raise MissingFieldAnnotationError(field_name, cls)
 
+    return added
+
 
 def _wrap_dataclass(cls: T) -> T:
     """Wrap a strawberry.type class with a dataclass and check for any issues before doing so."""
     annotated_field_types = _process_annotated_fields(cls)
 
     # Ensure all Fields have been properly type-annotated
-    _check_field_annotations(cls)
+    added_annotations = _check_field_annotations(cls)
     wrapped = cast("T", dataclasses.dataclass(kw_only=True)(cls))
+
+    # The annotations added for fields with a resolver are only for dataclasses,
+    # which has its fields now. Other tools that read the class's annotations,
+    # like Pydantic for a model that extends the type, would see the resolver's
+    # `StrawberryAnnotation` as the type of an attribute
+    for field_name in added_annotations:
+        del wrapped.__annotations__[field_name]
 
     # dataclasses replaces each StrawberryField's type with the class annotation.
     # Restore the type with only the StrawberryField metadata removed, keeping any
