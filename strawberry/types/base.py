@@ -281,19 +281,19 @@ def check_is_not_undecorated_subclass(type_: object) -> None:
     Generic aliases like `Edge[int]` aren't classes, so they're left alone, and
     the classes they're resolved to have their own definition.
     """
-    if not isinstance(type_, type) or "__strawberry_definition__" in vars(type_):
+    if not isinstance(type_, type):
         return
 
-    if not has_object_definition(type_):
+    definition = get_object_definition(type_)
+
+    # a class is the origin of its own definition, like the one `specialize`
+    # gives it when it's read
+    if definition is None or definition.origin is type_:
         return
 
     from strawberry.exceptions import UndecoratedSubclassError
 
-    for base in type_.__mro__[1:]:
-        definition = vars(base).get("__strawberry_definition__")
-
-        if isinstance(definition, StrawberryObjectDefinition):
-            raise UndecoratedSubclassError(type_, base, definition)
+    raise UndecoratedSubclassError(type_, definition.origin, definition)
 
 
 @dataclasses.dataclass(eq=False)
@@ -364,11 +364,61 @@ class StrawberryObjectDefinition(StrawberryType):
     When it's not set, all the fields of the instance are used.
     """
 
+    specialize: Callable[[type], StrawberryObjectDefinition | None] | None = (
+        dataclasses.field(default=None, kw_only=True)
+    )
+    """Returns the definition of a subclass that specializes this generic type.
+
+    It's meant for integrations whose generic types are parametrized with
+    subclasses, like the classes Pydantic creates for `Page[User]`, which
+    inherit the definition of the generic type. They pass it when they create
+    the definition.
+
+    Strawberry calls it the first time this definition is read from a class that
+    only inherits it, like `Page[User].__strawberry_definition__`, and keeps the
+    definition it returns on the class, like the definition of a decorated
+    subclass, so it's only built once. For example, a definition that sets
+    `concrete_of` to this one and `type_var_map` to the class's arguments is
+    named like the specializations of generic Strawberry types, like `UserPage`.
+    When it returns `None`, the class is an undecorated subclass, which can't be
+    used in the schema.
+    """
+
     def __post_init__(self) -> None:
         # resolve `Self` annotation with the origin type
         for index, field in enumerate(self.fields):
             if isinstance(field.type, StrawberryType) and field.type.has_generic(Self):  # type: ignore
                 self.fields[index] = field.copy_with({Self.__name__: self.origin})  # type: ignore
+
+    def __get__(
+        self, instance: object | None, owner: type
+    ) -> StrawberryObjectDefinition:
+        """Return the definition of `owner`, the class it's read from.
+
+        Python calls this on every read of `__strawberry_definition__`, from the
+        class, its instances and its subclasses, which inherit it. When
+        `specialize` is set, the first read from a subclass gives it its own
+        definition, which later reads find instead of this one.
+        """
+        if self.specialize is None or "__strawberry_definition__" in vars(owner):
+            return self
+
+        try:
+            definition = self.specialize(owner)
+        except AttributeError as error:
+            # `hasattr()` would hide it, and `owner` would look undecorated
+            raise RuntimeError(
+                f"Couldn't build the definition of `{owner.__name__}`: {error}"
+            ) from error
+
+        # an undecorated subclass, which `check_is_not_undecorated_subclass`
+        # reports when it's used in the schema
+        if definition is None:
+            return self
+
+        owner.__strawberry_definition__ = definition  # type: ignore[attr-defined]
+
+        return definition
 
     def resolve_generic(self, wrapped_cls: type) -> type:
         from strawberry.annotation import StrawberryAnnotation
