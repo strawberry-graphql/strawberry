@@ -32,10 +32,24 @@ by returning `User | strawberry.pydantic.ValidationError` and registering
 `strawberry.pydantic.PydanticValidationErrorHandler` in the schema's
 `exception_handlers`, as typed results.
 
-Partial updates work as usual with Pydantic's `model_fields_set` and
-`model_dump(exclude_unset=True)`, including when a model is the default of an
-argument: only the fields that were set on it are part of the default shown in
-the schema.
+Pydantic owns nested validation. Strawberry converts names and scalars and
+transports GraphQL lists as tuples for tuple fields, including in strict mode;
+it does not prevalidate nested models for validators that bypass or replace
+Pydantic's usual validation. Error messages are preserved from Pydantic. The
+error's `input` property is omitted and exception chaining is suppressed, but
+messages may still contain submitted values, even for built-in errors.
+
+Explicit field defaults use Strawberry's ordinary schema default machinery,
+including `None` as `null` and model instances as input objects. Default
+factories are Pydantic-owned and run per request when the field is omitted,
+including factories that need already validated data. Their fields are nullable
+in GraphQL to allow omission, without publishing a schema default.
+
+Only explicitly set fields of a model argument default are printed in that
+default. GraphQL can supply additional field defaults during input coercion, so
+`model_fields_set` is not guaranteed to survive a round trip unchanged, and
+`model_dump(exclude_unset=True)` is not a record of only client-submitted
+fields.
 
 Nullable fields without a default, like `nickname: str | None`, are optional for
 clients, like in other input types: Pydantic gets `None` for them when they're
@@ -44,13 +58,30 @@ left out, as if the client had sent `null`.
 GraphQL field names come from the Python field names, as Pydantic aliases only
 affect Pydantic's own (de)serialization: use
 `Annotated[..., strawberry.field(name=...)]` to rename a field. Computed fields
-are included, and deprecated fields are deprecated in GraphQL too.
-Fields with a resolver can be added with `@strawberry.pydantic.field`, fields
-can be customized with `Annotated[..., strawberry.field(...)]`,
-`strawberry.Private` hides a field from the schema, and Pydantic's
-`Field(exclude=True)` hides it from output types (inputs still accept it). See
-the [Pydantic integration docs](https://strawberry.rocks/docs/integrations/pydantic)
+are included, and deprecated fields are deprecated in GraphQL too. Fields with a
+resolver can be added with `@strawberry.pydantic.field`, fields can be
+customized with `Annotated[..., strawberry.field(...)]`, `strawberry.Private`
+hides a field from the schema, and Pydantic's `Field(exclude=True)` hides it
+from output types (inputs still accept it). See the
+[Pydantic integration docs](https://strawberry.rocks/docs/integrations/pydantic)
 for everything that's supported.
+
+Generic models work like generic Strawberry types: decorate the generic model,
+and use its parametrizations directly, like `Page[User]`, which is named
+`UserPage` in the schema.
+
+Each model class has one GraphQL role: use separate subclasses for output types
+and inputs. Forward references support self-references, same-module models and
+explicit `strawberry.lazy()` references. If unresolved references affect field
+metadata or GraphQL mappings, call `model_rebuild()` before decorating:
+rebuilding afterward does not refresh captured GraphQL fields or mappings.
+
+GraphQL resolves fields from the model's attributes, so Pydantic's serializers
+don't apply to it. Instead of silently ignoring them, types and interfaces whose
+exposed fields have serializers, or that have a model serializer, raise an
+error. This includes `PlainSerializer` and `WrapSerializer` in computed fields'
+return annotations. There is no option to bypass this check; use private or
+excluded fields and explicit GraphQL resolvers to hide or transform values.
 
 Pydantic types can also extend regular Strawberry types and implement regular
 `@strawberry.interface`s, including their `@strawberry.field` methods, as long

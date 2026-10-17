@@ -97,13 +97,14 @@ class Mutation:
 
 Pass `one_of=True` to create a
 [`oneOf` input](../types/input-types.md#one-of-input-types), where clients set
-exactly one field:
+exactly one field. Its fields must be nullable and have no explicit defaults,
+including `None`, like ordinary Strawberry `oneOf` inputs:
 
 ```python
 @strawberry.pydantic.input(one_of=True)
 class UserBy(BaseModel):
-    id: strawberry.ID | None = None
-    email: str | None = None
+    id: strawberry.ID | None
+    email: str | None
 ```
 
 ### `@strawberry.pydantic.interface`
@@ -334,11 +335,13 @@ deprecating required input fields, so deprecating `name` above would make the
 schema fail to build with
 `Required input field UserInput.name cannot be deprecated.`
 
-### Default Values and Partial Updates
+### Default Values and Omitted Fields
 
-Input fields with a default can be omitted by clients. Defaults that are
-constants of the field's type, like `20` for an `int` field or an enum member
-for an enum field, are shown in the schema:
+Input fields with a default can be omitted by clients. Explicit Pydantic field
+defaults use Strawberry's ordinary schema default machinery, including `None` as
+`null` and model instances as input objects. Defaults must be representable by
+the field's GraphQL type; they aren't classified by their Python type or
+validated by Pydantic before schema printing:
 
 ```python
 import uuid
@@ -359,65 +362,48 @@ input SearchInput {
   query: String!
   pageSize: Int! = 20
   requestId: UUID
-  tag: String
+  tag: String = null
 }
 ```
 
-Other defaults, like `None`, default factories, model instances or values that
-Pydantic converts to the field's type, are applied by Pydantic and are not shown
-in the schema, so the field becomes nullable. Pydantic validates an explicit
-`null` like any other value.
-
-Pydantic types exposed as strings follow the same rule: `"ada@example.com"` is
-shown for an `EmailStr` field and `HttpUrl("https://example.com")` for an
-`HttpUrl` field, but not a string that Pydantic converts to an `HttpUrl`.
-`SecretStr` defaults are never shown, as the schema would reveal them.
+Default factories are Pydantic's responsibility. They are not called to build
+the schema or published as schema defaults. Their fields are nullable in GraphQL
+so clients can omit them, and Pydantic calls the factory for each request that
+omits the field. This includes factories that receive already validated field
+data. This differs from defaults on ordinary Strawberry inputs. An explicit
+`null` is validated by Pydantic like any other supplied value; it does not
+invoke the factory.
 
 A nullable field without a default, like `nickname: str | None`, is optional for
 clients too, as GraphQL requires for nullable input fields. When a client leaves
 it out, Pydantic gets `None` for it, as if the client had sent `null`: the field
-is part of `model_fields_set`, and validators see `None`. Give the field a
-default, like `= None`, to tell the two apart, for example for partial updates.
+is part of `model_fields_set`, and validators see `None`.
 
-Fields the client omits whose default is not shown in the schema are not part of
-`model_fields_set`, which makes partial updates work as usual with Pydantic:
+GraphQL fills in defaults published in the schema before Pydantic validates the
+input. These values can therefore be part of `model_fields_set` even when the
+client omitted them. Do not use `model_dump(exclude_unset=True)` as a record of
+only client-submitted fields, or rely on it to distinguish omission from
+explicit `null` for partial updates.
+
+When a model is an argument default, only its explicitly set fields are emitted
+in the printed argument default. For example:
 
 ```python
 @strawberry.pydantic.input
 class UpdateUserInput(BaseModel):
     name: str | None = None
     bio: str | None = None
-
-
-@strawberry.type
-class Mutation:
-    @strawberry.mutation
-    def update_user(self, id: strawberry.ID, input: UpdateUserInput) -> User:
-        user = get_user(id)
-
-        # only the fields sent by the client, an explicit `null` included
-        for field, value in input.model_dump(exclude_unset=True).items():
-            setattr(user, field, value)
-
-        return user
 ```
 
-Defaults shown in the schema are filled in by GraphQL in the inputs clients
-send, so they are always part of their `model_fields_set`, and Pydantic
-validates them like values sent by the client.
-
-When a model is the default of an argument, only the fields that were set on it
-are part of the default shown in the schema, and the model the resolver gets
-when the client omits the argument has the same `model_fields_set`. For example,
-the default of `input: UpdateUserInput = UpdateUserInput(name="Ada")` is
-`{ name: "Ada" }`, so a partial update doesn't overwrite the other fields with
-`None`. Like the values sent by clients, the default is validated again for
-every request that uses it.
+The printed default of `input: UpdateUserInput = UpdateUserInput(name="Ada")` is
+`{ name: "Ada" }`. This does not guarantee that the resolver receives the same
+`model_fields_set`: GraphQL field defaults may supply other fields. Like
+client-supplied inputs, argument defaults are validated for each request that
+uses them.
 
 `strawberry.Maybe` can't be used in Pydantic inputs (Pydantic raises an error
-for it when the model is defined), give the field a default and use
-`model_fields_set` to tell omitted fields apart from explicit `null` values
-instead.
+for it when the model is defined). Use a regular Strawberry input with
+`strawberry.Maybe` if you need to distinguish omission from explicit `null`.
 
 ### Private Fields
 
@@ -478,10 +464,12 @@ Input types are not affected: clients can still send fields marked with
 Other serialization settings don't apply to GraphQL: output fields are resolved
 from the model's attributes, not from `model_dump()`, so serialization aliases
 are ignored. Serializers are often used to hide or redact values, so instead of
-ignoring them, types and interfaces with serializers on their fields
+ignoring them, types and interfaces with serializers on their exposed fields
 (`field_serializer`, `PlainSerializer` or `WrapSerializer`),
 `Field(exclude_if=...)` or a `model_serializer` raise an
-[`IgnoredSerializerError`](../errors/ignored-serializer.md). To hide or redact a
+[`IgnoredSerializerError`](../errors/ignored-serializer.md). This includes
+`PlainSerializer` and `WrapSerializer` in computed fields' return annotations.
+There is no configuration option to bypass this check. To hide or redact a
 value, use `strawberry.Private`, `Field(exclude=True)` or a
 [resolver field](#resolver-fields):
 
@@ -494,21 +482,6 @@ class Customer(BaseModel):
     @strawberry.pydantic.field
     def masked_email(self) -> str:
         return f"{self.email[0]}***"
-```
-
-If the serializers are only meant for other uses of the model, like a REST API,
-pass `ignore_serializers=True` to `@strawberry.pydantic.type` or
-`@strawberry.pydantic.interface`, and GraphQL returns the values of the
-attributes:
-
-```python
-@strawberry.pydantic.type(ignore_serializers=True)
-class Event(BaseModel):
-    starts_at: datetime  # GraphQL returns the full date and time
-
-    @field_serializer("starts_at")
-    def as_date(self, value: datetime) -> str:
-        return value.strftime("%Y-%m-%d")
 ```
 
 Pydantic's `SecretStr` fields are exposed as strings with their masked value,
@@ -731,6 +704,12 @@ only the type, like `Annotated[list["Post"], strawberry.field(...)]`, in a
 module without `from __future__ import annotations`, or decorating the model
 after calling `model_rebuild()`.
 
+Decoration captures the GraphQL fields and their mappings. Calling
+`model_rebuild()` afterward only rebuilds Pydantic's model; it does not refresh
+those captured fields or mappings. If unresolved references affect field
+metadata or the mapping to GraphQL types (for example, a Pydantic-specific
+scalar), resolve them and call `model_rebuild()` **before** decorating.
+
 Models from other modules can be referenced with
 [`strawberry.lazy()`](../types/lazy.md), for example when two modules import
 each other:
@@ -919,10 +898,17 @@ errors, at `input.items.0.quantity` and `input.items.2.quantity` for an argument
 named `input`. Validators with `mode="before"` receive nested inputs as data,
 not as model instances.
 
-This only applies to inputs nested in a Pydantic input: each item of an argument
-like `inputs: list[ItemInput]` is validated on its own, and the errors of the
-first invalid item are returned. Wrap the list in a Pydantic input to report the
-errors of all the items.
+Strawberry converts GraphQL field names and scalar values, and transports lists
+as tuples for tuple fields. Pydantic owns nested validation: Strawberry does not
+prevalidate nested models for `PlainValidator`, `SkipValidation` or
+`InstanceOf`. Their normal Pydantic behavior applies to the transported data; in
+particular, `InstanceOf` does not turn a nested input object into a model
+instance.
+
+Collecting nested errors together only applies inside a Pydantic input: each
+item of an argument like `inputs: list[ItemInput]` is validated on its own, and
+the errors of the first invalid item are returned. Wrap the list in a Pydantic
+input to report the errors of all the items.
 
 A Pydantic input nested inside a regular `@strawberry.input` is validated on its
 own, and overriding `model_validate` only affects the outermost input, so prefer
@@ -979,9 +965,11 @@ and `type` is the
 Errors raised by model validators are located at the model they validate: the
 `DateRangeInput` check above is reported at `["range"]` for an argument named
 `range`, or at `["input", "dates"]` when it's the `dates` field of an `input`
-argument. The values Pydantic attaches to its errors are not included, but
-messages come from Pydantic and from your validators, so avoid putting sensitive
-values in your validators' messages.
+argument. The `input` property Pydantic attaches to errors is omitted, and
+chaining to the original Pydantic exception is suppressed. Messages are
+preserved from Pydantic, however, and may contain submitted values, even for
+built-in errors. This is not a guarantee of redaction; avoid sensitive values in
+custom validator messages and review the errors your API exposes.
 
 The error is raised as `strawberry.pydantic.InputValidationError`, a
 [`StrawberryInputCoercionError`](../guides/errors.md#strawberry-input-coercion-errors),
@@ -1075,8 +1063,9 @@ class CreateUserInput(BaseModel):
 GraphQL already checks the types of the values, and doesn't allow unknown
 fields, before Pydantic validates the input, so settings like `strict=True` and
 `extra="forbid"` mostly matter when the model is also used outside of GraphQL.
-One exception: GraphQL lists are sent to Pydantic as Python lists, which strict
-mode doesn't accept for `tuple` fields.
+For tuple fields, Strawberry converts GraphQL lists to Python tuples before
+Pydantic validation, including in strict mode. Pydantic still validates their
+items and constraints.
 
 ### Field Directives and Customization
 
