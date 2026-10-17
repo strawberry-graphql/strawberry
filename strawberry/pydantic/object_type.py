@@ -25,7 +25,12 @@ from .exceptions import (
     NotAPydanticModelError,
     StrawberryBaseBeforeModelError,
 )
-from .fields import get_pydantic_fields, get_resolver_fields, get_type_var_map
+from .fields import (
+    check_serializers,
+    get_pydantic_fields,
+    get_resolver_fields,
+    get_type_var_map,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
@@ -74,16 +79,23 @@ class _GenericModelDefinition(StrawberryObjectDefinition):
         if metadata["origin"] is not self.origin or metadata["parameters"]:
             return self
 
-        _process_pydantic_type(
-            owner,
-            name=self.name,
-            is_input=self.is_input,
-            is_interface=self.is_interface,
-            description=self.description,
-            directives=self.directives,
-            include_computed=self.include_computed,
-            generic=self,
-        )
+        try:
+            _process_pydantic_type(
+                owner,
+                name=self.name,
+                is_input=self.is_input,
+                is_interface=self.is_interface,
+                description=self.description,
+                directives=self.directives,
+                include_computed=self.include_computed,
+                generic=self,
+            )
+        except AttributeError as error:
+            # Otherwise hasattr() would hide a construction failure and make
+            # the parametrized model look undecorated.
+            raise RuntimeError(
+                f"Couldn't build the definition of `{owner.__name__}`: {error}"
+            ) from error
 
         return vars(owner)["__strawberry_definition__"]
 
@@ -159,11 +171,12 @@ def _process_pydantic_type(
         *resolver_fields,
     ]
 
-    # parametrized interfaces, like `Node[User]` in `class Ada(Node[User])`, get
-    # the definition `_get_interfaces` looks for when it's read
-    for base in cls.__mro__[1:]:
-        if getattr(base, "__pydantic_generic_metadata__", {}).get("origin"):
-            getattr(base, "__strawberry_definition__", None)
+    if not is_input:
+        check_serializers(
+            cls,
+            field_names=[field.python_name for field in fields if field.python_name],
+            decorator=decorator,
+        )
 
     interfaces = _get_interfaces(cls)
 
@@ -182,7 +195,10 @@ def _process_pydantic_type(
 
     # generic models specialize their parametrizations
     definition_type = (
-        functools.partial(_GenericModelDefinition, include_computed=include_computed)
+        functools.partial(
+            _GenericModelDefinition,
+            include_computed=include_computed,
+        )
         if generic_metadata["parameters"]
         else StrawberryObjectDefinition
     )
