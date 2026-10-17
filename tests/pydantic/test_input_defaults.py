@@ -1,5 +1,6 @@
 import datetime as dt
 import decimal
+import ipaddress
 import typing
 import uuid
 from collections.abc import Sequence
@@ -567,3 +568,59 @@ def test_maybe_fields_on_inputs_raise_an_error():
         model_config = pydantic.ConfigDict(arbitrary_types_allowed=True)
 
         name: strawberry.Maybe[str] = None
+
+
+def test_constant_defaults_of_constrained_date_fields_are_published():
+    @strawberry.pydantic.input
+    class EventInput(pydantic.BaseModel):
+        due_on: pydantic.FutureDate = dt.date(2999, 1, 1)
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def event(self, input: EventInput) -> str:
+            return input.due_on.isoformat()
+
+    schema = strawberry.Schema(query=Query)
+
+    assert _input_sdl(schema, "EventInput") == snapshot("""\
+input EventInput {
+  dueOn: Date! = "2999-01-01"
+}\
+""")
+
+
+def test_constant_defaults_of_pydantic_types_exposed_as_strings_are_published():
+    @strawberry.pydantic.input
+    class SettingsInput(pydantic.BaseModel):
+        email: pydantic.EmailStr = "noreply@example.com"
+        website: pydantic.HttpUrl = pydantic.HttpUrl("https://example.com")
+        host: pydantic.IPvAnyAddress = ipaddress.IPv4Address("127.0.0.1")
+        # pydantic converts this value to the field type
+        docs: pydantic.HttpUrl = "https://example.com/docs"  # type: ignore[assignment]
+        # secrets would be part of the schema
+        token: pydantic.SecretStr = pydantic.SecretStr("hunter2")
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def settings(self, input: SettingsInput) -> bool:
+            # the defaults are the ones pydantic applies
+            return input == SettingsInput()
+
+    schema = strawberry.Schema(query=Query)
+
+    assert _input_sdl(schema, "SettingsInput") == snapshot("""\
+input SettingsInput {
+  email: String! = "noreply@example.com"
+  website: String! = "https://example.com/"
+  host: String! = "127.0.0.1"
+  docs: String
+  token: String
+}\
+""")
+
+    result = schema.execute_sync("{ settings(input: {}) }")
+
+    assert not result.errors
+    assert result.data == {"settings": True}

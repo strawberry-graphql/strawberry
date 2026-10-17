@@ -252,6 +252,47 @@ class StrawberryFieldInModelError(StrawberryException):
         return SourceFinder().find_function_from_object(function)
 
 
+class UnresolvedAnnotatedFieldError(StrawberryException):
+    """The `Annotated` options of a field can't be read yet.
+
+    `cls` declares the field, and `model` is the decorated model, which can be a
+    subclass of it.
+    """
+
+    def __init__(self, field_name: str, cls: type, *, model: type) -> None:
+        self.cls = cls
+        self.field_name = field_name
+
+        self.message = (
+            f"The `Annotated` options of field `{field_name}` on pydantic model "
+            f"`{cls.__name__}` can't be read because its annotation uses names "
+            "that aren't defined yet"
+        )
+        self.rich_message = (
+            f"The `Annotated` options of field `[underline]{field_name}[/]` on "
+            f"pydantic model `[underline]{cls.__name__}[/]` can't be read because "
+            "its annotation uses names that aren't defined yet"
+        )
+        self.annotation_message = "annotation using names that aren't defined yet"
+        self.suggestion = (
+            "Strawberry reads the options when the model is decorated, but Pydantic "
+            "only reads them once it can resolve the annotation, so options like "
+            "the permissions of `strawberry.field()` or `Field(exclude=True)` "
+            "would be lost. Define the models the annotation references before "
+            f"`{cls.__name__}`, or decorate `{model.__name__}` later: once they're "
+            f"defined, call `{model.__name__}.model_rebuild()` and then decorate "
+            "it. In a module without `from __future__ import annotations`, you can "
+            'also quote only the types, like `Annotated["Account", '
+            "strawberry.field(...)]`."
+        )
+
+        super().__init__(self.message)
+
+    @cached_property
+    def exception_source(self) -> ExceptionSource | None:
+        return _find_field_source(self.cls, self.field_name)
+
+
 class UploadFieldError(StrawberryException):
     def __init__(self, field_name: str, cls: type) -> None:
         self.cls = cls
