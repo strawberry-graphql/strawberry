@@ -358,6 +358,33 @@ _generic_checks_in_progress: ContextVar[tuple[StrawberryObjectDefinition, ...]] 
 )
 
 
+def _is_same_type_argument(
+    first: StrawberryType | type, second: StrawberryType | type
+) -> bool:
+    # containers compare equal when they wrap the same type, so `list[int]`
+    # would otherwise be the same argument as `int | None`
+    if isinstance(first, StrawberryContainer) or isinstance(
+        second, StrawberryContainer
+    ):
+        return (
+            type(first) is type(second)
+            and isinstance(first, StrawberryContainer)
+            and isinstance(second, StrawberryContainer)
+            and _is_same_type_argument(first.of_type, second.of_type)
+        )
+
+    return first == second
+
+
+def _is_same_type_var_map(
+    first: Mapping[str, StrawberryType | type],
+    second: Mapping[str, StrawberryType | type],
+) -> bool:
+    return first.keys() == second.keys() and all(
+        _is_same_type_argument(first[name], second[name]) for name in first
+    )
+
+
 @dataclasses.dataclass(eq=False)
 class StrawberryObjectDefinition(StrawberryType):
     """Encapsulates definitions for Input / Object / interface GraphQL Types.
@@ -457,7 +484,9 @@ class StrawberryObjectDefinition(StrawberryType):
         # `Node[T]`, so the copy being created is reused for it instead of
         # creating it again, which wouldn't end
         for definition, copy_type_var_map, copy in _copies_in_progress.get():
-            if definition is self and copy_type_var_map == type_var_map:
+            if definition is self and _is_same_type_var_map(
+                copy_type_var_map, type_var_map
+            ):
                 return copy
 
         new_type_definition = StrawberryObjectDefinition(

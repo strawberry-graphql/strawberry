@@ -670,6 +670,47 @@ def test_generic_type_using_itself_with_swapped_type_parameters():
     }
 
 
+def test_generic_type_using_itself_with_swapped_container_type_parameters():
+    # list[int] and int | None wrap the same type, but they are different
+    # arguments, so the swapped pair is a different type
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def pair(self) -> Pair[list[int], int | None]:
+            return Pair(
+                first=[1], second=None, swapped=Pair(first=2, second=[3], swapped=None)
+            )
+
+    schema = strawberry.Schema(query=Query)
+
+    expected_schema = """
+    type IntListIntOptionalPair {
+      first: [Int!]!
+      second: Int
+      swapped: IntOptionalIntListPair
+    }
+
+    type IntOptionalIntListPair {
+      first: Int
+      second: [Int!]!
+      swapped: IntListIntOptionalPair
+    }
+
+    type Query {
+      pair: IntListIntOptionalPair!
+    }
+    """
+
+    assert str(schema) == textwrap.dedent(expected_schema).strip()
+
+    result = schema.execute_sync("{ pair { first second swapped { first second } } }")
+
+    assert not result.errors
+    assert result.data == {
+        "pair": {"first": [1], "second": None, "swapped": {"first": 2, "second": [3]}}
+    }
+
+
 def test_generic_input_using_itself():
     @strawberry.input
     class UserFilter:
