@@ -6,8 +6,8 @@ title: Model Already Decorated Error
 
 ## Description
 
-This error is thrown when a Pydantic model is decorated more than once with
-`strawberry.pydantic.type`, for example the following code will throw this
+This error is thrown when a Pydantic model is decorated by more than one
+`strawberry.pydantic` decorator, for example the following code will throw this
 error:
 
 ```python
@@ -21,7 +21,7 @@ class Address(pydantic.BaseModel):
 
 
 strawberry.pydantic.type(Address)
-strawberry.pydantic.type(Address, name="Location")
+strawberry.pydantic.input(Address)
 ```
 
 This happens because a model can only have one GraphQL definition, so the second
@@ -29,8 +29,8 @@ decorator would replace the first one.
 
 ## How to fix this error
 
-You can fix this error by removing one of the decorators. To publish the same
-model as two GraphQL types, decorate a subclass of it:
+To use the same model as an output type and as an input, decorate a subclass of
+it:
 
 ```python
 import pydantic
@@ -43,8 +43,8 @@ class Address(pydantic.BaseModel):
     city: str
 
 
-@strawberry.pydantic.type
-class Location(Address):
+@strawberry.pydantic.input
+class AddressInput(Address):
     pass
 ```
 
