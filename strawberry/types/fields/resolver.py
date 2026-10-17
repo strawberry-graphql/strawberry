@@ -27,7 +27,11 @@ from strawberry.exceptions import (
 )
 from strawberry.parent import StrawberryParent, resolve_parent_forward_arg
 from strawberry.types.arguments import StrawberryArgument
-from strawberry.types.base import StrawberryType, has_object_definition
+from strawberry.types.base import (
+    StrawberryType,
+    copy_object_type_with,
+    has_object_definition,
+)
 from strawberry.types.info import Info
 from strawberry.utils.typing import type_has_annotation
 
@@ -430,9 +434,7 @@ class StrawberryResolver(Generic[T]):
             if isinstance(self.type, StrawberryType):
                 type_override = self.type.copy_with(type_var_map)
             elif has_object_definition(self.type):
-                type_override = self.type.__strawberry_definition__.copy_with(
-                    type_var_map,
-                )
+                type_override = copy_object_type_with(self.type, type_var_map)
 
         other = type(self)(
             func=self.wrapped_func,
