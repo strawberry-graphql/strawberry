@@ -39,6 +39,7 @@ from pydantic import (
     NaiveDatetime,
     PastDate,
     PastDatetime,
+    RootModel,
 )
 from pydantic_core import PydanticUndefined
 
@@ -69,6 +70,7 @@ from .exceptions import (
     StrawberryFieldInModelError,
     UnregisteredPydanticTypeError,
     UnresolvedAnnotatedFieldError,
+    UnsupportedRootModelError,
     UploadFieldError,
 )
 from .resolver_field import get_resolver_field, is_field_decorator
@@ -598,6 +600,9 @@ def _unregistered_model_error(
     model: type[BaseModel], *, cls: type, field_name: str, is_input: bool
 ) -> StrawberryException:
     """The error for a field using a model without a GraphQL definition."""
+    if issubclass(model, RootModel):
+        return UnsupportedRootModelError(model, cls=cls, field_name=field_name)
+
     return UnregisteredPydanticTypeError(
         model, cls=cls, field_name=field_name, is_input=is_input
     )

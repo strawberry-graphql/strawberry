@@ -204,7 +204,9 @@ def _to_python_data(
             data[field.python_name] = python_value
         # nullable fields are optional for clients, like in other input types, so
         # pydantic gets `None` for a missing one it requires, e.g. `str | None`
-        # without a default
+        # without a default. GraphQL validates that non-null fields are sent, but
+        # values it doesn't validate can miss them, like federation
+        # representations, so they're left out for pydantic to report as missing
         elif (
             field_info is not None
             and field_info.is_required()
@@ -310,7 +312,7 @@ def dump_pydantic_model(model: BaseModel) -> dict[str, Any]:
 def build_pydantic_model(
     model: type[BaseModel], value: Mapping[str, Any], context: InputContext
 ) -> BaseModel:
-    """The `from_input` hook of `strawberry.pydantic` inputs."""
+    """The `from_input` hook of `strawberry.pydantic` types."""
     data = _to_python_data(model, value, context, ())
 
     try:
