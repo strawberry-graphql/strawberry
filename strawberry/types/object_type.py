@@ -202,11 +202,12 @@ def _process_annotated_fields(cls: T) -> dict[str, StrawberryAnnotation]:
 def _get_interfaces(cls: builtins.type[Any]) -> list[StrawberryObjectDefinition]:
     interfaces: list[StrawberryObjectDefinition] = []
     for base in cls.__mro__[1:]:  # Exclude current class
-        # Only use the definitions that bases declare themselves, as an undecorated
-        # subclass of an interface inherits its definition
-        type_definition = vars(base).get("__strawberry_definition__")
+        # Read descriptors before checking ownership: integrations may build a
+        # specialized interface on first access.
+        type_definition = getattr(base, "__strawberry_definition__", None)
         if (
             isinstance(type_definition, StrawberryObjectDefinition)
+            and type_definition.origin is base
             and type_definition.is_interface
         ):
             interfaces.append(type_definition)
