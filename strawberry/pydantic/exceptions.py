@@ -221,6 +221,68 @@ class NotAPydanticModelError(StrawberryException):
         return SourceFinder().find_class_from_object(self.obj)
 
 
+class MaybeFieldError(StrawberryException):
+    def __init__(self, field_name: str, cls: type) -> None:
+        self.cls = cls
+        self.field_name = field_name
+
+        self.message = (
+            f"Field `{field_name}` on pydantic input `{cls.__name__}` can't use "
+            "`strawberry.Maybe`"
+        )
+        self.rich_message = (
+            f"Field `[underline]{field_name}[/]` on pydantic input "
+            f"`[underline]{cls.__name__}[/]` can't use `strawberry.Maybe`"
+        )
+        self.annotation_message = "field typed as strawberry.Maybe"
+        self.suggestion = (
+            "Pydantic inputs tell omitted fields apart from explicit nulls with "
+            "`model_fields_set`: give the field a `None` default, e.g. "
+            f"`{field_name}: str | None = None`, and use "
+            "`model_dump(exclude_unset=True)` to get the fields the client sent."
+        )
+
+        super().__init__(self.message)
+
+    @cached_property
+    def exception_source(self) -> ExceptionSource | None:
+        source_finder = SourceFinder()
+
+        return source_finder.find_class_attribute_from_object(self.cls, self.field_name)
+
+
+class InheritedDefaultFactoryError(StrawberryException):
+    def __init__(self, field_name: str, cls: type, base: type) -> None:
+        self.cls = base
+        self.field_name = field_name
+
+        self.message = (
+            f"Pydantic input `{cls.__name__}` can't use the default factory of "
+            f"field `{field_name}`, inherited from `{base.__name__}`"
+        )
+        self.rich_message = (
+            f"Pydantic input `[underline]{cls.__name__}[/]` can't use the default "
+            f"factory of field `[underline]{field_name}[/]`, inherited from "
+            f"`[underline]{base.__name__}[/]`"
+        )
+        self.annotation_message = "default factory that pydantic doesn't see"
+        self.suggestion = (
+            "Strawberry types are dataclasses, which don't keep a field's default "
+            "factory on the class, so pydantic doesn't see it and the field would "
+            "be required. Declare the field on the pydantic model instead, e.g. "
+            f"`{field_name}: list[str] | None = "
+            "pydantic.Field(default_factory=list)`."
+        )
+
+        super().__init__(self.message)
+
+    @cached_property
+    def exception_source(self) -> ExceptionSource | None:
+        source_finder = SourceFinder()
+
+        return source_finder.find_class_attribute_from_object(self.cls, self.field_name)
+
+
 class ModelAlreadyDecoratedError(StrawberryException):
     def __init__(self, cls: type, decorator: str) -> None:
         self.cls = cls

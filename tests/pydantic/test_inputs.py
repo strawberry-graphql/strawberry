@@ -800,6 +800,28 @@ def test_one_of_inputs():
     assert result.errors
 
 
+def test_one_of_inputs_with_fields_without_a_default():
+    @strawberry.pydantic.input(one_of=True)
+    class UserBy(pydantic.BaseModel):
+        id: strawberry.ID | None
+        email: str | None
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def user(self, by: UserBy) -> str:
+            return repr(by)
+
+    schema = strawberry.Schema(query=Query)
+
+    assert "input UserBy @oneOf {\n  id: ID\n  email: String\n}" in str(schema)
+
+    result = schema.execute_sync('{ user(by: {email: "ada@example.com"}) }')
+
+    assert not result.errors
+    assert result.data == {"user": "UserBy(id=None, email='ada@example.com')"}
+
+
 def test_list_items_are_converted_like_in_strawberry_inputs():
     @strawberry.enum
     class Color(Enum):

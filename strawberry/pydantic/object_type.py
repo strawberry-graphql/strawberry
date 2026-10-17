@@ -15,7 +15,7 @@ from strawberry.schema_directives import OneOf
 from strawberry.types.base import StrawberryObjectDefinition
 from strawberry.utils.str_converters import to_camel_case
 
-from .conversion import build_pydantic_model
+from .conversion import build_pydantic_model, dump_pydantic_model
 from .exceptions import ModelAlreadyDecoratedError, NotAPydanticModelError
 from .fields import get_pydantic_fields
 
@@ -73,6 +73,7 @@ def _process_pydantic_type(
         is_type_of=getattr(cls, "is_type_of", None),
         resolve_type=getattr(cls, "resolve_type", None),
         from_input=build_pydantic_model if is_input else None,
+        to_input=dump_pydantic_model if is_input else None,
     )
 
     return cls
