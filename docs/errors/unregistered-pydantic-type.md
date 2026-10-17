@@ -75,8 +75,8 @@ class Owner(pydantic.BaseModel):
     dog: Dog
 ```
 
-A parametrized generic model, like `Page[User]`, can't be decorated: decorate a
-subclass of it instead, and use the subclass for the field:
+A parametrized generic model, like `Page[User]`, is a GraphQL type when its
+generic model is decorated, so decorate the generic model:
 
 ```python
 from typing import Generic, TypeVar
@@ -90,11 +90,6 @@ class Page(pydantic.BaseModel, Generic[T]):
 
 
 @strawberry.pydantic.type
-class UserPage(Page[User]):
-    pass
-
-
-@strawberry.pydantic.type
 class Directory(pydantic.BaseModel):
-    users: UserPage
+    users: Page[User]
 ```

@@ -763,7 +763,9 @@ define the models in the same module.
 
 ### Generic Models
 
-To use a generic model, decorate a subclass of it with concrete types:
+Generic models work like generic Strawberry types: decorate the generic model,
+and use its parametrizations, like `Page[User]`, as types. Each one is a GraphQL
+type named after its arguments:
 
 ```python
 from typing import Generic, TypeVar
@@ -771,6 +773,7 @@ from typing import Generic, TypeVar
 T = TypeVar("T")
 
 
+@strawberry.pydantic.type
 class Page(BaseModel, Generic[T]):
     items: list[T]
     total: int
@@ -781,20 +784,32 @@ class User(BaseModel):
     name: str
 
 
-@strawberry.pydantic.type
-class UserPage(Page[User]):
-    pass
-
-
 @strawberry.type
 class Query:
     @strawberry.field
-    def users(self) -> UserPage:
-        return UserPage(items=[User(name="Ada")], total=1)
+    def users(self) -> Page[User]:
+        return Page[User](items=[User(name="Ada")], total=1)
 ```
 
-Using the parametrized model directly, like `-> Page[User]`, isn't supported
-yet.
+```graphql
+type UserPage {
+  items: [User!]!
+  total: Int!
+}
+```
+
+Generic inputs and interfaces work the same way, and resolvers can also return
+instances of the generic model itself, like `Page(items=[...], total=1)`. To
+give a parametrization a name of your own, decorate a subclass of it:
+
+```python
+@strawberry.pydantic.type
+class Users(Page[User]):
+    pass
+```
+
+Generic models that reference their own parametrizations, like a `Tree[T]` with
+`children: list[Tree[T]]`, aren't supported yet.
 
 ### Validation
 
