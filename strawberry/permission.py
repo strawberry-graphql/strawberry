@@ -10,8 +10,6 @@ from typing import (
     ClassVar,
 )
 
-from asgiref.sync import async_to_sync
-
 from strawberry.exceptions import (
     PermissionReturnedAwaitableInSyncContextError,
     StrawberryGraphQLError,
@@ -25,7 +23,7 @@ from strawberry.types.base import StrawberryList, StrawberryOptional
 from strawberry.utils.await_maybe import await_maybe
 
 if TYPE_CHECKING:
-    from collections.abc import Awaitable, Callable
+    from collections.abc import Awaitable
 
     from graphql import GraphQLError, GraphQLErrorExtensions
 
@@ -37,8 +35,47 @@ if TYPE_CHECKING:
     from strawberry.types.field import StrawberryField
 
 
+def _build_auto_directive(name: str, *, qualname: str, module: str) -> object:
+    """Build the auto-generated schema directive object for a permission.
+
+    The returned object carries the `__strawberry_directive__` definition used
+    when the permission is added to a field. `qualname` and `module` are copied
+    onto its class so collision diagnostics point to something users can rename.
+    """
+
+    class AutoDirective:
+        __strawberry_directive__ = StrawberrySchemaDirective(
+            name,
+            name,
+            [Location.FIELD_DEFINITION],
+            [],
+        )
+
+    # Without this metadata a collision would report the local
+    # `AutoDirective` class twice.
+    AutoDirective.__name__ = name
+    AutoDirective.__qualname__ = qualname
+    AutoDirective.__module__ = module
+    return AutoDirective()
+
+
+_CLASS_OPERAND_HINT = (
+    "The `|` operator combines permission instances, not classes. "
+    "Instantiate the permission (e.g. `IsAdmin() | IsOwner()`) and pass the "
+    "result to `PermissionExtension`."
+)
+
+
+def _is_permission_class(value: object) -> bool:
+    return isinstance(value, type) and issubclass(value, BasePermission)
+
+
 class BasePermission(abc.ABC):
     """Base class for permissions. All permissions should inherit from this class.
+
+    Permission instances can be combined with the `|` operator: the result is an
+    `OrPermission` that grants access when any of its operands does. Note that `|`
+    combines instances (`IsAdmin() | IsOwner()`), not classes.
 
     Example:
 
@@ -63,8 +100,23 @@ class BasePermission(abc.ABC):
     _schema_directive: ClassVar[object | None] = None
     _auto_schema_directive: ClassVar[object]
 
-    def __or__(self, other: BasePermission):
-        return OrPermission((self, other))
+    def __or__(self, other: BasePermission) -> OrPermission:
+        if _is_permission_class(other):
+            raise TypeError(_CLASS_OPERAND_HINT)
+        if not isinstance(other, BasePermission):
+            return NotImplemented
+        return OrPermission(self, other)
+
+    def __ror__(self, other: object) -> OrPermission:
+        # Reached by `IsA | IsB()`, after `type.__or__` returned NotImplemented.
+        # A permission instance only arrives here if a subclass's own `__or__`
+        # returned NotImplemented.
+        # `IsA | IsB` (two classes) is a plain `types.UnionType` and never gets here.
+        if _is_permission_class(other):
+            raise TypeError(_CLASS_OPERAND_HINT)
+        if isinstance(other, BasePermission):
+            return OrPermission(other, self)
+        return NotImplemented
 
     def __init_subclass__(cls, **kwargs: Any) -> None:
         super().__init_subclass__(**kwargs)
@@ -76,21 +128,9 @@ class BasePermission(abc.ABC):
         # concurrent schema construction racing to create two definitions. Keep
         # it separate from `_schema_directive` so instance, class, and inherited
         # overrides work.
-        class AutoDirective:
-            __strawberry_directive__ = StrawberrySchemaDirective(
-                cls.__name__,
-                cls.__name__,
-                [Location.FIELD_DEFINITION],
-                [],
-            )
-
-        # Without this metadata a collision would report the local
-        # `AutoDirective` class twice. Make diagnostics point to the permission
-        # classes that users can actually rename.
-        AutoDirective.__name__ = cls.__name__
-        AutoDirective.__qualname__ = cls.__qualname__
-        AutoDirective.__module__ = cls.__module__
-        cls._auto_schema_directive = AutoDirective()
+        cls._auto_schema_directive = _build_auto_directive(
+            cls.__name__, qualname=cls.__qualname__, module=cls.__module__
+        )
 
     @abc.abstractmethod
     def has_permission(
@@ -146,55 +186,172 @@ class BasePermission(abc.ABC):
 
 
 class OrPermission(BasePermission):
-    failed_permission: BasePermission | None = None
+    """Grants access when any of the combined permissions does.
 
-    def __init__(self, permissions: tuple[BasePermission, ...]):
-        if not permissions:
-            raise ValueError("At least one permission is required")
+    Usually created with the `|` operator. Permissions are evaluated left to
+    right and evaluation stops at the first one that grants access. Operands may
+    be sync or async. Nested compositions are flattened, so `(A | B) | C` is the
+    same as `A | B | C`.
 
-        self.permissions = permissions
+    When no operand grants access, the first operand's `on_unauthorized` is used.
+    Subclass `OrPermission` to give the composition its own name, `message`, and
+    error handling. A subclass may also override `has_permission`; the
+    composition then uses that override as-is, so the author is responsible for
+    awaiting async operands. A plain combination is flattened when combined
+    further, so anything set on that intermediate instance is not carried over;
+    subclass `OrPermission` when you need per-combination customization.
 
-        messages = [p.message for p in permissions if p.message]
-        if messages:
-            self.message = ", or ".join(messages)
+    Example:
 
-    def has_permission(self, source: Any, info: Info, **kwargs: Any) -> bool:
-        for permission in self.permissions:
-            has_permission = (
-                async_to_sync(permission.has_permission)
-                if iscoroutinefunction(permission.has_permission)
-                else permission.has_permission
+    ```python
+    import strawberry
+    from strawberry.permission import BasePermission, PermissionExtension
+
+
+    class IsAdmin(BasePermission):
+        message = "User is not an admin"
+
+        def has_permission(self, source, info, **kwargs):
+            return info.context["user"].is_admin
+
+
+    class IsOwner(BasePermission):
+        message = "User is not the owner"
+
+        def has_permission(self, source, info, **kwargs):
+            return info.context["user"].id == source.owner_id
+
+
+    @strawberry.type
+    class Query:
+        @strawberry.field(extensions=[PermissionExtension([IsAdmin() | IsOwner()])])
+        def secret(self) -> str:
+            return "secret"
+    ```
+    """
+
+    # Directives are shared per distinct composition so that every use prints the
+    # same definition. Keys hold strong references to the operand classes, which
+    # is fine as permission classes are expected to live for the whole process.
+    _directive_cache: ClassVar[dict[tuple[type[BasePermission], ...], object]] = {}
+
+    permissions: tuple[BasePermission, ...]
+
+    def __init__(self, *permissions: BasePermission) -> None:
+        flattened: list[BasePermission] = []
+        for permission in permissions:
+            if not isinstance(permission, BasePermission):
+                raise TypeError(
+                    "OrPermission operands must be BasePermission instances, "
+                    f"got {permission!r}"
+                )
+            if type(permission) is OrPermission:
+                flattened.extend(permission.permissions)
+            else:
+                flattened.append(permission)
+
+        if len(flattened) < 2:
+            raise ValueError("OrPermission requires at least two permissions")
+
+        self.permissions = tuple(flattened)
+
+        # `PermissionExtension.supports_sync` (and any other code) decides
+        # between the sync and async paths with `iscoroutinefunction` on
+        # `has_permission`. Expose the async implementation as an instance
+        # attribute only when an operand is async, so that check stays truthful
+        # without putting all-sync compositions on the async path. A subclass
+        # that overrides `has_permission` keeps its override untouched.
+        if type(self).has_permission is OrPermission.has_permission and any(
+            iscoroutinefunction(p.has_permission) for p in self.permissions
+        ):
+            self.has_permission = self._has_permission_async  # type: ignore[method-assign]
+
+        # Instances are shared between requests and concurrent async executions,
+        # so no per-request state is ever stored on them after this point.
+        if type(self) is OrPermission:
+            # Created eagerly so concurrent schema builds never race to create
+            # two directives.
+            self._get_composite_directive(self.permissions)
+
+    @classmethod
+    def _get_composite_directive(
+        cls, permissions: tuple[BasePermission, ...]
+    ) -> object:
+        classes = tuple(
+            sorted(
+                (type(p) for p in permissions),
+                # Total order: distinct classes with identical metadata (e.g.
+                # made by a factory) must still map `A() | B()` and `B() | A()`
+                # to one directive object.
+                key=lambda c: (c.__name__, c.__module__, c.__qualname__, id(c)),
             )
-            if has_permission(source, info, **kwargs):
+        )
+        directive = cls._directive_cache.get(classes)
+        if directive is None:
+            name = "Or".join(c.__name__ for c in classes)
+            operands = " | ".join(f"{c.__module__}.{c.__qualname__}" for c in classes)
+            # `setdefault` is atomic, so a racing duplicate is simply discarded.
+            directive = cls._directive_cache.setdefault(
+                classes,
+                _build_auto_directive(
+                    name,
+                    qualname=f"{name}({operands})",
+                    module=__name__,
+                ),
+            )
+        return directive
+
+    def has_permission(
+        self, source: Any, info: Info, **kwargs: Any
+    ) -> bool | Awaitable[bool]:
+        for permission in self.permissions:
+            result = permission.has_permission(source, info, **kwargs)
+
+            # Mirror `PermissionExtension.resolve`: an awaitable is truthy, so
+            # trusting it would silently grant access. Fail closed.
+            if inspect.isawaitable(result):
+                if inspect.iscoroutine(result):
+                    result.close()
+
+                raise PermissionReturnedAwaitableInSyncContextError(permission)
+
+            if result:
                 return True
 
-        self.failed_permission = permission
-        self.message = permission.message
         return False
 
-    @property
-    def on_unauthorized(self) -> Callable[[], None]:
-        if not self.failed_permission:
-            return lambda: None
+    async def _has_permission_async(
+        self, source: Any, info: Info, **kwargs: Any
+    ) -> bool:
+        # Sequential on purpose: operands may be expensive or have side effects,
+        # and evaluation order is part of the contract.
+        for permission in self.permissions:
+            result = await await_maybe(
+                permission.has_permission(source, info, **kwargs)
+            )
+            if result:
+                return True
 
-        return self.failed_permission.on_unauthorized
+        return False
+
+    def on_unauthorized(self) -> None:
+        if type(self) is OrPermission:
+            # Every operand denied access, so there is no "failing" operand to
+            # pick: use the first one, the primary permission the author wrote.
+            self.permissions[0].on_unauthorized()
+        else:
+            super().on_unauthorized()
 
     @property
     def schema_directive(self) -> object:
-        if not self._schema_directive:
-            directive_name = "Or".join([p.__class__.__name__ for p in self.permissions])
-
-            class AutoDirective:
-                __strawberry_directive__ = StrawberrySchemaDirective(
-                    directive_name,
-                    directive_name,
-                    [Location.FIELD_DEFINITION],
-                    [],
-                )
-
-            self._schema_directive = AutoDirective()
-
-        return self._schema_directive
+        # No derived state lives on the instance, so `copy`/`deepcopy` of a
+        # composite keeps directive identity and the identity-based dedup in
+        # `PermissionExtension.apply` keeps working.
+        return self._schema_directive or (
+            self._get_composite_directive(self.permissions)
+            if type(self) is OrPermission
+            else self._auto_schema_directive
+        )
 
 
 class PermissionExtension(FieldExtension):
