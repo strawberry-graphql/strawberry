@@ -261,17 +261,20 @@ class OrPermission(BasePermission):
         # attribute only when an operand is async, so that check stays truthful
         # without putting all-sync compositions on the async path. A subclass
         # that overrides `has_permission` keeps its override untouched.
+        #
+        # The check runs over the operands as written, not the flattened tuple:
+        # a flattened composite already reports whether any of its operands is
+        # async, so a chain of n permissions costs n checks instead of n**2.
         if type(self).has_permission is OrPermission.has_permission and any(
-            iscoroutinefunction(p.has_permission) for p in self.permissions
+            iscoroutinefunction(p.has_permission) for p in permissions
         ):
             self.has_permission = self._has_permission_async  # type: ignore[method-assign]
 
         # Instances are shared between requests and concurrent async executions,
-        # so no per-request state is ever stored on them after this point.
-        if type(self) is OrPermission:
-            # Created eagerly so concurrent schema builds never race to create
-            # two directives.
-            self._get_composite_directive(self.permissions)
+        # so no per-request state is ever stored on them after this point. The
+        # schema directive is created on first use rather than here: chaining
+        # `A() | B() | C()` builds `A() | B()` on the way, and that intermediate
+        # composition never needs a directive.
 
     @classmethod
     def _get_composite_directive(

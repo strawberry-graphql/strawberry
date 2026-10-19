@@ -478,6 +478,18 @@ def test_directive_cache_is_keyed_by_class_not_name():
     assert directive_name(from_first) == "CanAccessOrDenied"
 
 
+def test_chaining_creates_no_directives_for_intermediate_compositions():
+    classes = [type(f"Step{i}", (Allowed,), {}) for i in range(4)]
+    cached = len(OrPermission._directive_cache)
+
+    combined = classes[0]() | classes[1]() | classes[2]() | classes[3]()
+    assert len(OrPermission._directive_cache) == cached
+
+    combined.schema_directive
+    assert len(OrPermission._directive_cache) == cached + 1
+    assert directive_name(combined) == "Step0OrStep1OrStep2OrStep3"
+
+
 def test_directive_diagnostics_name_the_constituent_classes():
     first = type("CanAccess", (Allowed,), {"__module__": "permissions.first"})
     second = type("CanAccess", (Allowed,), {"__module__": "permissions.second"})
