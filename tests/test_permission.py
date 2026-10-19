@@ -5,6 +5,7 @@ from typing import Any
 
 import pytest
 
+from strawberry import permission as permission_module
 from strawberry.exceptions import PermissionReturnedAwaitableInSyncContextError
 from strawberry.permission import BasePermission, OrPermission, PermissionExtension
 from strawberry.schema_directive import StrawberrySchemaDirective
@@ -68,10 +69,10 @@ def test_or_returns_or_permission_with_operands_in_order():
 
 
 def test_or_flattens_nested_compositions_in_written_order():
-    class C(Allowed):
+    class Third(Allowed):
         pass
 
-    a, b, c = Allowed(), Denied(), C()
+    a, b, c = Allowed(), Denied(), Third()
 
     assert (a | b | c).permissions == (a, b, c)
     assert ((a | b) | c).permissions == (a, b, c)
@@ -261,7 +262,7 @@ def test_has_permission_is_coroutine_function_iff_any_operand_is_async():
     assert inspect.iscoroutinefunction((AsyncAllowed() | AsyncDenied()).has_permission)
 
 
-def test_permission_extension_supports_sync_only_when_or_permission_has_no_async_operand():
+def test_extension_supports_sync_only_without_async_operands():
     assert PermissionExtension([Allowed() | Denied()]).supports_sync
     assert not PermissionExtension([Allowed() | AsyncDenied()]).supports_sync
     assert not PermissionExtension(
@@ -287,7 +288,7 @@ def test_async_detection_propagates_through_nesting():
     )
 
 
-def test_subclass_overriding_has_permission_is_not_replaced_by_async_operands():
+def test_subclass_has_permission_override_survives_async_operands():
     class StrictDeny(OrPermission):
         def has_permission(
             self, source: Any, info: Info, **kwargs: Any
@@ -321,7 +322,7 @@ def test_sync_operand_returning_coroutine_fails_closed_and_closes_it():
     ):
         combined.has_permission(None, None)  # type: ignore[arg-type]
 
-    # an un-closed coroutine would only warn "never awaited" when collected
+    # An un-closed coroutine would only warn "never awaited" when collected
     assert len(created) == 1
     assert inspect.getcoroutinestate(created[0]) == inspect.CORO_CLOSED
 
@@ -480,13 +481,13 @@ def test_directive_cache_is_keyed_by_class_not_name():
 
 def test_chaining_creates_no_directives_for_intermediate_compositions():
     classes = [type(f"Step{i}", (Allowed,), {}) for i in range(4)]
-    cached = len(OrPermission._directive_cache)
+    cached = len(permission_module._composite_directives)
 
     combined = classes[0]() | classes[1]() | classes[2]() | classes[3]()
-    assert len(OrPermission._directive_cache) == cached
+    assert len(permission_module._composite_directives) == cached
 
     combined.schema_directive
-    assert len(OrPermission._directive_cache) == cached + 1
+    assert len(permission_module._composite_directives) == cached + 1
     assert directive_name(combined) == "Step0OrStep1OrStep2OrStep3"
 
 

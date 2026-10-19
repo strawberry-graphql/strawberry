@@ -747,7 +747,7 @@ def test_or_permission_directive_is_flat_for_chained_and_nested_operands():
     assert print_schema(schema) == textwrap.dedent(expected_output).strip()
 
 
-def test_or_permission_directive_is_added_next_to_other_permission_directives():
+def test_or_permission_directive_next_to_other_permission_directives():
     class IsAuthenticated(BasePermission):
         def has_permission(self, source, info, **kwargs: typing.Any) -> bool:
             return True

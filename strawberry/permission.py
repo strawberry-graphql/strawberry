@@ -51,8 +51,6 @@ def _build_auto_directive(name: str, *, qualname: str, module: str) -> object:
             [],
         )
 
-    # Without this metadata a collision would report the local
-    # `AutoDirective` class twice.
     AutoDirective.__name__ = name
     AutoDirective.__qualname__ = qualname
     AutoDirective.__module__ = module
@@ -108,10 +106,8 @@ class BasePermission(abc.ABC):
         return OrPermission(self, other)
 
     def __ror__(self, other: object) -> OrPermission:
-        # Reached by `IsA | IsB()`, after `type.__or__` returned NotImplemented.
-        # A permission instance only arrives here if a subclass's own `__or__`
-        # returned NotImplemented.
-        # `IsA | IsB` (two classes) is a plain `types.UnionType` and never gets here.
+        # `IsA | IsB()` lands here once `type.__or__` returns NotImplemented, so
+        # the class-operand hint covers a class on either side.
         if _is_permission_class(other):
             raise TypeError(_CLASS_OPERAND_HINT)
         if isinstance(other, BasePermission):
@@ -185,6 +181,37 @@ class BasePermission(abc.ABC):
         return self._schema_directive or self._auto_schema_directive
 
 
+# One directive per distinct set of operand classes, so every use of `A() | B()`
+# prints the same definition whatever the operand order. Keys keep the operand
+# classes alive, which is fine: permission classes live as long as the process.
+_composite_directives: dict[tuple[type[BasePermission], ...], object] = {}
+
+
+def _get_composite_directive(permissions: tuple[BasePermission, ...]) -> object:
+    classes = tuple(
+        sorted(
+            (type(p) for p in permissions),
+            # Total order even for distinct classes with identical metadata (e.g.
+            # made by a factory), so `A() | B()` and `B() | A()` share a directive.
+            key=lambda c: (c.__name__, c.__module__, c.__qualname__, id(c)),
+        )
+    )
+    directive = _composite_directives.get(classes)
+    if directive is None:
+        name = "Or".join(c.__name__ for c in classes)
+        operands = " | ".join(f"{c.__module__}.{c.__qualname__}" for c in classes)
+        # `setdefault` is atomic, so a racing duplicate is simply discarded.
+        directive = _composite_directives.setdefault(
+            classes,
+            _build_auto_directive(
+                name,
+                qualname=f"{name}({operands})",
+                module=__name__,
+            ),
+        )
+    return directive
+
+
 class OrPermission(BasePermission):
     """Grants access when any of the combined permissions does.
 
@@ -194,12 +221,10 @@ class OrPermission(BasePermission):
     same as `A | B | C`.
 
     When no operand grants access, the first operand's `on_unauthorized` is used.
-    Subclass `OrPermission` to give the composition its own name, `message`, and
-    error handling. A subclass may also override `has_permission`; the
-    composition then uses that override as-is, so the author is responsible for
-    awaiting async operands. A plain combination is flattened when combined
-    further, so anything set on that intermediate instance is not carried over;
-    subclass `OrPermission` when you need per-combination customization.
+    Subclass `OrPermission` to give a combination its own name, `message` and
+    error handling, or to override `has_permission` altogether. A plain
+    combination is flattened when combined further, so attributes set on it are
+    not carried over.
 
     Example:
 
@@ -230,11 +255,6 @@ class OrPermission(BasePermission):
     ```
     """
 
-    # Directives are shared per distinct composition so that every use prints the
-    # same definition. Keys hold strong references to the operand classes, which
-    # is fine as permission classes are expected to live for the whole process.
-    _directive_cache: ClassVar[dict[tuple[type[BasePermission], ...], object]] = {}
-
     permissions: tuple[BasePermission, ...]
 
     def __init__(self, *permissions: BasePermission) -> None:
@@ -255,58 +275,22 @@ class OrPermission(BasePermission):
 
         self.permissions = tuple(flattened)
 
-        # `PermissionExtension.supports_sync` (and any other code) decides
-        # between the sync and async paths with `iscoroutinefunction` on
-        # `has_permission`. Expose the async implementation as an instance
-        # attribute only when an operand is async, so that check stays truthful
-        # without putting all-sync compositions on the async path. A subclass
-        # that overrides `has_permission` keeps its override untouched.
-        #
-        # The check runs over the operands as written, not the flattened tuple:
-        # a flattened composite already reports whether any of its operands is
-        # async, so a chain of n permissions costs n checks instead of n**2.
+        # `PermissionExtension.supports_sync` picks the sync or async path with
+        # `iscoroutinefunction(has_permission)`, so expose the async
+        # implementation as an instance attribute only when an operand is async.
+        # The operands are checked as written rather than flattened: a flattened
+        # composite already reports whether any of its operands is async. A
+        # subclass that overrides `has_permission` keeps its override.
         if type(self).has_permission is OrPermission.has_permission and any(
             iscoroutinefunction(p.has_permission) for p in permissions
         ):
             self.has_permission = self._has_permission_async  # type: ignore[method-assign]
 
-        # Instances are shared between requests and concurrent async executions,
-        # so no per-request state is ever stored on them after this point. The
-        # schema directive is created on first use rather than here: chaining
-        # `A() | B() | C()` builds `A() | B()` on the way, and that intermediate
-        # composition never needs a directive.
-
-    @classmethod
-    def _get_composite_directive(
-        cls, permissions: tuple[BasePermission, ...]
-    ) -> object:
-        classes = tuple(
-            sorted(
-                (type(p) for p in permissions),
-                # Total order: distinct classes with identical metadata (e.g.
-                # made by a factory) must still map `A() | B()` and `B() | A()`
-                # to one directive object.
-                key=lambda c: (c.__name__, c.__module__, c.__qualname__, id(c)),
-            )
-        )
-        directive = cls._directive_cache.get(classes)
-        if directive is None:
-            name = "Or".join(c.__name__ for c in classes)
-            operands = " | ".join(f"{c.__module__}.{c.__qualname__}" for c in classes)
-            # `setdefault` is atomic, so a racing duplicate is simply discarded.
-            directive = cls._directive_cache.setdefault(
-                classes,
-                _build_auto_directive(
-                    name,
-                    qualname=f"{name}({operands})",
-                    module=__name__,
-                ),
-            )
-        return directive
-
     def has_permission(
         self, source: Any, info: Info, **kwargs: Any
     ) -> bool | Awaitable[bool]:
+        # Instances are shared between requests and concurrent executions, so
+        # nothing per-request is stored on `self` here or in the async variant.
         for permission in self.permissions:
             result = permission.has_permission(source, info, **kwargs)
 
@@ -347,11 +331,13 @@ class OrPermission(BasePermission):
 
     @property
     def schema_directive(self) -> object:
-        # No derived state lives on the instance, so `copy`/`deepcopy` of a
-        # composite keeps directive identity and the identity-based dedup in
-        # `PermissionExtension.apply` keeps working.
+        # Looked up on first use rather than in `__init__`: chaining
+        # `A() | B() | C()` builds `A() | B()` on the way, and that intermediate
+        # never needs a directive. Nothing is cached on the instance, so
+        # `copy`/`deepcopy` keep directive identity for the identity-based dedup
+        # in `PermissionExtension.apply`.
         return self._schema_directive or (
-            self._get_composite_directive(self.permissions)
+            _get_composite_directive(self.permissions)
             if type(self) is OrPermission
             else self._auto_schema_directive
         )
