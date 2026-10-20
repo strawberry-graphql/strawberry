@@ -1,79 +1,146 @@
-import json
-from typing import Any
+import ast
+import textwrap
 
 import pytest
 
-from strawberry.schema_codegen import codegen
-
-STRINGS = [
-    pytest.param("plain", id="plain"),
-    pytest.param('with "double" quotes', id="double-quotes"),
-    pytest.param("with 'single' quotes", id="single-quotes"),
-    pytest.param('it\'s "both"', id="both-quotes"),
-    pytest.param("ends with a quote'", id="trailing-single-quote"),
-    pytest.param('ends with a quote"', id="trailing-double-quote"),
-    pytest.param("a\\b and \\n", id="backslashes"),
-    pytest.param("trailing backslash \\", id="trailing-backslash"),
-    pytest.param("tab\tand\rcarriage return", id="control-characters"),
-    pytest.param("unicode é 中文 \u2028 separator", id="unicode"),
-    pytest.param("' + str(1 / 0) + '\"", id="expression-after-quote"),
-    pytest.param("first line\nsecond line", id="multiline"),
-    pytest.param(
-        'multiline with """triple""" quotes\n""""', id="multiline-triple-quotes"
-    ),
-    pytest.param("multiline ending with a backslash \\\n\\", id="multiline-backslash"),
-]
+from strawberry.schema_codegen import _string_literal, codegen
 
 
-def _execute(code: str) -> dict[str, Any]:
-    namespace: dict[str, Any] = {}
-    exec(compile(code, "<generated>", "exec"), namespace)  # noqa: S102
-    return namespace
-
-
-def _expected(value: str) -> str:
-    # Multi-line descriptions are written as triple-quoted strings that start
-    # and end with a newline.
-    return f"\n{value}\n" if "\n" in value else value
-
-
-@pytest.mark.parametrize("value", STRINGS)
-def test_descriptions_are_escaped(value: str):
-    schema = f"""
-    {json.dumps(value)}
-    type Example {{
-        {json.dumps(value)}
+def test_description_with_both_quotes():
+    schema = '''
+    """It's a "Star Wars" species."""
+    type Species {
         name: String!
-    }}
+    }
+    '''
+
+    expected = textwrap.dedent(
+        r"""
+        from __future__ import annotations
+        import strawberry
+
+        @strawberry.type(description="It's a \"Star Wars\" species.")
+        class Species:
+            name: str
+        """
+    ).strip()
+
+    assert codegen(schema).strip() == expected
+
+
+def test_description_with_backslashes():
+    schema = r'''
+    type Species {
+        """Stored under C:\species\new."""
+        name: String!
+    }
+    '''
+
+    expected = textwrap.dedent(
+        r"""
+        from __future__ import annotations
+        import strawberry
+
+        @strawberry.type
+        class Species:
+            name: str = strawberry.field(description="Stored under C:\\species\\new.")
+        """
+    ).strip()
+
+    assert codegen(schema).strip() == expected
+
+
+def test_multiline_description_with_triple_quotes():
+    schema = r'''
+    """
+    A description that quotes another one:
+    \"""Nested description.\"""
+    """
+    type Species {
+        name: String!
+    }
+    '''
+
+    expected = textwrap.dedent(
+        r'''
+        from __future__ import annotations
+        import strawberry
+
+        @strawberry.type(description="""
+        A description that quotes another one:
+        ""\"Nested description.""\"
+        """)
+        class Species:
+            name: str
+        '''
+    ).strip()
+
+    assert codegen(schema).strip() == expected
+
+
+def test_string_default_values():
+    schema = r"""
+    input SpeciesInput {
+        name: String! = "first line\nsecond line"
+        quote: String! = "It's \"quoted\""
+    }
     """
 
-    namespace = _execute(codegen(schema))
-    definition = namespace["Example"].__strawberry_definition__
+    expected = textwrap.dedent(
+        r"""
+        from __future__ import annotations
+        import strawberry
 
-    assert definition.description == _expected(value)
-    assert definition.fields[0].description == _expected(value)
+        @strawberry.input
+        class SpeciesInput:
+            name: str = "first line\nsecond line"
+            quote: str = "It's \"quoted\""
+        """
+    ).strip()
+
+    assert codegen(schema).strip() == expected
 
 
-@pytest.mark.parametrize("value", STRINGS)
-def test_string_default_values_are_escaped(value: str):
-    schema = f"""
-    input ExampleInput {{
-        name: String! = {json.dumps(value)}
-    }}
+def test_specified_by_url_with_quotes():
+    schema = r"""
+    scalar LocalDate @specifiedBy(url: "https://example.com/local-date?name=\"local\"&kind='date'")
     """
 
-    namespace = _execute(codegen(schema))
+    expected = textwrap.dedent(
+        r"""
+        from __future__ import annotations
+        import strawberry
+        from typing import NewType
 
-    assert namespace["ExampleInput"]().name == value
+        LocalDate = strawberry.scalar(NewType("LocalDate", object), specified_by_url="https://example.com/local-date?name=\"local\"&kind='date'", serialize=lambda v: v, parse_value=lambda v: v)
+        """
+    ).strip()
+
+    assert codegen(schema).strip() == expected
 
 
-@pytest.mark.parametrize("value", STRINGS)
-def test_specified_by_url_is_escaped(value: str):
-    schema = f"""
-    scalar Example @specifiedBy(url: {json.dumps(value)})
-    """
+@pytest.mark.parametrize(
+    "value",
+    [
+        "plain",
+        'with "double" quotes',
+        "with 'single' quotes",
+        'it\'s "both"',
+        "ends with a quote'",
+        'ends with a quote"',
+        "trailing backslash \\",
+        "tab\tand\rcarriage return",
+        "unicode é 中文 \u2028 separator",
+        "first line\nsecond line",
+        'multiline with """triple""" quotes\n""""',
+        "multiline ending with a backslash \\\n\\",
+    ],
+)
+def test_string_literals_round_trip(value: str):
+    single_line = _string_literal(value, allow_triple_quotes=False)
+    assert ast.literal_eval(single_line.value) == value
 
-    namespace = _execute(codegen(schema))
-    definition = namespace["Example"]._scalar_definition
-
-    assert definition.specified_by_url == _expected(value)
+    # Multi-line values are written as triple-quoted strings that start and
+    # end with a newline.
+    expected = f"\n{value}\n" if "\n" in value else value
+    assert ast.literal_eval(_string_literal(value).value) == expected
