@@ -1,7 +1,7 @@
 # Strawberry installed from source with the dev and integrations dependency groups, the way contributors set it up
 # with `uv sync`. The integrations group pulls in every web framework Strawberry ships a view for, so all HTTP and
 # WebSocket integrations can be exercised offline.
-FROM python:3.13-bookworm
+FROM python:3.15-bookworm
 ENV DEBIAN_FRONTEND=noninteractive \
     PIP_DISABLE_PIP_VERSION_CHECK=1 \
     UV_LINK_MODE=copy \
