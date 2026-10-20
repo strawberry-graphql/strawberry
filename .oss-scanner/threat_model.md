@@ -24,10 +24,6 @@ is trusted. Everything a client sends is untrusted:
   forge, and `first`/`last`/`before`/`after` are client controlled.
 - Federation entity resolution (`strawberry/federation/`): `_entities` representations and `_service { sdl }`.
 
-Developer-facing tooling also handles input that may not be trusted in practice: `strawberry codegen` (generates
-client code from GraphQL queries and a schema) and `strawberry schema-codegen` (generates Python from GraphQL SDL).
-Generated code that lets crafted input inject Python or TypeScript is in scope.
-
 ## Components that matter most / least
 
 Most:
@@ -47,8 +43,9 @@ Most:
 Least:
 
 - GraphiQL / Apollo Sandbox HTML (`strawberry/static/`) beyond XSS or leaking credentials.
-- `strawberry/codemods/`, `strawberry/ext/mypy_plugin.py` and other developer-only tooling that only reads the
-  developer's own source code.
+- `strawberry/codemods/`, `strawberry/ext/mypy_plugin.py`, `strawberry/codegen/`, `strawberry/schema_codegen/` and
+  other developer-only tooling. Their input (source code, GraphQL SDL, queries) is provided by the developer and is
+  trusted; see "Anything to leave alone".
 - `docs/`, `tests/` and the benchmarks (`tests/benchmarks/`) are out of scope.
 
 ## How to exercise it
@@ -65,9 +62,9 @@ Least:
 - Critical: unauthenticated remote code execution, or a bypass of authentication/permissions that exposes or modifies
   data in a default or common configuration.
 - High: bypass of a permission class or of a security extension (`DisableIntrospection`, `MaskErrors`, query limiters)
-  in a realistic configuration; authentication bypass on a subscription transport; code injection through
-  `schema-codegen` or `codegen` from attacker-controlled input; denial of service where a single small request makes
-  the server use unbounded memory or CPU, or blocks the event loop, when the documented limits are configured.
+  in a realistic configuration; authentication bypass on a subscription transport; denial of service where a single
+  small request makes the server use unbounded memory or CPU, or blocks the event loop, when the documented limits are
+  configured.
 - Medium: denial of service that needs sustained traffic or many connections, or only affects a non-default feature;
   CSRF; information disclosure of stack traces or internal type names when masking is enabled.
 - Low: issues that need an unusual configuration or a developer mistake that the docs already warn about; minor
@@ -84,6 +81,11 @@ example, exponential work from a small document).
 - Introspection being enabled, GraphiQL being served, or query batching being accepted when the developer turned these
   on (or did not turn them off). These are documented configuration choices.
 - Vulnerabilities in resolvers written by the application developer.
+- Code injection or other issues in the code generators (`strawberry codegen`, `strawberry schema-codegen`,
+  `strawberry.schema_codegen.codegen()`) and other CLI commands. They are developer tools that run on the
+  developer's own schema and queries, which we treat as trusted input, in the same way as Python source code. Running
+  them on a schema or query from an untrusted source is equivalent to running untrusted code. Bugs where the
+  generated code is wrong for valid input are welcome as normal issues, not security reports.
 
 ## Reports and patches
 
