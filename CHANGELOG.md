@@ -1,6 +1,18 @@
 CHANGELOG
 =========
 
+0.336.2 - 2026-10-20
+--------------------
+
+This release fixes `strawberry schema-codegen` adding a newline to the start and
+end of multi-line descriptions.
+
+Multi-line strings are still written as triple-quoted strings on their own
+lines, but the generated code now uses escaped line breaks so the description
+matches the one in the schema exactly.
+
+This release was contributed by [@patrick91](https://github.com/patrick91) in [#4726](https://github.com/strawberry-graphql/strawberry/pull/4726)
+
 0.336.1 - 2026-10-20
 --------------------
 
