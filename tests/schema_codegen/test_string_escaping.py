@@ -66,9 +66,9 @@ def test_multiline_description_with_triple_quotes():
         from __future__ import annotations
         import strawberry
 
-        @strawberry.type(description="""
+        @strawberry.type(description="""\
         A description that quotes another one:
-        ""\"Nested description.""\"
+        ""\"Nested description.""\"\
         """)
         class Species:
             name: str
@@ -134,13 +134,12 @@ def test_specified_by_url_with_quotes():
         "first line\nsecond line",
         'multiline with """triple""" quotes\n""""',
         "multiline ending with a backslash \\\n\\",
+        "\nstarts and ends with a newline\n",
+        'multiline ending with a quote\n"',
     ],
 )
-def test_string_literals_round_trip(value: str):
-    single_line = _string_literal(value, allow_triple_quotes=False)
-    assert ast.literal_eval(single_line.value) == value
+@pytest.mark.parametrize("allow_triple_quotes", [True, False])
+def test_string_literals_round_trip(value: str, allow_triple_quotes: bool):
+    literal = _string_literal(value, allow_triple_quotes=allow_triple_quotes)
 
-    # Multi-line values are written as triple-quoted strings that start and
-    # end with a newline.
-    expected = f"\n{value}\n" if "\n" in value else value
-    assert ast.literal_eval(_string_literal(value).value) == expected
+    assert ast.literal_eval(literal.value) == value
