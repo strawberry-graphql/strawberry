@@ -58,7 +58,7 @@ Least:
   to build a reproducer: add a test that uses the `http_client` fixture so it runs on all integrations.
 - Run tests with `python -m pytest tests/http -q -n auto` (the venv is already on PATH).
 - `strawberry.Schema(...).execute_sync(query)` / `await schema.execute(query)` runs a query without any web framework.
-- `strawberry server <module>:schema` starts a development server with uvicorn.
+- `strawberry dev <module>:schema` starts a development server with uvicorn.
 
 ## How you rate severity
 
