@@ -199,10 +199,7 @@ def _get_default_value_expr(
         return cst.Float(node.value)
 
     if isinstance(node, StringValueNode):
-        if '"' in node.value:
-            return cst.SimpleString(f"'{node.value}'")
-
-        return cst.SimpleString(f'"{node.value}"')
+        return _string_literal(node.value, allow_triple_quotes=False)
 
     if isinstance(node, BooleanValueNode):
         return cst.Name("True" if node.value else "False")
@@ -232,6 +229,60 @@ def _get_default_value_expr(
     raise NotImplementedError(f"Unknown default value node {node}")
 
 
+def _escape_character(character: str) -> str:
+    if character == "\\":
+        return "\\\\"
+
+    if not character.isprintable():
+        # repr() gives the shortest escape sequence (\t, \x00, \u2028, ...)
+        return repr(character)[1:-1]
+
+    return character
+
+
+def _string_literal(
+    value: str, *, allow_triple_quotes: bool = True
+) -> cst.SimpleString:
+    """Return a Python string literal for `value`, escaping it as needed.
+
+    Single-line values use double quotes, or single quotes when the value
+    contains double quotes. With `allow_triple_quotes`, multi-line values are
+    written as triple-quoted strings starting and ending with a newline, so
+    long descriptions stay readable in the generated code; otherwise newlines
+    are escaped and the literal evaluates to exactly `value`.
+    """
+    if not allow_triple_quotes or "\n" not in value:
+        quote = "'" if '"' in value and "'" not in value else '"'
+        body = "".join(
+            f"\\{character}" if character == quote else _escape_character(character)
+            for character in value
+        )
+
+        return cst.SimpleString(f"{quote}{body}{quote}")
+
+    parts: list[str] = []
+    consecutive_quotes = 0
+
+    for character in value:
+        if character == '"':
+            consecutive_quotes += 1
+
+            # Escape every third quote in a row, so that the value can't close
+            # the triple-quoted string.
+            if consecutive_quotes == 3:
+                parts.append('\\"')
+                consecutive_quotes = 0
+            else:
+                parts.append(character)
+
+            continue
+
+        consecutive_quotes = 0
+        parts.append(character if character == "\n" else _escape_character(character))
+
+    return cst.SimpleString(f'"""\n{"".join(parts)}\n"""')
+
+
 def _sanitize_argument(value: ArgumentValue) -> cst.SimpleString | cst.Name | cst.List:
     if isinstance(value, bool):
         return cst.Name(value=str(value))
@@ -245,14 +296,7 @@ def _sanitize_argument(value: ArgumentValue) -> cst.SimpleString | cst.Name | cs
             ],
         )
 
-    if "\n" in value:
-        argument_value = cst.SimpleString(f'"""\n{value}\n"""')
-    elif '"' in value:
-        argument_value = cst.SimpleString(f"'{value}'")
-    else:
-        argument_value = cst.SimpleString(f'"{value}"')
-
-    return argument_value
+    return _string_literal(value)
 
 
 def _get_argument(name: str, value: ArgumentValue) -> cst.Arg:
