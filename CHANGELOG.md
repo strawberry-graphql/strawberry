@@ -1,6 +1,18 @@
 CHANGELOG
 =========
 
+0.336.1 - 2026-10-20
+--------------------
+
+This release fixes `strawberry schema-codegen` generating invalid Python for
+strings that need escaping.
+
+Descriptions, `@specifiedBy` URLs, directive arguments and string default
+values containing both kinds of quotes, backslashes or control characters are
+now escaped correctly, so they keep their content in the generated code.
+
+This release was contributed by [@patrick91](https://github.com/patrick91) in [#4725](https://github.com/strawberry-graphql/strawberry/pull/4725)
+
 0.336.0 - 2026-10-17
 --------------------
 
