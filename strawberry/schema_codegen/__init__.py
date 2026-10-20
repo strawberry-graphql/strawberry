@@ -247,9 +247,8 @@ def _string_literal(
 
     Single-line values use double quotes, or single quotes when the value
     contains double quotes. With `allow_triple_quotes`, multi-line values are
-    written as triple-quoted strings starting and ending with a newline, so
-    long descriptions stay readable in the generated code; otherwise newlines
-    are escaped and the literal evaluates to exactly `value`.
+    written as triple-quoted strings so long descriptions stay readable in the
+    generated code; otherwise newlines are escaped.
     """
     if not allow_triple_quotes or "\n" not in value:
         quote = "'" if '"' in value and "'" not in value else '"'
@@ -280,7 +279,9 @@ def _string_literal(
         consecutive_quotes = 0
         parts.append(character if character == "\n" else _escape_character(character))
 
-    return cst.SimpleString(f'"""\n{"".join(parts)}\n"""')
+    # The escaped line breaks after the opening quotes and before the closing
+    # ones keep the value on its own lines without adding newlines to it.
+    return cst.SimpleString(f'"""\\\n{"".join(parts)}\\\n"""')
 
 
 def _sanitize_argument(value: ArgumentValue) -> cst.SimpleString | cst.Name | cst.List:
