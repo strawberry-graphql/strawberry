@@ -1,16 +1,17 @@
+from typing_extensions import TypedDict
 from typing import List
 
-class ListLifeGenericResultListLifeItems1:
+class ListLifeGenericResultListLifeItems1(TypedDict):
     name: str
     age: int
 
-class ListLifeGenericResultListLifeItems2:
+class ListLifeGenericResultListLifeItems2(TypedDict):
     name: str
     age: int
 
-class ListLifeGenericResultListLife:
+class ListLifeGenericResultListLife(TypedDict):
     items1: list[ListLifeGenericResultListLifeItems1]
     items2: list[ListLifeGenericResultListLifeItems2]
 
-class ListLifeGenericResult:
+class ListLifeGenericResult(TypedDict):
     list_life: ListLifeGenericResultListLife
