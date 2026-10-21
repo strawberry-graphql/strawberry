@@ -2,6 +2,12 @@ from typing import Any
 from unittest.mock import MagicMock
 
 import pytest
+from opentelemetry.semconv._incubating.attributes.graphql_attributes import (
+    GRAPHQL_DOCUMENT,
+    GRAPHQL_OPERATION_NAME,
+    GRAPHQL_OPERATION_TYPE,
+    GraphqlOperationTypeValues,
+)
 from opentelemetry.trace import SpanKind
 from pytest_mock import MockerFixture
 
@@ -66,12 +72,14 @@ async def test_opentelemetry_sync_uses_global_tracer(global_tracer_mock):
 def _instrumentation_stages(mocker, query):
     return [
         mocker.call("GraphQL Query", kind=SpanKind.SERVER),
-        mocker.call().set_attribute("component", "graphql"),
-        mocker.call().set_attribute("query", query),
+        mocker.call().set_attribute(GRAPHQL_DOCUMENT, query),
         mocker.call("GraphQL Parsing", context=mocker.ANY),
         mocker.call().end(),
         mocker.call("GraphQL Validation", context=mocker.ANY),
         mocker.call().end(),
+        mocker.call().set_attribute(
+            GRAPHQL_OPERATION_TYPE, GraphqlOperationTypeValues.QUERY.value
+        ),
         mocker.call().end(),
     ]
 
@@ -101,7 +109,6 @@ async def test_open_tracing(global_tracer_mock, mocker):
         [
             mocker.call("GraphQL Resolving: person", context=mocker.ANY),
             mocker.call().__enter__(),
-            mocker.call().__enter__().set_attribute("component", "graphql"),
             mocker.call().__enter__().set_attribute("graphql.parentType", "Query"),
             mocker.call().__enter__().set_attribute("graphql.path", "person"),
             mocker.call().__exit__(None, None, None),
@@ -126,6 +133,7 @@ async def test_open_tracing_uses_operation_name(global_tracer_mock, mocker):
         [
             # if operation_name is supplied it is added to this span's tag
             mocker.call("GraphQL Query: Example", kind=SpanKind.SERVER),
+            mocker.call().set_attribute(GRAPHQL_OPERATION_NAME, "Example"),
             *_instrumentation_stages(mocker, query)[1:],
         ]
     )
@@ -154,11 +162,15 @@ async def test_open_tracing_gets_operation_name(global_tracer_mock, mocker):
 
     await schema.execute(query)
 
+    # if operation_name is in the query, it is added to this span's name
     tracers[0].update_name.assert_has_calls(
         [
-            # if operation_name is supplied it is added to this span's tag
             mocker.call("GraphQL Query: Example"),
         ]
+    )
+    # and the span's attributes
+    tracers[0].set_attribute.assert_has_calls(
+        [mocker.call(GRAPHQL_OPERATION_NAME, "Example")]
     )
 
 
