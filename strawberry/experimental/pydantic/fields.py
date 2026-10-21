@@ -28,6 +28,23 @@ def replace_pydantic_types(type_: Any, is_input: bool) -> Any:
     return type_
 
 
+def _unwrap_annotated_none(type_: Any) -> Any:
+    """Return `None` for union members that are `None` behind an `Annotated`.
+
+    Pydantic lets you annotate the `None` member of a union, for example
+    `Union[str, SkipJsonSchema[None]]`. That hides the `NoneType` that tells
+    strawberry the field is optional, so the field is read as a union of `str`
+    and `Annotated[None, ...]` instead. Metadata on `None` says nothing about
+    the GraphQL type, while metadata on any other member can (a
+    `strawberry.lazy` reference or a `strawberry.union` name), so only the
+    `None` member loses its metadata here.
+    """
+    if get_origin(type_) is Annotated and get_args(type_)[0] is type(None):
+        return type(None)
+
+    return type_
+
+
 def replace_types_recursively(
     type_: Any, is_input: bool, compat: PydanticCompat
 ) -> Any:
@@ -47,8 +64,8 @@ def replace_types_recursively(
 
     if isinstance(replaced_type, TypingGenericAlias):
         return TypingGenericAlias(origin, converted)
-    if isinstance(replaced_type, UnionType):
-        return Union[converted]  # noqa: UP007
+    if origin is Union or isinstance(replaced_type, UnionType):
+        return Union[tuple(_unwrap_annotated_none(t) for t in converted)]  # noqa: UP007
 
     # TODO: investigate if we could move the check for annotated to the top
     if origin is Annotated and converted:
