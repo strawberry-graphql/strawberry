@@ -101,6 +101,7 @@ class HttpClient(abc.ABC):
         schema: Schema,
         graphiql: bool | None = None,
         graphql_ide: GraphQL_IDE | None = "graphiql",
+        subscription_url: str | None = None,
         allow_queries_via_get: bool = True,
         keep_alive: bool = False,
         keep_alive_interval: float = 1,
