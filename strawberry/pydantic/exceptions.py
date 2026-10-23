@@ -13,7 +13,6 @@ from strawberry.exceptions.utils.source_finder import SourceFinder
 from strawberry.types.base import has_object_definition
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
 
     from strawberry.exceptions.exception_source import ExceptionSource
     from strawberry.types.field import StrawberryField
