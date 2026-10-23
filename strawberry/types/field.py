@@ -29,6 +29,7 @@ from strawberry.exceptions import (
 from strawberry.types.base import (
     StrawberryType,
     WithStrawberryObjectDefinition,
+    copy_object_type_with,
     has_object_definition,
 )
 from strawberry.types.union import StrawberryUnion
@@ -399,8 +400,7 @@ class StrawberryField(dataclasses.Field):
             type_definition = type_.__strawberry_definition__
 
             if type_definition.is_graphql_generic:
-                type_ = type_definition
-                override_type = type_.copy_with(type_var_map)
+                override_type = copy_object_type_with(type_, type_var_map)
         elif isinstance(type_, StrawberryType):
             override_type = type_.copy_with(type_var_map)
 
