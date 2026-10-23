@@ -49,6 +49,12 @@ schema = strawberry.Schema(query=Query)
 This automatically creates a GraphQL type that includes all fields from your
 Pydantic model.
 
+Returning an undecorated Pydantic model from a regular `@strawberry.field`
+raises
+[`UnregisteredPydanticTypeError`](../errors/unregistered-pydantic-type.md) when
+the schema is built, identifying the field and the missing decorator. Use
+`@strawberry.pydantic.type`, or explicitly map the model to a custom scalar.
+
 ## Type Decorators
 
 ### `@strawberry.pydantic.type`
@@ -903,9 +909,11 @@ class OrderInput(BaseModel):
 ```
 
 Sending `items: [{quantity: 0}, {quantity: 1}, {quantity: -1}]` reports two
-errors, at `input.items.0.quantity` and `input.items.2.quantity` for an argument
-named `input`. Validators with `mode="before"` receive nested inputs as data,
-not as model instances.
+errors, with locations `["input", "items", "0", "quantity"]` and
+`["input", "items", "2", "quantity"]` for an argument named `input`. Every
+segment is a string, including list indexes, matching the `[String!]!` GraphQL
+field. Validators with `mode="before"` receive nested inputs as data, not as
+model instances.
 
 Strawberry converts GraphQL field names and scalar values, and transports lists
 as tuples for tuple fields. Pydantic owns nested validation: Strawberry does not
@@ -968,17 +976,26 @@ returns:
 }
 ```
 
-`location` uses the GraphQL names the client sent, starting with the argument,
-and `type` is the
+`location` is a list of strings using the GraphQL names the client sent,
+starting with the argument; list indexes are strings too. This applies to both
+typed results and the `validationErrors` extension. The dotted path in the
+top-level error message is only a human-readable summary. `type` is the
 [Pydantic error type](https://docs.pydantic.dev/latest/errors/validation_errors/).
 Errors raised by model validators are located at the model they validate: the
 `DateRangeInput` check above is reported at `["range"]` for an argument named
 `range`, or at `["input", "dates"]` when it's the `dates` field of an `input`
 argument. The `input` property Pydantic attaches to errors is omitted, and
 chaining to the original Pydantic exception is suppressed. Messages are
-preserved from Pydantic, however, and may contain submitted values, even for
-built-in errors. This is not a guarantee of redaction; avoid sensitive values in
-custom validator messages and review the errors your API exposes.
+preserved from Pydantic, except that a validator's `ValueError` uses the
+original exception message without Pydantic's generated `"Value error, "`
+prefix. For example, `raise ValueError("An ISBN has 13 digits")` produces
+`"An ISBN has 13 digits"`, with type `"value_error"`. Custom Pydantic error
+messages and built-in constraint messages are unchanged. This applies to both
+typed results and GraphQL errors.
+
+Messages may contain submitted values, even for built-in errors. Removing the
+prefix is not redaction; avoid sensitive values in custom validator messages and
+review the errors your API exposes.
 
 The error is raised as `strawberry.pydantic.InputValidationError`, a
 [`StrawberryInputCoercionError`](../guides/errors.md#strawberry-input-coercion-errors),

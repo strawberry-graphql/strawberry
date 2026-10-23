@@ -35,9 +35,12 @@ by returning `User | strawberry.pydantic.ValidationError` and registering
 Pydantic owns nested validation. Strawberry converts names and scalars and
 transports GraphQL lists as tuples for tuple fields, including in strict mode;
 it does not prevalidate nested models for validators that bypass or replace
-Pydantic's usual validation. Error messages are preserved from Pydantic. The
-error's `input` property is omitted and exception chaining is suppressed, but
-messages may still contain submitted values, even for built-in errors.
+Pydantic's usual validation. Validator `ValueError`s expose their original
+message without Pydantic's generated `"Value error, "` prefix; other messages
+are preserved. Error locations contain strings, including list indexes, in
+both typed results and GraphQL error extensions. The error's `input` property
+is omitted and exception chaining is suppressed, but messages may still
+contain submitted values, even for built-in errors.
 
 Explicit field defaults use Strawberry's ordinary schema default machinery,
 including `None` as `null` and model instances as input objects. Default
@@ -115,6 +118,9 @@ preserved.
 Explicit `scalar_map` entries take precedence over automatic Pydantic scalar
 mappings. Undecorated models can be used as custom scalars; missing model
 registration is checked when building the schema rather than during decoration.
+Regular Strawberry fields returning undecorated Pydantic models also raise the
+contextual `UnregisteredPydanticTypeError`, rather than a generic unexpected-type
+error, even without explicitly importing `strawberry.pydantic` first.
 Upload fields use Pydantic's validation, including custom validators, instead
 of being rejected by their annotation. Defaults in Strawberry `Annotated`
 metadata raise a clear error: defaults must be declared on the Pydantic field.
