@@ -216,9 +216,83 @@ To customize the error handling, the `on_unauthorized` method on the
 `BasePermission` class can be used. Further changes can be implemented by
 subclassing the `PermissionExtension` class.
 
+## Combining permissions with the `|` operator
+
+Permission instances can be combined with the `|` operator. Access is granted if
+_any_ of the combined permissions grants it, which is useful when a field can be
+reached by more than one kind of user:
+
+```python
+import strawberry
+from strawberry.permission import PermissionExtension
+
+
+@strawberry.type
+class User:
+    @strawberry.field(
+        extensions=[
+            PermissionExtension(
+                # require auth AND (user is the owner OR user is staff)
+                permissions=[IsAuthenticated(), IsOwner() | IsStaff()]
+            )
+        ]
+    )
+    def ssn(self) -> str:
+        return "555-55-5555"
+```
+
+The combined permissions are evaluated from left to right and evaluation stops
+at the first permission that grants access. Sync and async permissions can be
+mixed freely. A combination made only of sync permissions always evaluates them
+synchronously, even when the field's other permissions or resolver are async, so
+a permission that returns an awaitable must be declared with `async def`.
+
+Chaining is supported: `A() | B() | C()`, `(A() | B()) | C()` and
+`A() | (B() | C())` are equivalent and all produce a single combined permission.
+
+When none of the permissions grants access, the error of the **first**
+permission is raised, including its `message`, `error_class`, `error_extensions`
+and custom `on_unauthorized` behavior. To give the combination its own name and
+error, subclass `OrPermission` and set `message` (or override `on_unauthorized`)
+like you would for any other permission:
+
+```python
+from strawberry.permission import OrPermission
+
+
+class IsOwnerOrStaff(OrPermission):
+    message = "Only the owner or staff can see this"
+
+
+permission = IsOwnerOrStaff(IsOwner(), IsStaff())
+```
+
+A subclass may also override `has_permission`. The combination then uses your
+override as-is, so you are responsible for awaiting async permissions yourself.
+Pick a name that does not clash with a derived one: `AdminOrOwner` would collide
+with `Admin() | Owner()`, and schema construction reports a directive collision.
+
+A combined permission adds a single schema directive to the schema. Its name is
+built from the permission class names, sorted alphabetically and joined with
+`Or`, for example `@isOwnerOrIsStaff`. The same directive is reused on every
+field, regardless of the order of the operands. The directive has no arguments,
+so combining two instances of the same class, like
+`HasRole("admin") | HasRole("editor")`, is printed as `@hasRoleOrHasRole`.
+Because chained combinations are flattened, a custom `_schema_directive` set on
+an intermediate combination is not kept; set it on the final combination or use
+a subclass.
+
+<Note>
+  The `|` operator combines permission _instances_, so use it with
+  `PermissionExtension`. Writing `IsOwner | IsStaff` on the classes themselves
+  creates a regular Python type union, not a permission, and fails when the
+  schema is built; the `permission_classes` argument takes classes and can't be
+  combined this way.
+</Note>
+
 ## Schema Directives
 
 Permissions will automatically be added as schema directives to the schema. This
-behavior can be altered by setting the `add_directives` to `False` on
+behavior can be altered by setting the `use_directives` to `False` on
 `PermissionExtension`, or by setting the `_schema_directive` class attribute of
 the permission class to a custom directive.
