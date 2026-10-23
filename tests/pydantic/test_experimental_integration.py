@@ -52,6 +52,8 @@ def test_strawberry_pydantic_models_cannot_use_experimental_types():
     class User(pydantic.BaseModel):
         address: AddressModel
 
+    strawberry.Schema(query=User)
+
 
 def test_experimental_types_missing_the_input_of_a_model_with_both_types():
     class AddressModel(pydantic.BaseModel):
@@ -96,6 +98,8 @@ def test_subclasses_of_models_with_experimental_types():
     @strawberry.pydantic.type
     class User(pydantic.BaseModel):
         address: AddressSubclass
+
+    strawberry.Schema(query=User)
 
 
 def test_models_can_have_both_types_while_migrating():

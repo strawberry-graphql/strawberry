@@ -287,15 +287,22 @@ def test_root_model_fields_raise_an_error():
     class Post(pydantic.BaseModel):
         tags: Tags
 
+    strawberry.Schema(query=Post)
+
 
 def test_root_model_errors_render_brackets():
     rich_console = pytest.importorskip("rich.console")
 
-    with pytest.raises(UnsupportedRootModelError) as exc_info:
+    @strawberry.pydantic.input
+    class PostInput(pydantic.BaseModel):
+        ids: pydantic.RootModel[list[int]]
 
-        @strawberry.pydantic.input
-        class PostInput(pydantic.BaseModel):
-            ids: pydantic.RootModel[list[int]]
+    @strawberry.type
+    class Query:
+        ok: bool
+
+    with pytest.raises(UnsupportedRootModelError) as exc_info:
+        strawberry.Schema(query=Query, types=[PostInput])
 
     console = rich_console.Console(width=200, color_system=None)
 

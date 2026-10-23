@@ -528,11 +528,13 @@ other decorators, like `@staticmethod`, `@classmethod` or `@functools.cache`
 (which needs a hashable model, for example with
 `model_config = ConfigDict(frozen=True)`). They are inherited from base models
 and from Pydantic interfaces, and the field is named after the attribute, so
-`label = strawberry.pydantic.field(get_label)` adds a `label` field. The
-resolver needs to be a function, or a `functools.partial`, as Pydantic only
-allows functions in the class body of a model. Pydantic's mypy plugin reports
-this form as an untyped field, so prefer the decorator form if you use it, or
-add `# type: ignore[pydantic-field]`.
+`label = strawberry.pydantic.field(get_label)` adds a `label` field.
+`strawberry.pydantic.field(resolver=get_label, description="A label")` also
+works. Resolvers can be functions, bound methods, partials or typed callable
+objects, including asynchronous ones. Bound methods and callable objects keep
+their calling convention: calling them through a model does not inject another
+`self`. Pydantic's mypy plugin reports this form as an untyped field, so prefer
+the decorator form if you use it, or add `# type: ignore[pydantic-field]`.
 
 The same resolver can be used by multiple fields, including on different models.
 Each call to `strawberry.pydantic.field` creates its own method wrapper, so
@@ -584,7 +586,14 @@ Pydantic types that only add validation to a scalar, like `EmailStr`, `HttpUrl`,
 `scalar_map` entries for `datetime` also apply to `AwareDatetime` fields, and
 `strawberry.field(graphql_type=...)` changes the scalar of a field. Pydantic's
 URL and DSN types (including your own subclasses of them), `NameEmail` and the
-`IPvAny*` types are strings, which Pydantic validates on inputs:
+`IPvAny*` types are strings, which Pydantic validates on inputs.
+
+An exact `scalar_map` entry, such as one for `EmailStr`, takes precedence over
+these automatic mappings. Mappings are resolved separately for each schema;
+building one schema does not change another schema using the same models. An
+undecorated Pydantic model can also be registered as a custom scalar. Models not
+registered as scalars still need a Strawberry decorator; that check runs during
+schema construction, once the scalar map is available.
 
 ```python
 from typing import NewType
@@ -656,10 +665,10 @@ class User(BaseModel):
     id: Annotated[UserId, strawberry.field(graphql_type=int)]
 ```
 
-The same applies to [file uploads](../guides/file-upload.md): uploaded files are
-the file objects of your integration, which Pydantic can't validate as `Upload`,
-so input fields typed as `Upload` raise an error. Annotate the field with the
-file type and use `Upload` as its GraphQL type instead:
+For [file uploads](../guides/file-upload.md), Pydantic validates the file
+objects provided by your integration. A bare `Upload` annotation validates as
+`bytes`, so file objects need a custom Pydantic validator, or an annotation
+using the actual file type with `Upload` as its GraphQL type:
 
 ```python
 from typing import Annotated
@@ -1135,6 +1144,11 @@ When using `strawberry.field()` with Pydantic models, you can specify:
 default value (`email: str = strawberry.field(...)`) raises an error, because
 Pydantic would keep only its default and discard the rest of its configuration.
 
+Defaults belong to Pydantic: use `count: int = 7` or
+`pydantic.Field(default_factory=...)`. A `default` or `default_factory` inside
+`Annotated[..., strawberry.field(...)]` raises a `TypeError` rather than being
+silently ignored; Pydantic does not use that metadata to construct the model.
+
 Customizations declared on a base model or on an interface are inherited by its
 subclasses and implementations.
 
@@ -1162,8 +1176,9 @@ class CreateUserInput(BaseModel):
 ### TypeAdapter and RootModel
 
 A `RootModel` holds a single value instead of fields, so it can't be decorated
-as a type or an input, or be the type of a field. Pydantic's `TypeAdapter` and
-`RootModel` can be used in resolvers for additional validation:
+as an object type or an input. To use one as a field, register a custom scalar
+for it in `scalar_map`. Pydantic's `TypeAdapter` and `RootModel` can be used in
+resolvers for additional validation:
 
 ```python
 from pydantic import TypeAdapter, RootModel, Field
