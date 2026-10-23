@@ -105,6 +105,9 @@ class Product(BaseModel, Node):
 This includes `relay.Node`, with a `relay.NodeID` field and a `resolve_nodes`
 class method, like on regular Strawberry types.
 
+Resolver functions can be reused across Pydantic fields and models, with
+independent names, descriptions and permissions for each decoration.
+
 The experimental integration, `strawberry.experimental.pydantic`, keeps working
 as before, next to `strawberry.pydantic`. The two integrations can't use each
 other's types, so models that reference each other need to use the same
