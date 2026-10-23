@@ -21,7 +21,8 @@ class Tags(pydantic.RootModel[list[str]]):
     pass
 ```
 
-And so will this code:
+An unregistered `RootModel` field also raises the error when the schema is
+built:
 
 ```python
 import pydantic
@@ -36,10 +37,21 @@ class Tags(pydantic.RootModel[list[str]]):
 class CreatePostInput(pydantic.BaseModel):
     title: str
     tags: Tags
+
+
+@strawberry.type
+class Query:
+    ok: bool
+
+
+schema = strawberry.Schema(query=Query, types=[CreatePostInput])
 ```
 
 This happens because a `RootModel` holds a single value instead of fields, so it
 can't be a GraphQL object type or input.
+
+A `RootModel` field can instead be exposed through a custom scalar registered in
+the schema's `scalar_map`.
 
 ## How to fix this error
 

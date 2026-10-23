@@ -108,6 +108,17 @@ class method, like on regular Strawberry types.
 Resolver functions can be reused across Pydantic fields and models, with
 independent names, descriptions and permissions for each decoration.
 
+Resolvers also accept bound methods and typed callable objects, including async
+callables, and the `resolver=...` spelling. Their Python binding behavior is
+preserved.
+
+Explicit `scalar_map` entries take precedence over automatic Pydantic scalar
+mappings. Undecorated models can be used as custom scalars; missing model
+registration is checked when building the schema rather than during decoration.
+Upload fields use Pydantic's validation, including custom validators, instead
+of being rejected by their annotation. Defaults in Strawberry `Annotated`
+metadata raise a clear error: defaults must be declared on the Pydantic field.
+
 The experimental integration, `strawberry.experimental.pydantic`, keeps working
 as before, next to `strawberry.pydantic`. The two integrations can't use each
 other's types, so models that reference each other need to use the same
