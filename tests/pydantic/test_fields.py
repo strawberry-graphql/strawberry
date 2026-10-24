@@ -648,6 +648,55 @@ type User {
     assert result.data == {"user": {"oldName": "ada", "nickname": "A"}}
 
 
+def test_deprecated_input_fields():
+    @strawberry.pydantic.input
+    class UserInput(pydantic.BaseModel):
+        name: str
+        full_name: str = pydantic.Field(default="", deprecated="Use name")
+        nickname: str | None = pydantic.Field(deprecated=True)
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def user(
+            self,
+            data: UserInput = UserInput(name="Ada", full_name="A", nickname=None),
+        ) -> str:
+            return f"{data.name} {sorted(data.model_fields_set)}"
+
+    with warnings.catch_warnings():
+        # reading the default's deprecated fields would emit pydantic's warning
+        warnings.simplefilter("error", DeprecationWarning)
+
+        schema = strawberry.Schema(query=Query)
+
+    assert str(schema) == snapshot("""\
+type Query {
+  user(data: UserInput! = { name: "Ada", fullName: "A", nickname: null }): String!
+}
+
+input UserInput {
+  name: String!
+  fullName: String! = "" @deprecated(reason: "Use name")
+  nickname: String @deprecated
+}\
+""")
+
+    with warnings.catch_warnings():
+        # building the models from the input doesn't read them either
+        warnings.simplefilter("error", DeprecationWarning)
+
+        result = schema.execute_sync(
+            '{ default: user custom: user(data: { name: "Bob", fullName: "B" }) }'
+        )
+
+    assert not result.errors
+    assert result.data == {
+        "default": "Ada ['full_name', 'name', 'nickname']",
+        "custom": "Bob ['full_name', 'name', 'nickname']",
+    }
+
+
 def test_deprecating_required_input_fields_fails_like_on_strawberry_inputs():
     @strawberry.pydantic.input
     class UserInput(pydantic.BaseModel):
