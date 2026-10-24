@@ -93,7 +93,7 @@ title: Strawberry docs
 - [Starlette](./integrations/starlette.md)
 - [Litestar](./integrations/litestar.md)
 - [Creating an integration](./integrations/creating-an-integration.md)
-- [Pydantic **experimental**](./integrations/pydantic.md)
+- [Pydantic](./integrations/pydantic.md)
 
 ## Federation
 
