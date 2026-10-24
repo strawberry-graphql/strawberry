@@ -28,14 +28,14 @@ class StrawberryConfig:
         relay_max_results: Maximum results for Relay connections.
         relay_use_legacy_global_id: Use legacy GlobalID format for Relay.
         disable_field_suggestions: Disable field suggestions in error messages.
-        sort_schema: Sort the GraphQL schema lexicographically, affecting
-            both introspection and exported schemas.
         info_class: Custom Info class to use.
         enable_experimental_incremental_execution: Enable @defer/@stream support.
         scalar_map: A mapping of types to their scalar definitions. This allows
             any type (including NewType) to be used as a GraphQL scalar with
             proper type checking support.
         batching_config: Configuration for operation batching.
+        sort_schema: Sort the GraphQL schema lexicographically, affecting
+            both introspection and exported schemas.
     """
 
     auto_camel_case: InitVar[bool] = None  # pyright: reportGeneralTypeIssues=false
@@ -44,12 +44,12 @@ class StrawberryConfig:
     relay_max_results: int = 100
     relay_use_legacy_global_id: bool = False
     disable_field_suggestions: bool = False
-    sort_schema: bool = False
     info_class: type[Info] = Info
     enable_experimental_incremental_execution: bool = False
     _unsafe_disable_same_type_validation: bool = False
     scalar_map: Mapping[object, ScalarDefinition] = field(default_factory=dict)
     batching_config: BatchingConfig | None = None
+    sort_schema: bool = False
 
     def __post_init__(
         self,
