@@ -112,6 +112,33 @@ def test_models_can_define_is_type_of():
     assert "Expected value of type 'User'" in result.errors[0].message
 
 
+def test_objects_cast_to_a_type_implementing_an_interface():
+    @strawberry.pydantic.interface
+    class Node(pydantic.BaseModel):
+        id: strawberry.ID
+
+    @strawberry.pydantic.type
+    class User(Node):
+        name: str
+
+    class UserRow:
+        id = "1"
+        name = "Ada"
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def node(self) -> Node:
+            return strawberry.cast(User, UserRow())
+
+    result = strawberry.Schema(query=Query, types=[User]).execute_sync(
+        "{ node { id ... on User { name } } }"
+    )
+
+    assert not result.errors
+    assert result.data == {"node": {"id": "1", "name": "Ada"}}
+
+
 def test_schema_generation():
     """Test that the decorated models work in schema generation."""
 
@@ -169,8 +196,9 @@ type User {
     [
         strawberry.pydantic.type,
         strawberry.pydantic.input,
+        strawberry.pydantic.interface,
     ],
-    ids=["type", "input"],
+    ids=["type", "input", "interface"],
 )
 def test_decorating_a_class_that_is_not_a_pydantic_model_raises_an_error(
     decorator: Callable[[type], type],
