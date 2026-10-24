@@ -32,6 +32,12 @@ from graphql import (
     StringValueNode,
     VariableNode,
     parse,
+    validate,
+)
+from graphql.validation import (
+    FieldsOnCorrectTypeRule,
+    KnownFragmentNamesRule,
+    KnownTypeNamesRule,
 )
 
 from strawberry.types.base import (
@@ -50,6 +56,7 @@ from strawberry.types.unset import UNSET
 from strawberry.utils.str_converters import capitalize_first, to_camel_case
 
 from .exceptions import (
+    InvalidOperationError,
     MultipleOperationsProvidedError,
     NoOperationNameProvidedError,
     NoOperationProvidedError,
@@ -330,6 +337,8 @@ class QueryCodegen:
         if operation.name is None:
             raise NoOperationNameProvidedError
 
+        self._validate(ast)
+
         # Look for any free-floating fragments and create types out of them
         # These types can then be referenced and included later via the
         # fragment spread operator.
@@ -340,6 +349,18 @@ class QueryCodegen:
         self.plugin_manager.on_end(result)
 
         return result
+
+    def _validate(self, ast: DocumentNode) -> None:
+        # Only check what code generation relies on, so documents that use
+        # client-side directives or leave variables unused keep working.
+        errors = validate(
+            self.schema._schema,
+            ast,
+            [FieldsOnCorrectTypeRule, KnownFragmentNamesRule, KnownTypeNamesRule],
+        )
+
+        if errors:
+            raise InvalidOperationError(errors)
 
     def _collect_type(self, type_: GraphQLType) -> None:
         if type_ in self.types:
