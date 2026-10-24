@@ -30,7 +30,9 @@ Inputs are validated by Pydantic when the arguments are converted. Invalid
 inputs are reported as GraphQL errors with a `validationErrors` extension, or,
 by returning `User | strawberry.pydantic.ValidationError` and registering
 `strawberry.pydantic.PydanticValidationErrorHandler` in the schema's
-`exception_handlers`, as typed results.
+`exception_handlers`, as typed results. `ValidationError.errors` contains
+`ValidationErrorDetail` objects with `location`, `message` and `type` fields.
+`InputValidationError.errors` exposes the same details to Python handlers.
 
 Pydantic owns nested validation. Strawberry converts names and scalars and
 transports GraphQL lists as tuples for tuple fields, including in strict mode;

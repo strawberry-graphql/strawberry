@@ -999,8 +999,8 @@ review the errors your API exposes.
 
 The error is raised as `strawberry.pydantic.InputValidationError`, a
 [`StrawberryInputCoercionError`](../guides/errors.md#strawberry-input-coercion-errors),
-so it can be told apart from server errors. Its `issues` attribute is the list
-of `ValidationIssue`s, each with the `location`, `message` and `type` of a
+so it can be told apart from server errors. Its `errors` attribute is the list
+of `ValidationErrorDetail`s, each with the `location`, `message` and `type` of a
 problem, which you can use for example in your own
 [exception handler](../guides/errors.md#mapping-expected-exceptions-to-union-results).
 Each argument is validated on its own, so when several arguments are invalid,
@@ -1053,7 +1053,7 @@ mutation {
       name
     }
     ... on ValidationError {
-      issues {
+      errors {
         location
         message
         type
@@ -1323,8 +1323,8 @@ reports a missing field as `Field required`.
 
 <Note>
 
-The `ValidationError` and `ValidationIssue` types aren't `@shareable` yet, so
-two subgraphs that both use them don't compose: composition fails with
+The `ValidationError` and `ValidationErrorDetail` types aren't `@shareable` yet,
+so two subgraphs that both use them don't compose: composition fails with
 `INVALID_FIELD_SHARING` errors.
 
 </Note>
