@@ -12,6 +12,8 @@ from strawberry.exceptions.utils.source_finder import SourceFinder
 from strawberry.types.base import has_object_definition
 
 if TYPE_CHECKING:
+    from collections.abc import Callable, Sequence
+
     from strawberry.exceptions.exception_source import ExceptionSource
     from strawberry.types.field import StrawberryField
 
@@ -442,6 +444,52 @@ class UnsupportedFieldOverrideError(StrawberryException):
         return SourceFinder().find_class_attribute_from_object(
             self.cls, self.field_name
         )
+
+
+class IgnoredSerializerError(StrawberryException):
+    def __init__(
+        self,
+        cls: type,
+        *,
+        decorator: str,
+        field_names: Sequence[str] = (),
+        serializer: Callable[..., Any] | None = None,
+    ) -> None:
+        self.cls = cls
+        self.field_names = field_names
+        self.serializer = serializer
+
+        if field_names:
+            *others, last = [f"`{name}`" for name in field_names]
+            fields = f"{', '.join(others)} and {last}" if others else last
+            template = (
+                f"Pydantic {decorator} `{{cls}}` customizes how {fields} "
+                f"{'are' if others else 'is'} serialized, which GraphQL doesn't apply"
+            )
+            self.annotation_message = "serialization that GraphQL doesn't apply"
+        else:
+            template = (
+                f"Pydantic {decorator} `{{cls}}` has a model serializer, which GraphQL "
+                "doesn't apply"
+            )
+            self.annotation_message = "model serializer that GraphQL doesn't apply"
+
+        self.message, self.rich_message = _format_message(template, cls=cls.__name__)
+        self.suggestion = (
+            "GraphQL resolves fields from the model's attributes, not from "
+            "`model_dump()`, so Pydantic's serializers would silently be ignored. "
+            "To change a value in GraphQL, use a field with a resolver or a custom "
+            "scalar, and to hide it, `strawberry.Private` or `Field(exclude=True)`."
+        )
+
+        super().__init__(self.message)
+
+    @cached_property
+    def exception_source(self) -> ExceptionSource | None:
+        if self.serializer is not None:
+            return SourceFinder().find_function_from_object(self.serializer)
+
+        return _find_field_source(self.cls, self.field_names[0])
 
 
 class StrawberryBaseBeforeModelError(StrawberryException):

@@ -476,11 +476,14 @@ Input types are not affected: clients can still send fields marked with
 `exclude=True`.
 
 Other serialization settings don't apply to GraphQL: output fields are resolved
-from the model's attributes, not from `model_dump()`, so Pydantic's serializers
-(`field_serializer`, `PlainSerializer`, `WrapSerializer` and
-`model_serializer`), serialization aliases and `Field(exclude_if=...)` are not
-applied. To hide or redact a value, use `strawberry.Private`,
-`Field(exclude=True)` or a [resolver field](#resolver-fields):
+from the model's attributes, not from `model_dump()`, so serialization aliases
+are ignored. Serializers are often used to hide or redact values, so instead of
+ignoring them, types and interfaces with serializers on their fields
+(`field_serializer`, `PlainSerializer` or `WrapSerializer`),
+`Field(exclude_if=...)` or a `model_serializer` raise an
+[`IgnoredSerializerError`](../errors/ignored-serializer.md). To hide or redact a
+value, use `strawberry.Private`, `Field(exclude=True)` or a
+[resolver field](#resolver-fields):
 
 ```python
 @strawberry.pydantic.type
@@ -491,6 +494,21 @@ class Customer(BaseModel):
     @strawberry.pydantic.field
     def masked_email(self) -> str:
         return f"{self.email[0]}***"
+```
+
+If the serializers are only meant for other uses of the model, like a REST API,
+pass `ignore_serializers=True` to `@strawberry.pydantic.type` or
+`@strawberry.pydantic.interface`, and GraphQL returns the values of the
+attributes:
+
+```python
+@strawberry.pydantic.type(ignore_serializers=True)
+class Event(BaseModel):
+    starts_at: datetime  # GraphQL returns the full date and time
+
+    @field_serializer("starts_at")
+    def as_date(self, value: datetime) -> str:
+        return value.strftime("%Y-%m-%d")
 ```
 
 Pydantic's `SecretStr` fields are exposed as strings with their masked value,

@@ -33,6 +33,8 @@ from pydantic import (
     NaiveDatetime,
     PastDate,
     PastDatetime,
+    PlainSerializer,
+    WrapSerializer,
 )
 from pydantic_core import PydanticUndefined
 
@@ -55,6 +57,7 @@ from strawberry.types.unresolved_annotations import find_unresolved_options
 from strawberry.utils.inspect import get_generic_arguments
 
 from .exceptions import (
+    IgnoredSerializerError,
     MaybeFieldError,
     MisplacedFieldError,
     UnregisteredPydanticTypeError,
@@ -65,7 +68,14 @@ from .exceptions import (
 from .resolver_field import get_resolver_field, is_field_decorator
 
 if TYPE_CHECKING:
-    from collections.abc import Collection, Iterable, Iterator, Mapping
+    from collections.abc import (
+        Callable,
+        Collection,
+        Iterable,
+        Iterator,
+        Mapping,
+        Sequence,
+    )
 
     from pydantic.fields import FieldInfo
 
@@ -628,6 +638,64 @@ def _is_computed_field(base: type, attribute: str, value: object) -> bool:
     return getter is decorators.computed_fields[attribute].func
 
 
+def check_serializers(
+    cls: type[BaseModel], *, field_names: Sequence[str], decorator: str
+) -> None:
+    """Raise if pydantic serializes the fields of `cls` in a way GraphQL doesn't.
+
+    GraphQL resolves the fields of output types from the model's attributes, not
+    from `model_dump()`, so serializers, which can hide or redact values, would
+    silently be ignored. `field_names` are the fields of the GraphQL type.
+    """
+    decorators = cls.__pydantic_decorators__
+
+    # e.g. a serializer that leaves out some fields, or reshapes the model
+    if decorators.model_serializers:
+        model_serializer = next(iter(decorators.model_serializers.values()))
+
+        raise IgnoredSerializerError(
+            cls, decorator=decorator, serializer=model_serializer.func
+        )
+
+    # the serialized fields, with their `@field_serializer` if they have one
+    serializers: dict[str, Callable[..., Any] | None] = {}
+
+    for serializer in decorators.field_serializers.values():
+        names = field_names if "*" in serializer.info.fields else serializer.info.fields
+
+        for name in names:
+            serializers.setdefault(name, serializer.func)
+
+    for name, field_info in cls.model_fields.items():
+        metadata = [
+            *field_info.metadata,
+            *_get_annotated_metadata(field_info.annotation),
+        ]
+
+        if any(
+            isinstance(item, (PlainSerializer, WrapSerializer)) for item in metadata
+        ) or (
+            # only in pydantic 2.12 and later
+            getattr(field_info, "exclude_if", None) is not None
+        ):
+            serializers.setdefault(name, None)
+
+    for name, computed_field in cls.model_computed_fields.items():
+        if any(
+            isinstance(item, (PlainSerializer, WrapSerializer))
+            for item in _get_annotated_metadata(computed_field.return_type)
+        ):
+            serializers.setdefault(name, None)
+
+    if serialized := [name for name in field_names if name in serializers]:
+        raise IgnoredSerializerError(
+            cls,
+            decorator=decorator,
+            field_names=serialized,
+            serializer=serializers[serialized[0]],
+        )
+
+
 def get_type_var_map(cls: type[BaseModel]) -> dict[str, StrawberryType | type]:
     """Map the type parameters of the generic model `cls` parametrizes.
 
@@ -899,4 +967,9 @@ def get_pydantic_fields(
     return fields
 
 
-__all__ = ["get_pydantic_fields", "get_resolver_fields", "get_type_var_map"]
+__all__ = [
+    "check_serializers",
+    "get_pydantic_fields",
+    "get_resolver_fields",
+    "get_type_var_map",
+]
