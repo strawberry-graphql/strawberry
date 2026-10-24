@@ -314,6 +314,27 @@ def _set_input_default(field: StrawberryField, field_info: FieldInfo) -> None:
         )
 
 
+def _is_registered(model: type[BaseModel]) -> bool:
+    """Whether `model` has a GraphQL type of its own.
+
+    The definition is inherited by subclasses, which would otherwise be the
+    GraphQL type of their decorated base. Generic models give one to their
+    parametrizations, like `Page[User]`, when it's read.
+    """
+    definition = getattr(model, "__strawberry_definition__", None)
+
+    if not isinstance(definition, StrawberryObjectDefinition):
+        return False
+
+    if definition.origin is model:
+        return True
+
+    # e.g. `Page[T]` in another generic model, which is specialized with it
+    metadata = model.__pydantic_generic_metadata__
+
+    return metadata["origin"] is definition.origin and bool(metadata["parameters"])
+
+
 def _find_unregistered_model(
     type_: Any,
     model: type[BaseModel] | None,
@@ -338,10 +359,8 @@ def _find_unregistered_model(
         if model is None and getattr(type_, "__strawberry_definition__", None):
             return None
         # `model` can reference itself, but it's only registered after its
-        # fields. The definition is inherited by subclasses, which would
-        # otherwise be the GraphQL type of their decorated base, and by
-        # parametrized generic models, like `Page[User]`
-        if type_ is model or "__strawberry_definition__" in vars(type_):
+        # fields
+        if type_ is model or _is_registered(type_):
             return None
 
         return type_
@@ -386,6 +405,19 @@ def validate_field_type(
             field_name=field.python_name or field.name,
             is_input=is_input,
         )
+
+
+def _has_recursive_reference(type_: Any) -> bool:
+    """Whether `type_` has a reference to a generic model that's being created.
+
+    Pydantic types the fields of a parametrized generic model that reference the
+    parametrization itself, like `children: list[Tree[T]]` in `Tree[int]`, with a
+    placeholder. It isn't public, so it's recognized by its name.
+    """
+    if type(type_).__name__ == "PydanticRecursiveRef":
+        return True
+
+    return any(_has_recursive_reference(arg) for arg in get_args(type_))
 
 
 def _with_strawberry_metadata(annotation: Any, metadata: Iterable[object]) -> Any:
@@ -500,6 +532,13 @@ def _create_strawberry_field(
     namespace = vars(module) if module is not None else None
 
     if strawberry_field.type_annotation is None:
+        if _has_recursive_reference(annotation):
+            raise TypeError(
+                f"`{cls.__name__}.{field_name}` references a parametrized generic "
+                f"model while it's created, like `children: list[Tree[T]]` in a "
+                "`Tree[T]`, which isn't supported yet"
+            )
+
         strawberry_field.type_annotation = StrawberryAnnotation(
             annotation, namespace=namespace
         )
@@ -587,6 +626,20 @@ def _is_computed_field(base: type, attribute: str, value: object) -> bool:
         return False
 
     return getter is decorators.computed_fields[attribute].func
+
+
+def get_type_var_map(cls: type[BaseModel]) -> dict[str, StrawberryType | type]:
+    """Map the type parameters of the generic model `cls` parametrizes.
+
+    `cls` is a parametrization like `Page[User]`. The arguments are converted like
+    the types of fields, so the specialized type is named after their GraphQL
+    types.
+    """
+    metadata = cls.__pydantic_generic_metadata__
+    assert metadata["origin"] is not None
+
+    parameters = metadata["origin"].__pydantic_generic_metadata__["parameters"]
+    return _get_type_var_map(cls, dict(zip(parameters, metadata["args"], strict=True)))
 
 
 def get_resolver_fields(
@@ -846,4 +899,4 @@ def get_pydantic_fields(
     return fields
 
 
-__all__ = ["get_pydantic_fields", "get_resolver_fields"]
+__all__ = ["get_pydantic_fields", "get_resolver_fields", "get_type_var_map"]

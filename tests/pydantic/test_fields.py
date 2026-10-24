@@ -321,19 +321,18 @@ def test_undecorated_subclasses_of_types_cant_be_field_types():
 @pytest.mark.raises_strawberry_exception(
     UnregisteredPydanticTypeError,
     match=(
-        r"`Holder\.page` uses `Page\[.*User\]`, a parametrized generic model, "
-        r"which can't be a GraphQL type: decorate a subclass of it with "
+        r"`Holder\.page` uses `Page\[.*User\]`, a parametrized generic model of "
+        r"`Page`, which isn't a Strawberry type: decorate `Page` with "
         r"`@strawberry\.pydantic\.type`"
     ),
 )
-def test_parametrized_generic_models_need_a_decorated_subclass():
+def test_parametrized_generic_models_need_a_decorated_generic_model():
     T = TypeVar("T")
 
     @strawberry.pydantic.type
     class User(pydantic.BaseModel):
         name: str
 
-    @strawberry.pydantic.type
     class Page(pydantic.BaseModel, Generic[T]):
         items: list[T]
 

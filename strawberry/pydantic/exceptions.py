@@ -97,19 +97,18 @@ class UnregisteredPydanticTypeError(StrawberryException):
         )
 
         if generic_metadata.get("origin") is not None:
-            # e.g. `Page[User]`, which pydantic creates when it's used
+            # e.g. `Page[User]`, which pydantic creates when it's used, and which
+            # is a GraphQL type when `Page` is decorated
             origin = generic_metadata["origin"].__name__
-            subclass = "".join(
-                [
-                    *(getattr(arg, "__name__", "") for arg in generic_metadata["args"]),
-                    origin,
-                ]
+            problem = (
+                f"a parametrized generic model of `{origin}`, which isn't a "
+                "Strawberry type"
             )
-            problem = "a parametrized generic model, which can't be a GraphQL type"
-            fix = f"decorate a subclass of it with `{decorator}`"
+            fix = f"decorate `{origin}` with `{decorator}`"
             suggestion = (
-                f"Decorate a subclass of it instead, for example: `{decorator} "
-                f"class {subclass}({type_.__name__}): pass`."
+                f"Decorate the generic model `{origin}` with `{decorator}`, which "
+                f"makes its parametrizations, like `{type_.__name__}`, GraphQL "
+                "types too."
             )
         elif decorated_base is not None:
             problem = (
