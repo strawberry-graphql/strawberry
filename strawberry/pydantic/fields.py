@@ -4,8 +4,19 @@ from __future__ import annotations
 
 import copy
 import dataclasses
+import functools
 import sys
-from typing import TYPE_CHECKING, Annotated, Any, Optional, get_args
+from typing import (
+    TYPE_CHECKING,
+    Annotated,
+    Any,
+    Literal,
+    Optional,
+    TypeGuard,
+    TypeVar,
+    get_args,
+    get_origin,
+)
 from typing_extensions import Format, get_annotations
 
 from graphql.type.directives import DEFAULT_DEPRECATION_REASON
@@ -13,22 +24,33 @@ from pydantic import BaseModel
 from pydantic_core import PydanticUndefined
 
 from strawberry.annotation import StrawberryAnnotation
+from strawberry.exceptions import (
+    ResolverFieldOnInputError,
+)
 from strawberry.file_uploads import Upload
 from strawberry.types.base import StrawberryObjectDefinition
 from strawberry.types.field import StrawberryField, get_annotated_field
 from strawberry.types.maybe import _annotation_is_maybe
 from strawberry.types.private import is_private
+from strawberry.utils.inspect import get_generic_arguments
 
 from .exceptions import (
     MaybeFieldError,
     MisplacedFieldError,
     UnregisteredPydanticTypeError,
+    UnsupportedFieldOverrideError,
     UnsupportedInheritedFieldError,
     UploadFieldError,
 )
+from .resolver_field import get_resolver_field, is_field_decorator
 
 if TYPE_CHECKING:
+    from collections.abc import Collection, Iterator, Mapping
+
     from pydantic.fields import FieldInfo
+
+    from strawberry.exceptions import StrawberryException
+    from strawberry.types.base import StrawberryType
 
 
 def _is_subclass(annotation: object, base: type | tuple[type, ...]) -> bool:
@@ -65,6 +87,42 @@ def _get_strawberry_base_field(origin: type, field_name: str) -> StrawberryField
     return definition.get_field(field_name)
 
 
+def _is_strawberry_resolver_field(value: object) -> TypeGuard[StrawberryField]:
+    """Whether `value` is a `strawberry.field()` with a resolver."""
+    return isinstance(value, StrawberryField) and value.base_resolver is not None
+
+
+def _get_strawberry_base_resolver_fields(base: type) -> list[StrawberryField] | None:
+    """Return the fields with a resolver of a regular Strawberry type or interface.
+
+    Returns `None` for other classes. Strawberry keeps the resolvers of its types
+    on the class as plain functions, so only the type's definition knows that
+    they're fields.
+    """
+    if issubclass(base, BaseModel):
+        return None
+
+    # only the class's own definition, not one inherited from its bases
+    definition = vars(base).get("__strawberry_definition__")
+
+    if not isinstance(definition, StrawberryObjectDefinition):
+        return None
+
+    return [field for field in definition.fields if field.base_resolver is not None]
+
+
+def _get_annotated_metadata(annotation: object) -> Iterator[object]:
+    """Yield the metadata of the `Annotated` types in `annotation`, at any depth."""
+    if get_origin(annotation) is Annotated:
+        annotation, *metadata = get_args(annotation)
+
+        yield from metadata
+        yield from _get_annotated_metadata(annotation)
+    else:
+        for arg in get_args(annotation):
+            yield from _get_annotated_metadata(arg)
+
+
 def _get_strawberry_field_override(
     field_info: FieldInfo, cls: type, field_name: str
 ) -> StrawberryField | None:
@@ -77,7 +135,17 @@ def _get_strawberry_field_override(
     # original object is only kept on a private attribute, so this check is best
     # effort.
     if isinstance(getattr(field_info, "_original_assignment", None), StrawberryField):
-        raise MisplacedFieldError(field_name=field_name, cls=cls)
+        raise MisplacedFieldError(field_name=field_name, cls=cls, usage="default")
+
+    # `strawberry.pydantic.field` is only for fields with a resolver
+    if is_field_decorator(field_info.default) or any(
+        is_field_decorator(item)
+        for item in (
+            *field_info.metadata,
+            *_get_annotated_metadata(field_info.annotation),
+        )
+    ):
+        raise MisplacedFieldError(field_name=field_name, cls=cls, usage="model_field")
 
     # pydantic keeps the metadata of the field's `Annotated` apart from its type
     annotation = (
@@ -147,17 +215,42 @@ def _find_unregistered_model(
     )
 
 
+def _get_computed_field_annotation(
+    cls: type[BaseModel], origin: type, field_name: str
+) -> tuple[Any, StrawberryField | None]:
+    """Return the type of a computed field and its `strawberry.field()`, if any."""
+    computed_field_info = cls.model_computed_fields[field_name]
+    annotation = computed_field_info.return_type
+
+    # `strawberry.pydantic.field` is only for fields with a resolver
+    if any(is_field_decorator(item) for item in _get_annotated_metadata(annotation)):
+        raise MisplacedFieldError(
+            field_name=field_name, cls=origin, usage="model_field"
+        )
+
+    return get_annotated_field(annotation, cls=origin, field_name=field_name)
+
+
 def _create_strawberry_field(
     cls: type[BaseModel],
     origin: type,
     field_name: str,
-    field_info: FieldInfo,
+    field_info: FieldInfo | None,
     *,
     is_input: bool,
 ) -> StrawberryField:
-    annotation = field_info.annotation
-    description = field_info.description
-    strawberry_override = _get_strawberry_field_override(field_info, origin, field_name)
+    # computed fields don't have a FieldInfo
+    if field_info is not None:
+        annotation = field_info.annotation
+        description = field_info.description
+        strawberry_override = _get_strawberry_field_override(
+            field_info, origin, field_name
+        )
+    else:
+        annotation, strawberry_override = _get_computed_field_annotation(
+            cls, origin, field_name
+        )
+        description = cls.model_computed_fields[field_name].description
 
     # Start from the user's `strawberry.field()`, so all of its options are
     # kept, and fill in what pydantic knows about the field
@@ -175,13 +268,23 @@ def _create_strawberry_field(
     if strawberry_field.description is None:
         strawberry_field.description = description
 
+    deprecated_field_info = (
+        field_info
+        if field_info is not None
+        else cls.model_computed_fields.get(field_name)
+    )
+
     # like `strawberry.field(deprecation_reason=...)`, deprecating a required
     # input field fails schema validation, as GraphQL doesn't allow it
-    if strawberry_field.deprecation_reason is None and field_info.deprecated:
+    if (
+        strawberry_field.deprecation_reason is None
+        and deprecated_field_info is not None
+        and deprecated_field_info.deprecated
+    ):
         strawberry_field.deprecation_reason = (
             DEFAULT_DEPRECATION_REASON
-            if field_info.deprecated is True
-            else field_info.deprecation_message
+            if deprecated_field_info.deprecated is True
+            else deprecated_field_info.deprecation_message
         )
 
     # types are resolved in the module declaring the field
@@ -190,7 +293,7 @@ def _create_strawberry_field(
 
     if strawberry_field.type_annotation is None:
         if (unregistered := _find_unregistered_model(annotation, cls)) is not None:
-            raise UnregisteredPydanticTypeError(
+            raise _unregistered_model_error(
                 unregistered, cls=origin, field_name=field_name, is_input=is_input
             )
 
@@ -213,8 +316,243 @@ def _create_strawberry_field(
     return strawberry_field
 
 
+def _unregistered_model_error(
+    model: type[BaseModel], *, cls: type, field_name: str, is_input: bool
+) -> StrawberryException:
+    """The error for a field using a model without a GraphQL definition."""
+    return UnregisteredPydanticTypeError(
+        model, cls=cls, field_name=field_name, is_input=is_input
+    )
+
+
+def _split_pydantic_base(base: Any) -> tuple[Any, tuple[Any, ...]]:
+    """Return the class and the arguments of a base of a pydantic model.
+
+    Pydantic parametrizes generic models with subclasses, like `Page[int]`, and
+    returns the model itself for `Page[T]` when `T` is its own type parameter,
+    like in `class Wrapper(Page[T], Generic[T])`.
+    """
+    metadata = getattr(base, "__pydantic_generic_metadata__", None)
+
+    if metadata is None:
+        return get_origin(base) or base, get_args(base)
+
+    if metadata["origin"] is None:
+        return base, tuple(metadata["parameters"])
+
+    return metadata["origin"], tuple(metadata["args"])
+
+
+def _get_type_var_map(
+    cls: type[BaseModel], arguments: Mapping[TypeVar, Any]
+) -> tuple[dict[str, StrawberryType | type], dict[str, type[BaseModel]]]:
+    """Map the type parameters of a generic model to the arguments `cls` gives them.
+
+    The arguments are converted like the types of data fields, so fields with a
+    resolver typed with a type parameter get the same GraphQL type. Arguments
+    that are models without a GraphQL definition are returned apart, by type
+    parameter name, so that only the fields using them raise an error.
+    """
+    type_var_map: dict[str, StrawberryType | type] = {}
+    unregistered_models: dict[str, type[BaseModel]] = {}
+
+    for parameter, argument in arguments.items():
+        # e.g. the type parameter of a generic model that isn't parametrized
+        if isinstance(argument, TypeVar):
+            continue
+
+        if (unregistered := _find_unregistered_model(argument, cls)) is not None:
+            unregistered_models[parameter.__name__] = unregistered
+
+        type_var_map[parameter.__name__] = StrawberryAnnotation(argument).resolve()
+
+    return type_var_map, unregistered_models
+
+
+def _is_computed_field(base: type, attribute: str, value: object) -> bool:
+    """Whether `value` is the computed field `attribute` defined by `base`.
+
+    The computed fields of a model include the inherited ones, even when a
+    subclass overrides them with something else, so the attribute is compared
+    to the computed field itself.
+    """
+    decorators = vars(base).get("__pydantic_decorators__")
+
+    if decorators is None or attribute not in decorators.computed_fields:
+        return False
+
+    if isinstance(value, property):
+        getter = value.fget
+    elif isinstance(value, functools.cached_property):
+        getter = value.func
+    else:
+        return False
+
+    return getter is decorators.computed_fields[attribute].func
+
+
+def get_resolver_fields(
+    cls: type[BaseModel], *, is_input: bool, include_computed: bool
+) -> list[StrawberryField]:
+    """Collect the fields with a resolver of `cls` and of its bases.
+
+    Computed fields override inherited resolver fields only when they're
+    included in the type, otherwise the field would be removed.
+    """
+    for field_name, field_info in cls.model_fields.items():
+        default = field_info.default
+
+        # pydantic uses a method that overrides a field as the field's default,
+        # and removes it from the class. A field that overrides an inherited
+        # method uses it as default too, but the method is still in its class
+        if get_resolver_field(default) is not None and not any(
+            vars(base).get(field_name) is default for base in cls.__mro__
+        ):
+            raise UnsupportedFieldOverrideError(
+                field_name=field_name, cls=cls, overridden="model_field"
+            )
+
+    if is_input:
+        # resolvers inherited from e.g. a base shared with an output type are
+        # ignored, as input types only hold the values sent by the client
+        for attribute, value in vars(cls).items():
+            # e.g. a `@strawberry.field` method in a model that makes pydantic
+            # ignore `StrawberryField`
+            resolver_field = (
+                value
+                if _is_strawberry_resolver_field(value)
+                else get_resolver_field(value)
+            )
+
+            if resolver_field is not None:
+                raise ResolverFieldOnInputError(
+                    field_name=attribute, cls=cls, resolver_field=resolver_field
+                )
+
+        return []
+
+    resolver_fields: dict[str, StrawberryField] = {}
+    # the model declaring each resolver, whose type parameters it uses
+    declared_in: dict[str, type] = {}
+    computed_fields: set[str] = set()
+    # fields overridden by an attribute that isn't a field, like a method
+    # without `strawberry.pydantic.field`, with the base defining it and the
+    # kind of field it overrides
+    overridden_by: dict[
+        str, tuple[type, Literal["resolver_field", "computed_field"]]
+    ] = {}
+
+    # bases first, so that subclasses can override their fields
+    for base in reversed(cls.__mro__):
+        # e.g. a data field that overrides an inherited resolver field
+        for name in get_annotations(base, format=Format.FORWARDREF):
+            resolver_fields.pop(name, None)
+            computed_fields.discard(name)
+            overridden_by.pop(name, None)
+
+        # e.g. the `@strawberry.field` methods of a regular Strawberry interface
+        if (base_fields := _get_strawberry_base_resolver_fields(base)) is not None:
+            for base_field in base_fields:
+                assert base_field.python_name is not None
+
+                resolver_fields[base_field.python_name] = base_field
+                declared_in[base_field.python_name] = base
+                computed_fields.discard(base_field.python_name)
+                overridden_by.pop(base_field.python_name, None)
+
+            continue
+
+        for attribute, value in list(vars(base).items()):
+            # pydantic types only read `strawberry.field()` from Strawberry types,
+            # but a model that makes pydantic ignore `StrawberryField`, or a class
+            # that isn't decorated, can still have one
+            if _is_strawberry_resolver_field(value):
+                raise MisplacedFieldError(
+                    field_name=attribute, cls=base, usage="resolver", field=value
+                )
+
+            if (resolver_field := get_resolver_field(value)) is not None:
+                resolver_fields[attribute] = resolver_field
+                declared_in[attribute] = base
+                computed_fields.discard(attribute)
+                overridden_by.pop(attribute, None)
+            elif include_computed and _is_computed_field(base, attribute, value):
+                # computed fields replace resolver fields, like data fields
+                resolver_fields.pop(attribute, None)
+                computed_fields.add(attribute)
+                overridden_by.pop(attribute, None)
+            elif attribute in resolver_fields:
+                del resolver_fields[attribute]
+                overridden_by[attribute] = (base, "resolver_field")
+            # a property only changes the value of a computed field, but pydantic
+            # would use e.g. a method itself as the value
+            elif attribute in computed_fields and not isinstance(
+                value, (property, functools.cached_property)
+            ):
+                computed_fields.discard(attribute)
+                overridden_by[attribute] = (base, "computed_field")
+
+    # checked once the bases have been walked, as a subclass can define the
+    # field again
+    if overridden_by:
+        attribute, (base, overridden) = next(iter(overridden_by.items()))
+
+        raise UnsupportedFieldOverrideError(
+            field_name=attribute, cls=base, overridden=overridden
+        )
+
+    generic_arguments = get_generic_arguments(cls, _split_pydantic_base)
+    fields = []
+
+    for attribute, resolver_field in resolver_fields.items():
+        # e.g. `label = strawberry.pydantic.field(get_label)` is named `label`.
+        # It's set before copying, as copying reads the name, which falls back
+        # to the resolver's `__name__`, and `functools.partial` doesn't have one
+        resolver_field.python_name = attribute
+        field = copy.copy(resolver_field)
+        field.origin = cls
+
+        resolver = field.base_resolver
+        assert resolver is not None
+
+        # like `@strawberry.type`, static and class methods are bound to the
+        # class, also when they're inherited from a regular Strawberry type
+        field.base_resolver = resolver = resolver.bind(cls)
+
+        if (
+            field.type_annotation is not None
+            and field.type_annotation.namespace is None
+        ):
+            # set by `graphql_type=...`, which is resolved like the resolver's
+            # own annotations
+            field.type_annotation.namespace = resolver._namespace
+
+        if field.is_graphql_generic:
+            type_var_map, unregistered_models = _get_type_var_map(
+                cls, generic_arguments.get(declared_in[attribute], {})
+            )
+            type_params = [type_var.__name__ for type_var in field.type_params]
+
+            # e.g. a resolver of a generic model that isn't parametrized
+            if all(name in type_var_map for name in type_params):
+                for name in type_params:
+                    if (model := unregistered_models.get(name)) is not None:
+                        raise _unregistered_model_error(
+                            model, cls=cls, field_name=attribute, is_input=False
+                        )
+
+                field = field.copy_with(type_var_map)
+
+        fields.append(field)
+
+    return fields
+
+
 def get_pydantic_fields(
-    cls: type[BaseModel], is_input: bool = False
+    cls: type[BaseModel],
+    is_input: bool = False,
+    include_computed: bool = False,
+    resolver_field_names: Collection[str] = (),
 ) -> list[StrawberryField]:
     """Return the Strawberry fields of a Pydantic model.
 
@@ -229,41 +567,81 @@ def get_pydantic_fields(
     class User(BaseModel):
         name: str
         age: Annotated[int, strawberry.field(directives=[SomeDirective()])]
+
+    `resolver_field_names` are the names of the resolver fields of `cls`, which
+    replace the computed fields with the same name.
     """
     fields: list[StrawberryField] = []
 
+    field_names = list(cls.model_fields)
+
+    if include_computed:
+        # replaced computed fields are left out before their type is resolved,
+        # as it doesn't have to be a Strawberry type
+        field_names.extend(
+            name
+            for name in cls.model_computed_fields
+            if name not in resolver_field_names
+        )
+
     origins = _get_field_origins(cls)
 
-    for field_name, field_info in cls.model_fields.items():
-        origin = origins.get(field_name, cls)
+    for field_name in field_names:
+        # computed fields don't have a FieldInfo
+        field_info = cls.model_fields.get(field_name)
 
-        if is_private(field_info.rebuild_annotation()):
-            continue
+        if field_info is None:
+            # computed fields are properties, not annotations
+            origin = next(
+                (base for base in cls.__mro__ if field_name in vars(base)), cls
+            )
+        else:
+            origin = origins.get(field_name, cls)
 
-        # `exclude=True` hides a field from pydantic's serialization, so we
-        # hide it from the GraphQL output too
-        if field_info.exclude is True and not is_input:
-            continue
+        if field_info is None:
+            # e.g. `-> strawberry.Private[int]` on a computed field
+            if is_private(cls.model_computed_fields[field_name].return_type):
+                continue
+        else:
+            if is_private(field_info.rebuild_annotation()):
+                continue
 
-        # Uploads are the integration's file objects, which pydantic would
-        # reject on every request when validating them as `Upload` (bytes)
-        if is_input and _contains_upload(field_info.annotation):
-            raise UploadFieldError(field_name=field_name, cls=origin)
+            # `exclude=True` hides a field from pydantic's serialization, so we
+            # hide it from the GraphQL output too
+            if field_info.exclude is True and not is_input:
+                continue
 
-        if is_input and _annotation_is_maybe(field_info.annotation):
-            raise MaybeFieldError(field_name=field_name, cls=origin)
+            # Uploads are the integration's file objects, which pydantic would
+            # reject on every request when validating them as `Upload` (bytes)
+            if is_input and _contains_upload(field_info.annotation):
+                raise UploadFieldError(field_name=field_name, cls=origin)
+
+            if is_input and _annotation_is_maybe(field_info.annotation):
+                raise MaybeFieldError(field_name=field_name, cls=origin)
 
         if (base_field := _get_strawberry_base_field(origin, field_name)) is not None:
+            # pydantic sees the annotation of a field with a resolver, like
+            # `label: str = strawberry.field(resolver=get_label)`, and makes it a
+            # field of the model, with the resolver as its default value
+            if base_field.base_resolver is not None:
+                raise UnsupportedInheritedFieldError(
+                    field_name=field_name, cls=cls, base=origin, reason="resolver"
+                )
+
             # dataclasses don't keep a default factory on the class, so pydantic
             # doesn't see it and requires the field, which clients can omit when
             # it's nullable
             if (
                 is_input
+                and field_info is not None
                 and field_info.is_required()
                 and base_field.default_factory is not dataclasses.MISSING
             ):
                 raise UnsupportedInheritedFieldError(
-                    field_name=field_name, cls=cls, base=origin
+                    field_name=field_name,
+                    cls=cls,
+                    base=origin,
+                    reason="default_factory",
                 )
 
             # inputs replace the field's default with pydantic's below
@@ -273,7 +651,7 @@ def get_pydantic_fields(
                 cls, origin, field_name, field_info, is_input=is_input
             )
 
-        if is_input:
+        if is_input and field_info is not None:
             _set_input_default(strawberry_field, field_info)
 
         fields.append(strawberry_field)
@@ -281,4 +659,4 @@ def get_pydantic_fields(
     return fields
 
 
-__all__ = ["get_pydantic_fields"]
+__all__ = ["get_pydantic_fields", "get_resolver_fields"]
