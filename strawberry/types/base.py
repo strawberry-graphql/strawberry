@@ -281,19 +281,17 @@ def check_is_not_undecorated_subclass(type_: object) -> None:
     Generic aliases like `Edge[int]` aren't classes, so they're left alone, and
     the classes they're resolved to have their own definition.
     """
-    if not isinstance(type_, type) or "__strawberry_definition__" in vars(type_):
+    if not isinstance(type_, type):
         return
 
-    if not has_object_definition(type_):
+    # Reading a descriptor may give an integration's subclass its own definition.
+    definition = get_object_definition(type_)
+    if definition is None or definition.origin is type_:
         return
 
     from strawberry.exceptions import UndecoratedSubclassError
 
-    for base in type_.__mro__[1:]:
-        definition = vars(base).get("__strawberry_definition__")
-
-        if isinstance(definition, StrawberryObjectDefinition):
-            raise UndecoratedSubclassError(type_, base, definition)
+    raise UndecoratedSubclassError(type_, definition.origin, definition)
 
 
 @dataclasses.dataclass(eq=False)

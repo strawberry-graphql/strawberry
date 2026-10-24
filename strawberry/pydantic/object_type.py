@@ -7,6 +7,8 @@ into GraphQL types, inputs, and interfaces without requiring a separate wrapper 
 from __future__ import annotations
 
 import builtins
+import dataclasses
+import functools
 from typing import TYPE_CHECKING, TypeVar, overload
 
 from pydantic import BaseModel
@@ -23,7 +25,7 @@ from .exceptions import (
     NotAPydanticModelError,
     StrawberryBaseBeforeModelError,
 )
-from .fields import get_pydantic_fields, get_resolver_fields
+from .fields import get_pydantic_fields, get_resolver_fields, get_type_var_map
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
@@ -48,6 +50,44 @@ def _find_strawberry_base_before_model(
     return None
 
 
+@dataclasses.dataclass(eq=False)
+class _GenericModelDefinition(StrawberryObjectDefinition):
+    """The definition of a generic model, like `Page` in `Page[User]`.
+
+    Pydantic parametrizes generic models with subclasses, which would inherit
+    this definition. Instead, reading it from a parametrization that has no type
+    parameters left, like `Page[User]`, gives the parametrization a definition
+    of its own, specialized like `Page[User]` is with a generic
+    `@strawberry.type`, which names it `UserPage`. Pydantic reuses the classes of
+    its parametrizations, so each one is only built once.
+    """
+
+    # the option of the decorator that isn't part of the definition
+    include_computed: bool = True
+
+    def __get__(
+        self, instance: object, owner: builtins.type[BaseModel]
+    ) -> StrawberryObjectDefinition:
+        metadata = owner.__pydantic_generic_metadata__
+
+        # e.g. the generic model itself, a subclass of it, or `Page[T]`
+        if metadata["origin"] is not self.origin or metadata["parameters"]:
+            return self
+
+        _process_pydantic_type(
+            owner,
+            name=self.name,
+            is_input=self.is_input,
+            is_interface=self.is_interface,
+            description=self.description,
+            directives=self.directives,
+            include_computed=self.include_computed,
+            generic=self,
+        )
+
+        return vars(owner)["__strawberry_definition__"]
+
+
 # The decorators return the class they're given, so type checkers keep the
 # model's own type instead of a plain BaseModel
 ModelT = TypeVar("ModelT", bound="BaseModel")
@@ -62,6 +102,7 @@ def _process_pydantic_type(
     description: str | None = None,
     directives: Sequence[object] | None = (),
     include_computed: bool = True,
+    generic: _GenericModelDefinition | None = None,
 ) -> builtins.type[ModelT]:
     """Process a Pydantic BaseModel class and add GraphQL metadata.
 
@@ -73,6 +114,8 @@ def _process_pydantic_type(
         description: The GraphQL type description
         directives: GraphQL directives to apply
         include_computed: Whether to include computed fields
+        generic: The definition of the generic model `cls` parametrizes, when
+            it's specialized, like `Page[User]`
 
     Returns:
         The processed BaseModel class with GraphQL metadata
@@ -81,6 +124,17 @@ def _process_pydantic_type(
 
     if not (isinstance(cls, builtins.type) and issubclass(cls, BaseModel)):
         raise NotAPydanticModelError(cls, decorator)
+
+    generic_metadata = cls.__pydantic_generic_metadata__
+
+    # before the check for decorated models, as they can already be specialized
+    if generic is None and (origin := generic_metadata["origin"]) is not None:
+        raise TypeError(
+            f"`{cls.__name__}` is a parametrized generic model, which can't be "
+            f"decorated: decorate `{origin.__name__}` instead, which makes "
+            f"`{cls.__name__}` a GraphQL type too, or a subclass of `{cls.__name__}` "
+            "to give it a name of its own"
+        )
 
     if "__strawberry_definition__" in vars(cls):
         raise ModelAlreadyDecoratedError(cls, decorator)
@@ -105,6 +159,12 @@ def _process_pydantic_type(
         *resolver_fields,
     ]
 
+    # parametrized interfaces, like `Node[User]` in `class Ada(Node[User])`, get
+    # the definition `_get_interfaces` looks for when it's read
+    for base in cls.__mro__[1:]:
+        if getattr(base, "__pydantic_generic_metadata__", {}).get("origin"):
+            getattr(base, "__strawberry_definition__", None)
+
     interfaces = _get_interfaces(cls)
 
     if is_input and interfaces:
@@ -112,7 +172,22 @@ def _process_pydantic_type(
             cls=cls, input_name=name, interfaces=interfaces
         )
 
-    cls.__strawberry_definition__ = StrawberryObjectDefinition(  # type: ignore
+    # types implement the specialized interfaces, as generic ones can't be part
+    # of the schema
+    interfaces = [
+        interface
+        for interface in interfaces
+        if not isinstance(interface, _GenericModelDefinition)
+    ]
+
+    # generic models specialize their parametrizations
+    definition_type = (
+        functools.partial(_GenericModelDefinition, include_computed=include_computed)
+        if generic_metadata["parameters"]
+        else StrawberryObjectDefinition
+    )
+
+    cls.__strawberry_definition__ = definition_type(  # type: ignore
         name=name,
         is_input=is_input,
         is_interface=is_interface,
@@ -128,6 +203,10 @@ def _process_pydantic_type(
         resolve_type=getattr(cls, "resolve_type", None),
         from_input=build_pydantic_model if is_input else None,
         to_input=dump_pydantic_model if is_input else None,
+        # named like the specialized types of generic Strawberry types, e.g.
+        # `UserPage` for `Page[User]`, by the schema's name converter
+        concrete_of=generic,
+        type_var_map=get_type_var_map(cls) if generic is not None else {},
     )
 
     return cls
