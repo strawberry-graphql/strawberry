@@ -124,6 +124,28 @@ class User(Node):
 
 Types implement a Pydantic interface by subclassing it, and inherit its fields.
 
+They can also implement a regular `@strawberry.interface`, including its fields
+with a resolver, by extending it after `BaseModel`:
+
+```python
+@strawberry.interface
+class Named:
+    name: str
+
+    @strawberry.field
+    def display_name(self) -> str:
+        return self.name.title()
+
+
+@strawberry.pydantic.type
+class Product(BaseModel, Named):
+    price: float
+```
+
+The Pydantic model has to come first: the interface's `__init__` would otherwise
+replace Pydantic's, so listing the interface first raises a
+[`StrawberryBaseBeforeModelError`](../errors/strawberry-base-before-model.md).
+
 ## Configuration Options
 
 All decorators accept optional configuration parameters:
@@ -229,11 +251,57 @@ receive the data keyed by Python field names, not by aliases. A model shared
 with a REST API that reads aliased keys in a `before` validator needs to handle
 both, or use an `after` validator instead.
 
+### Computed Fields
+
+Pydantic's computed fields are part of the GraphQL type, like they are part of
+`model_dump()`, with their description or the property's docstring as
+description:
+
+```python
+from typing import Annotated
+
+from pydantic import computed_field
+
+from strawberry.scalars import JSON
+
+
+@strawberry.pydantic.type
+class User(BaseModel):
+    first_name: str
+    last_name: str
+
+    @computed_field
+    @property
+    def full_name(self) -> str:
+        return f"{self.first_name} {self.last_name}"
+
+    @computed_field
+    @property
+    def settings(self) -> Annotated[dict, strawberry.field(graphql_type=JSON)]:
+        return {"theme": "dark"}
+
+    @computed_field
+    @property
+    def risk_score(self) -> strawberry.Private[int]:
+        return 42
+```
+
+Like other fields, they can be customized with `strawberry.field()` in their
+return type, and hidden with `strawberry.Private`. Pass `include_computed=False`
+to the decorator to leave all of them out.
+
+A subclass can override an inherited computed field with another computed field
+or a property, or replace it with a field with a resolver (see
+[Resolver Fields](#resolver-fields)). Overriding it with a method raises an
+[`UnsupportedFieldOverrideError`](../errors/unsupported-field-override.md), as
+Pydantic would use the method itself as the value of the field.
+
 ### Deprecated Fields
 
-Fields deprecated with Pydantic's `Field(deprecated=...)` are deprecated in the
-GraphQL schema too. Pydantic still emits its `DeprecationWarning` when the field
-is read, including when it's resolved.
+Fields deprecated with Pydantic's `Field(deprecated=...)` or
+`computed_field(deprecated=...)` are deprecated in the GraphQL schema too.
+Pydantic still emits its `DeprecationWarning` when the field is read, including
+when it's resolved.
 
 ```python
 @strawberry.pydantic.type
@@ -373,6 +441,19 @@ type User {
 }
 ```
 
+Private fields are still part of the model, so they can be used by resolvers:
+
+```python
+@strawberry.pydantic.type
+class User(BaseModel):
+    name: str
+    password_hash: strawberry.Private[str]
+
+    @strawberry.pydantic.field
+    def has_password(self) -> bool:
+        return bool(self.password_hash)
+```
+
 Fields excluded from Pydantic's serialization with `Field(exclude=True)` are not
 exposed on GraphQL types and interfaces either:
 
@@ -393,7 +474,95 @@ Other serialization settings don't apply to GraphQL: output fields are resolved
 from the model's attributes, not from `model_dump()`, so Pydantic's serializers
 (`field_serializer`, `PlainSerializer`, `WrapSerializer` and
 `model_serializer`), serialization aliases and `Field(exclude_if=...)` are not
-applied. To hide a value, use `strawberry.Private` or `Field(exclude=True)`.
+applied. To hide or redact a value, use `strawberry.Private`,
+`Field(exclude=True)` or a [resolver field](#resolver-fields):
+
+```python
+@strawberry.pydantic.type
+class Customer(BaseModel):
+    name: str
+    email: strawberry.Private[str]
+
+    @strawberry.pydantic.field
+    def masked_email(self) -> str:
+        return f"{self.email[0]}***"
+```
+
+### Resolver Fields
+
+Pydantic doesn't allow `strawberry.field` in a model, so use
+`strawberry.pydantic.field` to add fields with a resolver. It takes the field
+options of `strawberry.field`, like `name`, `description`, `permission_classes`
+or `graphql_type`:
+
+```python
+@strawberry.pydantic.type
+class User(BaseModel):
+    id: strawberry.ID
+    name: str
+
+    @strawberry.pydantic.field
+    def greeting(self, punctuation: str = "!") -> str:
+        return f"Hi {self.name}{punctuation}"
+
+    @strawberry.pydantic.field(permission_classes=[IsAuthenticated])
+    async def posts(self, info: strawberry.Info, first: int = 10) -> list[Post]:
+        posts = await info.context.loaders.posts_by_user.load(self.id)
+
+        return posts[:first]
+```
+
+The resolvers stay regular methods of the model, so they can be combined with
+other decorators, like `@staticmethod`, `@classmethod` or `@functools.cache`
+(which needs a hashable model, for example with
+`model_config = ConfigDict(frozen=True)`). They are inherited from base models
+and from Pydantic interfaces, and the field is named after the attribute, so
+`label = strawberry.pydantic.field(get_label)` adds a `label` field. The
+resolver needs to be a function, or a `functools.partial`, as Pydantic only
+allows functions in the class body of a model. Pydantic's mypy plugin reports
+this form as an untyped field, so prefer the decorator form if you use it, or
+add `# type: ignore[pydantic-field]`.
+
+The same resolver can be used by multiple fields, including on different models.
+Each call to `strawberry.pydantic.field` creates its own method wrapper, so
+names, descriptions and permissions are independent without changing the
+original function.
+
+To override an inherited field with a resolver, decorate the new method with
+`@strawberry.pydantic.field` too. Overriding it with a method that isn't
+decorated would remove the field, so it raises an
+[`UnsupportedFieldOverrideError`](../errors/unsupported-field-override.md)
+instead.
+
+Input types can't have fields with a resolver, and defining one raises a
+[`ResolverFieldOnInputError`](../errors/resolver-field-on-input.md). The ones
+inherited from a base model, for example one shared with an output type, are
+ignored.
+
+`strawberry.pydantic.field` is only for fields with a resolver. To customize a
+field of the model, use `strawberry.field()` in its annotation instead, like
+`age: Annotated[int, strawberry.field(name="yearsOld")]` (see
+[Field Directives and Customization](#field-directives-and-customization)):
+using `strawberry.pydantic.field` there raises a
+[`MisplacedFieldError`](../errors/misplaced-field.md).
+
+`@strawberry.field` can't be used in a Pydantic model: Pydantic raises
+`PydanticUserError: A non-annotated attribute was detected` when the model is
+defined. Use `@strawberry.pydantic.field` instead.
+
+Fields with a resolver are also inherited from regular Strawberry types and
+interfaces, when they're methods decorated with `@strawberry.field` (see
+[`@strawberry.pydantic.interface`](#strawberrypydanticinterface)).
+
+<Note>
+
+Fields like `label: str = strawberry.field(resolver=get_label)` can't be
+inherited from a regular Strawberry type or interface: Pydantic sees their
+annotation and makes them fields of the model, so they raise an
+[`UnsupportedInheritedFieldError`](../errors/unsupported-inherited-field.md).
+Declare them as methods with `@strawberry.field` instead.
+
+</Note>
 
 ### Scalars
 
