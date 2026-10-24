@@ -4,12 +4,14 @@ from __future__ import annotations
 
 import copy
 import dataclasses
+import datetime as dt
 import functools
 import sys
 from typing import (
     TYPE_CHECKING,
     Annotated,
     Any,
+    ForwardRef,
     Literal,
     Optional,
     TypeGuard,
@@ -19,38 +21,57 @@ from typing import (
 )
 from typing_extensions import Format, get_annotations
 
+import pydantic
+import pydantic.networks
+import pydantic_core
 from graphql.type.directives import DEFAULT_DEPRECATION_REASON
-from pydantic import BaseModel
+from pydantic import (
+    AwareDatetime,
+    BaseModel,
+    FutureDate,
+    FutureDatetime,
+    NaiveDatetime,
+    PastDate,
+    PastDatetime,
+)
 from pydantic_core import PydanticUndefined
 
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.exceptions import (
     ResolverFieldOnInputError,
 )
-from strawberry.file_uploads import Upload
-from strawberry.types.base import StrawberryObjectDefinition
+from strawberry.scalars import is_scalar
+from strawberry.types.base import (
+    StrawberryList,
+    StrawberryObjectDefinition,
+    StrawberryOptional,
+)
 from strawberry.types.field import StrawberryField, get_annotated_field
+from strawberry.types.lazy_type import LazyType, StrawberryLazyReference
 from strawberry.types.maybe import _annotation_is_maybe
-from strawberry.types.private import is_private
+from strawberry.types.private import StrawberryPrivate, is_private
+from strawberry.types.union import StrawberryUnion
+from strawberry.types.unresolved_annotations import find_unresolved_options
 from strawberry.utils.inspect import get_generic_arguments
 
 from .exceptions import (
     MaybeFieldError,
     MisplacedFieldError,
     UnregisteredPydanticTypeError,
+    UnresolvedAnnotatedFieldError,
     UnsupportedFieldOverrideError,
     UnsupportedInheritedFieldError,
-    UploadFieldError,
 )
 from .resolver_field import get_resolver_field, is_field_decorator
 
 if TYPE_CHECKING:
-    from collections.abc import Collection, Iterator, Mapping
+    from collections.abc import Collection, Iterable, Iterator, Mapping
 
     from pydantic.fields import FieldInfo
 
     from strawberry.exceptions import StrawberryException
     from strawberry.types.base import StrawberryType
+    from strawberry.types.scalar import ScalarDefinition, ScalarWrapper
 
 
 def _is_subclass(annotation: object, base: type | tuple[type, ...]) -> bool:
@@ -123,12 +144,50 @@ def _get_annotated_metadata(annotation: object) -> Iterator[object]:
             yield from _get_annotated_metadata(arg)
 
 
+# Strawberry reads these from the type when it resolves it, while other metadata,
+# like `strawberry.field()` or Pydantic's `Field()`, configures the field
+_TYPE_METADATA = (StrawberryLazyReference, StrawberryPrivate, StrawberryUnion)
+
+
+def _is_option(value: object) -> bool:
+    return not isinstance(value, _TYPE_METADATA)
+
+
+def _check_annotated_is_resolved(
+    annotation: object, *, cls: type, model: type, field_name: str
+) -> None:
+    """Fail when pydantic couldn't read the `Annotated` options of a field yet.
+
+    Pydantic keeps an annotation that uses names that aren't defined yet, like a
+    model defined further down the module, as a string, and only reads its
+    `Annotated` metadata once the model is rebuilt. Strawberry reads the field
+    when the model is decorated, so options like the permissions of
+    `strawberry.field()` or `Field(exclude=True)` would silently be lost.
+    """
+    if isinstance(annotation, ForwardRef):
+        annotation = annotation.__forward_arg__
+
+    if not isinstance(annotation, str):
+        return
+
+    module = sys.modules.get(cls.__module__)
+    namespace = vars(module) if module is not None else {}
+
+    if (
+        find_unresolved_options(
+            annotation, namespace, cls=cls, field_name=field_name, is_option=_is_option
+        )
+        is not None
+    ):
+        raise UnresolvedAnnotatedFieldError(field_name=field_name, cls=cls, model=model)
+
+
 def _get_strawberry_field_override(
-    field_info: FieldInfo, cls: type, field_name: str
+    field_info: FieldInfo, cls: type, field_name: str, *, model: type
 ) -> StrawberryField | None:
     """Return the `strawberry.field()` from `Annotated[T, strawberry.field()]`.
 
-    `cls` is the class that declares the field.
+    `cls` is the class that declares the field, and `model` the decorated model.
     """
     # Pydantic treats a `strawberry.field()` assigned as the default like a
     # dataclass field: it keeps its default and discards everything else. The
@@ -136,6 +195,10 @@ def _get_strawberry_field_override(
     # effort.
     if isinstance(getattr(field_info, "_original_assignment", None), StrawberryField):
         raise MisplacedFieldError(field_name=field_name, cls=cls, usage="default")
+
+    _check_annotated_is_resolved(
+        field_info.annotation, cls=cls, model=model, field_name=field_name
+    )
 
     # `strawberry.pydantic.field` is only for fields with a resolver
     if is_field_decorator(field_info.default) or any(
@@ -157,13 +220,73 @@ def _get_strawberry_field_override(
         annotation, cls=cls, field_name=field_name
     )
 
+    if strawberry_field is not None and (
+        strawberry_field.default is not dataclasses.MISSING
+        or strawberry_field.default_factory is not dataclasses.MISSING
+    ):
+        raise TypeError(
+            f"Define the default for `{model.__name__}.{field_name}` on the "
+            "Pydantic field, not in `Annotated[..., strawberry.field(...)]`. "
+            "Use an assigned default or `pydantic.Field(default_factory=...)` "
+            "so Pydantic and GraphQL use the same default."
+        )
+
     return strawberry_field
 
 
-def _contains_upload(annotation: object) -> bool:
-    return annotation is Upload or any(
-        _contains_upload(arg) for arg in get_args(annotation)
-    )
+# pydantic types that only add validation to a date or datetime
+_CONSTRAINED_DATE_TYPES: dict[type, type] = {
+    AwareDatetime: dt.datetime,
+    NaiveDatetime: dt.datetime,
+    PastDatetime: dt.datetime,
+    FutureDatetime: dt.datetime,
+    PastDate: dt.date,
+    FutureDate: dt.date,
+}
+
+# pydantic types exposed with the GraphQL type of their python equivalent. The
+# values of the ones exposed as strings are serialized with `str()`, and
+# validated from strings by pydantic
+# (type checkers see the `IPvAny*` types as unions of `ipaddress` types)
+_PYDANTIC_TYPES: dict[object, type] = {
+    pydantic.EmailStr: str,
+    pydantic.NameEmail: str,
+    pydantic.IPvAnyAddress: str,
+    pydantic.IPvAnyInterface: str,
+    pydantic.IPvAnyNetwork: str,
+    pydantic.SecretStr: str,
+}
+
+# pydantic's URL types, like `HttpUrl` or `MongoDsn`, and the ones defined by
+# users, are exposed as strings. Multi-host URLs, like `PostgresDsn`, don't
+# extend `AnyUrl`, and their base class is private
+_URL_TYPES: tuple[type, ...] = (
+    pydantic.AnyUrl,
+    pydantic_core.Url,
+    pydantic_core.MultiHostUrl,
+    *(
+        (base,)
+        if (base := getattr(pydantic.networks, "_BaseMultiHostUrl", None))
+        else ()
+    ),
+)
+
+
+def _get_scalar_fallback(type_: object) -> object:
+    """Return a scalar's Python equivalent without erasing its registry key."""
+    if not isinstance(type_, type):
+        return type_
+
+    if type_ in _CONSTRAINED_DATE_TYPES:
+        return _CONSTRAINED_DATE_TYPES[type_]
+
+    if type_ in _PYDANTIC_TYPES:
+        return _PYDANTIC_TYPES[type_]
+
+    if _is_subclass(type_, _URL_TYPES):
+        return str
+
+    return type_
 
 
 def _set_input_default(field: StrawberryField, field_info: FieldInfo) -> None:
@@ -192,10 +315,28 @@ def _set_input_default(field: StrawberryField, field_info: FieldInfo) -> None:
 
 
 def _find_unregistered_model(
-    type_: Any, model: type[BaseModel]
+    type_: Any,
+    model: type[BaseModel] | None,
+    scalar_registry: dict[object, ScalarDefinition | ScalarWrapper],
 ) -> type[BaseModel] | None:
-    """Return a model used in `type_` that doesn't have a GraphQL type, if any."""
-    if _is_subclass(type_, BaseModel):
+    """Register scalar fallbacks and find models without a GraphQL type."""
+    if isinstance(type_, LazyType):
+        type_ = type_.resolve_type()
+
+    if is_scalar(type_, scalar_registry):
+        return None
+
+    if model is not None:
+        fallback = _get_scalar_fallback(type_)
+        if fallback is not type_:
+            scalar_registry[type_] = scalar_registry[fallback]
+            return None
+
+    if isinstance(type_, type) and issubclass(type_, BaseModel):
+        # Ordinary Strawberry fields already diagnose undecorated subclasses
+        # of registered models during type conversion.
+        if model is None and getattr(type_, "__strawberry_definition__", None):
+            return None
         # `model` can reference itself, but it's only registered after its
         # fields. The definition is inherited by subclasses, which would
         # otherwise be the GraphQL type of their decorated base, and by
@@ -205,14 +346,65 @@ def _find_unregistered_model(
 
         return type_
 
+    args = (
+        (type_.of_type,)
+        if isinstance(type_, (StrawberryList, StrawberryOptional))
+        else type_.types
+        if isinstance(type_, StrawberryUnion)
+        else get_args(type_)
+    )
     return next(
         (
             unregistered
-            for arg in get_args(type_)
-            if (unregistered := _find_unregistered_model(arg, model)) is not None
+            for arg in args
+            if (unregistered := _find_unregistered_model(arg, model, scalar_registry))
+            is not None
         ),
         None,
     )
+
+
+def validate_field_type(
+    field: StrawberryField,
+    type_: Any,
+    scalar_registry: dict[object, ScalarDefinition | ScalarWrapper],
+    *,
+    is_input: bool,
+) -> None:
+    """Resolve Pydantic field types against the schema's scalar map."""
+    origin = field.origin
+    if not isinstance(origin, type):
+        return
+
+    pydantic_origin = origin if issubclass(origin, BaseModel) else None
+    if (
+        model := _find_unregistered_model(type_, pydantic_origin, scalar_registry)
+    ) is not None:
+        raise _unregistered_model_error(
+            model,
+            cls=origin,
+            field_name=field.python_name or field.name,
+            is_input=is_input,
+        )
+
+
+def _with_strawberry_metadata(annotation: Any, metadata: Iterable[object]) -> Any:
+    """Add back the Strawberry metadata of `Annotated`.
+
+    Pydantic keeps the metadata of a field's `Annotated` apart from its type, but
+    the type needs `strawberry.union()`, and `strawberry.lazy()` to resolve a
+    quoted type from another module.
+    """
+    strawberry_metadata = [
+        item
+        for item in metadata
+        if isinstance(item, (StrawberryUnion, StrawberryLazyReference))
+    ]
+
+    if not strawberry_metadata:
+        return annotation
+
+    return Annotated[(annotation, *strawberry_metadata)]
 
 
 def _get_computed_field_annotation(
@@ -221,6 +413,20 @@ def _get_computed_field_annotation(
     """Return the type of a computed field and its `strawberry.field()`, if any."""
     computed_field_info = cls.model_computed_fields[field_name]
     annotation = computed_field_info.return_type
+
+    if annotation is PydanticUndefined:
+        # pydantic couldn't resolve a forward reference yet, Strawberry resolves
+        # the annotation when the schema is built
+        wrapped_property = computed_field_info.wrapped_property
+        getter = (
+            wrapped_property.fget
+            if isinstance(wrapped_property, property)
+            else wrapped_property.func
+        )
+        annotation = get_annotations(getter, format=Format.FORWARDREF)["return"]
+        _check_annotated_is_resolved(
+            annotation, cls=origin, model=cls, field_name=field_name
+        )
 
     # `strawberry.pydantic.field` is only for fields with a resolver
     if any(is_field_decorator(item) for item in _get_annotated_metadata(annotation)):
@@ -241,10 +447,12 @@ def _create_strawberry_field(
 ) -> StrawberryField:
     # computed fields don't have a FieldInfo
     if field_info is not None:
-        annotation = field_info.annotation
+        annotation = _with_strawberry_metadata(
+            field_info.annotation, field_info.metadata
+        )
         description = field_info.description
         strawberry_override = _get_strawberry_field_override(
-            field_info, origin, field_name
+            field_info, origin, field_name, model=cls
         )
     else:
         annotation, strawberry_override = _get_computed_field_annotation(
@@ -292,11 +500,6 @@ def _create_strawberry_field(
     namespace = vars(module) if module is not None else None
 
     if strawberry_field.type_annotation is None:
-        if (unregistered := _find_unregistered_model(annotation, cls)) is not None:
-            raise _unregistered_model_error(
-                unregistered, cls=origin, field_name=field_name, is_input=is_input
-            )
-
         strawberry_field.type_annotation = StrawberryAnnotation(
             annotation, namespace=namespace
         )
@@ -345,28 +548,23 @@ def _split_pydantic_base(base: Any) -> tuple[Any, tuple[Any, ...]]:
 
 def _get_type_var_map(
     cls: type[BaseModel], arguments: Mapping[TypeVar, Any]
-) -> tuple[dict[str, StrawberryType | type], dict[str, type[BaseModel]]]:
+) -> dict[str, StrawberryType | type]:
     """Map the type parameters of a generic model to the arguments `cls` gives them.
 
     The arguments are converted like the types of data fields, so fields with a
-    resolver typed with a type parameter get the same GraphQL type. Arguments
-    that are models without a GraphQL definition are returned apart, by type
-    parameter name, so that only the fields using them raise an error.
+    resolver typed with a type parameter get the same GraphQL type. Scalar
+    identity is preserved until the schema's registry is available.
     """
     type_var_map: dict[str, StrawberryType | type] = {}
-    unregistered_models: dict[str, type[BaseModel]] = {}
 
     for parameter, argument in arguments.items():
         # e.g. the type parameter of a generic model that isn't parametrized
         if isinstance(argument, TypeVar):
             continue
 
-        if (unregistered := _find_unregistered_model(argument, cls)) is not None:
-            unregistered_models[parameter.__name__] = unregistered
-
         type_var_map[parameter.__name__] = StrawberryAnnotation(argument).resolve()
 
-    return type_var_map, unregistered_models
+    return type_var_map
 
 
 def _is_computed_field(base: type, attribute: str, value: object) -> bool:
@@ -528,19 +726,13 @@ def get_resolver_fields(
             field.type_annotation.namespace = resolver._namespace
 
         if field.is_graphql_generic:
-            type_var_map, unregistered_models = _get_type_var_map(
+            type_var_map = _get_type_var_map(
                 cls, generic_arguments.get(declared_in[attribute], {})
             )
             type_params = [type_var.__name__ for type_var in field.type_params]
 
             # e.g. a resolver of a generic model that isn't parametrized
             if all(name in type_var_map for name in type_params):
-                for name in type_params:
-                    if (model := unregistered_models.get(name)) is not None:
-                        raise _unregistered_model_error(
-                            model, cls=cls, field_name=attribute, is_input=False
-                        )
-
                 field = field.copy_with(type_var_map)
 
         fields.append(field)
@@ -610,11 +802,6 @@ def get_pydantic_fields(
             # hide it from the GraphQL output too
             if field_info.exclude is True and not is_input:
                 continue
-
-            # Uploads are the integration's file objects, which pydantic would
-            # reject on every request when validating them as `Upload` (bytes)
-            if is_input and _contains_upload(field_info.annotation):
-                raise UploadFieldError(field_name=field_name, cls=origin)
 
             if is_input and _annotation_is_maybe(field_info.annotation):
                 raise MaybeFieldError(field_name=field_name, cls=origin)

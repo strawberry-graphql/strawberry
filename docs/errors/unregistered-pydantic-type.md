@@ -6,9 +6,10 @@ title: Unregistered Pydantic Type Error
 
 ## Description
 
-This error is thrown when a field of a `strawberry.pydantic` type uses a
-Pydantic model that isn't a Strawberry type, for example the following code will
-throw this error:
+This error is thrown during schema construction when a field uses a Pydantic
+model that is neither a Strawberry type nor registered in the schema's
+`scalar_map`. It applies to regular Strawberry fields as well as fields of
+`strawberry.pydantic` types (with Pydantic 2.11 or newer):
 
 ```python
 import pydantic
@@ -19,10 +20,14 @@ class Address(pydantic.BaseModel):
     street: str
 
 
-@strawberry.pydantic.type
-class User(pydantic.BaseModel):
-    name: str
-    address: Address
+@strawberry.type
+class Query:
+    @strawberry.field
+    def address(self) -> Address:
+        return Address(street="Main Street")
+
+
+schema = strawberry.Schema(query=Query)
 ```
 
 This happens because Strawberry needs to know the GraphQL type of every field,

@@ -1,7 +1,7 @@
 """Tests for Pydantic v2 computed fields with first-class integration."""
 
 import textwrap
-from typing import Annotated, Any
+from typing import Annotated, Any, Optional
 
 import pydantic
 import pytest
@@ -200,7 +200,7 @@ def test_computed_field_with_interface():
 @pytest.mark.raises_strawberry_exception(
     UnregisteredPydanticTypeError,
     match=(
-        r"`Base\.pet` uses `Pet`, which isn't a Strawberry type: decorate it with "
+        r"`Owner\.pet` uses `Pet`, which isn't a Strawberry type: decorate it with "
         r"`@strawberry\.pydantic\.type`"
     ),
 )
@@ -217,6 +217,8 @@ def test_unregistered_types_of_inherited_computed_fields_raise_an_error():
     @strawberry.pydantic.type
     class Owner(Base):
         name: str
+
+    strawberry.Schema(query=Owner)
 
 
 def test_computed_fields_are_included_by_default():
@@ -387,3 +389,37 @@ def test_computed_fields_overridden_by_resolver_fields():
     ]
 
     assert display.base_resolver is not None
+
+
+@strawberry.pydantic.type
+class Parent(pydantic.BaseModel):
+    children: list["Child"] = []
+
+    # the forward reference can't be resolved yet when the class is created
+    @computed_field
+    @property
+    def first_child(self) -> Optional["Child"]:
+        return self.children[0] if self.children else None
+
+
+@strawberry.pydantic.type
+class Child(pydantic.BaseModel):
+    name: str
+
+
+Parent.model_rebuild()
+
+
+def test_computed_fields_with_forward_references():
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def parent(self) -> Parent:
+            return Parent(children=[Child(name="Ada")])
+
+    schema = strawberry.Schema(query=Query)
+
+    result = schema.execute_sync("{ parent { firstChild { name } } }")
+
+    assert not result.errors
+    assert result.data == {"parent": {"firstChild": {"name": "Ada"}}}

@@ -224,36 +224,45 @@ class MisplacedFieldError(StrawberryException):
         return SourceFinder().find_function_from_object(function)
 
 
-class UploadFieldError(StrawberryException):
-    def __init__(self, field_name: str, cls: type) -> None:
+class UnresolvedAnnotatedFieldError(StrawberryException):
+    """The `Annotated` options of a field can't be read yet.
+
+    `cls` declares the field, and `model` is the decorated model, which can be a
+    subclass of it.
+    """
+
+    def __init__(self, field_name: str, cls: type, *, model: type) -> None:
         self.cls = cls
         self.field_name = field_name
 
         self.message = (
-            f"Field `{field_name}` on pydantic input `{cls.__name__}` can't be typed "
-            "as `Upload`"
+            f"The `Annotated` options of field `{field_name}` on pydantic model "
+            f"`{cls.__name__}` can't be read because its annotation uses names "
+            "that aren't defined yet"
         )
         self.rich_message = (
-            f"Field `[underline]{field_name}[/]` on pydantic input "
-            f"`[underline]{cls.__name__}[/]` can't be typed as `Upload`"
+            f"The `Annotated` options of field `[underline]{field_name}[/]` on "
+            f"pydantic model `[underline]{cls.__name__}[/]` can't be read because "
+            "its annotation uses names that aren't defined yet"
         )
-        self.annotation_message = "field typed as Upload"
+        self.annotation_message = "annotation using names that aren't defined yet"
         self.suggestion = (
-            "Uploaded files are the file objects of your integration, which "
-            "Pydantic can't validate as `Upload`. Annotate the field with the file "
-            "type and use `Upload` as its GraphQL type, for example: "
-            f"`{field_name}: Annotated[UploadFile, "
-            "strawberry.field(graphql_type=Upload)]` "
-            "(with `arbitrary_types_allowed=True` in `model_config`)."
+            "Strawberry reads the options when the model is decorated, but Pydantic "
+            "only reads them once it can resolve the annotation, so options like "
+            "the permissions of `strawberry.field()` or `Field(exclude=True)` "
+            "would be lost. Define the models the annotation references before "
+            f"`{cls.__name__}`, or decorate `{model.__name__}` later: once they're "
+            f"defined, call `{model.__name__}.model_rebuild()` and then decorate "
+            "it. In a module without `from __future__ import annotations`, you can "
+            'also quote only the types, like `Annotated["Account", '
+            "strawberry.field(...)]`."
         )
 
         super().__init__(self.message)
 
     @cached_property
     def exception_source(self) -> ExceptionSource | None:
-        source_finder = SourceFinder()
-
-        return source_finder.find_class_attribute_from_object(self.cls, self.field_name)
+        return _find_field_source(self.cls, self.field_name)
 
 
 class NotAPydanticModelError(StrawberryException):
@@ -312,10 +321,10 @@ class MaybeFieldError(StrawberryException):
         )
         self.annotation_message = "field typed as strawberry.Maybe"
         self.suggestion = (
-            "Pydantic inputs tell omitted fields apart from explicit nulls with "
-            "`model_fields_set`: give the field a `None` default, e.g. "
-            f"`{field_name}: str | None = None`, and use "
-            "`model_dump(exclude_unset=True)` to get the fields the client sent."
+            "Use a regular `@strawberry.input` with `strawberry.Maybe` to "
+            "distinguish omission from explicit null. GraphQL fills in schema "
+            "defaults before Pydantic validation, so `model_fields_set` does "
+            "not identify only client-submitted fields."
         )
 
         super().__init__(self.message)
