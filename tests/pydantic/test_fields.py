@@ -520,6 +520,22 @@ def test_annotated_permissions_declared_on_a_base_model_are_enforced():
     assert result.errors[0].message == "Admins only"
 
 
+def test_annotated_permissions_declared_on_a_pydantic_interface_are_enforced():
+    @strawberry.pydantic.interface
+    class Account(pydantic.BaseModel):
+        email: Annotated[str, strawberry.field(permission_classes=[IsAdmin])]
+
+    @strawberry.pydantic.type
+    class User(Account):
+        name: str
+
+    result = _query_email(User, User(name="Ada", email="ada@example.com"))
+
+    assert result.data is None
+    assert result.errors
+    assert result.errors[0].message == "Admins only"
+
+
 def test_fields_declared_on_a_strawberry_interface_keep_their_configuration():
     @strawberry.interface
     class Account:

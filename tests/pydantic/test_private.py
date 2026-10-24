@@ -179,6 +179,23 @@ type User {
 """)
 
 
+def test_excluded_fields_are_not_exposed_on_interfaces():
+    @strawberry.pydantic.interface
+    class Node(pydantic.BaseModel):
+        id: str
+        internal_id: int = pydantic.Field(exclude=True)
+
+    @strawberry.pydantic.type
+    class User(Node):
+        name: str
+
+    node_fields = get_object_definition(Node, strict=True).fields
+    user_fields = get_object_definition(User, strict=True).fields
+
+    assert [f.python_name for f in node_fields] == ["id"]
+    assert [f.python_name for f in user_fields] == ["id", "name"]
+
+
 def test_excluded_fields_are_kept_on_inputs():
     # `exclude` only affects pydantic's serialization, inputs still accept it
     @strawberry.pydantic.input
