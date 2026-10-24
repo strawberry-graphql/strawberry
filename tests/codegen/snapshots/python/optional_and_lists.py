@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import Optional
 
 class OperationNameResult:
     optional_int: Optional[int]
