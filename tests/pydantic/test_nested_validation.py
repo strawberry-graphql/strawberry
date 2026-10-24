@@ -192,6 +192,26 @@ def test_pydantic_inputs_nested_in_strawberry_inputs_are_validated():
     assert "start must be before end" in result.errors[0].message
 
 
+def test_argument_defaults_are_used():
+    @strawberry.pydantic.input
+    class FilterInput(pydantic.BaseModel):
+        limit: int = 10
+        name: str | None = None
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def search(self, filter: FilterInput = FilterInput(limit=7, name="jam")) -> str:
+            return f"{filter.limit} {filter.name}"
+
+    schema = strawberry.Schema(query=Query)
+
+    result = schema.execute_sync("{ search }")
+
+    assert not result.errors
+    assert result.data == {"search": "7 jam"}
+
+
 def test_strawberry_inputs_with_a_model_validate_method_are_not_pydantic():
     @strawberry.input
     class FilterInput:

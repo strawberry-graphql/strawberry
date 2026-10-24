@@ -10,16 +10,20 @@ from typing_extensions import Format, get_annotations
 
 from graphql.type.directives import DEFAULT_DEPRECATION_REASON
 from pydantic import BaseModel
+from pydantic_core import PydanticUndefined
 
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.file_uploads import Upload
 from strawberry.types.base import StrawberryObjectDefinition
 from strawberry.types.field import StrawberryField, get_annotated_field
+from strawberry.types.maybe import _annotation_is_maybe
 from strawberry.types.private import is_private
 
 from .exceptions import (
+    MaybeFieldError,
     MisplacedFieldError,
     UnregisteredPydanticTypeError,
+    UnsupportedInheritedFieldError,
     UploadFieldError,
 )
 
@@ -95,14 +99,22 @@ def _contains_upload(annotation: object) -> bool:
 
 
 def _set_input_default(field: StrawberryField, field_info: FieldInfo) -> None:
-    # pydantic applies the defaults of input fields when it validates the input
-    field.default = dataclasses.MISSING
-    field.default_factory = dataclasses.MISSING
-    field.default_value = dataclasses.MISSING
+    # Let Strawberry's schema converter handle explicit defaults, including
+    # None and model instances, using the field's actual GraphQL type.
+    default = (
+        dataclasses.MISSING
+        if field_info.default is PydanticUndefined
+        else field_info.default
+    )
 
-    # input fields can only be omitted when they're nullable or have a default,
-    # so fields with a default become nullable
-    if not field_info.is_required():
+    # `StrawberryField.__copy__` builds `default_value` from `default`
+    field.default = default
+    field.default_factory = dataclasses.MISSING
+    field.default_value = default
+
+    # Factories belong to Pydantic: they run for each input and may need the
+    # other validated fields. Nullable GraphQL fields allow clients to omit them.
+    if field_info.default_factory is not None:
         assert field.type_annotation is not None
 
         field.type_annotation = StrawberryAnnotation(
@@ -238,7 +250,22 @@ def get_pydantic_fields(
         if is_input and _contains_upload(field_info.annotation):
             raise UploadFieldError(field_name=field_name, cls=origin)
 
+        if is_input and _annotation_is_maybe(field_info.annotation):
+            raise MaybeFieldError(field_name=field_name, cls=origin)
+
         if (base_field := _get_strawberry_base_field(origin, field_name)) is not None:
+            # dataclasses don't keep a default factory on the class, so pydantic
+            # doesn't see it and requires the field, which clients can omit when
+            # it's nullable
+            if (
+                is_input
+                and field_info.is_required()
+                and base_field.default_factory is not dataclasses.MISSING
+            ):
+                raise UnsupportedInheritedFieldError(
+                    field_name=field_name, cls=cls, base=origin
+                )
+
             # inputs replace the field's default with pydantic's below
             strawberry_field = copy.copy(base_field) if is_input else base_field
         else:
