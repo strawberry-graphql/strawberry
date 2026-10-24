@@ -155,6 +155,35 @@ def test_codegen_pass_no_query(cli_app: Typer, cli_runner: CliRunner, tmp_path: 
     assert result.exit_code == 0
 
 
+def test_codegen_reports_invalid_operation(
+    cli_app: Typer, cli_runner: CliRunner, tmp_path: Path
+):
+    query_path = tmp_path / "query.graphql"
+    query_path.write_text("query GetUser { user { nmae } }")
+    selector = "tests.fixtures.sample_package.sample_module:schema"
+    result = cli_runner.invoke(
+        cli_app,
+        [
+            "codegen",
+            "-p",
+            "python",
+            "--schema",
+            selector,
+            "-o",
+            str(tmp_path),
+            str(query_path),
+        ],
+        # Wide enough that rich doesn't wrap the long temporary path.
+        env={"COLUMNS": "500"},
+    )
+
+    assert result.exit_code == 1
+    assert (
+        f"Error: {query_path}:1:24: Cannot query field 'nmae' on type 'User'. "
+        "Did you mean 'name'?"
+    ) in result.stdout
+
+
 def test_codegen_passing_plugin_symbol(
     cli_app: Typer, cli_runner: CliRunner, query_file_path: Path, tmp_path: Path
 ):

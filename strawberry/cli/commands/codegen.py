@@ -8,10 +8,12 @@ from typing import cast
 
 import rich
 import typer
+from rich.markup import escape
 
 from strawberry.cli.app import app
 from strawberry.cli.utils import load_schema
 from strawberry.codegen import ConsolePlugin, QueryCodegen, QueryCodegenPlugin
+from strawberry.codegen.exceptions import InvalidOperationError
 
 
 def _is_codegen_plugin(obj: object) -> bool:
@@ -138,6 +140,11 @@ def codegen(  # noqa: PLR0917
         code_generator = QueryCodegen(
             schema_symbol, plugins=plugins, console_plugin=console_plugin
         )
-        code_generator.run(q.read_text())
+        try:
+            code_generator.run(q.read_text())
+        except InvalidOperationError as error:
+            for message in error.messages:
+                rich.print(f"[red]Error: {escape(f'{q}:{message}')}")
+            raise typer.Exit(1) from error
 
     console_plugin.after_all_finished()
