@@ -158,8 +158,13 @@ def _wrap_resolver(resolver: ResolverT) -> ResolverT:
         wrapper = synchronous
 
     # A function wrapper would otherwise inject the model as `self` into an
-    # already-bound method, a partial, or a callable instance.
-    if inspect.ismethod(resolver) or not hasattr(type(resolver), "__get__"):
+    # already-bound method, a partial, or a callable instance. Partials need an
+    # explicit check because they are descriptors since Python 3.13.
+    if (
+        inspect.ismethod(resolver)
+        or isinstance(resolver, partial)
+        or not hasattr(type(resolver), "__get__")
+    ):
         return cast("ResolverT", staticmethod(wrapper))
 
     return cast("ResolverT", wrapper)
