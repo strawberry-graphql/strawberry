@@ -11,9 +11,11 @@ from typing import TYPE_CHECKING, TypeVar, overload
 
 from pydantic import BaseModel
 
+from strawberry.schema_directives import OneOf
 from strawberry.types.base import StrawberryObjectDefinition
 from strawberry.utils.str_converters import to_camel_case
 
+from .conversion import build_pydantic_model
 from .exceptions import ModelAlreadyDecoratedError, NotAPydanticModelError
 from .fields import get_pydantic_fields
 
@@ -30,6 +32,7 @@ def _process_pydantic_type(
     cls: builtins.type[ModelT],
     *,
     name: str | None = None,
+    is_input: bool = False,
     description: str | None = None,
     directives: Sequence[object] | None = (),
 ) -> builtins.type[ModelT]:
@@ -38,13 +41,14 @@ def _process_pydantic_type(
     Args:
         cls: The Pydantic BaseModel class to process
         name: The GraphQL type name (defaults to class name)
+        is_input: Whether this is an input type
         description: The GraphQL type description
         directives: GraphQL directives to apply
 
     Returns:
         The processed BaseModel class with GraphQL metadata
     """
-    decorator = "type"
+    decorator = "input" if is_input else "type"
 
     if not (isinstance(cls, builtins.type) and issubclass(cls, BaseModel)):
         raise NotAPydanticModelError(cls, decorator)
@@ -56,18 +60,19 @@ def _process_pydantic_type(
 
     cls.__strawberry_definition__ = StrawberryObjectDefinition(  # type: ignore
         name=name,
-        is_input=False,
+        is_input=is_input,
         is_interface=False,
         interfaces=[],
         description=description,
         directives=directives,
         origin=cls,
         extend=False,
-        fields=get_pydantic_fields(cls),
+        fields=get_pydantic_fields(cls, is_input=is_input),
         # like `@strawberry.type`, resolvers can return objects that aren't
         # instances of the model, e.g. ORM rows, unless it defines `is_type_of`
         is_type_of=getattr(cls, "is_type_of", None),
         resolve_type=getattr(cls, "resolve_type", None),
+        from_input=build_pydantic_model if is_input else None,
     )
 
     return cls
@@ -132,6 +137,7 @@ def type(
         return _process_pydantic_type(
             cls,
             name=name,
+            is_input=False,
             description=description,
             directives=directives,
         )
@@ -142,4 +148,74 @@ def type(
     return wrap(cls)
 
 
-__all__ = ["type"]
+@overload
+def input(
+    cls: builtins.type[ModelT],
+    *,
+    name: str | None = None,
+    description: str | None = None,
+    directives: Sequence[object] | None = (),
+    one_of: bool | None = None,
+) -> builtins.type[ModelT]: ...
+
+
+@overload
+def input(
+    *,
+    name: str | None = None,
+    description: str | None = None,
+    directives: Sequence[object] | None = (),
+    one_of: bool | None = None,
+) -> Callable[[builtins.type[ModelT]], builtins.type[ModelT]]: ...
+
+
+def input(
+    cls: builtins.type[ModelT] | None = None,
+    *,
+    name: str | None = None,
+    description: str | None = None,
+    directives: Sequence[object] | None = (),
+    one_of: bool | None = None,
+) -> builtins.type[ModelT] | Callable[[builtins.type[ModelT]], builtins.type[ModelT]]:
+    """Decorator to convert a Pydantic BaseModel directly into a GraphQL input type.
+
+    This decorator allows you to use Pydantic models directly as GraphQL input types
+    without needing to create a separate wrapper class.
+
+    Args:
+        cls: The Pydantic BaseModel class to convert
+        name: The GraphQL input type name (defaults to class name)
+        description: The GraphQL input type description
+        directives: GraphQL directives to apply to the input type
+        one_of: Whether the input type is a `oneOf` type
+
+    Returns:
+        The decorated BaseModel class with GraphQL input metadata
+
+    Example:
+        @strawberry.pydantic.input
+        class CreateUserInput(BaseModel):
+            name: str
+            age: int
+
+        # All fields from the Pydantic model will be included in the GraphQL input type
+    """
+    if one_of:
+        directives = (*(directives or ()), OneOf())
+
+    def wrap(cls: builtins.type[ModelT]) -> builtins.type[ModelT]:
+        return _process_pydantic_type(
+            cls,
+            name=name,
+            is_input=True,
+            description=description,
+            directives=directives,
+        )
+
+    if cls is None:
+        return wrap
+
+    return wrap(cls)
+
+
+__all__ = ["input", "type"]

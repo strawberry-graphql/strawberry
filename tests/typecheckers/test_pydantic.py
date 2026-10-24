@@ -89,9 +89,14 @@ class User(pydantic.BaseModel):
     age: int
     name: str
 
+@strawberry.pydantic.input(name="CreateUserInput")
+class CreateUserInput(pydantic.BaseModel):
+    name: str
+
 user = User(age=1, name="abc")
 reveal_type(user)
 reveal_type(user.age)
+reveal_type(CreateUserInput(name="abc"))
 """
 
 
@@ -103,13 +108,19 @@ def test_first_class_pydantic_decorators_keep_the_model_type():
             Result(
                 type="note",
                 message='Revealed type is "mypy_test.User"',
-                line=11,
+                line=15,
                 column=13,
             ),
             Result(
                 type="note",
                 message='Revealed type is "int"',
-                line=12,
+                line=16,
+                column=13,
+            ),
+            Result(
+                type="note",
+                message='Revealed type is "mypy_test.CreateUserInput"',
+                line=17,
                 column=13,
             ),
         ]
@@ -120,13 +131,19 @@ def test_first_class_pydantic_decorators_keep_the_model_type():
             Result(
                 type="information",
                 message='Type of "user" is "User"',
-                line=11,
+                line=15,
                 column=13,
             ),
             Result(
                 type="information",
                 message='Type of "user.age" is "int"',
-                line=12,
+                line=16,
+                column=13,
+            ),
+            Result(
+                type="information",
+                message='Type of "CreateUserInput(name="abc")" is "CreateUserInput"',
+                line=17,
                 column=13,
             ),
         ]
@@ -137,13 +154,19 @@ def test_first_class_pydantic_decorators_keep_the_model_type():
             Result(
                 type="information",
                 message="Revealed type: `User`",
-                line=11,
+                line=15,
                 column=13,
             ),
             Result(
                 type="information",
                 message="Revealed type: `int`",
-                line=12,
+                line=16,
+                column=13,
+            ),
+            Result(
+                type="information",
+                message="Revealed type: `CreateUserInput`",
+                line=17,
                 column=13,
             ),
         ]

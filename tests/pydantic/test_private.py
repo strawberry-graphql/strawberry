@@ -177,3 +177,15 @@ type User {
   name: String!
 }\
 """)
+
+
+def test_excluded_fields_are_kept_on_inputs():
+    # `exclude` only affects pydantic's serialization, inputs still accept it
+    @strawberry.pydantic.input
+    class CreateUserInput(pydantic.BaseModel):
+        name: str
+        password: str = pydantic.Field(exclude=True)
+
+    definition = get_object_definition(CreateUserInput, strict=True)
+
+    assert [f.python_name for f in definition.fields] == ["name", "password"]

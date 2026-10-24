@@ -4,6 +4,7 @@ from typing import Optional
 
 import pydantic
 import pytest
+from inline_snapshot import snapshot
 
 import strawberry
 from strawberry.pydantic.exceptions import (
@@ -111,12 +112,65 @@ def test_models_can_define_is_type_of():
     assert "Expected value of type 'User'" in result.errors[0].message
 
 
+def test_schema_generation():
+    """Test that the decorated models work in schema generation."""
+
+    @strawberry.pydantic.type
+    class User(pydantic.BaseModel):
+        age: int
+        name: str
+
+    @strawberry.pydantic.input
+    class CreateUserInput(pydantic.BaseModel):
+        age: int
+        name: str
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def get_user(self) -> User:
+            return User(age=25, name="John")
+
+    @strawberry.type
+    class Mutation:
+        @strawberry.field
+        def create_user(self, input: CreateUserInput) -> User:
+            return User(age=input.age, name=input.name)
+
+    # Test that schema can be created successfully
+    schema = strawberry.Schema(query=Query, mutation=Mutation)
+    assert schema is not None
+
+    assert str(schema) == snapshot(
+        """\
+input CreateUserInput {
+  age: Int!
+  name: String!
+}
+
+type Mutation {
+  createUser(input: CreateUserInput!): User!
+}
+
+type Query {
+  getUser: User!
+}
+
+type User {
+  age: Int!
+  name: String!
+}\
+"""
+    )
+
+
 @pytest.mark.parametrize(
     "decorator",
     [
         strawberry.pydantic.type,
+        strawberry.pydantic.input,
     ],
-    ids=["type"],
+    ids=["type", "input"],
 )
 def test_decorating_a_class_that_is_not_a_pydantic_model_raises_an_error(
     decorator: Callable[[type], type],
@@ -182,3 +236,68 @@ def test_decorating_a_model_twice_raises_an_error():
     @strawberry.pydantic.type
     class Address(pydantic.BaseModel):
         street: str
+
+
+def test_models_can_only_be_decorated_once():
+    @strawberry.pydantic.type
+    class Address(pydantic.BaseModel):
+        street: str
+
+    with pytest.raises(
+        ModelAlreadyDecoratedError,
+        match=(
+            r"`Address` is already a type, so it can't be decorated with "
+            r"`strawberry\.pydantic\.input`"
+        ),
+    ) as exc_info:
+        strawberry.pydantic.input(Address)
+
+    assert exc_info.value.suggestion.startswith(
+        "To use a model both as an output type and as an input, decorate a subclass"
+    )
+
+    # a subclass can be used as the input
+    @strawberry.pydantic.input
+    class AddressInput(Address):
+        pass
+
+    assert get_object_definition(AddressInput, strict=True).is_input
+    assert not get_object_definition(Address, strict=True).is_input
+
+
+async def test_objects_cast_in_unions():
+    @strawberry.pydantic.type
+    class User(pydantic.BaseModel):
+        name: str
+
+    @strawberry.pydantic.input
+    class UserInput(pydantic.BaseModel):
+        name: str = pydantic.Field(min_length=1)
+
+    class UserRow:
+        name = "Ada"
+
+    @strawberry.type
+    class Query:
+        hello: str = "world"
+
+    @strawberry.type
+    class Mutation:
+        @strawberry.mutation
+        async def create_user(
+            self, input: UserInput
+        ) -> User | strawberry.pydantic.ValidationError:
+            return strawberry.cast(User, UserRow())
+
+    schema = strawberry.Schema(
+        query=Query,
+        mutation=Mutation,
+        exception_handlers=[strawberry.pydantic.PydanticValidationErrorHandler()],
+    )
+
+    result = await schema.execute(
+        'mutation { createUser(input: {name: "Ada"}) { ... on User { name } } }'
+    )
+
+    assert not result.errors
+    assert result.data == {"createUser": {"name": "Ada"}}

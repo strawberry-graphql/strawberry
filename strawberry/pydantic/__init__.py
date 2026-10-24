@@ -12,8 +12,19 @@ Example:
 
 # must be imported first: checks that a supported pydantic is installed
 from . import _requirements  # noqa: F401
-from .object_type import type  # noqa: A004
+from .error import (
+    InputValidationError,
+    PydanticValidationErrorHandler,
+    ValidationError,
+    ValidationErrorDetail,
+)
+from .object_type import input, type  # noqa: A004
 
 __all__ = [
+    "InputValidationError",
+    "PydanticValidationErrorHandler",
+    "ValidationError",
+    "ValidationErrorDetail",
+    "input",
     "type",
 ]
