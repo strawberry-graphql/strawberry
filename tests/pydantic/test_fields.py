@@ -146,6 +146,53 @@ def test_subclasses_of_decorated_models_need_to_be_decorated():
         dog: Dog
 
 
+@pytest.mark.raises_strawberry_exception(
+    UnregisteredPydanticTypeError,
+    match=(
+        r"`OwnerInput\.dog` uses `DogInput`, which isn't a Strawberry type, even "
+        r"though it extends `AnimalInput`: decorate it with "
+        r"`@strawberry\.pydantic\.input`"
+    ),
+)
+def test_subclasses_of_decorated_inputs_need_to_be_decorated():
+    @strawberry.pydantic.input
+    class AnimalInput(pydantic.BaseModel):
+        name: str
+
+    class DogInput(AnimalInput):
+        breed: str
+
+    @strawberry.pydantic.input
+    class OwnerInput(pydantic.BaseModel):
+        dog: DogInput
+
+
+def test_undecorated_subclasses_of_inputs_cant_be_arguments():
+    # they'd be published as their parent, but validated as themselves
+    @strawberry.pydantic.input
+    class FilterInput(pydantic.BaseModel):
+        term: str
+
+    class NoSpacesFilterInput(FilterInput):
+        pass
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def search(self, filter: NoSpacesFilterInput) -> str:
+            return ""
+
+    with pytest.raises(UndecoratedSubclassError) as exc_info:
+        strawberry.Schema(query=Query)
+
+    assert exc_info.value.suggestion == (
+        "Decorate `NoSpacesFilterInput` with `@strawberry.pydantic.input`, or use "
+        "`FilterInput` instead of `NoSpacesFilterInput` in your annotations. "
+        "Otherwise `NoSpacesFilterInput` would be published as `FilterInput`, "
+        "without the fields it declares itself."
+    )
+
+
 def test_undecorated_subclasses_of_types_cant_be_field_types():
     @strawberry.pydantic.type
     class User(pydantic.BaseModel):
@@ -379,6 +426,34 @@ def test_field_directives_with_deprecation():
     assert old_field.deprecation_reason == "Use name instead"
 
 
+def test_field_directives_input_types():
+    """Test that field directives work with Pydantic input types."""
+
+    @strawberry.schema_directive(locations=[Location.INPUT_FIELD_DEFINITION])
+    class Validate:
+        pattern: str
+
+    @strawberry.pydantic.input
+    class CreateUserInput(pydantic.BaseModel):
+        name: str
+        email: Annotated[
+            str, strawberry.field(directives=[Validate(pattern=r"^[^@]+@[^@]+\.[^@]+")])
+        ]
+
+    definition = get_object_definition(CreateUserInput, strict=True)
+
+    name_field = next(f for f in definition.fields if f.python_name == "name")
+    email_field = next(f for f in definition.fields if f.python_name == "email")
+
+    # Name field should have no directives
+    assert len(name_field.directives) == 0
+
+    # Email field should have the validation directive
+    assert len(email_field.directives) == 1
+    assert isinstance(email_field.directives[0], Validate)
+    assert email_field.directives[0].pattern == r"^[^@]+@[^@]+\.[^@]+"
+
+
 def test_field_directives_graphql_name_override():
     """Test that strawberry.field() can override Pydantic field aliases for GraphQL names."""
 
@@ -571,3 +646,20 @@ type User {
 
     assert not result.errors
     assert result.data == {"user": {"oldName": "ada", "nickname": "A"}}
+
+
+def test_deprecating_required_input_fields_fails_like_on_strawberry_inputs():
+    @strawberry.pydantic.input
+    class UserInput(pydantic.BaseModel):
+        name: str = pydantic.Field(deprecated="Use full_name")
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def user(self, data: UserInput) -> str:
+            return ""
+
+    with pytest.raises(
+        ValueError, match=r"Required input field UserInput\.name cannot be deprecated"
+    ):
+        strawberry.Schema(query=Query)
