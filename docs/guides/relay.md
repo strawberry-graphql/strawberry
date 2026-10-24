@@ -465,3 +465,54 @@ class Mutation:
 In the example above, you can also access the type name directly with
 `id.type_name`, the raw node ID with `id.id`, or even resolve the type itself
 with `id.resolve_type(info)`.
+
+#### Validating the expected type of a GlobalID
+
+When a field expects the ID of a specific type, you can declare that expectation
+with `Annotated` metadata and Strawberry will validate incoming IDs during
+argument coercion, rejecting mismatches with an input error:
+
+```python
+@strawberry.type
+class Mutation:
+    @strawberry.mutation
+    def rename_user(self, user_id: Annotated[GlobalID, User], name: str) -> User:
+        # user_id.type_name is guaranteed to be "User" here
+        ...
+
+    @strawberry.mutation
+    def move_member(self, member_id: Annotated[GlobalID, User, Team]) -> None:
+        # member_id can refer to either a User or a Team
+        ...
+```
+
+The expected types can be strawberry object types, several of them for a union
+of allowed types, or lazy references:
+
+```python
+user_id: Annotated[GlobalID, Annotated["User", strawberry.lazy(".users")]]
+```
+
+<Note>
+
+Only metadata that looks like a type expectation is interpreted; plain strings
+and other non-type metadata are ignored, as before this feature existed. Type
+expectations must be concrete object types: interfaces, input types, generic
+aliases such as `Box[int]`, and bare lazy references without a type name are
+rejected with a `TypeError` at schema build time.
+
+Validation applies to resolver arguments only. Expected-type metadata nested any
+deeper - `list[Annotated[GlobalID, User]]`,
+`Optional[list[Annotated[GlobalID, User]]]`, tuples, a union of several
+annotated members, or on the metadata of a container annotation such as
+`Annotated[list[GlobalID], User]` or `Annotated[Maybe[GlobalID], User]` - raises
+a `TypeError` at schema build time rather than being silently ignored.
+`Maybe[GlobalID]` itself is not a supported expected-type form either.
+Expected-type metadata on input-object fields also raises at schema build time;
+validating input fields is not supported yet. Like other `Annotated` argument
+metadata, the annotation must be resolvable when the resolver is processed: with
+`from __future__ import annotations`, a type that is not importable at that
+point (for example one declared later in the same module) needs the lazy form to
+be validated.
+
+</Note>
