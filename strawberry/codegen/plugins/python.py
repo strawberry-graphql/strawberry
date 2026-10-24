@@ -78,8 +78,6 @@ class PythonPlugin(QueryCodegenPlugin):
             return f"Optional[{self._get_type_name(type_.of_type)}]"
 
         if isinstance(type_, GraphQLList):
-            self.imports["typing"].add("List")
-
             return f"list[{self._get_type_name(type_.of_type)}]"
 
         if isinstance(type_, GraphQLUnion):
