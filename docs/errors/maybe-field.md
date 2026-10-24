@@ -24,30 +24,31 @@ class UpdateUserInput(pydantic.BaseModel):
 Without `arbitrary_types_allowed=True`, Pydantic itself raises an error for
 `strawberry.Maybe` when the model is defined.
 
-This happens because Pydantic doesn't know about `strawberry.Maybe`, and has its
-own way to tell omitted fields apart from explicit `null` values.
+Pydantic doesn't know how to validate Strawberry's `Some` values, and the
+integration does not currently support `strawberry.Maybe`.
 
 ## How to fix this error
 
-You can fix this error by giving the field a `None` default, and using
-`model_fields_set` (or `model_dump(exclude_unset=True)`) to find the fields that
-the client sent:
+Use a regular Strawberry input if you need to distinguish omission from an
+explicit `null`. GraphQL fills in published defaults before Pydantic validates
+an input, so `model_fields_set` and `model_dump(exclude_unset=True)` do not
+identify only client-submitted fields.
 
 ```python
-import pydantic
 import strawberry
 
 
-@strawberry.pydantic.input
-class UpdateUserInput(pydantic.BaseModel):
-    name: str | None = None
+@strawberry.input
+class UpdateUserInput:
+    name: strawberry.Maybe[str | None]
 
 
 @strawberry.type
 class Mutation:
     @strawberry.mutation
     def update_user(self, input: UpdateUserInput) -> str:
-        changes = input.model_dump(exclude_unset=True)
+        if input.name is None:
+            return "Name was omitted"
 
-        return f"Updated: {sorted(changes)}"
+        return f"Name was supplied: {input.name.value!r}"
 ```

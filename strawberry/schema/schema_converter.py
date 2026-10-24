@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import dataclasses
 import inspect
+import sys
 import typing
 from collections.abc import Mapping
 from functools import partial, reduce
@@ -414,7 +415,7 @@ class GraphQLCoreConverter:
         self,
         scalar_overrides: Mapping[object, ScalarWrapper | ScalarDefinition],
         scalar_map: Mapping[object, ScalarDefinition],
-    ) -> Mapping[object, ScalarWrapper | ScalarDefinition]:
+    ) -> dict[object, ScalarWrapper | ScalarDefinition]:
         scalar_registry: dict[object, ScalarWrapper | ScalarDefinition] = {
             **DEFAULT_SCALAR_REGISTRY
         }
@@ -569,6 +570,46 @@ class GraphQLCoreConverter:
             },
         )
 
+    def _validate_pydantic_field(
+        self, field: StrawberryField, resolved_type: Any, *, is_input: bool
+    ) -> None:
+        integration = sys.modules.get("strawberry.pydantic.fields")
+        if integration is None:
+            # A model can be used without importing Strawberry's integration.
+            # Don't import Pydantic for ordinary schemas, or load the new
+            # integration for applications using an older supported legacy one.
+            pydantic = sys.modules.get("pydantic")
+            if pydantic is None:
+                return
+
+            if isinstance(resolved_type, LazyType):
+                resolved_type = resolved_type.resolve_type()
+            if compat.is_scalar(resolved_type, self.scalar_registry):
+                return
+            if isinstance(resolved_type, (StrawberryList, StrawberryOptional)):
+                self._validate_pydantic_field(
+                    field, resolved_type.of_type, is_input=is_input
+                )
+                return
+            if isinstance(resolved_type, StrawberryUnion):
+                for member in resolved_type.types:
+                    self._validate_pydantic_field(field, member, is_input=is_input)
+                return
+            if not (
+                isinstance(resolved_type, type)
+                and issubclass(resolved_type, pydantic.BaseModel)
+                and tuple(map(int, pydantic.VERSION.split(".")[:2])) >= (2, 11)
+            ):
+                return
+
+            from strawberry.pydantic import fields
+
+            integration = fields
+
+        integration.validate_field_type(
+            field, resolved_type, self.scalar_registry, is_input=is_input
+        )
+
     def from_field(
         self,
         field: StrawberryField,
@@ -578,11 +619,11 @@ class GraphQLCoreConverter:
         # self.from_resolver needs to be called before accessing field.type because
         # in there a field extension might want to change the type during its apply
         resolver = self.from_resolver(field)
+        resolved_type = field.resolve_type(type_definition=type_definition)
+        self._validate_pydantic_field(field, resolved_type, is_input=False)
         field_type = cast(
             "GraphQLOutputType",
-            self.from_maybe_optional(
-                field.resolve_type(type_definition=type_definition)
-            ),
+            self.from_maybe_optional(resolved_type),
         )
         subscribe = None
 
@@ -636,6 +677,9 @@ class GraphQLCoreConverter:
 
         if isinstance(type_, StrawberryList) and isinstance(value, (list, tuple)):
             return [self._to_input_value(item, type_.of_type) for item in value]
+
+        if compat.is_scalar(type_, self.scalar_registry):
+            return value
 
         if has_object_definition(type_) and (
             has_object_definition(value) or isinstance(value, Mapping)
@@ -705,6 +749,7 @@ class GraphQLCoreConverter:
         type_definition: StrawberryObjectDefinition | None = None,
     ) -> GraphQLInputField:
         resolved_type = field.resolve_type(type_definition=type_definition)
+        self._validate_pydantic_field(field, resolved_type, is_input=True)
         field_type = cast("GraphQLInputType", self.from_maybe_optional(resolved_type))
         default_value: object
         if isinstance(field.type, StrawberryMaybe):
@@ -1316,6 +1361,9 @@ class GraphQLCoreConverter:
         return GraphQLNonNull(self.from_type(type_))
 
     def from_type(self, type_: StrawberryType | type) -> GraphQLNullableType:
+        if compat.is_scalar(type_, self.scalar_registry):
+            return self.from_scalar(type_)
+
         # Every type used in the schema is converted here, so this covers fields,
         # arguments, union members, lazy types and `Schema(types=[...])`
         check_is_not_undecorated_subclass(type_)
@@ -1351,11 +1399,6 @@ class GraphQLCoreConverter:
             if typing.get_origin(resolved) is Annotated:
                 return self.from_type(StrawberryAnnotation(resolved).resolve())
             return self.from_type(resolved)
-        if compat.is_scalar(
-            type_, self.scalar_registry
-        ):  # TODO: Replace with StrawberryScalar
-            return self.from_scalar(type_)
-
         raise TypeError(f"Unexpected type '{type_}'")
 
     def from_union(self, union: StrawberryUnion) -> GraphQLUnionType:

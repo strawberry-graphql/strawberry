@@ -1,5 +1,8 @@
+import subprocess
+import sys
+import textwrap
 import warnings
-from typing import Annotated, Any, Generic, TypeVar
+from typing import Annotated, Any, Generic, Optional, TypeVar, Union
 
 import pydantic
 import pytest
@@ -19,6 +22,100 @@ from strawberry.pydantic.exceptions import (
 from strawberry.scalars import JSON
 from strawberry.schema_directive import Location
 from strawberry.types.base import get_object_definition
+
+
+@pytest.mark.parametrize(
+    "annotation", ["Book", "list[Book]", "Book | None", "list[Book | None] | None"]
+)
+@pytest.mark.parametrize("preload", [False, True])
+@pytest.mark.parametrize("mapped", [False, True])
+def test_regular_fields_diagnose_unregistered_models(annotation, preload, mapped):
+    # Each invocation starts without the optional integration, unlike the test
+    # process itself. Import order must not determine schema diagnostics.
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-c",
+            textwrap.dedent(f"""
+            import sys
+            import pydantic
+            import strawberry
+            from strawberry.schema.config import StrawberryConfig
+
+            assert "strawberry.pydantic" not in sys.modules
+            if {preload!r}:
+                import strawberry.pydantic
+
+            class Book(pydantic.BaseModel):
+                title: str
+
+            @strawberry.type
+            class Query:
+                @strawberry.field
+                def book(self) -> {annotation}:
+                    raise NotImplementedError
+
+            if {mapped!r}:
+                schema = strawberry.Schema(
+                    query=Query,
+                    config=StrawberryConfig(scalar_map={{
+                        Book: strawberry.scalar(name="BookScalar", serialize=lambda book: book.title)
+                    }}),
+                )
+                assert "BookScalar" in str(schema)
+            else:
+                try:
+                    strawberry.Schema(query=Query)
+                except Exception as error:
+                    from strawberry.pydantic.exceptions import UnregisteredPydanticTypeError
+                    assert isinstance(error, UnregisteredPydanticTypeError), repr(error)
+                    assert error.cls is Query
+                    assert error.type is Book
+                    assert error.field_name == "book"
+                    assert "@strawberry.pydantic.type" in str(error)
+                else:
+                    raise AssertionError("Schema accepted an undecorated model")
+        """),
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr
+
+
+def test_regular_fields_do_not_gain_pydantic_scalar_fallbacks():
+    @strawberry.type
+    class Query:
+        url: pydantic.AnyUrl
+
+    with pytest.raises(TypeError, match="Unexpected type"):
+        strawberry.Schema(query=Query)
+
+
+def test_regular_schema_does_not_import_pydantic():
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-c",
+            textwrap.dedent("""
+            import sys
+            import strawberry
+
+            @strawberry.type
+            class Query:
+                hello: str
+
+            strawberry.Schema(query=Query)
+            assert "pydantic" not in sys.modules
+            assert "strawberry.pydantic" not in sys.modules
+        """),
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr
 
 
 def test_pydantic_field_descriptions():
@@ -125,6 +222,8 @@ def test_all_models_need_to_marked_as_strawberry_types():
         name: str
         address: Address
 
+    strawberry.Schema(query=User)
+
 
 @pytest.mark.raises_strawberry_exception(
     UnregisteredPydanticTypeError,
@@ -144,6 +243,8 @@ def test_subclasses_of_decorated_models_need_to_be_decorated():
     @strawberry.pydantic.type
     class Owner(pydantic.BaseModel):
         dog: Dog
+
+    strawberry.Schema(query=Owner)
 
 
 @pytest.mark.raises_strawberry_exception(
@@ -165,6 +266,12 @@ def test_subclasses_of_decorated_inputs_need_to_be_decorated():
     @strawberry.pydantic.input
     class OwnerInput(pydantic.BaseModel):
         dog: DogInput
+
+    @strawberry.type
+    class Query:
+        ok: bool
+
+    strawberry.Schema(query=Query, types=[OwnerInput])
 
 
 def test_undecorated_subclasses_of_inputs_cant_be_arguments():
@@ -234,6 +341,8 @@ def test_parametrized_generic_models_need_a_decorated_subclass():
     class Holder(pydantic.BaseModel):
         page: Page[User]
 
+    strawberry.Schema(query=Holder)
+
 
 def test_unregistered_generic_model_names_are_rendered():
     rich_console = pytest.importorskip("rich.console")
@@ -243,11 +352,12 @@ def test_unregistered_generic_model_names_are_rendered():
     class Box(pydantic.BaseModel, Generic[T]):
         value: T
 
-    with pytest.raises(UnregisteredPydanticTypeError) as exc_info:
+    @strawberry.pydantic.type
+    class User(pydantic.BaseModel):
+        box: Box[str]
 
-        @strawberry.pydantic.type
-        class User(pydantic.BaseModel):
-            box: Box[str]
+    with pytest.raises(UnregisteredPydanticTypeError) as exc_info:
+        strawberry.Schema(query=User)
 
     console = rich_console.Console(width=200, color_system=None)
 
@@ -255,6 +365,75 @@ def test_unregistered_generic_model_names_are_rendered():
         console.print(exc_info.value)
 
     assert "`User.box` uses `Box[str]`" in capture.get()
+
+
+def test_union_names():
+    @strawberry.type
+    class Cat:
+        name: str
+
+    @strawberry.type
+    class Dog:
+        name: str
+
+    Pet = Annotated[Union[Cat, Dog], strawberry.union("Pet")]
+
+    @strawberry.pydantic.type
+    class Owner(pydantic.BaseModel):
+        model_config = pydantic.ConfigDict(arbitrary_types_allowed=True)
+
+        pet: Pet
+        previous_pet: Annotated[
+            Optional[Union[Cat, Dog]], strawberry.union("PreviousPet")
+        ] = None
+        pets: list[Pet] = []
+
+        @pydantic.computed_field
+        @property
+        def favorite_pet(self) -> Pet:
+            return self.pet
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def owner(self) -> Owner:
+            return Owner(pet=Dog(name="Rex"))
+
+    schema = strawberry.Schema(query=Query)
+
+    assert str(schema) == snapshot("""\
+type Cat {
+  name: String!
+}
+
+type Dog {
+  name: String!
+}
+
+type Owner {
+  pet: Pet!
+  previousPet: PreviousPet
+  pets: [Pet!]!
+  favoritePet: Pet!
+}
+
+union Pet = Cat | Dog
+
+union PreviousPet = Cat | Dog
+
+type Query {
+  owner: Owner!
+}\
+""")
+
+    result = schema.execute_sync(
+        "{ owner { pet { __typename } favoritePet { __typename } } }"
+    )
+
+    assert not result.errors
+    assert result.data == {
+        "owner": {"pet": {"__typename": "Dog"}, "favoritePet": {"__typename": "Dog"}}
+    }
 
 
 def test_field_directives_basic():
