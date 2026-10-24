@@ -1,6 +1,5 @@
 ---
 title: Pydantic support
-experimental: true
 ---
 
 # Pydantic support
@@ -50,6 +49,12 @@ schema = strawberry.Schema(query=Query)
 This automatically creates a GraphQL type that includes all fields from your
 Pydantic model.
 
+Returning an undecorated Pydantic model from a regular `@strawberry.field`
+raises
+[`UnregisteredPydanticTypeError`](../errors/unregistered-pydantic-type.md) when
+the schema is built, identifying the field and the missing decorator. Use
+`@strawberry.pydantic.type`, or explicitly map the model to a custom scalar.
+
 ## Type Decorators
 
 ### `@strawberry.pydantic.type`
@@ -98,13 +103,14 @@ class Mutation:
 
 Pass `one_of=True` to create a
 [`oneOf` input](../types/input-types.md#one-of-input-types), where clients set
-exactly one field:
+exactly one field. Its fields must be nullable and have no explicit defaults,
+including `None`, like ordinary Strawberry `oneOf` inputs:
 
 ```python
 @strawberry.pydantic.input(one_of=True)
 class UserBy(BaseModel):
-    id: strawberry.ID | None = None
-    email: str | None = None
+    id: strawberry.ID | None
+    email: str | None
 ```
 
 ### `@strawberry.pydantic.interface`
@@ -161,7 +167,8 @@ class User(BaseModel):
 ```
 
 They also take `directives`, a list of
-[schema directives](../types/schema-directives.md) for the type.
+[schema directives](../types/schema-directives.md) for the type, like the
+[federation](#federation) ones.
 
 To use the same model as a GraphQL type and as an input, decorate a subclass, as
 a model can only be decorated once:
@@ -226,8 +233,8 @@ class User(BaseModel):
 GraphQL field names come from the Python field names, like with
 `@strawberry.type`. Pydantic aliases describe how the model is (de)serialized,
 for example for a REST API, so they are not used in the GraphQL schema (unlike
-in the [experimental integration](#experimental-pydantic-support)). Use
-`strawberry.field(name=...)` to rename a field:
+in the [experimental integration](#moving-from-the-experimental-integration)).
+Use `strawberry.field(name=...)` to rename a field:
 
 ```python
 from typing import Annotated
@@ -334,11 +341,13 @@ deprecating required input fields, so deprecating `name` above would make the
 schema fail to build with
 `Required input field UserInput.name cannot be deprecated.`
 
-### Default Values and Partial Updates
+### Default Values and Omitted Fields
 
-Input fields with a default can be omitted by clients. Defaults that are
-constants of the field's type, like `20` for an `int` field or an enum member
-for an enum field, are shown in the schema:
+Input fields with a default can be omitted by clients. Explicit Pydantic field
+defaults use Strawberry's ordinary schema default machinery, including `None` as
+`null` and model instances as input objects. Defaults must be representable by
+the field's GraphQL type; they aren't classified by their Python type or
+validated by Pydantic before schema printing:
 
 ```python
 import uuid
@@ -359,65 +368,48 @@ input SearchInput {
   query: String!
   pageSize: Int! = 20
   requestId: UUID
-  tag: String
+  tag: String = null
 }
 ```
 
-Other defaults, like `None`, default factories, model instances or values that
-Pydantic converts to the field's type, are applied by Pydantic and are not shown
-in the schema, so the field becomes nullable. Pydantic validates an explicit
-`null` like any other value.
-
-Pydantic types exposed as strings follow the same rule: `"ada@example.com"` is
-shown for an `EmailStr` field and `HttpUrl("https://example.com")` for an
-`HttpUrl` field, but not a string that Pydantic converts to an `HttpUrl`.
-`SecretStr` defaults are never shown, as the schema would reveal them.
+Default factories are Pydantic's responsibility. They are not called to build
+the schema or published as schema defaults. Their fields are nullable in GraphQL
+so clients can omit them, and Pydantic calls the factory for each request that
+omits the field. This includes factories that receive already validated field
+data. This differs from defaults on ordinary Strawberry inputs. An explicit
+`null` is validated by Pydantic like any other supplied value; it does not
+invoke the factory.
 
 A nullable field without a default, like `nickname: str | None`, is optional for
 clients too, as GraphQL requires for nullable input fields. When a client leaves
 it out, Pydantic gets `None` for it, as if the client had sent `null`: the field
-is part of `model_fields_set`, and validators see `None`. Give the field a
-default, like `= None`, to tell the two apart, for example for partial updates.
+is part of `model_fields_set`, and validators see `None`.
 
-Fields the client omits whose default is not shown in the schema are not part of
-`model_fields_set`, which makes partial updates work as usual with Pydantic:
+GraphQL fills in defaults published in the schema before Pydantic validates the
+input. These values can therefore be part of `model_fields_set` even when the
+client omitted them. Do not use `model_dump(exclude_unset=True)` as a record of
+only client-submitted fields, or rely on it to distinguish omission from
+explicit `null` for partial updates.
+
+When a model is an argument default, only its explicitly set fields are emitted
+in the printed argument default. For example:
 
 ```python
 @strawberry.pydantic.input
 class UpdateUserInput(BaseModel):
     name: str | None = None
     bio: str | None = None
-
-
-@strawberry.type
-class Mutation:
-    @strawberry.mutation
-    def update_user(self, id: strawberry.ID, input: UpdateUserInput) -> User:
-        user = get_user(id)
-
-        # only the fields sent by the client, an explicit `null` included
-        for field, value in input.model_dump(exclude_unset=True).items():
-            setattr(user, field, value)
-
-        return user
 ```
 
-Defaults shown in the schema are filled in by GraphQL in the inputs clients
-send, so they are always part of their `model_fields_set`, and Pydantic
-validates them like values sent by the client.
-
-When a model is the default of an argument, only the fields that were set on it
-are part of the default shown in the schema, and the model the resolver gets
-when the client omits the argument has the same `model_fields_set`. For example,
-the default of `input: UpdateUserInput = UpdateUserInput(name="Ada")` is
-`{ name: "Ada" }`, so a partial update doesn't overwrite the other fields with
-`None`. Like the values sent by clients, the default is validated again for
-every request that uses it.
+The printed default of `input: UpdateUserInput = UpdateUserInput(name="Ada")` is
+`{ name: "Ada" }`. This does not guarantee that the resolver receives the same
+`model_fields_set`: GraphQL field defaults may supply other fields. Like
+client-supplied inputs, argument defaults are validated for each request that
+uses them.
 
 `strawberry.Maybe` can't be used in Pydantic inputs (Pydantic raises an error
-for it when the model is defined), give the field a default and use
-`model_fields_set` to tell omitted fields apart from explicit `null` values
-instead.
+for it when the model is defined). Use a regular Strawberry input with
+`strawberry.Maybe` if you need to distinguish omission from explicit `null`.
 
 ### Private Fields
 
@@ -478,10 +470,12 @@ Input types are not affected: clients can still send fields marked with
 Other serialization settings don't apply to GraphQL: output fields are resolved
 from the model's attributes, not from `model_dump()`, so serialization aliases
 are ignored. Serializers are often used to hide or redact values, so instead of
-ignoring them, types and interfaces with serializers on their fields
+ignoring them, types and interfaces with serializers on their exposed fields
 (`field_serializer`, `PlainSerializer` or `WrapSerializer`),
 `Field(exclude_if=...)` or a `model_serializer` raise an
-[`IgnoredSerializerError`](../errors/ignored-serializer.md). To hide or redact a
+[`IgnoredSerializerError`](../errors/ignored-serializer.md). This includes
+`PlainSerializer` and `WrapSerializer` in computed fields' return annotations.
+There is no configuration option to bypass this check. To hide or redact a
 value, use `strawberry.Private`, `Field(exclude=True)` or a
 [resolver field](#resolver-fields):
 
@@ -494,21 +488,6 @@ class Customer(BaseModel):
     @strawberry.pydantic.field
     def masked_email(self) -> str:
         return f"{self.email[0]}***"
-```
-
-If the serializers are only meant for other uses of the model, like a REST API,
-pass `ignore_serializers=True` to `@strawberry.pydantic.type` or
-`@strawberry.pydantic.interface`, and GraphQL returns the values of the
-attributes:
-
-```python
-@strawberry.pydantic.type(ignore_serializers=True)
-class Event(BaseModel):
-    starts_at: datetime  # GraphQL returns the full date and time
-
-    @field_serializer("starts_at")
-    def as_date(self, value: datetime) -> str:
-        return value.strftime("%Y-%m-%d")
 ```
 
 Pydantic's `SecretStr` fields are exposed as strings with their masked value,
@@ -555,11 +534,13 @@ other decorators, like `@staticmethod`, `@classmethod` or `@functools.cache`
 (which needs a hashable model, for example with
 `model_config = ConfigDict(frozen=True)`). They are inherited from base models
 and from Pydantic interfaces, and the field is named after the attribute, so
-`label = strawberry.pydantic.field(get_label)` adds a `label` field. The
-resolver needs to be a function, or a `functools.partial`, as Pydantic only
-allows functions in the class body of a model. Pydantic's mypy plugin reports
-this form as an untyped field, so prefer the decorator form if you use it, or
-add `# type: ignore[pydantic-field]`.
+`label = strawberry.pydantic.field(get_label)` adds a `label` field.
+`strawberry.pydantic.field(resolver=get_label, description="A label")` also
+works. Resolvers can be functions, bound methods, partials or typed callable
+objects, including asynchronous ones. Bound methods and callable objects keep
+their calling convention: calling them through a model does not inject another
+`self`. Pydantic's mypy plugin reports this form as an untyped field, so prefer
+the decorator form if you use it, or add `# type: ignore[pydantic-field]`.
 
 The same resolver can be used by multiple fields, including on different models.
 Each call to `strawberry.pydantic.field` creates its own method wrapper, so
@@ -611,7 +592,14 @@ Pydantic types that only add validation to a scalar, like `EmailStr`, `HttpUrl`,
 `scalar_map` entries for `datetime` also apply to `AwareDatetime` fields, and
 `strawberry.field(graphql_type=...)` changes the scalar of a field. Pydantic's
 URL and DSN types (including your own subclasses of them), `NameEmail` and the
-`IPvAny*` types are strings, which Pydantic validates on inputs:
+`IPvAny*` types are strings, which Pydantic validates on inputs.
+
+An exact `scalar_map` entry, such as one for `EmailStr`, takes precedence over
+these automatic mappings. Mappings are resolved separately for each schema;
+building one schema does not change another schema using the same models. An
+undecorated Pydantic model can also be registered as a custom scalar. Models not
+registered as scalars still need a Strawberry decorator; that check runs during
+schema construction, once the scalar map is available.
 
 ```python
 from typing import NewType
@@ -683,10 +671,10 @@ class User(BaseModel):
     id: Annotated[UserId, strawberry.field(graphql_type=int)]
 ```
 
-The same applies to [file uploads](../guides/file-upload.md): uploaded files are
-the file objects of your integration, which Pydantic can't validate as `Upload`,
-so input fields typed as `Upload` raise an error. Annotate the field with the
-file type and use `Upload` as its GraphQL type instead:
+For [file uploads](../guides/file-upload.md), Pydantic validates the file
+objects provided by your integration. A bare `Upload` annotation validates as
+`bytes`, so file objects need a custom Pydantic validator, or an annotation
+using the actual file type with `Upload` as its GraphQL type:
 
 ```python
 from typing import Annotated
@@ -730,6 +718,12 @@ whose page shows the workarounds: defining the referenced model first, quoting
 only the type, like `Annotated[list["Post"], strawberry.field(...)]`, in a
 module without `from __future__ import annotations`, or decorating the model
 after calling `model_rebuild()`.
+
+Decoration captures the GraphQL fields and their mappings. Calling
+`model_rebuild()` afterward only rebuilds Pydantic's model; it does not refresh
+those captured fields or mappings. If unresolved references affect field
+metadata or the mapping to GraphQL types (for example, a Pydantic-specific
+scalar), resolve them and call `model_rebuild()` **before** decorating.
 
 Models from other modules can be referenced with
 [`strawberry.lazy()`](../types/lazy.md), for example when two modules import
@@ -915,14 +909,23 @@ class OrderInput(BaseModel):
 ```
 
 Sending `items: [{quantity: 0}, {quantity: 1}, {quantity: -1}]` reports two
-errors, at `input.items.0.quantity` and `input.items.2.quantity` for an argument
-named `input`. Validators with `mode="before"` receive nested inputs as data,
-not as model instances.
+errors, with locations `["input", "items", "0", "quantity"]` and
+`["input", "items", "2", "quantity"]` for an argument named `input`. Every
+segment is a string, including list indexes, matching the `[String!]!` GraphQL
+field. Validators with `mode="before"` receive nested inputs as data, not as
+model instances.
 
-This only applies to inputs nested in a Pydantic input: each item of an argument
-like `inputs: list[ItemInput]` is validated on its own, and the errors of the
-first invalid item are returned. Wrap the list in a Pydantic input to report the
-errors of all the items.
+Strawberry converts GraphQL field names and scalar values, and transports lists
+as tuples for tuple fields. Pydantic owns nested validation: Strawberry does not
+prevalidate nested models for `PlainValidator`, `SkipValidation` or
+`InstanceOf`. Their normal Pydantic behavior applies to the transported data; in
+particular, `InstanceOf` does not turn a nested input object into a model
+instance.
+
+Collecting nested errors together only applies inside a Pydantic input: each
+item of an argument like `inputs: list[ItemInput]` is validated on its own, and
+the errors of the first invalid item are returned. Wrap the list in a Pydantic
+input to report the errors of all the items.
 
 A Pydantic input nested inside a regular `@strawberry.input` is validated on its
 own, and overriding `model_validate` only affects the outermost input, so prefer
@@ -973,20 +976,31 @@ returns:
 }
 ```
 
-`location` uses the GraphQL names the client sent, starting with the argument,
-and `type` is the
+`location` is a list of strings using the GraphQL names the client sent,
+starting with the argument; list indexes are strings too. This applies to both
+typed results and the `validationErrors` extension. The dotted path in the
+top-level error message is only a human-readable summary. `type` is the
 [Pydantic error type](https://docs.pydantic.dev/latest/errors/validation_errors/).
 Errors raised by model validators are located at the model they validate: the
 `DateRangeInput` check above is reported at `["range"]` for an argument named
 `range`, or at `["input", "dates"]` when it's the `dates` field of an `input`
-argument. The values Pydantic attaches to its errors are not included, but
-messages come from Pydantic and from your validators, so avoid putting sensitive
-values in your validators' messages.
+argument. The `input` property Pydantic attaches to errors is omitted, and
+chaining to the original Pydantic exception is suppressed. Messages are
+preserved from Pydantic, except that a validator's `ValueError` uses the
+original exception message without Pydantic's generated `"Value error, "`
+prefix. For example, `raise ValueError("An ISBN has 13 digits")` produces
+`"An ISBN has 13 digits"`, with type `"value_error"`. Custom Pydantic error
+messages and built-in constraint messages are unchanged. This applies to both
+typed results and GraphQL errors.
+
+Messages may contain submitted values, even for built-in errors. Removing the
+prefix is not redaction; avoid sensitive values in custom validator messages and
+review the errors your API exposes.
 
 The error is raised as `strawberry.pydantic.InputValidationError`, a
 [`StrawberryInputCoercionError`](../guides/errors.md#strawberry-input-coercion-errors),
-so it can be told apart from server errors. Its `issues` attribute is the list
-of `ValidationIssue`s, each with the `location`, `message` and `type` of a
+so it can be told apart from server errors. Its `errors` attribute is the list
+of `ValidationErrorDetail`s, each with the `location`, `message` and `type` of a
 problem, which you can use for example in your own
 [exception handler](../guides/errors.md#mapping-expected-exceptions-to-union-results).
 Each argument is validated on its own, so when several arguments are invalid,
@@ -1039,7 +1053,7 @@ mutation {
       name
     }
     ... on ValidationError {
-      issues {
+      errors {
         location
         message
         type
@@ -1075,8 +1089,9 @@ class CreateUserInput(BaseModel):
 GraphQL already checks the types of the values, and doesn't allow unknown
 fields, before Pydantic validates the input, so settings like `strict=True` and
 `extra="forbid"` mostly matter when the model is also used outside of GraphQL.
-One exception: GraphQL lists are sent to Pydantic as Python lists, which strict
-mode doesn't accept for `tuple` fields.
+For tuple fields, Strawberry converts GraphQL lists to Python tuples before
+Pydantic validation, including in strict mode. Pydantic still validates their
+items and constraints.
 
 ### Field Directives and Customization
 
@@ -1146,6 +1161,11 @@ When using `strawberry.field()` with Pydantic models, you can specify:
 default value (`email: str = strawberry.field(...)`) raises an error, because
 Pydantic would keep only its default and discard the rest of its configuration.
 
+Defaults belong to Pydantic: use `count: int = 7` or
+`pydantic.Field(default_factory=...)`. A `default` or `default_factory` inside
+`Annotated[..., strawberry.field(...)]` raises a `TypeError` rather than being
+silently ignored; Pydantic does not use that metadata to construct the model.
+
 Customizations declared on a base model or on an interface are inherited by its
 subclasses and implementations.
 
@@ -1172,8 +1192,10 @@ class CreateUserInput(BaseModel):
 
 ### TypeAdapter and RootModel
 
-Pydantic's `TypeAdapter` and `RootModel` can be used in resolvers for additional
-validation:
+A `RootModel` holds a single value instead of fields, so it can't be decorated
+as an object type or an input. To use one as a field, register a custom scalar
+for it in `scalar_map`. Pydantic's `TypeAdapter` and `RootModel` can be used in
+resolvers for additional validation:
 
 ```python
 from pydantic import TypeAdapter, RootModel, Field
@@ -1212,85 +1234,223 @@ The [`PydanticErrorExtension`](../extensions/pydantic_error_extension.md) adds
 these errors to the response in a `validation_errors` extension, with a
 different shape than invalid inputs: a `field` and a `message` for each error.
 
+### Relay
+
+Pydantic types can implement [`relay.Node`](../guides/relay.md) like regular
+Strawberry types: annotate the field that holds the ID with `relay.NodeID`,
+which Pydantic validates like any other field and the schema leaves out, as
+`relay.Node` exposes it as a global ID, and resolve the nodes with a
+`resolve_nodes` class method:
+
+```python
+from collections.abc import Iterable
+
+from strawberry import relay
+
+
+@strawberry.pydantic.type
+class Fruit(BaseModel, relay.Node):
+    id: relay.NodeID[int]
+    name: str
+
+    @classmethod
+    def resolve_nodes(
+        cls,
+        *,
+        info: strawberry.Info,
+        node_ids: Iterable[str],
+        required: bool = False,
+    ) -> list["Fruit | None"]:
+        return [get_fruit(int(node_id)) for node_id in node_ids]
+
+
+@strawberry.type
+class Query:
+    node: relay.Node = relay.node()
+
+    @relay.connection(relay.ListConnection[Fruit])
+    def fruits(self) -> list[Fruit]:
+        return get_fruits()
+```
+
+Like other regular Strawberry interfaces, `relay.Node` comes after `BaseModel`
+in the bases. Pydantic types that don't implement `relay.Node` can be the nodes
+of connections too.
+
+### Federation
+
+Pydantic types can be [federation](../guides/federation.md) entities. There are
+no `strawberry.federation` versions of the decorators, so pass the federation
+directives, like `Key`, with `directives`:
+
+```python
+from pydantic import BaseModel
+
+import strawberry
+from strawberry.federation.schema_directives import Key
+
+
+@strawberry.pydantic.type(directives=[Key(fields="id")])
+class Product(BaseModel):
+    id: strawberry.ID
+
+    @strawberry.pydantic.field
+    def reviews(self) -> list["Review"]:
+        return get_reviews(product_id=self.id)
+
+
+@strawberry.pydantic.type(directives=[Key(fields="id")])
+class Review(BaseModel):
+    id: strawberry.ID
+    body: str
+
+    @classmethod
+    def resolve_reference(cls, id: strawberry.ID) -> "Review":
+        return get_review(id)
+
+
+schema = strawberry.federation.Schema(query=Query, types=[Product])
+```
+
+Like other entities, they are resolved with their `resolve_reference` class
+method. Entities without one, like `Product`, are built by validating the
+representation sent by the router with Pydantic. A router only sends the key
+fields of an entity, and the fields that `@requires` asks for, so the model's
+other non-null fields need a default (nullable ones are `None` when they're
+missing). An invalid representation is reported like an invalid input: the
+entity is `null`, with an error that has a `validationErrors` extension, which
+reports a missing field as `Field required`.
+
+<Note>
+
+The `ValidationError` and `ValidationErrorDetail` types aren't `@shareable` yet,
+so two subgraphs that both use them don't compose: composition fails with
+`INVALID_FIELD_SHARING` errors.
+
+</Note>
+
+## Complete Example
+
+```python
+from pydantic import BaseModel, Field, field_validator
+
+import strawberry
+from strawberry.pydantic import PydanticValidationErrorHandler, ValidationError
+
+
+@strawberry.pydantic.type
+class User(BaseModel):
+    id: strawberry.ID
+    name: str = Field(description="The user's full name")
+    email: str
+    tags: list[str] = Field(default_factory=list)
+
+    @strawberry.pydantic.field
+    def initials(self) -> str:
+        return "".join(part[0] for part in self.name.split())
+
+
+@strawberry.pydantic.input
+class CreateUserInput(BaseModel):
+    name: str = Field(min_length=1)
+    email: str
+    tags: list[str] = []
+
+    @field_validator("email")
+    @classmethod
+    def check_email(cls, email: str) -> str:
+        if "@" not in email:
+            raise ValueError("Invalid email")
+
+        return email
+
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def user(self, id: strawberry.ID) -> User | None:
+        return User(id=id, name="Ada Lovelace", email="ada@example.com")
+
+
+@strawberry.type
+class Mutation:
+    @strawberry.mutation
+    def create_user(self, input: CreateUserInput) -> User | ValidationError:
+        return User(id=strawberry.ID("1"), **input.model_dump())
+
+
+schema = strawberry.Schema(
+    query=Query,
+    mutation=Mutation,
+    exception_handlers=[PydanticValidationErrorHandler()],
+)
+```
+
 ---
 
 # Experimental Pydantic Support
 
-Strawberry comes with support for
-[Pydantic](https://pydantic-docs.helpmanual.io/). This allows for the creation
-of Strawberry types from pydantic models without having to write code twice.
+The experimental integration, `strawberry.experimental.pydantic`, creates a
+separate Strawberry class for each Pydantic model, and also supports Pydantic v1
+models. It's still supported, next to `strawberry.pydantic`.
 
-Here's a basic example of how this works, let's say we have a pydantic Model for
-a user, like this:
+## Moving from the experimental integration
+
+To move a model from the experimental integration to `strawberry.pydantic`, keep
+in mind that the same model can give a different schema, which can break
+existing clients:
+
+- Pydantic aliases were the GraphQL names of the fields by default, now the
+  Python names are, on types and inputs. An alias like `userName` for
+  `user_name` gives the same name, but one like `login` doesn't: keep it as the
+  GraphQL name with
+  `Annotated[str, Field(alias="login"), strawberry.field(name="login")]`.
+- Fields excluded with `Field(exclude=True)` are no longer exposed on output
+  types.
+- Computed fields are included in output types, unless `include_computed=False`
+  is passed to the decorator.
+- Fields deprecated with `Field(deprecated=...)` are deprecated in GraphQL with
+  `@deprecated`.
+
+The two integrations can't use each other's types: a field of a
+`strawberry.pydantic` type can't use a model that only has an experimental type,
+and the other way around. Move models that reference each other together, or
+give a model a `strawberry.pydantic` type too while its experimental type is
+still used, with a different name if both are in the schema:
 
 ```python
-from datetime import datetime
-from typing import List, Optional
-from pydantic import BaseModel
+strawberry.pydantic.type(AddressModel, name="NewAddress")
+```
+
+## Experimental Usage
+
+The experimental integration uses a separate Strawberry class for each model:
+
+```python
+from strawberry.experimental.pydantic import type as pydantic_type
 
 
-class User(BaseModel):
+class UserModel(BaseModel):
     id: int
     name: str
     signup_ts: Optional[datetime] = None
     friends: List[int] = []
-```
-
-We can create a Strawberry type by using the
-`strawberry.experimental.pydantic.type` decorator:
-
-```python
-import strawberry
-
-from .models import User
 
 
-@strawberry.experimental.pydantic.type(model=User)
+@pydantic_type(model=UserModel)
 class UserType:
     id: strawberry.auto
     name: strawberry.auto
     friends: strawberry.auto
-```
-
-The `strawberry.experimental.pydantic.type` decorator accepts a Pydantic model
-and wraps a class that contains dataclass style fields with `strawberry.auto` as
-the type annotation. The fields marked with `strawberry.auto` will inherit their
-types from the Pydantic model.
-
-If you want to include all of the fields from your Pydantic model, you can
-instead pass `all_fields=True` to the decorator.
-
--> **Note** Care should be taken to avoid accidentally exposing fields that ->
-weren't meant to be exposed on an API using this feature.
-
-```python
-import strawberry
-
-from .models import User
 
 
-@strawberry.experimental.pydantic.type(model=User, all_fields=True)
+# Or include all fields
+@pydantic_type(model=UserModel, all_fields=True)
 class UserType:
     pass
 ```
 
-By default, computed fields are excluded. To also include all computed fields
-pass `include_computed=True` to the decorator.
-
-```python
-import strawberry
-
-from .models import User
-
-
-@strawberry.experimental.pydantic.type(
-    model=User, all_fields=True, include_computed=True
-)
-class UserType:
-    pass
-```
-
-## Input types
+### Input types
 
 Input types are similar to types; we can create one by using the
 `strawberry.experimental.pydantic.input` decorator:
@@ -1417,9 +1577,9 @@ class User:
 
 ```graphql
 type User {
+  age: Int!
   id: Int!
   name: String!
-  age: Int!
 }
 ```
 
@@ -1512,7 +1672,8 @@ class UserInput:
 
 input_data = UserInput(id="abc", name="Jake")
 
-# this will run pydantic's validation
+# this will run pydantic's validation, which raises a ValidationError here, as
+# "abc" isn't an integer
 instance = input_data.to_pydantic()
 ```
 
@@ -1724,7 +1885,7 @@ class UserType:
 
 user = User(id="abc", content={ContentType.NAME: "Bob"})
 print(UserType.from_pydantic(user))
-# UserType(id='abc', content_name='Bob', content_description=None)
+# UserType(content_name='Bob', content_description=None, id='abc')
 
 user_type = UserType(id="abc", content_name="Bob", content_description=None)
 print(user_type.to_pydantic())
