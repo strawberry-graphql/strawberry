@@ -5,6 +5,377 @@ experimental: true
 
 # Pydantic support
 
+Strawberry provides first-class support for [Pydantic](https://pydantic.dev/)
+models, allowing you to directly decorate your Pydantic `BaseModel` classes to
+create GraphQL types without writing code twice.
+
+## Installation
+
+```bash
+pip install 'strawberry-graphql[pydantic]'
+```
+
+`strawberry.pydantic` requires Pydantic 2.11 or newer. If an older version is
+installed, upgrade it with `pip install -U 'pydantic>=2.11'`. Pydantic v1 models
+are only supported by the
+[experimental integration](#experimental-pydantic-support).
+
+## Basic Usage
+
+The simplest way to use Pydantic with Strawberry is to decorate your Pydantic
+models directly:
+
+```python
+import strawberry
+from pydantic import BaseModel
+
+
+@strawberry.pydantic.type
+class User(BaseModel):
+    id: int
+    name: str
+    email: str
+
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def get_user(self) -> User:
+        return User(id=1, name="John", email="john@example.com")
+
+
+schema = strawberry.Schema(query=Query)
+```
+
+This automatically creates a GraphQL type that includes all fields from your
+Pydantic model.
+
+## Type Decorators
+
+### `@strawberry.pydantic.type`
+
+Creates a GraphQL object type from a Pydantic model:
+
+```python
+@strawberry.pydantic.type
+class User(BaseModel):
+    name: str
+    age: int
+    is_active: bool = True
+```
+
+Like with `@strawberry.type`, resolvers can return other objects with the same
+attributes, like rows of an ORM. In unions, where Strawberry needs to know their
+type, wrap them with `strawberry.cast`:
+
+```python
+@strawberry.field
+def account(self, id: strawberry.ID) -> User | Organization:
+    row = db.users.get(id=id)
+
+    return strawberry.cast(User, row)
+```
+
+Define an `is_type_of` class method on the model to only accept some objects.
+
+## Configuration Options
+
+`@strawberry.pydantic.type` accepts optional configuration parameters:
+
+```python
+@strawberry.pydantic.type(
+    name="CustomUser",  # Override the GraphQL type name
+    description="A user in the system",  # Add type description
+)
+class User(BaseModel):
+    name: str
+    age: int
+```
+
+It also takes `directives`, a list of
+[schema directives](../types/schema-directives.md) for the type.
+
+## Field Features
+
+### Field Descriptions
+
+Pydantic field descriptions are automatically preserved in the GraphQL schema:
+
+```python
+from pydantic import Field
+
+
+@strawberry.pydantic.type
+class User(BaseModel):
+    name: str = Field(description="The user's full name")
+    age: int = Field(description="The user's age in years")
+```
+
+### Field Names and Aliases
+
+GraphQL field names come from the Python field names, like with
+`@strawberry.type`. Pydantic aliases describe how the model is (de)serialized,
+for example for a REST API, so they are not used in the GraphQL schema (unlike
+in the [experimental integration](#experimental-pydantic-support)). Use
+`strawberry.field(name=...)` to rename a field:
+
+```python
+from typing import Annotated
+
+from pydantic import Field
+
+
+@strawberry.pydantic.type
+class User(BaseModel):
+    user_name: Annotated[str, Field(alias="user-name")]  # userName in GraphQL
+    age: Annotated[int, strawberry.field(name="yearsOld")]
+```
+
+This also applies to fields named after Python keywords, which are usually
+aliased: `from_: Annotated[date, Field(alias="from")]` is called `from_` in
+GraphQL, unless it is renamed with
+`Annotated[date, Field(alias="from"), strawberry.field(name="from")]`.
+
+### Deprecated Fields
+
+Fields deprecated with Pydantic's `Field(deprecated=...)` are deprecated in the
+GraphQL schema too. Pydantic still emits its `DeprecationWarning` when the field
+is read, including when it's resolved.
+
+```python
+@strawberry.pydantic.type
+class User(BaseModel):
+    name: str
+    full_name: str = Field(deprecated="Use name")
+```
+
+```graphql
+type User {
+  name: String!
+  fullName: String! @deprecated(reason: "Use name")
+}
+```
+
+### Private Fields
+
+You can use `strawberry.Private` to mark fields that should not be exposed in
+the GraphQL schema but are still accessible in your Python code:
+
+```python
+import strawberry
+
+
+@strawberry.pydantic.type
+class User(BaseModel):
+    id: int
+    name: str
+    password: strawberry.Private[str]  # Not exposed in GraphQL
+    email: str
+```
+
+This generates a GraphQL schema with only the public fields:
+
+```graphql
+type User {
+  id: Int!
+  name: String!
+  email: String!
+}
+```
+
+Fields excluded from Pydantic's serialization with `Field(exclude=True)` are not
+exposed on GraphQL types either:
+
+```python
+from pydantic import BaseModel, Field
+
+
+@strawberry.pydantic.type
+class ApiClient(BaseModel):
+    name: str
+    api_key: str = Field(exclude=True)  # Not exposed in GraphQL
+```
+
+Other serialization settings don't apply to GraphQL: output fields are resolved
+from the model's attributes, not from `model_dump()`, so Pydantic's serializers
+(`field_serializer`, `PlainSerializer`, `WrapSerializer` and
+`model_serializer`), serialization aliases and `Field(exclude_if=...)` are not
+applied. To hide a value, use `strawberry.Private` or `Field(exclude=True)`.
+
+### Scalars
+
+Fields can use Strawberry's scalars, such as `strawberry.ID` and `JSON`, and
+[custom scalars](../types/scalars.md), the same way as `@strawberry.type`:
+
+```python
+from typing import NewType
+
+from pydantic import BaseModel
+
+import strawberry
+from strawberry.scalars import JSON
+from strawberry.schema.config import StrawberryConfig
+
+Money = NewType("Money", str)
+
+
+@strawberry.pydantic.type
+class Product(BaseModel):
+    id: strawberry.ID
+    price: Money
+    metadata: JSON
+
+
+schema = strawberry.Schema(
+    query=Query,
+    config=StrawberryConfig(
+        scalar_map={
+            Money: strawberry.scalar(name="Money", serialize=str, parse_value=str)
+        }
+    ),
+)
+```
+
+Types that GraphQL has no scalar for, like `dict`, `Any`, `set` or `bytes`, need
+a GraphQL type too, for example `JSON` or a custom scalar:
+
+```python
+from typing import Annotated, Any
+
+from strawberry.scalars import JSON
+
+
+@strawberry.pydantic.type
+class Settings(BaseModel):
+    values: Annotated[dict[str, Any], strawberry.field(graphql_type=JSON)]
+```
+
+As with `@strawberry.type`, a `NewType` must be registered as a scalar to be
+used in the schema. To expose it as its base type instead, set the GraphQL type
+of the field:
+
+```python
+from typing import Annotated, NewType
+
+UserId = NewType("UserId", int)
+
+
+@strawberry.pydantic.type
+class User(BaseModel):
+    id: Annotated[UserId, strawberry.field(graphql_type=int)]
+```
+
+## Advanced Usage
+
+### Generic Models
+
+To use a generic model, decorate a subclass of it with concrete types:
+
+```python
+from typing import Generic, TypeVar
+
+T = TypeVar("T")
+
+
+class Page(BaseModel, Generic[T]):
+    items: list[T]
+    total: int
+
+
+@strawberry.pydantic.type
+class User(BaseModel):
+    name: str
+
+
+@strawberry.pydantic.type
+class UserPage(Page[User]):
+    pass
+
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def users(self) -> UserPage:
+        return UserPage(items=[User(name="Ada")], total=1)
+```
+
+Using the parametrized model directly, like `-> Page[User]`, isn't supported
+yet.
+
+### Field Directives and Customization
+
+You can use `strawberry.field()` with `Annotated` types to add GraphQL-specific
+features like directives, permissions, and deprecation to individual Pydantic
+model fields:
+
+```python
+from typing import Annotated
+from pydantic import BaseModel, Field
+import strawberry
+from strawberry.schema_directive import Location
+
+
+@strawberry.schema_directive(locations=[Location.FIELD_DEFINITION])
+class Sensitive:
+    reason: str
+
+
+@strawberry.schema_directive(locations=[Location.FIELD_DEFINITION])
+class Range:
+    min: int
+    max: int
+
+
+@strawberry.pydantic.type
+class User(BaseModel):
+    # Regular field - uses Pydantic description
+    name: Annotated[str, Field(description="The user's full name")]
+
+    # Field with directive
+    email: Annotated[str, strawberry.field(directives=[Sensitive(reason="PII")])]
+
+    # Field with multiple directives and Pydantic features
+    age: Annotated[
+        int,
+        Field(description="User's age"),
+        strawberry.field(directives=[Range(min=0, max=150)]),
+    ]
+
+    # Field with permissions
+    phone: Annotated[
+        str,
+        strawberry.field(
+            permission_classes=[IsAuthenticated],
+            directives=[Sensitive(reason="Contact Info")],
+        ),
+    ]
+
+    # Deprecated field
+    old_id: Annotated[int, strawberry.field(deprecation_reason="Use 'id' instead")]
+```
+
+#### Field Customization Options
+
+When using `strawberry.field()` with Pydantic models, you can specify:
+
+- **`directives`**: List of GraphQL directives to apply to the field
+- **`permission_classes`**: List of permission classes for field-level
+  authorization
+- **`deprecation_reason`**: Mark a field as deprecated with a reason
+- **`description`**: Override the Pydantic field description for GraphQL
+- **`name`**: Set the GraphQL field name
+- **`graphql_type`**: Override the GraphQL type of the field
+
+`strawberry.field()` must be used inside `Annotated`. Assigning it as the
+default value (`email: str = strawberry.field(...)`) raises an error, because
+Pydantic would keep only its default and discard the rest of its configuration.
+
+Customizations declared on a base model are inherited by its subclasses.
+
+---
+
+# Experimental Pydantic Support
+
 Strawberry comes with support for
 [Pydantic](https://pydantic-docs.helpmanual.io/). This allows for the creation
 of Strawberry types from pydantic models without having to write code twice.

@@ -1,0 +1,184 @@
+import sys
+from collections.abc import Callable
+from typing import Optional
+
+import pydantic
+import pytest
+
+import strawberry
+from strawberry.pydantic.exceptions import (
+    ModelAlreadyDecoratedError,
+    NotAPydanticModelError,
+)
+from strawberry.types.base import (
+    StrawberryOptional,
+    get_object_definition,
+)
+
+
+def test_basic_type_includes_all_fields():
+    """Test that @strawberry.pydantic.type includes all fields from the model."""
+
+    @strawberry.pydantic.type
+    class User(pydantic.BaseModel):
+        age: int
+        password: Optional[str]
+
+    definition = get_object_definition(User, strict=True)
+    assert definition.name == "User"
+
+    # Should have two fields
+    assert len(definition.fields) == 2
+
+    # Find fields by name
+    age_field = next(f for f in definition.fields if f.python_name == "age")
+    password_field = next(f for f in definition.fields if f.python_name == "password")
+
+    assert age_field.python_name == "age"
+    assert age_field.graphql_name is None
+    assert age_field.type is int
+
+    assert password_field.python_name == "password"
+    assert password_field.graphql_name is None
+    assert isinstance(password_field.type, StrawberryOptional)
+    assert password_field.type.of_type is str
+
+
+def test_basic_type_with_name_override():
+    """Test that @strawberry.pydantic.type with name parameter works."""
+
+    @strawberry.pydantic.type(name="CustomUser")
+    class User(pydantic.BaseModel):
+        age: int
+
+    definition = get_object_definition(User, strict=True)
+    assert definition.name == "CustomUser"
+
+
+def test_basic_type_with_description():
+    """Test that @strawberry.pydantic.type with description parameter works."""
+
+    @strawberry.pydantic.type(description="A user model")
+    class User(pydantic.BaseModel):
+        age: int
+
+    definition = get_object_definition(User, strict=True)
+    assert definition.description == "A user model"
+
+
+def test_resolvers_can_return_objects_with_the_same_attributes():
+    @strawberry.pydantic.type
+    class User(pydantic.BaseModel):
+        name: str
+
+    class UserRow:
+        # e.g. a row of an ORM
+        name = "Ada"
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def user(self) -> User:
+            return UserRow()  # type: ignore[return-value]
+
+    result = strawberry.Schema(query=Query).execute_sync("{ user { name } }")
+
+    assert not result.errors
+    assert result.data == {"user": {"name": "Ada"}}
+
+
+def test_models_can_define_is_type_of():
+    @strawberry.pydantic.type
+    class User(pydantic.BaseModel):
+        name: str
+
+        @classmethod
+        def is_type_of(cls, obj: object, info: object) -> bool:
+            return isinstance(obj, cls)
+
+    class UserRow:
+        name = "Ada"
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def user(self) -> User:
+            return UserRow()  # type: ignore[return-value]
+
+    result = strawberry.Schema(query=Query).execute_sync("{ user { name } }")
+
+    assert result.errors
+    assert "Expected value of type 'User'" in result.errors[0].message
+
+
+@pytest.mark.parametrize(
+    "decorator",
+    [
+        strawberry.pydantic.type,
+    ],
+    ids=["type"],
+)
+def test_decorating_a_class_that_is_not_a_pydantic_model_raises_an_error(
+    decorator: Callable[[type], type],
+):
+    name = decorator.__name__
+
+    with pytest.raises(
+        NotAPydanticModelError,
+        match=(
+            rf"strawberry\.pydantic\.{name} can only be used with pydantic models, "
+            r"but `User` is not a subclass of `pydantic\.BaseModel`"
+        ),
+    ):
+
+        @decorator
+        class User:
+            name: str
+
+
+@pytest.mark.raises_strawberry_exception(
+    NotAPydanticModelError,
+    match=(
+        r"strawberry\.pydantic\.type can only be used with pydantic models, but "
+        r"`User` is not a subclass of `pydantic\.BaseModel`"
+    ),
+)
+def test_decorating_a_pydantic_dataclass_raises_an_error():
+    @strawberry.pydantic.type
+    @pydantic.dataclasses.dataclass
+    class User:
+        name: str
+
+
+@pytest.mark.skipif(
+    sys.version_info >= (3, 14),
+    reason="Pydantic v1 is not compatible with Python 3.14+",
+)
+def test_decorating_a_pydantic_v1_model_raises_an_error():
+    from pydantic import v1 as pydantic_v1
+
+    with pytest.raises(
+        NotAPydanticModelError,
+        match=(
+            r"`User` is a pydantic v1 model, but strawberry\.pydantic\.type only "
+            r"supports pydantic v2 models"
+        ),
+    ):
+
+        @strawberry.pydantic.type
+        class User(pydantic_v1.BaseModel):
+            name: str
+
+
+@pytest.mark.raises_strawberry_exception(
+    ModelAlreadyDecoratedError,
+    match=(
+        r"`Address` is already a type, so it can't be decorated with "
+        r"`strawberry\.pydantic\.type`"
+    ),
+)
+def test_decorating_a_model_twice_raises_an_error():
+    @strawberry.pydantic.type
+    @strawberry.pydantic.type
+    class Address(pydantic.BaseModel):
+        street: str
