@@ -1,6 +1,18 @@
 CHANGELOG
 =========
 
+0.337.2 - 2026-10-25
+--------------------
+
+This release fixes `strawberry codegen` crashing with a bare `StopIteration` when a
+fragment spreads another fragment that is defined later in the document.
+
+GraphQL doesn't care about the order fragments are defined in, and now neither does
+codegen: fragments are processed after the fragments they spread, so both orders
+generate the same code.
+
+This release was contributed by [@RagedPanda](https://github.com/RagedPanda) in [#4747](https://github.com/strawberry-graphql/strawberry/pull/4747)
+
 0.337.1 - 2026-10-25
 --------------------
 
