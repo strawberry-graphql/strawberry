@@ -91,6 +91,14 @@ def _load_plugins(
     return plugins
 
 
+def _printable(text: str) -> str:
+    """Escape control characters, so a file name can't send escape sequences to the terminal."""
+    return "".join(
+        char if char.isprintable() else char.encode("unicode_escape").decode()
+        for char in text
+    )
+
+
 @app.command(help="Generate code from a query")
 def codegen(  # noqa: PLR0917
     query: list[Path] | None = typer.Argument(
@@ -144,7 +152,7 @@ def codegen(  # noqa: PLR0917
             code_generator.run(q.read_text())
         except InvalidOperationError as error:
             for message in error.messages:
-                rich.print(f"[red]Error: {escape(f'{q}:{message}')}")
+                rich.print(f"[red]Error: {escape(_printable(f'{q}:{message}'))}")
             raise typer.Exit(1) from error
 
     console_plugin.after_all_finished()

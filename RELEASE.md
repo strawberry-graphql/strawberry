@@ -1,5 +1,5 @@
 ---
-release type: patch
+release type: minor
 ---
 
 This release fixes `strawberry codegen` failing with a bare `AssertionError` (for
