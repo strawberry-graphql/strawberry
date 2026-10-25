@@ -43,7 +43,7 @@ will be called instead of the resolver and receives the resolver function as the
 passed to `next` in an incompatible way.
 
 The field's arguments are passed to `resolve` as keyword arguments. If a field
-can have an argument named `source` or `info`, declare the leading parameters as
+can have an argument named `source`, declare the leading parameters as
 positional-only (`def resolve(self, next_, source, info, /, **kwargs)`) so they
 can't clash with it. Strawberry's built-in extensions do this.
 
