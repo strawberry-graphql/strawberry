@@ -213,6 +213,46 @@ def _get_deps(t: GraphQLType) -> Iterable[GraphQLType]:
         raise ValueError(f"Unknown GraphQLType: {t}")  # noqa: TRY004
 
 
+def _get_fragment_spread_names(selection_set: SelectionSetNode | None) -> Iterable[str]:
+    """Get the names of all the fragments spread anywhere in `selection_set`."""
+    if selection_set is None:
+        return
+
+    for selection in selection_set.selections:
+        if isinstance(selection, FragmentSpreadNode):
+            yield selection.name.value
+        elif isinstance(selection, (FieldNode, InlineFragmentNode)):
+            yield from _get_fragment_spread_names(selection.selection_set)
+
+
+def _sort_fragments_by_dependency(
+    fragments: Iterable[FragmentDefinitionNode],
+) -> list[FragmentDefinitionNode]:
+    """Order `fragments` so that each one comes after the fragments it spreads.
+
+    GraphQL doesn't care about the order fragments are defined in, but a spread
+    can only be resolved once the spread fragment's type has been collected.
+    """
+    fragments_by_name = {fragment.name.value: fragment for fragment in fragments}
+    ordered: list[FragmentDefinitionNode] = []
+    visited: set[str] = set()
+
+    def visit(fragment: FragmentDefinitionNode) -> None:
+        if fragment.name.value in visited:
+            return
+
+        visited.add(fragment.name.value)
+        for name in _get_fragment_spread_names(fragment.selection_set):
+            if name in fragments_by_name:
+                visit(fragments_by_name[name])
+        ordered.append(fragment)
+
+    for fragment in fragments_by_name.values():
+        visit(fragment)
+
+    return ordered
+
+
 _TYPE_TO_GRAPHQL_TYPE = {
     int: GraphQLIntValue,
     float: GraphQLFloatValue,
@@ -348,7 +388,7 @@ class QueryCodegen:
         self.types.append(type_)
 
     def _populate_fragment_types(self, ast: DocumentNode) -> None:
-        fragment_definitions = (
+        fragment_definitions = _sort_fragments_by_dependency(
             definition
             for definition in ast.definitions
             if isinstance(definition, FragmentDefinitionNode)

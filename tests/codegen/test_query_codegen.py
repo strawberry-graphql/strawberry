@@ -83,3 +83,26 @@ def test_fails_with_multiple_operations(schema, tmp_path):
 
     with pytest.raises(MultipleOperationsProvidedError):
         generator.run(data)
+
+
+@pytest.mark.parametrize("plugin_class", [PythonPlugin, TypeScriptPlugin])
+def test_nested_fragment_spread_does_not_depend_on_definition_order(
+    plugin_class: type[QueryCodegenPlugin], schema, tmp_path
+):
+    operation = "query OperationName { listLife { ...LifeFields } }"
+    life_fields = (
+        "fragment LifeFields on PersonAnimalLifeContainer"
+        " { items1 { ...PersonFields } }"
+    )
+    person_fields = "fragment PersonFields on Person { name age }"
+    query = tmp_path / "query.graphql"
+
+    def generate(document: str) -> str:
+        generator = QueryCodegen(schema, plugins=[plugin_class(query)])
+        return generator.run(document).to_string()
+
+    inner_first = generate(f"{operation}\n{person_fields}\n{life_fields}")
+    inner_last = generate(f"{operation}\n{life_fields}\n{person_fields}")
+
+    assert inner_last == inner_first
+    assert "PersonFields" in inner_last
