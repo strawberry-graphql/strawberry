@@ -1,3 +1,4 @@
+import sys
 from pathlib import Path
 
 import pytest
@@ -184,6 +185,10 @@ def test_codegen_reports_invalid_operation(
     ) in result.stdout
 
 
+@pytest.mark.skipif(
+    sys.platform == "win32",
+    reason="Windows doesn't allow control characters in file names",
+)
 def test_codegen_escapes_control_characters_in_file_name(
     cli_app: Typer, cli_runner: CliRunner, tmp_path: Path
 ):
