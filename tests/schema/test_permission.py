@@ -187,6 +187,71 @@ def test_can_use_args_when_testing_permission():
     assert result.errors[0].message == "Cannot see email for this user"
 
 
+def test_field_argument_named_source_does_not_clash_with_permissions():
+    class OnlyManualReadings(BasePermission):
+        message = "Only manual readings are visible"
+
+        def has_permission(
+            self, source: typing.Any, info: strawberry.Info, /, **kwargs: typing.Any
+        ) -> bool:
+            # `source` is the parent object; the field argument arrives in kwargs.
+            assert isinstance(source, Field)
+            return kwargs.get("source") in (None, "manual")
+
+    @strawberry.type
+    class Field:
+        name: str
+
+        @strawberry.field(permission_classes=[OnlyManualReadings])
+        def readings(self, source: str | None = None) -> str:
+            return f"{self.name}:{source}"
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def field(self) -> Field:
+            return Field(name="north")
+
+    schema = strawberry.Schema(query=Query)
+
+    result = schema.execute_sync('{ field { readings(source: "manual") } }')
+    assert result.errors is None
+    assert result.data == {"field": {"readings": "north:manual"}}
+
+    result = schema.execute_sync("{ field { readings } }")
+    assert result.errors is None
+    assert result.data == {"field": {"readings": "north:None"}}
+
+    result = schema.execute_sync('{ field { readings(source: "sensor") } }')
+    assert result.errors[0].message == "Only manual readings are visible"
+
+
+@pytest.mark.asyncio
+async def test_field_argument_named_source_does_not_clash_with_async_permissions():
+    class OnlyManualReadings(BasePermission):
+        message = "Only manual readings are visible"
+
+        async def has_permission(
+            self, source: typing.Any, info: strawberry.Info, /, **kwargs: typing.Any
+        ) -> bool:
+            return kwargs.get("source") in (None, "manual")
+
+    @strawberry.type
+    class Query:
+        @strawberry.field(permission_classes=[OnlyManualReadings])
+        async def readings(self, source: str | None = None) -> str:
+            return f"readings:{source}"
+
+    schema = strawberry.Schema(query=Query)
+
+    result = await schema.execute('{ readings(source: "manual") }')
+    assert result.errors is None
+    assert result.data == {"readings": "readings:manual"}
+
+    result = await schema.execute('{ readings(source: "sensor") }')
+    assert result.errors[0].message == "Only manual readings are visible"
+
+
 def test_can_use_on_simple_fields():
     class CanSeeEmail(BasePermission):
         message = "Cannot see email for this user"

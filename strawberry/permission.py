@@ -89,7 +89,7 @@ class BasePermission(abc.ABC):
 
     @abc.abstractmethod
     def has_permission(
-        self, source: Any, info: Info, **kwargs: Any
+        self, source: Any, info: Info, /, **kwargs: Any
     ) -> bool | Awaitable[bool]:
         """Check if the permission should be accepted.
 
@@ -204,6 +204,7 @@ class PermissionExtension(FieldExtension):
         next_: SyncExtensionResolver,
         source: Any,
         info: Info,
+        /,
         **kwargs: dict[str, Any],
     ) -> Any:
         """Checks if the permission should be accepted and raises an exception if not."""
@@ -234,6 +235,7 @@ class PermissionExtension(FieldExtension):
         next_: AsyncExtensionResolver,
         source: Any,
         info: Info,
+        /,
         **kwargs: dict[str, Any],
     ) -> Any:
         for permission in self.permissions:
