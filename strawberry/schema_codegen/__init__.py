@@ -186,6 +186,23 @@ def _get_base_type_name(type_node: TypeNode) -> str:
     raise NotImplementedError(f"Unknown type node {type_node}")
 
 
+def _get_default_enum_type_name(
+    field: FieldDefinitionNode | InputValueDefinitionNode,
+) -> str | None:
+    """Return the enum type a field's default value refers to, if any.
+
+    A default like `status: Status = ACTIVE` is generated as `Status.ACTIVE`,
+    which runs when the class body runs, so the enum has to be defined before
+    the class.
+    """
+    if isinstance(field, InputValueDefinitionNode) and isinstance(
+        field.default_value, EnumValueNode
+    ):
+        return _get_base_type_name(field.type)
+
+    return None
+
+
 def _get_default_value_expr(
     node: ConstValueNode,
     *,
@@ -397,14 +414,8 @@ def _get_field(
     # Extract default value for input fields
     default_value: cst.BaseExpression | None = None
     if isinstance(field, InputValueDefinitionNode) and field.default_value is not None:
-        enum_type_name = (
-            _get_base_type_name(field.type)
-            if isinstance(field.default_value, EnumValueNode)
-            else None
-        )
-
         default_value = _get_default_value_expr(
-            field.default_value, enum_type_name=enum_type_name
+            field.default_value, enum_type_name=_get_default_enum_type_name(field)
         )
 
     return cst.SimpleStatementLine(
@@ -633,7 +644,19 @@ def _get_class_definition(
         decorators=[decorator],
     )
 
-    return Definition(class_definition, interfaces, definition.name.value)
+    # Enum members used as default values are evaluated when the class is
+    # created, so those enums must be emitted before the class.
+    default_enum_names = [
+        enum_name
+        for field in definition.fields or ()
+        if (enum_name := _get_default_enum_type_name(field)) is not None
+    ]
+
+    return Definition(
+        class_definition,
+        [*interfaces, *default_enum_names],
+        definition.name.value,
+    )
 
 
 def _get_enum_value(enum_value: EnumValueDefinitionNode) -> cst.SimpleStatementLine:
