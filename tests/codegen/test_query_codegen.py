@@ -5,6 +5,7 @@
 # - 5. test subscriptions (raise)
 
 from pathlib import Path
+from typing import Any, Optional, get_type_hints
 
 import pytest
 from pytest_snapshot.plugin import Snapshot
@@ -106,3 +107,21 @@ def test_nested_fragment_spread_does_not_depend_on_definition_order(
 
     assert inner_last == inner_first
     assert "PersonFields" in inner_last
+
+
+def test_python_codegen_for_recursive_input_can_be_imported(schema, tmp_path):
+    query = tmp_path / "query.graphql"
+    generator = QueryCodegen(schema, plugins=[PythonPlugin(query)])
+
+    code = generator.run(
+        "query OperationName($filter: PostFilter) { filterPosts(filter: $filter) }"
+    ).to_string()
+
+    namespace: dict[str, Any] = {}
+    exec(code, namespace)  # noqa: S102
+
+    post_filter = namespace["PostFilter"]
+    author_filter = namespace["AuthorFilter"]
+    hints = get_type_hints(post_filter, namespace)
+    assert hints["any_of"] == Optional[list[post_filter]]
+    assert hints["author"] == Optional[author_filter]
