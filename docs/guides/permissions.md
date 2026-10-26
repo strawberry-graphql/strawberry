@@ -34,9 +34,20 @@ Your `has_permission` method should check if this request has permission to
 access the field. Note that the `has_permission` method can also be
 asynchronous.
 
-If the `has_permission` method returns a truthy value then the field access will
-go ahead. Otherwise, an error will be raised using the `message` class
+If the `has_permission` method returns `True` then the field access will go
+ahead. If it returns `False`, an error will be raised using the `message` class
 attribute.
+
+`has_permission` must return a boolean (or, when it is asynchronous, resolve to
+one). Any other value, including truthy values like a user object and `None`,
+raises an error instead of being evaluated for truthiness, so a permission can
+never grant access by accident. Use `bool(...)` or an explicit comparison when
+your check produces some other value:
+
+```python
+def has_permission(self, source: typing.Any, info: strawberry.Info, **kwargs) -> bool:
+    return info.context.user is not None
+```
 
 Take a look at our [Dealing with Errors Guide](/docs/guides/errors) for more
 information on how errors are handled.

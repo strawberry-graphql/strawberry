@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import inspect
 from functools import cached_property
 from typing import TYPE_CHECKING
 
@@ -216,6 +217,37 @@ class PermissionReturnedAwaitableInSyncContextError(Exception):
         super().__init__(message)
 
 
+class PermissionReturnedNonBooleanError(Exception):
+    """A permission's ``has_permission`` returned something other than a bool.
+
+    Strawberry only grants access when ``has_permission`` returns (or, for an
+    asynchronous permission, resolves to) ``True``. Any other value is
+    rejected rather than evaluated for truthiness, so that results Strawberry
+    cannot evaluate, such as an async generator from an ``async def`` that
+    ``yield``s, never grant access by accident.
+    """
+
+    def __init__(self, permission: object, result: object) -> None:
+        self.permission = permission
+        self.result = result
+        permission_name = type(permission).__name__
+        result_type = type(result).__name__
+        message = (
+            f"Permission {permission_name!r} returned a value of type "
+            f"{result_type!r} from `has_permission`, but permissions must "
+            "return a boolean. Return `True` to grant access or `False` to "
+            "deny it."
+        )
+
+        if inspect.isasyncgen(result) or inspect.isgenerator(result):
+            message += (
+                " `has_permission` must not use `yield`; declare it as "
+                "`async def` (or `def`) and `return` a boolean instead."
+            )
+
+        super().__init__(message)
+
+
 __all__ = [
     "AmbiguousCastError",
     "ConflictingArgumentsError",
@@ -241,6 +273,7 @@ __all__ = [
     "ObjectIsNotAnEnumError",
     "ObjectIsNotClassError",
     "PermissionReturnedAwaitableInSyncContextError",
+    "PermissionReturnedNonBooleanError",
     "PrivateStrawberryFieldError",
     "ResolverFieldOnInputError",
     "ScalarAlreadyRegisteredError",
