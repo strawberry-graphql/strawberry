@@ -3684,7 +3684,7 @@ wheels = [
 
 [[package]]
 name = "strawberry-graphql"
-version = "0.337.2"
+version = "0.338.0"
 source = { editable = "." }
 default-groups = ["dev", "integrations"]
 dependencies = [
