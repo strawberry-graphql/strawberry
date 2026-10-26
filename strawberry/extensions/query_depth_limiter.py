@@ -271,7 +271,7 @@ def determine_depth(  # noqa: PLR0917
         )
     if isinstance(node, FragmentSpreadNode):
         fragment_name = node.name.value
-        if fragment_name in visited_fragments:
+        if fragment_name in visited_fragments or fragment_name not in fragments:
             return 0
 
         return determine_depth(
