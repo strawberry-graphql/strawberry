@@ -38,7 +38,7 @@ def has_permission(self, source, info, **kwargs):
 
 # After
 def has_permission(self, source, info, **kwargs) -> bool:
-    return info.context.user is not None
+    return bool(info.context.user)
 ```
 
 See the [breaking changes guide](https://strawberry.rocks/docs/breaking-changes/0.338.0)
