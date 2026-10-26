@@ -58,7 +58,8 @@ class Info(Generic[ContextType, RootValueType]):
     """
 
     _raw_info: GraphQLResolveInfo
-    _field: StrawberryField
+    # graphql-core-only fields, such as introspection fields, have no StrawberryField.
+    _field: StrawberryField | None
 
     def __class_getitem__(cls, types: type | tuple[type, ...]) -> type[Info]:
         """Workaround for when passing only one type.
@@ -115,11 +116,18 @@ class Info(Generic[ContextType, RootValueType]):
         self,
     ) -> FieldType:
         """The return type of the current field being resolved."""
+        if self._field is None:
+            raise ValueError(
+                "This graphql-core field has no Strawberry return type. "
+                "Use `info._raw_info.return_type` instead."
+            )
         return self._field.type
 
     @property
     def python_name(self) -> str:
         """The name of the current field being resolved in Python format."""
+        if self._field is None:
+            return self.field_name
         return self._field.python_name
 
     # TODO: create an abstraction on these fields
@@ -146,6 +154,8 @@ class Info(Generic[ContextType, RootValueType]):
     # Helper functions
     def get_argument_definition(self, name: str) -> StrawberryArgument | None:
         """Get the StrawberryArgument definition for the current field by name."""
+        if self._field is None:
+            return None
         try:
             return next(arg for arg in self._field.arguments if arg.python_name == name)
         except StopIteration:

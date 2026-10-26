@@ -26,6 +26,9 @@ if TYPE_CHECKING:
 SPECIFIED_DIRECTIVES = {"include", "skip"}
 
 
+# Unlike the other built-in extensions, this one receives graphql-core's info:
+# Strawberry adds it to every schema with custom directives, and building
+# strawberry.Info only when a field uses a directive keeps other fields fast.
 class DirectivesExtension(SchemaExtension):
     async def resolve(
         self,
