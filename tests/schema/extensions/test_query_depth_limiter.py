@@ -1,6 +1,7 @@
 import pytest
 from graphql import (
     GraphQLError,
+    SourceLocation,
     get_introspection_query,
     parse,
     specified_rules,
@@ -278,7 +279,7 @@ async def test_should_report_unknown_fragments_as_extension(async_execution: boo
     assert result.data is None
     assert result.errors is not None
     assert [error.message for error in result.errors] == ["Unknown fragment 'Missing'."]
-    assert result.errors[0].locations is not None
+    assert result.errors[0].locations == [SourceLocation(line=1, column=14)]
     assert result.errors[0].original_error is None
 
 
