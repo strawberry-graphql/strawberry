@@ -4,6 +4,7 @@ from collections.abc import Iterator, Mapping
 from typing import Any, Generic, TypeVar
 
 import strawberry
+from strawberry.schema_directive import Location
 from strawberry.types.arguments import InputContext
 from strawberry.types.base import get_object_definition
 
@@ -254,3 +255,28 @@ def test_fields_left_out_by_to_input_are_not_passed_to_from_input():
         "update": "Ada user"
     }
     assert received == [{"name": "Ada"}, {"name": "Ada", "role": "user"}]
+
+
+def test_to_input_is_used_for_schema_directive_values():
+    @strawberry.input
+    class Filter:
+        limit: int = 10
+        query: str | None = "all"
+
+    get_object_definition(Filter, strict=True).to_input = lambda instance: {
+        "limit": instance.limit
+    }
+
+    @strawberry.schema_directive(locations=[Location.FIELD_DEFINITION])
+    class Filtered:
+        filter: Filter
+
+    @strawberry.type
+    class Query:
+        items: list[str] = strawberry.field(
+            directives=[Filtered(filter=Filter(limit=5, query=None))]
+        )
+
+    schema = strawberry.Schema(query=Query)
+
+    assert "items: [String!]! @filtered(filter: { limit: 5 })" in str(schema)

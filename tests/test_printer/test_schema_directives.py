@@ -1,11 +1,14 @@
 import textwrap
 from enum import Enum, StrEnum
-from typing import Annotated, Any
+from typing import Annotated, Any, NewType
+
+import pytest
 
 import strawberry
-from strawberry import BasePermission, Info
+from strawberry import BasePermission, Info, Maybe, Some
 from strawberry.permission import PermissionExtension
 from strawberry.printer import print_schema
+from strawberry.scalars import JSON
 from strawberry.schema.config import StrawberryConfig
 from strawberry.schema_directive import Location
 from strawberry.types.unset import UNSET
@@ -917,3 +920,120 @@ def test_print_directive_with_snake_case_arguments():
     schema = strawberry.Schema(query=Query)
 
     assert print_schema(schema) == textwrap.dedent(expected_output).strip()
+
+
+def test_print_directive_input_renamed_fields_and_maybe():
+    @strawberry.input
+    class Options:
+        max_age: int = strawberry.field(name="ttlSeconds")
+        limit: int | None = 10
+        reason: str | None = None
+        note: Maybe[str | None] = None
+
+    @strawberry.schema_directive(locations=[Location.FIELD_DEFINITION])
+    class Configured:
+        options: Options
+        tag: Maybe[str | None] = None
+        meta: JSON | None = UNSET
+
+    @strawberry.type
+    class Query:
+        first: str = strawberry.field(
+            directives=[
+                Configured(
+                    options=Options(
+                        max_age=60,
+                        limit=None,
+                        note=Some(None),
+                    ),
+                    meta=JSON({"snake_key": 1}),
+                )
+            ]
+        )
+        second: str = strawberry.field(
+            directives=[
+                Configured(
+                    options={"max_age": 30},  # type: ignore[arg-type]
+                    tag=Some(None),
+                )
+            ]
+        )
+
+    expected_output = """
+    directive @configured(options: Options!, tag: String, meta: JSON) on FIELD_DEFINITION
+
+    \"\"\"
+    The `JSON` scalar type represents JSON values as specified by [ECMA-404](https://ecma-international.org/wp-content/uploads/ECMA-404_2nd_edition_december_2017.pdf).
+    \"\"\"
+    scalar JSON @specifiedBy(url: "https://ecma-international.org/wp-content/uploads/ECMA-404_2nd_edition_december_2017.pdf")
+
+    input Options {
+      ttlSeconds: Int!
+      limit: Int = 10
+      reason: String = null
+      note: String
+    }
+
+    type Query {
+      first: String! @configured(options: { ttlSeconds: 60, limit: null, note: null }, meta: { snake_key: 1 })
+      second: String! @configured(options: { ttlSeconds: 30 }, tag: null)
+    }
+    """
+
+    schema = strawberry.Schema(query=Query)
+
+    assert print_schema(schema) == textwrap.dedent(expected_output).strip()
+
+
+def test_print_directive_non_mapping_and_unprintable_scalar_values():
+    from strawberry.printer.printer import print_schema_directive_params
+
+    @strawberry.input
+    class Options:
+        key: str
+
+    Unprintable = strawberry.scalar(
+        NewType("Unprintable", object),
+        name="Unprintable",
+        serialize=lambda v: v,
+        parse_value=lambda v: v,
+    )
+
+    @strawberry.schema_directive(locations=[Location.FIELD_DEFINITION])
+    class BadInputDirective:
+        options: Options
+        required_label: str = "ok"
+
+    @strawberry.schema_directive(locations=[Location.FIELD_DEFINITION])
+    class UnprintableDirective:
+        raw: Unprintable
+
+    @strawberry.type
+    class QueryWithNonMapping:
+        item: str = strawberry.field(
+            directives=[
+                BadInputDirective(
+                    options="not-a-mapping",  # type: ignore[arg-type]
+                    required_label=None,  # type: ignore[arg-type]
+                )
+            ]
+        )
+
+    schema = strawberry.Schema(query=QueryWithNonMapping)
+    assert "item: String! @badInputDirective\n" in print_schema(schema)
+
+    gql_directive = schema.schema_converter.from_schema_directive(BadInputDirective)
+    assert (
+        print_schema_directive_params(gql_directive, {}, schema=schema)
+        == '(requiredLabel: "ok")'
+    )
+
+    @strawberry.type
+    class QueryWithUnprintable:
+        item: str = strawberry.field(
+            directives=[UnprintableDirective(raw=Unprintable(object()))]
+        )
+
+    unprintable_schema = strawberry.Schema(query=QueryWithUnprintable)
+    with pytest.raises(TypeError, match="Cannot convert value to AST"):
+        print_schema(unprintable_schema)
