@@ -88,6 +88,14 @@ class MyQueryResult:
     user: MyQueryResultUser
 ```
 
+If an operation asks for a field, type or fragment that isn't in the schema, no
+code is generated. Each problem is printed with its file and position, and the
+command exits with status 1:
+
+```text
+Error: query.graphql:4:7: Cannot query field 'tilte' on type 'Post'. Did you mean 'title'?
+```
+
 ## Why is this useful?
 
 Query code generation is usually used to generate types for clients using your

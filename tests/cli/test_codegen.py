@@ -1,3 +1,4 @@
+import sys
 from pathlib import Path
 
 import pytest
@@ -153,6 +154,65 @@ def test_codegen_pass_no_query(cli_app: Typer, cli_runner: CliRunner, tmp_path: 
     )
 
     assert result.exit_code == 0
+
+
+def test_codegen_reports_invalid_operation(
+    cli_app: Typer, cli_runner: CliRunner, tmp_path: Path
+):
+    query_path = tmp_path / "query.graphql"
+    query_path.write_text("query GetUser { user { nmae } }")
+    selector = "tests.fixtures.sample_package.sample_module:schema"
+    result = cli_runner.invoke(
+        cli_app,
+        [
+            "codegen",
+            "-p",
+            "python",
+            "--schema",
+            selector,
+            "-o",
+            str(tmp_path),
+            str(query_path),
+        ],
+        # Wide enough that rich doesn't wrap the long temporary path.
+        env={"COLUMNS": "500"},
+    )
+
+    assert result.exit_code == 1
+    assert (
+        f"Error: {query_path}:1:24: Cannot query field 'nmae' on type 'User'. "
+        "Did you mean 'name'?"
+    ) in result.stdout
+
+
+@pytest.mark.skipif(
+    sys.platform == "win32",
+    reason="Windows doesn't allow control characters in file names",
+)
+def test_codegen_escapes_control_characters_in_file_name(
+    cli_app: Typer, cli_runner: CliRunner, tmp_path: Path
+):
+    query_path = tmp_path / "\x1b[2Jquery.graphql"
+    query_path.write_text("query GetUser { user { nmae } }")
+    selector = "tests.fixtures.sample_package.sample_module:schema"
+    result = cli_runner.invoke(
+        cli_app,
+        [
+            "codegen",
+            "-p",
+            "python",
+            "--schema",
+            selector,
+            "-o",
+            str(tmp_path),
+            str(query_path),
+        ],
+        env={"COLUMNS": "500"},
+    )
+
+    assert result.exit_code == 1
+    assert "\x1b[2Jquery.graphql:1:24:" not in result.stdout
+    assert f"Error: {tmp_path}/\\x1b[2Jquery.graphql:1:24:" in result.stdout
 
 
 def test_codegen_passing_plugin_symbol(
