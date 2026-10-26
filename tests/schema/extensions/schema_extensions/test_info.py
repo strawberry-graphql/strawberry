@@ -10,6 +10,14 @@ from graphql import GraphQLResolveInfo
 
 import strawberry
 from strawberry.extensions import SchemaExtension
+from strawberry.extensions.directives import (
+    DirectivesExtension,
+    DirectivesExtensionSync,
+)
+from strawberry.extensions.tracing import (
+    ApolloTracingExtension,
+    ApolloTracingExtensionSync,
+)
 from strawberry.schema.config import StrawberryConfig
 from strawberry.utils.await_maybe import await_maybe
 
@@ -213,3 +221,66 @@ def test_strawberry_info_extension_handles_graphql_core_only_fields() -> None:
     assert received_info["__typename"].get_argument_definition("name") is None
     with pytest.raises(ValueError, match="has no Strawberry return type"):
         received_info["__typename"].return_type
+
+
+def test_legacy_info_warning_points_at_extension_resolve() -> None:
+    class LegacyLocationExtension(SchemaExtension):
+        def resolve(self, next_: Any, root: Any, info: Any, **kwargs: Any) -> Any:
+            return next_(root, info, **kwargs)
+
+    schema = strawberry.Schema(query=Query, extensions=[LegacyLocationExtension])
+
+    with pytest.warns(DeprecationWarning, match="LegacyLocationExtension") as record:
+        schema.execute_sync("{ hello }")
+
+    code = LegacyLocationExtension.resolve.__code__
+    assert record[0].filename == code.co_filename
+    assert record[0].lineno == code.co_firstlineno
+
+
+@pytest.mark.parametrize(
+    "extension_class",
+    [ApolloTracingExtensionSync, DirectivesExtensionSync],
+)
+def test_strawberry_info_subclass_of_builtin_extension_can_call_super(
+    extension_class: type[SchemaExtension],
+) -> None:
+    received_info: list[object] = []
+
+    class Extension(extension_class):  # type: ignore[valid-type,misc]
+        def resolve(
+            self, next_: Any, root: Any, info: strawberry.Info, **kwargs: Any
+        ) -> Any:
+            received_info.append(info)
+            return super().resolve(next_, root, info, **kwargs)
+
+    schema = strawberry.Schema(query=Query, extensions=[Extension])
+    result = schema.execute_sync("{ hello }")
+
+    assert result.errors is None
+    assert result.data == {"hello": "world"}
+    assert isinstance(received_info[0], strawberry.Info)
+
+
+@pytest.mark.parametrize(
+    "extension_class",
+    [ApolloTracingExtension, DirectivesExtension],
+)
+async def test_strawberry_info_subclass_of_async_builtin_extension_can_call_super(
+    extension_class: type[SchemaExtension],
+) -> None:
+    received_info: list[object] = []
+
+    class Extension(extension_class):  # type: ignore[valid-type,misc]
+        async def resolve(
+            self, next_: Any, root: Any, info: strawberry.Info, **kwargs: Any
+        ) -> Any:
+            received_info.append(info)
+            return await super().resolve(next_, root, info, **kwargs)
+
+    schema = strawberry.Schema(query=Query, extensions=[Extension])
+    result = await schema.execute("{ hello }")
+
+    assert result.errors is None
+    assert result.data == {"hello": "world"}
+    assert isinstance(received_info[0], strawberry.Info)

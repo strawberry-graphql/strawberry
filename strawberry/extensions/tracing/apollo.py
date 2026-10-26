@@ -7,7 +7,7 @@ from inspect import isawaitable
 from typing import TYPE_CHECKING, Any
 
 from strawberry.extensions import SchemaExtension
-from strawberry.extensions.utils import get_path_from_info
+from strawberry.extensions.utils import get_graphql_resolve_info, get_path_from_info
 
 from .utils import should_skip_tracing
 
@@ -155,6 +155,7 @@ class ApolloTracingExtension(SchemaExtension):
         *args: str,
         **kwargs: Any,
     ) -> Any:
+        info = get_graphql_resolve_info(info)
         if should_skip_tracing(_next, info):
             result = _next(root, info, *args, **kwargs)
 
@@ -195,6 +196,7 @@ class ApolloTracingExtensionSync(ApolloTracingExtension):
         *args: str,
         **kwargs: Any,
     ) -> Any:
+        info = get_graphql_resolve_info(info)
         if should_skip_tracing(_next, info):
             return _next(root, info, *args, **kwargs)
 

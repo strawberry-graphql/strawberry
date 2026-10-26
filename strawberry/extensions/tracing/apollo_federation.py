@@ -70,6 +70,7 @@ from inspect import isawaitable
 from typing import TYPE_CHECKING, Any
 
 from strawberry.extensions import SchemaExtension
+from strawberry.extensions.utils import get_graphql_resolve_info
 
 from .utils import should_skip_tracing
 
@@ -365,6 +366,7 @@ class ApolloFederationTracingExtension(SchemaExtension):
         *args: Any,
         **kwargs: Any,
     ) -> Any:
+        info = get_graphql_resolve_info(info)
         if not self._should_trace or should_skip_tracing(_next, info):
             result = _next(root, info, *args, **kwargs)
             if isawaitable(result):
@@ -509,6 +511,7 @@ class ApolloFederationTracingExtensionSync(ApolloFederationTracingExtension):
         *args: Any,
         **kwargs: Any,
     ) -> Any:
+        info = get_graphql_resolve_info(info)
         if not self._should_trace or should_skip_tracing(_next, info):
             return _next(root, info, *args, **kwargs)
 

@@ -5,7 +5,7 @@ import warnings
 from asyncio import ensure_future
 from collections.abc import AsyncGenerator, AsyncIterator, Awaitable, Callable, Iterable
 from functools import lru_cache
-from inspect import isawaitable
+from inspect import isawaitable, unwrap
 from threading import Lock
 from typing import (
     TYPE_CHECKING,
@@ -133,6 +133,34 @@ ProcessErrors: TypeAlias = (
     "Callable[[list[GraphQLError], ExecutionContext | None], None]"
 )
 _DirectiveEntry: TypeAlias = tuple[GraphQLDirective, object, str]
+
+
+def _warn_graphql_info_extension(extension_type: type[SchemaExtension]) -> None:
+    message = (
+        f"{extension_type.__qualname__}.resolve receives "
+        "GraphQLResolveInfo, which is deprecated. Annotate its "
+        "`info` parameter as `strawberry.Info` to use Strawberry's "
+        "Info API. Run `strawberry upgrade schema-extension-info .` "
+        "for an automated migration. The raw graphql-core object "
+        "remains available as `info._raw_info`. Support for the "
+        "legacy behavior will be removed in Strawberry 1.0."
+    )
+    # The warning is emitted while Strawberry builds the middleware, so the call
+    # stack only contains Strawberry internals; point at the extension's resolve
+    # method instead.
+    resolver = unwrap(extension_type.resolve)
+    code = getattr(resolver, "__code__", None)
+    if code is None:
+        warnings.warn(message, DeprecationWarning, stacklevel=2)
+        return
+
+    warnings.warn_explicit(
+        message,
+        DeprecationWarning,
+        filename=code.co_filename,
+        lineno=code.co_firstlineno,
+        module=resolver.__module__,
+    )
 
 
 def _register_graphql_directive(
@@ -638,19 +666,7 @@ class Schema(BaseSchema):
                         should_warn = True
 
             if should_warn:
-                warnings.warn(
-                    (
-                        f"{extension_type.__qualname__}.resolve receives "
-                        "GraphQLResolveInfo, which is deprecated. Annotate its "
-                        "`info` parameter as `strawberry.Info` to use Strawberry's "
-                        "Info API. Run `strawberry upgrade schema-extension-info .` "
-                        "for an automated migration. The raw graphql-core object "
-                        "remains available as `info._raw_info`. Support for the "
-                        "legacy behavior will be removed in Strawberry 1.0."
-                    ),
-                    DeprecationWarning,
-                    stacklevel=4,
-                )
+                _warn_graphql_info_extension(extension_type)
             return extension
 
         extension_resolver = cast("Callable[..., Any]", extension.resolve)

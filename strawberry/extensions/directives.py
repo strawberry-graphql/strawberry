@@ -6,6 +6,7 @@ from weakref import WeakKeyDictionary
 from graphql import get_argument_values
 
 from strawberry.extensions import SchemaExtension
+from strawberry.extensions.utils import get_graphql_resolve_info
 from strawberry.types.arguments import convert_arguments
 from strawberry.types.base import StrawberryContainer, has_object_definition
 from strawberry.types.lazy_type import LazyType
@@ -35,6 +36,7 @@ class DirectivesExtension(SchemaExtension):
         *args: str,
         **kwargs: Any,
     ) -> AwaitableOrValue[Any]:
+        info = get_graphql_resolve_info(info)
         value = await await_maybe(_next(root, info, *args, **kwargs))
 
         nodes = list(info.field_nodes)
@@ -57,6 +59,7 @@ class DirectivesExtensionSync(SchemaExtension):
         *args: str,
         **kwargs: Any,
     ) -> AwaitableOrValue[Any]:
+        info = get_graphql_resolve_info(info)
         value = _next(root, info, *args, **kwargs)
 
         nodes = list(info.field_nodes)

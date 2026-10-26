@@ -12,7 +12,7 @@ from opentelemetry import trace
 from opentelemetry.trace import SpanKind
 
 from strawberry.extensions import LifecycleStep, SchemaExtension
-from strawberry.extensions.utils import get_path_from_info
+from strawberry.extensions.utils import get_graphql_resolve_info, get_path_from_info
 
 from .utils import should_skip_tracing
 
@@ -157,6 +157,7 @@ class OpenTelemetryExtension(SchemaExtension):
         *args: str,
         **kwargs: Any,
     ) -> Any:
+        info = get_graphql_resolve_info(info)
         if should_skip_tracing(_next, info):
             result = _next(root, info, *args, **kwargs)
 
@@ -189,6 +190,7 @@ class OpenTelemetryExtensionSync(OpenTelemetryExtension):
         *args: str,
         **kwargs: Any,
     ) -> Any:
+        info = get_graphql_resolve_info(info)
         if should_skip_tracing(_next, info):
             return _next(root, info, *args, **kwargs)
 

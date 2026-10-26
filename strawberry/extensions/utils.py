@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from strawberry.types.info import Info
+
 if TYPE_CHECKING:
     from graphql import GraphQLResolveInfo
     from graphql.pyutils import Path
@@ -38,4 +40,21 @@ def get_path_from_info(info: GraphQLResolveInfo) -> list[str | int]:
     return elements[::-1]
 
 
-__all__ = ["get_path_from_info", "is_introspection_field", "is_introspection_key"]
+def get_graphql_resolve_info(info: GraphQLResolveInfo | Info) -> GraphQLResolveInfo:
+    """Return graphql-core's info for a schema extension resolve hook.
+
+    Built-in extensions receive ``GraphQLResolveInfo`` from the middleware, but a
+    subclass that annotates ``resolve`` with ``strawberry.Info`` passes the
+    Strawberry wrapper when it calls ``super().resolve(...)``.
+    """
+    if isinstance(info, Info):
+        return info._raw_info
+    return info
+
+
+__all__ = [
+    "get_graphql_resolve_info",
+    "get_path_from_info",
+    "is_introspection_field",
+    "is_introspection_key",
+]

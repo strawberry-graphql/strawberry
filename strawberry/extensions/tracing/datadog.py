@@ -10,6 +10,7 @@ from packaging import version
 
 from strawberry.extensions import LifecycleStep, SchemaExtension
 from strawberry.extensions.tracing.utils import should_skip_tracing
+from strawberry.extensions.utils import get_graphql_resolve_info
 
 parsed_ddtrace_version = version.parse(ddtrace.__version__)
 if parsed_ddtrace_version >= version.parse("3.0.0"):
@@ -130,6 +131,7 @@ class DatadogTracingExtension(SchemaExtension):
         *args: str,
         **kwargs: Any,
     ) -> Any:
+        info = get_graphql_resolve_info(info)
         if should_skip_tracing(_next, info):
             result = _next(root, info, *args, **kwargs)
 
@@ -166,6 +168,7 @@ class DatadogTracingExtensionSync(DatadogTracingExtension):
         *args: str,
         **kwargs: Any,
     ) -> Any:
+        info = get_graphql_resolve_info(info)
         if should_skip_tracing(_next, info):
             return _next(root, info, *args, **kwargs)
 
