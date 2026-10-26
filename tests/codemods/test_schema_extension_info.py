@@ -250,10 +250,10 @@ class TestConvertSchemaExtensionInfo(CodemodTest):
 
     def test_does_not_rewrite_super_calls_in_nested_scopes(self) -> None:
         before = """
-            from strawberry.extensions.directives import DirectivesExtensionSync
+            from strawberry.extensions.tracing.apollo import ApolloTracingExtensionSync
 
 
-            class MyDirectives(DirectivesExtensionSync):
+            class MyTracing(ApolloTracingExtensionSync):
                 def resolve(self, _next, root, info, *args, **kwargs):
                     class Helper(Base):
                         def resolve(self, info):
@@ -263,11 +263,11 @@ class TestConvertSchemaExtensionInfo(CodemodTest):
         """
 
         after = """
-            from strawberry.extensions.directives import DirectivesExtensionSync
+            from strawberry.extensions.tracing.apollo import ApolloTracingExtensionSync
             import strawberry
 
 
-            class MyDirectives(DirectivesExtensionSync):
+            class MyTracing(ApolloTracingExtensionSync):
                 def resolve(self, _next, root, strawberry_info: strawberry.Info, *args, **kwargs):
                     info = strawberry_info._raw_info
                     class Helper(Base):

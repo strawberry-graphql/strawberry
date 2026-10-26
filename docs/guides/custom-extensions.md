@@ -106,13 +106,12 @@ the previous runtime behavior for compatibility but emits a
 `DeprecationWarning`. This compatibility behavior will be removed in Strawberry
 1.0.
 
-Strawberry's built-in extensions (the Apollo, Apollo Federation, Datadog and
-OpenTelemetry tracing extensions, and the extension that runs custom directives)
-receive `strawberry.Info`. A subclass that overrides `resolve` must pass
-`strawberry.Info` to `super().resolve(...)`, and `OpenTelemetryExtension`
-subclasses receive it in `add_tags` and `filter_resolver_args` too. The
-`arg_filter` callback of the OpenTelemetry extension still receives
-`GraphQLResolveInfo`.
+Strawberry's built-in tracing extensions (Apollo, Apollo Federation, Datadog and
+OpenTelemetry) receive `strawberry.Info`. A subclass that overrides `resolve`
+must pass `strawberry.Info` to `super().resolve(...)`, and
+`OpenTelemetryExtension` subclasses receive it in `add_tags` and
+`filter_resolver_args` too. The `arg_filter` callback of the OpenTelemetry
+extension still receives `GraphQLResolveInfo`.
 
 The upgrade command opts direct subclasses of `SchemaExtension` and of the
 built-in extensions into `strawberry.Info` while preserving their existing use

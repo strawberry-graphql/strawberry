@@ -673,6 +673,11 @@ class Schema(BaseSchema):
     ) -> SchemaExtension | Callable[..., Any]:
         if not extension._uses_strawberry_info():
             extension_type = type(extension)
+            # Strawberry adds this extension itself. It keeps graphql-core's info
+            # so that Info is only built for fields that use a custom directive.
+            if extension_type in (DirectivesExtension, DirectivesExtensionSync):
+                return extension
+
             with _WARNED_GRAPHQL_INFO_EXTENSIONS_LOCK:
                 should_warn = extension_type not in _WARNED_GRAPHQL_INFO_EXTENSIONS
                 _WARNED_GRAPHQL_INFO_EXTENSIONS.add(extension_type)

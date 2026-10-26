@@ -11,10 +11,6 @@ from graphql import GraphQLResolveInfo
 import strawberry
 from strawberry.directive import DirectiveLocation, DirectiveValue
 from strawberry.extensions import SchemaExtension
-from strawberry.extensions.directives import (
-    DirectivesExtension,
-    DirectivesExtensionSync,
-)
 from strawberry.extensions.tracing import (
     ApolloTracingExtension,
     ApolloTracingExtensionSync,
@@ -241,7 +237,7 @@ def test_legacy_info_warning_points_at_extension_resolve() -> None:
 
 @pytest.mark.parametrize(
     "extension_class",
-    [ApolloTracingExtensionSync, DirectivesExtensionSync],
+    [ApolloTracingExtensionSync],
 )
 def test_strawberry_info_subclass_of_builtin_extension_can_call_super(
     extension_class: type[SchemaExtension],
@@ -265,7 +261,7 @@ def test_strawberry_info_subclass_of_builtin_extension_can_call_super(
 
 @pytest.mark.parametrize(
     "extension_class",
-    [ApolloTracingExtension, DirectivesExtension],
+    [ApolloTracingExtension],
 )
 async def test_strawberry_info_subclass_of_async_builtin_extension_can_call_super(
     extension_class: type[SchemaExtension],
@@ -292,38 +288,12 @@ async def test_strawberry_info_subclass_of_async_builtin_extension_can_call_supe
     [
         ApolloTracingExtension,
         ApolloTracingExtensionSync,
-        DirectivesExtension,
-        DirectivesExtensionSync,
     ],
 )
 def test_builtin_extensions_receive_strawberry_info(
     extension_class: type[SchemaExtension],
 ) -> None:
     assert extension_class._uses_strawberry_info()
-
-
-def test_directive_receives_the_field_resolver_info() -> None:
-    received_info: list[strawberry.Info] = []
-
-    @strawberry.directive(locations=[DirectiveLocation.FIELD])
-    def uppercase(value: DirectiveValue[str], info: strawberry.Info) -> str:
-        received_info.append(info)
-        return value.upper()
-
-    @strawberry.type
-    class InfoQuery:
-        @strawberry.field
-        def hello(self, info: strawberry.Info) -> str:
-            received_info.append(info)
-            return "world"
-
-    schema = strawberry.Schema(query=InfoQuery, directives=[uppercase])
-    result = schema.execute_sync("{ hello @uppercase }")
-
-    assert result.errors is None
-    assert result.data == {"hello": "WORLD"}
-    assert len(received_info) == 2
-    assert received_info[0] is received_info[1]
 
 
 def test_legacy_info_warning_mentions_strawberry_info_parent() -> None:
@@ -340,3 +310,23 @@ def test_legacy_info_warning_mentions_strawberry_info_parent() -> None:
         result = schema.execute_sync("{ hello }")
 
     assert result.errors is None
+
+
+@pytest.mark.parametrize("execute", ["sync", "async"])
+async def test_directives_extension_does_not_warn(execute: str) -> None:
+    @strawberry.directive(locations=[DirectiveLocation.FIELD])
+    def uppercase(value: DirectiveValue[str]) -> str:
+        return value.upper()
+
+    schema = strawberry.Schema(query=Query, directives=[uppercase])
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        result = (
+            schema.execute_sync("{ hello @uppercase }")
+            if execute == "sync"
+            else await schema.execute("{ hello @uppercase }")
+        )
+
+    assert result.errors is None
+    assert result.data == {"hello": "WORLD"}

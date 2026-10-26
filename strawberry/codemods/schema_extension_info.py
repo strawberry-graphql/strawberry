@@ -25,9 +25,6 @@ _DATADOG_EXTENSIONS = frozenset(
 _EXTENSION_BASES: dict[str, frozenset[str]] = {
     "strawberry.extensions": frozenset({"SchemaExtension"}),
     "strawberry.extensions.base_extension": frozenset({"SchemaExtension"}),
-    "strawberry.extensions.directives": frozenset(
-        {"DirectivesExtension", "DirectivesExtensionSync"}
-    ),
     "strawberry.extensions.tracing": _OPENTELEMETRY_EXTENSIONS
     | _APOLLO_EXTENSIONS
     | _APOLLO_FEDERATION_EXTENSIONS
