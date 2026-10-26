@@ -145,6 +145,22 @@ def _warn_graphql_info_extension(extension_type: type[SchemaExtension]) -> None:
         "remains available as `info._raw_info`. Support for the "
         "legacy behavior will be removed in Strawberry 1.0."
     )
+    parent_type = next(
+        (
+            base
+            for base in extension_type.__mro__[1:]
+            if "resolve" in vars(base)
+            and issubclass(base, SchemaExtension)
+            and base._uses_strawberry_info()
+        ),
+        None,
+    )
+    if parent_type is not None:
+        message += (
+            f" {parent_type.__qualname__}.resolve receives `strawberry.Info`, so "
+            "calls to `super().resolve(...)` must pass it instead of "
+            "GraphQLResolveInfo."
+        )
     # The warning is emitted while Strawberry builds the middleware, so the call
     # stack only contains Strawberry internals; point at the extension's resolve
     # method instead.
@@ -657,19 +673,18 @@ class Schema(BaseSchema):
     ) -> SchemaExtension | Callable[..., Any]:
         if not extension._uses_strawberry_info():
             extension_type = type(extension)
-            resolver_module = extension_type.resolve.__module__
-            should_warn = False
-            if not resolver_module.startswith("strawberry.extensions."):
-                with _WARNED_GRAPHQL_INFO_EXTENSIONS_LOCK:
-                    if extension_type not in _WARNED_GRAPHQL_INFO_EXTENSIONS:
-                        _WARNED_GRAPHQL_INFO_EXTENSIONS.add(extension_type)
-                        should_warn = True
+            with _WARNED_GRAPHQL_INFO_EXTENSIONS_LOCK:
+                should_warn = extension_type not in _WARNED_GRAPHQL_INFO_EXTENSIONS
+                _WARNED_GRAPHQL_INFO_EXTENSIONS.add(extension_type)
 
             if should_warn:
                 _warn_graphql_info_extension(extension_type)
             return extension
 
         extension_resolver = cast("Callable[..., Any]", extension.resolve)
+        # Hoisted out of the per-field hot path.
+        info_class = self.config.info_class
+        definition_backref = GraphQLCoreConverter.DEFINITION_BACKREF
 
         def middleware(
             next_: Callable[..., Any],
@@ -682,15 +697,12 @@ class Schema(BaseSchema):
                 info = raw_info
             else:
                 graphql_field = raw_info.parent_type.fields.get(raw_info.field_name)
-                field = cast(
-                    "StrawberryField | None",
-                    graphql_field.extensions.get(
-                        GraphQLCoreConverter.DEFINITION_BACKREF
-                    )
+                field: StrawberryField | None = (
+                    graphql_field.extensions.get(definition_backref)
                     if graphql_field
-                    else None,
+                    else None
                 )
-                info = self.config.info_class(_raw_info=raw_info, _field=field)
+                info = info_class(_raw_info=raw_info, _field=field)
 
             next_requires_graphql_info = inner_uses_strawberry_info is False or (
                 inner_uses_strawberry_info is None and info._field is None

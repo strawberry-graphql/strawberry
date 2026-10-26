@@ -106,22 +106,39 @@ the previous runtime behavior for compatibility but emits a
 `DeprecationWarning`. This compatibility behavior will be removed in Strawberry
 1.0.
 
-The upgrade command opts direct `SchemaExtension` subclasses into
-`strawberry.Info` while preserving their existing use of the raw object:
+Strawberry's built-in extensions (the Apollo, Apollo Federation, Datadog and
+OpenTelemetry tracing extensions, and the extension that runs custom directives)
+receive `strawberry.Info`. A subclass that overrides `resolve` must pass
+`strawberry.Info` to `super().resolve(...)`, and `OpenTelemetryExtension`
+subclasses receive it in `add_tags` and `filter_resolver_args` too. The
+`arg_filter` callback of the OpenTelemetry extension still receives
+`GraphQLResolveInfo`.
+
+The upgrade command opts direct subclasses of `SchemaExtension` and of the
+built-in extensions into `strawberry.Info` while preserving their existing use
+of the raw object:
 
 ```shell
 strawberry upgrade schema-extension-info .
 ```
 
 For example, the codemod renames the new parameter and retains `info` as an
-alias for the graphql-core object. This makes the automated change
-behavior-preserving and leaves semantic cleanup to a follow-up review:
+alias for the graphql-core object, passing `strawberry.Info` to `super()` calls
+of the converted hook. This makes the automated change behavior-preserving and
+leaves semantic cleanup to a follow-up review:
 
 ```python
 class MyExtension(SchemaExtension):
     def resolve(self, _next, root, strawberry_info: strawberry.Info, **kwargs):
         info = strawberry_info._raw_info
         return _next(root, info, **kwargs)
+
+
+class MyTracing(OpenTelemetryExtension):
+    def add_tags(self, span, strawberry_info: strawberry.Info, kwargs):
+        info = strawberry_info._raw_info
+        span.set_attribute("graphql.parentType", info.parent_type.name)
+        super().add_tags(span, strawberry_info, kwargs)
 ```
 
 Indirect subclasses must be reviewed manually; unrecognized annotations on
@@ -129,8 +146,11 @@ direct subclasses are reported by the codemod. The following prompt can be given
 to a coding agent after running the codemod:
 
 ```text
-Find all SchemaExtension subclasses that override resolve. Ensure the Info
-parameter is annotated as strawberry.Info and preserve every _next call.
+Find all SchemaExtension subclasses, including subclasses of Strawberry's
+tracing extensions, that override resolve (or add_tags and filter_resolver_args
+on OpenTelemetryExtension subclasses). Ensure the Info parameter is annotated
+as strawberry.Info, pass it to super() calls of those hooks, and preserve every
+_next call.
 
 Replace access through info._raw_info with Strawberry Info properties when they
 are equivalent: field_name, context, root_value, variable_values, operation,

@@ -7,14 +7,16 @@ from inspect import isawaitable
 from typing import TYPE_CHECKING, Any
 
 from strawberry.extensions import SchemaExtension
-from strawberry.extensions.utils import get_graphql_resolve_info, get_path_from_info
+from strawberry.extensions.utils import get_path_from_info
+
+# Imported at runtime: `resolve` is annotated with Info so it receives strawberry.Info.
+from strawberry.types.info import Info  # noqa: TC001
 
 from .utils import should_skip_tracing
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Generator
 
-    from graphql import GraphQLResolveInfo
 
 DATETIME_FORMAT = "%Y-%m-%dT%H:%M:%S.%fZ"
 
@@ -151,11 +153,10 @@ class ApolloTracingExtension(SchemaExtension):
         self,
         _next: Callable,
         root: Any,
-        info: GraphQLResolveInfo,
+        info: Info,
         *args: str,
         **kwargs: Any,
     ) -> Any:
-        info = get_graphql_resolve_info(info)
         if should_skip_tracing(_next, info):
             result = _next(root, info, *args, **kwargs)
 
@@ -169,8 +170,8 @@ class ApolloTracingExtension(SchemaExtension):
         resolver_stats = ApolloResolverStats(
             path=get_path_from_info(info),
             field_name=info.field_name,
-            parent_type=info.parent_type,
-            return_type=info.return_type,
+            parent_type=info._raw_info.parent_type,
+            return_type=info._raw_info.return_type,
             start_offset=start_timestamp - self.start_timestamp,
         )
 
@@ -192,11 +193,10 @@ class ApolloTracingExtensionSync(ApolloTracingExtension):
         self,
         _next: Callable,
         root: Any,
-        info: GraphQLResolveInfo,
+        info: Info,
         *args: str,
         **kwargs: Any,
     ) -> Any:
-        info = get_graphql_resolve_info(info)
         if should_skip_tracing(_next, info):
             return _next(root, info, *args, **kwargs)
 
@@ -205,8 +205,8 @@ class ApolloTracingExtensionSync(ApolloTracingExtension):
         resolver_stats = ApolloResolverStats(
             path=get_path_from_info(info),
             field_name=info.field_name,
-            parent_type=info.parent_type,
-            return_type=info.return_type,
+            parent_type=info._raw_info.parent_type,
+            return_type=info._raw_info.return_type,
             start_offset=start_timestamp - self.start_timestamp,
         )
 

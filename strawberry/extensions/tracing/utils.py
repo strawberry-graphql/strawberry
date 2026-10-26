@@ -8,13 +8,14 @@ from strawberry.resolvers import is_default_resolver
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-    from graphql import GraphQLResolveInfo
+    from strawberry.types.info import Info
 
 
-def should_skip_tracing(resolver: Callable[..., Any], info: GraphQLResolveInfo) -> bool:
-    if info.field_name not in info.parent_type.fields:
+def should_skip_tracing(resolver: Callable[..., Any], info: Info) -> bool:
+    parent_type = info._raw_info.parent_type
+    if info.field_name not in parent_type.fields:
         return True
-    resolver = info.parent_type.fields[info.field_name].resolve
+    resolver = parent_type.fields[info.field_name].resolve
     return (
         is_introspection_field(info)
         or is_default_resolver(resolver)

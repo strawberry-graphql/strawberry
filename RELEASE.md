@@ -18,6 +18,12 @@ configured Info type used by field resolvers. Existing unannotated and
 `GraphQLResolveInfo` extension resolvers continue to receive the graphql-core
 object, with a deprecation warning ahead of Strawberry 1.0.
 
-Run `strawberry upgrade schema-extension-info .` to opt direct schema extension
-subclasses into Strawberry Info while preserving their existing raw Info
-behavior.
+Strawberry's built-in tracing and directive extensions now receive
+`strawberry.Info` too. Subclasses that override `resolve`, or `add_tags` and
+`filter_resolver_args` on `OpenTelemetryExtension`, must pass `strawberry.Info`
+to their `super()` calls. The OpenTelemetry `arg_filter` callback still receives
+`GraphQLResolveInfo`.
+
+Run `strawberry upgrade schema-extension-info .` to opt direct subclasses of
+`SchemaExtension` and of the built-in extensions into Strawberry Info while
+preserving their existing raw Info behavior.

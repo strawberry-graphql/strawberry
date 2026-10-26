@@ -9,6 +9,7 @@ import pytest
 from graphql import GraphQLResolveInfo
 
 import strawberry
+from strawberry.directive import DirectiveLocation, DirectiveValue
 from strawberry.extensions import SchemaExtension
 from strawberry.extensions.directives import (
     DirectivesExtension,
@@ -284,3 +285,58 @@ async def test_strawberry_info_subclass_of_async_builtin_extension_can_call_supe
     assert result.errors is None
     assert result.data == {"hello": "world"}
     assert isinstance(received_info[0], strawberry.Info)
+
+
+@pytest.mark.parametrize(
+    "extension_class",
+    [
+        ApolloTracingExtension,
+        ApolloTracingExtensionSync,
+        DirectivesExtension,
+        DirectivesExtensionSync,
+    ],
+)
+def test_builtin_extensions_receive_strawberry_info(
+    extension_class: type[SchemaExtension],
+) -> None:
+    assert extension_class._uses_strawberry_info()
+
+
+def test_directive_receives_the_field_resolver_info() -> None:
+    received_info: list[strawberry.Info] = []
+
+    @strawberry.directive(locations=[DirectiveLocation.FIELD])
+    def uppercase(value: DirectiveValue[str], info: strawberry.Info) -> str:
+        received_info.append(info)
+        return value.upper()
+
+    @strawberry.type
+    class InfoQuery:
+        @strawberry.field
+        def hello(self, info: strawberry.Info) -> str:
+            received_info.append(info)
+            return "world"
+
+    schema = strawberry.Schema(query=InfoQuery, directives=[uppercase])
+    result = schema.execute_sync("{ hello @uppercase }")
+
+    assert result.errors is None
+    assert result.data == {"hello": "WORLD"}
+    assert len(received_info) == 2
+    assert received_info[0] is received_info[1]
+
+
+def test_legacy_info_warning_mentions_strawberry_info_parent() -> None:
+    class LegacyTracing(ApolloTracingExtensionSync):
+        def resolve(self, next_: Any, root: Any, info: Any, **kwargs: Any) -> Any:
+            return next_(root, info, **kwargs)
+
+    schema = strawberry.Schema(query=Query, extensions=[LegacyTracing])
+
+    with pytest.warns(
+        DeprecationWarning,
+        match=r"ApolloTracingExtensionSync\.resolve receives `strawberry\.Info`",
+    ):
+        result = schema.execute_sync("{ hello }")
+
+    assert result.errors is None

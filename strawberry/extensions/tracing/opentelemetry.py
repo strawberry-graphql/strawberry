@@ -12,7 +12,10 @@ from opentelemetry import trace
 from opentelemetry.trace import SpanKind
 
 from strawberry.extensions import LifecycleStep, SchemaExtension
-from strawberry.extensions.utils import get_graphql_resolve_info, get_path_from_info
+from strawberry.extensions.utils import get_path_from_info
+
+# Imported at runtime: `resolve` is annotated with Info so it receives strawberry.Info.
+from strawberry.types.info import Info  # noqa: TC001
 
 from .utils import should_skip_tracing
 
@@ -95,12 +98,10 @@ class OpenTelemetryExtension(SchemaExtension):
         yield
         self._span_holder[LifecycleStep.PARSE].end()
 
-    def filter_resolver_args(
-        self, args: dict[str, Any], info: GraphQLResolveInfo
-    ) -> dict[str, Any]:
+    def filter_resolver_args(self, args: dict[str, Any], info: Info) -> dict[str, Any]:
         if not self._arg_filter:
             return args
-        return self._arg_filter(deepcopy(args), info)
+        return self._arg_filter(deepcopy(args), info._raw_info)
 
     def convert_dict_to_allowed_types(self, value: dict) -> str:
         return (
@@ -135,11 +136,11 @@ class OpenTelemetryExtension(SchemaExtension):
     def convert_list_or_tuple_to_allowed_types(self, value: Iterable) -> str:
         return ", ".join(map(str, map(self.convert_to_allowed_types, value)))
 
-    def add_tags(self, span: Span, info: GraphQLResolveInfo, kwargs: Any) -> None:
+    def add_tags(self, span: Span, info: Info, kwargs: Any) -> None:
         graphql_path = ".".join(map(str, get_path_from_info(info)))
 
         span.set_attribute("component", "graphql")
-        span.set_attribute("graphql.parentType", info.parent_type.name)
+        span.set_attribute("graphql.parentType", info._raw_info.parent_type.name)
         span.set_attribute("graphql.path", graphql_path)
 
         if kwargs:
@@ -153,11 +154,10 @@ class OpenTelemetryExtension(SchemaExtension):
         self,
         _next: Callable,
         root: Any,
-        info: GraphQLResolveInfo,
+        info: Info,
         *args: str,
         **kwargs: Any,
     ) -> Any:
-        info = get_graphql_resolve_info(info)
         if should_skip_tracing(_next, info):
             result = _next(root, info, *args, **kwargs)
 
@@ -186,11 +186,10 @@ class OpenTelemetryExtensionSync(OpenTelemetryExtension):
         self,
         _next: Callable,
         root: Any,
-        info: GraphQLResolveInfo,
+        info: Info,
         *args: str,
         **kwargs: Any,
     ) -> Any:
-        info = get_graphql_resolve_info(info)
         if should_skip_tracing(_next, info):
             return _next(root, info, *args, **kwargs)
 

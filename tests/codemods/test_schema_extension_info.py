@@ -177,3 +177,104 @@ class TestConvertSchemaExtensionInfo(CodemodTest):
                 )
             ],
         )
+
+    def test_converts_builtin_extension_subclass_and_super_calls(self) -> None:
+        before = """
+            from strawberry.extensions.tracing import OpenTelemetryExtension
+
+
+            class MyTracing(OpenTelemetryExtension):
+                async def resolve(self, _next, root, info, *args, **kwargs):
+                    print(info.parent_type)
+                    return await super().resolve(_next, root, info, *args, **kwargs)
+
+                def add_tags(self, span, info, kwargs):
+                    span.set_attribute("parent", info.parent_type.name)
+                    super().add_tags(span, info=info, kwargs=kwargs)
+
+                def filter_resolver_args(self, args, info):
+                    return super().filter_resolver_args(args, info)
+        """
+
+        after = """
+            from strawberry.extensions.tracing import OpenTelemetryExtension
+            import strawberry
+
+
+            class MyTracing(OpenTelemetryExtension):
+                async def resolve(self, _next, root, strawberry_info: strawberry.Info, *args, **kwargs):
+                    info = strawberry_info._raw_info
+                    print(info.parent_type)
+                    return await super().resolve(_next, root, strawberry_info, *args, **kwargs)
+
+                def add_tags(self, span, strawberry_info: strawberry.Info, kwargs):
+                    info = strawberry_info._raw_info
+                    span.set_attribute("parent", info.parent_type.name)
+                    super().add_tags(span, info=strawberry_info, kwargs=kwargs)
+
+                def filter_resolver_args(self, args, strawberry_info: strawberry.Info):
+                    info = strawberry_info._raw_info
+                    return super().filter_resolver_args(args, strawberry_info)
+        """
+
+        self.assertCodemod(before, after)
+
+    def test_converts_builtin_extension_subclass_with_module_access(self) -> None:
+        before = """
+            import strawberry.extensions.tracing
+
+
+            class MyTracing(strawberry.extensions.tracing.ApolloTracingExtensionSync):
+                def resolve(self, _next, root, info, *args, **kwargs):
+                    return super().resolve(_next, root, info, *args, **kwargs)
+
+                def add_tags(self, span, info, kwargs):
+                    return info
+        """
+
+        after = """
+            import strawberry.extensions.tracing
+            import strawberry
+
+
+            class MyTracing(strawberry.extensions.tracing.ApolloTracingExtensionSync):
+                def resolve(self, _next, root, strawberry_info: strawberry.Info, *args, **kwargs):
+                    info = strawberry_info._raw_info
+                    return super().resolve(_next, root, strawberry_info, *args, **kwargs)
+
+                def add_tags(self, span, info, kwargs):
+                    return info
+        """
+
+        self.assertCodemod(before, after)
+
+    def test_does_not_rewrite_super_calls_in_nested_scopes(self) -> None:
+        before = """
+            from strawberry.extensions.directives import DirectivesExtensionSync
+
+
+            class MyDirectives(DirectivesExtensionSync):
+                def resolve(self, _next, root, info, *args, **kwargs):
+                    class Helper(Base):
+                        def resolve(self, info):
+                            return super().resolve(info)
+
+                    return super().resolve(_next, root, info, *args, **kwargs)
+        """
+
+        after = """
+            from strawberry.extensions.directives import DirectivesExtensionSync
+            import strawberry
+
+
+            class MyDirectives(DirectivesExtensionSync):
+                def resolve(self, _next, root, strawberry_info: strawberry.Info, *args, **kwargs):
+                    info = strawberry_info._raw_info
+                    class Helper(Base):
+                        def resolve(self, info):
+                            return super().resolve(info)
+
+                    return super().resolve(_next, root, strawberry_info, *args, **kwargs)
+        """
+
+        self.assertCodemod(before, after)
