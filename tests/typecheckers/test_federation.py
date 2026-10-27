@@ -308,7 +308,6 @@ def parse_epoch_literal(
     return datetime.fromtimestamp(int(node.value))
 
 EpochDateTime = strawberry.federation.scalar(
-    datetime,
     name="EpochDateTime",
     serialize=lambda value: int(value.timestamp()),
     parse_value=lambda value: datetime.fromtimestamp(int(value)),
@@ -326,8 +325,8 @@ def test_federation_scalar():
         [
             Result(
                 type="information",
-                message='Type of "EpochDateTime" is "type[datetime]"',
-                line=20,
+                message='Type of "EpochDateTime" is "ScalarDefinition"',
+                line=19,
                 column=13,
             )
         ]
@@ -336,8 +335,8 @@ def test_federation_scalar():
         [
             Result(
                 type="note",
-                message='Revealed type is "def (year: typing.SupportsIndex, month: typing.SupportsIndex, day: typing.SupportsIndex, hour: typing.SupportsIndex =, minute: typing.SupportsIndex =, second: typing.SupportsIndex =, microsecond: typing.SupportsIndex =, tzinfo: datetime.tzinfo | None =, *, fold: int =) -> datetime.datetime"',
-                line=20,
+                message='Revealed type is "strawberry.types.scalar.ScalarDefinition"',
+                line=19,
                 column=13,
             )
         ]
@@ -346,8 +345,8 @@ def test_federation_scalar():
         [
             Result(
                 type="information",
-                message="Revealed type: `<class 'datetime'>`",
-                line=20,
+                message="Revealed type: `ScalarDefinition`",
+                line=19,
                 column=13,
             )
         ]
