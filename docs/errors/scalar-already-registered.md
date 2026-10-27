@@ -12,11 +12,16 @@ the following code will throw this error:
 
 ```python
 import strawberry
-from typing import NewType
-from strawberry.schema.config import StrawberryConfig
+from typing import Annotated
 
-MyCustomScalar = NewType("MyCustomScalar", str)
-MyCustomScalar2 = NewType("MyCustomScalar2", int)
+MyCustomScalar = Annotated[
+    str,
+    strawberry.scalar(name="MyCustomScalar", serialize=str, parse_value=str),
+]
+MyCustomScalar2 = Annotated[
+    int,
+    strawberry.scalar(name="MyCustomScalar", serialize=int, parse_value=int),
+]
 
 
 @strawberry.type
@@ -25,19 +30,7 @@ class Query:
     scalar_2: MyCustomScalar2
 
 
-strawberry.Schema(
-    Query,
-    config=StrawberryConfig(
-        scalar_map={
-            MyCustomScalar: strawberry.scalar(
-                name="MyCustomScalar", serialize=str, parse_value=str
-            ),
-            MyCustomScalar2: strawberry.scalar(
-                name="MyCustomScalar", serialize=int, parse_value=int
-            ),
-        }
-    ),
-)
+strawberry.Schema(Query)
 ```
 
 This happens because different types in Strawberry (and GraphQL) cannot have the
@@ -55,11 +48,16 @@ name of one of them, for example in this code we renamed the second scalar:
 
 ```python
 import strawberry
-from typing import NewType
-from strawberry.schema.config import StrawberryConfig
+from typing import Annotated
 
-MyCustomScalar = NewType("MyCustomScalar", str)
-MyCustomScalar2 = NewType("MyCustomScalar2", int)
+MyCustomScalar = Annotated[
+    str,
+    strawberry.scalar(name="MyCustomScalar", serialize=str, parse_value=str),
+]
+MyCustomScalar2 = Annotated[
+    int,
+    strawberry.scalar(name="MyCustomScalar2", serialize=int, parse_value=int),
+]
 
 
 @strawberry.type
@@ -68,17 +66,5 @@ class Query:
     scalar_2: MyCustomScalar2
 
 
-strawberry.Schema(
-    Query,
-    config=StrawberryConfig(
-        scalar_map={
-            MyCustomScalar: strawberry.scalar(
-                name="MyCustomScalar", serialize=str, parse_value=str
-            ),
-            MyCustomScalar2: strawberry.scalar(
-                name="MyCustomScalar2", serialize=int, parse_value=int
-            ),
-        }
-    ),
-)
+strawberry.Schema(Query)
 ```

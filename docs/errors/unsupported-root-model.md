@@ -50,8 +50,9 @@ schema = strawberry.Schema(query=Query, types=[CreatePostInput])
 This happens because a `RootModel` holds a single value instead of fields, so it
 can't be a GraphQL object type or input.
 
-A `RootModel` field can instead be exposed through a custom scalar registered in
-the schema's `scalar_map`.
+A `RootModel` field can instead be exposed through an `Annotated` custom scalar,
+or registered as a scalar in the schema's `scalar_map` to keep existing model
+annotations unchanged.
 
 ## How to fix this error
 

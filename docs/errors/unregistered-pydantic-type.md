@@ -7,9 +7,10 @@ title: Unregistered Pydantic Type Error
 ## Description
 
 This error is thrown during schema construction when a field uses a Pydantic
-model that is neither a Strawberry type nor registered in the schema's
-`scalar_map`. It applies to regular Strawberry fields as well as fields of
-`strawberry.pydantic` types (with Pydantic 2.11 or newer):
+model that is neither a Strawberry type nor exposed as a custom scalar through
+`Annotated` or the schema's `scalar_map`. It applies to regular Strawberry
+fields as well as fields of `strawberry.pydantic` types (with Pydantic 2.11 or
+newer):
 
 ```python
 import pydantic

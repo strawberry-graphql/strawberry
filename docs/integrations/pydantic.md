@@ -598,19 +598,25 @@ An exact `scalar_map` entry, such as one for `EmailStr`, takes precedence over
 these automatic mappings. Mappings are resolved separately for each schema;
 building one schema does not change another schema using the same models. An
 undecorated Pydantic model can also be registered as a custom scalar. Models not
-registered as scalars still need a Strawberry decorator; that check runs during
+exposed as scalars still need a Strawberry decorator; that check runs during
 schema construction, once the scalar map is available.
 
+For a local custom scalar, attach its definition with `Annotated` instead of
+registering it in a scalar map:
+
 ```python
-from typing import NewType
+from typing import Annotated, NewType
 
 from pydantic import BaseModel
 
 import strawberry
 from strawberry.scalars import JSON
-from strawberry.schema.config import StrawberryConfig
 
-Money = NewType("Money", str)
+MoneyValue = NewType("MoneyValue", str)
+Money = Annotated[
+    MoneyValue,
+    strawberry.scalar(name="Money", serialize=str, parse_value=str),
+]
 
 
 @strawberry.pydantic.type
@@ -620,14 +626,18 @@ class Product(BaseModel):
     metadata: JSON
 
 
-schema = strawberry.Schema(
-    query=Query,
-    config=StrawberryConfig(
-        scalar_map={
-            Money: strawberry.scalar(name="Money", serialize=str, parse_value=str)
-        }
-    ),
-)
+@strawberry.type
+class Query:
+    @strawberry.field
+    def product(self) -> Product:
+        return Product(
+            id=strawberry.ID("1"),
+            price=MoneyValue("19.99"),
+            metadata=JSON({"in_stock": True}),
+        )
+
+
+schema = strawberry.Schema(query=Query)
 ```
 
 Types that GraphQL has no scalar for, like `dict`, `Any`, `set` or `bytes`, need
@@ -656,9 +666,9 @@ class PostInput(BaseModel):
     status: Annotated[Literal["draft", "published"], strawberry.field(graphql_type=str)]
 ```
 
-As with `@strawberry.type`, a `NewType` must be registered as a scalar to be
-used in the schema. To expose it as its base type instead, set the GraphQL type
-of the field:
+As with `@strawberry.type`, a `NewType` needs a scalar definition, either
+through `Annotated` or a schema's `scalar_map`, to be used in the schema. To
+expose it as its base type instead, set the GraphQL type of the field:
 
 ```python
 from typing import Annotated, NewType
@@ -1729,8 +1739,10 @@ type Query {
 
 Pydantic BaseModels may define a custom type with
 [`__get_validators__`](https://pydantic-docs.helpmanual.io/usage/types/#classes-with-__get_validators__)
-logic. You will need to add a scalar definition and add the mapping to
-`scalar_map` in `StrawberryConfig`.
+logic. To keep using that existing type in model annotations, add a scalar
+definition to `scalar_map` in `StrawberryConfig`. Alternatively, define an
+annotated scalar alias as shown in [Scalars](#scalars) and use that alias in
+your model annotations.
 
 ```python
 import strawberry
@@ -1796,8 +1808,7 @@ conversion is possible through a constructor.
 import base64
 import strawberry
 from pydantic import BaseModel
-from typing import Union, NewType
-from strawberry.schema.config import StrawberryConfig
+from typing import Annotated, Union
 
 
 class User(BaseModel):
@@ -1805,7 +1816,14 @@ class User(BaseModel):
     hash: bytes
 
 
-Base64 = NewType("Base64", bytes)
+Base64 = Annotated[
+    bytes,
+    strawberry.scalar(
+        name="Base64",
+        serialize=lambda v: base64.b64encode(v).decode("utf-8"),
+        parse_value=lambda v: base64.b64decode(v.encode("utf-8")),
+    ),
+]
 
 
 @strawberry.experimental.pydantic.type(model=User)
@@ -1821,18 +1839,7 @@ class Query:
         return UserType.from_pydantic(User(id=123, hash=b"abcd"))
 
 
-schema = strawberry.Schema(
-    query=Query,
-    config=StrawberryConfig(
-        scalar_map={
-            Base64: strawberry.scalar(
-                name="Base64",
-                serialize=lambda v: base64.b64encode(v).decode("utf-8"),
-                parse_value=lambda v: base64.b64decode(v.encode("utf-8")),
-            )
-        }
-    ),
-)
+schema = strawberry.Schema(query=Query)
 
 print(schema.execute_sync("query { test { id, hash } }").data)
 # {"test": {"id": "123", "hash": "YWJjZA=="}}

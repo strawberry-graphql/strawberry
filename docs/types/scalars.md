@@ -146,7 +146,7 @@ Base64 = Annotated[
 class Query:
     @strawberry.field
     def base64(self) -> Base64:
-        return Base64(b"hi")
+        return b"hi"
 
 
 schema = strawberry.Schema(Query)
@@ -222,41 +222,42 @@ raise `StrawberryInputCoercionError` explicitly:
 
 ```python
 import uuid
-from typing import NewType
+from typing import Annotated, NewType
 
 import strawberry
 from strawberry.exceptions import StrawberryInputCoercionError
 
-OrderID = NewType("OrderID", uuid.UUID)
+OrderIDValue = NewType("OrderIDValue", uuid.UUID)
 
 
-def parse_order_id(value: object) -> OrderID:
+def parse_order_id(value: object) -> OrderIDValue:
     if not isinstance(value, str):
         raise StrawberryInputCoercionError("OrderID must be a string")
 
     try:
-        return OrderID(uuid.UUID(value))
+        return OrderIDValue(uuid.UUID(value))
     except ValueError:
         raise StrawberryInputCoercionError("Invalid OrderID") from None
 
 
-order_id_scalar = strawberry.scalar(
-    name="OrderID",
-    serialize=str,
-    parse_value=parse_order_id,
-)
+OrderID = Annotated[
+    OrderIDValue,
+    strawberry.scalar(name="OrderID", serialize=str, parse_value=parse_order_id),
+]
 ```
 
-The resulting scalar definition can be added to `StrawberryConfig.scalar_map`.
-Only catch exceptions that represent expected conversion errors so unexpected
-parser exceptions continue to be reported as server faults. See
+Use `OrderID` directly in field and argument annotations; no scalar map is
+needed. Only catch exceptions that represent expected conversion errors so
+unexpected parser exceptions continue to be reported as server faults. See
 [Dealing with errors](../guides/errors#strawberry-input-coercion-errors) for how
 to identify direct and wrapped coercion errors.
 
 ## Example: Custom Object Scalar
 
 Suppose we would like to use a Pillow `Image` as a scalar that serializes
-to/from base64-encoded bytes:
+to/from base64-encoded bytes. This example registers the existing third-party
+type with `scalar_map`, so resolvers can keep using `Image.Image` without
+introducing an annotated alias:
 
 ```python
 import base64
@@ -330,35 +331,30 @@ Suppose we would like to have a type-safe `Currency` scalar based on `Decimal`:
 
 ```python
 from decimal import Decimal
-from typing import NewType
+from typing import Annotated, NewType
 
 import strawberry
-from strawberry.schema.config import StrawberryConfig
 
-# Define a NewType for currency - this is a proper type that type checkers understand
-Currency = NewType("Currency", Decimal)
+CurrencyValue = NewType("CurrencyValue", Decimal)
+Currency = Annotated[
+    CurrencyValue,
+    strawberry.scalar(
+        name="Currency",
+        description="A monetary value with 2 decimal places",
+        serialize=lambda v: str(v.quantize(Decimal("0.01"))),
+        parse_value=lambda v: CurrencyValue(Decimal(v).quantize(Decimal("0.01"))),
+    ),
+]
 
 
 @strawberry.type
 class Query:
     @strawberry.field
     def price(self) -> Currency:
-        return Currency("19.99")
+        return CurrencyValue(Decimal("19.99"))
 
 
-schema = strawberry.Schema(
-    Query,
-    config=StrawberryConfig(
-        scalar_map={
-            Currency: strawberry.scalar(
-                name="Currency",
-                description="A monetary value with 2 decimal places",
-                serialize=lambda v: str(v.quantize(Decimal("0.01"))),
-                parse_value=lambda v: Currency(v).quantize(Decimal("0.01")),
-            )
-        }
-    ),
-)
+schema = strawberry.Schema(Query)
 ```
 
 This generates the following schema:
@@ -490,38 +486,33 @@ schema = strawberry.Schema(
 Python integers have arbitrary precision (no size limit). However, the GraphQL
 spec limits integers to 32-bit signed values (approximately ±2 billion).
 
-This will inevitably raise errors. Instead of using strings on the client as a
-workaround, you could use the following approach:
+Use a custom `BigInt` scalar for values beyond that limit. This example
+serializes them as strings to preserve precision in clients:
 
 ```python
-from typing import NewType, Union
+from typing import Annotated
 
 import strawberry
-from strawberry.schema.config import StrawberryConfig
 
-BigInt = NewType("BigInt", int)
+BigInt = Annotated[
+    int,
+    strawberry.scalar(
+        name="BigInt",
+        description="BigInt field",
+        serialize=str,
+        parse_value=int,
+    ),
+]
 
 
 @strawberry.type
 class Query:
     @strawberry.field
     def large_number(self) -> BigInt:
-        return BigInt(9007199254740993)
+        return 9007199254740993
 
 
-schema = strawberry.Schema(
-    Query,
-    config=StrawberryConfig(
-        scalar_map={
-            BigInt: strawberry.scalar(
-                name="BigInt",
-                description="BigInt field",
-                serialize=lambda v: int(v),
-                parse_value=lambda v: str(v),
-            ),
-        }
-    ),
-)
+schema = strawberry.Schema(Query)
 ```
 
 You can adapt your schema to automatically use this scalar for all integers by
@@ -537,16 +528,17 @@ adding `int` to the `scalar_map`:
 </Tip>
 
 ```python
+from strawberry.schema.config import StrawberryConfig
+
 schema = strawberry.Schema(
     query=Query,
-    mutation=Mutation,
-    subscription=Subscription,
     config=StrawberryConfig(
         scalar_map={
             int: strawberry.scalar(
                 name="BigInt",
-                serialize=lambda v: int(v),
-                parse_value=lambda v: str(v),
+                description="BigInt field",
+                serialize=str,
+                parse_value=int,
             ),
         }
     ),
