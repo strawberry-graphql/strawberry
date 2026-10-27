@@ -34,14 +34,22 @@ def get_scalar_definition(
         return scalar_registry[annotation]
 
     if get_origin(annotation) is Annotated:
-        underlying, *metadata = get_args(annotation)
-        if scalar_overrides and underlying in scalar_overrides:
-            return scalar_overrides[underlying]
-        for item in metadata:
-            if isinstance(item, ScalarDefinition):
-                return item
+        underlying_type, *metadata = get_args(annotation)
+
+        if scalar_overrides:
+            override = scalar_overrides.get(underlying_type)
+
+            if override is not None:
+                return override
+
+        for metadata_item in metadata:
+            if isinstance(metadata_item, ScalarDefinition):
+                return metadata_item
+
         return get_scalar_definition(
-            underlying, scalar_registry, scalar_overrides=scalar_overrides
+            underlying_type,
+            scalar_registry,
+            scalar_overrides=scalar_overrides,
         )
 
     # Keep scalar checks consistent for schema generation and argument conversion.
