@@ -122,16 +122,24 @@ can expect for a particular field.
 To define a custom scalar you need to give it a name and functions that tell
 Strawberry how to serialize and deserialise the type.
 
-For example here is a custom scalar type to represent a Base64 string:
+Use `Annotated` to attach the definition to a Python type. The scalar is then
+available anywhere the annotation is used, without schema registration. For
+example, here is a custom scalar type to represent a Base64 string:
 
 ```python
 import base64
-from typing import NewType
+from typing import Annotated
 
 import strawberry
-from strawberry.schema.config import StrawberryConfig
 
-Base64 = NewType("Base64", bytes)
+Base64 = Annotated[
+    bytes,
+    strawberry.scalar(
+        name="Base64",
+        serialize=lambda v: base64.b64encode(v).decode("utf-8"),
+        parse_value=lambda v: base64.b64decode(v.encode("utf-8")),
+    ),
+]
 
 
 @strawberry.type
@@ -141,23 +149,58 @@ class Query:
         return Base64(b"hi")
 
 
-schema = strawberry.Schema(
-    Query,
-    config=StrawberryConfig(
-        scalar_map={
-            Base64: strawberry.scalar(
-                name="Base64",
-                serialize=lambda v: base64.b64encode(v).decode("utf-8"),
-                parse_value=lambda v: base64.b64decode(v.encode("utf-8")),
-            )
-        }
-    ),
-)
+schema = strawberry.Schema(Query)
 
 result = schema.execute_sync("{ base64 }")
 
 assert result.data == {"base64": "aGk="}
 ```
+
+This does not change how other `bytes` annotations are handled. To also give
+your scalar a distinct Python type-checking identity, declare a `NewType` first:
+
+```python
+from datetime import datetime, timezone
+from typing import Annotated, NewType
+
+import strawberry
+
+EpochValue = NewType("EpochValue", datetime)
+EpochDateTime = Annotated[
+    EpochValue,
+    strawberry.scalar(
+        name="EpochDateTime",
+        serialize=lambda value: int(value.timestamp()),
+        parse_value=lambda value: datetime.fromtimestamp(value, timezone.utc),
+    ),
+]
+```
+
+Declare `NewType` separately rather than calling it inside `Annotated`, so
+Python type checkers recognize it. At runtime, `Annotated` does not wrap values;
+`EpochValue(...)` constructs values of the distinct static type.
+
+### Schema-wide registration and overrides
+
+Use `StrawberryConfig.scalar_map` when you want to support an existing Python
+type without changing annotations throughout your codebase. It also lets you
+replace built-ins: use `date` or `datetime` as the key for the corresponding
+Python type, or `strawberry.scalars.JSON` for the built-in JSON scalar (not
+`dict`).
+
+An explicit mapping takes precedence over an annotated definition, which takes
+precedence over the built-in scalar. You can key a mapping by the exported
+annotated alias, such as `EpochDateTime`, to override only that alias, or by its
+underlying type, such as `EpochValue`, to override all annotated uses of that
+type. An override of `datetime` does not override a distinct `NewType` based on
+`datetime`. If both alias and underlying-type mappings exist, the alias wins.
+
+Standalone `strawberry.scalar(name=...)` definitions can be reused as metadata
+or mapping values. The existing `Schema(scalar_overrides=...)` parameter also
+continues to work; for the same key, it takes precedence over `scalar_map`. Two
+incompatible scalar definitions with the same GraphQL name are an error. Give
+locally different representations different GraphQL names unless you intend a
+schema-wide override to unify them.
 
 <Note>
 

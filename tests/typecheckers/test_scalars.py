@@ -25,10 +25,43 @@ def test_generated_custom_scalars():
         }
         """
     )
-    results = typecheck(source + "\nreveal_type(scalar_map)\n", strict=False)
+    results = typecheck(source + "\nreveal_type(Query.custom)\n")
     assert [result.type for result in results.pyright] == ["information"]
     assert [result.type for result in results.mypy] == ["note"]
     assert [result.type for result in results.ty] == ["information"]
+
+
+def test_annotated_custom_scalar():
+    results = typecheck(
+        """
+from datetime import datetime
+from typing import Annotated, NewType
+import strawberry
+from strawberry.schema.config import StrawberryConfig
+
+EpochValue = NewType("EpochValue", datetime)
+EpochDateTime = Annotated[
+    EpochValue,
+    strawberry.scalar(name="EpochDateTime", serialize=lambda v: int(v.timestamp())),
+]
+
+@strawberry.type
+class Query:
+    created: EpochDateTime
+
+query = Query(created=EpochValue(datetime(2020, 1, 2)))
+schema = strawberry.Schema(Query, config=StrawberryConfig(scalar_map={
+    EpochDateTime: strawberry.scalar(name="EpochDateTime"),
+}))
+reveal_type(query.created)
+"""
+    )
+    assert [result.type for result in results.pyright] == ["information"]
+    assert [result.type for result in results.mypy] == ["note"]
+    assert [result.type for result in results.ty] == ["information"]
+    assert "EpochValue" in results.pyright[0].message
+    assert "EpochValue" in results.mypy[0].message
+    assert "EpochValue" in results.ty[0].message
 
 
 CODE = """

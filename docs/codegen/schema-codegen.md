@@ -48,19 +48,16 @@ schema = strawberry.Schema(query=Query)
 ## Custom scalars
 
 Known scalars such as `Date`, `UUID`, and `JSON` use their Python types (`date`,
-`UUID`, and `strawberry.scalars.JSON`). Other scalar names generate a `NewType`
-and a module-level `scalar_map` containing `strawberry.scalar(name=...)`
-definitions. Generated schemas register these definitions through
-`StrawberryConfig.scalar_map`:
+`UUID`, and `strawberry.scalars.JSON`). Other scalar names generate an
+`Annotated` alias with a `strawberry.scalar(name=...)` definition. No scalar map
+is required:
 
 ```python
-from typing import NewType
+from typing import Annotated
 
 import strawberry
-from strawberry.schema.config import StrawberryConfig
-from strawberry.types.scalar import ScalarDefinition
 
-Email = NewType("Email", object)
+Email = Annotated[object, strawberry.scalar(name="Email")]
 
 
 @strawberry.type
@@ -68,18 +65,14 @@ class Query:
     email: Email
 
 
-scalar_map: dict[object, ScalarDefinition] = {
-    Email: strawberry.scalar(
-        name="Email", serialize=lambda value: value, parse_value=lambda value: value
-    )
-}
-
-schema = strawberry.Schema(query=Query, config=StrawberryConfig(scalar_map=scalar_map))
+schema = strawberry.Schema(query=Query)
 ```
 
-Replace the identity serialization and parsing functions with your scalar's
-implementation as needed. Descriptions and `@specifiedBy` URLs are preserved in
-the scalar definitions. For SDL fragments without a schema root, codegen still
-emits `scalar_map`; pass it to your schema configuration when combining
-fragments. Unknown names such as `JSONObject` keep their GraphQL name rather
-than silently being renamed to `JSON`.
+SDL does not describe Python value types or conversion functions, so codegen
+uses `object` and identity conversion as placeholders. Replace them with your
+scalar's Python type, `serialize`, and `parse_value` as needed. Descriptions and
+`@specifiedBy` URLs are preserved, including for SDL fragments without a schema
+root: importing and using the generated alias carries its definition with it.
+Unknown names such as `JSONObject` keep their GraphQL name rather than silently
+being renamed to `JSON`. You can still use `StrawberryConfig.scalar_map` to
+override an imported alias for a particular schema.

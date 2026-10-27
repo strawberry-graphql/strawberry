@@ -91,8 +91,11 @@ class StrawberryArgument:
             if get_origin(resolved_annotation) is Annotated:
                 first, *rest = get_args(resolved_annotation)
 
-                # The first argument to Annotated is always the underlying type
-                self.type_annotation = StrawberryAnnotation(first)
+                # Keep type metadata (including scalar definitions); resolution
+                # discards argument-only metadata after it is processed below.
+                self.type_annotation = StrawberryAnnotation(
+                    resolved_annotation, namespace=type_annotation.namespace
+                )
 
                 # Find any instances of StrawberryArgumentAnnotation
                 # in the other Annotated args, raising an exception if there

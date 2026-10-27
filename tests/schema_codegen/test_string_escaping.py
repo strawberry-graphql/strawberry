@@ -110,12 +110,9 @@ def test_specified_by_url_with_quotes():
         r"""
         from __future__ import annotations
         import strawberry
-        from strawberry.types.scalar import ScalarDefinition
-        from typing import NewType
+        from typing import Annotated
 
-        LocalDate = NewType("LocalDate", object)
-
-        scalar_map: dict[object, ScalarDefinition] = {LocalDate: strawberry.scalar(name="LocalDate", specified_by_url="https://example.com/local-date?name=\"local\"&kind='date'", serialize=lambda v: v, parse_value=lambda v: v)}
+        LocalDate = Annotated[object, strawberry.scalar(name="LocalDate", specified_by_url="https://example.com/local-date?name=\"local\"&kind='date'")]
         """
     ).strip()
 

@@ -5,10 +5,12 @@
 # - 5. test subscriptions (raise)
 
 from pathlib import Path
+from typing import Annotated, NewType
 
 import pytest
 from pytest_snapshot.plugin import Snapshot
 
+import strawberry
 from strawberry.codegen import QueryCodegen, QueryCodegenPlugin
 from strawberry.codegen.exceptions import (
     MultipleOperationsProvidedError,
@@ -17,6 +19,7 @@ from strawberry.codegen.exceptions import (
 )
 from strawberry.codegen.plugins.python import PythonPlugin
 from strawberry.codegen.plugins.typescript import TypeScriptPlugin
+from strawberry.schema.config import StrawberryConfig
 
 HERE = Path(__file__).parent
 QUERIES = list(HERE.glob("queries/*.graphql"))
@@ -106,3 +109,34 @@ def test_nested_fragment_spread_does_not_depend_on_definition_order(
 
     assert inner_last == inner_first
     assert "PersonFields" in inner_last
+
+
+@pytest.mark.parametrize("override", [False, True])
+@pytest.mark.parametrize("plugin_class", [PythonPlugin, TypeScriptPlugin])
+def test_annotated_scalar_codegen(plugin_class, override, tmp_path):
+    Value = NewType("Value", int)
+    Count = Annotated[Value, strawberry.scalar(name="Count")]
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def counts(self, count: Count) -> list[Count | None]:
+            return [count, None]  # pragma: no cover
+
+    name = "MappedCount" if override else "Count"
+    schema = strawberry.Schema(
+        Query,
+        config=StrawberryConfig(
+            scalar_map={Count: strawberry.scalar(name=name)} if override else {}
+        ),
+    )
+    generator = QueryCodegen(schema, plugins=[plugin_class(tmp_path / "query.graphql")])
+    code = generator.run(
+        f"query Counts($count: {name}!) {{ counts(count: $count) }}"
+    ).to_string()
+    if plugin_class is PythonPlugin:
+        assert f'{name} = NewType("{name}", int)' in code
+        assert f"counts: list[Optional[{name}]]" in code
+    else:
+        assert f"type {name} = number" in code
+        assert f"counts: ({name} | undefined)[]" in code

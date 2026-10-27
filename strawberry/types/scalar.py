@@ -44,6 +44,11 @@ class ScalarDefinition(StrawberryType):
     _source_line: int | None = None
     print_definition: bool = True
 
+    def __hash__(self) -> int:
+        # Annotated aliases must be hashable (e.g. in unions and scalar_map).
+        # Equal definitions always share a name, even with unhashable directives.
+        return hash(self.name)
+
     def copy_with(
         self, type_var_map: Mapping[str, StrawberryType | type]
     ) -> StrawberryType | type:
@@ -67,8 +72,8 @@ def scalar(
 ) -> ScalarDefinition:
     """Creates a GraphQL custom scalar definition.
 
-    Returns a `ScalarDefinition` for use in `StrawberryConfig.scalar_map`
-    or `Schema(scalar_overrides=...)`.
+    Returns a `ScalarDefinition` for use as `Annotated` metadata, in
+    `StrawberryConfig.scalar_map` or in `Schema(scalar_overrides=...)`.
 
     Args:
         name: The GraphQL name of the scalar.
@@ -86,26 +91,27 @@ def scalar(
     Example usage:
 
     ```python
-    from typing import NewType
+    import base64
+    from typing import Annotated
+
     import strawberry
-    from strawberry.schema.config import StrawberryConfig
 
-    # Define the type
-    Base64 = NewType("Base64", bytes)
-
-    # Configure the scalar in schema config
-    schema = strawberry.Schema(
-        query=Query,
-        config=StrawberryConfig(
-            scalar_map={
-                Base64: strawberry.scalar(
-                    name="Base64",
-                    serialize=lambda v: base64.b64encode(v).decode(),
-                    parse_value=lambda v: base64.b64decode(v),
-                )
-            }
+    Base64 = Annotated[
+        bytes,
+        strawberry.scalar(
+            name="Base64",
+            serialize=lambda v: base64.b64encode(v).decode(),
+            parse_value=lambda v: base64.b64decode(v),
         ),
-    )
+    ]
+
+
+    @strawberry.type
+    class Query:
+        encoded: Base64
+
+
+    schema = strawberry.Schema(query=Query)
     ```
     """
     from strawberry.exceptions.handler import should_use_rich_exceptions

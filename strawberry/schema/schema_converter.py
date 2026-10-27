@@ -54,6 +54,7 @@ from strawberry.exceptions import (
 )
 from strawberry.extensions.field_extension import build_field_extension_resolvers
 from strawberry.relay.types import GlobalID
+from strawberry.scalars import get_scalar_definition
 from strawberry.schema.exception_handlers import (
     get_error_type,
     get_exception_types,
@@ -397,6 +398,7 @@ class GraphQLCoreConverter:
     ) -> None:
         self.type_map: dict[str, ConcreteType] = {}
         self.config = config
+        self.scalar_overrides = {**scalar_map, **scalar_overrides}
         self.scalar_registry = self._get_scalar_registry(scalar_overrides, scalar_map)
         self.get_fields = get_fields
         self.exception_handlers = tuple(exception_handlers)
@@ -1294,17 +1296,13 @@ class GraphQLCoreConverter:
 
             return self.from_scalar(ID)
 
-        scalar_definition: ScalarDefinition
-
-        if scalar not in self.scalar_registry:
-            origin = typing.get_origin(scalar)
-            if origin is not None and origin in self.scalar_registry:
-                scalar = origin
-
-        if scalar in self.scalar_registry:
-            scalar_definition = self.scalar_registry[scalar]
-        else:
-            scalar_definition = scalar._scalar_definition  # type: ignore[attr-defined]
+        scalar_definition = get_scalar_definition(
+            scalar, self.scalar_registry, scalar_overrides=self.scalar_overrides
+        )
+        assert scalar_definition is not None
+        # Cache this schema's binding, including Annotated aliases, for argument
+        # conversion and codegen. Do not register it for the underlying type.
+        self.scalar_registry[scalar] = scalar_definition
 
         scalar_name = self.config.name_converter.from_type(scalar_definition)
 

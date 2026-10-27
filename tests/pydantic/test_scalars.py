@@ -152,14 +152,22 @@ def test_upload_validation_belongs_to_pydantic(custom_validator):
         )
 
 
-def test_scalar_map_new_types():
+@pytest.mark.parametrize("annotated", [False, True])
+def test_custom_scalar_new_types(annotated):
+    definition = strawberry.scalar(
+        name="Money",
+        serialize=lambda value: f"{value} EUR",
+        parse_value=lambda value: value.removesuffix(" EUR"),
+    )
+    MoneyType = Annotated[Money, definition] if annotated else Money
+
     @strawberry.pydantic.type
     class Product(pydantic.BaseModel):
-        price: Money
+        price: MoneyType
 
     @strawberry.pydantic.input
     class ProductInput(pydantic.BaseModel):
-        price: Money
+        price: MoneyType
 
     @strawberry.type
     class Query:
@@ -169,15 +177,7 @@ def test_scalar_map_new_types():
 
     schema = strawberry.Schema(
         query=Query,
-        config=StrawberryConfig(
-            scalar_map={
-                Money: strawberry.scalar(
-                    name="Money",
-                    serialize=lambda value: f"{value} EUR",
-                    parse_value=lambda value: value.removesuffix(" EUR"),
-                )
-            }
-        ),
+        config=StrawberryConfig(scalar_map={} if annotated else {Money: definition}),
     )
 
     assert "price: Money!" in str(schema)

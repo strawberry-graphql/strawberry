@@ -22,19 +22,15 @@ def test_scalar():
         """
         from __future__ import annotations
         import strawberry
-        from strawberry.schema.config import StrawberryConfig
-        from strawberry.types.scalar import ScalarDefinition
-        from typing import NewType
+        from typing import Annotated
 
-        LocalDate = NewType("LocalDate", object)
+        LocalDate = Annotated[object, strawberry.scalar(name="LocalDate", specified_by_url="https://scalars.graphql.org/andimarek/local-date.html")]
 
         @strawberry.type
         class Query:
             date: LocalDate | None
 
-        scalar_map: dict[object, ScalarDefinition] = {LocalDate: strawberry.scalar(name="LocalDate", specified_by_url="https://scalars.graphql.org/andimarek/local-date.html", serialize=lambda v: v, parse_value=lambda v: v)}
-
-        schema = strawberry.Schema(query=Query, config=StrawberryConfig(scalar_map=scalar_map))
+        schema = strawberry.Schema(query=Query)
         """
     ).strip()
 
@@ -55,19 +51,15 @@ def test_scalar_with_description():
         """
         from __future__ import annotations
         import strawberry
-        from strawberry.schema.config import StrawberryConfig
-        from strawberry.types.scalar import ScalarDefinition
-        from typing import NewType
+        from typing import Annotated
 
-        LocalDate = NewType("LocalDate", object)
+        LocalDate = Annotated[object, strawberry.scalar(name="LocalDate", description="A date without a time-zone in the ISO-8601 calendar system, such as 2007-12-03.")]
 
         @strawberry.type
         class Query:
             date: LocalDate | None
 
-        scalar_map: dict[object, ScalarDefinition] = {LocalDate: strawberry.scalar(name="LocalDate", description="A date without a time-zone in the ISO-8601 calendar system, such as 2007-12-03.", serialize=lambda v: v, parse_value=lambda v: v)}
-
-        schema = strawberry.Schema(query=Query, config=StrawberryConfig(scalar_map=scalar_map))
+        schema = strawberry.Schema(query=Query)
         """
     ).strip()
 
