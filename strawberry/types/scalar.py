@@ -10,9 +10,14 @@ from typing import (
 from strawberry.types.base import StrawberryType
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Iterable, Mapping
+    from collections.abc import Iterable, Mapping
 
-    from graphql import GraphQLScalarType
+    from graphql import (
+        GraphQLScalarLiteralParser,
+        GraphQLScalarSerializer,
+        GraphQLScalarType,
+        GraphQLScalarValueParser,
+    )
 
 
 def identity(x: Any) -> Any:
@@ -24,9 +29,9 @@ class ScalarDefinition(StrawberryType):
     name: str
     description: str | None
     specified_by_url: str | None
-    serialize: Callable | None
-    parse_value: Callable | None
-    parse_literal: Callable | None
+    serialize: GraphQLScalarSerializer | None
+    parse_value: GraphQLScalarValueParser | None
+    parse_literal: GraphQLScalarLiteralParser | None
     directives: Iterable[object] = ()
     origin: GraphQLScalarType | type | None = None
 
@@ -37,6 +42,7 @@ class ScalarDefinition(StrawberryType):
     # used for better error messages
     _source_file: str | None = None
     _source_line: int | None = None
+    print_definition: bool = True
 
     def copy_with(
         self, type_var_map: Mapping[str, StrawberryType | type]
@@ -53,10 +59,11 @@ def scalar(
     name: str,
     description: str | None = None,
     specified_by_url: str | None = None,
-    serialize: Callable = identity,
-    parse_value: Callable | None = None,
-    parse_literal: Callable | None = None,
+    serialize: GraphQLScalarSerializer = identity,
+    parse_value: GraphQLScalarValueParser | None = None,
+    parse_literal: GraphQLScalarLiteralParser | None = None,
     directives: Iterable[object] = (),
+    print_definition: bool = True,
 ) -> ScalarDefinition:
     """Creates a GraphQL custom scalar definition.
 
@@ -71,6 +78,7 @@ def scalar(
         parse_value: The function to parse the value.
         parse_literal: The function to parse the literal.
         directives: The directives to apply to the scalar.
+        print_definition: Whether to print an unreferenced scalar definition.
 
     Returns:
         A `ScalarDefinition`.
@@ -117,7 +125,8 @@ def scalar(
         serialize=serialize,
         parse_literal=parse_literal,
         parse_value=parse_value,
-        directives=directives,
+        directives=tuple(directives),
+        print_definition=print_definition,
         origin=None,
         _source_file=_source_file,
         _source_line=_source_line,

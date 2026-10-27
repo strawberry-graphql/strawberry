@@ -1,9 +1,34 @@
 from inline_snapshot import snapshot
 
+from strawberry.schema_codegen import codegen
+
 from .utils.marks import requires_mypy, requires_pyright, requires_ty, skip_on_windows
 from .utils.typecheck import Result, typecheck
 
 pytestmark = [skip_on_windows, requires_pyright, requires_mypy, requires_ty]
+
+
+def test_generated_custom_scalars():
+    source = codegen(
+        """
+        scalar JSON
+        scalar Foo
+        scalar JSONObject
+        scalar UUID
+        scalar Date
+        type Query {
+            data: JSON!
+            custom: Foo!
+            other: JSONObject!
+            id: UUID!
+            date: Date!
+        }
+        """
+    )
+    results = typecheck(source + "\nreveal_type(scalar_map)\n", strict=False)
+    assert [result.type for result in results.pyright] == ["information"]
+    assert [result.type for result in results.mypy] == ["note"]
+    assert [result.type for result in results.ty] == ["information"]
 
 
 CODE = """
