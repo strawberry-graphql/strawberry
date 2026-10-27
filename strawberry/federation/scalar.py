@@ -1,5 +1,11 @@
 import sys
-from collections.abc import Callable, Iterable
+from collections.abc import Iterable
+
+from graphql import (
+    GraphQLScalarLiteralParser,
+    GraphQLScalarSerializer,
+    GraphQLScalarValueParser,
+)
 
 from strawberry.types.scalar import ScalarDefinition, identity
 
@@ -9,9 +15,9 @@ def scalar(
     name: str,
     description: str | None = None,
     specified_by_url: str | None = None,
-    serialize: Callable = identity,
-    parse_value: Callable | None = None,
-    parse_literal: Callable | None = None,
+    serialize: GraphQLScalarSerializer = identity,
+    parse_value: GraphQLScalarValueParser | None = None,
+    parse_literal: GraphQLScalarLiteralParser | None = None,
     directives: Iterable[object] = (),
     authenticated: bool = False,
     inaccessible: bool = False,

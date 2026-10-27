@@ -178,7 +178,7 @@ class InputContext:
 
     info: Info | None
     config: StrawberryConfig
-    scalar_registry: Mapping[object, ScalarWrapper | ScalarDefinition]
+    scalar_registry: Mapping[object, ScalarDefinition]
     path: tuple[str | int, ...]
     """Location of the input value in the arguments, see `convert_argument`."""
 

@@ -1,4 +1,5 @@
 import textwrap
+from typing import NewType
 from uuid import UUID
 
 import strawberry
@@ -37,13 +38,21 @@ def test_simple_required_types():
 
 
 def test_does_not_print_unreferenced_hidden_explicit_type():
-    Hidden = strawberry.scalar(str, name="Hidden", print_definition=False)
+    Hidden = NewType("Hidden", str)
 
     @strawberry.type
     class Query:
         name: str
 
-    schema = strawberry.Schema(query=Query, types=[Hidden])
+    schema = strawberry.Schema(
+        query=Query,
+        types=[Hidden],
+        config=StrawberryConfig(
+            scalar_map={
+                Hidden: strawberry.scalar(name="Hidden", print_definition=False)
+            }
+        ),
+    )
 
     expected_type = """
     type Query {

@@ -326,9 +326,7 @@ def test_override_built_in_scalars():
                 datetime: strawberry.scalar(
                     name="DateTime",
                     serialize=lambda value: int(value.timestamp()),
-                    parse_value=lambda value: datetime.fromtimestamp(
-                        int(value), UTC
-                    ),
+                    parse_value=lambda value: datetime.fromtimestamp(int(value), UTC),
                 )
             }
         ),
@@ -380,7 +378,6 @@ def test_override_generic_container_by_origin():
     # Registering the bare ``dict`` should cover every ``dict[K, V]``
     # parameterization instead of requiring one override entry per variant.
     JSONScalar = scalar(
-        dict,
         name="JSON",
         serialize=lambda value: value,
         parse_value=lambda value: value,
@@ -451,7 +448,6 @@ def test_override_generic_container_by_origin():
 
 def test_override_exact_generic_key_still_matches():
     JSONScalar = scalar(
-        dict,
         name="JSON",
         serialize=lambda value: value,
         parse_value=lambda value: value,
@@ -468,7 +464,6 @@ def test_override_exact_generic_key_still_matches():
 
 def test_override_exact_generic_key_does_not_match_other_parameterizations():
     JSONScalar = scalar(
-        dict,
         name="JSON",
         serialize=lambda value: value,
         parse_value=lambda value: value,
