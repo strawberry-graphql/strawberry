@@ -321,6 +321,8 @@ class Schema(BaseSchema):
         scalar_overrides: Mapping[object, type | ScalarDefinition] | None = None,
         schema_directives: Iterable[object] = (),
         exception_handlers: Iterable[ExceptionHandler[Any]] = (),
+        *,
+        scalar_map: Mapping[object, ScalarDefinition] | None = None,
     ) -> None:
         """Default Schema to be used in a Strawberry application.
 
@@ -345,6 +347,9 @@ class Schema(BaseSchema):
             schema_directives: A list of schema directives for the schema.
             exception_handlers: A list of handlers that can convert Python
                 exceptions into explicit GraphQL union return values.
+            scalar_map: A mapping of Python types or annotated aliases to scalar
+                definitions. Takes precedence over scalar_overrides and the
+                deprecated config.scalar_map for the same key.
 
         Example:
         ```python
@@ -386,9 +391,14 @@ class Schema(BaseSchema):
         self.config = config or StrawberryConfig()
         self.exception_handlers = tuple(exception_handlers)
 
+        scalar_overrides = {
+            **(scalar_overrides or {}),
+            **(scalar_map or {}),
+        }
+
         self.schema_converter = GraphQLCoreConverter(
             self.config,
-            scalar_overrides=scalar_overrides or {},  # type: ignore
+            scalar_overrides=scalar_overrides,  # type: ignore
             scalar_map=self.config.scalar_map,
             get_fields=self.get_fields,
             exception_handlers=self.exception_handlers,

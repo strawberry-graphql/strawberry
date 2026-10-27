@@ -7,6 +7,7 @@ from uuid import UUID
 import pytest
 
 import strawberry
+import strawberry.federation
 from strawberry import scalar
 from strawberry.exceptions import ScalarAlreadyRegisteredError
 from strawberry.scalars import JSON, Base16, Base32, Base64
@@ -585,11 +586,12 @@ def test_optional_scalar_with_or_operator():
     assert result.data["date"] == "2020-01-01"
 
 
-def test_scalar_map_with_newtype():
-    """Test scalar_map configuration with NewType."""
+@pytest.mark.parametrize(
+    "schema_class", [strawberry.Schema, strawberry.federation.Schema]
+)
+def test_scalar_map_with_newtype(schema_class, recwarn):
+    """Register a NewType directly on either Schema without deprecation warnings."""
     from typing import NewType
-
-    from strawberry.schema.config import StrawberryConfig
 
     MyString = NewType("MyString", str)
 
@@ -603,18 +605,16 @@ def test_scalar_map_with_newtype():
         def process_string(self, value: MyString) -> str:
             return f"processed: {value}"
 
-    schema = strawberry.Schema(
+    schema = schema_class(
         query=Query,
-        config=StrawberryConfig(
-            scalar_map={
-                MyString: strawberry.scalar(
-                    name="MyString",
-                    description="A custom string scalar",
-                    serialize=lambda v: v.upper(),
-                    parse_value=lambda v: v.lower(),
-                )
-            }
-        ),
+        scalar_map={
+            MyString: strawberry.scalar(
+                name="MyString",
+                description="A custom string scalar",
+                serialize=lambda v: v.upper(),
+                parse_value=lambda v: v.lower(),
+            )
+        },
     )
 
     expected_schema = dedent(
@@ -629,7 +629,8 @@ def test_scalar_map_with_newtype():
         '''
     ).strip()
 
-    assert str(schema) == expected_schema
+    if schema_class is strawberry.Schema:
+        assert str(schema) == expected_schema
 
     result = schema.execute_sync("{ myString }")
     assert not result.errors
@@ -638,11 +639,11 @@ def test_scalar_map_with_newtype():
     result = schema.execute_sync('{ processString(value: "WORLD") }')
     assert not result.errors
     assert result.data == {"processString": "processed: world"}
+    assert not recwarn.list
 
 
 def test_scalar_map_override_builtin():
     """Test scalar_map can override built-in scalars."""
-    from strawberry.schema.config import StrawberryConfig
 
     @strawberry.type
     class Query:
@@ -656,15 +657,13 @@ def test_scalar_map_override_builtin():
 
     schema = strawberry.Schema(
         query=Query,
-        config=StrawberryConfig(
-            scalar_map={
-                datetime: strawberry.scalar(
-                    name="DateTime",
-                    serialize=lambda v: int(v.timestamp()),
-                    parse_value=lambda v: datetime.fromtimestamp(int(v), UTC),
-                )
-            }
-        ),
+        scalar_map={
+            datetime: strawberry.scalar(
+                name="DateTime",
+                serialize=lambda v: int(v.timestamp()),
+                parse_value=lambda v: datetime.fromtimestamp(int(v), UTC),
+            )
+        },
     )
 
     result = schema.execute_sync("{ currentTime parseTime(value: 1628683200) }")
@@ -738,6 +737,70 @@ def test_scalar_map_combined_with_scalar_overrides():
     )
     assert not result.errors
     assert result.data == {"myInt": 10, "myFloat": 3.14}
+
+
+@pytest.mark.parametrize(
+    "schema_class", [strawberry.Schema, strawberry.federation.Schema]
+)
+def test_scalar_map_precedence_and_legacy_config(schema_class):
+    from typing import NewType
+
+    from strawberry.schema.config import StrawberryConfig
+
+    LegacyOnly = NewType("LegacyOnly", int)
+    OverrideOnly = NewType("OverrideOnly", int)
+    Preferred = NewType("Preferred", int)
+
+    @strawberry.type
+    class Query:
+        legacy: LegacyOnly = LegacyOnly(2)
+        overridden: OverrideOnly = OverrideOnly(3)
+
+        @strawberry.field
+        def echo(self, value: Preferred) -> Preferred:
+            return value + 1
+
+    legacy_map = {
+        type_: strawberry.scalar(
+            name=type_.__name__, serialize=lambda value: value * 10
+        )
+        for type_ in (LegacyOnly, OverrideOnly, Preferred)
+    }
+    overrides = {
+        type_: strawberry.scalar(
+            name=type_.__name__, serialize=lambda value: value * 20
+        )
+        for type_ in (OverrideOnly, Preferred)
+    }
+    original_legacy_map = legacy_map.copy()
+    original_overrides = overrides.copy()
+
+    preferred = strawberry.scalar(
+        name="Preferred",
+        serialize=lambda value: value * 3,
+        parse_value=lambda value: value + 1,
+    )
+
+    with pytest.warns(
+        DeprecationWarning,
+        match=r"StrawberryConfig.scalar_map is deprecated.*Schema\(scalar_map=",
+    ):
+        config = StrawberryConfig(scalar_map=legacy_map)
+
+    schema = schema_class(
+        Query,
+        config=config,
+        scalar_overrides=overrides,
+        scalar_map={Preferred: preferred},
+    )
+    result = schema.execute_sync(
+        "{ legacy overridden echo(value: 20) }", root_value=Query()
+    )
+
+    assert result.errors is None
+    assert result.data == {"legacy": 20, "overridden": 60, "echo": 66}
+    assert config.scalar_map == original_legacy_map
+    assert overrides == original_overrides
 
 
 def test_scalar_definition_direct_creation():

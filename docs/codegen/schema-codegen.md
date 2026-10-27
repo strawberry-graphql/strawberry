@@ -74,5 +74,5 @@ scalar's Python type, `serialize`, and `parse_value` as needed. Descriptions and
 `@specifiedBy` URLs are preserved, including for SDL fragments without a schema
 root: importing and using the generated alias carries its definition with it.
 Unknown names such as `JSONObject` keep their GraphQL name rather than silently
-being renamed to `JSON`. You can still use `StrawberryConfig.scalar_map` to
-override an imported alias for a particular schema.
+being renamed to `JSON`. You can still use `Schema(scalar_map=...)` to override
+an imported alias for a particular schema.

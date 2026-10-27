@@ -182,11 +182,10 @@ Python type checkers recognize it. At runtime, `Annotated` does not wrap values;
 
 ### Schema-wide registration and overrides
 
-Use `StrawberryConfig.scalar_map` when you want to support an existing Python
-type without changing annotations throughout your codebase. It also lets you
-replace built-ins: use `date` or `datetime` as the key for the corresponding
-Python type, or `strawberry.scalars.JSON` for the built-in JSON scalar (not
-`dict`).
+Use `Schema(scalar_map=...)` when you want to support an existing Python type
+without changing annotations throughout your codebase. It also lets you replace
+built-ins: use `date` or `datetime` as the key for the corresponding Python
+type, or `strawberry.scalars.JSON` for the built-in JSON scalar (not `dict`).
 
 An explicit mapping takes precedence over an annotated definition, which takes
 precedence over the built-in scalar. You can key a mapping by the exported
@@ -197,10 +196,18 @@ type. An override of `datetime` does not override a distinct `NewType` based on
 
 Standalone `strawberry.scalar(name=...)` definitions can be reused as metadata
 or mapping values. The existing `Schema(scalar_overrides=...)` parameter also
-continues to work; for the same key, it takes precedence over `scalar_map`. Two
+continues to work; for the same key, the new `scalar_map` takes precedence. Two
 incompatible scalar definitions with the same GraphQL name are an error. Give
 locally different representations different GraphQL names unless you intend a
 schema-wide override to unify them.
+
+`StrawberryConfig.scalar_map` is deprecated. Passing a non-empty map to
+`StrawberryConfig` emits a `DeprecationWarning`; move that mapping directly to
+`Schema(scalar_map=...)` instead. The config map still works for compatibility.
+When the same key appears in multiple places, the order is `Schema.scalar_map`,
+then `Schema.scalar_overrides`, then the config map. Other `StrawberryConfig`
+options are unchanged. The direct parameter is also available on
+`strawberry.federation.Schema`.
 
 <Note>
 
@@ -266,7 +273,6 @@ from io import BytesIO
 from PIL import Image
 
 import strawberry
-from strawberry.schema.config import StrawberryConfig
 
 
 @strawberry.type
@@ -279,18 +285,14 @@ class Query:
 
 schema = strawberry.Schema(
     Query,
-    config=StrawberryConfig(
-        scalar_map={
-            Image.Image: strawberry.scalar(
-                name="Image",
-                description="A Pillow Image, serialized as base64-encoded PNG",
-                serialize=lambda img: base64.b64encode(img.tobytes("png")).decode(
-                    "utf-8"
-                ),
-                parse_value=lambda v: Image.open(BytesIO(base64.b64decode(v))),
-            )
-        }
-    ),
+    scalar_map={
+        Image.Image: strawberry.scalar(
+            name="Image",
+            description="A Pillow Image, serialized as base64-encoded PNG",
+            serialize=lambda img: base64.b64encode(img.tobytes("png")).decode("utf-8"),
+            parse_value=lambda v: Image.open(BytesIO(base64.b64decode(v))),
+        )
+    },
 )
 ```
 
@@ -401,7 +403,7 @@ from strawberry.scalars import JSON
 ## Overriding built-in scalars
 
 To override the behaviour of the built-in scalars, you can pass a `scalar_map`
-in your schema config.
+directly to your schema.
 
 Here is a full example of replacing the built-in `DateTime` scalar with one that
 serializes all datetimes as Unix timestamps:
@@ -409,7 +411,6 @@ serializes all datetimes as Unix timestamps:
 ```python
 from datetime import datetime, timezone
 import strawberry
-from strawberry.schema.config import StrawberryConfig
 
 
 @strawberry.type
@@ -421,17 +422,13 @@ class Query:
 
 schema = strawberry.Schema(
     Query,
-    config=StrawberryConfig(
-        scalar_map={
-            datetime: strawberry.scalar(
-                name="DateTime",
-                serialize=lambda value: int(value.timestamp()),
-                parse_value=lambda value: datetime.fromtimestamp(
-                    int(value), timezone.utc
-                ),
-            ),
-        }
-    ),
+    scalar_map={
+        datetime: strawberry.scalar(
+            name="DateTime",
+            serialize=lambda value: int(value.timestamp()),
+            parse_value=lambda value: datetime.fromtimestamp(int(value), timezone.utc),
+        ),
+    },
 )
 result = schema.execute_sync("{ currentTime }")
 assert result.data == {"currentTime": 1628683200}
@@ -452,7 +449,6 @@ from datetime import datetime
 from typing import Union
 
 import strawberry
-from strawberry.schema.config import StrawberryConfig
 
 
 def serialize_datetime(dt: Union[pendulum.DateTime, datetime]) -> str:  # type: ignore
@@ -468,16 +464,14 @@ def parse_datetime(value: str) -> Union[pendulum.DateTime, datetime]:  # type: i
 
 schema = strawberry.Schema(
     Query,
-    config=StrawberryConfig(
-        scalar_map={
-            datetime: strawberry.scalar(
-                name="DateTime",
-                description="A date and time",
-                serialize=serialize_datetime,
-                parse_value=parse_datetime,
-            ),
-        }
-    ),
+    scalar_map={
+        datetime: strawberry.scalar(
+            name="DateTime",
+            description="A date and time",
+            serialize=serialize_datetime,
+            parse_value=parse_datetime,
+        ),
+    },
 )
 ```
 
@@ -528,19 +522,15 @@ adding `int` to the `scalar_map`:
 </Tip>
 
 ```python
-from strawberry.schema.config import StrawberryConfig
-
 schema = strawberry.Schema(
     query=Query,
-    config=StrawberryConfig(
-        scalar_map={
-            int: strawberry.scalar(
-                name="BigInt",
-                description="BigInt field",
-                serialize=str,
-                parse_value=int,
-            ),
-        }
-    ),
+    scalar_map={
+        int: strawberry.scalar(
+            name="BigInt",
+            description="BigInt field",
+            serialize=str,
+            parse_value=int,
+        ),
+    },
 )
 ```

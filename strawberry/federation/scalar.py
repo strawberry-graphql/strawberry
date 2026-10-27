@@ -27,8 +27,8 @@ def scalar(
 ) -> ScalarDefinition:
     """Creates a GraphQL custom scalar definition with federation support.
 
-    Returns a `ScalarDefinition` for use in `StrawberryConfig.scalar_map`
-    or `Schema(scalar_overrides=...)`.
+    Returns a `ScalarDefinition` for use as `Annotated` metadata or in
+    `Schema(scalar_map=...)`.
 
     Args:
         name: The GraphQL name of the scalar.
@@ -50,26 +50,32 @@ def scalar(
     Example usage:
 
     ```python
+    import base64
     from typing import NewType
+
     import strawberry
-    from strawberry.schema.config import StrawberryConfig
+    import strawberry.federation
 
     # Define the type
     Base64 = NewType("Base64", bytes)
 
+
+    @strawberry.type
+    class Query:
+        encoded: Base64
+
+
     # Configure the scalar with federation directives
     schema = strawberry.federation.Schema(
         query=Query,
-        config=StrawberryConfig(
-            scalar_map={
-                Base64: strawberry.federation.scalar(
-                    name="Base64",
-                    serialize=lambda v: base64.b64encode(v).decode(),
-                    parse_value=lambda v: base64.b64decode(v),
-                    authenticated=True,
-                )
-            }
-        ),
+        scalar_map={
+            Base64: strawberry.federation.scalar(
+                name="Base64",
+                serialize=lambda v: base64.b64encode(v).decode(),
+                parse_value=lambda v: base64.b64decode(v),
+                authenticated=True,
+            )
+        },
     )
     ```
     """

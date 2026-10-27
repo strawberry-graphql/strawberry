@@ -19,7 +19,6 @@ from strawberry.codegen.exceptions import (
 )
 from strawberry.codegen.plugins.python import PythonPlugin
 from strawberry.codegen.plugins.typescript import TypeScriptPlugin
-from strawberry.schema.config import StrawberryConfig
 
 HERE = Path(__file__).parent
 QUERIES = list(HERE.glob("queries/*.graphql"))
@@ -126,9 +125,7 @@ def test_annotated_scalar_codegen(plugin_class, override, tmp_path):
     name = "MappedCount" if override else "Count"
     schema = strawberry.Schema(
         Query,
-        config=StrawberryConfig(
-            scalar_map={Count: strawberry.scalar(name=name)} if override else {}
-        ),
+        scalar_map={Count: strawberry.scalar(name=name)} if override else {},
     )
     generator = QueryCodegen(schema, plugins=[plugin_class(tmp_path / "query.graphql")])
     code = generator.run(

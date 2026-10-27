@@ -78,6 +78,8 @@ class Schema(BaseSchema):
             "2.11",
         ] = "2.11",
         exception_handlers: Iterable["ExceptionHandler[Any]"] = (),
+        *,
+        scalar_map: Mapping[object, ScalarDefinition] | None = None,
     ) -> None:
         # Convert version string (e.g., "2.5") to version tuple (e.g., (2, 5))
         self.federation_version = parse_version(federation_version)
@@ -115,6 +117,7 @@ class Schema(BaseSchema):
             scalar_overrides=federation_scalar_overrides,
             schema_directives=schema_directives,
             exception_handlers=exception_handlers,
+            scalar_map=scalar_map,
         )
 
     def _get_federation_query_type(

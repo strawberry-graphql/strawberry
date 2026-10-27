@@ -1739,15 +1739,14 @@ type Query {
 
 Pydantic BaseModels may define a custom type with
 [`__get_validators__`](https://pydantic-docs.helpmanual.io/usage/types/#classes-with-__get_validators__)
-logic. To keep using that existing type in model annotations, add a scalar
-definition to `scalar_map` in `StrawberryConfig`. Alternatively, define an
-annotated scalar alias as shown in [Scalars](#scalars) and use that alias in
-your model annotations.
+logic. To keep using that existing type in model annotations, pass a scalar
+definition in `Schema(scalar_map=...)`. Alternatively, define an annotated
+scalar alias as shown in [Scalars](#scalars) and use that alias in your model
+annotations.
 
 ```python
 import strawberry
 from pydantic import BaseModel
-from strawberry.schema.config import StrawberryConfig
 
 
 class MyCustomType:
@@ -1777,15 +1776,13 @@ class Query:
 
 schema = strawberry.Schema(
     query=Query,
-    config=StrawberryConfig(
-        scalar_map={
-            MyCustomType: strawberry.scalar(
-                name="MyScalarType",
-                serialize=str,
-                parse_value=lambda v: MyCustomType(),
-            )
-        }
-    ),
+    scalar_map={
+        MyCustomType: strawberry.scalar(
+            name="MyScalarType",
+            serialize=str,
+            parse_value=lambda v: MyCustomType(),
+        )
+    },
 )
 ```
 

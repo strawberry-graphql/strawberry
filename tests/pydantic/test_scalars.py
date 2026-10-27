@@ -177,7 +177,7 @@ def test_custom_scalar_new_types(annotated):
 
     schema = strawberry.Schema(
         query=Query,
-        config=StrawberryConfig(scalar_map={} if annotated else {Money: definition}),
+        scalar_map={} if annotated else {Money: definition},
     )
 
     assert "price: Money!" in str(schema)

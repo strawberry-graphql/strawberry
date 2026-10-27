@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import warnings
 from dataclasses import InitVar, dataclass, field
 from typing import TYPE_CHECKING, Any, TypedDict
 
@@ -30,9 +31,8 @@ class StrawberryConfig:
         disable_field_suggestions: Disable field suggestions in error messages.
         info_class: Custom Info class to use.
         enable_experimental_incremental_execution: Enable @defer/@stream support.
-        scalar_map: A mapping of types to their scalar definitions. This allows
-            any type (including NewType) to be used as a GraphQL scalar with
-            proper type checking support.
+        scalar_map: Deprecated. Pass the mapping directly to
+            `Schema(scalar_map=...)` instead.
         batching_config: Configuration for operation batching.
     """
 
@@ -52,6 +52,14 @@ class StrawberryConfig:
         self,
         auto_camel_case: bool,
     ) -> None:
+        if self.scalar_map:
+            warnings.warn(
+                "StrawberryConfig.scalar_map is deprecated. "
+                "Pass the mapping to Schema(scalar_map=...) instead.",
+                DeprecationWarning,
+                stacklevel=3,
+            )
+
         if auto_camel_case is not None:
             self.name_converter.auto_camel_case = auto_camel_case
 

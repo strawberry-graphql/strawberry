@@ -227,8 +227,11 @@ async def test_annotated_scalar_inputs_and_outputs(federation, variables):
 
 
 @pytest.mark.parametrize("key", [EpochDateTime, _EpochDateTime])
-@pytest.mark.parametrize("legacy_overrides", [False, True])
-def test_annotated_scalar_schema_overrides(key, legacy_overrides):
+@pytest.mark.parametrize("parameter", ["scalar_overrides", "scalar_map"])
+@pytest.mark.parametrize(
+    "schema_class", [strawberry.Schema, strawberry.federation.Schema]
+)
+def test_annotated_scalar_schema_overrides(key, parameter, schema_class):
     @strawberry.type
     class Query:
         @strawberry.field
@@ -241,13 +244,7 @@ def test_annotated_scalar_schema_overrides(key, legacy_overrides):
         serialize=lambda value: value * 3,
         parse_value=lambda value: value + 1,
     )
-    config = StrawberryConfig(scalar_map={key: definition})
-    kwargs = {}
-    if legacy_overrides:
-        # scalar_overrides retains precedence over config.scalar_map.
-        config.scalar_map = {key: strawberry.scalar(name="Wrong")}
-        kwargs["scalar_overrides"] = {key: definition}
-    schema = strawberry.Schema(Query, config=config, **kwargs)
+    schema = schema_class(Query, **{parameter: {key: definition}})
     result = schema.execute_sync("{ echo(value: 20) }")
     assert result.errors is None
     assert result.data == {"echo": 66}

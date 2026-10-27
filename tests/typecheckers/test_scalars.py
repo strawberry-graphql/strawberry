@@ -37,7 +37,7 @@ def test_annotated_custom_scalar():
 from datetime import datetime
 from typing import Annotated, NewType
 import strawberry
-from strawberry.schema.config import StrawberryConfig
+import strawberry.federation
 
 EpochValue = NewType("EpochValue", datetime)
 EpochDateTime = Annotated[
@@ -50,9 +50,12 @@ class Query:
     created: EpochDateTime
 
 query = Query(created=EpochValue(datetime(2020, 1, 2)))
-schema = strawberry.Schema(Query, config=StrawberryConfig(scalar_map={
+schema = strawberry.Schema(Query, scalar_map={
     EpochDateTime: strawberry.scalar(name="EpochDateTime"),
-}))
+})
+federation_schema = strawberry.federation.Schema(Query, scalar_map={
+    EpochDateTime: strawberry.scalar(name="EpochDateTime"),
+})
 reveal_type(query.created)
 """
     )

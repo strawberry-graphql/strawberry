@@ -9,10 +9,17 @@ wrapper pattern and `ScalarWrapper`, deprecated since
 
 The decorator form is also removed. Custom scalars must have an explicit name.
 Use `Annotated[PythonType, strawberry.scalar(name=..., ...)]` for a self-contained
-scalar, or keep `StrawberryConfig.scalar_map` for existing Python types and
+scalar, or use `Schema(scalar_map=...)` for existing Python types and
 schema-wide overrides. Explicit mappings take precedence over annotated
 definitions, which take precedence over built-ins. Mappings can target either
 the annotated alias or its underlying Python type; alias-specific mappings win.
+
+`Schema(scalar_map=...)` is also available on `strawberry.federation.Schema`.
+`StrawberryConfig.scalar_map` is deprecated: passing a non-empty map now emits
+a `DeprecationWarning`, but existing mappings continue to work. Move the map
+directly to the schema constructor. For the same key, the new `scalar_map`
+parameter takes precedence over `scalar_overrides`, which still takes precedence
+over the config map. Other `StrawberryConfig` options are unchanged.
 
 Schema code generation now emits annotated aliases, imports JSON from
 `strawberry.scalars`, and preserves scalar metadata even when generating SDL
@@ -65,7 +72,7 @@ schema = strawberry.Schema(query=Query)
 ```
 
 Declare the `NewType` separately so type checkers recognize it. Use
-`scalar_map={datetime: definition}` to support existing `datetime` annotations
-without updating them, or `scalar_map={EpochDateTime: definition}` to override
+`Schema(scalar_map={datetime: definition})` to support existing `datetime` annotations
+without updating them, or `Schema(scalar_map={EpochDateTime: definition})` to override
 only this alias. For built-in JSON overrides, use `strawberry.scalars.JSON` as
 the mapping key.

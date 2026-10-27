@@ -73,7 +73,7 @@ def scalar(
     """Creates a GraphQL custom scalar definition.
 
     Returns a `ScalarDefinition` for use as `Annotated` metadata, in
-    `StrawberryConfig.scalar_map` or in `Schema(scalar_overrides=...)`.
+    `Schema(scalar_map=...)` or in `Schema(scalar_overrides=...)`.
 
     Args:
         name: The GraphQL name of the scalar.
