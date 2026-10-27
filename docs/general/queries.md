@@ -124,17 +124,19 @@ class Query:
 
 ### Argument Types
 
-As with fields, `strawberry.argument` supports specifying a `graphql_type` for
-cases when the argument type of the function does not match the GraphQL type.
-This can be useful for static typing, as custom scalars are not valid type
-annotations.
+Custom scalars defined with `Annotated` can be used directly as argument types,
+with support for Python type checkers and no scalar map required:
 
 ```python
 import strawberry
-from typing import Annotated, NewType
-from strawberry.schema.config import StrawberryConfig
+from typing import Annotated
 
-BigInt = NewType("BigInt", int)
+BigInt = Annotated[
+    int,
+    strawberry.scalar(
+        name="BigInt", serialize=lambda v: str(v), parse_value=lambda v: int(v)
+    ),
+]
 
 
 @strawberry.type
@@ -142,20 +144,18 @@ class Query:
     @strawberry.field
     def users(
         self,
-        ids: Annotated[list[int], strawberry.argument(graphql_type=list[BigInt])],
+        ids: list[BigInt],
     ) -> list[User]: ...
 
 
-schema = strawberry.Schema(
-    query=Query,
-    config=StrawberryConfig(
-        scalar_map={
-            BigInt: strawberry.scalar(
-                name="BigInt",
-                serialize=lambda v: str(v),
-                parse_value=lambda v: int(v),
-            )
-        }
-    ),
-)
+schema = strawberry.Schema(query=Query)
+```
+
+As with fields, `strawberry.argument` also supports specifying a `graphql_type`
+when the resolver deliberately uses a different Python annotation. For example,
+to keep the resolver's argument annotated as `list[int]` while exposing
+`[BigInt!]!` in GraphQL, use:
+
+```python
+ids: Annotated[list[int], strawberry.argument(graphql_type=list[BigInt])]
 ```
