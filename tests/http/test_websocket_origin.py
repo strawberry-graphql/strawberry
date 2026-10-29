@@ -18,9 +18,14 @@ from strawberry.http.websocket_origin import (
         ("http://example.com:443", "http://example.com:443"),
         ("http://localhost:5173", "http://localhost:5173"),
         ("http://[::1]:8000", "http://[::1]:8000"),
+        ("http://[::1]:80", "http://[::1]"),
+        ("null", None),
+        ("https://[", None),
+        ("https://example.com:99999", None),
+        ("example.com", None),
     ],
 )
-def test_normalize_origin(origin: str, expected: str):
+def test_normalize_origin(origin: str, expected: str | None):
     assert normalize_origin(origin) == expected
 
 
@@ -39,6 +44,10 @@ def test_normalize_allowed_origins():
         "https://example.com?x=1",
         "https://example.com#x",
         "*.example.com",
+        "https://[",
+        "https://example.com:abc",
+        "https://user@example.com",
+        "null",
     ],
 )
 def test_normalize_allowed_origins_rejects_invalid_origins(origin: str):
@@ -65,6 +74,17 @@ def test_normalize_allowed_origins_rejects_a_bare_string():
         ("null", "example.com", False),
         ("https://example.com", None, False),
         ("https://example.com", "", False),
+        # Explicit default ports match ones the browser leaves out
+        ("https://example.com", "example.com:443", True),
+        ("http://example.com", "example.com:80", True),
+        ("https://example.com:443", "example.com", True),
+        ("https://example.com", "example.com:8443", False),
+        ("https://example.com:8443", "example.com", False),
+        ("http://[::1]:8000", "[::1]:8000", True),
+        # Malformed values never match, and never raise
+        ("https://[", "example.com", False),
+        ("https://example.com", "example.com:abc", False),
+        ("https://example.com", "[", False),
     ],
 )
 def test_is_same_origin(origin: str, host: str | None, expected: bool):

@@ -199,9 +199,12 @@ class AsyncBaseHTTPView(
         subdomain. Allowing an origin lets pages on it act with the user's
         cookies, so only allow origins you trust.
         """
-        return (
-            "*" in self.allowed_origins
-            or normalize_origin(origin) in self.allowed_origins
+        if "*" in self.allowed_origins:
+            return True
+
+        normalized_origin = normalize_origin(origin)
+        return normalized_origin is not None and (
+            normalized_origin in self.allowed_origins
         )
 
     def _check_websocket_origin(self, request: WebSocketRequest) -> bool:

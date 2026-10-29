@@ -81,6 +81,19 @@ async def test_rejects_null_origin(http_client: HttpClient):
     await assert_rejected(http_client, headers={"host": API_HOST, "origin": "null"})
 
 
+async def test_rejects_malformed_origin(http_client: HttpClient):
+    await assert_rejected(
+        http_client, headers={"host": API_HOST, "origin": "https://["}
+    )
+
+
+async def test_allows_same_origin_with_explicit_default_port(http_client: HttpClient):
+    await assert_connects(
+        http_client,
+        headers={"host": f"{API_HOST}:443", "origin": f"https://{API_HOST}"},
+    )
+
+
 async def test_allowed_origins(http_client_class: type[HttpClient]):
     http_client = http_client_class(
         schema, allowed_origins=["https://App.example.com:443"]

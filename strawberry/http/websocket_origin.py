@@ -14,24 +14,44 @@ from urllib.parse import urlsplit
 if TYPE_CHECKING:
     from collections.abc import Iterable
 
-_DEFAULT_PORTS = {"http": ":80", "https": ":443"}
+_DEFAULT_PORTS = {"http": 80, "https": 443}
 
 
-def normalize_origin(origin: str) -> str:
+def _format_host(hostname: str) -> str:
+    # `urlsplit` strips the brackets around IPv6 addresses
+    return f"[{hostname}]" if ":" in hostname else hostname
+
+
+def normalize_origin(origin: str) -> str | None:
     """Return ``origin`` in the form browsers send it in the ``Origin`` header.
 
     Browsers send the scheme and host in lowercase and leave out default ports,
-    so ``"https://Example.com:443"`` becomes ``"https://example.com"``.
+    so ``"https://Example.com:443"`` becomes ``"https://example.com"``. Returns
+    ``None`` for values that aren't origins, such as ``"null"`` or ``"https://["``.
     """
-    parts = urlsplit(origin.strip())
+    try:
+        parts = urlsplit(origin.strip())
+        port = parts.port
+    except ValueError:
+        return None
+
+    if not parts.scheme or not parts.hostname:
+        return None
+
     scheme = parts.scheme.lower()
-    netloc = parts.netloc.lower()
+    host = _format_host(parts.hostname)
 
-    default_port = _DEFAULT_PORTS.get(scheme)
-    if default_port and netloc.endswith(default_port):
-        netloc = netloc.removesuffix(default_port)
+    if port is not None and port != _DEFAULT_PORTS.get(scheme):
+        host = f"{host}:{port}"
 
-    return f"{scheme}://{netloc}"
+    return f"{scheme}://{host}"
+
+
+def _has_more_than_an_origin(url: str) -> bool:
+    parts = urlsplit(url.strip())
+    return bool(
+        parts.path not in ("", "/") or parts.query or parts.fragment or parts.username
+    )
 
 
 def normalize_allowed_origins(allowed_origins: Iterable[str]) -> frozenset[str]:
@@ -49,21 +69,16 @@ def normalize_allowed_origins(allowed_origins: Iterable[str]) -> frozenset[str]:
             normalized.add(origin)
             continue
 
-        parts = urlsplit(origin)
-        if (
-            not parts.scheme
-            or not parts.netloc
-            or parts.path not in ("", "/")
-            or parts.query
-            or parts.fragment
-        ):
+        normalized_origin = normalize_origin(origin)
+
+        if normalized_origin is None or _has_more_than_an_origin(origin):
             raise ValueError(
                 f"Invalid origin {origin!r} in allowed_origins. Expected '*' or "
                 "an origin like 'https://example.com' (scheme, host and optional "
                 "port, without a path)."
             )
 
-        normalized.add(normalize_origin(origin))
+        normalized.add(normalized_origin)
 
     return frozenset(normalized)
 
@@ -73,13 +88,27 @@ def is_same_origin(origin: str, host: str | None) -> bool:
 
     Like gorilla/websocket and Tornado, this compares the host and port only, so
     TLS terminated at a proxy (an ``https`` page reaching the app over ``http``)
-    still counts as the same origin.
+    still counts as the same origin. Ports left out on either side are the
+    default port for the origin's scheme, so ``Host: example.com:443`` matches
+    ``Origin: https://example.com``.
     """
     if not host:
         return False
 
-    netloc = urlsplit(origin).netloc
-    return bool(netloc) and netloc.lower() == host.strip().lower()
+    try:
+        origin_parts = urlsplit(origin)
+        host_parts = urlsplit(f"//{host.strip()}")
+        default_port = _DEFAULT_PORTS.get(origin_parts.scheme.lower())
+        origin_port = origin_parts.port or default_port
+        host_port = host_parts.port or default_port
+    except ValueError:
+        return False
+
+    return (
+        origin_parts.hostname is not None
+        and origin_parts.hostname == host_parts.hostname
+        and origin_port == host_port
+    )
 
 
 __all__ = ["is_same_origin", "normalize_allowed_origins", "normalize_origin"]

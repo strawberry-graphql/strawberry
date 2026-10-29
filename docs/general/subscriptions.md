@@ -218,10 +218,18 @@ send automatically, for example because clients authenticate with a token in
 
 </Warning>
 
-If Strawberry sits behind a reverse proxy that rewrites the `Host` header,
-same-origin requests are still recognized through the `Sec-Fetch-Site` header
-that browsers send. Configuring the proxy to forward the original `Host` header
-works for older browsers too.
+Same-origin requests are recognized by comparing the `Origin` header with the
+`Host` header. A proxy that rewrites `Host` breaks that comparison, so configure
+it to forward the original `Host` header (for example
+`proxy_set_header Host $host;` in Nginx), or list the origin in
+`allowed_origins`. Firefox and Safari also send a `Sec-Fetch-Site` header that
+Strawberry uses to recognize same-origin requests in this case, but Chrome
+doesn't send it on WebSocket connections.
+
+This also applies to development server proxies. Vite's `server.proxy` with
+`changeOrigin: true`, for example, makes requests from `http://localhost:5173`
+arrive with the `Host` of your GraphQL server, so add the development server's
+origin to `allowed_origins`.
 
 ## Using SSE Subscriptions
 
