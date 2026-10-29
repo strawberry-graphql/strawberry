@@ -9,8 +9,12 @@ from typing import Any, Literal
 
 from starlette.requests import Request
 from starlette.responses import Response as StarletteResponse
-from starlette.testclient import TestClient, WebSocketTestSession
-from starlette.websockets import WebSocket
+from starlette.testclient import (
+    TestClient,
+    WebSocketDenialResponse,
+    WebSocketTestSession,
+)
+from starlette.websockets import WebSocket, WebSocketDisconnect
 
 from strawberry.asgi import GraphQL as BaseGraphQLView
 from strawberry.http import GraphQLHTTPResponse
@@ -34,6 +38,7 @@ from .base import (
     Response,
     ResultOverrideFunction,
     WebSocketClient,
+    WebSocketRejectedError,
 )
 
 
@@ -79,6 +84,7 @@ class AsgiHttpClient(HttpClient):
         result_override: ResultOverrideFunction = None,
         multipart_uploads_enabled: bool = False,
         max_subscriptions_per_connection: int | None = 100,
+        allowed_origins: Sequence[str] = (),
     ):
         view = GraphQLView(
             schema,
@@ -90,6 +96,7 @@ class AsgiHttpClient(HttpClient):
             connection_init_wait_timeout=connection_init_wait_timeout,
             multipart_uploads_enabled=multipart_uploads_enabled,
             max_subscriptions_per_connection=max_subscriptions_per_connection,
+            allowed_origins=allowed_origins,
         )
         view.result_override = result_override
 
@@ -180,8 +187,18 @@ class AsgiHttpClient(HttpClient):
         url: str,
         *,
         protocols: list[str],
+        headers: dict[str, str] | None = None,
     ) -> AsyncGenerator[WebSocketClient, None]:
-        with self.client.websocket_connect(url, protocols) as ws:
+        with contextlib.ExitStack() as stack:
+            try:
+                ws = stack.enter_context(
+                    self.client.websocket_connect(
+                        url, protocols, headers=dict(headers or {})
+                    )
+                )
+            except (WebSocketDisconnect, WebSocketDenialResponse) as e:
+                raise WebSocketRejectedError from e
+
             yield AsgiWebSocketClient(ws)
 
 

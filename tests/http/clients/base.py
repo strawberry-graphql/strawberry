@@ -264,8 +264,14 @@ class HttpClient(abc.ABC):
         url: str,
         *,
         protocols: list[str],
+        headers: dict[str, str] | None = None,
     ) -> contextlib.AbstractAsyncContextManager["WebSocketClient"]:
+        """Open a WebSocket, raising `WebSocketRejectedError` if refused."""
         raise NotImplementedError
+
+
+class WebSocketRejectedError(Exception):
+    """The server refused the WebSocket handshake."""
 
 
 @dataclass
