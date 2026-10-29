@@ -72,8 +72,8 @@ def scalar(
 ) -> ScalarDefinition:
     """Creates a GraphQL custom scalar definition.
 
-    Returns a `ScalarDefinition` for use as `Annotated` metadata, in
-    `Schema(scalar_map=...)` or in `Schema(scalar_overrides=...)`.
+    Returns a `ScalarDefinition` for use as `Annotated` metadata or in
+    `Schema(scalar_map=...)`.
 
     Args:
         name: The GraphQL name of the scalar.

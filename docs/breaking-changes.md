@@ -4,6 +4,7 @@ title: List of breaking changes and deprecations
 
 # List of breaking changes and deprecations
 
+- [Version 0.340.0 - Unreleased](./breaking-changes/0.340.0.md)
 - [Version 0.339.0 - 29 October 2026](./breaking-changes/0.339.0.md)
 - [Version 0.338.0 - 26 October 2026](./breaking-changes/0.338.0.md)
 - [Version 0.328.0 - 28 September 2026](./breaking-changes/0.328.0.md)

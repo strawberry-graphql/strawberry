@@ -787,12 +787,17 @@ def test_scalar_map_precedence_and_legacy_config(schema_class):
     ):
         config = StrawberryConfig(scalar_map=legacy_map)
 
-    schema = schema_class(
-        Query,
-        config=config,
-        scalar_overrides=overrides,
-        scalar_map={Preferred: preferred},
-    )
+    with pytest.warns(
+        DeprecationWarning,
+        match=r"Schema\(scalar_overrides=.*Schema\(scalar_map=",
+    ) as caught:
+        schema = schema_class(
+            Query,
+            config=config,
+            scalar_overrides=overrides,
+            scalar_map={Preferred: preferred},
+        )
+    assert len(caught) == 1
     result = schema.execute_sync(
         "{ legacy overridden echo(value: 20) }", root_value=Query()
     )

@@ -244,7 +244,13 @@ def test_annotated_scalar_schema_overrides(key, parameter, schema_class):
         serialize=lambda value: value * 3,
         parse_value=lambda value: value + 1,
     )
-    schema = schema_class(Query, **{parameter: {key: definition}})
+    scalar_map = {key: definition}
+    if key is EpochDateTime:
+        scalar_map[_EpochDateTime] = strawberry.scalar(
+            name="Underlying", serialize=lambda value: -1, parse_value=lambda value: 0
+        )
+
+    schema = schema_class(Query, **{parameter: scalar_map})
     result = schema.execute_sync("{ echo(value: 20) }")
     assert result.errors is None
     assert result.data == {"echo": 66}

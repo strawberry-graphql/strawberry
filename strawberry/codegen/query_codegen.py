@@ -589,7 +589,6 @@ class QueryCodegen:
             scalar_definition := get_scalar_definition(
                 field_type,
                 self.schema.schema_converter.scalar_registry,
-                scalar_overrides=self.schema.schema_converter.scalar_overrides,
             )
         ):
             # Store the original Python type (could be a type or NewType)

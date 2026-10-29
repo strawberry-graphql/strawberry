@@ -21,6 +21,10 @@ directly to the schema constructor. For the same key, the new `scalar_map`
 parameter takes precedence over `scalar_overrides`, which still takes precedence
 over the config map. Other `StrawberryConfig` options are unchanged.
 
+`Schema(scalar_overrides=...)` is also deprecated and emits a `DeprecationWarning`
+when supplied. Rename that argument to `scalar_map`; existing overrides continue
+to work. `scalar_map` is the single recommended registration and override API.
+
 Schema code generation now emits annotated aliases, imports JSON from
 `strawberry.scalars`, and preserves scalar metadata even when generating SDL
 fragments without a schema root.
@@ -28,6 +32,9 @@ fragments without a schema root.
 You can run `strawberry upgrade replace-scalar-wrappers <path>` to automatically replace built-in scalar wrapper imports.
 
 ### Migration guide
+
+See the [breaking-change guide](https://strawberry.rocks/docs/breaking-changes/0.340.0)
+for scalar-wrapper and config-map migrations.
 
 **Before (deprecated):**
 ```python

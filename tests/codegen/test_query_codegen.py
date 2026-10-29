@@ -110,7 +110,7 @@ def test_nested_fragment_spread_does_not_depend_on_definition_order(
     assert "PersonFields" in inner_last
 
 
-@pytest.mark.parametrize("override", [False, True])
+@pytest.mark.parametrize("override", [None, "alias", "underlying"])
 @pytest.mark.parametrize("plugin_class", [PythonPlugin, TypeScriptPlugin])
 def test_annotated_scalar_codegen(plugin_class, override, tmp_path):
     Value = NewType("Value", int)
@@ -123,9 +123,10 @@ def test_annotated_scalar_codegen(plugin_class, override, tmp_path):
             return [count, None]  # pragma: no cover
 
     name = "MappedCount" if override else "Count"
+    key = Value if override == "underlying" else Count
     schema = strawberry.Schema(
         Query,
-        scalar_map={Count: strawberry.scalar(name=name)} if override else {},
+        scalar_map={key: strawberry.scalar(name=name)} if override else {},
     )
     generator = QueryCodegen(schema, plugins=[plugin_class(tmp_path / "query.graphql")])
     code = generator.run(

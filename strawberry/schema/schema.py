@@ -343,7 +343,7 @@ class Schema(BaseSchema):
             extensions: A list of Strawberry extensions.
             execution_context_class: The execution context class.
             config: The configuration for the schema.
-            scalar_overrides: A dictionary of overrides for scalars.
+            scalar_overrides: Deprecated. Use scalar_map instead.
             schema_directives: A list of schema directives for the schema.
             exception_handlers: A list of handlers that can convert Python
                 exceptions into explicit GraphQL union return values.
@@ -391,15 +391,23 @@ class Schema(BaseSchema):
         self.config = config or StrawberryConfig()
         self.exception_handlers = tuple(exception_handlers)
 
-        scalar_overrides = {
-            **(scalar_overrides or {}),
+        if scalar_overrides is not None:
+            warnings.warn(
+                "Schema(scalar_overrides=...) is deprecated. "
+                "Use Schema(scalar_map=...) instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+
+        scalar_map = {
+            **self.config.scalar_map,
+            **cast("Mapping[object, ScalarDefinition]", scalar_overrides or {}),
             **(scalar_map or {}),
         }
 
         self.schema_converter = GraphQLCoreConverter(
             self.config,
-            scalar_overrides=scalar_overrides,  # type: ignore
-            scalar_map=self.config.scalar_map,
+            scalar_map=scalar_map,
             get_fields=self.get_fields,
             exception_handlers=self.exception_handlers,
         )

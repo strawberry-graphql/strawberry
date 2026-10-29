@@ -1,3 +1,4 @@
+import warnings
 from collections import defaultdict
 from collections.abc import Callable, Iterable, Mapping
 from typing import (
@@ -93,17 +94,25 @@ class Schema(BaseSchema):
         # Add FederationAny to types so it appears in the schema
         types = [*types, FederationAny]
 
+        if scalar_overrides is not None:
+            warnings.warn(
+                "Schema(scalar_overrides=...) is deprecated. "
+                "Use Schema(scalar_map=...) instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+
         # _Any belongs to Federation's entity resolver rather than a directive,
         # so this schema installs its scalar mapping. Directive support types
         # such as _FieldSet carry their definitions on the annotations themselves;
         # that lets both Schema classes register attached Federation directives.
-        federation_scalar_overrides: dict[object, type | ScalarDefinition] = {
+        federation_scalar_map = {
             FederationAny: scalar(
                 name="_Any", serialize=lambda v: v, parse_value=lambda v: v
             ),
+            **cast("Mapping[object, ScalarDefinition]", scalar_overrides or {}),
+            **(scalar_map or {}),
         }
-        if scalar_overrides:
-            federation_scalar_overrides.update(scalar_overrides)
 
         super().__init__(
             query=query,
@@ -114,10 +123,9 @@ class Schema(BaseSchema):
             extensions=extensions,
             execution_context_class=execution_context_class,
             config=config,
-            scalar_overrides=federation_scalar_overrides,
             schema_directives=schema_directives,
             exception_handlers=exception_handlers,
-            scalar_map=scalar_map,
+            scalar_map=federation_scalar_map,
         )
 
     def _get_federation_query_type(

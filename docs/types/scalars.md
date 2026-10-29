@@ -195,19 +195,21 @@ type. An override of `datetime` does not override a distinct `NewType` based on
 `datetime`. If both alias and underlying-type mappings exist, the alias wins.
 
 Standalone `strawberry.scalar(name=...)` definitions can be reused as metadata
-or mapping values. The existing `Schema(scalar_overrides=...)` parameter also
-continues to work; for the same key, the new `scalar_map` takes precedence. Two
-incompatible scalar definitions with the same GraphQL name are an error. Give
-locally different representations different GraphQL names unless you intend a
-schema-wide override to unify them.
+or mapping values. The old `Schema(scalar_overrides=...)` parameter is
+deprecated; use `Schema(scalar_map=...)` instead. Two incompatible scalar
+definitions with the same GraphQL name are an error. Give locally different
+representations different GraphQL names unless you intend a schema-wide override
+to unify them.
 
 `StrawberryConfig.scalar_map` is deprecated. Passing a non-empty map to
 `StrawberryConfig` emits a `DeprecationWarning`; move that mapping directly to
 `Schema(scalar_map=...)` instead. The config map still works for compatibility.
-When the same key appears in multiple places, the order is `Schema.scalar_map`,
-then `Schema.scalar_overrides`, then the config map. Other `StrawberryConfig`
-options are unchanged. The direct parameter is also available on
-`strawberry.federation.Schema`.
+Passing `scalar_overrides` also emits a `DeprecationWarning`, including when the
+supplied map is empty. Both old entry points are still supported during
+migration. When the same key appears in multiple places, the order is
+`Schema.scalar_map`, then `Schema.scalar_overrides`, then the config map. Other
+`StrawberryConfig` options are unchanged. The direct parameter is also available
+on `strawberry.federation.Schema`.
 
 <Note>
 

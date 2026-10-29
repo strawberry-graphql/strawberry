@@ -27,8 +27,6 @@ Base64 = NewType("Base64", bytes)
 def get_scalar_definition(
     annotation: Any,
     scalar_registry: Mapping[object, ScalarDefinition],
-    *,
-    scalar_overrides: Mapping[object, ScalarDefinition] | None = None,
 ) -> ScalarDefinition | None:
     if annotation in scalar_registry:
         return scalar_registry[annotation]
@@ -36,21 +34,11 @@ def get_scalar_definition(
     if get_origin(annotation) is Annotated:
         underlying_type, *metadata = get_args(annotation)
 
-        if scalar_overrides:
-            override = scalar_overrides.get(underlying_type)
-
-            if override is not None:
-                return override
-
         for metadata_item in metadata:
             if isinstance(metadata_item, ScalarDefinition):
                 return metadata_item
 
-        return get_scalar_definition(
-            underlying_type,
-            scalar_registry,
-            scalar_overrides=scalar_overrides,
-        )
+        return get_scalar_definition(underlying_type, scalar_registry)
 
     # Keep scalar checks consistent for schema generation and argument conversion.
     origin = get_origin(annotation)

@@ -391,15 +391,14 @@ class GraphQLCoreConverter:
     def __init__(
         self,
         config: StrawberryConfig,
-        scalar_overrides: Mapping[object, ScalarDefinition],
         scalar_map: Mapping[object, ScalarDefinition],
         get_fields: Callable[[StrawberryObjectDefinition], list[StrawberryField]],
         exception_handlers: Iterable[ExceptionHandler[Any]] = (),
     ) -> None:
         self.type_map: dict[str, ConcreteType] = {}
         self.config = config
-        self.scalar_overrides = {**scalar_map, **scalar_overrides}
-        self.scalar_registry = self._get_scalar_registry(scalar_overrides, scalar_map)
+        self.scalar_map = scalar_map
+        self.scalar_registry = self._get_scalar_registry(scalar_map)
         self.get_fields = get_fields
         self.exception_handlers = tuple(exception_handlers)
         # Resolving the exception and error types validates each handler, so a
@@ -414,7 +413,6 @@ class GraphQLCoreConverter:
 
     def _get_scalar_registry(
         self,
-        scalar_overrides: Mapping[object, ScalarDefinition],
         scalar_map: Mapping[object, ScalarDefinition],
     ) -> dict[object, ScalarDefinition]:
         scalar_registry: dict[object, ScalarDefinition] = {**DEFAULT_SCALAR_REGISTRY}
@@ -431,9 +429,6 @@ class GraphQLCoreConverter:
 
         if scalar_map:
             scalar_registry.update(scalar_map)
-
-        if scalar_overrides:
-            scalar_registry.update(scalar_overrides)
 
         return scalar_registry
 
@@ -1296,9 +1291,15 @@ class GraphQLCoreConverter:
 
             return self.from_scalar(ID)
 
-        scalar_definition = get_scalar_definition(
-            scalar, self.scalar_registry, scalar_overrides=self.scalar_overrides
-        )
+        # Bind explicit underlying-type mappings to aliases before lookup. Built-in
+        # defaults must not replace the scalar definition attached to an alias.
+        if typing.get_origin(scalar) is Annotated and scalar not in self.scalar_map:
+            underlying_type = typing.get_args(scalar)[0]
+
+            if underlying_type in self.scalar_map:
+                self.scalar_registry[scalar] = self.scalar_map[underlying_type]
+
+        scalar_definition = get_scalar_definition(scalar, self.scalar_registry)
         assert scalar_definition is not None
         # Cache this schema's binding, including Annotated aliases, for argument
         # conversion and codegen. Do not register it for the underlying type.
