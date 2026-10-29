@@ -150,6 +150,79 @@ connection, which is abstracted as `connectionParams` in Apollo-client, and it
 will be successfully injected into the `info.context` object. It is then up to
 you to handle it correctly!
 
+### Restricting WebSocket origins
+
+Browsers don't apply CORS to WebSocket connections. A page on any website can
+open a WebSocket to your GraphQL endpoint, and the browser sends your user's
+cookies with the handshake. If you authenticate WebSockets from a cookie (for
+example, a session cookie read in your context getter or `on_ws_connect`), that
+page could run operations as your user. This is known as cross-site WebSocket
+hijacking.
+
+To prevent this, Strawberry checks the `Origin` header of every WebSocket
+handshake before accepting it:
+
+- Pages served from the same origin as the GraphQL endpoint are allowed.
+- Clients that don't send an `Origin` header are allowed. Browsers always send
+  it, so these are non-browser clients such as mobile apps, server-side clients
+  and tests, which have no browser cookies to misuse.
+- Everything else is refused with an HTTP 403 response, and Strawberry logs a
+  warning on the `strawberry.ws` logger naming the rejected origin.
+
+The check runs before the connection is accepted and before Strawberry calls
+`get_root_value`, `get_context` or `on_ws_connect`. In FastAPI and Litestar, the
+`context_getter` and `root_value_getter` you pass are resolved by the
+framework's dependency injection before Strawberry's view runs, so they still
+run for rejected handshakes, but no operation is executed.
+
+If your frontend is served from a different origin than your GraphQL endpoint
+(including a local development server on another port), list it in
+`allowed_origins`:
+
+```python
+from strawberry.fastapi import GraphQLRouter
+
+graphql_app = GraphQLRouter(
+    schema,
+    allowed_origins=["https://app.example.com", "http://localhost:5173"],
+)
+```
+
+Every integration that supports WebSockets accepts the same option. Your CORS
+configuration doesn't apply to WebSockets, so origins allowed there need to be
+listed here too.
+
+For rules a list can't express, override `is_websocket_origin_allowed`. It's
+only called for cross-origin handshakes:
+
+```python
+from urllib.parse import urlsplit
+
+from starlette.websockets import WebSocket
+
+from strawberry.fastapi import GraphQLRouter
+
+
+class MyGraphQLRouter(GraphQLRouter):
+    def is_websocket_origin_allowed(self, request: WebSocket, origin: str) -> bool:
+        host = urlsplit(origin).hostname or ""
+        return host == "example.com" or host.endswith(".example.com")
+```
+
+<Warning>
+
+Passing `allowed_origins=["*"]` turns the check off. Only do this if your
+WebSocket endpoint doesn't rely on cookies or other credentials that browsers
+send automatically, for example because clients authenticate with a token in
+`connection_params` as shown above.
+
+</Warning>
+
+If Strawberry sits behind a reverse proxy that rewrites the `Host` header,
+same-origin requests are still recognized through the `Sec-Fetch-Site` header
+that browsers send. Configuring the proxy to forward the original `Host` header
+works for older browsers too.
+
 ## Using SSE Subscriptions
 
 Server-Sent Events (SSE) are an HTTP-based alternative to websockets for

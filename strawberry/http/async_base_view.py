@@ -1,7 +1,8 @@
 import abc
 import asyncio
 import json
-from collections.abc import AsyncGenerator, Callable, Mapping, Sequence
+import logging
+from collections.abc import AsyncGenerator, Callable, Collection, Mapping, Sequence
 from datetime import timedelta
 from typing import (
     Any,
@@ -59,6 +60,9 @@ from .typevars import (
     WebSocketRequest,
     WebSocketResponse,
 )
+from .websocket_origin import is_same_origin, normalize_origin
+
+logger = logging.getLogger("strawberry.ws")
 
 
 class AsyncWebSocketAdapter(abc.ABC):
@@ -96,6 +100,7 @@ class AsyncBaseHTTPView(
     keep_alive_interval: float | None = None
     connection_init_wait_timeout: timedelta = timedelta(minutes=1)
     max_subscriptions_per_connection: int | None = 100
+    allowed_origins: Collection[str] = frozenset()
     protocols: Sequence[str] = (
         GRAPHQL_TRANSPORT_WS_PROTOCOL,
         GRAPHQL_WS_PROTOCOL,
@@ -169,6 +174,63 @@ class AsyncBaseHTTPView(
     async def create_websocket_response(
         self, request: WebSocketRequest, subprotocol: str | None
     ) -> WebSocketResponse: ...
+
+    @abc.abstractmethod
+    def get_websocket_headers(self, request: WebSocketRequest) -> Mapping[str, str]:
+        """Return the handshake headers, looked up by lowercase name."""
+
+    @abc.abstractmethod
+    async def reject_websocket(
+        self, request: WebSocketRequest
+    ) -> Response | WebSocketResponse:
+        """Refuse the handshake without accepting the connection (HTTP 403)."""
+
+    def is_websocket_origin_allowed(
+        self, request: WebSocketRequest, origin: str
+    ) -> bool:
+        """Decide whether a page on another origin may open a WebSocket.
+
+        This is only called for cross-origin handshakes: requests without an
+        ``Origin`` header (non-browser clients) and same-origin requests are
+        always allowed. By default, it accepts the origins listed in
+        ``allowed_origins``, or any origin if that contains ``"*"``.
+
+        Override it for rules a list can't express, such as allowing every
+        subdomain. Allowing an origin lets pages on it act with the user's
+        cookies, so only allow origins you trust.
+        """
+        return (
+            "*" in self.allowed_origins
+            or normalize_origin(origin) in self.allowed_origins
+        )
+
+    def _check_websocket_origin(self, request: WebSocketRequest) -> bool:
+        headers = self.get_websocket_headers(request)
+        origin = headers.get("origin")
+
+        # Browsers always send `Origin` on WebSocket handshakes. Clients that
+        # don't aren't browsers, so they carry no ambient credentials to abuse.
+        if origin is None:
+            return True
+
+        host = headers.get("host")
+
+        if headers.get("sec-fetch-site") == "same-origin" or is_same_origin(
+            origin, host
+        ):
+            return True
+
+        if self.is_websocket_origin_allowed(request, origin):
+            return True
+
+        logger.warning(
+            "Rejected WebSocket connection from origin %r to host %r. If pages "
+            "on this origin should be able to connect, add it to "
+            "`allowed_origins`.",
+            origin,
+            host,
+        )
+        return False
 
     @property
     def websocket_subprotocols(self) -> list[str]:
@@ -319,6 +381,13 @@ class AsyncBaseHTTPView(
         context: Context = UNSET,
         root_value: RootValue | None = UNSET,
     ) -> Response | WebSocketResponse:
+        # Checked first, so the view refuses a handshake from a disallowed origin
+        # before calling any of the application's hooks
+        if self.is_websocket_request(request) and not self._check_websocket_origin(
+            request
+        ):
+            return await self.reject_websocket(request)
+
         root_value = (
             await self.get_root_value(request) if root_value is UNSET else root_value
         )

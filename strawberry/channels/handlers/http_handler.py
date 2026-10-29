@@ -355,6 +355,12 @@ class GraphQLHTTPConsumer(
     ) -> TemporalResponse:
         raise NotImplementedError
 
+    def get_websocket_headers(self, request: ChannelsRequest) -> Mapping[str, str]:
+        raise NotImplementedError
+
+    async def reject_websocket(self, request: ChannelsRequest) -> TemporalResponse:
+        raise NotImplementedError
+
 
 class SyncGraphQLHTTPConsumer(
     BaseGraphQLHTTPConsumer,

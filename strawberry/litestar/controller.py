@@ -32,7 +32,7 @@ from litestar.exceptions import (
     WebSocketDisconnect,
 )
 from litestar.response.streaming import Stream
-from litestar.status_codes import HTTP_200_OK
+from litestar.status_codes import HTTP_200_OK, WS_1008_POLICY_VIOLATION
 from msgspec import Struct
 
 from strawberry.exceptions import InvalidCustomContext
@@ -46,6 +46,7 @@ from strawberry.http.exceptions import (
     WebSocketDisconnected,
 )
 from strawberry.http.typevars import Context, RootValue
+from strawberry.http.websocket_origin import normalize_allowed_origins
 from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
 
 if TYPE_CHECKING:
@@ -53,6 +54,7 @@ if TYPE_CHECKING:
         AsyncGenerator,
         AsyncIterator,
         Callable,
+        Collection,
         Mapping,
         Sequence,
     )
@@ -225,6 +227,7 @@ class GraphQLController(
     keep_alive: bool = False
     keep_alive_interval: float = 1
     max_subscriptions_per_connection: int | None = 100
+    allowed_origins: Collection[str] = frozenset()
 
     def is_websocket_request(
         self, request: Request | WebSocket
@@ -241,6 +244,14 @@ class GraphQLController(
         self, request: WebSocket, subprotocol: str | None
     ) -> WebSocket:
         await request.accept(subprotocols=subprotocol)
+        return request
+
+    def get_websocket_headers(self, request: WebSocket) -> Mapping[str, str]:
+        return request.headers
+
+    async def reject_websocket(self, request: WebSocket) -> WebSocket:
+        # Closing before accepting makes the server answer the handshake with 403
+        await request.close(code=WS_1008_POLICY_VIOLATION)
         return request
 
     async def execute_request(
@@ -387,6 +398,7 @@ def make_graphql_controller(  # noqa: PLR0917
     connection_init_wait_timeout: timedelta = timedelta(minutes=1),
     multipart_uploads_enabled: bool = False,
     max_subscriptions_per_connection: int | None = 100,
+    allowed_origins: Sequence[str] = (),
 ) -> type[GraphQLController]:  # sourcery skip: move-assign
     if context_getter is None:
         custom_context_getter_ = _none_custom_context_getter
@@ -426,6 +438,7 @@ def make_graphql_controller(  # noqa: PLR0917
     _GraphQLController.max_subscriptions_per_connection = (
         max_subscriptions_per_connection
     )
+    _GraphQLController.allowed_origins = normalize_allowed_origins(allowed_origins)
 
     return _GraphQLController
 

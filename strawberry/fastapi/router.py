@@ -32,6 +32,7 @@ from strawberry.exceptions import InvalidCustomContext
 from strawberry.fastapi.context import BaseContext, CustomContext
 from strawberry.http.async_base_view import AsyncBaseHTTPView
 from strawberry.http.typevars import RootValue
+from strawberry.http.websocket_origin import normalize_allowed_origins
 from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
 
 Context = TypeVar("Context", default=CustomContext)
@@ -156,6 +157,7 @@ class GraphQLRouter(
             generate_unique_id
         ),
         multipart_uploads_enabled: bool = False,
+        allowed_origins: Sequence[str] = (),
         **kwargs: Any,
     ) -> None:
         super().__init__(
@@ -191,6 +193,7 @@ class GraphQLRouter(
         self.connection_init_wait_timeout = connection_init_wait_timeout
         self.max_subscriptions_per_connection = max_subscriptions_per_connection
         self.multipart_uploads_enabled = multipart_uploads_enabled
+        self.allowed_origins = normalize_allowed_origins(allowed_origins)
         self.graphql_ide = graphql_ide
 
         @self.get(
@@ -315,6 +318,14 @@ class GraphQLRouter(
         self, request: WebSocket, subprotocol: str | None
     ) -> WebSocket:
         await request.accept(subprotocol=subprotocol)
+        return request
+
+    def get_websocket_headers(self, request: WebSocket) -> Mapping[str, str]:
+        return request.headers
+
+    async def reject_websocket(self, request: WebSocket) -> WebSocket:
+        # Closing before accepting makes the server answer the handshake with 403
+        await request.close(code=status.WS_1008_POLICY_VIOLATION)
         return request
 
 

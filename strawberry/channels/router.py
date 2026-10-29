@@ -56,6 +56,7 @@ class GraphQLProtocolTypeRouter(ProtocolTypeRouter):
             GRAPHQL_TRANSPORT_WS_PROTOCOL,
             GRAPHQL_WS_PROTOCOL,
         ),
+        allowed_origins: Sequence[str] = (),
     ) -> None:
         http_urls = [
             re_path(
@@ -79,6 +80,7 @@ class GraphQLProtocolTypeRouter(ProtocolTypeRouter):
                             GraphQLWSConsumer.as_asgi(
                                 schema=schema,
                                 subscription_protocols=subscription_protocols,
+                                allowed_origins=allowed_origins,
                             ),
                         ),
                     ]

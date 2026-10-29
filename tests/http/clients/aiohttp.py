@@ -7,7 +7,7 @@ from datetime import timedelta
 from io import BytesIO
 from typing import Any, Literal
 
-from aiohttp import web
+from aiohttp import WSServerHandshakeError, web
 from aiohttp.client_ws import ClientWebSocketResponse
 from aiohttp.http_websocket import WSMsgType
 from aiohttp.test_utils import TestClient, TestServer
@@ -31,6 +31,7 @@ from .base import (
     Response,
     ResultOverrideFunction,
     WebSocketClient,
+    WebSocketRejectedError,
 )
 
 
@@ -75,6 +76,7 @@ class AioHttpClient(HttpClient):
         result_override: ResultOverrideFunction = None,
         multipart_uploads_enabled: bool = False,
         max_subscriptions_per_connection: int | None = 100,
+        allowed_origins: Sequence[str] = (),
     ):
         view = GraphQLView(
             schema=schema,
@@ -86,6 +88,7 @@ class AioHttpClient(HttpClient):
             connection_init_wait_timeout=connection_init_wait_timeout,
             multipart_uploads_enabled=multipart_uploads_enabled,
             max_subscriptions_per_connection=max_subscriptions_per_connection,
+            allowed_origins=allowed_origins,
         )
         view.result_override = result_override
 
@@ -179,12 +182,16 @@ class AioHttpClient(HttpClient):
         url: str,
         *,
         protocols: list[str],
+        headers: dict[str, str] | None = None,
     ) -> AsyncGenerator[WebSocketClient, None]:
-        async with (
-            TestClient(TestServer(self.app)) as client,
-            client.ws_connect(url, protocols=protocols) as ws,
-        ):
-            yield AioWebSocketClient(ws)
+        async with TestClient(TestServer(self.app)) as client:
+            try:
+                ws = await client.ws_connect(url, protocols=protocols, headers=headers)
+            except WSServerHandshakeError as e:
+                raise WebSocketRejectedError from e
+
+            async with ws:
+                yield AioWebSocketClient(ws)
 
 
 class AioWebSocketClient(WebSocketClient):

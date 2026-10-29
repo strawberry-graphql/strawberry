@@ -38,6 +38,7 @@ from .base import (
     Response,
     ResultOverrideFunction,
     WebSocketClient,
+    WebSocketRejectedError,
 )
 
 
@@ -160,6 +161,7 @@ class ChannelsHttpClient(HttpClient):
         result_override: ResultOverrideFunction = None,
         multipart_uploads_enabled: bool = False,
         max_subscriptions_per_connection: int | None = 100,
+        allowed_origins: Sequence[str] = (),
     ):
         self.ws_app = DebuggableGraphQLWSConsumer.as_asgi(
             schema=schema,
@@ -168,6 +170,7 @@ class ChannelsHttpClient(HttpClient):
             subscription_protocols=subscription_protocols,
             connection_init_wait_timeout=connection_init_wait_timeout,
             max_subscriptions_per_connection=max_subscriptions_per_connection,
+            allowed_origins=allowed_origins,
         )
 
         self.http_app = DebuggableGraphQLHTTPConsumer.as_asgi(
@@ -270,11 +273,18 @@ class ChannelsHttpClient(HttpClient):
         url: str,
         *,
         protocols: list[str],
+        headers: dict[str, str] | None = None,
     ) -> AsyncGenerator[WebSocketClient, None]:
-        client = WebsocketCommunicator(self.ws_app, url, subprotocols=protocols)
+        client = WebsocketCommunicator(
+            self.ws_app,
+            url,
+            headers=[(k.encode(), v.encode()) for k, v in (headers or {}).items()],
+            subprotocols=protocols,
+        )
 
         connected, subprotocol_or_close_code = await client.connect()
-        assert connected
+        if not connected:
+            raise WebSocketRejectedError
 
         try:
             yield ChannelsWebSocketClient(

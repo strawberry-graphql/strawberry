@@ -20,6 +20,7 @@ from strawberry.http.exceptions import (
 )
 from strawberry.http.ides import GraphQL_IDE
 from strawberry.http.typevars import Context, RootValue
+from strawberry.http.websocket_origin import normalize_allowed_origins
 from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
 
 if TYPE_CHECKING:
@@ -94,6 +95,7 @@ class GraphQLView(
         connection_init_wait_timeout: timedelta = timedelta(minutes=1),
         multipart_uploads_enabled: bool = False,
         max_subscriptions_per_connection: int | None = 100,
+        allowed_origins: Sequence[str] = (),
     ) -> None:
         self.schema = schema
         self.allow_queries_via_get = allow_queries_via_get
@@ -103,6 +105,7 @@ class GraphQLView(
         self.connection_init_wait_timeout = connection_init_wait_timeout
         self.multipart_uploads_enabled = multipart_uploads_enabled
         self.max_subscriptions_per_connection = max_subscriptions_per_connection
+        self.allowed_origins = normalize_allowed_origins(allowed_origins)
         self.graphql_ide = graphql_ide
 
     async def render_graphql_ide(self, request: Request) -> Response:
@@ -172,6 +175,13 @@ class GraphQLView(
     ) -> Response:
         await request.accept(subprotocol=subprotocol)
         return Response()
+
+    def get_websocket_headers(self, request: Websocket) -> Mapping[str, str]:
+        return {name.lower(): value for name, value in request.headers.items()}
+
+    async def reject_websocket(self, request: Websocket) -> Response:
+        # Returning a response before accepting refuses the handshake
+        return Response("Forbidden", status=403)
 
 
 __all__ = ["GraphQLView"]

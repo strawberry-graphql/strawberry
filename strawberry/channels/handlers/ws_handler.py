@@ -12,6 +12,7 @@ from typing import (
 from strawberry.http.async_base_view import AsyncBaseHTTPView, AsyncWebSocketAdapter
 from strawberry.http.exceptions import NonJsonMessageReceived, NonTextMessageReceived
 from strawberry.http.typevars import Context, RootValue
+from strawberry.http.websocket_origin import normalize_allowed_origins
 from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
 
 from .base import ChannelsWSConsumer
@@ -113,6 +114,7 @@ class GraphQLWSConsumer(
         ),
         connection_init_wait_timeout: dt.timedelta | None = None,
         max_subscriptions_per_connection: int | None = 100,
+        allowed_origins: Sequence[str] = (),
     ) -> None:
         if connection_init_wait_timeout is None:
             connection_init_wait_timeout = dt.timedelta(minutes=1)
@@ -121,6 +123,7 @@ class GraphQLWSConsumer(
         self.keep_alive = keep_alive
         self.keep_alive_interval = keep_alive_interval
         self.max_subscriptions_per_connection = max_subscriptions_per_connection
+        self.allowed_origins = normalize_allowed_origins(allowed_origins)
         self.protocols = subscription_protocols
         self.message_queue: asyncio.Queue[MessageQueueData] = asyncio.Queue()
         self.run_task: asyncio.Task | None = None
@@ -188,6 +191,17 @@ class GraphQLWSConsumer(
         self, request: GraphQLWSConsumer, subprotocol: str | None
     ) -> GraphQLWSConsumer:
         await request.accept(subprotocol=subprotocol)
+        return request
+
+    def get_websocket_headers(self, request: GraphQLWSConsumer) -> Mapping[str, str]:
+        return {
+            name.decode("latin1").lower(): value.decode("latin1")
+            for name, value in request.scope["headers"]
+        }
+
+    async def reject_websocket(self, request: GraphQLWSConsumer) -> GraphQLWSConsumer:
+        # Closing before accepting makes the server answer the handshake with 403
+        await request.close()
         return request
 
 
