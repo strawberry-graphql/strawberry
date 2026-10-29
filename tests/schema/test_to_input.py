@@ -280,3 +280,49 @@ def test_to_input_is_used_for_schema_directive_values():
     schema = strawberry.Schema(query=Query)
 
     assert "items: [String!]! @filtered(filter: { limit: 5 })" in str(schema)
+
+
+def test_to_input_is_used_for_arbitrary_iterables_in_list_defaults():
+    from collections import deque
+
+    @strawberry.input
+    class Pagination:
+        limit: int = 10
+        offset: int = 0
+
+    get_object_definition(Pagination, strict=True).to_input = lambda p: {
+        "limit": p.limit
+    }
+
+    @strawberry.input
+    class BatchFilter:
+        pages: list[Pagination] = strawberry.field(
+            default_factory=lambda: (Pagination(limit=n, offset=99) for n in (2, 4))  # type: ignore[arg-type,return-value]
+        )
+
+    default_pages: Any = deque(
+        [Pagination(limit=5, offset=1), Pagination(limit=8, offset=2)]
+    )
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def batch(
+            self,
+            pages: list[Pagination] = default_pages,
+            filter: BatchFilter = BatchFilter(),
+        ) -> str:
+            page_limits = [p.limit for p in pages]
+            filter_limits = [p.limit for p in filter.pages]
+            return f"{page_limits} {filter_limits}"
+
+    schema = strawberry.Schema(query=Query)
+    sdl = str(schema)
+
+    assert "pages: [Pagination!]! = [{ limit: 2 }, { limit: 4 }]" in sdl
+    assert "pages: [Pagination!]! = [{ limit: 5 }, { limit: 8 }]" in sdl
+    assert _query_default(schema) == "[{ limit: 5 }, { limit: 8 }]"
+
+    result = schema.execute_sync("{ batch }")
+    assert not result.errors
+    assert result.data == {"batch": "[5, 8] [2, 4]"}

@@ -1037,3 +1037,56 @@ def test_print_directive_non_mapping_and_unprintable_scalar_values():
     unprintable_schema = strawberry.Schema(query=QueryWithUnprintable)
     with pytest.raises(TypeError, match="Cannot convert value to AST"):
         print_schema(unprintable_schema)
+
+
+def test_print_directive_list_input_with_arbitrary_iterables():
+    from collections import deque
+
+    @strawberry.input
+    class Options:
+        key: str
+
+    @strawberry.schema_directive(locations=[Location.FIELD_DEFINITION])
+    class WithList:
+        items: list[Options]
+
+    @strawberry.type
+    class Query:
+        from_gen: str = strawberry.field(
+            directives=[
+                WithList(
+                    items=(Options(key=k) for k in ("x", "y"))  # type: ignore[arg-type]
+                )
+            ]
+        )
+        from_deque: str = strawberry.field(
+            directives=[
+                WithList(
+                    items=deque([Options(key="a"), Options(key="b")])  # type: ignore[arg-type]
+                )
+            ]
+        )
+        from_single: str = strawberry.field(
+            directives=[
+                WithList(
+                    items=Options(key="solo")  # type: ignore[arg-type]
+                )
+            ]
+        )
+
+    expected_output = """
+    directive @withList(items: [Options!]!) on FIELD_DEFINITION
+
+    input Options {
+      key: String!
+    }
+
+    type Query {
+      fromGen: String! @withList(items: [{ key: "x" }, { key: "y" }])
+      fromDeque: String! @withList(items: [{ key: "a" }, { key: "b" }])
+      fromSingle: String! @withList(items: { key: "solo" })
+    }
+    """
+
+    schema = strawberry.Schema(query=Query)
+    assert print_schema(schema) == textwrap.dedent(expected_output).strip()
