@@ -10,6 +10,7 @@ from typing import Any, Optional, get_type_hints
 import pytest
 from pytest_snapshot.plugin import Snapshot
 
+import strawberry
 from strawberry.codegen import QueryCodegen, QueryCodegenPlugin
 from strawberry.codegen.exceptions import (
     MultipleOperationsProvidedError,
@@ -125,3 +126,45 @@ def test_python_codegen_for_recursive_input_can_be_imported(schema, tmp_path):
     hints = get_type_hints(post_filter, namespace)
     assert hints["any_of"] == Optional[list[post_filter]]
     assert hints["author"] == Optional[author_filter]
+
+
+@strawberry.input
+class NullableTeamFilter:
+    name: str | None = None
+    all_of: list["NullableTeamFilter"] | None = None
+
+
+@strawberry.input
+class IssueFilter:
+    title: str | None = None
+    all_of: list["IssueFilter"] | None = None
+    team: NullableTeamFilter | None = None
+
+
+@strawberry.type(name="Query")
+class IssueQuery:
+    @strawberry.field
+    def issues(self, filter: IssueFilter | None = None) -> bool:
+        return True
+
+
+def test_python_codegen_for_cycle_through_nullable_wrapper_can_be_imported(tmp_path):
+    """The shape real filter schemas have: each filter refers to itself, and one
+    reaches another self-referencing filter through a nullable wrapper type."""
+    schema = strawberry.Schema(query=IssueQuery)
+    generator = QueryCodegen(schema, plugins=[PythonPlugin(tmp_path / "query.graphql")])
+
+    code = generator.run(
+        "query OperationName($filter: IssueFilter) { issues(filter: $filter) }"
+    ).to_string()
+
+    namespace: dict[str, Any] = {}
+    exec(code, namespace)  # noqa: S102
+
+    issue_filter = namespace["IssueFilter"]
+    team_filter = namespace["NullableTeamFilter"]
+    issue_hints = get_type_hints(issue_filter, namespace)
+    team_hints = get_type_hints(team_filter, namespace)
+    assert issue_hints["all_of"] == Optional[list[issue_filter]]
+    assert issue_hints["team"] == Optional[team_filter]
+    assert team_hints["all_of"] == Optional[list[team_filter]]
