@@ -356,7 +356,9 @@ def test_annotated_argument_with_rename():
 
 
 def test_annotated_argument_with_graphql_type_override():
-    BigInt = strawberry.scalar(int, name="BigInt", serialize=str, parse_value=int)
+    from typing import NewType
+
+    BigInt = NewType("BigInt", int)
 
     @strawberry.type
     class Query:

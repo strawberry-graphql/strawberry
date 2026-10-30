@@ -1,9 +1,34 @@
 from inline_snapshot import snapshot
 
+from strawberry.schema_codegen import codegen
+
 from .utils.marks import requires_mypy, requires_pyright, requires_ty, skip_on_windows
 from .utils.typecheck import Result, typecheck
 
 pytestmark = [skip_on_windows, requires_pyright, requires_mypy, requires_ty]
+
+
+def test_generated_custom_scalars():
+    source = codegen(
+        """
+        scalar JSON
+        scalar Foo
+        scalar JSONObject
+        scalar UUID
+        scalar Date
+        type Query {
+            data: JSON!
+            custom: Foo!
+            other: JSONObject!
+            id: UUID!
+            date: Date!
+        }
+        """
+    )
+    results = typecheck(source + "\nreveal_type(scalar_map)\n", strict=False)
+    assert [result.type for result in results.pyright] == ["information"]
+    assert [result.type for result in results.mypy] == ["note"]
+    assert [result.type for result in results.ty] == ["information"]
 
 
 CODE = """
@@ -152,7 +177,7 @@ import strawberry
 from datetime import datetime
 
 EpochDateTime = strawberry.scalar(
-    datetime,
+    name="EpochDateTime",
 )
 
 @strawberry.type
@@ -174,7 +199,7 @@ def test_schema_overrides():
         [
             Result(
                 type="information",
-                message='Type of "EpochDateTime" is "type[datetime]"',
+                message='Type of "EpochDateTime" is "ScalarDefinition"',
                 line=17,
                 column=13,
             )
@@ -184,7 +209,7 @@ def test_schema_overrides():
         [
             Result(
                 type="note",
-                message='Revealed type is "def (year: typing.SupportsIndex, month: typing.SupportsIndex, day: typing.SupportsIndex, hour: typing.SupportsIndex =, minute: typing.SupportsIndex =, second: typing.SupportsIndex =, microsecond: typing.SupportsIndex =, tzinfo: datetime.tzinfo | None =, *, fold: int =) -> datetime.datetime"',
+                message='Revealed type is "strawberry.types.scalar.ScalarDefinition"',
                 line=17,
                 column=13,
             )
@@ -194,7 +219,7 @@ def test_schema_overrides():
         [
             Result(
                 type="information",
-                message="Revealed type: `<class 'datetime'>`",
+                message="Revealed type: `ScalarDefinition`",
                 line=17,
                 column=13,
             ),

@@ -59,10 +59,7 @@ _SCALAR_MAP = {
         value=cst.Name("strawberry"),
         attr=cst.Name("ID"),
     ),
-    "JSON": cst.Attribute(
-        value=cst.Name("strawberry"),
-        attr=cst.Name("JSON"),
-    ),
+    "JSON": cst.Name("JSON"),
     "UUID": cst.Name("UUID"),
     "Decimal": cst.Name("Decimal"),
     "Date": cst.Name("date"),
@@ -678,6 +675,7 @@ def _get_schema_definition(
     root_mutation_name: str | None,
     root_subscription_name: str | None,
     is_apollo_federation: bool,
+    has_scalar_map: bool,
 ) -> cst.SimpleStatementLine | None:
     if not any([root_query_name, root_mutation_name, root_subscription_name]):
         return None
@@ -699,6 +697,26 @@ def _get_schema_definition(
 
     if root_subscription_name:
         args.append(_get_arg("subscription", root_subscription_name))
+
+    # Generate scalar_map config if there are custom scalars
+    if has_scalar_map:
+        config_arg = cst.Arg(
+            keyword=cst.Name("config"),
+            value=cst.Call(
+                func=cst.Name("StrawberryConfig"),
+                args=[
+                    cst.Arg(
+                        keyword=cst.Name("scalar_map"),
+                        value=cst.Name("scalar_map"),
+                        equal=cst.AssignEqual(
+                            cst.SimpleWhitespace(""), cst.SimpleWhitespace("")
+                        ),
+                    ),
+                ],
+            ),
+            equal=cst.AssignEqual(cst.SimpleWhitespace(""), cst.SimpleWhitespace("")),
+        )
+        args.append(config_arg)
 
     # Federation 2 is now always enabled for federation schemas
     if is_apollo_federation:
@@ -736,6 +754,60 @@ class Definition:
     code: cst.CSTNode
     dependencies: list[str]
     name: str
+
+
+@dataclasses.dataclass(frozen=True)
+class ScalarInfo:
+    name: str
+    description: str | None
+    specified_by_url: str | None
+
+
+def _get_scalar_map_definition(scalar_infos: list[ScalarInfo]) -> Definition:
+    elements = []
+    for scalar_info in scalar_infos:
+        args = [_get_argument("name", scalar_info.name)]
+        if scalar_info.description is not None:
+            args.append(_get_argument("description", scalar_info.description))
+        if scalar_info.specified_by_url is not None:
+            args.append(_get_argument("specified_by_url", scalar_info.specified_by_url))
+        args.extend(
+            cst.Arg(
+                keyword=cst.Name(keyword),
+                value=cst.Lambda(
+                    body=cst.Name("v"),
+                    params=cst.Parameters(params=[cst.Param(cst.Name("v"))]),
+                ),
+                equal=cst.AssignEqual(
+                    cst.SimpleWhitespace(""), cst.SimpleWhitespace("")
+                ),
+            )
+            for keyword in ("serialize", "parse_value")
+        )
+        elements.append(
+            cst.DictElement(
+                key=cst.Name(scalar_info.name),
+                value=cst.Call(
+                    func=cst.Attribute(cst.Name("strawberry"), cst.Name("scalar")),
+                    args=args,
+                ),
+            )
+        )
+    return Definition(
+        cst.SimpleStatementLine(
+            body=[
+                cst.AnnAssign(
+                    target=cst.Name("scalar_map"),
+                    annotation=cst.Annotation(
+                        cst.parse_expression("dict[object, ScalarDefinition]")
+                    ),
+                    value=cst.Dict(elements=elements),
+                )
+            ]
+        ),
+        [info.name for info in scalar_infos],
+        "scalar_map",
+    )
 
 
 def _get_union_definition(definition: UnionTypeDefinitionNode) -> Definition:
@@ -780,26 +852,27 @@ def _get_union_definition(definition: UnionTypeDefinitionNode) -> Definition:
 
 def _get_scalar_definition(
     definition: ScalarTypeDefinitionNode, imports: set[Import]
-) -> Definition | None:
+) -> tuple[Definition | None, ScalarInfo | None]:
     name = definition.name.value
 
     if name == "Date":
         imports.add(Import(module="datetime", imports=("date",)))
-        return None
+        return None, None
     if name == "Time":
         imports.add(Import(module="datetime", imports=("time",)))
-        return None
+        return None, None
     if name == "DateTime":
         imports.add(Import(module="datetime", imports=("datetime",)))
-        return None
+        return None, None
     if name == "Decimal":
         imports.add(Import(module="decimal", imports=("Decimal",)))
-        return None
+        return None, None
     if name == "UUID":
         imports.add(Import(module="uuid", imports=("UUID",)))
-        return None
+        return None, None
     if name == "JSON":
-        return None
+        imports.add(Import(module="strawberry.scalars", imports=("JSON",)))
+        return None, None
 
     description = definition.description.value if definition.description else None
 
@@ -818,62 +891,36 @@ def _get_scalar_definition(
 
     imports.add(Import(module="typing", imports=("NewType",)))
 
-    identity_lambda = cst.Lambda(
-        body=cst.Name("v"),
-        params=cst.Parameters(
-            params=[cst.Param(cst.Name("v"))],
-        ),
-    )
-
-    additional_args: list[cst.Arg | None] = [
-        _get_argument("description", description) if description else None,
-        _get_argument("specified_by_url", specified_by_url)
-        if specified_by_url
-        else None,
-        cst.Arg(
-            keyword=cst.Name("serialize"),
-            value=identity_lambda,
-            equal=cst.AssignEqual(cst.SimpleWhitespace(""), cst.SimpleWhitespace("")),
-        ),
-        cst.Arg(
-            keyword=cst.Name("parse_value"),
-            value=identity_lambda,
-            equal=cst.AssignEqual(cst.SimpleWhitespace(""), cst.SimpleWhitespace("")),
-        ),
-    ]
-
+    # Generate just the NewType definition
     statement_definition = cst.SimpleStatementLine(
         body=[
             cst.Assign(
                 targets=[cst.AssignTarget(cst.Name(name))],
                 value=cst.Call(
-                    func=cst.Attribute(
-                        value=cst.Name("strawberry"),
-                        attr=cst.Name("scalar"),
-                    ),
+                    func=cst.Name("NewType"),
                     args=[
-                        cst.Arg(
-                            cst.Call(
-                                func=cst.Name("NewType"),
-                                args=[
-                                    cst.Arg(cst.SimpleString(f'"{name}"')),
-                                    cst.Arg(cst.Name("object")),
-                                ],
-                            )
-                        ),
-                        *filter(None, additional_args),
+                        cst.Arg(cst.SimpleString(f'"{name}"')),
+                        cst.Arg(cst.Name("object")),
                     ],
                 ),
             )
         ]
     )
-    return Definition(statement_definition, [], name=definition.name.value)
+
+    scalar_info = ScalarInfo(
+        name=name,
+        description=description,
+        specified_by_url=specified_by_url,
+    )
+
+    return Definition(statement_definition, [], name=definition.name.value), scalar_info
 
 
 def codegen(schema: str) -> str:
     document = parse(schema)
 
     definitions: dict[str, Definition] = {}
+    scalar_infos: list[ScalarInfo] = []
 
     root_query_name: str | None = None
     root_mutation_name: str | None = None
@@ -927,7 +974,11 @@ def codegen(schema: str) -> str:
 
             definition = _get_union_definition(graphql_definition)
         elif isinstance(graphql_definition, ScalarTypeDefinitionNode):
-            definition = _get_scalar_definition(graphql_definition, imports)
+            definition, scalar_info = _get_scalar_definition(
+                graphql_definition, imports
+            )
+            if scalar_info is not None:
+                scalar_infos.append(scalar_info)
 
         elif isinstance(graphql_definition, SchemaExtensionNode):
             is_apollo_federation = any(
@@ -951,11 +1002,22 @@ def codegen(schema: str) -> str:
             "Subscription" if "Subscription" in definitions else None
         )
 
+    if scalar_infos:
+        definitions["scalar_map"] = _get_scalar_map_definition(scalar_infos)
+        imports.add(
+            Import(module="strawberry.types.scalar", imports=("ScalarDefinition",))
+        )
+        if any((root_query_name, root_mutation_name, root_subscription_name)):
+            imports.add(
+                Import(module="strawberry.schema.config", imports=("StrawberryConfig",))
+            )
+
     schema_definition = _get_schema_definition(
         root_query_name=root_query_name,
         root_mutation_name=root_mutation_name,
         root_subscription_name=root_subscription_name,
         is_apollo_federation=is_apollo_federation,
+        has_scalar_map=bool(scalar_infos),
     )
 
     if schema_definition:
