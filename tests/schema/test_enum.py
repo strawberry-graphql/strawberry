@@ -100,6 +100,72 @@ def test_enum_arguments():
     assert result.data["eatCone"] is True
 
 
+@pytest.mark.parametrize("usage", ["required", "default", "optional", "field"])
+def test_annotated_enum_schema(usage: str):
+    class Color(Enum):
+        RED = "red"
+
+    GqlColor = Annotated[Color, strawberry.enum(name="GqlColor", description="A color")]
+
+    if usage == "required":
+
+        @strawberry.type
+        class Query:
+            @strawberry.field
+            def color(self, color: GqlColor) -> str:
+                assert isinstance(color, Color)
+                return color.value
+
+        field = "color(color: GqlColor!): String!"
+        query = "{ color(color: RED) }"
+    elif usage == "default":
+
+        @strawberry.type
+        class Query:
+            @strawberry.field
+            def color(self, color: GqlColor = Color.RED) -> str:
+                return color.value
+
+        field = "color(color: GqlColor! = RED): String!"
+        query = "{ color }"
+    elif usage == "optional":
+
+        @strawberry.type
+        class Query:
+            @strawberry.field
+            def color(self, color: GqlColor | None = None) -> str:
+                return color.value if color is not None else "red"
+
+        field = "color(color: GqlColor = null): String!"
+        query = "{ color(color: RED) }"
+    else:
+
+        @strawberry.type
+        class Query:
+            color: GqlColor = Color.RED
+
+        field = "color: GqlColor!"
+        query = "{ color }"
+
+    schema = strawberry.Schema(query=Query)
+
+    assert str(schema) == dedent(
+        f'''\
+        """A color"""
+        enum GqlColor {{
+          RED
+        }}
+
+        type Query {{
+          {field}
+        }}'''
+    )
+
+    result = schema.execute_sync(query, root_value=Query())
+    assert not result.errors
+    assert result.data == {"color": "RED" if usage == "field" else "red"}
+
+
 def test_lazy_enum_arguments():
     LazyEnum = Annotated[
         "LazyEnum", lazy("tests.schema.test_lazy_types.test_lazy_enums")
