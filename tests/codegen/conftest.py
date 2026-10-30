@@ -14,11 +14,12 @@ from uuid import UUID
 import pytest
 
 import strawberry
+from strawberry.schema.config import StrawberryConfig
 
 if TYPE_CHECKING:
     from .lazy_type import LaziestType
 
-JSON = strawberry.scalar(NewType("JSON", str))
+JSON = NewType("JSON", str)
 
 
 @strawberry.enum
@@ -171,4 +172,9 @@ class Mutation:
 
 @pytest.fixture
 def schema() -> strawberry.Schema:
-    return strawberry.Schema(query=Query, mutation=Mutation, types=[BlogPost, Image])
+    return strawberry.Schema(
+        query=Query,
+        mutation=Mutation,
+        types=[BlogPost, Image],
+        config=StrawberryConfig(scalar_map={JSON: strawberry.scalar(name="JSON")}),
+    )

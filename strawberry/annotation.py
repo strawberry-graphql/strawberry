@@ -219,6 +219,17 @@ class StrawberryAnnotation:
 
         if self._is_lazy_type(evaled_type):
             return evaled_type
+
+        scalar_definitions = [arg for arg in args if isinstance(arg, ScalarDefinition)]
+        if scalar_definitions:
+            if len(scalar_definitions) > 1:
+                raise ValueError("Only one scalar definition is allowed in Annotated")
+            if self._is_optional(evaled_type, args):
+                return self.create_optional(evaled_type, scalar_definitions)
+            # Preserve the Python type for schema overrides, without registering
+            # this field's definition globally for unrelated uses of that type.
+            return cast("type", Annotated[evaled_type, scalar_definitions[0]])
+
         if self._is_streamable(evaled_type, args):
             return self.create_list(list[evaled_type])
         if self._is_list(evaled_type):
@@ -318,7 +329,10 @@ class StrawberryAnnotation:
         # If this optional had Annotated metadata (collected into `args` by
         # _get_type_with_args), re-apply it to the rebuilt child_type so metadata
         # (e.g. strawberry.union(...)) is preserved.
-        if args and len(non_optional_types) > 1:
+        if args and (
+            len(non_optional_types) > 1
+            or any(isinstance(arg, ScalarDefinition) for arg in args)
+        ):
             child_type = Annotated[(child_type, *args)]  # type: ignore
         of_type = StrawberryAnnotation(
             annotation=child_type,

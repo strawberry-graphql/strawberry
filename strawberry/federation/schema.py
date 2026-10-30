@@ -1,3 +1,4 @@
+import warnings
 from collections import defaultdict
 from collections.abc import Callable, Iterable, Mapping
 from typing import (
@@ -25,7 +26,7 @@ from strawberry.types.base import (
     get_object_definition,
 )
 from strawberry.types.info import Info
-from strawberry.types.scalar import ScalarDefinition, ScalarWrapper, scalar
+from strawberry.types.scalar import ScalarDefinition, scalar
 from strawberry.types.union import StrawberryUnion
 from strawberry.utils.inspect import get_func_args
 
@@ -61,8 +62,7 @@ class Schema(BaseSchema):
         ] = (),
         execution_context_class: type["GraphQLExecutionContext"] | None = None,
         config: Optional["StrawberryConfig"] = None,
-        scalar_overrides: dict[object, Union[type, "ScalarWrapper", "ScalarDefinition"]]
-        | None = None,
+        scalar_overrides: dict[object, Union[type, "ScalarDefinition"]] | None = None,
         schema_directives: Iterable[object] = (),
         federation_version: Literal[
             "2.0",
@@ -79,6 +79,8 @@ class Schema(BaseSchema):
             "2.11",
         ] = "2.11",
         exception_handlers: Iterable["ExceptionHandler[Any]"] = (),
+        *,
+        scalar_map: Mapping[object, ScalarDefinition] | None = None,
     ) -> None:
         # Convert version string (e.g., "2.5") to version tuple (e.g., (2, 5))
         self.federation_version = parse_version(federation_version)
@@ -92,19 +94,25 @@ class Schema(BaseSchema):
         # Add FederationAny to types so it appears in the schema
         types = [*types, FederationAny]
 
+        if scalar_overrides is not None:
+            warnings.warn(
+                "Schema(scalar_overrides=...) is deprecated. "
+                "Use Schema(scalar_map=...) instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+
         # _Any belongs to Federation's entity resolver rather than a directive,
         # so this schema installs its scalar mapping. Directive support types
         # such as _FieldSet carry their definitions on the annotations themselves;
         # that lets both Schema classes register attached Federation directives.
-        federation_scalar_overrides: dict[
-            object, type | ScalarDefinition | ScalarWrapper
-        ] = {
+        federation_scalar_map = {
             FederationAny: scalar(
                 name="_Any", serialize=lambda v: v, parse_value=lambda v: v
             ),
+            **cast("Mapping[object, ScalarDefinition]", scalar_overrides or {}),
+            **(scalar_map or {}),
         }
-        if scalar_overrides:
-            federation_scalar_overrides.update(scalar_overrides)
 
         super().__init__(
             query=query,
@@ -115,9 +123,9 @@ class Schema(BaseSchema):
             extensions=extensions,
             execution_context_class=execution_context_class,
             config=config,
-            scalar_overrides=federation_scalar_overrides,
             schema_directives=schema_directives,
             exception_handlers=exception_handlers,
+            scalar_map=federation_scalar_map,
         )
 
     def _get_federation_query_type(

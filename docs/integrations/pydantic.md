@@ -598,19 +598,25 @@ An exact `scalar_map` entry, such as one for `EmailStr`, takes precedence over
 these automatic mappings. Mappings are resolved separately for each schema;
 building one schema does not change another schema using the same models. An
 undecorated Pydantic model can also be registered as a custom scalar. Models not
-registered as scalars still need a Strawberry decorator; that check runs during
+exposed as scalars still need a Strawberry decorator; that check runs during
 schema construction, once the scalar map is available.
 
+For a local custom scalar, attach its definition with `Annotated` instead of
+registering it in a scalar map:
+
 ```python
-from typing import NewType
+from typing import Annotated, NewType
 
 from pydantic import BaseModel
 
 import strawberry
 from strawberry.scalars import JSON
-from strawberry.schema.config import StrawberryConfig
 
-Money = NewType("Money", str)
+MoneyValue = NewType("MoneyValue", str)
+Money = Annotated[
+    MoneyValue,
+    strawberry.scalar(name="Money", serialize=str, parse_value=str),
+]
 
 
 @strawberry.pydantic.type
@@ -620,14 +626,18 @@ class Product(BaseModel):
     metadata: JSON
 
 
-schema = strawberry.Schema(
-    query=Query,
-    config=StrawberryConfig(
-        scalar_map={
-            Money: strawberry.scalar(name="Money", serialize=str, parse_value=str)
-        }
-    ),
-)
+@strawberry.type
+class Query:
+    @strawberry.field
+    def product(self) -> Product:
+        return Product(
+            id=strawberry.ID("1"),
+            price=MoneyValue("19.99"),
+            metadata=JSON({"in_stock": True}),
+        )
+
+
+schema = strawberry.Schema(query=Query)
 ```
 
 Types that GraphQL has no scalar for, like `dict`, `Any`, `set` or `bytes`, need
@@ -656,9 +666,9 @@ class PostInput(BaseModel):
     status: Annotated[Literal["draft", "published"], strawberry.field(graphql_type=str)]
 ```
 
-As with `@strawberry.type`, a `NewType` must be registered as a scalar to be
-used in the schema. To expose it as its base type instead, set the GraphQL type
-of the field:
+As with `@strawberry.type`, a `NewType` needs a scalar definition, either
+through `Annotated` or a schema's `scalar_map`, to be used in the schema. To
+expose it as its base type instead, set the GraphQL type of the field:
 
 ```python
 from typing import Annotated, NewType
@@ -1729,8 +1739,10 @@ type Query {
 
 Pydantic BaseModels may define a custom type with
 [`__get_validators__`](https://pydantic-docs.helpmanual.io/usage/types/#classes-with-__get_validators__)
-logic. You will need to add a scalar type and add the mapping to the
-`scalar_overrides` argument in the Schema class.
+logic. To keep using that existing type in model annotations, pass a scalar
+definition in `Schema(scalar_map=...)`. Alternatively, define an annotated
+scalar alias as shown in [Scalars](#scalars) and use that alias in your model
+annotations.
 
 ```python
 import strawberry
@@ -1755,14 +1767,6 @@ class Example(BaseModel):
 class ExampleGQL: ...
 
 
-MyScalarType = strawberry.scalar(
-    MyCustomType,
-    # or another function describing how to represent MyCustomType in the response
-    serialize=str,
-    parse_value=lambda v: MyCustomType(),
-)
-
-
 @strawberry.type
 class Query:
     @strawberry.field()
@@ -1770,8 +1774,16 @@ class Query:
         return Example(custom=MyCustomType())
 
 
-# Tells strawberry to convert MyCustomType into MyScalarType
-schema = strawberry.Schema(query=Query, scalar_overrides={MyCustomType: MyScalarType})
+schema = strawberry.Schema(
+    query=Query,
+    scalar_map={
+        MyCustomType: strawberry.scalar(
+            name="MyScalarType",
+            serialize=str,
+            parse_value=lambda v: MyCustomType(),
+        )
+    },
+)
 ```
 
 ## Custom Conversion Logic
@@ -1793,7 +1805,7 @@ conversion is possible through a constructor.
 import base64
 import strawberry
 from pydantic import BaseModel
-from typing import Union, NewType
+from typing import Annotated, Union
 
 
 class User(BaseModel):
@@ -1801,11 +1813,14 @@ class User(BaseModel):
     hash: bytes
 
 
-Base64 = strawberry.scalar(
-    NewType("Base64", bytes),
-    serialize=lambda v: base64.b64encode(v).decode("utf-8"),
-    parse_value=lambda v: base64.b64decode(v.encode("utf-8")),
-)
+Base64 = Annotated[
+    bytes,
+    strawberry.scalar(
+        name="Base64",
+        serialize=lambda v: base64.b64encode(v).decode("utf-8"),
+        parse_value=lambda v: base64.b64decode(v.encode("utf-8")),
+    ),
+]
 
 
 @strawberry.experimental.pydantic.type(model=User)

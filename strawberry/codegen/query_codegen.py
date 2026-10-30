@@ -7,8 +7,11 @@ from functools import cmp_to_key, partial
 from pathlib import Path
 from typing import (
     TYPE_CHECKING,
+    Annotated,
     Any,
     cast,
+    get_args,
+    get_origin,
 )
 from typing_extensions import Protocol
 
@@ -34,6 +37,7 @@ from graphql import (
     parse,
 )
 
+from strawberry.scalars import get_scalar_definition
 from strawberry.types.base import (
     StrawberryList,
     StrawberryObjectDefinition,
@@ -44,7 +48,7 @@ from strawberry.types.base import (
 )
 from strawberry.types.enum import StrawberryEnumDefinition
 from strawberry.types.lazy_type import LazyType
-from strawberry.types.scalar import ScalarDefinition, ScalarWrapper
+from strawberry.types.scalar import ScalarDefinition
 from strawberry.types.union import StrawberryUnion
 from strawberry.types.unset import UNSET
 from strawberry.utils.str_converters import capitalize_first, to_camel_case
@@ -581,20 +585,35 @@ class QueryCodegen:
         if isinstance(field_type, StrawberryList):
             return GraphQLList(self._get_field_type(field_type.of_type))
 
-        if (
-            not isinstance(field_type, StrawberryType)
-            and field_type in self.schema.schema_converter.scalar_registry
+        if not isinstance(field_type, StrawberryType) and (
+            scalar_definition := get_scalar_definition(
+                field_type,
+                self.schema.schema_converter.scalar_registry,
+            )
         ):
-            field_type = self.schema.schema_converter.scalar_registry[field_type]  # type: ignore
-
-        if isinstance(field_type, ScalarWrapper):
-            python_type = field_type.wrap
-            if hasattr(python_type, "__supertype__"):
-                python_type = python_type.__supertype__
-
-            return self._collect_scalar(field_type._scalar_definition, python_type)  # type: ignore
+            # Store the original Python type (could be a type or NewType)
+            # before replacing with the ScalarDefinition
+            original_python_type = field_type
+            if get_origin(original_python_type) is Annotated:
+                original_python_type = get_args(original_python_type)[0]
+            # For NewTypes, get the underlying type for the codegen
+            if hasattr(original_python_type, "__supertype__"):
+                python_type = original_python_type.__supertype__
+            elif isinstance(original_python_type, type):
+                python_type = original_python_type
+            else:
+                python_type = None
+            return self._collect_scalar(scalar_definition, python_type)
 
         if isinstance(field_type, ScalarDefinition):
+            # Variable definitions refer to scalars by GraphQL name, rather
+            # than the Python annotation used on their fields or arguments.
+            for (
+                annotation,
+                definition,
+            ) in self.schema.schema_converter.scalar_registry.items():
+                if definition is field_type:
+                    return self._get_field_type(cast("type", annotation))
             return self._collect_scalar(field_type, None)
 
         if isinstance(field_type, StrawberryEnumDefinition):

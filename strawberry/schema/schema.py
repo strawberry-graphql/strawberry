@@ -99,7 +99,7 @@ if TYPE_CHECKING:
     from strawberry.types.base import StrawberryType
     from strawberry.types.enum import StrawberryEnumDefinition
     from strawberry.types.field import StrawberryField
-    from strawberry.types.scalar import ScalarDefinition, ScalarWrapper
+    from strawberry.types.scalar import ScalarDefinition
     from strawberry.types.union import StrawberryUnion
 
 
@@ -318,11 +318,11 @@ class Schema(BaseSchema):
         ] = (),
         execution_context_class: type[GraphQLExecutionContext] | None = None,
         config: StrawberryConfig | None = None,
-        scalar_overrides: (
-            Mapping[object, type | ScalarWrapper | ScalarDefinition] | None
-        ) = None,
+        scalar_overrides: Mapping[object, type | ScalarDefinition] | None = None,
         schema_directives: Iterable[object] = (),
         exception_handlers: Iterable[ExceptionHandler[Any]] = (),
+        *,
+        scalar_map: Mapping[object, ScalarDefinition] | None = None,
     ) -> None:
         """Default Schema to be used in a Strawberry application.
 
@@ -343,10 +343,13 @@ class Schema(BaseSchema):
             extensions: A list of Strawberry extensions.
             execution_context_class: The execution context class.
             config: The configuration for the schema.
-            scalar_overrides: A dictionary of overrides for scalars.
+            scalar_overrides: Deprecated. Use scalar_map instead.
             schema_directives: A list of schema directives for the schema.
             exception_handlers: A list of handlers that can convert Python
                 exceptions into explicit GraphQL union return values.
+            scalar_map: A mapping of Python types or annotated aliases to scalar
+                definitions. Takes precedence over scalar_overrides and the
+                deprecated config.scalar_map for the same key.
 
         Example:
         ```python
@@ -388,10 +391,23 @@ class Schema(BaseSchema):
         self.config = config or StrawberryConfig()
         self.exception_handlers = tuple(exception_handlers)
 
+        if scalar_overrides is not None:
+            warnings.warn(
+                "Schema(scalar_overrides=...) is deprecated. "
+                "Use Schema(scalar_map=...) instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+
+        scalar_map = {
+            **self.config.scalar_map,
+            **cast("Mapping[object, ScalarDefinition]", scalar_overrides or {}),
+            **(scalar_map or {}),
+        }
+
         self.schema_converter = GraphQLCoreConverter(
             self.config,
-            scalar_overrides=scalar_overrides or {},  # type: ignore
-            scalar_map=self.config.scalar_map,
+            scalar_map=scalar_map,
             get_fields=self.get_fields,
             exception_handlers=self.exception_handlers,
         )

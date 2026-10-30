@@ -114,10 +114,23 @@ List of handlers that convert expected Python exceptions into typed GraphQL
 union results. See
 [dealing with expected errors](/docs/guides/errors#mapping-expected-exceptions-to-union-results).
 
-#### `scalar_overrides: Optional[Dict[object, ScalarWrapper]] = None`
+#### `scalar_map: Mapping[object, ScalarDefinition] | None = None`
 
-Override the implementation of the built in scalars.
+Register existing Python types as scalars or override scalar implementations for
+this schema. Keys can be Python types, `NewType`s, or annotated scalar aliases.
+The parameter is keyword-only and is also available on
+`strawberry.federation.Schema`.
 [More information](/docs/types/scalars#overriding-built-in-scalars).
+
+`StrawberryConfig.scalar_map` is deprecated; pass that mapping here instead.
+Other configuration options are unchanged.
+
+#### `scalar_overrides: Optional[Dict[object, ScalarDefinition]] = None`
+
+Deprecated. Use `scalar_map` instead. Passing `scalar_overrides` emits a
+`DeprecationWarning`, but existing overrides continue to work. For the same key,
+`Schema(scalar_map=...)` takes precedence over `scalar_overrides`, which takes
+precedence over the deprecated config map.
 
 ---
 

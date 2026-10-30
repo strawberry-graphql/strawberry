@@ -1,6 +1,6 @@
 import textwrap
 from enum import Enum
-from typing import Any, NoReturn
+from typing import Any, NewType, NoReturn
 
 import pytest
 
@@ -649,12 +649,7 @@ def test_directive_arguments_are_coerced_and_converted(
         VANILLA = "vanilla"
         CHOCOLATE = "chocolate"
 
-    ParsedScalar = strawberry.scalar(
-        str,
-        name="ParsedScalar",
-        serialize=str,
-        parse_value=lambda value: f"parsed:{value}",
-    )
+    ParsedScalar = NewType("ParsedScalar", str)
 
     @strawberry.input
     class NestedDirectiveInput:
@@ -683,7 +678,19 @@ def test_directive_arguments_are_coerced_and_converted(
     class Query:
         greeting: str = "Hi"
 
-    schema = strawberry.Schema(query=Query, directives=[inspect_arguments])
+    schema = strawberry.Schema(
+        query=Query,
+        directives=[inspect_arguments],
+        config=StrawberryConfig(
+            scalar_map={
+                ParsedScalar: strawberry.scalar(
+                    name="ParsedScalar",
+                    serialize=str,
+                    parse_value=lambda value: f"parsed:{value}",
+                )
+            }
+        ),
+    )
     result = schema.execute_sync(
         query, root_value=Query(), variable_values=variable_values
     )
@@ -796,7 +803,11 @@ def test_directives_with_custom_types():
 
 
 def test_directives_with_scalar():
-    DirectiveInput = strawberry.scalar(str, name="DirectiveInput")
+    from typing import NewType
+
+    from strawberry.schema.config import StrawberryConfig
+
+    DirectiveInput = NewType("DirectiveInput", str)
 
     @strawberry.type
     class Query:
@@ -810,7 +821,13 @@ def test_directives_with_scalar():
     def uppercase(value: DirectiveValue[str], input: DirectiveInput):
         return value.upper()
 
-    schema = strawberry.Schema(query=Query, directives=[uppercase])
+    schema = strawberry.Schema(
+        query=Query,
+        directives=[uppercase],
+        config=StrawberryConfig(
+            scalar_map={DirectiveInput: strawberry.scalar(name="DirectiveInput")}
+        ),
+    )
 
     expected_schema = '''
     """Make string uppercase"""

@@ -12,16 +12,16 @@ the following code will throw this error:
 
 ```python
 import strawberry
+from typing import Annotated
 
-MyCustomScalar = strawberry.scalar(
+MyCustomScalar = Annotated[
     str,
-    name="MyCustomScalar",
-)
-
-MyCustomScalar2 = strawberry.scalar(
+    strawberry.scalar(name="MyCustomScalar", serialize=str, parse_value=str),
+]
+MyCustomScalar2 = Annotated[
     int,
-    name="MyCustomScalar",
-)
+    strawberry.scalar(name="MyCustomScalar", serialize=int, parse_value=int),
+]
 
 
 @strawberry.type
@@ -48,16 +48,16 @@ name of one of them, for example in this code we renamed the second scalar:
 
 ```python
 import strawberry
+from typing import Annotated
 
-MyCustomScalar = strawberry.scalar(
+MyCustomScalar = Annotated[
     str,
-    name="MyCustomScalar",
-)
-
-MyCustomScalar2 = strawberry.scalar(
+    strawberry.scalar(name="MyCustomScalar", serialize=str, parse_value=str),
+]
+MyCustomScalar2 = Annotated[
     int,
-    name="MyCustomScalar2",
-)
+    strawberry.scalar(name="MyCustomScalar2", serialize=int, parse_value=int),
+]
 
 
 @strawberry.type

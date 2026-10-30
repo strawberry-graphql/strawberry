@@ -50,7 +50,7 @@ from strawberry.file_uploads import UploadDefinition
 schema = strawberry.Schema(
     query=Query,
     mutation=Mutation,
-    scalar_overrides={UploadFile: UploadDefinition},
+    scalar_map={UploadFile: UploadDefinition},
 )
 ```
 

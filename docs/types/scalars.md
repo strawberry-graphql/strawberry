@@ -122,42 +122,94 @@ can expect for a particular field.
 To define a custom scalar you need to give it a name and functions that tell
 Strawberry how to serialize and deserialise the type.
 
-For example here is a custom scalar type to represent a Base64 string:
+Use `Annotated` to attach the definition to a Python type. The scalar is then
+available anywhere the annotation is used, without schema registration. For
+example, here is a custom scalar type to represent a Base64 string:
 
 ```python
 import base64
-from typing import NewType
+from typing import Annotated
 
 import strawberry
-from strawberry.schema.config import StrawberryConfig
 
-Base64 = NewType("Base64", bytes)
+Base64 = Annotated[
+    bytes,
+    strawberry.scalar(
+        name="Base64",
+        serialize=lambda v: base64.b64encode(v).decode("utf-8"),
+        parse_value=lambda v: base64.b64decode(v.encode("utf-8")),
+    ),
+]
 
 
 @strawberry.type
 class Query:
     @strawberry.field
     def base64(self) -> Base64:
-        return Base64(b"hi")
+        return b"hi"
 
 
-schema = strawberry.Schema(
-    Query,
-    config=StrawberryConfig(
-        scalar_map={
-            Base64: strawberry.scalar(
-                name="Base64",
-                serialize=lambda v: base64.b64encode(v).decode("utf-8"),
-                parse_value=lambda v: base64.b64decode(v.encode("utf-8")),
-            )
-        }
-    ),
-)
+schema = strawberry.Schema(Query)
 
 result = schema.execute_sync("{ base64 }")
 
 assert result.data == {"base64": "aGk="}
 ```
+
+This does not change how other `bytes` annotations are handled. To also give
+your scalar a distinct Python type-checking identity, declare a `NewType` first:
+
+```python
+from datetime import datetime, timezone
+from typing import Annotated, NewType
+
+import strawberry
+
+EpochValue = NewType("EpochValue", datetime)
+EpochDateTime = Annotated[
+    EpochValue,
+    strawberry.scalar(
+        name="EpochDateTime",
+        serialize=lambda value: int(value.timestamp()),
+        parse_value=lambda value: datetime.fromtimestamp(value, timezone.utc),
+    ),
+]
+```
+
+Declare `NewType` separately rather than calling it inside `Annotated`, so
+Python type checkers recognize it. At runtime, `Annotated` does not wrap values;
+`EpochValue(...)` constructs values of the distinct static type.
+
+### Schema-wide registration and overrides
+
+Use `Schema(scalar_map=...)` when you want to support an existing Python type
+without changing annotations throughout your codebase. It also lets you replace
+built-ins: use `date` or `datetime` as the key for the corresponding Python
+type, or `strawberry.scalars.JSON` for the built-in JSON scalar (not `dict`).
+
+An explicit mapping takes precedence over an annotated definition, which takes
+precedence over the built-in scalar. You can key a mapping by the exported
+annotated alias, such as `EpochDateTime`, to override only that alias, or by its
+underlying type, such as `EpochValue`, to override all annotated uses of that
+type. An override of `datetime` does not override a distinct `NewType` based on
+`datetime`. If both alias and underlying-type mappings exist, the alias wins.
+
+Standalone `strawberry.scalar(name=...)` definitions can be reused as metadata
+or mapping values. The old `Schema(scalar_overrides=...)` parameter is
+deprecated; use `Schema(scalar_map=...)` instead. Two incompatible scalar
+definitions with the same GraphQL name are an error. Give locally different
+representations different GraphQL names unless you intend a schema-wide override
+to unify them.
+
+`StrawberryConfig.scalar_map` is deprecated. Passing a non-empty map to
+`StrawberryConfig` emits a `DeprecationWarning`; move that mapping directly to
+`Schema(scalar_map=...)` instead. The config map still works for compatibility.
+Passing `scalar_overrides` also emits a `DeprecationWarning`, including when the
+supplied map is empty. Both old entry points are still supported during
+migration. When the same key appears in multiple places, the order is
+`Schema.scalar_map`, then `Schema.scalar_overrides`, then the config map. Other
+`StrawberryConfig` options are unchanged. The direct parameter is also available
+on `strawberry.federation.Schema`.
 
 <Note>
 
@@ -179,41 +231,42 @@ raise `StrawberryInputCoercionError` explicitly:
 
 ```python
 import uuid
-from typing import NewType
+from typing import Annotated, NewType
 
 import strawberry
 from strawberry.exceptions import StrawberryInputCoercionError
 
-OrderID = NewType("OrderID", uuid.UUID)
+OrderIDValue = NewType("OrderIDValue", uuid.UUID)
 
 
-def parse_order_id(value: object) -> OrderID:
+def parse_order_id(value: object) -> OrderIDValue:
     if not isinstance(value, str):
         raise StrawberryInputCoercionError("OrderID must be a string")
 
     try:
-        return OrderID(uuid.UUID(value))
+        return OrderIDValue(uuid.UUID(value))
     except ValueError:
         raise StrawberryInputCoercionError("Invalid OrderID") from None
 
 
-order_id_scalar = strawberry.scalar(
-    name="OrderID",
-    serialize=str,
-    parse_value=parse_order_id,
-)
+OrderID = Annotated[
+    OrderIDValue,
+    strawberry.scalar(name="OrderID", serialize=str, parse_value=parse_order_id),
+]
 ```
 
-The resulting scalar definition can be added to `StrawberryConfig.scalar_map`.
-Only catch exceptions that represent expected conversion errors so unexpected
-parser exceptions continue to be reported as server faults. See
+Use `OrderID` directly in field and argument annotations; no scalar map is
+needed. Only catch exceptions that represent expected conversion errors so
+unexpected parser exceptions continue to be reported as server faults. See
 [Dealing with errors](../guides/errors#strawberry-input-coercion-errors) for how
 to identify direct and wrapped coercion errors.
 
 ## Example: Custom Object Scalar
 
 Suppose we would like to use a Pillow `Image` as a scalar that serializes
-to/from base64-encoded bytes:
+to/from base64-encoded bytes. This example registers the existing third-party
+type with `scalar_map`, so resolvers can keep using `Image.Image` without
+introducing an annotated alias:
 
 ```python
 import base64
@@ -222,7 +275,6 @@ from io import BytesIO
 from PIL import Image
 
 import strawberry
-from strawberry.schema.config import StrawberryConfig
 
 
 @strawberry.type
@@ -235,18 +287,14 @@ class Query:
 
 schema = strawberry.Schema(
     Query,
-    config=StrawberryConfig(
-        scalar_map={
-            Image.Image: strawberry.scalar(
-                name="Image",
-                description="A Pillow Image, serialized as base64-encoded PNG",
-                serialize=lambda img: base64.b64encode(img.tobytes("png")).decode(
-                    "utf-8"
-                ),
-                parse_value=lambda v: Image.open(BytesIO(base64.b64decode(v))),
-            )
-        }
-    ),
+    scalar_map={
+        Image.Image: strawberry.scalar(
+            name="Image",
+            description="A Pillow Image, serialized as base64-encoded PNG",
+            serialize=lambda img: base64.b64encode(img.tobytes("png")).decode("utf-8"),
+            parse_value=lambda v: Image.open(BytesIO(base64.b64decode(v))),
+        )
+    },
 )
 ```
 
@@ -287,35 +335,30 @@ Suppose we would like to have a type-safe `Currency` scalar based on `Decimal`:
 
 ```python
 from decimal import Decimal
-from typing import NewType
+from typing import Annotated, NewType
 
 import strawberry
-from strawberry.schema.config import StrawberryConfig
 
-# Define a NewType for currency - this is a proper type that type checkers understand
-Currency = NewType("Currency", Decimal)
+CurrencyValue = NewType("CurrencyValue", Decimal)
+Currency = Annotated[
+    CurrencyValue,
+    strawberry.scalar(
+        name="Currency",
+        description="A monetary value with 2 decimal places",
+        serialize=lambda v: str(v.quantize(Decimal("0.01"))),
+        parse_value=lambda v: CurrencyValue(Decimal(v).quantize(Decimal("0.01"))),
+    ),
+]
 
 
 @strawberry.type
 class Query:
     @strawberry.field
     def price(self) -> Currency:
-        return Currency("19.99")
+        return CurrencyValue(Decimal("19.99"))
 
 
-schema = strawberry.Schema(
-    Query,
-    config=StrawberryConfig(
-        scalar_map={
-            Currency: strawberry.scalar(
-                name="Currency",
-                description="A monetary value with 2 decimal places",
-                serialize=lambda v: str(v.quantize(Decimal("0.01"))),
-                parse_value=lambda v: Currency(v).quantize(Decimal("0.01")),
-            )
-        }
-    ),
-)
+schema = strawberry.Schema(Query)
 ```
 
 This generates the following schema:
@@ -362,7 +405,7 @@ from strawberry.scalars import JSON
 ## Overriding built-in scalars
 
 To override the behaviour of the built-in scalars, you can pass a `scalar_map`
-in your schema config.
+directly to your schema.
 
 Here is a full example of replacing the built-in `DateTime` scalar with one that
 serializes all datetimes as Unix timestamps:
@@ -370,7 +413,6 @@ serializes all datetimes as Unix timestamps:
 ```python
 from datetime import datetime, timezone
 import strawberry
-from strawberry.schema.config import StrawberryConfig
 
 
 @strawberry.type
@@ -382,17 +424,13 @@ class Query:
 
 schema = strawberry.Schema(
     Query,
-    config=StrawberryConfig(
-        scalar_map={
-            datetime: strawberry.scalar(
-                name="DateTime",
-                serialize=lambda value: int(value.timestamp()),
-                parse_value=lambda value: datetime.fromtimestamp(
-                    int(value), timezone.utc
-                ),
-            ),
-        }
-    ),
+    scalar_map={
+        datetime: strawberry.scalar(
+            name="DateTime",
+            serialize=lambda value: int(value.timestamp()),
+            parse_value=lambda value: datetime.fromtimestamp(int(value), timezone.utc),
+        ),
+    },
 )
 result = schema.execute_sync("{ currentTime }")
 assert result.data == {"currentTime": 1628683200}
@@ -413,7 +451,6 @@ from datetime import datetime
 from typing import Union
 
 import strawberry
-from strawberry.schema.config import StrawberryConfig
 
 
 def serialize_datetime(dt: Union[pendulum.DateTime, datetime]) -> str:  # type: ignore
@@ -429,16 +466,14 @@ def parse_datetime(value: str) -> Union[pendulum.DateTime, datetime]:  # type: i
 
 schema = strawberry.Schema(
     Query,
-    config=StrawberryConfig(
-        scalar_map={
-            datetime: strawberry.scalar(
-                name="DateTime",
-                description="A date and time",
-                serialize=serialize_datetime,
-                parse_value=parse_datetime,
-            ),
-        }
-    ),
+    scalar_map={
+        datetime: strawberry.scalar(
+            name="DateTime",
+            description="A date and time",
+            serialize=serialize_datetime,
+            parse_value=parse_datetime,
+        ),
+    },
 )
 ```
 
@@ -447,38 +482,33 @@ schema = strawberry.Schema(
 Python integers have arbitrary precision (no size limit). However, the GraphQL
 spec limits integers to 32-bit signed values (approximately ±2 billion).
 
-This will inevitably raise errors. Instead of using strings on the client as a
-workaround, you could use the following approach:
+Use a custom `BigInt` scalar for values beyond that limit. This example
+serializes them as strings to preserve precision in clients:
 
 ```python
-from typing import NewType, Union
+from typing import Annotated
 
 import strawberry
-from strawberry.schema.config import StrawberryConfig
 
-BigInt = NewType("BigInt", int)
+BigInt = Annotated[
+    int,
+    strawberry.scalar(
+        name="BigInt",
+        description="BigInt field",
+        serialize=str,
+        parse_value=int,
+    ),
+]
 
 
 @strawberry.type
 class Query:
     @strawberry.field
     def large_number(self) -> BigInt:
-        return BigInt(9007199254740993)
+        return 9007199254740993
 
 
-schema = strawberry.Schema(
-    Query,
-    config=StrawberryConfig(
-        scalar_map={
-            BigInt: strawberry.scalar(
-                name="BigInt",
-                description="BigInt field",
-                serialize=lambda v: int(v),
-                parse_value=lambda v: str(v),
-            ),
-        }
-    ),
-)
+schema = strawberry.Schema(Query)
 ```
 
 You can adapt your schema to automatically use this scalar for all integers by
@@ -496,16 +526,13 @@ adding `int` to the `scalar_map`:
 ```python
 schema = strawberry.Schema(
     query=Query,
-    mutation=Mutation,
-    subscription=Subscription,
-    config=StrawberryConfig(
-        scalar_map={
-            int: strawberry.scalar(
-                name="BigInt",
-                serialize=lambda v: int(v),
-                parse_value=lambda v: str(v),
-            ),
-        }
-    ),
+    scalar_map={
+        int: strawberry.scalar(
+            name="BigInt",
+            description="BigInt field",
+            serialize=str,
+            parse_value=int,
+        ),
+    },
 )
 ```

@@ -53,6 +53,7 @@ from strawberry.types.field import StrawberryField, get_annotated_field
 from strawberry.types.lazy_type import LazyType, StrawberryLazyReference
 from strawberry.types.maybe import _annotation_is_maybe
 from strawberry.types.private import StrawberryPrivate, is_private
+from strawberry.types.scalar import ScalarDefinition
 from strawberry.types.union import StrawberryUnion
 from strawberry.types.unresolved_annotations import find_unresolved_options
 from strawberry.utils.inspect import get_generic_arguments
@@ -83,7 +84,6 @@ if TYPE_CHECKING:
 
     from strawberry.exceptions import StrawberryException
     from strawberry.types.base import StrawberryType
-    from strawberry.types.scalar import ScalarDefinition, ScalarWrapper
 
 
 def _is_subclass(annotation: object, base: type | tuple[type, ...]) -> bool:
@@ -158,7 +158,12 @@ def _get_annotated_metadata(annotation: object) -> Iterator[object]:
 
 # Strawberry reads these from the type when it resolves it, while other metadata,
 # like `strawberry.field()` or Pydantic's `Field()`, configures the field
-_TYPE_METADATA = (StrawberryLazyReference, StrawberryPrivate, StrawberryUnion)
+_TYPE_METADATA = (
+    StrawberryLazyReference,
+    StrawberryPrivate,
+    StrawberryUnion,
+    ScalarDefinition,
+)
 
 
 def _is_option(value: object) -> bool:
@@ -350,7 +355,7 @@ def _is_registered(model: type[BaseModel]) -> bool:
 def _find_unregistered_model(
     type_: Any,
     model: type[BaseModel] | None,
-    scalar_registry: dict[object, ScalarDefinition | ScalarWrapper],
+    scalar_registry: dict[object, ScalarDefinition],
 ) -> type[BaseModel] | None:
     """Register scalar fallbacks and find models without a GraphQL type."""
     if isinstance(type_, LazyType):
@@ -398,7 +403,7 @@ def _find_unregistered_model(
 def validate_field_type(
     field: StrawberryField,
     type_: Any,
-    scalar_registry: dict[object, ScalarDefinition | ScalarWrapper],
+    scalar_registry: dict[object, ScalarDefinition],
     *,
     is_input: bool,
 ) -> None:
@@ -436,13 +441,15 @@ def _with_strawberry_metadata(annotation: Any, metadata: Iterable[object]) -> An
     """Add back the Strawberry metadata of `Annotated`.
 
     Pydantic keeps the metadata of a field's `Annotated` apart from its type, but
-    the type needs `strawberry.union()`, and `strawberry.lazy()` to resolve a
-    quoted type from another module.
+    the type needs scalar and union definitions, and `strawberry.lazy()` to
+    resolve a quoted type from another module.
     """
     strawberry_metadata = [
         item
         for item in metadata
-        if isinstance(item, (StrawberryUnion, StrawberryLazyReference))
+        if isinstance(
+            item, (StrawberryUnion, StrawberryLazyReference, ScalarDefinition)
+        )
     ]
 
     if not strawberry_metadata:

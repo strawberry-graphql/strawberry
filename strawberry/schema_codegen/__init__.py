@@ -59,10 +59,7 @@ _SCALAR_MAP = {
         value=cst.Name("strawberry"),
         attr=cst.Name("ID"),
     ),
-    "JSON": cst.Attribute(
-        value=cst.Name("strawberry"),
-        attr=cst.Name("JSON"),
-    ),
+    "JSON": cst.Name("JSON"),
     "UUID": cst.Name("UUID"),
     "Decimal": cst.Name("Decimal"),
     "Date": cst.Name("date"),
@@ -799,6 +796,7 @@ def _get_scalar_definition(
         imports.add(Import(module="uuid", imports=("UUID",)))
         return None
     if name == "JSON":
+        imports.add(Import(module="strawberry.scalars", imports=("JSON",)))
         return None
 
     description = definition.description.value if definition.description else None
@@ -816,58 +814,41 @@ def _get_scalar_definition(
 
             specified_by_url = arg.value.value
 
-    imports.add(Import(module="typing", imports=("NewType",)))
+    imports.add(Import(module="typing", imports=("Annotated",)))
 
-    identity_lambda = cst.Lambda(
-        body=cst.Name("v"),
-        params=cst.Parameters(
-            params=[cst.Param(cst.Name("v"))],
-        ),
-    )
+    args = [_get_argument("name", name)]
+    if description is not None:
+        args.append(_get_argument("description", description))
+    if specified_by_url is not None:
+        args.append(_get_argument("specified_by_url", specified_by_url))
 
-    additional_args: list[cst.Arg | None] = [
-        _get_argument("description", description) if description else None,
-        _get_argument("specified_by_url", specified_by_url)
-        if specified_by_url
-        else None,
-        cst.Arg(
-            keyword=cst.Name("serialize"),
-            value=identity_lambda,
-            equal=cst.AssignEqual(cst.SimpleWhitespace(""), cst.SimpleWhitespace("")),
-        ),
-        cst.Arg(
-            keyword=cst.Name("parse_value"),
-            value=identity_lambda,
-            equal=cst.AssignEqual(cst.SimpleWhitespace(""), cst.SimpleWhitespace("")),
-        ),
-    ]
-
+    # SDL does not describe Python value types or conversion functions. Use
+    # object and identity conversion as placeholders the user can customize.
     statement_definition = cst.SimpleStatementLine(
         body=[
             cst.Assign(
                 targets=[cst.AssignTarget(cst.Name(name))],
-                value=cst.Call(
-                    func=cst.Attribute(
-                        value=cst.Name("strawberry"),
-                        attr=cst.Name("scalar"),
-                    ),
-                    args=[
-                        cst.Arg(
-                            cst.Call(
-                                func=cst.Name("NewType"),
-                                args=[
-                                    cst.Arg(cst.SimpleString(f'"{name}"')),
-                                    cst.Arg(cst.Name("object")),
-                                ],
+                value=cst.Subscript(
+                    value=cst.Name("Annotated"),
+                    slice=[
+                        cst.SubscriptElement(cst.Index(cst.Name("object"))),
+                        cst.SubscriptElement(
+                            cst.Index(
+                                cst.Call(
+                                    func=cst.Attribute(
+                                        cst.Name("strawberry"), cst.Name("scalar")
+                                    ),
+                                    args=args,
+                                )
                             )
                         ),
-                        *filter(None, additional_args),
                     ],
                 ),
             )
         ]
     )
-    return Definition(statement_definition, [], name=definition.name.value)
+
+    return Definition(statement_definition, [], name=name)
 
 
 def codegen(schema: str) -> str:

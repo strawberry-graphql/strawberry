@@ -32,7 +32,7 @@ if TYPE_CHECKING:
 
     from strawberry.schema.config import StrawberryConfig
     from strawberry.types.info import Info
-    from strawberry.types.scalar import ScalarDefinition, ScalarWrapper
+    from strawberry.types.scalar import ScalarDefinition
 
 
 class StrawberryArgumentAnnotation:
@@ -91,8 +91,11 @@ class StrawberryArgument:
             if get_origin(resolved_annotation) is Annotated:
                 first, *rest = get_args(resolved_annotation)
 
-                # The first argument to Annotated is always the underlying type
-                self.type_annotation = StrawberryAnnotation(first)
+                # Keep type metadata (including scalar definitions); resolution
+                # discards argument-only metadata after it is processed below.
+                self.type_annotation = StrawberryAnnotation(
+                    resolved_annotation, namespace=type_annotation.namespace
+                )
 
                 # Find any instances of StrawberryArgumentAnnotation
                 # in the other Annotated args, raising an exception if there
@@ -140,7 +143,7 @@ class StrawberryArgument:
 
 def _is_leaf_type(
     type_: StrawberryType | type,
-    scalar_registry: Mapping[object, ScalarWrapper | ScalarDefinition],
+    scalar_registry: Mapping[object, ScalarDefinition],
     skip_classes: tuple[type, ...] = (),
 ) -> bool:
     if type_ in skip_classes:
@@ -160,7 +163,7 @@ def _is_leaf_type(
 
 def _is_optional_leaf_type(
     type_: StrawberryType | type,
-    scalar_registry: Mapping[object, ScalarWrapper | ScalarDefinition],
+    scalar_registry: Mapping[object, ScalarDefinition],
     skip_classes: tuple[type, ...] = (),
 ) -> bool:
     if type_ in skip_classes:
@@ -178,7 +181,7 @@ class InputContext:
 
     info: Info | None
     config: StrawberryConfig
-    scalar_registry: Mapping[object, ScalarWrapper | ScalarDefinition]
+    scalar_registry: Mapping[object, ScalarDefinition]
     path: tuple[str | int, ...]
     """Location of the input value in the arguments, see `convert_argument`."""
 
@@ -213,7 +216,7 @@ class InputContext:
 def convert_argument(
     value: object,
     type_: StrawberryType | type,
-    scalar_registry: Mapping[object, ScalarWrapper | ScalarDefinition],
+    scalar_registry: Mapping[object, ScalarDefinition],
     config: StrawberryConfig,
     info: Info | None = None,
     *,
@@ -367,7 +370,7 @@ def convert_argument(
 def convert_arguments(
     value: dict[str, Any],
     arguments: list[StrawberryArgument],
-    scalar_registry: Mapping[object, ScalarWrapper | ScalarDefinition],
+    scalar_registry: Mapping[object, ScalarDefinition],
     config: StrawberryConfig,
     info: Info | None = None,
 ) -> dict[str, Any]:

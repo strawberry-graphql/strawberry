@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, cast
 from typing_extensions import Protocol
 
 from strawberry.directive import StrawberryDirective
+from strawberry.scalars import get_scalar_definition
 from strawberry.schema_directive import StrawberrySchemaDirective
 from strawberry.types.base import (
     StrawberryList,
@@ -162,10 +163,8 @@ class NameConverter:
             name = self.get_name_from_type(type_.of_type) + "List"
         elif isinstance(type_, StrawberryOptional):
             name = self.get_name_from_type(type_.of_type) + "Optional"
-        elif hasattr(type_, "_scalar_definition"):
-            strawberry_type = type_._scalar_definition
-
-            name = strawberry_type.name
+        elif scalar_definition := get_scalar_definition(type_, {}):
+            name = scalar_definition.name
         elif has_object_definition(type_):
             strawberry_type = type_.__strawberry_definition__
 
