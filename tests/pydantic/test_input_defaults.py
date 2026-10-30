@@ -17,6 +17,7 @@ from strawberry.pydantic.exceptions import (
     UnsupportedInheritedFieldError,
 )
 from strawberry.scalars import JSON
+from strawberry.schema_directive import Location
 
 
 class Color(Enum):
@@ -651,3 +652,65 @@ input SettingsInput {
 
     assert not result.errors
     assert result.data == {"settings": True}
+
+
+def test_schema_directive_with_pydantic_input():
+    @strawberry.pydantic.input
+    class RetryPolicy(pydantic.BaseModel):
+        attempts: int = 3
+
+    @strawberry.pydantic.input
+    class CachePolicy(pydantic.BaseModel):
+        max_age: Annotated[int, strawberry.field(name="ttlSeconds")]
+        scope: str = "PUBLIC"
+        reason: str | None = None
+        retry: RetryPolicy | None = None
+
+    @strawberry.schema_directive(locations=[Location.FIELD_DEFINITION, Location.OBJECT])
+    class Cached:
+        policy: CachePolicy
+
+    @strawberry.type(
+        directives=[
+            Cached(
+                policy=CachePolicy(
+                    max_age=60,
+                    retry=RetryPolicy(attempts=5),
+                )
+            )
+        ]
+    )
+    class Query:
+        @strawberry.field(
+            directives=[
+                Cached(
+                    policy=CachePolicy(
+                        max_age=10,
+                        reason=None,
+                    )
+                )
+            ]
+        )
+        def item(self) -> str:
+            return "ok"
+
+    schema = strawberry.Schema(query=Query)
+
+    assert str(schema) == snapshot("""\
+directive @cached(policy: CachePolicy!) on FIELD_DEFINITION | OBJECT
+
+input CachePolicy {
+  ttlSeconds: Int!
+  scope: String! = "PUBLIC"
+  reason: String = null
+  retry: RetryPolicy = null
+}
+
+type Query @cached(policy: { ttlSeconds: 60, retry: { attempts: 5 } }) {
+  item: String! @cached(policy: { ttlSeconds: 10, reason: null })
+}
+
+input RetryPolicy {
+  attempts: Int! = 3
+}\
+""")
