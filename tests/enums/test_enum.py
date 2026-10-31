@@ -1,3 +1,4 @@
+import textwrap
 from enum import Enum, IntEnum
 from typing import Annotated
 
@@ -314,3 +315,91 @@ def test_annotated_enum_as_resolver_parameter():
     result = schema.execute_sync("{ colorName(color: RED) }")
     assert result.errors is None
     assert result.data == {"colorName": "red"}
+
+
+def test_annotated_enum_with_name_as_resolver_parameter():
+    class Color(Enum):
+        RED = "red"
+
+    GqlColor = Annotated[Color, strawberry.enum(name="GqlColor", description="A color")]
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def color_name(self, color: GqlColor) -> str:
+            return color.value
+
+    schema = strawberry.Schema(query=Query)
+
+    assert str(schema) == textwrap.dedent(
+        '''\
+        """A color"""
+        enum GqlColor {
+          RED
+        }
+
+        type Query {
+          colorName(color: GqlColor!): String!
+        }'''
+    )
+
+    result = schema.execute_sync("{ colorName(color: RED) }")
+
+    assert not result.errors
+    assert result.data == {"colorName": "red"}
+
+
+def test_annotated_enum_with_name_in_annotated_resolver_parameters():
+    class Color(Enum):
+        RED = "red"
+
+    GqlColor = Annotated[Color, strawberry.enum(name="GqlColor")]
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def color_name(
+            self,
+            color: Annotated[GqlColor, strawberry.argument(description="A color")],
+        ) -> str:
+            return color.value
+
+        @strawberry.field
+        def color_names(
+            self,
+            colors: Annotated[list[GqlColor], strawberry.argument(name="values")],
+        ) -> list[str]:
+            return [color.value for color in colors]
+
+        @strawberry.field
+        def optional_color_name(self, color: GqlColor | None = None) -> str | None:
+            return color.value if color else None
+
+    schema = strawberry.Schema(query=Query)
+
+    assert str(schema) == textwrap.dedent(
+        '''\
+        enum GqlColor {
+          RED
+        }
+
+        type Query {
+          colorName(
+            """A color"""
+            color: GqlColor!
+          ): String!
+          colorNames(values: [GqlColor!]!): [String!]!
+          optionalColorName(color: GqlColor = null): String
+        }'''
+    )
+
+    result = schema.execute_sync(
+        "{ colorName(color: RED) colorNames(values: [RED]) optionalColorName }"
+    )
+
+    assert not result.errors
+    assert result.data == {
+        "colorName": "red",
+        "colorNames": ["red"],
+        "optionalColorName": None,
+    }

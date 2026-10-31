@@ -91,8 +91,17 @@ class StrawberryArgument:
             if get_origin(resolved_annotation) is Annotated:
                 first, *rest = get_args(resolved_annotation)
 
-                # The first argument to Annotated is always the underlying type
-                self.type_annotation = StrawberryAnnotation(first)
+                # Only `strawberry.argument()` is removed, as the rest of the
+                # metadata, like `strawberry.enum(name=...)`, is part of the type
+                type_metadata = [
+                    arg
+                    for arg in rest
+                    if not isinstance(arg, StrawberryArgumentAnnotation)
+                ]
+                self.type_annotation = StrawberryAnnotation(
+                    Annotated[(first, *type_metadata)] if type_metadata else first,
+                    namespace=type_annotation.namespace,
+                )
 
                 # Find any instances of StrawberryArgumentAnnotation
                 # in the other Annotated args, raising an exception if there
