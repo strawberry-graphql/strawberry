@@ -1,6 +1,41 @@
 CHANGELOG
 =========
 
+0.339.1 - 2026-10-31
+--------------------
+
+This release fixes the name and description of enums registered with
+`Annotated` when they're used as resolver arguments:
+
+```python
+class Color(Enum):
+    RED = "red"
+
+
+GqlColor = Annotated[Color, strawberry.enum(name="GqlColor", description="A color")]
+
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def color_name(self, color: GqlColor) -> str:  # was `Color!`, now `GqlColor!`
+        return color.value
+```
+
+Strawberry removed all the `Annotated` metadata from arguments annotated
+directly with the alias, or with
+`Annotated[GqlColor, strawberry.argument(...)]`, not only
+`strawberry.argument()`. The enum was then registered with the name of the
+Python class, and since an enum is only registered once, this also renamed it
+in the rest of the schema whenever such an argument was defined before the
+other uses of the alias.
+
+Resolver parameters annotated with `strawberry.Private` were also exposed in the
+schema as regular arguments, as the private marker was removed too. They now
+raise an `InvalidArgumentTypeError`.
+
+This release was contributed by [@patrick91](https://github.com/patrick91) in [#4775](https://github.com/strawberry-graphql/strawberry/pull/4775)
+
 0.339.0 - 2026-10-29
 --------------------
 
