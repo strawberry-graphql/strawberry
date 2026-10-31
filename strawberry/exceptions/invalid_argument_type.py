@@ -4,6 +4,7 @@ from functools import cached_property
 from typing import TYPE_CHECKING
 
 from strawberry.types.base import get_object_definition
+from strawberry.types.private import is_private
 
 from .exception import StrawberryException
 from .utils.source_finder import SourceFinder
@@ -29,7 +30,9 @@ class InvalidArgumentTypeError(StrawberryException):
 
         argument_type = "unknown"
 
-        if isinstance(argument.type, StrawberryUnion):
+        if is_private(argument.type):
+            argument_type = "private"
+        elif isinstance(argument.type, StrawberryUnion):
             argument_type = "union"
         else:
             type_definition = get_object_definition(argument.type)
@@ -43,7 +46,12 @@ class InvalidArgumentTypeError(StrawberryException):
         )
         self.rich_message = self.message
 
-        if argument_type == "union":
+        if argument_type == "private":
+            self.suggestion = (
+                "Private types are not supported as arguments, as arguments are "
+                "always exposed in the schema."
+            )
+        elif argument_type == "union":
             self.suggestion = "Unions are not supported as arguments in GraphQL."
         elif argument_type == "interface":
             self.suggestion = "Interfaces are not supported as arguments in GraphQL."

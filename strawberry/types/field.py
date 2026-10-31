@@ -31,6 +31,7 @@ from strawberry.types.base import (
     WithStrawberryObjectDefinition,
     has_object_definition,
 )
+from strawberry.types.private import is_private
 from strawberry.types.union import StrawberryUnion
 
 from .fields.resolver import StrawberryResolver
@@ -210,7 +211,7 @@ class StrawberryField(dataclasses.Field):
             if isinstance(argument.type_annotation.annotation, str):
                 continue
 
-            if isinstance(argument.type, StrawberryUnion):
+            if is_private(argument.type) or isinstance(argument.type, StrawberryUnion):
                 raise InvalidArgumentTypeError(
                     resolver,
                     argument,
