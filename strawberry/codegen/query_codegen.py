@@ -3,7 +3,9 @@ from __future__ import annotations
 from collections.abc import Callable, Iterable, Mapping, Sequence
 from dataclasses import MISSING, dataclass
 from enum import Enum
-from functools import cmp_to_key, partial
+from functools import partial
+from graphlib import TopologicalSorter
+from heapq import heapify, heappop, heappush
 from pathlib import Path
 from typing import (
     TYPE_CHECKING,
@@ -288,26 +290,32 @@ class QueryCodegenPluginManager:
         self.console_plugin = console_plugin
 
     def _sort_types(self, types: list[GraphQLType]) -> list[GraphQLType]:
-        """Sort the types.
+        """Order dependencies first, choosing ready types in collection order."""
+        # Codegen types are unhashable dataclasses, so use their indices as nodes.
+        graph: dict[int, set[int]] = {}
+        for index, type_ in enumerate(types):
+            dependencies = list(_get_deps(type_))
+            graph[index] = {
+                dependency_index
+                for dependency_index, dependency in enumerate(types)
+                if dependency_index != index and dependency in dependencies
+            }
 
-        t1 < t2 iff t2 has a dependency on t1.
-        t1 == t2 iff neither type has a dependency on the other.
-        """
+        sorter = TopologicalSorter(graph)
+        sorter.prepare()
+        ready = list(sorter.get_ready())
+        heapify(ready)
+        ordered: list[GraphQLType] = []
 
-        def type_cmp(t1: GraphQLType, t2: GraphQLType) -> int:
-            """Compare the types."""
-            if t1 is t2:
-                retval = 0
-            elif t1 in _get_deps(t2):
-                retval = -1
-            elif t2 in _get_deps(t1):
-                retval = 1
-            else:
-                retval = 0
+        while ready:
+            index = heappop(ready)
+            ordered.append(types[index])
+            sorter.done(index)
+            # Newly ready types must compete with those already in the heap.
+            for next_index in sorter.get_ready():
+                heappush(ready, next_index)
 
-            return retval
-
-        return sorted(types, key=cmp_to_key(type_cmp))
+        return ordered
 
     def generate_code(
         self, types: list[GraphQLType], operation: GraphQLOperation
