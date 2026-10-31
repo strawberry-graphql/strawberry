@@ -1,3 +1,4 @@
+import runpy
 import textwrap
 
 from strawberry.schema_codegen import codegen
@@ -128,3 +129,38 @@ def test_generates_union_members_before_union():
     assert base_pos < bar_pos, "Interface must precede implementing type"
     assert foo_pos < union_pos, "Union members must precede union definition"
     assert bar_pos < union_pos, "Union members must precede union definition"
+
+
+def test_generates_enum_before_input_using_it_as_default(tmp_path):
+    """An enum used as an input field default must be emitted before the input.
+
+    The default (``= Nulls.last``) is a runtime expression evaluated when the
+    class body runs, so ``from __future__ import annotations`` doesn't help.
+    """
+    schema = """
+    input SortInput {
+        nulls: Nulls = last
+    }
+
+    enum Nulls {
+        first
+        last
+    }
+
+    type Query {
+        issues(sort: SortInput): String
+    }
+    """
+
+    generated = codegen(schema).strip()
+
+    enum_pos = generated.index("@strawberry.enum\nclass Nulls(Enum):")
+    input_pos = generated.index("@strawberry.input\nclass SortInput:")
+
+    assert enum_pos < input_pos, "Enum must precede the input using it as default"
+
+    path = tmp_path / "generated.py"
+    path.write_text(generated)
+    module = runpy.run_path(str(path))
+
+    assert module["SortInput"]().nulls is module["Nulls"].last
