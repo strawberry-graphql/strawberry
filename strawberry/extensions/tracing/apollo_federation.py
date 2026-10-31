@@ -71,6 +71,9 @@ from typing import TYPE_CHECKING, Any
 
 from strawberry.extensions import SchemaExtension
 
+# Imported at runtime: `resolve` is annotated with Info so it receives strawberry.Info.
+from strawberry.types.info import Info  # noqa: TC001
+
 from .utils import should_skip_tracing
 
 if TYPE_CHECKING:
@@ -361,7 +364,7 @@ class ApolloFederationTracingExtension(SchemaExtension):
         self,
         _next: Callable,
         root: Any,
-        info: GraphQLResolveInfo,
+        info: Info,
         *args: Any,
         **kwargs: Any,
     ) -> Any:
@@ -373,7 +376,7 @@ class ApolloFederationTracingExtension(SchemaExtension):
 
         # Record resolver timing
         start_time = time.perf_counter_ns() - self._start_time_ns
-        node = self._create_node(info)
+        node = self._create_node(info._raw_info)
         node.start_time = start_time
 
         try:
@@ -381,7 +384,7 @@ class ApolloFederationTracingExtension(SchemaExtension):
             if isawaitable(result):
                 result = await result
         except Exception as e:
-            node.errors.append(self._make_error(e, info))
+            node.errors.append(self._make_error(e, info._raw_info))
             raise
         else:
             return result
@@ -505,7 +508,7 @@ class ApolloFederationTracingExtensionSync(ApolloFederationTracingExtension):
         self,
         _next: Callable,
         root: Any,
-        info: GraphQLResolveInfo,
+        info: Info,
         *args: Any,
         **kwargs: Any,
     ) -> Any:
@@ -514,13 +517,13 @@ class ApolloFederationTracingExtensionSync(ApolloFederationTracingExtension):
 
         # Record resolver timing
         start_time = time.perf_counter_ns() - self._start_time_ns
-        node = self._create_node(info)
+        node = self._create_node(info._raw_info)
         node.start_time = start_time
 
         try:
             return _next(root, info, *args, **kwargs)
         except Exception as e:
-            node.errors.append(self._make_error(e, info))
+            node.errors.append(self._make_error(e, info._raw_info))
             raise
         finally:
             node.end_time = time.perf_counter_ns() - self._start_time_ns

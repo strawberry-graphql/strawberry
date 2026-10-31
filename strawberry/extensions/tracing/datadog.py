@@ -11,6 +11,9 @@ from packaging import version
 from strawberry.extensions import LifecycleStep, SchemaExtension
 from strawberry.extensions.tracing.utils import should_skip_tracing
 
+# Imported at runtime: `resolve` is annotated with Info so it receives strawberry.Info.
+from strawberry.types.info import Info  # noqa: TC001
+
 parsed_ddtrace_version = version.parse(ddtrace.__version__)
 if parsed_ddtrace_version >= version.parse("3.0.0"):
     from ddtrace.trace import Span, tracer
@@ -20,8 +23,6 @@ else:
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Generator, Iterator
-
-    from graphql import GraphQLResolveInfo
 
     from strawberry.types.execution import ExecutionContext
 
@@ -126,7 +127,7 @@ class DatadogTracingExtension(SchemaExtension):
         self,
         _next: Callable,
         root: Any,
-        info: GraphQLResolveInfo,
+        info: Info,
         *args: str,
         **kwargs: Any,
     ) -> Any:
@@ -138,14 +139,14 @@ class DatadogTracingExtension(SchemaExtension):
 
             return result
 
-        field_path = f"{info.parent_type}.{info.field_name}"
+        field_path = f"{info._raw_info.parent_type}.{info.field_name}"
 
         with self.create_span(
             lifecycle_step=LifecycleStep.RESOLVE,
             name=f"Resolving: {field_path}",
         ) as span:
             span.set_tag("graphql.field_name", info.field_name)
-            span.set_tag("graphql.parent_type", info.parent_type.name)
+            span.set_tag("graphql.parent_type", info._raw_info.parent_type.name)
             span.set_tag("graphql.field_path", field_path)
             span.set_tag("graphql.path", ".".join(map(str, info.path.as_list())))
 
@@ -162,21 +163,21 @@ class DatadogTracingExtensionSync(DatadogTracingExtension):
         self,
         _next: Callable,
         root: Any,
-        info: GraphQLResolveInfo,
+        info: Info,
         *args: str,
         **kwargs: Any,
     ) -> Any:
         if should_skip_tracing(_next, info):
             return _next(root, info, *args, **kwargs)
 
-        field_path = f"{info.parent_type}.{info.field_name}"
+        field_path = f"{info._raw_info.parent_type}.{info.field_name}"
 
         with self.create_span(
             lifecycle_step=LifecycleStep.RESOLVE,
             name=f"Resolving: {field_path}",
         ) as span:
             span.set_tag("graphql.field_name", info.field_name)
-            span.set_tag("graphql.parent_type", info.parent_type.name)
+            span.set_tag("graphql.parent_type", info._raw_info.parent_type.name)
             span.set_tag("graphql.field_path", field_path)
             span.set_tag("graphql.path", ".".join(map(str, info.path.as_list())))
 
