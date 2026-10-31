@@ -28,6 +28,6 @@ Python class, and since an enum is only registered once, this also renamed it
 in the rest of the schema whenever such an argument was defined before the
 other uses of the alias.
 
-Resolver arguments annotated with `strawberry.Private` were also exposed in the
+Resolver parameters annotated with `strawberry.Private` were also exposed in the
 schema as regular arguments, as the private marker was removed too. They now
 raise an `InvalidArgumentTypeError`.

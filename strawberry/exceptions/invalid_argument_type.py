@@ -48,8 +48,9 @@ class InvalidArgumentTypeError(StrawberryException):
 
         if argument_type == "private":
             self.suggestion = (
-                "Private types are not supported as arguments, as arguments are "
-                "always exposed in the schema."
+                "strawberry.Private can only be used on fields. Every resolver "
+                "parameter other than self, root, info and strawberry.Parent is a "
+                "GraphQL argument."
             )
         elif argument_type == "union":
             self.suggestion = "Unions are not supported as arguments in GraphQL."

@@ -7,8 +7,9 @@ title: Invalid Argument Type Error
 ## Description
 
 This error is thrown when an argument is of the wrong type, it usually happens
-when passing **unions**, **interfaces** or **private types** as an argument, for
-example the following code will throw this error:
+when passing **unions** or **interfaces** as an argument, or when marking an
+argument with `strawberry.Private`, for example the following code will throw
+this error:
 
 ```python
 import strawberry
@@ -69,10 +70,11 @@ class Query:
         return "this is an example"
 ```
 
-## Using private types as arguments
+## Using `strawberry.Private` on arguments
 
-[Private types](../types/private.md) are not exposed in the schema, while
-arguments always are, so they can't be used as arguments:
+[`strawberry.Private`](../types/private.md) only hides fields. Every resolver
+parameter, except `self`, `root`, `info` and `strawberry.Parent`, is exposed as
+an argument, so it can't be private:
 
 ```python
 import strawberry
