@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import dataclasses
 from abc import ABC, abstractmethod
+from contextvars import ContextVar
 from typing import (
     TYPE_CHECKING,
     Annotated,
@@ -12,6 +13,7 @@ from typing import (
     Self,
     TypeGuard,
     TypeVar,
+    get_args,
     get_origin,
     overload,
 )
@@ -131,7 +133,7 @@ class StrawberryContainer(StrawberryType):
             type_definition = self.of_type.__strawberry_definition__
 
             if type_definition.is_graphql_generic:
-                of_type_copy = type_definition.copy_with(type_var_map)
+                of_type_copy = copy_object_type_with(self.of_type, type_var_map)
 
         elif (
             isinstance(self.of_type, StrawberryType) and self.of_type.is_graphql_generic
@@ -269,6 +271,47 @@ def get_object_definition(
     return definition
 
 
+def copy_object_type_with(
+    type_: type[WithStrawberryObjectDefinition],
+    type_var_map: Mapping[str, StrawberryType | type],
+) -> type[WithStrawberryObjectDefinition]:
+    """Return the copy of the generic object type `type_` for `type_var_map`.
+
+    `type_var_map` has the arguments of the type parameters of the generic type
+    using `type_` in one of its fields. When `type_` is given type parameters of
+    that type, like `Edge[S]` in `edges: list[Edge[S]]`, they're replaced with
+    their arguments, which are then given to the type parameters of `Edge`, as
+    they can have other names.
+    """
+    from strawberry.annotation import StrawberryAnnotation
+
+    origin = get_origin(type_)
+
+    if origin is not None:
+        arguments: list[StrawberryType | type] = []
+
+        for argument in get_args(type_):
+            resolved = StrawberryAnnotation(argument).resolve()
+
+            if has_object_definition(resolved):
+                if resolved.__strawberry_definition__.is_graphql_generic:
+                    resolved = copy_object_type_with(resolved, type_var_map)
+            elif isinstance(resolved, StrawberryType) and resolved.is_graphql_generic:
+                resolved = resolved.copy_with(type_var_map)
+
+            arguments.append(resolved)
+
+        type_var_map = dict(
+            zip(
+                (parameter.__name__ for parameter in origin.__parameters__),
+                arguments,
+                strict=True,
+            )
+        )
+
+    return type_.__strawberry_definition__.copy_with(type_var_map)
+
+
 def check_is_not_undecorated_subclass(type_: object) -> None:
     """Raise if `type_` only inherits its object definition from a base class.
 
@@ -292,6 +335,52 @@ def check_is_not_undecorated_subclass(type_: object) -> None:
     from strawberry.exceptions import UndecoratedSubclassError
 
     raise UndecoratedSubclassError(type_, definition.origin, definition)
+
+
+# the generic types `StrawberryObjectDefinition.copy_with` is copying, with the
+# type var map of each copy and the type it's creating
+_copies_in_progress: ContextVar[
+    tuple[
+        tuple[
+            StrawberryObjectDefinition,
+            Mapping[str, StrawberryType | type],
+            type[WithStrawberryObjectDefinition],
+        ],
+        ...,
+    ]
+] = ContextVar("_copies_in_progress", default=())
+
+# the types `StrawberryObjectDefinition.is_graphql_generic` is checking
+_generic_checks_in_progress: ContextVar[tuple[StrawberryObjectDefinition, ...]] = (
+    ContextVar("_generic_checks_in_progress", default=())
+)
+
+
+def _is_same_type_argument(
+    first: StrawberryType | type, second: StrawberryType | type
+) -> bool:
+    # containers compare equal when they wrap the same type, so `list[int]`
+    # would otherwise be the same argument as `int | None`
+    if isinstance(first, StrawberryContainer) or isinstance(
+        second, StrawberryContainer
+    ):
+        return (
+            type(first) is type(second)
+            and isinstance(first, StrawberryContainer)
+            and isinstance(second, StrawberryContainer)
+            and _is_same_type_argument(first.of_type, second.of_type)
+        )
+
+    return first == second
+
+
+def _is_same_type_var_map(
+    first: Mapping[str, StrawberryType | type],
+    second: Mapping[str, StrawberryType | type],
+) -> bool:
+    return first.keys() == second.keys() and all(
+        _is_same_type_argument(first[name], second[name]) for name in first
+    )
 
 
 @dataclasses.dataclass(eq=False)
@@ -389,7 +478,14 @@ class StrawberryObjectDefinition(StrawberryType):
     def copy_with(
         self, type_var_map: Mapping[str, StrawberryType | type]
     ) -> type[WithStrawberryObjectDefinition]:
-        fields = [field.copy_with(type_var_map) for field in self.fields]
+        # a generic type can use itself, like `children: list[Node[T]]` in
+        # `Node[T]`, so the copy being created is reused for it instead of
+        # creating it again, which wouldn't end
+        for definition, copy_type_var_map, copy in _copies_in_progress.get():
+            if definition is self and _is_same_type_var_map(
+                copy_type_var_map, type_var_map
+            ):
+                return copy
 
         new_type_definition = StrawberryObjectDefinition(
             name=self.name,
@@ -402,7 +498,7 @@ class StrawberryObjectDefinition(StrawberryType):
             extend=self.extend,
             is_type_of=self.is_type_of,
             resolve_type=self.resolve_type,
-            fields=fields,
+            fields=[],
             concrete_of=self,
             type_var_map=type_var_map,
             from_input=self.from_input,
@@ -417,6 +513,16 @@ class StrawberryObjectDefinition(StrawberryType):
 
         new_type_definition.origin = new_type
 
+        token = _copies_in_progress.set(
+            (*_copies_in_progress.get(), (self, type_var_map, new_type))
+        )
+        try:
+            new_type_definition.fields = [
+                field.copy_with(type_var_map) for field in self.fields
+            ]
+        finally:
+            _copies_in_progress.reset(token)
+
         return new_type
 
     def get_field(self, python_name: str) -> StrawberryField | None:
@@ -429,10 +535,20 @@ class StrawberryObjectDefinition(StrawberryType):
         if not is_type_generic(self.origin):
             return False
 
-        # here we are checking if any exposed field is generic
-        # a Strawberry class can be "generic", but not expose any
-        # generic field to GraphQL
-        return any(field.is_graphql_generic for field in self.fields)
+        # a type using itself, like `children: list[Node[T]]` in `Node[T]`, is
+        # only generic if one of its other fields is
+        checks_in_progress = _generic_checks_in_progress.get()
+        if self in checks_in_progress:
+            return False
+
+        token = _generic_checks_in_progress.set((*checks_in_progress, self))
+        try:
+            # here we are checking if any exposed field is generic
+            # a Strawberry class can be "generic", but not expose any
+            # generic field to GraphQL
+            return any(field.is_graphql_generic for field in self.fields)
+        finally:
+            _generic_checks_in_progress.reset(token)
 
     @property
     def is_specialized_generic(self) -> bool:
