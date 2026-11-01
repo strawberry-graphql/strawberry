@@ -88,9 +88,8 @@ class MyQueryResult:
     user: MyQueryResultUser
 ```
 
-Generated types appear after their dependencies. When multiple types are ready
-to be generated, Strawberry chooses the type collected first while traversing
-the operation. This keeps the output ordering consistent across Python versions.
+Strawberry visits collected types in order and generates each type after its
+dependencies. This keeps the output ordering consistent across Python versions.
 
 ## Why is this useful?
 

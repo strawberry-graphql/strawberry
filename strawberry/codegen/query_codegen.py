@@ -4,8 +4,6 @@ from collections.abc import Callable, Iterable, Mapping, Sequence
 from dataclasses import MISSING, dataclass
 from enum import Enum
 from functools import partial
-from graphlib import TopologicalSorter
-from heapq import heapify, heappop, heappush
 from pathlib import Path
 from typing import (
     TYPE_CHECKING,
@@ -98,7 +96,12 @@ if TYPE_CHECKING:
     from strawberry.schema import Schema
     from strawberry.types.field import StrawberryField
 
-    from .types import GraphQLArgumentValue, GraphQLSelection, GraphQLType
+    from .types import (
+        GraphQLArgumentValue,
+        GraphQLNamedType,
+        GraphQLSelection,
+        GraphQLType,
+    )
 
 
 @dataclass
@@ -189,30 +192,25 @@ class ConsolePlugin:
         )
 
 
-def _get_deps(t: GraphQLType) -> Iterable[GraphQLType]:
-    """Get all the types that `t` depends on.
-
-    To keep things simple, `t` depends on itself.
-    """
-    yield t
-
+def _get_deps(t: GraphQLType) -> Iterable[GraphQLNamedType]:
+    """Get directly referenced types, unwrapping lists and optionals."""
+    dependencies: Iterable[GraphQLType]
     if isinstance(t, GraphQLObjectType):
-        for fld in t.fields:
-            yield from _get_deps(fld.type)
-
-    elif isinstance(t, (GraphQLEnum, GraphQLScalar)):
-        # enums and scalars have no dependent types
-        pass
-
-    elif isinstance(t, (GraphQLOptional, GraphQLList)):
-        yield from _get_deps(t.of_type)
-
+        dependencies = (field.type for field in t.fields)
     elif isinstance(t, GraphQLUnion):
-        for gql_type in t.types:
-            yield from _get_deps(gql_type)
+        dependencies = t.types
+    elif isinstance(t, (GraphQLOptional, GraphQLList)):
+        dependencies = (t.of_type,)
+    elif isinstance(t, (GraphQLEnum, GraphQLScalar)):
+        return
     else:
-        # Want to make sure that all types are covered.
         raise ValueError(f"Unknown GraphQLType: {t}")  # noqa: TRY004
+
+    for dependency in dependencies:
+        unwrapped = dependency
+        while isinstance(unwrapped, (GraphQLOptional, GraphQLList)):
+            unwrapped = unwrapped.of_type
+        yield unwrapped
 
 
 def _get_fragment_spread_names(selection_set: SelectionSetNode | None) -> Iterable[str]:
@@ -289,43 +287,56 @@ class QueryCodegenPluginManager:
         self.plugins = plugins
         self.console_plugin = console_plugin
 
-    def _sort_types(self, types: list[GraphQLType]) -> list[GraphQLType]:
-        """Order dependencies first, choosing ready types in collection order."""
-        # Codegen types are unhashable dataclasses, so use their indices as nodes.
-        graph: dict[int, set[int]] = {}
-        for index, type_ in enumerate(types):
-            dependencies = list(_get_deps(type_))
-            graph[index] = {
-                dependency_index
-                for dependency_index, dependency in enumerate(types)
-                if dependency_index != index and dependency in dependencies
-            }
+    def _sort_types(self, types: list[GraphQLNamedType]) -> list[GraphQLType]:
+        """Visit collected types in order, emitting their dependencies first."""
+        types_by_id: dict[int, GraphQLNamedType] = {}
+        types_by_name: dict[str, list[GraphQLNamedType]] = {}
+        for type_ in types:
+            types_by_id[id(type_)] = type_
+            types_by_name.setdefault(type_.name, []).append(type_)
 
-        sorter = TopologicalSorter(graph)
-        sorter.prepare()
-        ready = list(sorter.get_ready())
-        heapify(ready)
+        visited: set[int] = set()
         ordered: list[GraphQLType] = []
 
-        while ready:
-            index = heappop(ready)
-            ordered.append(types[index])
-            sorter.done(index)
-            # Newly ready types must compete with those already in the heap.
-            for next_index in sorter.get_ready():
-                heappush(ready, next_index)
+        def visit(type_: GraphQLNamedType) -> None:
+            type_id = id(type_)
+            if type_id in visited:
+                return
+
+            visited.add(type_id)
+            for dependency in _get_deps(type_):
+                dependency_id = id(dependency)
+                collected_type = types_by_id.get(dependency_id)
+                if collected_type is None:
+                    # Collection may keep one instance while fields reference
+                    # an equivalent copy.
+                    collected_type = next(
+                        (
+                            candidate
+                            for candidate in types_by_name.get(dependency.name, ())
+                            if candidate == dependency
+                        ),
+                        None,
+                    )
+                if collected_type is not None:
+                    types_by_id[dependency_id] = collected_type
+                    visit(collected_type)
+            ordered.append(type_)
+
+        for type_ in types:
+            visit(type_)
 
         return ordered
 
     def generate_code(
-        self, types: list[GraphQLType], operation: GraphQLOperation
+        self, types: list[GraphQLNamedType], operation: GraphQLOperation
     ) -> CodegenResult:
         result = CodegenResult(files=[])
 
-        types = self._sort_types(types)
+        sorted_types = self._sort_types(types)
 
         for plugin in self.plugins:
-            files = plugin.generate_code(types, operation)
+            files = plugin.generate_code(sorted_types, operation)
 
             result.files.extend(files)
 
@@ -358,7 +369,7 @@ class QueryCodegen:
     ) -> None:
         self.schema = schema
         self.plugin_manager = QueryCodegenPluginManager(plugins, console_plugin)
-        self.types: list[GraphQLType] = []
+        self.types: list[GraphQLNamedType] = []
 
     def run(self, query: str) -> CodegenResult:
         self.plugin_manager.on_start()
@@ -389,7 +400,7 @@ class QueryCodegen:
 
         return result
 
-    def _collect_type(self, type_: GraphQLType) -> None:
+    def _collect_type(self, type_: GraphQLNamedType) -> None:
         if type_ in self.types:
             return
 

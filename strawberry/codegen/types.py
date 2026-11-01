@@ -77,14 +77,11 @@ class GraphQLScalar:
     python_type: type | None
 
 
-GraphQLType: TypeAlias = (
-    GraphQLObjectType
-    | GraphQLEnum
-    | GraphQLScalar
-    | GraphQLOptional
-    | GraphQLList
-    | GraphQLUnion
+GraphQLNamedType: TypeAlias = (
+    GraphQLObjectType | GraphQLEnum | GraphQLScalar | GraphQLUnion
 )
+
+GraphQLType: TypeAlias = GraphQLNamedType | GraphQLOptional | GraphQLList
 
 
 @dataclass
@@ -213,6 +210,7 @@ __all__ = [
     "GraphQLIntValue",
     "GraphQLList",
     "GraphQLListValue",
+    "GraphQLNamedType",
     "GraphQLNullValue",
     "GraphQLObjectType",
     "GraphQLObjectValue",
