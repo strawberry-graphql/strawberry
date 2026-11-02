@@ -102,6 +102,9 @@ def test_schema_with_custom_edge_class(schema: Schema):
 
             """Returns the items in the list that come after the specified cursor."""
             last: Int = null
+
+            """Skips the first n items in the list."""
+            offset: Int = null
           ): FruitConnection!
         }
         '''

@@ -222,3 +222,40 @@ def test_get_slice_metadata_first_with_before(
         last=None,
     )
     assert slice_metadata == expected
+
+
+@pytest.mark.parametrize(
+    ("after", "first", "last", "offset", "expected"),
+    [
+        (None, None, None, 2, SliceMetadata(start=2, end=102, expected=100)),
+        (None, 2, None, 1, SliceMetadata(start=1, end=3, expected=2)),
+        (10, None, None, 2, SliceMetadata(start=13, end=113, expected=100)),
+        (None, None, 5, 3, SliceMetadata(start=3, end=sys.maxsize, expected=None)),
+    ],
+)
+def test_get_slice_metadata_with_offset(
+    after: int | None,
+    first: int | None,
+    last: int | None,
+    offset: int,
+    expected: SliceMetadata,
+):
+    info = mock.Mock()
+    info.schema.config = StrawberryConfig(relay_max_results=100)
+    slice_metadata = SliceMetadata.from_arguments(
+        info,
+        after=after and to_base64(PREFIX, str(after)),
+        first=first,
+        last=last,
+        offset=offset,
+    )
+    assert slice_metadata == expected
+
+
+def test_get_slice_metadata_with_negative_offset():
+    info = mock.Mock()
+    info.schema.config = StrawberryConfig(relay_max_results=100)
+
+    with pytest.raises(ValueError, match="Argument 'offset' must be a non-negative integer."):
+        SliceMetadata.from_arguments(info, offset=-1)
+

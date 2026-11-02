@@ -725,6 +725,7 @@ class Connection(Generic[NodeType]):
         after: str | None = None,
         first: int | None = None,
         last: int | None = None,
+        offset: int | None = None,
         max_results: int | None = None,
         **kwargs: Any,
     ) -> AwaitableOrValue[Self]:
@@ -777,6 +778,7 @@ class ListConnection(Connection[NodeType]):
         after: str | None = None,
         first: int | None = None,
         last: int | None = None,
+        offset: int | None = None,
         max_results: int | None = None,
         **kwargs: Any,
     ) -> AwaitableOrValue[Self]:
@@ -817,6 +819,7 @@ class ListConnection(Connection[NodeType]):
             after=after,
             first=first,
             last=last,
+            offset=offset,
             max_results=max_results,
             prefix=edge_class.CURSOR_PREFIX,
         )
@@ -874,7 +877,7 @@ class ListConnection(Connection[NodeType]):
                     original_len = len(edges)
                     edges = edges[-last:]
                     has_next_page = False
-                    has_previous_page = len(edges) != original_len
+                    has_previous_page = has_previous_page or len(edges) != original_len
                 else:
                     has_next_page = False
 
@@ -938,7 +941,7 @@ class ListConnection(Connection[NodeType]):
             original_len = len(edges)
             edges = edges[-last:]
             has_next_page = False
-            has_previous_page = len(edges) != original_len
+            has_previous_page = has_previous_page or len(edges) != original_len
         else:
             has_next_page = False
 

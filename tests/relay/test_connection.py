@@ -266,3 +266,69 @@ def test_max_results(
     assert result.data is not None
     assert isinstance(result.data["users"]["edges"], list)
     assert len(result.data["users"]["edges"]) == expected
+
+
+def test_connection_with_offset():
+    @strawberry.type
+    class Item(Node):
+        id: strawberry.relay.NodeID[str]
+
+    @strawberry.type
+    class Query:
+        @strawberry.relay.connection(ListConnection[Item])
+        def items(self) -> list[Item]:
+            return [Item(id=str(i)) for i in range(10)]
+
+    schema = strawberry.Schema(query=Query)
+    query = """
+      query ($offset: Int, $first: Int, $last: Int) {
+        items(offset: $offset, first: $first, last: $last) {
+          pageInfo {
+            hasPreviousPage
+            hasNextPage
+            startCursor
+            endCursor
+          }
+          edges {
+            node {
+              id
+            }
+          }
+        }
+      }
+    """
+
+    res = schema.execute_sync(query, variable_values={"offset": 3, "first": 2})
+    assert not res.errors
+    assert res.data == {
+        "items": {
+            "pageInfo": {
+                "hasPreviousPage": True,
+                "hasNextPage": True,
+                "startCursor": to_base64("arrayconnection", "3"),
+                "endCursor": to_base64("arrayconnection", "4"),
+            },
+            "edges": [
+                {"node": {"id": to_base64("Item", "3")}},
+                {"node": {"id": to_base64("Item", "4")}},
+            ],
+        }
+    }
+
+    res_last = schema.execute_sync(query, variable_values={"offset": 8, "last": 2})
+    assert not res_last.errors
+    assert res_last.data == {
+        "items": {
+            "pageInfo": {
+                "hasPreviousPage": True,
+                "hasNextPage": False,
+                "startCursor": to_base64("arrayconnection", "8"),
+                "endCursor": to_base64("arrayconnection", "9"),
+            },
+            "edges": [
+                {"node": {"id": to_base64("Item", "8")}},
+                {"node": {"id": to_base64("Item", "9")}},
+            ],
+        }
+    }
+

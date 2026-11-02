@@ -1552,6 +1552,9 @@ def test_parameters(mocker: MockerFixture):
 
         """Returns the items in the list that come after the specified cursor."""
         last: Int = null
+
+        """Skips the first n items in the list."""
+        offset: Int = null
       ): FruitConnection!
       fruitCustomField(
         foo: String!
@@ -1567,6 +1570,9 @@ def test_parameters(mocker: MockerFixture):
 
         """Returns the items in the list that come after the specified cursor."""
         last: Int = null
+
+        """Skips the first n items in the list."""
+        offset: Int = null
       ): FruitConnection!
     }
     '''

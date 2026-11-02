@@ -97,6 +97,9 @@ def test_node_id_annotation():
 
             """Returns the items in the list that come after the specified cursor."""
             last: Int = null
+
+            """Skips the first n items in the list."""
+            offset: Int = null
           ): FruitConnection!
         }
         '''
@@ -197,6 +200,9 @@ def test_node_id_annotation_in_superclass():
 
             """Returns the items in the list that come after the specified cursor."""
             last: Int = null
+
+            """Skips the first n items in the list."""
+            offset: Int = null
           ): FruitConnection!
         }
         '''
@@ -298,6 +304,9 @@ def test_node_id_annotation_in_superclass_and_subclass():
 
             """Returns the items in the list that come after the specified cursor."""
             last: Int = null
+
+            """Skips the first n items in the list."""
+            offset: Int = null
           ): FruitConnection!
         }
         '''
