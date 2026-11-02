@@ -96,12 +96,7 @@ if TYPE_CHECKING:
     from strawberry.schema import Schema
     from strawberry.types.field import StrawberryField
 
-    from .types import (
-        GraphQLArgumentValue,
-        GraphQLNamedType,
-        GraphQLSelection,
-        GraphQLType,
-    )
+    from .types import GraphQLArgumentValue, GraphQLSelection, GraphQLType
 
 
 @dataclass
@@ -192,27 +187,6 @@ class ConsolePlugin:
         )
 
 
-def _get_deps(t: GraphQLType) -> Iterable[GraphQLNamedType]:
-    """Get directly referenced types, unwrapping lists and optionals."""
-    dependencies: Iterable[GraphQLType]
-    if isinstance(t, GraphQLObjectType):
-        dependencies = (field.type for field in t.fields)
-    elif isinstance(t, GraphQLUnion):
-        dependencies = t.types
-    elif isinstance(t, (GraphQLOptional, GraphQLList)):
-        dependencies = (t.of_type,)
-    elif isinstance(t, (GraphQLEnum, GraphQLScalar)):
-        return
-    else:
-        raise ValueError(f"Unknown GraphQLType: {t}")  # noqa: TRY004
-
-    for dependency in dependencies:
-        unwrapped = dependency
-        while isinstance(unwrapped, (GraphQLOptional, GraphQLList)):
-            unwrapped = unwrapped.of_type
-        yield unwrapped
-
-
 def _get_fragment_spread_names(selection_set: SelectionSetNode | None) -> Iterable[str]:
     """Get the names of all the fragments spread anywhere in `selection_set`."""
     if selection_set is None:
@@ -287,56 +261,13 @@ class QueryCodegenPluginManager:
         self.plugins = plugins
         self.console_plugin = console_plugin
 
-    def _sort_types(self, types: list[GraphQLNamedType]) -> list[GraphQLType]:
-        """Visit collected types in order, emitting their dependencies first."""
-        types_by_id: dict[int, GraphQLNamedType] = {}
-        types_by_name: dict[str, list[GraphQLNamedType]] = {}
-        for type_ in types:
-            types_by_id[id(type_)] = type_
-            types_by_name.setdefault(type_.name, []).append(type_)
-
-        visited: set[int] = set()
-        ordered: list[GraphQLType] = []
-
-        def visit(type_: GraphQLNamedType) -> None:
-            type_id = id(type_)
-            if type_id in visited:
-                return
-
-            visited.add(type_id)
-            for dependency in _get_deps(type_):
-                dependency_id = id(dependency)
-                collected_type = types_by_id.get(dependency_id)
-                if collected_type is None:
-                    # Collection may keep one instance while fields reference
-                    # an equivalent copy.
-                    collected_type = next(
-                        (
-                            candidate
-                            for candidate in types_by_name.get(dependency.name, ())
-                            if candidate == dependency
-                        ),
-                        None,
-                    )
-                if collected_type is not None:
-                    types_by_id[dependency_id] = collected_type
-                    visit(collected_type)
-            ordered.append(type_)
-
-        for type_ in types:
-            visit(type_)
-
-        return ordered
-
     def generate_code(
-        self, types: list[GraphQLNamedType], operation: GraphQLOperation
+        self, types: list[GraphQLType], operation: GraphQLOperation
     ) -> CodegenResult:
         result = CodegenResult(files=[])
 
-        sorted_types = self._sort_types(types)
-
         for plugin in self.plugins:
-            files = plugin.generate_code(sorted_types, operation)
+            files = plugin.generate_code(types, operation)
 
             result.files.extend(files)
 
@@ -369,7 +300,7 @@ class QueryCodegen:
     ) -> None:
         self.schema = schema
         self.plugin_manager = QueryCodegenPluginManager(plugins, console_plugin)
-        self.types: list[GraphQLNamedType] = []
+        self.types: list[GraphQLType] = []
 
     def run(self, query: str) -> CodegenResult:
         self.plugin_manager.on_start()
@@ -400,7 +331,8 @@ class QueryCodegen:
 
         return result
 
-    def _collect_type(self, type_: GraphQLNamedType) -> None:
+    def _collect_type(self, type_: GraphQLType) -> None:
+        """Collect a type after its dependencies."""
         if type_ in self.types:
             return
 
@@ -567,8 +499,6 @@ class QueryCodegen:
 
         type_ = GraphQLObjectType(f"{operation_name}Variables", [])
 
-        self._collect_type(type_)
-
         variables: list[GraphQLVariable] = []
 
         for variable_definition in variable_definitions:
@@ -580,6 +510,8 @@ class QueryCodegen:
 
             type_.fields.append(GraphQLField(variable.name, None, variable_type))
             variables.append(variable)
+
+        self._collect_type(type_)
 
         return variables, type_
 

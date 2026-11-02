@@ -88,8 +88,9 @@ class MyQueryResult:
     user: MyQueryResultUser
 ```
 
-Strawberry visits collected types in order and generates each type after its
-dependencies. This keeps the output ordering consistent across Python versions.
+Strawberry collects each generated type after its dependencies and passes that
+order to code generation plugins. This keeps declaration order consistent across
+Python versions.
 
 ## Why is this useful?
 
