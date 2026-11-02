@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections.abc import Callable, Iterable, Mapping, Sequence
 from dataclasses import MISSING, dataclass
 from enum import Enum
-from functools import cmp_to_key, partial
+from functools import partial
 from pathlib import Path
 from typing import (
     TYPE_CHECKING,
@@ -187,32 +187,6 @@ class ConsolePlugin:
         )
 
 
-def _get_deps(t: GraphQLType) -> Iterable[GraphQLType]:
-    """Get all the types that `t` depends on.
-
-    To keep things simple, `t` depends on itself.
-    """
-    yield t
-
-    if isinstance(t, GraphQLObjectType):
-        for fld in t.fields:
-            yield from _get_deps(fld.type)
-
-    elif isinstance(t, (GraphQLEnum, GraphQLScalar)):
-        # enums and scalars have no dependent types
-        pass
-
-    elif isinstance(t, (GraphQLOptional, GraphQLList)):
-        yield from _get_deps(t.of_type)
-
-    elif isinstance(t, GraphQLUnion):
-        for gql_type in t.types:
-            yield from _get_deps(gql_type)
-    else:
-        # Want to make sure that all types are covered.
-        raise ValueError(f"Unknown GraphQLType: {t}")  # noqa: TRY004
-
-
 def _get_fragment_spread_names(selection_set: SelectionSetNode | None) -> Iterable[str]:
     """Get the names of all the fragments spread anywhere in `selection_set`."""
     if selection_set is None:
@@ -287,34 +261,10 @@ class QueryCodegenPluginManager:
         self.plugins = plugins
         self.console_plugin = console_plugin
 
-    def _sort_types(self, types: list[GraphQLType]) -> list[GraphQLType]:
-        """Sort the types.
-
-        t1 < t2 iff t2 has a dependency on t1.
-        t1 == t2 iff neither type has a dependency on the other.
-        """
-
-        def type_cmp(t1: GraphQLType, t2: GraphQLType) -> int:
-            """Compare the types."""
-            if t1 is t2:
-                retval = 0
-            elif t1 in _get_deps(t2):
-                retval = -1
-            elif t2 in _get_deps(t1):
-                retval = 1
-            else:
-                retval = 0
-
-            return retval
-
-        return sorted(types, key=cmp_to_key(type_cmp))
-
     def generate_code(
         self, types: list[GraphQLType], operation: GraphQLOperation
     ) -> CodegenResult:
         result = CodegenResult(files=[])
-
-        types = self._sort_types(types)
 
         for plugin in self.plugins:
             files = plugin.generate_code(types, operation)
@@ -382,6 +332,7 @@ class QueryCodegen:
         return result
 
     def _collect_type(self, type_: GraphQLType) -> None:
+        """Collect a type after its dependencies."""
         if type_ in self.types:
             return
 
@@ -548,8 +499,6 @@ class QueryCodegen:
 
         type_ = GraphQLObjectType(f"{operation_name}Variables", [])
 
-        self._collect_type(type_)
-
         variables: list[GraphQLVariable] = []
 
         for variable_definition in variable_definitions:
@@ -561,6 +510,8 @@ class QueryCodegen:
 
             type_.fields.append(GraphQLField(variable.name, None, variable_type))
             variables.append(variable)
+
+        self._collect_type(type_)
 
         return variables, type_
 

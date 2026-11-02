@@ -88,6 +88,10 @@ class MyQueryResult:
     user: MyQueryResultUser
 ```
 
+Strawberry collects each generated type after its dependencies and passes that
+order to code generation plugins. This keeps declaration order consistent across
+Python versions.
+
 ## Why is this useful?
 
 Query code generation is usually used to generate types for clients using your
