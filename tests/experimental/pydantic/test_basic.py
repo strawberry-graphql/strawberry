@@ -769,6 +769,58 @@ def test_deprecated_fields():
     assert field2.type.of_type is str
 
 
+def test_field_descriptions():
+    class User(pydantic.BaseModel):
+        age: int = pydantic.Field(description="The user age")
+        password: str = pydantic.Field(description="The user password")
+        other: float
+
+    @strawberry.experimental.pydantic.type(User)
+    class UserType:
+        age: strawberry.auto = strawberry.field(description="Overridden age")
+        password: strawberry.auto
+        other: strawberry.auto = strawberry.field(description="")
+
+    definition: StrawberryObjectDefinition = UserType.__strawberry_definition__
+    assert definition.name == "UserType"
+
+    [field1, field2, field3] = definition.fields
+
+    # an explicit strawberry.field description wins over the pydantic one
+    assert field1.python_name == "age"
+    assert field1.description == "Overridden age"
+
+    # without one, the pydantic field description is kept
+    assert field2.python_name == "password"
+    assert field2.description == "The user password"
+
+    # an explicitly empty description is respected, not replaced
+    assert field3.python_name == "other"
+    assert field3.description == ""
+
+
+def test_input_field_descriptions():
+    class User(pydantic.BaseModel):
+        age: int = pydantic.Field(description="The user age")
+        password: str = pydantic.Field(description="The user password")
+
+    @strawberry.experimental.pydantic.input(User)
+    class UserInput:
+        age: strawberry.auto = strawberry.field(description="Overridden age")
+        password: strawberry.auto
+
+    definition: StrawberryObjectDefinition = UserInput.__strawberry_definition__
+    assert definition.name == "UserInput"
+
+    [field1, field2] = definition.fields
+
+    assert field1.python_name == "age"
+    assert field1.description == "Overridden age"
+
+    assert field2.python_name == "password"
+    assert field2.description == "The user password"
+
+
 def test_permission_classes():
     class IsAuthenticated(strawberry.BasePermission):
         message = "User is not authenticated"

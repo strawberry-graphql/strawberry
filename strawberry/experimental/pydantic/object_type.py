@@ -89,7 +89,11 @@ def _build_dataclass_creation_fields(  # noqa: PLR0917
             default=dataclasses.MISSING,
             default_factory=get_default_factory_for_field(field, compat=compat),
             type_annotation=StrawberryAnnotation.from_annotation(field_type),
-            description=field.description,
+            description=(
+                existing_field.description
+                if existing_field and existing_field.description is not None
+                else field.description
+            ),
             deprecation_reason=(
                 existing_field.deprecation_reason if existing_field else None
             ),
