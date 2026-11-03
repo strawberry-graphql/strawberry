@@ -1,7 +1,7 @@
 import dataclasses
 import warnings
 from enum import Enum
-from typing import Annotated, Any
+from typing import Annotated, Any, Union
 
 import pydantic
 import pytest
@@ -16,6 +16,7 @@ from strawberry.types.base import (
 )
 from strawberry.types.enum import StrawberryEnumDefinition
 from strawberry.types.union import StrawberryUnion
+from tests.experimental.pydantic.utils import needs_pydantic_v2
 
 
 def test_basic_type_all_fields():
@@ -939,3 +940,79 @@ def test_nested_annotated():
     assert isinstance(field_b.type, StrawberryOptional)
     assert isinstance(field_b.type.of_type, StrawberryList)
     assert field_b.type.of_type.of_type is int
+
+
+def test_annotated_none_in_union():
+    class User(pydantic.BaseModel):
+        a: Union[int, Annotated[None, "metadata"]] = None
+        b: Union[int, str, Annotated[None, "metadata"]] = None
+
+    @strawberry.experimental.pydantic.input(User, all_fields=True)
+    class UserType:
+        pass
+
+    definition: StrawberryObjectDefinition = UserType.__strawberry_definition__
+    assert definition.name == "UserType"
+
+    [field_a, field_b] = definition.fields
+    assert field_a.python_name == "a"
+    assert isinstance(field_a.type, StrawberryOptional)
+    assert field_a.type.of_type is int
+
+    assert field_b.python_name == "b"
+    assert isinstance(field_b.type, StrawberryOptional)
+    assert isinstance(field_b.type.of_type, StrawberryUnion)
+    assert field_b.type.of_type.types == (int, str)
+
+
+@needs_pydantic_v2
+def test_skip_json_schema_none_in_union():
+    from pydantic.json_schema import SkipJsonSchema
+
+    class User(pydantic.BaseModel):
+        a: Union[str, SkipJsonSchema[None]] = None
+        b: Union[list[str], SkipJsonSchema[None]] = None
+
+    @strawberry.experimental.pydantic.type(User, all_fields=True)
+    class UserType:
+        pass
+
+    definition: StrawberryObjectDefinition = UserType.__strawberry_definition__
+    assert definition.name == "UserType"
+
+    [field_a, field_b] = definition.fields
+    assert field_a.python_name == "a"
+    assert isinstance(field_a.type, StrawberryOptional)
+    assert field_a.type.of_type is str
+
+    assert field_b.python_name == "b"
+    assert isinstance(field_b.type, StrawberryOptional)
+    assert isinstance(field_b.type.of_type, StrawberryList)
+    assert field_b.type.of_type.of_type is str
+
+
+def test_annotated_union_member_keeps_metadata():
+    @strawberry.type
+    class Cat:
+        name: str
+
+    @strawberry.type
+    class Dog:
+        name: str
+
+    AnimalUnion = Annotated[Union[Cat, Dog], strawberry.union("AnimalUnion")]
+
+    class User(pydantic.BaseModel):
+        pet: Union[AnimalUnion, Annotated[None, "metadata"]] = None
+
+    @strawberry.experimental.pydantic.type(User, all_fields=True)
+    class UserType:
+        pass
+
+    definition: StrawberryObjectDefinition = UserType.__strawberry_definition__
+
+    [field] = definition.fields
+    assert field.python_name == "pet"
+    assert isinstance(field.type, StrawberryOptional)
+    assert isinstance(field.type.of_type, StrawberryUnion)
+    assert field.type.of_type.graphql_name == "AnimalUnion"
