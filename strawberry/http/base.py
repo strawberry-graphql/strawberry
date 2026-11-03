@@ -56,7 +56,7 @@ class BaseView(Generic[Request]):
     def parse_json(self, data: str | bytes) -> Any:
         try:
             return self.decode_json(data)
-        except json.JSONDecodeError as e:
+        except (json.JSONDecodeError, UnicodeDecodeError) as e:
             raise HTTPException(400, "Unable to parse request body as JSON") from e
 
     def decode_json(self, data: str | bytes) -> object:
@@ -128,6 +128,41 @@ class BaseView(Generic[Request]):
                 if transport.accepts_content_type(content_type, params)
             ),
             None,
+        )
+
+    def _parse_request_data(
+        self, data: object, protocol: GraphQLRequestProtocol = "http"
+    ) -> GraphQLRequestData:
+        if not isinstance(data, Mapping):
+            raise HTTPException(400, "The GraphQL request must be a JSON object.")
+
+        query = data.get("query")
+        if not isinstance(query, (str, type(None))):
+            raise HTTPException(
+                400,
+                "The GraphQL operation's `query` must be a string or null, if provided.",
+            )
+
+        variables = data.get("variables")
+        if not isinstance(variables, (dict, type(None))):
+            raise HTTPException(
+                400,
+                "The GraphQL operation's `variables` must be an object or null, if provided.",
+            )
+
+        extensions = data.get("extensions")
+        if not isinstance(extensions, (dict, type(None))):
+            raise HTTPException(
+                400,
+                "The GraphQL operation's `extensions` must be an object or null, if provided.",
+            )
+
+        return GraphQLRequestData(
+            query=query,
+            variables=variables,
+            operation_name=data.get("operationName"),
+            extensions=extensions,
+            protocol=protocol,
         )
 
     def _validate_batch_request(
