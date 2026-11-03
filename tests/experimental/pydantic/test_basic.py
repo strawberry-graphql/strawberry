@@ -769,7 +769,8 @@ def test_deprecated_fields():
     assert field2.type.of_type is str
 
 
-def test_is_type_of_accepts_sibling_subclass_instance():
+@pytest.mark.parametrize("cast_to_subclass", [False, True])
+def test_is_type_of_accepts_sibling_subclass_instance(cast_to_subclass):
     class UserModel(pydantic.BaseModel):
         login: str
 
@@ -791,7 +792,10 @@ def test_is_type_of_accepts_sibling_subclass_instance():
     class Query:
         @strawberry.field
         def user(self) -> User:
-            return UserRow(id_="1", login="123")  # type: ignore
+            row = UserRow(id_="1", login="123")
+            if cast_to_subclass:
+                return strawberry.cast(User, row)
+            return row  # type: ignore
 
     schema = strawberry.Schema(query=Query)
     result = schema.execute_sync("{ user { login name } }")
@@ -837,11 +841,14 @@ def test_is_type_of_cast_and_rejection_semantics():
     assert is_type_of(UserRow(id_="1", login="a"), info)
     assert is_type_of(UserModel(login="a"), info)
 
-    # an explicit cast to this type is accepted, also through the check a
-    # subtype inherits: the cast names the type the object resolves as
+    # an explicit cast names the exact type the object resolves as
     casted = strawberry.cast(SomeExtension, UserRow(id_="1", login="a"))
     assert is_type_of(casted, info)
-    assert subtype_is_type_of(casted, info)
+    assert not subtype_is_type_of(casted, info)
+
+    casted_subtype = strawberry.cast(User, UserRow(id_="1", login="a"))
+    assert subtype_is_type_of(casted_subtype, info)
+    assert not is_type_of(casted_subtype, info)
 
     # a cast to an unrelated type is rejected
     assert not is_type_of(strawberry.cast(OtherType, UserRow(id_="1", login="a")), info)
