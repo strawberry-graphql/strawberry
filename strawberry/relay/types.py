@@ -741,6 +741,7 @@ class Connection(Generic[NodeType]):
             after: Returns the items in the list that come after the specified cursor.
             first: Returns the first n items from the list.
             last: Returns the items in the list that come after the specified cursor.
+            offset: Skips the first n items in the list.
             max_results: The maximum number of results to resolve.
             kwargs: Additional arguments passed to the resolver.
 
@@ -793,6 +794,7 @@ class ListConnection(Connection[NodeType]):
             after: Returns the items in the list that come after the specified cursor.
             first: Returns the first n items from the list.
             last: Returns the items in the list that come after the specified cursor.
+            offset: Skips the first n items in the list.
             max_results: The maximum number of results to resolve.
             kwargs: Additional arguments passed to the resolver.
 

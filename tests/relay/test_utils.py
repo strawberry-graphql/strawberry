@@ -256,6 +256,7 @@ def test_get_slice_metadata_with_negative_offset():
     info = mock.Mock()
     info.schema.config = StrawberryConfig(relay_max_results=100)
 
-    with pytest.raises(ValueError, match="Argument 'offset' must be a non-negative integer."):
+    with pytest.raises(
+        ValueError, match=r"^Argument 'offset' must be a non-negative integer\.$"
+    ):
         SliceMetadata.from_arguments(info, offset=-1)
-

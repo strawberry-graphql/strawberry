@@ -218,9 +218,11 @@ class NodeExtension(FieldExtension):
 
 class ConnectionExtension(FieldExtension):
     connection_type: type[Connection[Node]]
+    connection_accepts_offset: bool = True
 
     def __init__(self, max_results: int | None = None) -> None:
         self.max_results = max_results
+        self.connection_accepts_offset = True
 
     def apply(self, field: StrawberryField) -> None:
         field.arguments = [
@@ -319,6 +321,10 @@ class ConnectionExtension(FieldExtension):
             raise RelayWrongResolverAnnotationError(field.name, field.base_resolver)
 
         self.connection_type = cast("type[Connection[Node]]", f_type)
+        params = inspect.signature(type_origin.resolve_connection).parameters
+        self.connection_accepts_offset = "offset" in params or any(
+            p.kind == inspect.Parameter.VAR_KEYWORD for p in params.values()
+        )
 
     def resolve(
         self,
@@ -334,6 +340,11 @@ class ConnectionExtension(FieldExtension):
         **kwargs: Any,
     ) -> Any:
         assert self.connection_type is not None
+        connection_kwargs: dict[str, Any] = (
+            {"offset": offset}
+            if (self.connection_accepts_offset or offset is not None)
+            else {}
+        )
         return self.connection_type.resolve_connection(
             cast("Iterable[Node]", next_(source, info, **kwargs)),
             info=info,
@@ -341,8 +352,8 @@ class ConnectionExtension(FieldExtension):
             after=after,
             first=first,
             last=last,
-            offset=offset,
             max_results=self.max_results,
+            **connection_kwargs,
         )
 
     async def resolve_async(
@@ -359,6 +370,11 @@ class ConnectionExtension(FieldExtension):
         **kwargs: Any,
     ) -> Any:
         assert self.connection_type is not None
+        connection_kwargs: dict[str, Any] = (
+            {"offset": offset}
+            if (self.connection_accepts_offset or offset is not None)
+            else {}
+        )
         nodes = next_(source, info, **kwargs)
         # nodes might be an AsyncIterable/AsyncIterator
         # In this case we don't await for it
@@ -372,8 +388,8 @@ class ConnectionExtension(FieldExtension):
             after=after,
             first=first,
             last=last,
-            offset=offset,
             max_results=self.max_results,
+            **connection_kwargs,
         )
 
         # If nodes was an AsyncIterable/AsyncIterator, resolve_connection

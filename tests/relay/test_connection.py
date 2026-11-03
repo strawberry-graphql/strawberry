@@ -332,3 +332,122 @@ def test_connection_with_offset():
         }
     }
 
+
+async def test_async_connection_with_offset():
+    @strawberry.type
+    class Item(Node):
+        id: strawberry.relay.NodeID[str]
+
+    @strawberry.type
+    class Query:
+        @strawberry.relay.connection(ListConnection[Item])
+        async def items(self) -> list[Item]:
+            return [Item(id=str(i)) for i in range(10)]
+
+    schema = strawberry.Schema(query=Query)
+    query = """
+      query ($offset: Int, $first: Int) {
+        items(offset: $offset, first: $first) {
+          edges {
+            node {
+              id
+            }
+          }
+        }
+      }
+    """
+
+    res = await schema.execute(query, variable_values={"offset": 3, "first": 2})
+    assert not res.errors
+    assert res.data == {
+        "items": {
+            "edges": [
+                {"node": {"id": to_base64("Item", "3")}},
+                {"node": {"id": to_base64("Item", "4")}},
+            ]
+        }
+    }
+
+
+async def test_custom_connection_legacy_signature_without_offset():
+    @strawberry.type
+    class Item(Node):
+        id: strawberry.relay.NodeID[str]
+
+    @strawberry.type
+    class CustomLegacyConnection(strawberry.relay.Connection[Item]):
+        @classmethod
+        def resolve_connection(
+            cls,
+            nodes: Iterable[Item],
+            *,
+            info: strawberry.Info,
+            before: str | None = None,
+            after: str | None = None,
+            first: int | None = None,
+            last: int | None = None,
+            max_results: int | None = None,
+        ) -> Self:
+            edges = [
+                strawberry.relay.Edge(
+                    cursor=to_base64("Item", node.id),
+                    node=node,
+                )
+                for node in nodes
+            ]
+            return cls(
+                page_info=strawberry.relay.PageInfo(
+                    has_next_page=False,
+                    has_previous_page=False,
+                    start_cursor=edges[0].cursor if edges else None,
+                    end_cursor=edges[-1].cursor if edges else None,
+                ),
+                edges=edges,
+            )
+
+    @strawberry.type
+    class Query:
+        @strawberry.relay.connection(CustomLegacyConnection)
+        def sync_items(self) -> list[Item]:
+            return [Item(id="1"), Item(id="2")]
+
+        @strawberry.relay.connection(CustomLegacyConnection)
+        async def async_items(self) -> list[Item]:
+            return [Item(id="3"), Item(id="4")]
+
+    schema = strawberry.Schema(query=Query)
+    query = """
+      query {
+        syncItems {
+          edges {
+            node {
+              id
+            }
+          }
+        }
+        asyncItems {
+          edges {
+            node {
+              id
+            }
+          }
+        }
+      }
+    """
+
+    res = await schema.execute(query)
+    assert not res.errors
+    assert res.data == {
+        "syncItems": {
+            "edges": [
+                {"node": {"id": to_base64("Item", "1")}},
+                {"node": {"id": to_base64("Item", "2")}},
+            ]
+        },
+        "asyncItems": {
+            "edges": [
+                {"node": {"id": to_base64("Item", "3")}},
+                {"node": {"id": to_base64("Item", "4")}},
+            ]
+        },
+    }
