@@ -1,8 +1,11 @@
+import re
 from pathlib import Path
 
 import pytest
 from typer import Typer
 from typer.testing import CliRunner
+
+_ANSI_ESCAPE_RE = re.compile(r"\x1b\[[0-9;]*m")
 
 schema = """
 type Query {
@@ -63,3 +66,64 @@ def test_overrides_file_if_exists(
     assert "Code generated at `schema.py`" in result.stdout.strip()
     assert result.exit_code == 0
     assert output_file.read_text().strip() == expected_output
+
+
+def test_schema_codegen_with_config(
+    cli_app: Typer, cli_runner: CliRunner, tmp_path: Path
+):
+    schema_file = tmp_path / "schema.graphql"
+    schema_file.write_text(
+        "scalar JSONObject\n\ntype Query {\n  data: JSONObject!\n}\n"
+    )
+
+    config_file = tmp_path / "codegen.yaml"
+    config_file.write_text("scalars:\n  JSONObject: strawberry.scalars:JSON\n")
+
+    result = cli_runner.invoke(
+        cli_app,
+        ["schema-codegen", str(schema_file), "-c", str(config_file)],
+    )
+
+    assert result.exit_code == 0, result.stdout
+    assert "from strawberry.scalars import JSON as JSONObject" in result.stdout
+    assert "NewType" not in result.stdout
+    assert "scalar_map" not in result.stdout
+
+
+def test_schema_codegen_config_malformed(
+    cli_app: Typer, cli_runner: CliRunner, schema_file: Path, tmp_path: Path
+):
+    config_file = tmp_path / "codegen.yaml"
+    # Value missing `:` separator — invalid `<module>:<object>` shape.
+    config_file.write_text("scalars:\n  JSONObject: strawberry.scalars.JSON\n")
+
+    result = cli_runner.invoke(
+        cli_app,
+        ["schema-codegen", str(schema_file), "--config", str(config_file)],
+    )
+
+    # Strip ANSI escapes so the substring match isn't broken by Typer/Rich's
+    # syntax highlighting of the placeholders inside the error message.
+    plain_output = _ANSI_ESCAPE_RE.sub("", result.output)
+
+    assert result.exit_code != 0
+    assert "JSONObject" in plain_output
+    assert "<module>:<object>" in plain_output
+
+
+def test_schema_codegen_config_invalid_yaml(
+    cli_app: Typer, cli_runner: CliRunner, schema_file: Path, tmp_path: Path
+):
+    config_file = tmp_path / "codegen.yaml"
+    # Unbalanced bracket — yaml.safe_load raises yaml.YAMLError.
+    config_file.write_text("scalars: [JSONObject: strawberry.scalars:JSON\n")
+
+    result = cli_runner.invoke(
+        cli_app,
+        ["schema-codegen", str(schema_file), "--config", str(config_file)],
+    )
+
+    plain_output = _ANSI_ESCAPE_RE.sub("", result.output)
+
+    assert result.exit_code != 0
+    assert "Invalid YAML" in plain_output
