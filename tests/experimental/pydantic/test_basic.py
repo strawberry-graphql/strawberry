@@ -821,6 +821,100 @@ def test_input_field_descriptions():
     assert field2.description == "The user password"
 
 
+def test_field_description_with_inheritance():
+    class Base(pydantic.BaseModel):
+        age: int = pydantic.Field(description="Base age")
+
+    @strawberry.experimental.pydantic.type(Base)
+    class BaseType:
+        age: strawberry.auto
+
+    class Child(Base):
+        age: int = pydantic.Field(description="Child age")
+
+    @strawberry.experimental.pydantic.type(Child, all_fields=True)
+    class ChildType(BaseType):
+        pass
+
+    definition: StrawberryObjectDefinition = ChildType.__strawberry_definition__
+    assert definition.name == "ChildType"
+
+    [field] = definition.fields
+
+    # the child model's own description wins over the one inherited from the
+    # base strawberry type
+    assert field.python_name == "age"
+    assert field.description == "Child age"
+
+
+def test_field_description_with_inheritance_reannotated():
+    class Base(pydantic.BaseModel):
+        age: int = pydantic.Field(description="Base age")
+
+    @strawberry.experimental.pydantic.type(Base)
+    class BaseType:
+        age: strawberry.auto
+
+    class Child(Base):
+        age: int = pydantic.Field(description="Child age")
+
+    @strawberry.experimental.pydantic.type(Child, all_fields=True)
+    class ChildType(BaseType):
+        # re-annotated without an explicit strawberry.field: still not an
+        # explicit description, so the child model's description wins
+        age: strawberry.auto
+
+    [field] = ChildType.__strawberry_definition__.fields
+
+    assert field.python_name == "age"
+    assert field.description == "Child age"
+
+
+def test_field_description_with_inheritance_explicit_base():
+    class Base(pydantic.BaseModel):
+        age: int = pydantic.Field(description="Base age")
+
+    @strawberry.experimental.pydantic.type(Base)
+    class BaseType:
+        age: strawberry.auto = strawberry.field(description="Explicit base age")
+
+    class Child(Base):
+        age: int = pydantic.Field(description="Child age")
+
+    @strawberry.experimental.pydantic.type(Child, all_fields=True)
+    class ChildType(BaseType):
+        pass
+
+    [field] = ChildType.__strawberry_definition__.fields
+
+    # the explicit description was set on the base type, not on this class,
+    # so the overridden pydantic field keeps its own description
+    assert field.python_name == "age"
+    assert field.description == "Child age"
+
+
+def test_field_description_with_inheritance_explicit_child():
+    class Base(pydantic.BaseModel):
+        age: int = pydantic.Field(description="Base age")
+
+    @strawberry.experimental.pydantic.type(Base)
+    class BaseType:
+        age: strawberry.auto
+
+    class Child(Base):
+        age: int = pydantic.Field(description="Child age")
+
+    @strawberry.experimental.pydantic.type(Child, all_fields=True)
+    class ChildType(BaseType):
+        age: strawberry.auto = strawberry.field(description="Explicit child age")
+
+    [field] = ChildType.__strawberry_definition__.fields
+
+    # an explicit strawberry.field description on this class still wins
+    assert field.python_name == "age"
+    assert field.description == "Explicit child age"
+
+
 def test_permission_classes():
     class IsAuthenticated(strawberry.BasePermission):
         message = "User is not authenticated"
