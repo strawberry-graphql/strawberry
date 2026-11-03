@@ -581,10 +581,12 @@ class QueryCodegen:
         if isinstance(field_type, StrawberryList):
             return GraphQLList(self._get_field_type(field_type.of_type))
 
+        original_python_type: type | None = None
         if (
             not isinstance(field_type, StrawberryType)
             and field_type in self.schema.schema_converter.scalar_registry
         ):
+            original_python_type = field_type
             field_type = self.schema.schema_converter.scalar_registry[field_type]  # type: ignore
 
         if isinstance(field_type, ScalarWrapper):
@@ -595,7 +597,23 @@ class QueryCodegen:
             return self._collect_scalar(field_type._scalar_definition, python_type)  # type: ignore
 
         if isinstance(field_type, ScalarDefinition):
-            return self._collect_scalar(field_type, None)
+            if original_python_type is None:
+                for (
+                    py_type,
+                    scalar_def,
+                ) in self.schema.schema_converter.scalar_registry.items():
+                    if scalar_def is field_type or scalar_def == field_type:
+                        original_python_type = py_type
+                        break
+
+            if original_python_type is None and field_type.origin is not None:
+                original_python_type = field_type.origin
+
+            python_type = original_python_type
+            if hasattr(python_type, "__supertype__"):
+                python_type = python_type.__supertype__
+
+            return self._collect_scalar(field_type, python_type)
 
         if isinstance(field_type, StrawberryEnumDefinition):
             return self._collect_enum(field_type)

@@ -185,11 +185,23 @@ class PythonPlugin(QueryCodegenPlugin):
         if type_.name in self.SCALARS_TO_PYTHON_TYPES:
             return ""
 
-        assert type_.python_type is not None, (
-            f"Scalar type must have a python type: {type_.name}"
-        )
+        if type_.python_type is not None:
+            if hasattr(type_.python_type, "__name__"):
+                type_name = type_.python_type.__name__
+                if hasattr(
+                    type_.python_type, "__module__"
+                ) and type_.python_type.__module__ not in ("builtins", "__main__"):
+                    self.imports[type_.python_type.__module__].add(type_name)
+            else:
+                type_name = str(type_.python_type)
+                if "Any" in type_name:
+                    self.imports["typing"].add("Any")
+        else:
+            self.imports["typing"].add("Any")
+            type_name = "Any"
 
-        return f'{type_.name} = NewType("{type_.name}", {type_.python_type.__name__})'
+        self.imports["typing"].add("NewType")
+        return f'{type_.name} = NewType("{type_.name}", {type_name})'
 
     def _print_union_type(self, type_: GraphQLUnion) -> str:
         return f"{type_.name} = Union[{', '.join([t.name for t in type_.types])}]"
