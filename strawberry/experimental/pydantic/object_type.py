@@ -214,15 +214,18 @@ def type(
         ] + all_model_fields
 
         # Implicitly define `is_type_of` to support interfaces/unions that use
-        # pydantic objects (not the corresponding strawberry type)
-        @classmethod  # type: ignore
-        def is_type_of(cls: builtins.type, obj: Any, _info: GraphQLResolveInfo) -> bool:
+        # pydantic objects (not the corresponding strawberry type).
+        # This closes over `cls`, which is rebound to the created class below:
+        # a subclass that inherits `is_type_of` must accept instances of the
+        # type it was defined for (or its pydantic model), not only instances
+        # of the subclass accessing it.
+        def is_type_of(obj: Any, _info: GraphQLResolveInfo) -> bool:
             if (type_cast := get_strawberry_type_cast(obj)) is not None:
                 return type_cast is cls
 
             return isinstance(obj, (cls, model))
 
-        namespace = {"is_type_of": is_type_of}
+        namespace = {"is_type_of": staticmethod(is_type_of)}
         # We need to tell the difference between a from_pydantic method that is
         # inherited from a base class and one that is defined by the user in the
         # decorated class. We want to override the method only if it is
