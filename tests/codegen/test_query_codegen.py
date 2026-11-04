@@ -250,3 +250,16 @@ def test_codegen_void_scalar_none_type(tmp_path: Path):
     ts_generator = QueryCodegen(schema, plugins=[TypeScriptPlugin(query)])
     ts_code = ts_generator.run(query_text).to_string()
     assert "type Void = null" in ts_code
+
+
+def test_codegen_unmapped_scalar_fallback_warning(tmp_path: Path):
+    from strawberry.codegen.types import GraphQLScalar
+
+    plugin = PythonPlugin(tmp_path / "query.graphql")
+    with pytest.warns(
+        UserWarning,
+        match="Scalar Unmapped has no associated Python type; falling back to Any",
+    ):
+        code = plugin._print_scalar_type(GraphQLScalar("Unmapped", None))
+
+    assert code == 'Unmapped = NewType("Unmapped", Any)'

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import textwrap
+import warnings
 from collections import defaultdict
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, ClassVar
@@ -203,6 +204,11 @@ class PythonPlugin(QueryCodegenPlugin):
                 if "Any" in type_name:
                     self.imports["typing"].add("Any")
         else:
+            warnings.warn(
+                f"Scalar {type_.name} has no associated Python type; falling back to Any.",
+                UserWarning,
+                stacklevel=2,
+            )
             self.imports["typing"].add("Any")
             type_name = "Any"
 
