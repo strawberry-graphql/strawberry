@@ -162,7 +162,7 @@ class StrawberryAnnotation:
 
         # If this is a generic field, try to resolve it using its origin's
         # specialized type_var_map
-        if self._is_type_generic(resolved) and type_definition is not None:
+        if type_definition is not None and self._is_type_generic(resolved):
             from strawberry.types.base import StrawberryType
 
             # the type parameters of the class declaring the field, so that fields
