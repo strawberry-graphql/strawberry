@@ -191,3 +191,62 @@ def test_codegen_custom_scalar_in_variables_from_scalar_map(tmp_path: Path):
 
     assert "type JSONObject = any" in ts_code
     assert "data: JSONObject" in ts_code
+
+
+def test_codegen_custom_scalar_deduplication(tmp_path: Path):
+    CustomScalar = strawberry.scalar(
+        None, name="Custom", serialize=lambda v: v, parse_value=lambda v: v
+    )
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def field_a(self) -> str:
+            return "a"
+
+        @strawberry.field
+        def field_b(self) -> float:
+            return 1.0
+
+    schema = strawberry.Schema(
+        query=Query,
+        config=StrawberryConfig(
+            scalar_map={
+                str: CustomScalar,
+                float: CustomScalar,
+            }
+        ),
+    )
+
+    query = tmp_path / "query.graphql"
+    query_text = "query Test { fieldA fieldB }"
+
+    py_generator = QueryCodegen(schema, plugins=[PythonPlugin(query)])
+    py_code = py_generator.run(query_text).to_string()
+    assert py_code.count('Custom = NewType("Custom", str)') == 1
+
+    ts_generator = QueryCodegen(schema, plugins=[TypeScriptPlugin(query)])
+    ts_code = ts_generator.run(query_text).to_string()
+    assert ts_code.count("type Custom = string") == 1
+
+
+def test_codegen_void_scalar_none_type(tmp_path: Path):
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def empty(self) -> None:
+            return None
+
+    schema = strawberry.Schema(query=Query)
+
+    query = tmp_path / "query.graphql"
+    query_text = "query TestVoid { empty }"
+
+    py_generator = QueryCodegen(schema, plugins=[PythonPlugin(query)])
+    py_code = py_generator.run(query_text).to_string()
+    assert "from types import NoneType" in py_code
+    assert 'Void = NewType("Void", NoneType)' in py_code
+
+    ts_generator = QueryCodegen(schema, plugins=[TypeScriptPlugin(query)])
+    ts_code = ts_generator.run(query_text).to_string()
+    assert "type Void = null" in ts_code

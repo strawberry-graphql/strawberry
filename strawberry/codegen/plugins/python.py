@@ -186,7 +186,13 @@ class PythonPlugin(QueryCodegenPlugin):
             return ""
 
         if type_.python_type is not None:
-            if hasattr(type_.python_type, "__name__"):
+            if (
+                type_.python_type is type(None)
+                or getattr(type_.python_type, "__name__", None) == "NoneType"
+            ):
+                self.imports["types"].add("NoneType")
+                type_name = "NoneType"
+            elif hasattr(type_.python_type, "__name__"):
                 type_name = type_.python_type.__name__
                 if hasattr(
                     type_.python_type, "__module__"

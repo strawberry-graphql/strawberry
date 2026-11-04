@@ -33,6 +33,7 @@ class TypeScriptPlugin(QueryCodegenPlugin):
         "Decimal": "string",
         str: "string",
         float: "number",
+        type(None): "null",
     }
 
     def __init__(self, query: Path) -> None:
