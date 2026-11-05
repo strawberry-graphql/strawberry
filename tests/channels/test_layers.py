@@ -438,3 +438,123 @@ async def test_listen_to_channel_group_twice(ws: WebsocketCommunicator):
 
     await ws.send_json_to(CompleteMessage({"id": "sub1", "type": "complete"}))
     await ws.send_json_to(CompleteMessage({"id": "sub2", "type": "complete"}))
+
+
+async def test_listen_to_channel_group_ref_counted():
+    """Completing one listener must not discard a group a sibling still shares."""
+    from channels.layers import get_channel_layer
+
+    from strawberry.channels.handlers.base import ChannelsConsumer
+
+    consumer = ChannelsConsumer()
+    consumer.channel_layer = get_channel_layer()
+    consumer.channel_name = "test-channel-shared-group"
+
+    async with consumer.listen_to_channel("test.message", groups=["shared"]) as gen1:
+        async with consumer.listen_to_channel("test.message", groups=["shared"]):
+            pass
+
+        # The second listener's context exited; the first is still active and
+        # still shares "shared", so the group must not have been discarded.
+        await consumer.channel_layer.group_send(
+            "shared", {"type": "test.message", "text": "hello"}
+        )
+        # Simulate the ASGI protocol server delivering the group message.
+        await consumer.dispatch(
+            await asyncio.wait_for(
+                consumer.channel_layer.receive(consumer.channel_name), timeout=1
+            )
+        )
+
+        message = await asyncio.wait_for(gen1.__anext__(), timeout=1)
+        assert message == {"type": "test.message", "text": "hello"}
+
+
+async def test_listen_to_channel_group_rolls_back_on_setup_failure():
+    """A later group's failed group_add must not leak an earlier group's join."""
+    from strawberry.channels.handlers.base import ChannelsConsumer
+
+    class FlakyLayer:
+        extensions = ["groups"]
+        group_expiry = 86400
+
+        def __init__(self) -> None:
+            self.joined: list[str] = []
+
+        async def group_add(self, group: str, channel: str) -> None:
+            if group == "bad":
+                raise RuntimeError("boom")
+            self.joined.append(group)
+
+        async def group_discard(self, group: str, channel: str) -> None:
+            self.joined.remove(group)
+
+    consumer = ChannelsConsumer()
+    consumer.channel_layer = FlakyLayer()
+    consumer.channel_name = "ch1"
+
+    with pytest.raises(RuntimeError):
+        async with consumer.listen_to_channel("t", groups=["good", "bad"]):
+            pass
+
+    assert consumer._group_refs == {}
+    assert consumer.channel_layer.joined == []
+
+
+async def test_listen_to_channel_group_join_leave_is_serialized():
+    """A concurrent join and leave of the same group must not interleave their
+    channel-layer calls, or the group's real membership can end up wrong.
+    """
+    from strawberry.channels.handlers.base import ChannelsConsumer
+
+    log: list[tuple[str, str]] = []
+
+    class SlowLayer:
+        extensions = ["groups"]
+        group_expiry = 86400
+
+        async def group_add(self, group: str, channel: str) -> None:
+            log.append(("add-start", group))
+            await asyncio.sleep(0)
+            log.append(("add-end", group))
+
+        async def group_discard(self, group: str, channel: str) -> None:
+            log.append(("discard-start", group))
+            await asyncio.sleep(0)
+            log.append(("discard-end", group))
+
+    consumer = ChannelsConsumer()
+    consumer.channel_layer = SlowLayer()
+    consumer.channel_name = "ch1"
+
+    cm1 = consumer.listen_to_channel("t", groups=["shared"])
+    await cm1.__aenter__()
+    log.clear()
+
+    async def leave() -> None:
+        await cm1.__aexit__(None, None, None)
+
+    cm2 = consumer.listen_to_channel("t", groups=["shared"])
+
+    async def join() -> None:
+        await cm2.__aenter__()
+
+    await asyncio.gather(leave(), join())
+
+    # Whichever ran first must fully finish (its "-end") before the other starts.
+    assert log in (
+        [
+            ("discard-start", "shared"),
+            ("discard-end", "shared"),
+            ("add-start", "shared"),
+            ("add-end", "shared"),
+        ],
+        [
+            ("add-start", "shared"),
+            ("add-end", "shared"),
+            ("discard-start", "shared"),
+            ("discard-end", "shared"),
+        ],
+    )
+
+    await cm2.__aexit__(None, None, None)
