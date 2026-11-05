@@ -28,6 +28,17 @@ class Color(enum.Enum):
     BLUE = "blue"
 
 
+@strawberry.enum(name="SortOrder")
+class Order(enum.Enum):
+    ASCENDING = strawberry.enum_value("asc", name="ASC")
+    DESCENDING = strawberry.enum_value("desc", name="DESC")
+
+
+@strawberry.input
+class SearchInput:
+    order: Order = Order.DESCENDING
+
+
 @strawberry.type
 class Person:
     name: str
@@ -132,6 +143,10 @@ class Query:
         person = Person(name="Henry", age=10)
         dinosaur = Animal(name="rex", age=66_000_000)
         return LifeContainer([person], [dinosaur])
+
+    @strawberry.field
+    def order(self, input: SearchInput) -> Order:
+        return input.order
 
 
 @strawberry.input

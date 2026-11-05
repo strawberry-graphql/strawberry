@@ -49,6 +49,18 @@ def test_codegen(  # noqa: PLR0917
     snapshot.assert_match(code, f"{query.with_suffix('').stem}.{extension}")
 
 
+def test_python_codegen_renamed_enum_default_uses_graphql_names(schema):
+    query = HERE / "queries" / "enum_default_value.graphql"
+    generator = QueryCodegen(schema, plugins=[PythonPlugin(query)])
+
+    code = generator.run(query.read_text()).to_string()
+    namespace: dict[str, object] = {}
+    exec(code, namespace)  # noqa: S102
+
+    sort_order = namespace["SortOrder"]
+    assert namespace["SearchInput"].order is sort_order.DESC  # type: ignore[attr-defined]
+
+
 def test_codegen_fails_if_no_operation_name(schema, tmp_path):
     query = tmp_path / "query.graphql"
     data = "query { hello }"
