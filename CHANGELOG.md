@@ -1,6 +1,15 @@
 CHANGELOG
 =========
 
+0.339.3 - 2026-11-05
+--------------------
+
+This release improves the performance of argument conversion by skipping an
+unnecessary generic type check when an annotation is resolved without a type
+definition.
+
+This release was contributed by [@fernandoflorez](https://github.com/fernandoflorez) in [#4790](https://github.com/strawberry-graphql/strawberry/pull/4790)
+
 0.339.2 - 2026-11-05
 --------------------
 
