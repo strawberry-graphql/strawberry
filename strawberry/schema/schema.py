@@ -99,7 +99,7 @@ if TYPE_CHECKING:
     from strawberry.types.base import StrawberryType
     from strawberry.types.enum import StrawberryEnumDefinition
     from strawberry.types.field import StrawberryField
-    from strawberry.types.scalar import ScalarDefinition, ScalarWrapper
+    from strawberry.types.scalar import ScalarDefinition
     from strawberry.types.union import StrawberryUnion
 
 
@@ -318,9 +318,7 @@ class Schema(BaseSchema):
         ] = (),
         execution_context_class: type[GraphQLExecutionContext] | None = None,
         config: StrawberryConfig | None = None,
-        scalar_overrides: (
-            Mapping[object, type | ScalarWrapper | ScalarDefinition] | None
-        ) = None,
+        scalar_overrides: Mapping[object, type | ScalarDefinition] | None = None,
         schema_directives: Iterable[object] = (),
         exception_handlers: Iterable[ExceptionHandler[Any]] = (),
     ) -> None:
