@@ -6,6 +6,8 @@ if TYPE_CHECKING:
     from graphql import GraphQLResolveInfo
     from graphql.pyutils import Path
 
+    from strawberry.types.info import Info
+
 
 def is_introspection_key(key: str | int) -> bool:
     # from: https://spec.graphql.org/June2018/#sec-Schema
@@ -16,7 +18,7 @@ def is_introspection_key(key: str | int) -> bool:
     return str(key).startswith("__")
 
 
-def is_introspection_field(info: GraphQLResolveInfo) -> bool:
+def is_introspection_field(info: GraphQLResolveInfo | Info) -> bool:
     path: Path | None = info.path
 
     while path:
@@ -27,7 +29,7 @@ def is_introspection_field(info: GraphQLResolveInfo) -> bool:
     return False
 
 
-def get_path_from_info(info: GraphQLResolveInfo) -> list[str | int]:
+def get_path_from_info(info: GraphQLResolveInfo | Info) -> list[str | int]:
     path: Path | None = info.path
     elements = []
 
@@ -38,4 +40,8 @@ def get_path_from_info(info: GraphQLResolveInfo) -> list[str | int]:
     return elements[::-1]
 
 
-__all__ = ["get_path_from_info", "is_introspection_field", "is_introspection_key"]
+__all__ = [
+    "get_path_from_info",
+    "is_introspection_field",
+    "is_introspection_key",
+]

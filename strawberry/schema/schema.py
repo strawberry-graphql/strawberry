@@ -5,7 +5,8 @@ import warnings
 from asyncio import ensure_future
 from collections.abc import AsyncGenerator, AsyncIterator, Awaitable, Callable, Iterable
 from functools import lru_cache
-from inspect import isawaitable
+from inspect import isawaitable, unwrap
+from threading import Lock
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -64,6 +65,7 @@ from strawberry.types.execution import (
     PreExecutionError,
 )
 from strawberry.types.graphql import OperationType
+from strawberry.types.info import Info
 from strawberry.utils.aio import aclosing
 from strawberry.utils.await_maybe import await_maybe
 
@@ -125,10 +127,56 @@ DEFAULT_ALLOWED_OPERATION_TYPES = {
     OperationType.MUTATION,
     OperationType.SUBSCRIPTION,
 }
+_WARNED_GRAPHQL_INFO_EXTENSIONS: set[type[SchemaExtension]] = set()
+_WARNED_GRAPHQL_INFO_EXTENSIONS_LOCK = Lock()
 ProcessErrors: TypeAlias = (
     "Callable[[list[GraphQLError], ExecutionContext | None], None]"
 )
 _DirectiveEntry: TypeAlias = tuple[GraphQLDirective, object, str]
+
+
+def _warn_graphql_info_extension(extension_type: type[SchemaExtension]) -> None:
+    message = (
+        f"{extension_type.__qualname__}.resolve receives "
+        "GraphQLResolveInfo, which is deprecated. Annotate its "
+        "`info` parameter as `strawberry.Info` to use Strawberry's "
+        "Info API. Run `strawberry upgrade schema-extension-info .` "
+        "for an automated migration. The raw graphql-core object "
+        "remains available as `info._raw_info`. Support for the "
+        "legacy behavior will be removed in Strawberry 1.0."
+    )
+    parent_type = next(
+        (
+            base
+            for base in extension_type.__mro__[1:]
+            if "resolve" in vars(base)
+            and issubclass(base, SchemaExtension)
+            and base._uses_strawberry_info()
+        ),
+        None,
+    )
+    if parent_type is not None:
+        message += (
+            f" {parent_type.__qualname__}.resolve receives `strawberry.Info`, so "
+            "calls to `super().resolve(...)` must pass it instead of "
+            "GraphQLResolveInfo."
+        )
+    # The warning is emitted while Strawberry builds the middleware, so the call
+    # stack only contains Strawberry internals; point at the extension's resolve
+    # method instead.
+    resolver = unwrap(extension_type.resolve)
+    code = getattr(resolver, "__code__", None)
+    if code is None:
+        warnings.warn(message, DeprecationWarning, stacklevel=2)
+        return
+
+    warnings.warn_explicit(
+        message,
+        DeprecationWarning,
+        filename=code.co_filename,
+        lineno=code.co_firstlineno,
+        module=resolver.__module__,
+    )
 
 
 def _register_graphql_directive(
@@ -601,9 +649,87 @@ class Schema(BaseSchema):
         # Build a fresh middleware manager per request: the manager holds
         # references to extension instances, which are now constructed
         # per-request to avoid concurrency leaks (see #4369).
-        return MiddlewareManager(
-            *(ext for ext in extensions if ext._implements_resolve())
-        )
+        middleware: list[SchemaExtension | Callable[..., Any]] = []
+        # graphql-core wraps each middleware around the ones already added.
+        inner_uses_strawberry_info: bool | None = None
+        for extension in extensions:
+            if extension._implements_resolve():
+                uses_strawberry_info = extension._uses_strawberry_info()
+                middleware.append(
+                    self._get_extension_middleware(
+                        extension,
+                        inner_uses_strawberry_info=inner_uses_strawberry_info,
+                    )
+                )
+                inner_uses_strawberry_info = uses_strawberry_info
+
+        return MiddlewareManager(*middleware)
+
+    def _get_extension_middleware(
+        self,
+        extension: SchemaExtension,
+        *,
+        inner_uses_strawberry_info: bool | None,
+    ) -> SchemaExtension | Callable[..., Any]:
+        if not extension._uses_strawberry_info():
+            extension_type = type(extension)
+            # Strawberry adds this extension itself. It keeps graphql-core's info
+            # so that Info is only built for fields that use a custom directive.
+            if extension_type in (DirectivesExtension, DirectivesExtensionSync):
+                return extension
+
+            with _WARNED_GRAPHQL_INFO_EXTENSIONS_LOCK:
+                should_warn = extension_type not in _WARNED_GRAPHQL_INFO_EXTENSIONS
+                _WARNED_GRAPHQL_INFO_EXTENSIONS.add(extension_type)
+
+            if should_warn:
+                _warn_graphql_info_extension(extension_type)
+            return extension
+
+        extension_resolver = cast("Callable[..., Any]", extension.resolve)
+        # Hoisted out of the per-field hot path.
+        info_class = self.config.info_class
+        definition_backref = GraphQLCoreConverter.DEFINITION_BACKREF
+
+        def middleware(
+            next_: Callable[..., Any],
+            root: Any,
+            raw_info: GraphQLResolveInfo | Info,
+            *args: str,
+            **kwargs: Any,
+        ) -> Any:
+            if isinstance(raw_info, Info):
+                info = raw_info
+            else:
+                graphql_field = raw_info.parent_type.fields.get(raw_info.field_name)
+                field: StrawberryField | None = (
+                    graphql_field.extensions.get(definition_backref)
+                    if graphql_field
+                    else None
+                )
+                info = info_class(_raw_info=raw_info, _field=field)
+
+            next_requires_graphql_info = inner_uses_strawberry_info is False or (
+                inner_uses_strawberry_info is None and info._field is None
+            )
+            if next_requires_graphql_info:
+                raw_next = next_
+
+                def adapted_next(
+                    next_root: Any,
+                    next_info: Info | GraphQLResolveInfo,
+                    *next_args: str,
+                    **next_kwargs: Any,
+                ) -> Any:
+                    if isinstance(next_info, Info):
+                        next_info = next_info._raw_info
+                    return raw_next(next_root, next_info, *next_args, **next_kwargs)
+
+                next_ = adapted_next
+
+            return extension_resolver(next_, root, info, *args, **kwargs)
+
+        return middleware
 
     def _create_execution_context(  # noqa: PLR0917
         self,
