@@ -1,6 +1,19 @@
 CHANGELOG
 =========
 
+0.340.0 - 2026-11-05
+--------------------
+
+This release adds a `sort_schema` option to `StrawberryConfig`.
+
+When enabled, the GraphQL schema is sorted lexicographically. This affects
+both introspection queries and exported schemas, making them easier to read
+and diff.
+
+This release was contributed by [@lilacrainlog-art](https://github.com/lilacrainlog-art) in [#4733](https://github.com/strawberry-graphql/strawberry/pull/4733)
+
+Additional contributors: [@pre-commit-ci[bot]](https://github.com/pre-commit-ci[bot])
+
 0.339.3 - 2026-11-05
 --------------------
 
