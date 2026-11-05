@@ -187,27 +187,37 @@ class ConsolePlugin:
         )
 
 
-def _get_deps(t: GraphQLType) -> Iterable[GraphQLType]:
+def _get_deps(t: GraphQLType, seen: set[int] | None = None) -> Iterable[GraphQLType]:
     """Get all the types that `t` depends on.
 
-    To keep things simple, `t` depends on itself.
+    To keep things simple, `t` depends on itself. `seen` holds the ids of the
+    types already visited, so types that refer to themselves (like recursive
+    input types) don't recurse forever.
     """
+    if seen is None:
+        seen = set()
+
+    if id(t) in seen:
+        return
+
+    seen.add(id(t))
+
     yield t
 
     if isinstance(t, GraphQLObjectType):
         for fld in t.fields:
-            yield from _get_deps(fld.type)
+            yield from _get_deps(fld.type, seen)
 
     elif isinstance(t, (GraphQLEnum, GraphQLScalar)):
         # enums and scalars have no dependent types
         pass
 
     elif isinstance(t, (GraphQLOptional, GraphQLList)):
-        yield from _get_deps(t.of_type)
+        yield from _get_deps(t.of_type, seen)
 
     elif isinstance(t, GraphQLUnion):
         for gql_type in t.types:
-            yield from _get_deps(gql_type)
+            yield from _get_deps(gql_type, seen)
     else:
         # Want to make sure that all types are covered.
         raise ValueError(f"Unknown GraphQLType: {t}")  # noqa: TRY004
@@ -351,6 +361,9 @@ class QueryCodegen:
         self.schema = schema
         self.plugin_manager = QueryCodegenPluginManager(plugins, console_plugin)
         self.types: list[GraphQLType] = []
+        # Input types by name, so a type that refers to itself (directly or
+        # through other inputs) is built once instead of recursing forever.
+        self._input_types: dict[str, GraphQLObjectType] = {}
 
     def run(self, query: str) -> CodegenResult:
         self.plugin_manager.on_start()
@@ -621,10 +634,14 @@ class QueryCodegen:
             strawberry_type = strawberry_type.__strawberry_definition__
 
         if isinstance(strawberry_type, StrawberryObjectDefinition):
+            if strawberry_type.name in self._input_types:
+                return self._input_types[strawberry_type.name]
+
             type_ = GraphQLObjectType(
                 strawberry_type.name,
                 [],
             )
+            self._input_types[strawberry_type.name] = type_
 
             for field in strawberry_type.fields:
                 field_type = self._collect_type_from_strawberry_type(field.type)
