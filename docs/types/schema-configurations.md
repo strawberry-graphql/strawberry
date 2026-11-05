@@ -106,6 +106,19 @@ schema = strawberry.Schema(
 )
 ```
 
+### sort_schema
+
+By default Strawberry keeps the order in which types and fields are defined when
+generating the schema. You can sort the schema lexicographically by setting
+`sort_schema` to `True`.
+
+This affects both the exported schema and introspection queries, making the
+schema easier to read and diff.
+
+```python
+schema = strawberry.Schema(query=Query, config=StrawberryConfig(sort_schema=True))
+```
+
 ### info_class
 
 By default Strawberry will create an object of type `strawberry.Info` when the

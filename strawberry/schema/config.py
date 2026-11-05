@@ -34,6 +34,8 @@ class StrawberryConfig:
             any type (including NewType) to be used as a GraphQL scalar with
             proper type checking support.
         batching_config: Configuration for operation batching.
+        sort_schema: Sort the GraphQL schema lexicographically, affecting
+            both introspection and exported schemas.
     """
 
     auto_camel_case: InitVar[bool] = None  # pyright: reportGeneralTypeIssues=false
@@ -47,6 +49,7 @@ class StrawberryConfig:
     _unsafe_disable_same_type_validation: bool = False
     scalar_map: Mapping[object, ScalarDefinition] = field(default_factory=dict)
     batching_config: BatchingConfig | None = None
+    sort_schema: bool = False
 
     def __post_init__(
         self,

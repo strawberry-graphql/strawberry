@@ -31,6 +31,7 @@ from graphql import (
     GraphQLSchema,
     OperationDefinitionNode,
     get_introspection_query,
+    lexicographic_sort_schema,
     parse,
     validate_schema,
 )
@@ -483,6 +484,12 @@ class Schema(BaseSchema):
         self._warn_for_federation_directives()
         self._resolve_node_ids()
         self._extend_introspection()
+
+        if self.config.sort_schema:
+            self._schema = lexicographic_sort_schema(self._schema)
+            # lexicographic_sort_schema builds a new GraphQLSchema instance, so
+            # re-attach the reference used during execution (e.g. info.schema).
+            self._schema._strawberry_schema = self  # type: ignore
 
         # Validate schema early because we want developers to know about
         # possible issues as soon as possible
