@@ -88,3 +88,18 @@ def test_evaluation_is_cached_between_annotation_and_resolve():
     assert annotation.annotation is int
     assert annotation.resolve() is int
     assert annotation.evaluations == 1
+
+
+def test_resolve_without_type_definition_skips_generic_check():
+    class CountingAnnotation(StrawberryAnnotation):
+        generic_checks = 0
+
+        @classmethod
+        def _is_type_generic(cls, type_: object) -> bool:
+            cls.generic_checks += 1
+            return super()._is_type_generic(type_)
+
+    annotation = CountingAnnotation(int)
+
+    assert annotation.resolve() is int
+    assert CountingAnnotation.generic_checks == 0
