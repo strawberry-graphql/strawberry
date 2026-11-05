@@ -33,6 +33,7 @@ class TypeScriptPlugin(QueryCodegenPlugin):
         "Decimal": "string",
         str: "string",
         float: "number",
+        type(None): "null",
     }
 
     def __init__(self, query: Path) -> None:
@@ -102,8 +103,12 @@ class TypeScriptPlugin(QueryCodegenPlugin):
         if type_.name in self.SCALARS_TO_TS_TYPE:
             return ""
 
-        assert type_.python_type is not None
-        return f"type {type_.name} = {self.SCALARS_TO_TS_TYPE[type_.python_type]}"
+        ts_type = (
+            self.SCALARS_TO_TS_TYPE.get(type_.python_type, "any")
+            if type_.python_type is not None
+            else "any"
+        )
+        return f"type {type_.name} = {ts_type}"
 
     def _print_union_type(self, type_: GraphQLUnion) -> str:
         return f"type {type_.name} = {' | '.join([t.name for t in type_.types])}"
