@@ -939,3 +939,49 @@ def test_nested_annotated():
     assert isinstance(field_b.type, StrawberryOptional)
     assert isinstance(field_b.type.of_type, StrawberryList)
     assert field_b.type.of_type.of_type is int
+
+
+def test_type_preserves_user_defined_attributes():
+    class User(pydantic.BaseModel):
+        age: int
+
+    @strawberry.experimental.pydantic.type(User, all_fields=True)
+    class UserType:
+        species = "human"
+
+        @staticmethod
+        def describe() -> str:
+            return "a user"
+
+        @classmethod
+        def kind(cls) -> str:
+            return cls.__name__
+
+        def greeting(self) -> str:
+            return f"age {self.age}"
+
+    assert UserType.describe() == "a user"
+    assert UserType.kind() == "UserType"
+    assert UserType.species == "human"
+
+    instance = UserType.from_pydantic(User(age=42))
+    assert instance.greeting() == "age 42"
+    # the default conversion methods are still in place
+    assert instance.to_pydantic() == User(age=42)
+
+    definition: StrawberryObjectDefinition = UserType.__strawberry_definition__
+    assert [field.python_name for field in definition.fields] == ["age"]
+
+
+def test_input_preserves_user_defined_attributes():
+    class User(pydantic.BaseModel):
+        age: int
+
+    @strawberry.experimental.pydantic.input(User, all_fields=True)
+    class UserInput:
+        @staticmethod
+        def validate_age(age: int) -> bool:
+            return age >= 0
+
+    assert UserInput.validate_age(1)
+    assert not UserInput.validate_age(-1)
