@@ -608,9 +608,14 @@ class QueryCodegen:
         type_: GraphQLType
 
         if isinstance(strawberry_type, StrawberryOptional):
-            return GraphQLOptional(
-                self._collect_type_from_strawberry_type(strawberry_type.of_type)
-            )
+            of_type = self._collect_type_from_strawberry_type(strawberry_type.of_type)
+
+            # `strawberry.Maybe[X | None]` is an optional wrapping an optional,
+            # but in GraphQL it's a single nullable `X`.
+            if isinstance(of_type, GraphQLOptional):
+                return of_type
+
+            return GraphQLOptional(of_type)
 
         if isinstance(strawberry_type, StrawberryList):
             return GraphQLList(

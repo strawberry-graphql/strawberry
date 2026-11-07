@@ -154,6 +154,13 @@ class AddBlogPostsOutput:
     posts: list[BlogPost]
 
 
+@strawberry.input
+class UpdateBlogPostInput:
+    title: strawberry.Maybe[str]
+    subtitle: strawberry.Maybe[str | None]
+    tags: strawberry.Maybe[list[str] | None]
+
+
 @strawberry.type
 class Mutation:
     @strawberry.mutation
@@ -167,6 +174,10 @@ class Mutation:
         for i, title in enumerate(input.posts):
             output.posts.append(BlogPost(str(i), title))
         return output
+
+    @strawberry.mutation
+    def update_blog_post(self, input: UpdateBlogPostInput) -> bool:
+        return True
 
 
 @pytest.fixture
