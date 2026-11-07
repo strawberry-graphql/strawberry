@@ -8,6 +8,7 @@ import pytest
 from inline_snapshot import snapshot
 
 import strawberry
+from strawberry.exceptions import MaybeFieldOnOutputTypeError
 from strawberry.pydantic import PydanticValidationErrorHandler, ValidationError
 from strawberry.pydantic.exceptions import MaybeFieldError
 
@@ -671,8 +672,8 @@ def test_json_schema():
 
 
 @pytest.mark.raises_strawberry_exception(
-    MaybeFieldError,
-    match=r"Field `name` on pydantic type `User` can't use `strawberry\.Maybe`",
+    MaybeFieldOnOutputTypeError,
+    match=r"Field `name` on type `User` can't use `strawberry\.Maybe`",
 )
 def test_output_types_cannot_use_maybe():
     @strawberry.pydantic.type
@@ -681,8 +682,8 @@ def test_output_types_cannot_use_maybe():
 
 
 @pytest.mark.raises_strawberry_exception(
-    MaybeFieldError,
-    match=r"Field `name` on pydantic type `Node` can't use `strawberry\.Maybe`",
+    MaybeFieldOnOutputTypeError,
+    match=r"Field `name` on interface `Node` can't use `strawberry\.Maybe`",
 )
 def test_interfaces_cannot_use_maybe():
     @strawberry.pydantic.interface

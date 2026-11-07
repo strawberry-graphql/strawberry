@@ -517,8 +517,10 @@ In the JSON schema of the model, a `Maybe[T]` field has the schema of `T`, with
 a `null` default.
 
 `Maybe` is for inputs: a `Maybe` field on a `@strawberry.pydantic.type` or
-`@strawberry.pydantic.interface` raises an error, as GraphQL has no value for a
-field that was left out. Make the field nullable instead.
+`@strawberry.pydantic.interface` raises a
+[`MaybeFieldOnOutputTypeError`](../errors/maybe-field-on-output-type.md), as
+GraphQL has no value for a field that was left out. Make the field nullable
+instead.
 
 ### Private Fields
 

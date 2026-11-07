@@ -1,9 +1,11 @@
+import re
 from textwrap import dedent
 from typing import Annotated
 
 import pytest
 
 import strawberry
+from strawberry.exceptions import MaybeFieldOnOutputTypeError
 
 
 @pytest.fixture
@@ -1302,3 +1304,75 @@ def test_maybe_str_rejects_null_via_variables():
     result_null = schema2.execute_sync(query_flexible, variable_values=variables_null)
     assert not result_null.errors
     assert result_null.data == {"updateFlexible": "Cleared"}
+
+
+@pytest.mark.raises_strawberry_exception(
+    MaybeFieldOnOutputTypeError,
+    match=re.escape("Field `name` on type `User` can't use `strawberry.Maybe`"),
+)
+def test_maybe_fields_on_types_are_an_error():
+    """The `Some` would be serialized as its repr."""
+
+    @strawberry.type
+    class User:
+        name: strawberry.Maybe[str]
+
+    @strawberry.type
+    class Query:
+        user: User
+
+    strawberry.Schema(query=Query)
+
+
+@pytest.mark.raises_strawberry_exception(
+    MaybeFieldOnOutputTypeError,
+    match=re.escape("Field `name` on interface `Node` can't use `strawberry.Maybe`"),
+)
+def test_maybe_fields_on_interfaces_are_an_error():
+    @strawberry.interface
+    class Node:
+        name: strawberry.Maybe[str | None]
+
+    @strawberry.type
+    class User(Node):
+        pass
+
+    @strawberry.type
+    class Query:
+        user: User
+
+    strawberry.Schema(query=Query, types=[Node])
+
+
+@pytest.mark.raises_strawberry_exception(
+    MaybeFieldOnOutputTypeError,
+    match=re.escape("Field `name` on type `Query` can't use `strawberry.Maybe`"),
+)
+def test_resolvers_returning_maybe_are_an_error():
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def name(self) -> strawberry.Maybe[str]:
+            return strawberry.Some("Patrick")
+
+    strawberry.Schema(query=Query)
+
+
+@pytest.mark.raises_strawberry_exception(
+    MaybeFieldOnOutputTypeError,
+    match=re.escape("Field `name` on type `Person` can't use `strawberry.Maybe`"),
+)
+def test_inherited_maybe_fields_point_at_the_base_type():
+    @strawberry.type
+    class Person:
+        name: strawberry.Maybe[str]
+
+    @strawberry.type
+    class User(Person):
+        pass
+
+    @strawberry.type
+    class Query:
+        user: User
+
+    strawberry.Schema(query=Query)

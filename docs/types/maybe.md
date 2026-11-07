@@ -213,7 +213,10 @@ Use regular optional types (`str | None`) when:
 
 - You only need two states: value or null
 - The field absence and null have the same meaning
-- You're defining output types (GraphQL responses)
+- You're defining output types (GraphQL responses): a `Maybe` field on a
+  `@strawberry.type` or `@strawberry.interface` raises a
+  [`MaybeFieldOnOutputTypeError`](../errors/maybe-field-on-output-type.md) when
+  the schema is built, as GraphQL has no value for a field that was left out
 
 ### Error Handling
 

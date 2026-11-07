@@ -47,6 +47,7 @@ from strawberry.exceptions import (
     InvalidOneOfInputFieldError,
     InvalidTypeInputForUnion,
     InvalidUnionTypeError,
+    MaybeFieldOnOutputTypeError,
     MissingTypesForGenericError,
     ScalarAlreadyRegisteredError,
     StrawberryInputCoercionError,
@@ -620,6 +621,29 @@ class GraphQLCoreConverter:
         # in there a field extension might want to change the type during its apply
         resolver = self.from_resolver(field)
         resolved_type = field.resolve_type(type_definition=type_definition)
+
+        if isinstance(resolved_type, StrawberryMaybe):
+            # `Maybe` is for inputs: the `Some` would be serialized as its repr
+            cls = (
+                field.origin
+                if isinstance(field.origin, type)
+                # the field is one of the type's fields
+                else cast("StrawberryObjectDefinition", type_definition).origin
+            )
+            # e.g. a field inherited from an interface
+            definition = get_object_definition(cls)
+
+            raise MaybeFieldOnOutputTypeError(
+                field_name=field.python_name,
+                cls=cls,
+                kind="interface"
+                if definition is not None and definition.is_interface
+                else "type",
+                resolver=field.base_resolver._unbound_wrapped_func
+                if field.base_resolver is not None
+                else None,
+            )
+
         self._validate_pydantic_field(field, resolved_type, is_input=False)
         field_type = cast(
             "GraphQLOutputType",
