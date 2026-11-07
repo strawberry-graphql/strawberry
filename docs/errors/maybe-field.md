@@ -18,6 +18,10 @@ a way the integration doesn't support:
   like `Annotated[strawberry.Maybe[int], Field(ge=0)]` or
   `strawberry.Maybe[int] = Field(None, ge=0)`: Pydantic would apply the
   constraints to the `strawberry.Some`, not to the value in it;
+- on a `@strawberry.pydantic.input`, with an `after` or `plain`
+  `@field_validator` naming the field: an `after` validator would get the
+  `strawberry.Some`, and a `plain` one would replace the validation of the
+  `Maybe`;
 - on a `@strawberry.pydantic.input`, with an explicit `None` default that
   Pydantic validates, because of `validate_default`.
 
@@ -61,7 +65,8 @@ class Mutation:
 ```
 
 Put constraints and validators in the type inside the `Maybe`, where they apply
-to the value:
+to the value. A `@field_validator` with `mode="before"` or `mode="wrap"` works
+too, as it gets the value the client sent:
 
 ```python
 from typing import Annotated
@@ -70,9 +75,14 @@ import pydantic
 import strawberry
 
 
+def check_name(name: str) -> str:
+    return name.strip()
+
+
 @strawberry.pydantic.input
 class UpdateUserInput(pydantic.BaseModel):
     age: strawberry.Maybe[Annotated[int, pydantic.Field(ge=0)]]
+    name: strawberry.Maybe[Annotated[str, pydantic.AfterValidator(check_name)]]
 ```
 
 On a type or an interface, make the field nullable instead:

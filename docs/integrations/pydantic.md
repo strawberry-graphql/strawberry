@@ -455,8 +455,11 @@ apply to it, and validation errors are reported at the field, like
 `["input", "name"]`. Constraints and validators go in the type inside the
 `Maybe`, as metadata outside it would apply to the `Some`: use
 `strawberry.Maybe[Annotated[int, Field(ge=0)]]`, not
-`Annotated[strawberry.Maybe[int], Field(ge=0)]`. The fields don't need a
-default: like on a regular Strawberry input, they're `None` when the client
+`Annotated[strawberry.Maybe[int], Field(ge=0)]`. The same goes for
+`@field_validator`: one with `mode="after"` or `mode="plain"` naming a `Maybe`
+field is an error, while `mode="before"` and `mode="wrap"` get the value the
+client sent, and a `field_validator("*")` sees the `Some`. The fields don't need
+a default: like on a regular Strawberry input, they're `None` when the client
 leaves them out, which also keeps them out of `model_fields_set`. A `Maybe`
 field can't have a default other than an explicit `None`.
 

@@ -333,12 +333,15 @@ def _check_maybe_field(
     field_info: FieldInfo,
     *,
     is_input: bool,
-) -> None:
+) -> bool:
     """Check a `strawberry.Maybe` field, and make it optional like on `@strawberry.input`.
 
     `origin` is the class that declares the field. Pydantic validates the field
     with the core schema of `Maybe`, see `strawberry.pydantic.maybe`, which gives
     it a `None` default that isn't validated, so the field doesn't need one.
+
+    Returns whether the field was given a default, which is in the schema of the
+    model once it's built again.
     """
     if not is_input:
         raise MaybeFieldError(field_name=field_name, cls=origin, reason="output")
@@ -356,11 +359,27 @@ def _check_maybe_field(
     ):
         raise MaybeFieldError(field_name=field_name, cls=origin, reason="metadata")
 
+    # pydantic runs the field validators of a field on its value too: an `after`
+    # validator gets the `Some`, and a `plain` one replaces the validation of the
+    # `Maybe`, so the field is never wrapped
+    for decorator in cls.__pydantic_decorators__.field_validators.values():
+        if field_name in decorator.info.fields and decorator.info.mode in (
+            "after",
+            "plain",
+        ):
+            raise MaybeFieldError(field_name=field_name, cls=origin, reason="validator")
+
     if field_info.default is PydanticUndefined:
         # pydantic's view of the field matches its schema: it isn't required by
-        # `model_construct()` or in the model's signature
+        # `model_construct()` or in the model's signature, and a field validator
+        # around the schema of the `Maybe` doesn't make it required. The default
+        # isn't validated, even with `validate_default` in the model's config
         field_info.default = None
-    elif (
+        field_info.validate_default = False
+
+        return True
+
+    if (
         field_info.validate_default
         if field_info.validate_default is not None
         else cls.model_config.get("validate_default", False)
@@ -369,6 +388,8 @@ def _check_maybe_field(
         raise MaybeFieldError(
             field_name=field_name, cls=origin, reason="validate_default"
         )
+
+    return False
 
 
 def _is_registered(model: type[BaseModel]) -> bool:
@@ -935,6 +956,7 @@ def get_pydantic_fields(
     replace the computed fields with the same name.
     """
     fields: list[StrawberryField] = []
+    rebuild_schema = False
 
     field_names = list(cls.model_fields)
 
@@ -975,7 +997,7 @@ def get_pydantic_fields(
                 continue
 
             if _annotation_is_maybe(field_info.annotation):
-                _check_maybe_field(
+                rebuild_schema |= _check_maybe_field(
                     cls, origin, field_name, field_info, is_input=is_input
                 )
 
@@ -1015,6 +1037,12 @@ def get_pydantic_fields(
             _set_input_default(strawberry_field, field_info)
 
         fields.append(strawberry_field)
+
+    if rebuild_schema:
+        # the defaults of the `Maybe` fields are in the schema once it's built
+        # again: without them, a field validator around the schema of a `Maybe`,
+        # like `field_validator("*")`, makes pydantic require the field
+        cls.model_rebuild(force=True)
 
     return fields
 

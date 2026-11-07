@@ -735,3 +735,101 @@ def test_validate_default_does_not_apply_to_fields_without_a_default():
 
     assert model.name is None
     assert model.phone is None
+
+    # the `None` default the decorator adds isn't validated either when the
+    # schema is built again
+    assert UpdateInput.model_fields["name"].validate_default is False
+    UpdateInput.model_rebuild(force=True)
+
+    model = UpdateInput()
+
+    assert model.name is None
+    assert model.phone is None
+
+
+def test_subclasses_keep_the_fields_optional():
+    @strawberry.pydantic.input
+    class UpdateInput(pydantic.BaseModel):
+        model_config = pydantic.ConfigDict(validate_default=True)
+
+        name: strawberry.Maybe[str]
+
+    @strawberry.pydantic.input
+    class UpdateAdminInput(UpdateInput):
+        role: strawberry.Maybe[str | None]
+
+    model = UpdateAdminInput()
+
+    assert model.name is None
+    assert model.role is None
+    assert UpdateAdminInput(name="Ada", role=None).model_dump(exclude_unset=True) == {
+        "name": "Ada",
+        "role": None,
+    }
+
+
+@pytest.mark.parametrize("mode", ["after", "plain"])
+@pytest.mark.raises_strawberry_exception(
+    MaybeFieldError,
+    match=(
+        r"Field `name` on pydantic input `UpdateInput` has a field validator "
+        r"outside its `strawberry\.Maybe`"
+    ),
+)
+def test_field_validators_outside_maybe_are_an_error(mode: str):
+    """An `after` validator would get the `Some`, a `plain` one replace it."""
+
+    @strawberry.pydantic.input
+    class UpdateInput(pydantic.BaseModel):
+        name: strawberry.Maybe[str]
+
+        @pydantic.field_validator("name", mode=mode)
+        @classmethod
+        def check_name(cls, value: Any) -> Any:
+            return value
+
+
+def test_before_and_wrap_field_validators_get_the_value():
+    @strawberry.pydantic.input
+    class UpdateInput(pydantic.BaseModel):
+        name: strawberry.Maybe[str]
+        nickname: strawberry.Maybe[str | None]
+
+        @pydantic.field_validator("name", mode="before")
+        @classmethod
+        def strip_name(cls, value: Any) -> Any:
+            return value.strip()
+
+        @pydantic.field_validator("nickname", mode="wrap")
+        @classmethod
+        def check_nickname(
+            cls, value: Any, handler: pydantic.ValidatorFunctionWrapHandler
+        ) -> Any:
+            assert value is None or isinstance(value, str)
+            return handler(value)
+
+    model = UpdateInput(name="  Ada ", nickname=None)
+
+    assert model.name == strawberry.Some("Ada")
+    assert model.nickname == strawberry.Some(None)
+    assert UpdateInput().name is None
+
+
+def test_wildcard_field_validators_get_the_some():
+    """`field_validator("*")` isn't about the `Maybe` fields, so it isn't an error."""
+    seen: list[Any] = []
+
+    @strawberry.pydantic.input
+    class UpdateInput(pydantic.BaseModel):
+        name: strawberry.Maybe[str]
+        age: int = 0
+
+        @pydantic.field_validator("*")
+        @classmethod
+        def record(cls, value: Any) -> Any:
+            seen.append(value)
+            return value
+
+    assert UpdateInput(name="Ada", age=3).name == strawberry.Some("Ada")
+    assert seen == [strawberry.Some("Ada"), 3]
+    assert UpdateInput().name is None

@@ -378,7 +378,9 @@ class MaybeFieldError(StrawberryException):
         field_name: str,
         cls: type,
         *,
-        reason: Literal["output", "default", "metadata", "validate_default"],
+        reason: Literal[
+            "output", "default", "metadata", "validator", "validate_default"
+        ],
     ) -> None:
         self.cls = cls
         self.field_name = field_name
@@ -415,6 +417,20 @@ class MaybeFieldError(StrawberryException):
                 "value, which is a `strawberry.Some` here. Put them in the type "
                 f"inside the `Maybe`, e.g. `{field_name}: "
                 "strawberry.Maybe[Annotated[int, pydantic.Field(ge=0)]]`."
+            )
+        elif reason == "validator":
+            template = (
+                "Field `{field}` on pydantic input `{cls}` has a field validator "
+                "outside its `strawberry.Maybe`"
+            )
+            self.annotation_message = "field validator outside strawberry.Maybe"
+            self.suggestion = (
+                "Pydantic runs the validators of a field on its value, which is a "
+                "`strawberry.Some` here, and a `plain` validator replaces the "
+                "validation of the `Maybe`. Put the validator in the type inside "
+                f"the `Maybe`, e.g. `{field_name}: strawberry.Maybe[Annotated[str, "
+                'pydantic.AfterValidator(check)]]`, or use `mode="before"`, which '
+                "gets the value the client sent."
             )
         else:
             template = (
