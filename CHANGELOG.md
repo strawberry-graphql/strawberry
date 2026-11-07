@@ -1,6 +1,21 @@
 CHANGELOG
 =========
 
+0.341.2 - 2026-11-07
+--------------------
+
+This release fixes `strawberry.Maybe` fields on output types: a `Maybe` field on
+a `@strawberry.type` or `@strawberry.interface`, or a resolver returning one,
+also inside a list like `list[strawberry.Maybe[str]]`, now raises
+`MaybeFieldOnOutputTypeError` when the schema is built, instead of silently
+serializing the `strawberry.Some` as its repr, like `"Some('Ada')"`. `Maybe` is
+for inputs: make the field nullable instead.
+
+`@strawberry.pydantic.type` and `@strawberry.pydantic.interface` raise the same
+error for `Maybe` fields, instead of `MaybeFieldError`.
+
+This release was contributed by [@patrick91](https://github.com/patrick91) in [#4797](https://github.com/strawberry-graphql/strawberry/pull/4797)
+
 0.341.1 - 2026-11-07
 --------------------
 
