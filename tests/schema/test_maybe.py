@@ -1376,3 +1376,83 @@ def test_inherited_maybe_fields_point_at_the_base_type():
         user: User
 
     strawberry.Schema(query=Query)
+
+
+@pytest.mark.raises_strawberry_exception(
+    MaybeFieldOnOutputTypeError,
+    match=re.escape("Field `names` on type `User` can't use `strawberry.Maybe`"),
+)
+def test_maybe_fields_in_lists_are_an_error():
+    """Each `Some` in the list would be serialized as its repr."""
+
+    @strawberry.type
+    class User:
+        names: list[strawberry.Maybe[str]]
+
+    @strawberry.type
+    class Query:
+        user: User
+
+    strawberry.Schema(query=Query)
+
+
+@pytest.mark.raises_strawberry_exception(
+    MaybeFieldOnOutputTypeError,
+    match=re.escape("Field `names` on type `Query` can't use `strawberry.Maybe`"),
+)
+def test_resolvers_returning_lists_of_maybe_are_an_error():
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def names(self) -> list[strawberry.Maybe[str]] | None:
+            return [strawberry.Some("Patrick")]
+
+    strawberry.Schema(query=Query)
+
+
+@pytest.mark.raises_strawberry_exception(
+    MaybeFieldOnOutputTypeError,
+    match=re.escape("Field `name` on type `User` can't use `strawberry.Maybe`"),
+)
+def test_optional_maybe_fields_are_an_error():
+    @strawberry.type
+    class User:
+        name: strawberry.Maybe[str] | None
+
+    @strawberry.type
+    class Query:
+        user: User
+
+    strawberry.Schema(query=Query)
+
+
+def test_error_points_at_the_resolver_returning_the_maybe():
+    def get_name(root) -> strawberry.Maybe[str]:
+        return strawberry.Some("Patrick")
+
+    @strawberry.type
+    class Query:
+        name: strawberry.Maybe[str] = strawberry.field(resolver=get_name)
+
+    with pytest.raises(MaybeFieldOnOutputTypeError) as excinfo:
+        strawberry.Schema(query=Query)
+
+    assert excinfo.value.resolver is get_name
+    assert excinfo.value.suggestion.endswith("e.g. `def name(self) -> str | None`.")
+
+
+def test_error_points_at_the_field_annotation_with_a_resolver():
+    """The field's annotation wins over the resolver's, which is fine here."""
+
+    def get_name(root) -> str:
+        return "Patrick"
+
+    @strawberry.type
+    class Query:
+        name: strawberry.Maybe[str] = strawberry.field(resolver=get_name)
+
+    with pytest.raises(MaybeFieldOnOutputTypeError) as excinfo:
+        strawberry.Schema(query=Query)
+
+    assert excinfo.value.resolver is None
+    assert excinfo.value.suggestion.endswith("e.g. `name: str | None`.")

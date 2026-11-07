@@ -683,6 +683,24 @@ def test_output_types_cannot_use_maybe():
 
 @pytest.mark.raises_strawberry_exception(
     MaybeFieldOnOutputTypeError,
+    match=r"Field `names` on type `User` can't use `strawberry\.Maybe`",
+)
+def test_output_types_cannot_use_maybe_in_lists():
+    """Caught when the schema is built, like on a `@strawberry.type`."""
+
+    @strawberry.pydantic.type
+    class User(pydantic.BaseModel):
+        names: list[strawberry.Maybe[str]]
+
+    @strawberry.type
+    class Query:
+        user: User
+
+    strawberry.Schema(query=Query)
+
+
+@pytest.mark.raises_strawberry_exception(
+    MaybeFieldOnOutputTypeError,
     match=r"Field `name` on interface `Node` can't use `strawberry\.Maybe`",
 )
 def test_interfaces_cannot_use_maybe():

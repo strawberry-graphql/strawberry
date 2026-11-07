@@ -24,7 +24,8 @@ the `strawberry.Some` holding the value would be serialized as its repr, like
 `"Some('Ada')"`.
 
 The error is raised when the schema is built, for fields and for resolvers
-returning a `Maybe`, and for Pydantic models decorated with
+returning a `Maybe`, also inside a list or an optional, like
+`list[strawberry.Maybe[str]]`, and for Pydantic models decorated with
 `@strawberry.pydantic.type` or `@strawberry.pydantic.interface`.
 
 ## How to fix this error
