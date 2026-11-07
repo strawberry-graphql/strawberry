@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import keyword
 import textwrap
 from collections import defaultdict
 from dataclasses import dataclass
@@ -32,6 +33,16 @@ if TYPE_CHECKING:
 class PythonType:
     type: str
     module: str | None = None
+
+
+def _to_python_identifier(name: str) -> str:
+    """Return a valid Python identifier for a GraphQL name.
+
+    GraphQL names can be Python keywords (for example `from` or `class`),
+    which can't be used as attribute names, so we append an underscore,
+    following PEP 8.
+    """
+    return f"{name}_" if keyword.iskeyword(name) else name
 
 
 class PythonPlugin(QueryCodegenPlugin):
@@ -108,10 +119,10 @@ class PythonPlugin(QueryCodegenPlugin):
         return type_.name
 
     def _print_field(self, field: GraphQLField) -> str:
-        name = field.name
+        name = _to_python_identifier(field.name)
 
         if field.alias:
-            name = f"# alias for {field.name}\n{field.alias}"
+            name = f"# alias for {field.name}\n{_to_python_identifier(field.alias)}"
 
         default_value = ""
         if field.default_value is not None:
@@ -150,7 +161,7 @@ class PythonPlugin(QueryCodegenPlugin):
         return repr(argval.value)
 
     def _print_enum_value(self, value: str) -> str:
-        return f'{value} = "{value}"'
+        return f'{_to_python_identifier(value)} = "{value}"'
 
     def _print_object_type(self, type_: GraphQLObjectType) -> str:
         fields = "\n".join(

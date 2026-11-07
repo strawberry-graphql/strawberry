@@ -5,6 +5,7 @@
 # - 5. test subscriptions (raise)
 
 from pathlib import Path
+from typing import Any
 
 import pytest
 from pytest_snapshot.plugin import Snapshot
@@ -106,3 +107,31 @@ def test_nested_fragment_spread_does_not_depend_on_definition_order(
 
     assert inner_last == inner_first
     assert "PersonFields" in inner_last
+
+
+@pytest.mark.parametrize("query", QUERIES, ids=[x.name for x in QUERIES])
+def test_python_codegen_output_is_valid_python(query: Path, schema):
+    generator = QueryCodegen(schema, plugins=[PythonPlugin(query)])
+
+    code = generator.run(query.read_text()).to_string()
+
+    compile(code, query.with_suffix(".py").name, "exec")
+
+
+def test_python_codegen_escapes_keywords(schema):
+    query = HERE / "queries" / "python_keywords.graphql"
+    generator = QueryCodegen(schema, plugins=[PythonPlugin(query)])
+
+    namespace: dict[str, Any] = {}
+    exec(generator.run(query.read_text()).to_string(), namespace)  # noqa: S102
+
+    result = namespace["OperationNameResult"]
+    assert set(result.__annotations__) == {
+        "from_",
+        "import_",
+        "clause",
+        "with_keyword_input",
+    }
+    assert namespace["Clause"].from_.value == "from"
+    assert set(namespace["KeywordInput"].__annotations__) == {"class_"}
+    assert set(namespace["OperationNameVariables"].__annotations__) == {"class_"}

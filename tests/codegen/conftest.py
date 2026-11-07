@@ -88,9 +88,22 @@ class ExampleInput:
     optional_people: list[PersonInput] | None
 
 
+@strawberry.enum
+class Clause(enum.Enum):
+    FROM = strawberry.enum_value("from", name="from")
+    WHERE = "where"
+
+
+@strawberry.input
+class KeywordInput:
+    class_: str = strawberry.field(name="class")
+
+
 @strawberry.type
 class Query:
     id: strawberry.ID
+    from_: str = strawberry.field(name="from")
+    clause: Clause
     integer: int
     float: float
     boolean: bool
@@ -116,6 +129,10 @@ class Query:
 
     @strawberry.field
     def with_inputs(self, id: strawberry.ID | None, input: ExampleInput) -> bool:
+        return True
+
+    @strawberry.field
+    def with_keyword_input(self, input: KeywordInput) -> bool:
         return True
 
     @strawberry.field
