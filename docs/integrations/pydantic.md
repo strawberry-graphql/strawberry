@@ -389,7 +389,8 @@ GraphQL fills in defaults published in the schema before Pydantic validates the
 input. These values can therefore be part of `model_fields_set` even when the
 client omitted them. Do not use `model_dump(exclude_unset=True)` as a record of
 only client-submitted fields, or rely on it to distinguish omission from
-explicit `null` for partial updates.
+explicit `null` for partial updates: use `strawberry.Maybe` for that, see
+[Partial updates with `Maybe`](#partial-updates-with-maybe).
 
 When a model is an argument default, only its explicitly set fields are emitted
 in the printed argument default. For example:
@@ -407,9 +408,79 @@ The printed default of `input: UpdateUserInput = UpdateUserInput(name="Ada")` is
 client-supplied inputs, argument defaults are validated for each request that
 uses them.
 
-`strawberry.Maybe` can't be used in Pydantic inputs (Pydantic raises an error
-for it when the model is defined). Use a regular Strawberry input with
-`strawberry.Maybe` if you need to distinguish omission from explicit `null`.
+### Partial updates with `Maybe`
+
+[`strawberry.Maybe`](../types/maybe.md) tells the fields a client left out apart
+from the ones it set to `null`, like on other input types. A `Maybe` field is
+`None` when the client leaves it out, and a `strawberry.Some` with the validated
+value when it sends one. `Maybe[T]` doesn't accept `null`, while
+`Maybe[T | None]` gives `Some(None)` for it:
+
+```python
+from typing import Annotated
+
+from pydantic import BaseModel, StringConstraints
+
+
+@strawberry.pydantic.input
+class UpdateUserInput(BaseModel):
+    name: strawberry.Maybe[Annotated[str, StringConstraints(min_length=1)]]
+    nickname: strawberry.Maybe[str | None]
+
+
+@strawberry.type
+class Mutation:
+    @strawberry.mutation
+    def update_user(self, id: strawberry.ID, input: UpdateUserInput) -> User:
+        user = get_user(id)
+
+        if input.name is not None:
+            user.name = input.name.value
+        if input.nickname is not None:
+            # `None` removes the nickname
+            user.nickname = input.nickname.value
+
+        return user
+```
+
+```graphql
+input UpdateUserInput {
+  name: String
+  nickname: String
+}
+```
+
+Pydantic validates the value inside the `Maybe`, so the constraints of `name`
+apply to it, and validation errors are reported at the field, like
+`["input", "name"]`. Constraints and validators go in the type inside the
+`Maybe`, as metadata outside it would apply to the `Some`: use
+`strawberry.Maybe[Annotated[int, Field(ge=0)]]`, not
+`Annotated[strawberry.Maybe[int], Field(ge=0)]`. The same goes for
+`@field_validator`: one with `mode="after"` or `mode="plain"` naming a `Maybe`
+field is an error, while `mode="before"` and `mode="wrap"` get the value the
+client sent, and a `field_validator("*")` sees the `Some`. The fields don't need
+a default: like on a regular Strawberry input, they're `None` when the client
+leaves them out, which also keeps them out of `model_fields_set`. A `Maybe`
+field can't have a default other than an explicit `None`.
+
+The model behaves the same way in Python: a field that's passed is a `Some`, and
+one that isn't is `None`. `model_dump()` gives the value inside each `Some`, so
+with `exclude_unset=True` it only has the fields the client sent:
+
+```python
+changes = UpdateUserInput(name="Ada", nickname=None)
+
+assert changes.name == strawberry.Some("Ada")
+assert changes.nickname == strawberry.Some(None)
+assert changes.model_dump(exclude_unset=True) == {"name": "Ada", "nickname": None}
+```
+
+In the JSON schema of the model, a `Maybe[T]` field has the schema of `T`, with
+a `null` default.
+
+`Maybe` is for inputs: a `Maybe` field on a `@strawberry.pydantic.type` or
+`@strawberry.pydantic.interface` raises an error, as GraphQL has no value for a
+field that was left out. Make the field nullable instead.
 
 ### Private Fields
 

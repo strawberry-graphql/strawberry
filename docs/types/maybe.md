@@ -333,9 +333,18 @@ Note: This codemod is for updating `Maybe` annotations, not for migrating from
 both the type annotations and the value access patterns (from `value` to
 `value.value`).
 
+## Pydantic inputs
+
+`Maybe` works the same way on the fields of a
+[`@strawberry.pydantic.input`](../integrations/pydantic.md#partial-updates-with-maybe):
+Pydantic validates the value inside the `Some`, and
+`model_dump(exclude_unset=True)` gives the fields the client sent.
+
 ## Related Types
 
 - [Input Types](./input-types.md) - Using Maybe in input type definitions
+- [Pydantic](../integrations/pydantic.md#partial-updates-with-maybe) - Using
+  Maybe in Pydantic inputs
 - [Resolvers](./resolvers.md) - Using Maybe in resolver arguments
 - [Union Types](./union.md) - Combining Maybe with union types
 - [Scalars](./scalars.md) - Custom scalar types with Maybe

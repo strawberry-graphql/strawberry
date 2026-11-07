@@ -373,24 +373,82 @@ class UnsupportedRootModelError(StrawberryException):
 
 
 class MaybeFieldError(StrawberryException):
-    def __init__(self, field_name: str, cls: type) -> None:
+    def __init__(
+        self,
+        field_name: str,
+        cls: type,
+        *,
+        reason: Literal[
+            "output", "default", "metadata", "validator", "validate_default"
+        ],
+    ) -> None:
         self.cls = cls
         self.field_name = field_name
 
-        self.message = (
-            f"Field `{field_name}` on pydantic input `{cls.__name__}` can't use "
-            "`strawberry.Maybe`"
-        )
-        self.rich_message = (
-            f"Field `[underline]{field_name}[/]` on pydantic input "
-            f"`[underline]{cls.__name__}[/]` can't use `strawberry.Maybe`"
-        )
-        self.annotation_message = "field typed as strawberry.Maybe"
-        self.suggestion = (
-            "Use a regular `@strawberry.input` with `strawberry.Maybe` to "
-            "distinguish omission from explicit null. GraphQL fills in schema "
-            "defaults before Pydantic validation, so `model_fields_set` does "
-            "not identify only client-submitted fields."
+        if reason == "output":
+            template = (
+                "Field `{field}` on pydantic type `{cls}` can't use `strawberry.Maybe`"
+            )
+            self.annotation_message = "field typed as strawberry.Maybe"
+            self.suggestion = (
+                "`strawberry.Maybe` tells the fields a client left out apart from "
+                "the ones it set to null, which only makes sense for inputs. Make "
+                f"the field nullable instead, e.g. `{field_name}: str | None`."
+            )
+        elif reason == "default":
+            template = (
+                "Field `{field}` on pydantic input `{cls}` can't use "
+                "`strawberry.Maybe` with a default"
+            )
+            self.annotation_message = "strawberry.Maybe field with a default"
+            self.suggestion = (
+                "A `strawberry.Maybe` field is `None` when the client leaves it "
+                f"out, so it doesn't need a default: remove it, e.g. `{field_name}: "
+                "strawberry.Maybe[str]`."
+            )
+        elif reason == "metadata":
+            template = (
+                "Field `{field}` on pydantic input `{cls}` has metadata outside its "
+                "`strawberry.Maybe`"
+            )
+            self.annotation_message = "metadata outside strawberry.Maybe"
+            self.suggestion = (
+                "Pydantic applies the constraints and validators of a field to its "
+                "value, which is a `strawberry.Some` here. Put them in the type "
+                f"inside the `Maybe`, e.g. `{field_name}: "
+                "strawberry.Maybe[Annotated[int, pydantic.Field(ge=0)]]`."
+            )
+        elif reason == "validator":
+            template = (
+                "Field `{field}` on pydantic input `{cls}` has a field validator "
+                "outside its `strawberry.Maybe`"
+            )
+            self.annotation_message = "field validator outside strawberry.Maybe"
+            self.suggestion = (
+                "Pydantic runs the validators of a field on its value, which is a "
+                "`strawberry.Some` here, and a `plain` validator replaces the "
+                "validation of the `Maybe`. Put the validator in the type inside "
+                f"the `Maybe`, e.g. `{field_name}: strawberry.Maybe[Annotated[str, "
+                'pydantic.AfterValidator(check)]]`, or use `mode="before"`, which '
+                "gets the value the client sent."
+            )
+        else:
+            template = (
+                "Pydantic input `{cls}` can't validate the default of "
+                "`strawberry.Maybe` field `{field}`"
+            )
+            self.annotation_message = "default validated by pydantic"
+            self.suggestion = (
+                "`validate_default` makes pydantic validate the `None` default like "
+                "a value the client sent, which `Maybe[T]` rejects and "
+                "`Maybe[T | None]` wraps in `Some`. Remove the default, e.g. "
+                f"`{field_name}: strawberry.Maybe[str]`: the field is `None` when "
+                "the client leaves it out, without validating it."
+            )
+
+        self.message = template.format(field=field_name, cls=cls.__name__)
+        self.rich_message = template.format(
+            field=f"[underline]{field_name}[/]", cls=f"[underline]{cls.__name__}[/]"
         )
 
         super().__init__(self.message)

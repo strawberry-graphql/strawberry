@@ -12,10 +12,7 @@ import pytest
 from inline_snapshot import snapshot
 
 import strawberry
-from strawberry.pydantic.exceptions import (
-    MaybeFieldError,
-    UnsupportedInheritedFieldError,
-)
+from strawberry.pydantic.exceptions import UnsupportedInheritedFieldError
 from strawberry.scalars import JSON
 
 
@@ -577,22 +574,6 @@ def test_default_factories_inherited_from_strawberry_input_bases_raise_an_error(
     @strawberry.pydantic.input
     class SearchInput(pydantic.BaseModel, Pagination):
         query: str | None = None
-
-
-@pytest.mark.raises_strawberry_exception(
-    MaybeFieldError,
-    match=(
-        r"Field `name` on pydantic input `UpdateUserInput` can't use "
-        r"`strawberry\.Maybe`"
-    ),
-)
-def test_maybe_fields_on_inputs_raise_an_error():
-    @strawberry.pydantic.input
-    class UpdateUserInput(pydantic.BaseModel):
-        # without it pydantic itself rejects `strawberry.Maybe`
-        model_config = pydantic.ConfigDict(arbitrary_types_allowed=True)
-
-        name: strawberry.Maybe[str] = None
 
 
 def test_constant_defaults_of_constrained_date_fields_are_published():
