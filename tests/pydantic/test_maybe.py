@@ -175,28 +175,142 @@ def test_null_is_some_none_when_the_type_allows_it():
     ("query", "variables"),
     [
         pytest.param(
-            "mutation { updateUser(input: { name: null }) { ... on User { name } } }",
+            """
+            mutation {
+                updateUser(input: { name: null }) {
+                    ... on ValidationError { errors { location message type } }
+                }
+            }
+            """,
             None,
             id="literal",
         ),
         pytest.param(UPDATE_USER, {"input": {"name": None}}, id="variable"),
     ],
 )
-def test_null_is_an_error_when_the_type_does_not_allow_it(
+def test_null_is_a_validation_error_when_the_type_does_not_allow_it(
     query: str, variables: dict[str, Any] | None
 ):
-    """Like on `@strawberry.input`, null isn't a value of `Maybe[T]`."""
+    """Pydantic validates null as the type inside the `Maybe`, like in Python."""
     result = schema.execute_sync(query, variable_values=variables)
 
-    assert result.errors
-    assert len(result.errors) == 1
-    assert "Field of type 'Maybe[str]' cannot be explicitly set to null" in str(
-        result.errors[0]
-    ) or "Field 'name' of type 'Maybe[str]' cannot be explicitly set to null" in str(
-        result.errors[0]
+    assert not result.errors
+    assert result.data == {
+        "updateUser": {
+            "errors": [
+                {
+                    "location": ["input", "name"],
+                    "message": "Input should be a valid string",
+                    "type": "string_type",
+                }
+            ]
+        }
+    }
+
+
+def test_null_is_reported_with_the_other_problems():
+    result = schema.execute_sync(
+        UPDATE_USER,
+        variable_values={"input": {"name": None, "address": {"zipCode": "x"}}},
     )
-    assert "Use 'Maybe[str | None]' if you need to allow null values" in str(
-        result.errors[0]
+
+    assert not result.errors
+    assert result.data == snapshot(
+        {
+            "updateUser": {
+                "errors": [
+                    {
+                        "location": ["input", "name"],
+                        "message": "Input should be a valid string",
+                        "type": "string_type",
+                    },
+                    {
+                        "location": ["input", "address", "zipCode"],
+                        "message": "String should match pattern '^\\d{5}$'",
+                        "type": "string_pattern_mismatch",
+                    },
+                ]
+            }
+        }
+    )
+
+
+def test_null_in_nested_inputs_and_lists_is_reported_at_the_value():
+    @strawberry.pydantic.input
+    class SettingsInput(pydantic.BaseModel):
+        limit: strawberry.Maybe[int]
+
+    @strawberry.pydantic.input
+    class LinkInput(pydantic.BaseModel):
+        url: strawberry.Maybe[str]
+
+    @strawberry.pydantic.input
+    class ProfileInput(pydantic.BaseModel):
+        settings: strawberry.Maybe[SettingsInput]
+        links: strawberry.Maybe[list[LinkInput]]
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def profile(self, input: ProfileInput) -> User | ValidationError:
+            return User(name="Ada")
+
+    schema = strawberry.Schema(
+        query=Query, exception_handlers=[PydanticValidationErrorHandler()]
+    )
+    query = """
+        query ($input: ProfileInput!) {
+            profile(input: $input) {
+                ... on ValidationError { errors { location message type } }
+            }
+        }
+    """
+
+    result = schema.execute_sync(
+        query,
+        variable_values={
+            "input": {
+                "settings": {"limit": None},
+                "links": [{"url": "a"}, {"url": None}],
+            }
+        },
+    )
+
+    assert not result.errors
+    assert result.data == snapshot(
+        {
+            "profile": {
+                "errors": [
+                    {
+                        "location": ["input", "settings", "limit"],
+                        "message": "Input should be a valid integer",
+                        "type": "int_type",
+                    },
+                    {
+                        "location": ["input", "links", "1", "url"],
+                        "message": "Input should be a valid string",
+                        "type": "string_type",
+                    },
+                ]
+            }
+        }
+    )
+
+    result = schema.execute_sync(query, variable_values={"input": {"settings": None}})
+
+    assert not result.errors
+    assert result.data == snapshot(
+        {
+            "profile": {
+                "errors": [
+                    {
+                        "location": ["input", "settings"],
+                        "message": "Input should be a valid dictionary or instance of SettingsInput",
+                        "type": "model_type",
+                    }
+                ]
+            }
+        }
     )
 
 

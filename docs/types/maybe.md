@@ -337,7 +337,8 @@ both the type annotations and the value access patterns (from `value` to
 
 `Maybe` works the same way on the fields of a
 [`@strawberry.pydantic.input`](../integrations/pydantic.md#partial-updates-with-maybe):
-Pydantic validates the value inside the `Some`, and
+Pydantic validates the value inside the `Some`, `null` included, so a `null` for
+a `Maybe[T]` field is a validation error like any other, and
 `model_dump(exclude_unset=True)` gives the fields the client sent.
 
 ## Related Types

@@ -413,8 +413,8 @@ uses them.
 [`strawberry.Maybe`](../types/maybe.md) tells the fields a client left out apart
 from the ones it set to `null`, like on other input types. A `Maybe` field is
 `None` when the client leaves it out, and a `strawberry.Some` with the validated
-value when it sends one. `Maybe[T]` doesn't accept `null`, while
-`Maybe[T | None]` gives `Some(None)` for it:
+value when it sends one. `Maybe[T | None]` gives `Some(None)` for `null`, while
+`Maybe[T]` reports it as a validation error:
 
 ```python
 from typing import Annotated
@@ -452,9 +452,14 @@ input UpdateUserInput {
 
 Pydantic validates the value inside the `Maybe`, so the constraints of `name`
 apply to it, and validation errors are reported at the field, like
-`["input", "name"]`. Constraints and validators go in the type inside the
-`Maybe`, as metadata outside it would apply to the `Some`: use
-`strawberry.Maybe[Annotated[int, Field(ge=0)]]`, not
+`["input", "name"]`. That includes `null`: Pydantic validates it as the type
+inside the `Maybe`, so `{ name: null }` is a `string_type` error at
+`["input", "name"]`, reported with the other problems of the input and returned
+as a `ValidationError` like them (see [Validation errors](#validation-errors)).
+On a regular Strawberry input, a `null` for a `Maybe[T]` field fails the whole
+operation instead, as there is no `ValidationError` to return it in. Constraints
+and validators go in the type inside the `Maybe`, as metadata outside it would
+apply to the `Some`: use `strawberry.Maybe[Annotated[int, Field(ge=0)]]`, not
 `Annotated[strawberry.Maybe[int], Field(ge=0)]`. The same goes for
 `@field_validator`: one with `mode="after"` or `mode="plain"` naming a `Maybe`
 field is an error, while `mode="before"` and `mode="wrap"` get the value the
@@ -462,6 +467,32 @@ client sent, and a `field_validator("*")` sees the `Some`. The fields don't need
 a default: like on a regular Strawberry input, they're `None` when the client
 leaves them out, which also keeps them out of `model_fields_set`. A `Maybe`
 field can't have a default other than an explicit `None`.
+
+A `@model_validator(mode="after")` sees the fields as the resolver does, `None`
+or a `Some`, so a check across fields unwraps them:
+
+```python
+from pydantic import model_validator
+
+
+@strawberry.pydantic.input
+class UpdateUserInput(BaseModel):
+    name: strawberry.Maybe[str]
+    nickname: strawberry.Maybe[str | None]
+
+    @model_validator(mode="after")
+    def check_nickname(self) -> "UpdateUserInput":
+        if (
+            self.nickname is not None
+            and self.name is not None
+            and self.nickname.value == self.name.value
+        ):
+            raise ValueError("nickname must differ from name")
+        return self
+```
+
+A `@model_validator(mode="before")` gets the data the client sent, with `None`
+for an explicit `null` and no key for a field that was left out.
 
 The model behaves the same way in Python: a field that's passed is a `Some`, and
 one that isn't is `None`. `model_dump()` gives the value inside each `Some`, so
@@ -474,6 +505,13 @@ assert changes.name == strawberry.Some("Ada")
 assert changes.nickname == strawberry.Some(None)
 assert changes.model_dump(exclude_unset=True) == {"name": "Ada", "nickname": None}
 ```
+
+`exclude_none=True` only drops the fields that were left out: a `Maybe` field
+set to `null` is a `Some(None)`, which Pydantic doesn't consider `None`, so it
+stays in the output as `None`. That keeps an explicit `null` apart from a field
+that was left out, which is what `Maybe` is for. Use `exclude_unset=True` for
+the fields the client sent, and check the values for `None` to tell the ones it
+cleared.
 
 In the JSON schema of the model, a `Maybe[T]` field has the schema of `T`, with
 a `null` default.
@@ -921,7 +959,8 @@ class CreateUserInput(BaseModel):
 
 #### Model Validators
 
-Cross-field validation using `@model_validator`:
+Cross-field validation using `@model_validator` (on `Maybe` fields, see
+[Partial updates with `Maybe`](#partial-updates-with-maybe)):
 
 ```python
 from pydantic import model_validator

@@ -88,6 +88,13 @@ class MaybeNullValidationRule(ValidationRule):
         if not hasattr(strawberry_type, "fields"):
             return
 
+        # Input types that build their own value, like pydantic inputs, convert
+        # the values of their fields themselves, nulls included, so they can
+        # report them with the other problems of the input instead of failing
+        # the whole operation
+        if getattr(strawberry_type, "from_input", None) is not None:
+            return
+
         for field_def in strawberry_type.fields:
             # Resolve the actual GraphQL field name using the same logic as NameConverter
             if field_def.graphql_name is not None:
