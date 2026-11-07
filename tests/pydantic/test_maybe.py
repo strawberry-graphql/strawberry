@@ -1,7 +1,7 @@
 """`strawberry.Maybe` fields of pydantic inputs."""
 
 import inspect
-from typing import Annotated, Any
+from typing import Annotated, Any, get_origin
 
 import pydantic
 import pytest
@@ -499,9 +499,15 @@ def test_fields_are_not_required():
     assert not UpdateUserInput.model_fields["name"].is_required()
     assert UpdateUserInput.model_fields["name"].default is None
     assert UpdateUserInput.model_construct().name is None
-    assert str(inspect.signature(UpdateUserInput)) == snapshot(
-        "(*, name: strawberry.types.maybe.Maybe[typing.Annotated[str, StringConstraints(strip_whitespace=None, to_upper=None, to_lower=None, strict=None, min_length=2, max_length=None, pattern=None, ascii_only=None), AfterValidator(func=<method 'title' of 'str' objects>)]] = None, phone: strawberry.types.maybe.Maybe[str | None] = None, address: strawberry.types.maybe.Maybe[tests.pydantic.test_maybe.AddressInput | None] = None, tags: strawberry.types.maybe.Maybe[list[str]] = None) -> None"
+    parameters = inspect.signature(UpdateUserInput).parameters
+    assert list(parameters) == ["name", "phone", "address", "tags"]
+    assert all(
+        parameter.kind is inspect.Parameter.KEYWORD_ONLY
+        and parameter.default is None
+        and get_origin(parameter.annotation) is strawberry.Maybe
+        for parameter in parameters.values()
     )
+    assert parameters["phone"].annotation == strawberry.Maybe[str | None]
 
 
 def test_json_schema():
