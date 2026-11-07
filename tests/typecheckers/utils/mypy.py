@@ -77,6 +77,9 @@ def run_mypy(
         )
         full_output = full_output.strip()
 
+        if not full_output:
+            return []
+
         results: list[Result] = []
 
         try:
