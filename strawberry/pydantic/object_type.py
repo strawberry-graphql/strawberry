@@ -168,6 +168,7 @@ def _process_pydantic_type(
         *get_pydantic_fields(
             cls=cls,
             is_input=is_input,
+            is_interface=is_interface,
             include_computed=include_computed,
             # e.g. a computed field overridden by a resolver field in a subclass
             resolver_field_names={field.python_name for field in resolver_fields},

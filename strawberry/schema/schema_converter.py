@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import contextlib
 import dataclasses
 import inspect
 import sys
@@ -47,6 +48,7 @@ from strawberry.exceptions import (
     InvalidOneOfInputFieldError,
     InvalidTypeInputForUnion,
     InvalidUnionTypeError,
+    MaybeFieldOnOutputTypeError,
     MissingTypesForGenericError,
     ScalarAlreadyRegisteredError,
     StrawberryInputCoercionError,
@@ -104,6 +106,7 @@ if TYPE_CHECKING:
     from strawberry.schema_directive import StrawberrySchemaDirective
     from strawberry.types.enum import EnumValue
     from strawberry.types.field import StrawberryField
+    from strawberry.types.fields.resolver import StrawberryResolver
     from strawberry.types.info import Info
     from strawberry.types.scalar import ScalarDefinition
 
@@ -237,6 +240,23 @@ class FieldConverterProtocol(Protocol, Generic[FieldType]):
         *,
         type_definition: StrawberryObjectDefinition | None = None,
     ) -> FieldType: ...
+
+
+def _has_maybe(type_: StrawberryType | type | None) -> bool:
+    """Whether `type_` is a `strawberry.Maybe`, also inside a list or an optional."""
+    if isinstance(type_, StrawberryMaybe):
+        return True
+    if isinstance(type_, (StrawberryList, StrawberryOptional)):
+        return _has_maybe(type_.of_type)
+    return False
+
+
+def _resolver_returns_maybe(resolver: StrawberryResolver) -> bool:
+    # like `StrawberryField.resolve_type`, the annotation can name a type the
+    # module doesn't define yet
+    with contextlib.suppress(NameError):
+        return _has_maybe(resolver.type)
+    return False
 
 
 def _get_thunk_mapping(
@@ -620,6 +640,32 @@ class GraphQLCoreConverter:
         # in there a field extension might want to change the type during its apply
         resolver = self.from_resolver(field)
         resolved_type = field.resolve_type(type_definition=type_definition)
+
+        if _has_maybe(resolved_type):
+            # `Maybe` is for inputs: the `Some` would be serialized as its repr
+            cls = (
+                field.origin
+                if isinstance(field.origin, type)
+                # the field is one of the type's fields
+                else cast("StrawberryObjectDefinition", type_definition).origin
+            )
+            # e.g. a field inherited from an interface
+            definition = get_object_definition(cls)
+
+            raise MaybeFieldOnOutputTypeError(
+                field_name=field.python_name,
+                cls=cls,
+                kind="interface"
+                if definition is not None and definition.is_interface
+                else "type",
+                # the field's annotation wins over the resolver's, so the
+                # resolver is only to blame when it returns the `Maybe` itself
+                resolver=field.base_resolver._unbound_wrapped_func
+                if field.base_resolver is not None
+                and _resolver_returns_maybe(field.base_resolver)
+                else None,
+            )
+
         self._validate_pydantic_field(field, resolved_type, is_input=False)
         field_type = cast(
             "GraphQLOutputType",

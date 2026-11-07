@@ -41,6 +41,7 @@ from pydantic_core import PydanticUndefined
 
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.exceptions import (
+    MaybeFieldOnOutputTypeError,
     ResolverFieldOnInputError,
 )
 from strawberry.scalars import is_scalar
@@ -333,6 +334,7 @@ def _check_maybe_field(
     field_info: FieldInfo,
     *,
     is_input: bool,
+    is_interface: bool,
 ) -> bool:
     """Check a `strawberry.Maybe` field, and make it optional like on `@strawberry.input`.
 
@@ -344,7 +346,11 @@ def _check_maybe_field(
     model once it's built again.
     """
     if not is_input:
-        raise MaybeFieldError(field_name=field_name, cls=origin, reason="output")
+        raise MaybeFieldOnOutputTypeError(
+            field_name=field_name,
+            cls=origin,
+            kind="interface" if is_interface else "type",
+        )
 
     if field_info.default_factory is not None or (
         field_info.default is not PydanticUndefined and field_info.default is not None
@@ -935,6 +941,7 @@ def get_resolver_fields(
 def get_pydantic_fields(
     cls: type[BaseModel],
     is_input: bool = False,
+    is_interface: bool = False,
     include_computed: bool = False,
     resolver_field_names: Collection[str] = (),
 ) -> list[StrawberryField]:
@@ -998,7 +1005,12 @@ def get_pydantic_fields(
 
             if _annotation_is_maybe(field_info.annotation):
                 rebuild_schema |= _check_maybe_field(
-                    cls, origin, field_name, field_info, is_input=is_input
+                    cls,
+                    origin,
+                    field_name,
+                    field_info,
+                    is_input=is_input,
+                    is_interface=is_interface,
                 )
 
         if (base_field := _get_strawberry_base_field(origin, field_name)) is not None:

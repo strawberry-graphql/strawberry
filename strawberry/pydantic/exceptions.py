@@ -378,24 +378,12 @@ class MaybeFieldError(StrawberryException):
         field_name: str,
         cls: type,
         *,
-        reason: Literal[
-            "output", "default", "metadata", "validator", "validate_default"
-        ],
+        reason: Literal["default", "metadata", "validator", "validate_default"],
     ) -> None:
         self.cls = cls
         self.field_name = field_name
 
-        if reason == "output":
-            template = (
-                "Field `{field}` on pydantic type `{cls}` can't use `strawberry.Maybe`"
-            )
-            self.annotation_message = "field typed as strawberry.Maybe"
-            self.suggestion = (
-                "`strawberry.Maybe` tells the fields a client left out apart from "
-                "the ones it set to null, which only makes sense for inputs. Make "
-                f"the field nullable instead, e.g. `{field_name}: str | None`."
-            )
-        elif reason == "default":
+        if reason == "default":
             template = (
                 "Field `{field}` on pydantic input `{cls}` can't use "
                 "`strawberry.Maybe` with a default"

@@ -15,6 +15,7 @@ from .invalid_one_of_input_field import InvalidOneOfInputFieldError
 from .invalid_strawberry_field_annotation import InvalidStrawberryFieldAnnotationError
 from .invalid_superclass_interface import InvalidSuperclassInterfaceError
 from .invalid_union_type import InvalidTypeForUnionMergeError, InvalidUnionTypeError
+from .maybe_field_on_output_type import MaybeFieldOnOutputTypeError
 from .missing_arguments_annotations import MissingArgumentsAnnotationsError
 from .missing_dependencies import MissingOptionalDependenciesError
 from .missing_field_annotation import MissingFieldAnnotationError
@@ -262,6 +263,7 @@ __all__ = [
     "InvalidSuperclassInterfaceError",
     "InvalidTypeForUnionMergeError",
     "InvalidUnionTypeError",
+    "MaybeFieldOnOutputTypeError",
     "MissingArgumentsAnnotationsError",
     "MissingFieldAnnotationError",
     "MissingOptionalDependenciesError",
