@@ -748,6 +748,20 @@ class GraphQLCoreConverter:
         *,
         type_definition: StrawberryObjectDefinition | None = None,
     ) -> GraphQLInputField:
+        from strawberry.types.arguments import _check_nested_global_id_expected_types
+
+        field_annotation = (
+            field.type_annotation.annotation if field.type_annotation else None
+        )
+        if field_annotation is not None and not isinstance(field_annotation, str):
+            try:
+                _check_nested_global_id_expected_types(field_annotation, _allowed=False)
+            except TypeError as error:
+                raise TypeError(
+                    "Expected GlobalID types are not supported on input object "
+                    f"fields yet (field {field.python_name!r}): {error}"
+                ) from error
+
         resolved_type = field.resolve_type(type_definition=type_definition)
         self._validate_pydantic_field(field, resolved_type, is_input=True)
         field_type = cast("GraphQLInputType", self.from_maybe_optional(resolved_type))
