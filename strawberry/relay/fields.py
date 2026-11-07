@@ -70,6 +70,7 @@ class NodeExtension(FieldExtension):
         next_: SyncExtensionResolver,
         source: Any,
         info: strawberry.Info,
+        /,
         **kwargs: Any,
     ) -> Any:
         return next_(source, info, **kwargs)
@@ -79,6 +80,7 @@ class NodeExtension(FieldExtension):
         next_: SyncExtensionResolver,
         source: Any,
         info: strawberry.Info,
+        /,
         **kwargs: Any,
     ) -> Any:
         retval = next_(source, info, **kwargs)
@@ -318,6 +320,7 @@ class ConnectionExtension(FieldExtension):
         next_: SyncExtensionResolver,
         source: Any,
         info: strawberry.Info,
+        /,
         *,
         before: str | None = None,
         after: str | None = None,
@@ -341,6 +344,7 @@ class ConnectionExtension(FieldExtension):
         next_: AsyncExtensionResolver,
         source: Any,
         info: strawberry.Info,
+        /,
         *,
         before: str | None = None,
         after: str | None = None,

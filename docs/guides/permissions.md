@@ -63,6 +63,30 @@ information on how errors are handled.
 }
 ```
 
+### Fields with an argument named `source`
+
+The field's arguments are passed to `has_permission` as keyword arguments, so a
+field with an argument called `source` would clash with the `source` parameter
+of `has_permission`. Mark the first parameters as positional-only with `/` to
+keep them separate:
+
+```python
+class OnlyManualReadings(BasePermission):
+    message = "Only manual readings are visible"
+
+    def has_permission(
+        self, source: typing.Any, info: strawberry.Info, /, **kwargs
+    ) -> bool:
+        # `source` is the parent object, the field argument is in `kwargs`
+        return kwargs.get("source") == "manual"
+
+
+@strawberry.type
+class Field:
+    @strawberry.field(permission_classes=[OnlyManualReadings])
+    def readings(self, source: str) -> list[str]: ...
+```
+
 ## Accessing user information
 
 Accessing the current user information to implement your permission checks
