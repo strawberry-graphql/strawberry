@@ -162,12 +162,11 @@ def _to_python_value(
     keys: tuple[str | int, ...],
 ) -> Any:
     if isinstance(type_, StrawberryMaybe):
-        # null is `Some(None)` for `Maybe[T | None]` and an error for `Maybe[T]`,
-        # like in other input types. Other values are passed as they are:
-        # pydantic wraps them in `Some` itself, see `strawberry.pydantic.maybe`
-        if value is None:
-            return context.convert(value, type_, *keys)
-
+        # the value is passed as it is, null included: pydantic validates it as
+        # the type inside the `Maybe` and wraps it in `Some` itself, see
+        # `strawberry.pydantic.maybe`. So null is `Some(None)` for
+        # `Maybe[T | None]`, and for `Maybe[T]` it's reported like any other
+        # invalid value, at the field, with the other problems of the input
         return _to_python_value(value, type_.of_type, context, keys)
 
     if value is None:

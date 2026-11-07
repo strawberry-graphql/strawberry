@@ -329,7 +329,9 @@ class StrawberryObjectDefinition(StrawberryType):
 
     It's called with the class to build, which can be a subclass of `origin`, and
     the whole input value, keyed by GraphQL field names, so it's also responsible
-    for converting the values of the fields (see `InputContext.convert`). Fields
+    for converting the values of the fields (see `InputContext.convert`), which
+    includes a null for a `Maybe` field, as Strawberry doesn't validate those in
+    the document for types that set it. Fields
     the client omitted contain their default when it's published in the schema,
     and are missing otherwise, e.g. when they default to `UNSET`. Defaults of
     arguments and input fields are built with it too, as Strawberry converts them
