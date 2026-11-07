@@ -1,6 +1,17 @@
 CHANGELOG
 =========
 
+0.340.1 - 2026-11-07
+--------------------
+
+This release fixes `strawberry codegen` wrapping nullable `strawberry.Maybe`
+input fields twice. A field declared as `strawberry.Maybe[str | None]` was
+generated as `Optional[Optional[str]]` in Python and `string | undefined | undefined`
+in TypeScript. It's now `Optional[str]` and `string | undefined`, matching the
+nullable `String` it is in the schema.
+
+This release was contributed by [@RagedPanda](https://github.com/RagedPanda) in [#4759](https://github.com/strawberry-graphql/strawberry/pull/4759)
+
 0.340.0 - 2026-11-05
 --------------------
 
