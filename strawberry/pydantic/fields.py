@@ -326,6 +326,51 @@ def _set_input_default(field: StrawberryField, field_info: FieldInfo) -> None:
         )
 
 
+def _check_maybe_field(
+    cls: type[BaseModel],
+    origin: type,
+    field_name: str,
+    field_info: FieldInfo,
+    *,
+    is_input: bool,
+) -> None:
+    """Check a `strawberry.Maybe` field, and make it optional like on `@strawberry.input`.
+
+    `origin` is the class that declares the field. Pydantic validates the field
+    with the core schema of `Maybe`, see `strawberry.pydantic.maybe`, which gives
+    it a `None` default that isn't validated, so the field doesn't need one.
+    """
+    if not is_input:
+        raise MaybeFieldError(field_name=field_name, cls=origin, reason="output")
+
+    if field_info.default_factory is not None or (
+        field_info.default is not PydanticUndefined and field_info.default is not None
+    ):
+        raise MaybeFieldError(field_name=field_name, cls=origin, reason="default")
+
+    # pydantic applies the metadata of a field to its value, which is a `Some`
+    # here, so e.g. `Annotated[Maybe[int], Field(ge=0)]` fails for every value
+    if any(
+        not isinstance(item, (StrawberryField, *_TYPE_METADATA))
+        for item in field_info.metadata
+    ):
+        raise MaybeFieldError(field_name=field_name, cls=origin, reason="metadata")
+
+    if field_info.default is PydanticUndefined:
+        # pydantic's view of the field matches its schema: it isn't required by
+        # `model_construct()` or in the model's signature
+        field_info.default = None
+    elif (
+        field_info.validate_default
+        if field_info.validate_default is not None
+        else cls.model_config.get("validate_default", False)
+    ):
+        # pydantic would validate the explicit `None` default as a value
+        raise MaybeFieldError(
+            field_name=field_name, cls=origin, reason="validate_default"
+        )
+
+
 def _is_registered(model: type[BaseModel]) -> bool:
     """Whether `model` has a GraphQL type of its own.
 
@@ -929,8 +974,10 @@ def get_pydantic_fields(
             if field_info.exclude is True and not is_input:
                 continue
 
-            if is_input and _annotation_is_maybe(field_info.annotation):
-                raise MaybeFieldError(field_name=field_name, cls=origin)
+            if _annotation_is_maybe(field_info.annotation):
+                _check_maybe_field(
+                    cls, origin, field_name, field_info, is_input=is_input
+                )
 
         if (base_field := _get_strawberry_base_field(origin, field_name)) is not None:
             # pydantic sees the annotation of a field with a resolver, like
