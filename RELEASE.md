@@ -21,4 +21,8 @@ This release also fixes later loads hanging forever after all the loads of a
 batch were cancelled before the batch was dispatched.
 
 Note that `loader.load(key)` called twice for the same cached key now returns
-two different awaitables, both resolving to the same value.
+two different awaitables, both resolving to the same value. As each call has its
+own awaitable, one that is never awaited (e.g. to prefetch a key) keeps the
+load of its key going even if all other callers are cancelled, and if the load
+fails, asyncio reports its exception as never retrieved, like for any other
+future that is never awaited.
