@@ -315,11 +315,13 @@ class DataLoader(Generic[K, T]):
             # that cancelling it doesn't cancel the one shared by the others.
             return _follow(cached, self.loop)
 
-        batch = get_current_batch(self)
         future: _CachedFuture[T] = _CachedFuture(loop=self.loop)
-        task = batch.add_task(key, future)
-        future.task = task
+        future.task = None
+        # Cache the future first, so that nothing is loaded if this fails
         self.cache_map.set(key, future)
+
+        task = get_current_batch(self).add_task(key, future)
+        future.task = task
 
         return task.add_waiter(self.loop)
 

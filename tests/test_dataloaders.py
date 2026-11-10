@@ -8,7 +8,7 @@ from typing import Any, Optional, cast
 import pytest
 from pytest_mock import MockerFixture
 
-from strawberry.dataloader import AbstractCache, DataLoader
+from strawberry.dataloader import AbstractCache, DataLoader, DefaultCache
 from strawberry.exceptions import WrongNumberOfResultsReturned
 
 IDXType = Callable[[list[int]], Awaitable[list[int]]]
@@ -1123,6 +1123,28 @@ async def test_cancelling_a_caller_of_a_future_not_created_by_the_loader():
 
     assert await asyncio.wait_for(second, timeout=1) == 42
     assert first.cancelled()
+
+
+@pytest.mark.asyncio
+async def test_failing_cache_write_does_not_load_the_key():
+    calls: list[list[int]] = []
+
+    async def load(keys: list[int]) -> list[int]:
+        calls.append(keys)
+        return keys
+
+    class FailingCache(DefaultCache[int, int]):
+        def set(self, key: int, value: Future[int]) -> None:
+            if key == 1:
+                raise RuntimeError("Cache unavailable")
+            super().set(key, value)
+
+    loader = DataLoader(load_fn=load, cache_map=FailingCache())
+    with pytest.raises(RuntimeError, match="Cache unavailable"):
+        loader.load(1)
+
+    assert await loader.load(2) == 2
+    assert calls == [[2]]
 
 
 @pytest.mark.asyncio
