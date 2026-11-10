@@ -229,6 +229,13 @@ def _get_default_value_expr(
     raise NotImplementedError(f"Unknown default value node {node}")
 
 
+def _has_enum_value(node: ConstValueNode) -> bool:
+    if isinstance(node, ListValueNode):
+        return any(_has_enum_value(value) for value in node.values)
+
+    return isinstance(node, EnumValueNode)
+
+
 def _escape_character(character: str) -> str:
     if character == "\\":
         return "\\\\"
@@ -399,7 +406,7 @@ def _get_field(
     if isinstance(field, InputValueDefinitionNode) and field.default_value is not None:
         enum_type_name = (
             _get_base_type_name(field.type)
-            if isinstance(field.default_value, EnumValueNode)
+            if _has_enum_value(field.default_value)
             else None
         )
 
@@ -633,7 +640,21 @@ def _get_class_definition(
         decorators=[decorator],
     )
 
-    return Definition(class_definition, interfaces, definition.name.value)
+    # Enum members used as default values are evaluated when the class is
+    # created, so those enums must be emitted before the class.
+    default_enum_names = [
+        _get_base_type_name(field.type)
+        for field in definition.fields or ()
+        if isinstance(field, InputValueDefinitionNode)
+        and field.default_value is not None
+        and _has_enum_value(field.default_value)
+    ]
+
+    return Definition(
+        class_definition,
+        [*interfaces, *default_enum_names],
+        definition.name.value,
+    )
 
 
 def _get_enum_value(enum_value: EnumValueDefinitionNode) -> cst.SimpleStatementLine:
