@@ -1169,6 +1169,28 @@ async def test_cancelling_a_caller_of_a_cache_shared_between_loaders():
 
 
 @pytest.mark.asyncio
+async def test_cancelled_callers_are_freed_while_their_key_is_loading():
+    finish = asyncio.Event()
+
+    async def load(keys: list[int]) -> list[int]:
+        await finish.wait()
+        return keys
+
+    loader = DataLoader(load_fn=load)
+    live = loader.load(1)
+    cancelled = cast("Future[int]", loader.load(1))
+    ref = weakref.ref(cancelled)
+    cancelled.cancel()
+    del cancelled
+    await asyncio.sleep(0)
+    await asyncio.sleep(0)
+
+    assert ref() is None
+    finish.set()
+    assert await live == 1
+
+
+@pytest.mark.asyncio
 @pytest.mark.parametrize("cache", [False, True])
 async def test_loaded_values_are_freed_without_garbage_collection(cache: bool):
     """The loader must not create reference cycles keeping loaded values alive."""

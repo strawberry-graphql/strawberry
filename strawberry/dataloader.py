@@ -39,7 +39,8 @@ class LoaderTask(Generic[K, T]):
     # Only used for cached keys. Every `load` of a cached key gets its own
     # waiter future, so that cancelling one caller doesn't cancel the others
     # waiting for the same key. `future` is cancelled once all waiters are.
-    waiters: list[Future] | None = dataclasses.field(default=None, repr=False)
+    # A dict is used as an ordered set, to remove cancelled waiters in O(1).
+    waiters: dict[Future, None] | None = dataclasses.field(default=None, repr=False)
     _live_waiters: int = dataclasses.field(default=0, repr=False)
     _batch: Batch[K, T] | None = dataclasses.field(default=None, repr=False)
     _cancellation_handled: bool = dataclasses.field(default=False, repr=False)
@@ -47,9 +48,9 @@ class LoaderTask(Generic[K, T]):
     def add_waiter(self, loop: AbstractEventLoop) -> Future:
         waiter = loop.create_future()
         if self.waiters is None:
-            self.waiters = [waiter]
+            self.waiters = {waiter: None}
         else:
-            self.waiters.append(waiter)
+            self.waiters[waiter] = None
         self._live_waiters += 1
         waiter.add_done_callback(self._on_waiter_done)
         return waiter
@@ -89,6 +90,9 @@ class LoaderTask(Generic[K, T]):
         if not waiter.cancelled():
             return
 
+        if self.waiters is not None:
+            # Don't keep cancelled waiters alive while the key is loading.
+            self.waiters.pop(waiter, None)
         self._live_waiters -= 1
         if self._live_waiters == 0 and not self.future.done():
             self.future.cancel()
