@@ -1098,6 +1098,34 @@ async def test_cache_returning_a_future_not_created_by_the_loader():
 
 
 @pytest.mark.asyncio
+async def test_cancelling_a_caller_of_a_future_not_created_by_the_loader():
+    future: Future[int] = asyncio.get_running_loop().create_future()
+
+    class StaticCache(AbstractCache[int, int]):
+        def get(self, key: int) -> Future[int] | None:
+            return future
+
+        def set(self, key: int, value: Future[int]) -> None:
+            pass
+
+        def delete(self, key: int) -> None:
+            pass
+
+        def clear(self) -> None:
+            pass
+
+    loader = DataLoader(load_fn=idx, cache_map=StaticCache())
+    first = cast("Future[int]", loader.load(1))
+    second = loader.load(1)
+    first.cancel()
+    await asyncio.sleep(0)
+    future.set_result(42)
+
+    assert await asyncio.wait_for(second, timeout=1) == 42
+    assert first.cancelled()
+
+
+@pytest.mark.asyncio
 async def test_cancelling_a_caller_of_a_cache_shared_between_loaders():
     calls: list[list[int]] = []
 

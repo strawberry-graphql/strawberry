@@ -305,13 +305,15 @@ class DataLoader(Generic[K, T]):
         cached = self.cache_map.get(key)
 
         if cached and not cached.cancelled():
-            if isinstance(cached, _CachedFuture) and not cached.done():
-                pending_task = cached.task
-                if pending_task is not None:
-                    return pending_task.add_waiter(self.loop)
+            if cached.done():
+                return cached
 
-            # Already resolved, or not created by a loader
-            return cached
+            if isinstance(cached, _CachedFuture) and cached.task is not None:
+                return cached.task.add_waiter(self.loop)
+
+            # Not created by a loader: give the caller its own future, so
+            # that cancelling it doesn't cancel the one shared by the others.
+            return _follow(cached, self.loop)
 
         batch = get_current_batch(self)
         future: _CachedFuture[T] = _CachedFuture(loop=self.loop)
@@ -360,6 +362,32 @@ class DataLoader(Generic[K, T]):
                     task.set_result(data[task.key])
             if batch_updated:
                 self.batch._remove_done_tasks()
+
+
+def _follow(source: Future[T], loop: AbstractEventLoop) -> Future[T]:
+    """Return a new future resolved like `source`.
+
+    Cancelling the new future doesn't cancel `source`.
+    """
+    waiter: Future[T] = loop.create_future()
+
+    def copy_state(source: Future[T]) -> None:
+        if waiter.done():
+            return
+        if source.cancelled():
+            waiter.cancel()
+        elif (exception := source.exception()) is not None:
+            waiter.set_exception(exception)
+        else:
+            waiter.set_result(source.result())
+
+    def on_waiter_done(waiter: Future[T]) -> None:
+        if waiter.cancelled():
+            source.remove_done_callback(copy_state)
+
+    source.add_done_callback(copy_state)
+    waiter.add_done_callback(on_waiter_done)
+    return waiter
 
 
 def should_create_new_batch(loader: DataLoader, batch: Batch) -> bool:
