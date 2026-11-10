@@ -880,7 +880,8 @@ async def test_all_callers_of_one_cached_key_cancelled_still_loads_other_keys():
     second.cancel()
 
     assert await asyncio.wait_for(other, timeout=1) == 2
-    assert len(calls) == 1
+    # As for uncached keys, the batch keeps the keys whose callers were cancelled
+    assert calls == [[1, 2]]
 
 
 @pytest.mark.asyncio
@@ -902,6 +903,87 @@ async def test_load_after_batch_cancelled_before_dispatch(cache: bool):
     await asyncio.sleep(0)
 
     assert await asyncio.wait_for(loader.load(3), timeout=1) == 3
+    assert calls == [[3]]
+
+
+@pytest.mark.asyncio
+async def test_load_while_a_batch_is_skipped_at_dispatch_starts_a_new_batch():
+    """A load joining a batch that is then skipped must not wait for it forever.
+
+    Here the cancellation of the only caller hasn't reached the shared future
+    when the dispatch skips the batch, and a new load of the same key comes in
+    right after.
+    """
+    calls: list[list[int]] = []
+
+    async def load(keys: list[int]) -> list[int]:
+        calls.append(keys)
+        return keys
+
+    loader = DataLoader(load_fn=load)
+    first = cast("Future[int]", loader.load(1))
+    # Let the dispatch task be created.
+    await asyncio.sleep(0)
+
+    later_loads: list[Awaitable[int]] = []
+    asyncio.get_running_loop().call_soon(lambda: later_loads.append(loader.load(1)))
+    first.cancel()
+    await asyncio.sleep(0)
+    await asyncio.sleep(0)
+
+    assert await asyncio.wait_for(later_loads[0], timeout=1) == 1
+    assert calls == [[1]]
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("cache", [False, True])
+async def test_load_errors_are_not_reported_as_never_retrieved(cache: bool):
+    reported: list[dict[str, Any]] = []
+    loop = asyncio.get_running_loop()
+    loop.set_exception_handler(lambda _, context: reported.append(context))
+
+    async def load(keys: list[int]) -> list[int | BaseException]:
+        return [ValueError(f"error {key}") for key in keys]
+
+    try:
+        loader = DataLoader(load_fn=load, cache=cache)
+        results = await asyncio.gather(
+            loader.load(1), loader.load(1), loader.load(2), return_exceptions=True
+        )
+        assert [str(result) for result in results] == [
+            "error 1",
+            "error 1",
+            "error 2",
+        ]
+
+        loader.clear_all()
+        del loader
+        del results
+        gc.collect()
+
+        assert reported == []
+    finally:
+        loop.set_exception_handler(None)
+
+
+@pytest.mark.asyncio
+async def test_prime_after_a_cancellation_still_dispatches_other_keys():
+    """Priming removes the cancelled key from the batch, before its callback runs."""
+    calls: list[list[int]] = []
+
+    async def load(keys: list[int]) -> list[int]:
+        calls.append(keys)
+        return keys
+
+    loader = DataLoader(load_fn=load, cache=False)
+    cancelled = cast("Future[int]", loader.load(1))
+    primed = loader.load(2)
+    other = loader.load(3)
+    cancelled.cancel()
+    loader.prime(2, 20)
+
+    assert await asyncio.wait_for(primed, timeout=1) == 20
+    assert await asyncio.wait_for(other, timeout=1) == 3
     assert calls == [[3]]
 
 

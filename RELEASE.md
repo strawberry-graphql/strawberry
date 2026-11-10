@@ -1,5 +1,5 @@
 ---
-release type: patch
+release type: minor
 ---
 
 This release fixes `DataLoader` cancelling every caller of a cached key when
