@@ -164,3 +164,28 @@ def test_generates_enum_before_input_using_it_as_default(tmp_path):
     module = runpy.run_path(str(path))
 
     assert module["SortInput"]().nulls is module["Nulls"].last
+
+
+def test_generates_enum_before_input_using_it_in_a_list_default():
+    schema = """
+    input SortInput {
+        nulls: [Nulls!]! = [first, last]
+    }
+
+    enum Nulls {
+        first
+        last
+    }
+
+    type Query {
+        issues(sort: SortInput): String
+    }
+    """
+
+    generated = codegen(schema).strip()
+
+    enum_pos = generated.index("@strawberry.enum\nclass Nulls(Enum):")
+    input_pos = generated.index("@strawberry.input\nclass SortInput:")
+
+    assert enum_pos < input_pos, "Enum must precede the input using it as default"
+    assert "nulls: list[Nulls] = [Nulls.first, Nulls.last]" in generated

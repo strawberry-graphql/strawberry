@@ -7,5 +7,6 @@ to import with a `NameError` when an input field's default value is a member of
 an enum declared later in the schema, like `input SortInput { nulls: Nulls = last }`
 followed by `enum Nulls`.
 
-Enums used as input field defaults are now emitted before the inputs that use
-them.
+Enums used as input field defaults, including inside list defaults like
+`[Nulls!]! = [first, last]`, are now emitted before the inputs that use them.
+List defaults holding enum values no longer fail with `ValueError`.
