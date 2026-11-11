@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import logging
 from contextlib import suppress
+from types import NoneType
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -138,6 +139,12 @@ class BaseGraphQLTransportWSHandler(Generic[Context, RootValue]):
         self.task_logger.exception("Exception in worker task", exc_info=error)  # noqa: LOG004
 
     async def handle_message(self, message: Message) -> None:
+        # Every protocol message is a JSON object; reject other JSON values
+        # (arrays, strings, numbers, null) before reading any fields.
+        if not isinstance(message, dict):
+            await self.handle_invalid_message("Failed to parse message")
+            return
+
         try:
             if message["type"] == "connection_init":
                 await self.handle_connection_init(message)
@@ -215,6 +222,10 @@ class BaseGraphQLTransportWSHandler(Generic[Context, RootValue]):
             await self.websocket.close(code=4401, reason="Unauthorized")
             return
 
+        if not self._is_valid_subscribe_message(message):
+            await self.handle_invalid_message("Failed to parse message")
+            return
+
         if message["id"] in self.operations:
             reason = f"Subscriber for {message['id']} already exists"
             await self.websocket.close(code=4409, reason=reason)
@@ -247,6 +258,18 @@ class BaseGraphQLTransportWSHandler(Generic[Context, RootValue]):
         operation.task = asyncio.create_task(self.run_operation(operation))
         operation.task.add_done_callback(self._task_done)
         self.operations[message["id"]] = operation
+
+    @staticmethod
+    def _is_valid_subscribe_message(message: SubscribeMessage) -> bool:
+        payload = message.get("payload")
+
+        return (
+            isinstance(message.get("id"), str)
+            and isinstance(payload, dict)
+            and isinstance(payload.get("query"), str)
+            and isinstance(payload.get("variables"), (dict, NoneType))
+            and isinstance(payload.get("operationName"), (str, NoneType))
+        )
 
     async def run_operation(self, operation: Operation[Context, RootValue]) -> None:
         """The operation task's top level method. Cleans-up and de-registers the operation once it is done."""
@@ -333,6 +356,10 @@ class BaseGraphQLTransportWSHandler(Generic[Context, RootValue]):
         del self.operations[id]
 
     async def handle_complete(self, message: CompleteMessage) -> None:
+        if not isinstance(message.get("id"), str):
+            await self.handle_invalid_message("Failed to parse message")
+            return
+
         await self.cleanup_operation(operation_id=message["id"])
 
     async def handle_invalid_message(self, error_message: str) -> None:

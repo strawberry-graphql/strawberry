@@ -620,6 +620,89 @@ async def test_unknown_protocol_messages_are_ignored(ws_raw: WebSocketClient):
     assert ws.closed
 
 
+async def test_malformed_protocol_messages_are_ignored(ws_raw: WebSocketClient):
+    ws = ws_raw
+    malformed_messages: list[object] = [
+        [],
+        "connection_init",
+        1,
+        None,
+        {},
+        {"payload": {}},
+    ]
+
+    for message in malformed_messages:
+        await ws.send_text(json.dumps(message))
+
+    await ws.send_legacy_message({"type": "connection_init"})
+
+    connection_ack_message: ConnectionAckMessage = await ws.receive_json()
+    assert connection_ack_message["type"] == "connection_ack"
+
+    malformed_operation_messages: list[object] = [
+        *malformed_messages,
+        {"type": "start", "payload": {"query": 'subscription { echo(message: "Hi") }'}},
+        {
+            "type": "start",
+            "id": ["demo"],
+            "payload": {"query": 'subscription { echo(message: "Hi") }'},
+        },
+        {"type": "start", "id": "demo"},
+        {"type": "start", "id": "demo", "payload": None},
+        {"type": "start", "id": "demo", "payload": "subscription { echo }"},
+        {"type": "start", "id": "demo", "payload": {}},
+        {"type": "start", "id": "demo", "payload": {"query": 1}},
+        {
+            "type": "start",
+            "id": "demo",
+            "payload": {
+                "query": 'subscription { echo(message: "Hi") }',
+                "variables": ["value"],
+            },
+        },
+        {
+            "type": "start",
+            "id": "demo",
+            "payload": {
+                "query": 'subscription { echo(message: "Hi") }',
+                "operationName": 1,
+            },
+        },
+        {"type": "stop"},
+        {"type": "stop", "id": ["demo"]},
+    ]
+
+    for message in malformed_operation_messages:
+        await ws.send_text(json.dumps(message))
+
+    await ws.send_legacy_message(
+        {
+            "type": "start",
+            "id": "demo",
+            "payload": {
+                "query": 'subscription { echo(message: "Hi") }',
+                "variables": None,
+                "operationName": None,
+            },
+        }
+    )
+
+    data_message = await ws.receive_json()
+    assert data_message["type"] == "data"
+    assert data_message["id"] == "demo"
+    assert data_message["payload"]["data"] == {"echo": "Hi"}
+
+    complete_message: CompleteMessage = await ws.receive_json()
+    assert complete_message["type"] == "complete"
+    assert complete_message["id"] == "demo"
+
+    await ws.send_legacy_message({"type": "connection_terminate"})
+
+    # make sure the WebSocket is disconnected now
+    await ws.receive(timeout=2)  # receive close
+    assert ws.closed
+
+
 async def test_custom_context(ws: WebSocketClient):
     await ws.send_legacy_message(
         {
