@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 from collections.abc import AsyncGenerator
 from contextlib import suppress
+from types import NoneType
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -83,6 +84,11 @@ class BaseGraphQLWSHandler(Generic[Context, RootValue]):
         self,
         message: OperationMessage,
     ) -> None:
+        # Like messages that aren't valid JSON or have an unknown type, messages
+        # that aren't objects with a type are ignored.
+        if not isinstance(message, dict) or "type" not in message:
+            return
+
         if message["type"] == "connection_init":
             await self.handle_connection_init(message)
         elif message["type"] == "connection_terminate":
@@ -137,6 +143,9 @@ class BaseGraphQLWSHandler(Generic[Context, RootValue]):
             await self.websocket.close(code=4401, reason="Unauthorized")
             return
 
+        if not self._is_valid_start_message(message):
+            return
+
         operation_id = message["id"]
 
         # Clean up existing operation with same ID to prevent task leaks
@@ -166,8 +175,24 @@ class BaseGraphQLWSHandler(Generic[Context, RootValue]):
         )
         self.tasks[operation_id] = asyncio.create_task(result_handler)
 
+    @staticmethod
+    def _is_valid_start_message(message: StartMessage) -> bool:
+        payload = message.get("payload")
+
+        return (
+            isinstance(message.get("id"), str)
+            and isinstance(payload, dict)
+            and isinstance(payload.get("query"), str)
+            and isinstance(payload.get("variables"), (dict, NoneType))
+            and isinstance(payload.get("operationName"), (str, NoneType))
+        )
+
     async def handle_stop(self, message: StopMessage) -> None:
-        operation_id = message["id"]
+        operation_id = message.get("id")
+
+        if not isinstance(operation_id, str):
+            return
+
         await self.cleanup_operation(operation_id)
 
     async def handle_keep_alive(self) -> None:
