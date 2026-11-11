@@ -98,13 +98,18 @@ def should_resolve_list_connection_edges(info: strawberry.Info) -> bool:
     return False
 
 
+# `sys.maxsize` is used as the "unbounded" end marker for `last`, and slicing
+# iterators fails above it, so leave plenty of room for `start + max_results`
+_MAX_CURSOR_OFFSET = sys.maxsize // 2
+
+
 def _parse_cursor_offset(cursor: str, *, prefix: str, argument: str) -> int:
     """Parse the offset from a `ListConnection` cursor.
 
     Raises:
         TypeError:
             If the cursor is malformed, has a different prefix or doesn't
-            point to a non-negative offset.
+            point to a non-negative offset that fits in a slice index.
 
     """
     try:
@@ -114,10 +119,19 @@ def _parse_cursor_offset(cursor: str, *, prefix: str, argument: str) -> int:
 
     # Only accept the plain digits produced by `to_base64`, so that negative
     # offsets can't turn into Python's negative indexing when slicing
+    error = TypeError(f"Argument '{argument}' contains a non-existing value.")
     if cursor_type != prefix or not (offset.isascii() and offset.isdigit()):
-        raise TypeError(f"Argument '{argument}' contains a non-existing value.")
+        raise error
 
-    return int(offset)
+    try:
+        value = int(offset)
+    except ValueError:  # more digits than Python's int conversion limit
+        raise error from None
+
+    if value > _MAX_CURSOR_OFFSET:
+        raise error
+
+    return value
 
 
 @dataclasses.dataclass
