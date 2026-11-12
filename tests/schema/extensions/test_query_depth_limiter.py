@@ -1,6 +1,7 @@
 import pytest
 from graphql import (
     GraphQLError,
+    SourceLocation,
     get_introspection_query,
     parse,
     specified_rules,
@@ -240,6 +241,62 @@ def test_circular_fragments_do_not_recurse_forever():
 
     assert not errors
     assert result == {"Crash": 1}
+
+
+@pytest.mark.parametrize(
+    ("query", "expected_depth"),
+    [
+        ("query Unknown { ...Missing }", 0),
+        ("query Unknown { user1 { ...Missing } }", 1),
+        (
+            """
+            query Unknown { user1 { ...HumanFields } }
+            fragment HumanFields on Human { name ...Missing }
+            """,
+            1,
+        ),
+    ],
+)
+def test_should_report_unknown_fragments(query: str, expected_depth: int):
+    errors, depths = run_query(query, 10)
+
+    assert [error.message for error in errors] == ["Unknown fragment 'Missing'."]
+    assert depths == {"Unknown": expected_depth}
+
+
+@pytest.mark.parametrize("async_execution", [False, True])
+async def test_should_report_unknown_fragments_as_extension(async_execution: bool):
+    schema = strawberry.Schema(
+        Query,
+        extensions=[lambda: QueryDepthLimiter(max_depth=4)],
+    )
+    query = "{ version ...Missing }"
+
+    result = (
+        await schema.execute(query) if async_execution else schema.execute_sync(query)
+    )
+
+    assert result.data is None
+    assert result.errors is not None
+    assert [error.message for error in result.errors] == ["Unknown fragment 'Missing'."]
+    assert result.errors[0].locations == [SourceLocation(line=1, column=14)]
+    assert result.errors[0].original_error is None
+
+
+def test_unknown_fragment_does_not_skip_depth_checking():
+    query = """
+    query TooDeep {
+      ...Missing
+      user1 { address { city } }
+    }
+    """
+
+    errors, _depths = run_query(query, 1)
+
+    assert {error.message for error in errors} == {
+        "Unknown fragment 'Missing'.",
+        "'TooDeep' exceeds maximum operation depth of 1",
+    }
 
 
 def test_should_ignore_the_introspection_query():
