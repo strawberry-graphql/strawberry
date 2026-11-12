@@ -6,12 +6,9 @@ import pytest
 from pytest_codspeed import BenchmarkFixture
 
 import strawberry
+from strawberry.schema.config import StrawberryConfig
 
-Token = strawberry.scalar(
-    NewType("Token", str),
-    serialize=lambda value: f"token:{value}",
-    parse_value=lambda value: value.removeprefix("token:"),
-)
+Token = NewType("Token", str)
 
 
 @strawberry.enum
@@ -63,7 +60,18 @@ class Query:
     ids=["omitted", "null", "value"],
 )
 def test_nested_inputs_and_scalars(benchmark: BenchmarkFixture, label: dict):
-    schema = strawberry.Schema(query=Query)
+    schema = strawberry.Schema(
+        query=Query,
+        config=StrawberryConfig(
+            scalar_map={
+                Token: strawberry.scalar(
+                    name="Token",
+                    serialize=lambda value: f"token:{value}",
+                    parse_value=lambda value: value.removeprefix("token:"),
+                )
+            }
+        ),
+    )
     ids = [str(i) for i in range(100)]
     result = benchmark(
         schema.execute_sync,

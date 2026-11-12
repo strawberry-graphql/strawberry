@@ -162,7 +162,6 @@ asyncio_default_fixture_loop_scope = "function"
 filterwarnings = [
   "ignore::DeprecationWarning:strawberry.*.resolver",
   "ignore:LazyType is deprecated:DeprecationWarning",
-  "ignore:Passing a class to strawberry.scalar:DeprecationWarning",
   "ignore::DeprecationWarning:ddtrace.internal",
   "ignore::DeprecationWarning:django.utils.encoding",
   "ignore::DeprecationWarning:pydantic_openapi_schema.*",

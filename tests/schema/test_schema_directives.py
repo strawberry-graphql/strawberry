@@ -1,6 +1,6 @@
 import textwrap
 from enum import Enum
-from typing import Annotated
+from typing import Annotated, NewType
 
 import pytest
 from graphql import (
@@ -15,6 +15,7 @@ from graphql import (
 import strawberry
 import strawberry.schema.schema as schema_module
 from strawberry.exceptions import DuplicatedTypeName, UnresolvedFieldTypeError
+from strawberry.schema.config import StrawberryConfig
 from strawberry.schema.schema_converter import GraphQLCoreConverter
 from strawberry.schema_directive import Location
 
@@ -203,7 +204,7 @@ def test_registers_nested_directive_argument_input_types():
     class Mode(Enum):
         PRIVATE = "private"
 
-    Secret = strawberry.scalar(str, name="Secret")
+    Secret = NewType("Secret", str)
 
     @strawberry.input(directives=[OnNestedInput()])
     class Rule:
@@ -226,7 +227,10 @@ def test_registers_nested_directive_argument_input_types():
             directives=[Protected()],
         )
 
-    schema = strawberry.Schema(query=Query)
+    schema = strawberry.Schema(
+        query=Query,
+        config=StrawberryConfig(scalar_map={Secret: strawberry.scalar(name="Secret")}),
+    )
 
     policy_type = schema._schema.get_type("Policy")
     rule_type = schema._schema.get_type("Rule")
@@ -308,7 +312,7 @@ def test_print_definition_false_remains_available_to_introspection():
 
 
 def test_hidden_argument_types_are_printed_with_visible_directive_definitions():
-    HiddenValue = strawberry.scalar(str, name="HiddenValue", print_definition=False)
+    HiddenValue = NewType("HiddenValue", str)
 
     @strawberry.schema_directive(locations=[Location.FIELD_DEFINITION])
     class Marker:
@@ -321,7 +325,16 @@ def test_hidden_argument_types_are_printed_with_visible_directive_definitions():
             directives=[Marker(value="example")],
         )
 
-    schema = strawberry.Schema(query=Query)
+    schema = strawberry.Schema(
+        query=Query,
+        config=StrawberryConfig(
+            scalar_map={
+                HiddenValue: strawberry.scalar(
+                    name="HiddenValue", print_definition=False
+                )
+            }
+        ),
+    )
 
     expected = """
     directive @marker(value: HiddenValue!) on FIELD_DEFINITION
@@ -375,9 +388,7 @@ def test_registers_directives_from_all_type_system_attachment_points():
     class Choice(Enum):
         FIRST = strawberry.enum_value("first", directives=[EnumValueDirective()])
 
-    CustomScalar = strawberry.scalar(
-        str, name="CustomScalar", directives=[ScalarDirective()]
-    )
+    CustomScalar = NewType("CustomScalar", str)
 
     @strawberry.input(directives=[InputDirective()])
     class Filter:
@@ -398,7 +409,17 @@ def test_registers_directives_from_all_type_system_attachment_points():
         ) -> str:
             return filter.term + term
 
-    schema = strawberry.Schema(query=Query, types=[Item])
+    schema = strawberry.Schema(
+        query=Query,
+        types=[Item],
+        config=StrawberryConfig(
+            scalar_map={
+                CustomScalar: strawberry.scalar(
+                    name="CustomScalar", directives=[ScalarDirective()]
+                )
+            }
+        ),
+    )
     directive_names = {item.name for item in schema._schema.directives}
 
     assert {
@@ -432,7 +453,7 @@ def test_directives_passed_as_one_shot_iterables_are_kept():
     class Choice(Enum):
         FIRST = strawberry.enum_value("first", directives=markers())
 
-    CustomScalar = strawberry.scalar(str, name="CustomScalar", directives=markers())
+    CustomScalar = NewType("CustomScalar", str)
 
     @strawberry.type
     class Item:
@@ -456,7 +477,16 @@ def test_directives_passed_as_one_shot_iterables_are_kept():
         ) -> Choice:
             return choice
 
-    schema = strawberry.Schema(query=Query)
+    schema = strawberry.Schema(
+        query=Query,
+        config=StrawberryConfig(
+            scalar_map={
+                CustomScalar: strawberry.scalar(
+                    name="CustomScalar", directives=markers()
+                )
+            }
+        ),
+    )
 
     expected = """
     directive @marker on ARGUMENT_DEFINITION | ENUM | ENUM_VALUE | SCALAR | UNION

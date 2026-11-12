@@ -81,7 +81,7 @@ from strawberry.types.field import UNRESOLVED
 from strawberry.types.lazy_type import LazyType
 from strawberry.types.maybe import Some
 from strawberry.types.private import is_private
-from strawberry.types.scalar import ScalarWrapper, scalar
+from strawberry.types.scalar import ScalarDefinition, scalar
 from strawberry.types.union import StrawberryUnion
 from strawberry.types.unset import UNSET
 from strawberry.utils.await_maybe import await_maybe
@@ -108,7 +108,6 @@ if TYPE_CHECKING:
     from strawberry.types.field import StrawberryField
     from strawberry.types.fields.resolver import StrawberryResolver
     from strawberry.types.info import Info
-    from strawberry.types.scalar import ScalarDefinition
 
 
 UNHANDLED = object()
@@ -360,7 +359,7 @@ def get_arguments(
     info: Info,
     kwargs: Any,
     config: StrawberryConfig,
-    scalar_registry: Mapping[object, ScalarWrapper | ScalarDefinition],
+    scalar_registry: Mapping[object, ScalarDefinition],
 ) -> tuple[list[Any], dict[str, Any]]:
     kwargs = convert_arguments(
         kwargs,
@@ -411,7 +410,7 @@ class GraphQLCoreConverter:
     def __init__(
         self,
         config: StrawberryConfig,
-        scalar_overrides: Mapping[object, ScalarWrapper | ScalarDefinition],
+        scalar_overrides: Mapping[object, ScalarDefinition],
         scalar_map: Mapping[object, ScalarDefinition],
         get_fields: Callable[[StrawberryObjectDefinition], list[StrawberryField]],
         exception_handlers: Iterable[ExceptionHandler[Any]] = (),
@@ -433,12 +432,10 @@ class GraphQLCoreConverter:
 
     def _get_scalar_registry(
         self,
-        scalar_overrides: Mapping[object, ScalarWrapper | ScalarDefinition],
+        scalar_overrides: Mapping[object, ScalarDefinition],
         scalar_map: Mapping[object, ScalarDefinition],
-    ) -> dict[object, ScalarWrapper | ScalarDefinition]:
-        scalar_registry: dict[object, ScalarWrapper | ScalarDefinition] = {
-            **DEFAULT_SCALAR_REGISTRY
-        }
+    ) -> dict[object, ScalarDefinition]:
+        scalar_registry: dict[object, ScalarDefinition] = {**DEFAULT_SCALAR_REGISTRY}
 
         global_id_name = "GlobalID" if self.config.relay_use_legacy_global_id else "ID"
 
@@ -1351,12 +1348,7 @@ class GraphQLCoreConverter:
                 scalar = origin
 
         if scalar in self.scalar_registry:
-            _scalar_definition = self.scalar_registry[scalar]
-            # TODO: check why we need the cast and we are not trying with getattr first
-            if isinstance(_scalar_definition, ScalarWrapper):
-                scalar_definition = _scalar_definition._scalar_definition
-            else:
-                scalar_definition = _scalar_definition
+            scalar_definition = self.scalar_registry[scalar]
         else:
             scalar_definition = scalar._scalar_definition  # type: ignore[attr-defined]
 
