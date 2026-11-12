@@ -60,6 +60,7 @@ def _build_dataclass_creation_fields(  # noqa: PLR0917
     auto_fields_set: set[str],
     use_pydantic_alias: bool,
     compat: PydanticCompat,
+    explicit_fields: dict[str, StrawberryField],
 ) -> DataclassCreationFields:
     field_type = (
         get_type_for_field(field, is_input, compat=compat)
@@ -76,6 +77,7 @@ def _build_dataclass_creation_fields(  # noqa: PLR0917
     else:
         # otherwise we build an appropriate strawberry field that resolves it
         existing_field = existing_fields.get(field.name)
+        explicit_field = explicit_fields.get(field.name)
         graphql_name = None
         if existing_field and existing_field.graphql_name:
             graphql_name = existing_field.graphql_name
@@ -89,7 +91,15 @@ def _build_dataclass_creation_fields(  # noqa: PLR0917
             default=dataclasses.MISSING,
             default_factory=get_default_factory_for_field(field, compat=compat),
             type_annotation=StrawberryAnnotation.from_annotation(field_type),
-            description=field.description,
+            description=(
+                explicit_field.description
+                # a description set with strawberry.field in this class's own
+                # body wins over the pydantic one; a description inherited
+                # from a base strawberry type is not explicit here, so an
+                # overridden pydantic field keeps its own description
+                if explicit_field is not None and explicit_field.description is not None
+                else field.description
+            ),
             deprecation_reason=(
                 existing_field.deprecation_reason if existing_field else None
             ),
@@ -132,6 +142,16 @@ def type(
         model_fields = compat.get_model_fields(model, include_computed=include_computed)
 
         existing_fields = getattr(cls, "__annotations__", {})
+
+        # Fields assigned a strawberry.field(...) in this class's own body
+        # carry explicit intent (e.g. a description) that wins over the
+        # pydantic field's. Fields inherited from a base strawberry type are
+        # not explicit for this class.
+        explicit_fields = {
+            field_name: value
+            for field_name, value in vars(cls).items()
+            if isinstance(value, StrawberryField)
+        }
 
         # Fields explicitly marked as Private should be excluded from pydantic
         # field processing - they should be handled as private fields instead
@@ -198,6 +218,7 @@ def type(
                 auto_fields_set,
                 use_pydantic_alias,
                 compat=compat,
+                explicit_fields=explicit_fields,
             )
             for field_name, field in model_fields.items()
             if field_name in fields_set
