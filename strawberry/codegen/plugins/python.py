@@ -50,6 +50,10 @@ class PythonPlugin(QueryCodegenPlugin):
 
     def __init__(self, query: Path) -> None:
         self.imports: dict[str, set[str]] = defaultdict(set)
+        # Names of the classes printed so far. A reference to a class that
+        # isn't defined yet (a type that refers to itself, directly or through
+        # other types) is quoted, so the generated module can be imported.
+        self.defined_types: set[str] = set()
         self.outfile_name: str = query.with_suffix(".py").name
         self.query = query
 
@@ -86,9 +90,14 @@ class PythonPlugin(QueryCodegenPlugin):
 
             return type_.name
 
-        if isinstance(type_, (GraphQLObjectType, GraphQLEnum)):
-            if isinstance(type_, GraphQLEnum):
-                self.imports["enum"].add("Enum")
+        if isinstance(type_, GraphQLEnum):
+            self.imports["enum"].add("Enum")
+
+            return type_.name
+
+        if isinstance(type_, GraphQLObjectType):
+            if type_.name not in self.defined_types:
+                return f'"{type_.name}"'
 
             return type_.name
 
@@ -168,6 +177,8 @@ class PythonPlugin(QueryCodegenPlugin):
                 textwrap.indent(f"# typename: {type_.graphql_typename}", indent)
             )
         lines.append(textwrap.indent(fields, indent))
+
+        self.defined_types.add(type_.name)
 
         return "\n".join(lines)
 
