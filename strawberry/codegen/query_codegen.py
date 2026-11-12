@@ -42,7 +42,7 @@ from strawberry.types.base import (
     get_object_definition,
     has_object_definition,
 )
-from strawberry.types.enum import StrawberryEnumDefinition
+from strawberry.types.enum import StrawberryEnumDefinition, has_enum_definition
 from strawberry.types.lazy_type import LazyType
 from strawberry.types.scalar import ScalarDefinition, ScalarWrapper
 from strawberry.types.union import StrawberryUnion
@@ -261,6 +261,23 @@ _TYPE_TO_GRAPHQL_TYPE = {
 }
 
 
+def _enum_member_to_graphql_value(member: Enum) -> GraphQLEnumValue:
+    """Convert an enum member into a GraphQLEnumValue.
+
+    Generated enums are built from the GraphQL names of the enum and its
+    values, which can differ from the Python names when they are renamed
+    with `strawberry.enum(name=...)` or `strawberry.enum_value(name=...)`.
+    """
+    enum_type = type(member)
+    if has_enum_definition(enum_type):
+        definition = enum_type.__strawberry_definition__
+        for value in definition.values:
+            if value.value == member.value:
+                return GraphQLEnumValue(value.name, enum_type=definition.name)
+
+    return GraphQLEnumValue(member.name, enum_type=enum_type.__name__)
+
+
 def _py_to_graphql_value(obj: Any) -> GraphQLArgumentValue:
     """Convert a python object to a GraphQLArgumentValue."""
     if obj is None or obj is UNSET:
@@ -270,7 +287,7 @@ def _py_to_graphql_value(obj: Any) -> GraphQLArgumentValue:
     if obj_type in _TYPE_TO_GRAPHQL_TYPE:
         return _TYPE_TO_GRAPHQL_TYPE[obj_type](obj)
     if issubclass(obj_type, Enum):
-        return GraphQLEnumValue(obj.name, enum_type=obj_type.__name__)
+        return _enum_member_to_graphql_value(obj)
     if issubclass(obj_type, Sequence):
         return GraphQLListValue([_py_to_graphql_value(v) for v in obj])
     if issubclass(obj_type, Mapping):
