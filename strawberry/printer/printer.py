@@ -5,9 +5,7 @@ from itertools import chain
 from typing import (
     TYPE_CHECKING,
     Any,
-    TypeVar,
     cast,
-    overload,
 )
 
 from graphql import (
@@ -50,7 +48,7 @@ from strawberry.types.unset import UNSET
 from .ast_from_value import ast_from_value
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Iterable
+    from collections.abc import Iterable
 
     from graphql import (
         GraphQLArgument,
@@ -67,7 +65,6 @@ if TYPE_CHECKING:
     from strawberry.types.field import StrawberryField
 
 
-_T = TypeVar("_T")
 _SCHEMA_TYPE_NAMES_CACHE_KEY = "strawberry-schema-type-names"
 
 
@@ -77,78 +74,37 @@ class PrintExtras:
     types: set[type] = dataclasses.field(default_factory=set)
 
 
-@overload
-def _serialize_dataclasses(
-    value: dict[_T, object],
-    *,
-    name_converter: Callable[[str], str] | None = None,
-) -> dict[_T, object]: ...
-
-
-@overload
-def _serialize_dataclasses(
-    value: list[object] | tuple[object],
-    *,
-    name_converter: Callable[[str], str] | None = None,
-) -> list[object]: ...
-
-
-@overload
-def _serialize_dataclasses(
-    value: object,
-    *,
-    name_converter: Callable[[str], str] | None = None,
-) -> object: ...
-
-
-def _serialize_dataclasses(
-    value,
-    *,
-    name_converter: Callable[[str], str] | None = None,
-):
-    if name_converter is None:
-        name_converter = lambda x: x  # noqa: E731
-
-    if dataclasses.is_dataclass(value):
-        return {
-            name_converter(k): v
-            for k, v in dataclasses.asdict(value).items()  # type: ignore
-            if v is not UNSET
-        }
-    if isinstance(value, (list, tuple)):
-        return [_serialize_dataclasses(v, name_converter=name_converter) for v in value]
-    if isinstance(value, dict):
-        return {
-            name_converter(k): _serialize_dataclasses(v, name_converter=name_converter)
-            for k, v in value.items()
-        }
-
-    return value
-
-
 def print_schema_directive_params(
     directive: GraphQLDirective,
     values: dict[str, Any],
     *,
     schema: BaseSchema,
 ) -> str:
+    from strawberry.schema.schema_converter import GraphQLCoreConverter
+
     params = []
     for name, arg in directive.args.items():
-        value = values.get(name, arg.default_value)
-        if value is UNSET:
-            value = None
-        else:
-            ast = ast_from_value(
-                _serialize_dataclasses(
-                    value,
-                    name_converter=schema.config.name_converter.apply_naming_config,
-                ),
-                arg.type,
+        if name in values:
+            value = values[name]
+            argument = (
+                arg.extensions.get(GraphQLCoreConverter.DEFINITION_BACKREF)
+                if arg.extensions
+                else None
             )
-            value = ast and f"{name}: {print_ast(ast)}"
+            if argument is not None:
+                if argument.is_maybe and value is None:
+                    value = UNSET
+                elif value is not UNSET:
+                    value = schema.schema_converter._to_input_value(
+                        value, argument.type
+                    )
+        else:
+            value = arg.default_value
 
-        if value:
-            params.append(value)
+        if value is not UNSET:
+            ast = ast_from_value(value, arg.type)
+            if ast:
+                params.append(f"{name}: {print_ast(ast)}")
 
     if not params:
         return ""
