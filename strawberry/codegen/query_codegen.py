@@ -351,6 +351,7 @@ class QueryCodegen:
         self.schema = schema
         self.plugin_manager = QueryCodegenPluginManager(plugins, console_plugin)
         self.types: list[GraphQLType] = []
+        self._scalar_definitions: dict[str, GraphQLScalar] = {}
 
     def run(self, query: str) -> CodegenResult:
         self.plugin_manager.on_start()
@@ -581,21 +582,20 @@ class QueryCodegen:
         if isinstance(field_type, StrawberryList):
             return GraphQLList(self._get_field_type(field_type.of_type))
 
+        original_python_type: type | None = None
         if (
             not isinstance(field_type, StrawberryType)
             and field_type in self.schema.schema_converter.scalar_registry
         ):
+            original_python_type = field_type
             field_type = self.schema.schema_converter.scalar_registry[field_type]  # type: ignore
 
         if isinstance(field_type, ScalarWrapper):
             python_type = field_type.wrap
-            if hasattr(python_type, "__supertype__"):
-                python_type = python_type.__supertype__
-
             return self._collect_scalar(field_type._scalar_definition, python_type)  # type: ignore
 
         if isinstance(field_type, ScalarDefinition):
-            return self._collect_scalar(field_type, None)
+            return self._collect_scalar(field_type, original_python_type)
 
         if isinstance(field_type, StrawberryEnumDefinition):
             return self._collect_enum(field_type)
@@ -955,12 +955,34 @@ class QueryCodegen:
         return sub_types
 
     def _collect_scalar(
-        self, scalar_definition: ScalarDefinition, python_type: type | None
+        self, scalar_definition: ScalarDefinition, python_type: type | None = None
     ) -> GraphQLScalar:
+        if scalar_definition.name in self._scalar_definitions:
+            existing = self._scalar_definitions[scalar_definition.name]
+            if existing.python_type is None and python_type is not None:
+                if hasattr(python_type, "__supertype__"):
+                    python_type = python_type.__supertype__
+                existing.python_type = python_type
+            return existing
+
+        if python_type is None:
+            for (
+                py_type,
+                scalar_def,
+            ) in self.schema.schema_converter.scalar_registry.items():
+                if scalar_def is scalar_definition or scalar_def == scalar_definition:
+                    python_type = py_type
+                    break
+
+            if python_type is None and isinstance(scalar_definition.origin, type):
+                python_type = scalar_definition.origin
+
+        if python_type is not None and hasattr(python_type, "__supertype__"):
+            python_type = python_type.__supertype__
+
         graphql_scalar = GraphQLScalar(scalar_definition.name, python_type=python_type)
-
+        self._scalar_definitions[scalar_definition.name] = graphql_scalar
         self._collect_type(graphql_scalar)
-
         return graphql_scalar
 
     def _collect_enum(self, enum: StrawberryEnumDefinition) -> GraphQLEnum:
