@@ -168,7 +168,13 @@ class SyncBaseHTTPView(
         if request.method == "GET":
             data = self.parse_query_params(request.query_params)
         elif "application/json" in content_type:
-            data = self.parse_json(request.body)
+            try:
+                # Some request adapters decode the body to a string when it
+                # is accessed, so invalid UTF-8 can fail before parse_json
+                body = request.body
+            except UnicodeDecodeError as e:
+                raise HTTPException(400, "Unable to parse request body as JSON") from e
+            data = self.parse_json(body)
         # TODO: multipart via get?
         elif self.multipart_uploads_enabled and content_type == "multipart/form-data":
             data = self.parse_multipart(request)
@@ -184,43 +190,9 @@ class SyncBaseHTTPView(
         if isinstance(data, list):
             # Sync views never stream, so any batch is always plain HTTP.
             self._validate_batch_request(data, protocol="http")
-            return [
-                GraphQLRequestData(
-                    query=item.get("query"),
-                    variables=item.get("variables"),
-                    operation_name=item.get("operationName"),
-                    extensions=item.get("extensions"),
-                )
-                for item in data
-            ]
+            return [self._parse_request_data(item) for item in data]
 
-        query = data.get("query")
-        if not isinstance(query, (str, type(None))):
-            raise HTTPException(
-                400,
-                "The GraphQL operation's `query` must be a string or null, if provided.",
-            )
-
-        variables = data.get("variables")
-        if not isinstance(variables, (dict, type(None))):
-            raise HTTPException(
-                400,
-                "The GraphQL operation's `variables` must be an object or null, if provided.",
-            )
-
-        extensions = data.get("extensions")
-        if not isinstance(extensions, (dict, type(None))):
-            raise HTTPException(
-                400,
-                "The GraphQL operation's `extensions` must be an object or null, if provided.",
-            )
-
-        return GraphQLRequestData(
-            query=query,
-            variables=variables,
-            operation_name=data.get("operationName"),
-            extensions=extensions,
-        )
+        return self._parse_request_data(data)
 
     def _handle_errors(
         self, errors: list[GraphQLError], response_data: GraphQLHTTPResponse

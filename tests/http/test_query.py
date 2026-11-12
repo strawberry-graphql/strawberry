@@ -116,6 +116,33 @@ async def test_requests_with_invalid_variables_parameter_are_rejected(
     )
 
 
+@pytest.mark.parametrize("body", [b"null", b"0", b"true", b'"string"'])
+async def test_requests_with_non_object_json_body_are_rejected(
+    http_client: HttpClient, body: bytes
+):
+    response = await http_client.post(
+        url="/graphql",
+        data=body,
+        headers={"content-type": "application/json"},
+    )
+
+    assert response.status_code == 400
+    assert response.data == b"The GraphQL request must be a JSON object."
+
+
+async def test_requests_with_invalid_utf8_json_body_are_rejected(
+    http_client: HttpClient,
+):
+    response = await http_client.post(
+        url="/graphql",
+        data=b'{"query": "\xff"}',
+        headers={"content-type": "application/json"},
+    )
+
+    assert response.status_code == 400
+    assert response.data == b"Unable to parse request body as JSON"
+
+
 @pytest.mark.parametrize("method", ["get", "post"])
 async def test_root_value(method: Literal["get", "post"], http_client: HttpClient):
     response = await http_client.query(
