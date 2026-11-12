@@ -769,6 +769,96 @@ def test_deprecated_fields():
     assert field2.type.of_type is str
 
 
+@pytest.mark.parametrize("cast_to_subclass", [False, True])
+def test_is_type_of_accepts_sibling_subclass_instance(cast_to_subclass):
+    class UserModel(pydantic.BaseModel):
+        login: str
+
+    @strawberry.experimental.pydantic.type(UserModel, all_fields=True)
+    class SomeExtension:
+        pass
+
+    @dataclasses.dataclass
+    class UserRow(SomeExtension):
+        id_: str
+
+    @strawberry.type
+    class User(SomeExtension):
+        @strawberry.field
+        def name(self) -> str:
+            return f"User {self.login}"
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def user(self) -> User:
+            row = UserRow(id_="1", login="123")
+            if cast_to_subclass:
+                return strawberry.cast(User, row)
+            return row  # type: ignore
+
+    schema = strawberry.Schema(query=Query)
+    result = schema.execute_sync("{ user { login name } }")
+
+    # the resolver returned a sibling subclass of SomeExtension; User inherits
+    # SomeExtension's is_type_of, which must accept it
+    assert not result.errors
+    assert result.data == {"user": {"login": "123", "name": "User 123"}}
+
+
+def test_is_type_of_cast_and_rejection_semantics():
+    class UserModel(pydantic.BaseModel):
+        login: str
+
+    @strawberry.experimental.pydantic.type(UserModel, all_fields=True)
+    class SomeExtension:
+        pass
+
+    @dataclasses.dataclass
+    class UserRow(SomeExtension):
+        id_: str
+
+    @strawberry.type
+    class User(SomeExtension):
+        pass
+
+    class OtherModel(pydantic.BaseModel):
+        other: str
+
+    @strawberry.experimental.pydantic.type(OtherModel, all_fields=True)
+    class OtherType:
+        pass
+
+    info = None  # is_type_of does not use the resolve info
+
+    is_type_of = SomeExtension.__strawberry_definition__.is_type_of
+    assert is_type_of is not None
+    subtype_is_type_of = User.__strawberry_definition__.is_type_of
+    assert subtype_is_type_of is not None
+
+    # instances of the type, its subclasses and its pydantic model are accepted
+    assert is_type_of(SomeExtension(login="a"), info)
+    assert is_type_of(UserRow(id_="1", login="a"), info)
+    assert is_type_of(UserModel(login="a"), info)
+
+    # an explicit cast names the exact type the object resolves as
+    casted = strawberry.cast(SomeExtension, UserRow(id_="1", login="a"))
+    assert is_type_of(casted, info)
+    assert not subtype_is_type_of(casted, info)
+
+    casted_subtype = strawberry.cast(User, UserRow(id_="1", login="a"))
+    assert subtype_is_type_of(casted_subtype, info)
+    assert not is_type_of(casted_subtype, info)
+
+    # a cast to an unrelated type is rejected
+    assert not is_type_of(strawberry.cast(OtherType, UserRow(id_="1", login="a")), info)
+
+    # unrelated objects are rejected, by the type and by the subtype
+    assert not is_type_of(object(), info)
+    assert not is_type_of(OtherModel(other="x"), info)
+    assert not subtype_is_type_of(object(), info)
+
+
 def test_permission_classes():
     class IsAuthenticated(strawberry.BasePermission):
         message = "User is not authenticated"
