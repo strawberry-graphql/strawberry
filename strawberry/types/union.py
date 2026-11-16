@@ -15,7 +15,6 @@ from typing import (
 
 from graphql import GraphQLNamedType, GraphQLUnionType
 
-from strawberry.annotation import StrawberryAnnotation
 from strawberry.exceptions import (
     InvalidTypeForUnionMergeError,
     UnallowedReturnTypeForUnion,
@@ -41,6 +40,7 @@ if TYPE_CHECKING:
         GraphQLTypeResolver,
     )
 
+    from strawberry.annotation import StrawberryAnnotation
     from strawberry.schema.types.concrete_type import TypeMap
 
 
@@ -134,26 +134,19 @@ class StrawberryUnion(StrawberryType):
         if not self.is_graphql_generic:
             return self
 
+        from strawberry.annotation import StrawberryAnnotation
+
         new_types = []
 
-        for type_ in self.types:
-            new_type: StrawberryType | type
-
-            if has_object_definition(type_):
-                type_definition = type_.__strawberry_definition__
-
-                if type_definition.is_graphql_generic:
-                    new_type = type_definition.copy_with(type_var_map)
-            if isinstance(type_, StrawberryType) and type_.is_graphql_generic:
-                new_type = type_.copy_with(type_var_map)
-            else:
-                new_type = type_
-
+        for annotation in self.type_annotations:
+            resolved = annotation.resolve()
+            new_type = StrawberryAnnotation._copy_type(resolved, type_var_map)
             new_types.append(new_type)
 
         new_union = StrawberryUnion(
             type_annotations=tuple(map(StrawberryAnnotation, new_types)),
             description=self.description,
+            directives=self.directives,
         )
         new_union.concrete_of = self
 
