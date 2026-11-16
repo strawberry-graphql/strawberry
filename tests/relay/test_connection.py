@@ -266,3 +266,96 @@ def test_max_results(
     assert result.data is not None
     assert isinstance(result.data["users"]["edges"], list)
     assert len(result.data["users"]["edges"]) == expected
+
+
+@pytest.mark.parametrize(
+    ("field_max_results", "schema_max_results"),
+    [(5, 100), (None, 5)],
+)
+def test_max_results_with_before(
+    field_max_results: int | None,
+    schema_max_results: int,
+):
+    @strawberry.type
+    class User(Node):
+        id: strawberry.relay.NodeID[str]
+
+    @strawberry.type
+    class Query:
+        @strawberry.relay.connection(
+            ListConnection[User],
+            max_results=field_max_results,
+        )
+        def users(self) -> list[User]:
+            return [User(id=str(i)) for i in range(20)]
+
+    schema = strawberry.Schema(
+        query=Query,
+        config=StrawberryConfig(relay_max_results=schema_max_results),
+    )
+    query = """
+      query ($before: String) {
+        users(before: $before) {
+          edges {
+            node {
+              id
+            }
+          }
+          pageInfo {
+            hasNextPage
+            hasPreviousPage
+          }
+        }
+      }
+    """
+
+    result = schema.execute_sync(
+        query, variable_values={"before": to_base64("arrayconnection", 15)}
+    )
+    assert result.errors is None
+    assert result.data == {
+        "users": {
+            "edges": [{"node": {"id": to_base64("User", i)}} for i in range(5)],
+            "pageInfo": {"hasNextPage": True, "hasPreviousPage": False},
+        }
+    }
+
+
+@pytest.mark.parametrize("argument", ["before", "after"])
+@pytest.mark.parametrize("offset", ["-5", "abc", " 1", "+1", ""])
+@pytest.mark.parametrize("as_iterator", [False, True])
+def test_invalid_cursor_offsets_are_rejected(
+    argument: str, offset: str, as_iterator: bool
+):
+    @strawberry.type
+    class User(Node):
+        id: strawberry.relay.NodeID[str]
+
+    @strawberry.type
+    class Query:
+        @strawberry.relay.connection(ListConnection[User], max_results=5)
+        def users(self) -> Iterable[User]:
+            users = [User(id=str(i)) for i in range(20)]
+            return iter(users) if as_iterator else users
+
+    schema = strawberry.Schema(query=Query)
+    query = f"""
+      query ($cursor: String) {{
+        users({argument}: $cursor) {{
+          edges {{
+            node {{
+              id
+            }}
+          }}
+        }}
+      }}
+    """
+
+    result = schema.execute_sync(
+        query, variable_values={"cursor": to_base64("arrayconnection", offset)}
+    )
+    assert result.data is None
+    assert result.errors is not None
+    assert result.errors[0].message == (
+        f"Argument '{argument}' contains a non-existing value."
+    )
