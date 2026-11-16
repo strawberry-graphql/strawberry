@@ -4,11 +4,14 @@
 # - 4. test mutations (raise?)
 # - 5. test subscriptions (raise)
 
+from enum import Enum
 from pathlib import Path
+from typing import Optional
 
 import pytest
 from pytest_snapshot.plugin import Snapshot
 
+import strawberry
 from strawberry.codegen import QueryCodegen, QueryCodegenPlugin
 from strawberry.codegen.exceptions import (
     MultipleOperationsProvidedError,
@@ -106,3 +109,41 @@ def test_nested_fragment_spread_does_not_depend_on_definition_order(
 
     assert inner_last == inner_first
     assert "PersonFields" in inner_last
+
+
+@pytest.mark.parametrize("plugin_class", [PythonPlugin, TypeScriptPlugin])
+def test_enum_variable_type_order(plugin_class: type[QueryCodegenPlugin]) -> None:
+    @strawberry.enum
+    class Order(Enum):
+        CREATED_AT = "createdAt"
+        UPDATED_AT = "updatedAt"
+
+    @strawberry.type
+    class Issue:
+        id: strawberry.ID
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def issues(self, order_by: Optional[Order] = None) -> list[Issue]:
+            return []
+
+    generator = QueryCodegen(
+        strawberry.Schema(query=Query),
+        plugins=[plugin_class(Path("issues.graphql"))],
+    )
+    result = generator.run(
+        "query Issues($orderBy: Order) { issues(orderBy: $orderBy) { id } }"
+    )
+    declarations = [
+        line.split()[1].removesuffix(":").removesuffix("(Enum)")
+        for line in result.to_string().splitlines()
+        if line.startswith(("class ", "type ", "enum "))
+    ]
+
+    assert declarations == [
+        "IssuesResultIssues",
+        "IssuesResult",
+        "Order",
+        "IssuesVariables",
+    ]
