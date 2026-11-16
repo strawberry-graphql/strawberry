@@ -327,6 +327,9 @@ class StrawberryObjectDefinition(StrawberryType):
     type_var_map: Mapping[str, StrawberryType | type] = dataclasses.field(
         default_factory=dict
     )
+    _specialized_cache: dict[Any, type] = dataclasses.field(
+        default_factory=dict, init=False, repr=False, compare=False
+    )
 
     from_input: Callable[[type, Mapping[str, Any], InputContext], Any] | None = None
     """Builds a value of this type from a GraphQL input value.
@@ -398,6 +401,15 @@ class StrawberryObjectDefinition(StrawberryType):
     def copy_with(
         self, type_var_map: Mapping[str, StrawberryType | type]
     ) -> type[WithStrawberryObjectDefinition]:
+        target = self.concrete_of or self
+        try:
+            cache_key = tuple(sorted(type_var_map.items(), key=lambda x: x[0]))
+        except TypeError:
+            cache_key = None
+
+        if cache_key is not None and cache_key in target._specialized_cache:
+            return target._specialized_cache[cache_key]
+
         fields = [field.copy_with(type_var_map) for field in self.fields]
 
         new_type_definition = StrawberryObjectDefinition(
@@ -425,6 +437,9 @@ class StrawberryObjectDefinition(StrawberryType):
         )
 
         new_type_definition.origin = new_type
+
+        if cache_key is not None:
+            target._specialized_cache[cache_key] = new_type
 
         return new_type
 

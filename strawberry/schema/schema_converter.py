@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import contextlib
+import copy
 import dataclasses
 import inspect
 import sys
@@ -361,11 +362,15 @@ def get_arguments(
     kwargs: Any,
     config: StrawberryConfig,
     scalar_registry: Mapping[object, ScalarWrapper | ScalarDefinition],
+    type_definition: StrawberryObjectDefinition | None = None,
 ) -> tuple[list[Any], dict[str, Any]]:
-    type_definition: StrawberryObjectDefinition | None = None
     if source is not None and has_object_definition(source):
         type_definition = source.__strawberry_definition__
-    elif isinstance(field.origin, type) and has_object_definition(field.origin):
+    elif (
+        type_definition is None
+        and isinstance(field.origin, type)
+        and has_object_definition(field.origin)
+    ):
         type_definition = field.origin.__strawberry_definition__
 
     origin = field.origin if isinstance(field.origin, type) else None
@@ -489,13 +494,19 @@ class GraphQLCoreConverter:
                 else self._to_input_value(argument.default, arg_type)
             )
 
+        if arg_type is not argument.type:
+            argument_for_backref = copy.copy(argument)
+            argument_for_backref.type_annotation = StrawberryAnnotation(arg_type)
+        else:
+            argument_for_backref = argument
+
         return GraphQLArgument(
             type_=argument_type,
             default_value=default_value,
             description=argument.description,
             deprecation_reason=argument.deprecation_reason,
             extensions={
-                GraphQLCoreConverter.DEFINITION_BACKREF: argument,
+                GraphQLCoreConverter.DEFINITION_BACKREF: argument_for_backref,
             },
         )
 
@@ -656,7 +667,7 @@ class GraphQLCoreConverter:
     ) -> GraphQLField:
         # self.from_resolver needs to be called before accessing field.type because
         # in there a field extension might want to change the type during its apply
-        resolver = self.from_resolver(field)
+        resolver = self.from_resolver(field, type_definition=type_definition)
         resolved_type = field.resolve_type(type_definition=type_definition)
 
         if _has_maybe(resolved_type):
@@ -1131,7 +1142,9 @@ class GraphQLCoreConverter:
         )
 
     def from_resolver(
-        self, field: StrawberryField
+        self,
+        field: StrawberryField,
+        type_definition: StrawberryObjectDefinition | None = None,
     ) -> Callable:  # TODO: Take StrawberryResolver
         field.default_resolver = self.config.default_resolver
 
@@ -1271,6 +1284,7 @@ class GraphQLCoreConverter:
                     kwargs=kwargs,
                     config=self.config,
                     scalar_registry=self.scalar_registry,
+                    type_definition=type_definition,
                 )
 
                 resolver_requested_info = False

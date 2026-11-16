@@ -235,6 +235,7 @@ class StrawberryAnnotation:
             args = get_args(type_)
             new_args = tuple(cls._copy_type(arg, type_var_map) for arg in args)
             if has_object_definition(origin):
+                check_is_not_undecorated_subclass(origin)
                 new_alias = origin[new_args]
                 if not any(
                     is_type_var(a)
@@ -258,6 +259,7 @@ class StrawberryAnnotation:
             return type_
 
         if has_object_definition(type_):
+            check_is_not_undecorated_subclass(type_)
             td = type_.__strawberry_definition__
             if td.is_graphql_generic:
                 params = getattr(type_, "__parameters__", None)

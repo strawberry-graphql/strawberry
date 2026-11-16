@@ -1,6 +1,8 @@
 import textwrap
 from enum import Enum
-from typing import Any, Generic, Self, TypeVar
+from typing import Any, Generic, Optional, Self, TypeVar
+
+import pytest
 
 import strawberry
 
@@ -1589,3 +1591,156 @@ def test_specialized_generic_subclass_field_arguments():
             "takeItem": 77,
         }
     }
+
+
+def test_specialized_generic_subclass_root_field_arguments_without_root_value():
+    T = TypeVar("T")
+
+    @strawberry.input
+    class ItemInput(Generic[T]):
+        val: T
+
+    @strawberry.type
+    class BaseQuery(Generic[T]):
+        @strawberry.field
+        def take(self, value: T) -> str:
+            return f"val={value}"
+
+        @strawberry.field
+        def process(self, item: ItemInput[T]) -> str:
+            return f"item={item.val}"
+
+    @strawberry.type
+    class IntQuery(BaseQuery[int]):
+        pass
+
+    schema = strawberry.Schema(query=IntQuery)
+
+    result = schema.execute_sync("{ take(value: 42) process(item: { val: 7 }) }")
+
+    assert not result.errors
+    assert result.data == {"take": "val=42", "process": "item=7"}
+
+
+def test_specialized_generic_subclass_maybe_null_argument():
+    T = TypeVar("T")
+
+    @strawberry.type
+    class MaybeBase(Generic[T]):
+        @strawberry.field
+        def check(self, value: strawberry.Maybe[T] = strawberry.UNSET) -> str:
+            if value is strawberry.UNSET:
+                return "unset"
+            if value is None:
+                return "null"
+            return f"val={value}"
+
+    @strawberry.type
+    class NullableQuery(MaybeBase[Optional[int]]):
+        pass
+
+    schema_nullable = strawberry.Schema(query=NullableQuery)
+
+    res_null = schema_nullable.execute_sync("{ check(value: null) }")
+    assert not res_null.errors
+    assert res_null.data == {"check": "val=Some(None)"}
+
+    res_val = schema_nullable.execute_sync("{ check(value: 123) }")
+    assert not res_val.errors
+    assert res_val.data == {"check": "val=Some(123)"}
+
+    res_unset = schema_nullable.execute_sync("{ check }")
+    assert not res_unset.errors
+    assert res_unset.data == {"check": "unset"}
+
+    @strawberry.type
+    class NonNullableQuery(MaybeBase[int]):
+        pass
+
+    schema_non_null = strawberry.Schema(query=NonNullableQuery)
+    res_err = schema_non_null.execute_sync("{ check(value: null) }")
+    assert res_err.errors
+    assert "cannot be explicitly set to null" in res_err.errors[0].message
+
+
+def test_specialized_generic_subclass_union_with_generic_alias():
+    T = TypeVar("T")
+
+    @strawberry.type
+    class Box(Generic[T]):
+        val: T
+
+    @strawberry.type
+    class Error:
+        msg: str
+
+    @strawberry.type
+    class UnionBase(Generic[T]):
+        @strawberry.field
+        def get_result(self) -> Box[T] | Error:
+            return Box(val=self.val)
+
+    @strawberry.type
+    class SpecializedUnionQuery(UnionBase[int]):
+        val: int = 10
+
+    schema = strawberry.Schema(query=SpecializedUnionQuery)
+
+    assert "union IntBoxError = IntBox | Error" in str(schema)
+    assert "getResult: IntBoxError!" in str(schema)
+
+    result = schema.execute_sync(
+        """
+        {
+            getResult {
+                ... on IntBox {
+                    val
+                }
+                ... on Error {
+                    msg
+                }
+            }
+        }
+        """,
+        root_value=SpecializedUnionQuery(),
+    )
+
+    assert not result.errors
+    assert result.data == {"getResult": {"val": 10}}
+
+
+def test_generic_specialization_cache():
+    T = TypeVar("T")
+
+    @strawberry.type
+    class Box(Generic[T]):
+        val: T
+
+    td = Box.__strawberry_definition__
+    box_int_1 = td.resolve_generic(Box[int])
+    box_int_2 = td.resolve_generic(Box[int])
+    assert box_int_1 is box_int_2
+
+
+def test_undecorated_generic_subclass_rejected_in_specialized_class():
+    from strawberry.exceptions import UndecoratedSubclassError
+
+    T = TypeVar("T")
+
+    @strawberry.type
+    class Box(Generic[T]):
+        val: T
+
+    class Bad(Box[T], Generic[T]):
+        extra: str
+
+    @strawberry.type
+    class Container(Generic[T]):
+        bad: Bad
+
+    @strawberry.type
+    class Specialized(Container[int]):
+        pass
+
+    with pytest.raises(UndecoratedSubclassError):
+        strawberry.Schema(query=Specialized)
