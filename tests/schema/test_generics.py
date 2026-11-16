@@ -1498,3 +1498,94 @@ def test_generic_bases_with_wrapped_arguments():
         "optionalIntBox": {"content": [None, 1]},
         "edgeBox": {"content": [{"node": 1}]},
     }
+
+
+def test_specialized_generic_subclass_nested_generic():
+    T = TypeVar("T")
+
+    @strawberry.type
+    class Box(Generic[T]):
+        val: T
+
+    @strawberry.type
+    class Base(Generic[T]):
+        val: T
+
+        @strawberry.field
+        def nested(self) -> Box[T]:
+            return Box(val=self.val)
+
+        @strawberry.field
+        def nested_list(self) -> list[Box[T]]:
+            return [Box(val=self.val)]
+
+    @strawberry.type
+    class IntHolder(Base[int]):
+        pass
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def holder(self) -> IntHolder:
+            return IntHolder(val=42)
+
+    schema = strawberry.Schema(query=Query)
+
+    result = schema.execute_sync(
+        "{ holder { nested { val } nestedList { val } } }",
+        root_value=Query(),
+    )
+
+    assert not result.errors
+    assert result.data == {
+        "holder": {
+            "nested": {"val": 42},
+            "nestedList": [{"val": 42}],
+        }
+    }
+
+
+def test_specialized_generic_subclass_field_arguments():
+    T = TypeVar("T")
+
+    @strawberry.input
+    class ItemInput(Generic[T]):
+        value: T
+
+    @strawberry.type
+    class Base(Generic[T]):
+        @strawberry.field
+        def take(self, value: T) -> list[T]:
+            return [value]
+
+        @strawberry.field
+        def take_item(self, item: ItemInput[T]) -> T:
+            return item.value
+
+    @strawberry.type
+    class IntHolder(Base[int]):
+        pass
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def holder(self) -> IntHolder:
+            return IntHolder()
+
+    schema = strawberry.Schema(query=Query)
+
+    assert "take(value: Int!): [Int!]!" in str(schema)
+    assert "takeItem(item: IntItemInput!): Int!" in str(schema)
+
+    result = schema.execute_sync(
+        "{ holder { take(value: 99) takeItem(item: { value: 77 }) } }",
+        root_value=Query(),
+    )
+
+    assert not result.errors
+    assert result.data == {
+        "holder": {
+            "take": [99],
+            "takeItem": 77,
+        }
+    }

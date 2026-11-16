@@ -362,12 +362,22 @@ def get_arguments(
     config: StrawberryConfig,
     scalar_registry: Mapping[object, ScalarWrapper | ScalarDefinition],
 ) -> tuple[list[Any], dict[str, Any]]:
+    type_definition: StrawberryObjectDefinition | None = None
+    if source is not None and has_object_definition(source):
+        type_definition = source.__strawberry_definition__
+    elif isinstance(field.origin, type) and has_object_definition(field.origin):
+        type_definition = field.origin.__strawberry_definition__
+
+    origin = field.origin if isinstance(field.origin, type) else None
+
     kwargs = convert_arguments(
         kwargs,
         field.arguments,
         scalar_registry=scalar_registry,
         config=config,
         info=info,
+        type_definition=type_definition,
+        origin=origin,
     )
 
     # Let field extensions reshape the converted arguments before the resolver
@@ -458,17 +468,25 @@ class GraphQLCoreConverter:
 
         return scalar_registry
 
-    def from_argument(self, argument: StrawberryArgument) -> GraphQLArgument:
-        argument_type = cast(
-            "GraphQLInputType", self.from_maybe_optional(argument.type)
+    def from_argument(
+        self,
+        argument: StrawberryArgument,
+        *,
+        type_definition: StrawberryObjectDefinition | None = None,
+        origin: type | None = None,
+    ) -> GraphQLArgument:
+        arg_type = argument.resolve_type(
+            type_definition=type_definition,
+            origin=origin,
         )
+        argument_type = cast("GraphQLInputType", self.from_maybe_optional(arg_type))
         if argument.is_maybe:
             default_value: Any = Undefined
         else:
             default_value = (
                 Undefined
                 if argument.default is UNSET
-                else self._to_input_value(argument.default, argument.type)
+                else self._to_input_value(argument.default, arg_type)
             )
 
         return GraphQLArgument(
@@ -680,7 +698,11 @@ class GraphQLCoreConverter:
         graphql_arguments = {}
         for argument in field.arguments:
             argument_name = self.config.name_converter.from_argument(argument)
-            graphql_arguments[argument_name] = self.from_argument(argument)
+            graphql_arguments[argument_name] = self.from_argument(
+                argument,
+                type_definition=type_definition,
+                origin=field.origin if isinstance(field.origin, type) else None,
+            )
 
         return GraphQLField(
             type_=field_type,

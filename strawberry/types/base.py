@@ -128,10 +128,17 @@ class StrawberryContainer(StrawberryType):
         of_type_copy = self.of_type
 
         if has_object_definition(self.of_type):
-            type_definition = self.of_type.__strawberry_definition__
+            if get_origin(self.of_type) is not None:
+                from strawberry.annotation import StrawberryAnnotation
 
-            if type_definition.is_graphql_generic:
-                of_type_copy = type_definition.copy_with(type_var_map)
+                of_type_copy = StrawberryAnnotation._copy_type(
+                    self.of_type, type_var_map
+                )
+            else:
+                type_definition = self.of_type.__strawberry_definition__
+
+                if type_definition.is_graphql_generic:
+                    of_type_copy = type_definition.copy_with(type_var_map)
 
         elif (
             isinstance(self.of_type, StrawberryType) and self.of_type.is_graphql_generic

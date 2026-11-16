@@ -31,6 +31,7 @@ if TYPE_CHECKING:
     from collections.abc import Iterable, Mapping
 
     from strawberry.schema.config import StrawberryConfig
+    from strawberry.types.base import StrawberryObjectDefinition
     from strawberry.types.info import Info
     from strawberry.types.scalar import ScalarDefinition, ScalarWrapper
 
@@ -135,6 +136,17 @@ class StrawberryArgument:
     @property
     def type(self) -> StrawberryType | type:
         return self.type_annotation.resolve()
+
+    def resolve_type(
+        self,
+        *,
+        type_definition: StrawberryObjectDefinition | None = None,
+        origin: type | None = None,
+    ) -> StrawberryType | type:
+        return self.type_annotation.resolve(
+            type_definition=type_definition,
+            origin=origin,
+        )
 
     @property
     def is_graphql_generic(self) -> bool:
@@ -379,6 +391,9 @@ def convert_arguments(
     scalar_registry: Mapping[object, ScalarWrapper | ScalarDefinition],
     config: StrawberryConfig,
     info: Info | None = None,
+    *,
+    type_definition: StrawberryObjectDefinition | None = None,
+    origin: type | None = None,
 ) -> dict[str, Any]:
     """Converts a nested dictionary to a dictionary of actual types.
 
@@ -400,10 +415,18 @@ def convert_arguments(
 
         if name in value:
             current_value = value[name]
+            arg_type = (
+                argument.resolve_type(
+                    type_definition=type_definition,
+                    origin=origin,
+                )
+                if type_definition is not None
+                else argument.type
+            )
 
             kwargs[argument.python_name] = convert_argument(
                 value=current_value,
-                type_=argument.type,
+                type_=arg_type,
                 config=config,
                 scalar_registry=scalar_registry,
                 info=info,
