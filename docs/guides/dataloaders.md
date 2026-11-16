@@ -166,7 +166,8 @@ assert data1 == data2  # returns true
 `loader.load(User(1, "Nick"))` will call `custom_cache_key` internally, passing
 the object as parameter to the function which will return `User.id` as key that
 is `1`. The second call will check the cache for the key returned by
-`custom_cache_key` and will return the cache object from the loader cache.
+`custom_cache_key` and will reuse the value loaded, or being loaded, for that
+key instead of loading it again.
 
 The implementation relies on users to handle conflicts while generating the
 cache key. In case of conflict the data will be overriden for the key.
