@@ -129,6 +129,28 @@ def test_to_base64_with_invalid_type(value: Any):
             SliceMetadata(start=0, end=10, expected=10),
             11,
         ),
+        # A `before` cursor far into the list must not widen the window
+        # past `max_results` when neither `first` nor `last` is given.
+        (
+            999,
+            None,
+            None,
+            None,
+            100,
+            SliceMetadata(start=0, end=100, expected=100),
+            101,
+        ),
+        # Same when `before` is combined with `after`: the window between
+        # the cursors is capped at `max_results`, anchored at `start`.
+        (
+            999,
+            10,
+            None,
+            None,
+            100,
+            SliceMetadata(start=11, end=111, expected=100),
+            112,
+        ),
         (
             None,
             10,
@@ -222,3 +244,25 @@ def test_get_slice_metadata_first_with_before(
         last=None,
     )
     assert slice_metadata == expected
+
+
+@pytest.mark.parametrize("argument", ["before", "after"])
+@pytest.mark.parametrize("offset", [-5, "abc"])
+def test_get_slice_metadata_with_invalid_cursor_offset(
+    argument: str,
+    offset: Any,
+):
+    """Cursors encoding a negative or non-integer offset cannot refer to an
+    existing position, so they get the same error as a cursor with an
+    unknown prefix instead of leaking into slicing/`islice` internals.
+    """
+    info = mock.Mock()
+    info.schema.config = StrawberryConfig(relay_max_results=100)
+    with pytest.raises(
+        TypeError,
+        match=f"Argument '{argument}' contains a non-existing value.",
+    ):
+        SliceMetadata.from_arguments(
+            info,
+            **{argument: to_base64(PREFIX, offset)},
+        )
