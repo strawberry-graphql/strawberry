@@ -88,6 +88,19 @@ class ExampleInput:
     optional_people: list[PersonInput] | None
 
 
+@strawberry.input
+class PostFilter:
+    title: str | None = None
+    any_of: list["PostFilter"] | None = None
+    author: "AuthorFilter | None" = None
+
+
+@strawberry.input
+class AuthorFilter:
+    name: str | None = None
+    posts: PostFilter | None = None
+
+
 @strawberry.type
 class Query:
     id: strawberry.ID
@@ -116,6 +129,10 @@ class Query:
 
     @strawberry.field
     def with_inputs(self, id: strawberry.ID | None, input: ExampleInput) -> bool:
+        return True
+
+    @strawberry.field
+    def filter_posts(self, filter: PostFilter | None = None) -> bool:
         return True
 
     @strawberry.field
