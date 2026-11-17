@@ -377,13 +377,188 @@ def _get_field_value(
     return None
 
 
+def _get_resolver_parameter(
+    argument: InputValueDefinitionNode,
+    imports: set[Import],
+) -> cst.Param:
+    name = to_snake_case(argument.name.value)
+
+    strawberry_argument_args: list[cst.Arg] = []
+
+    if keyword.iskeyword(name):
+        strawberry_argument_args.append(_get_argument("name", argument.name.value))
+        name = f"{name}_"
+
+    if argument.description:
+        strawberry_argument_args.append(
+            _get_argument("description", argument.description.value)
+        )
+
+    deprecation_reason: str | None = None
+
+    for directive in argument.directives or ():
+        if directive.name.value != "deprecated":
+            continue
+
+        for directive_argument in directive.arguments or ():
+            if directive_argument.name.value == "reason" and isinstance(
+                directive_argument.value, StringValueNode
+            ):
+                deprecation_reason = directive_argument.value.value
+
+    if deprecation_reason is not None:
+        strawberry_argument_args.append(
+            _get_argument("deprecation_reason", deprecation_reason)
+        )
+
+    annotation: cst.BaseExpression = _get_field_type(argument.type)
+
+    if strawberry_argument_args:
+        imports.add(Import(module="typing", imports=("Annotated",)))
+
+        annotation = cst.Subscript(
+            value=cst.Name("Annotated"),
+            slice=[
+                cst.SubscriptElement(cst.Index(value=annotation)),
+                cst.SubscriptElement(
+                    cst.Index(
+                        value=cst.Call(
+                            func=cst.Attribute(
+                                value=cst.Name("strawberry"),
+                                attr=cst.Name("argument"),
+                            ),
+                            args=strawberry_argument_args,
+                        )
+                    )
+                ),
+            ],
+        )
+
+    default_value: cst.BaseExpression | None = None
+
+    if argument.default_value is not None:
+        enum_type_name = (
+            _get_base_type_name(argument.type)
+            if isinstance(argument.default_value, EnumValueNode)
+            else None
+        )
+
+        default_value = _get_default_value_expr(
+            argument.default_value, enum_type_name=enum_type_name
+        )
+
+    return cst.Param(
+        name=cst.Name(name),
+        annotation=cst.Annotation(annotation),
+        default=default_value,
+    )
+
+
+def _get_resolver_field(
+    field: FieldDefinitionNode,
+    is_apollo_federation: bool,
+    imports: set[Import],
+) -> cst.FunctionDef:
+    name = to_snake_case(field.name.value)
+    alias: str | None = None
+
+    if keyword.iskeyword(name):
+        name = f"{name}_"
+        alias = field.name.value
+
+    parameters = [
+        _get_resolver_parameter(argument, imports) for argument in field.arguments or ()
+    ]
+
+    # Python forbids a parameter without a default after one with a
+    # default; GraphQL has no such rule, so in that case the arguments
+    # are emitted as keyword-only parameters.
+    seen_default = False
+    needs_keyword_only = False
+
+    for parameter in parameters:
+        if parameter.default is not None:
+            seen_default = True
+        elif seen_default:
+            needs_keyword_only = True
+
+    self_parameter = cst.Param(name=cst.Name("self"))
+
+    if needs_keyword_only:
+        function_parameters = cst.Parameters(
+            params=[self_parameter],
+            star_arg=cst.ParamStar(),
+            kwonly_params=parameters,
+        )
+    else:
+        function_parameters = cst.Parameters(params=[self_parameter, *parameters])
+
+    description = field.description.value if field.description else None
+
+    decorator_args = list(
+        filter(
+            None,
+            [
+                _get_argument("description", description) if description else None,
+                _get_argument("name", alias) if alias else None,
+            ],
+        )
+    )
+
+    directives = _get_directives(field)
+
+    if deprecated := directives.get("deprecated"):
+        reason = deprecated[0].get("reason")
+
+        if isinstance(reason, str):
+            decorator_args.append(_get_argument("deprecation_reason", reason))
+
+    federation_args = _get_federation_arguments(directives, imports)
+
+    if is_apollo_federation and federation_args:
+        decorator_args.extend(federation_args)
+
+        field_expression: cst.BaseExpression = cst.Attribute(
+            value=cst.Attribute(
+                value=cst.Name("strawberry"),
+                attr=cst.Name("federation"),
+            ),
+            attr=cst.Name("field"),
+        )
+    else:
+        field_expression = cst.Attribute(
+            value=cst.Name("strawberry"),
+            attr=cst.Name("field"),
+        )
+
+    if decorator_args:
+        field_expression = cst.Call(func=field_expression, args=decorator_args)
+
+    return cst.FunctionDef(
+        name=cst.Name(name),
+        params=function_parameters,
+        body=cst.IndentedBlock(
+            body=[
+                cst.SimpleStatementLine(
+                    body=[cst.Raise(exc=cst.Name("NotImplementedError"))]
+                )
+            ]
+        ),
+        decorators=[cst.Decorator(decorator=field_expression)],
+        returns=cst.Annotation(_get_field_type(field.type)),
+    )
+
+
 def _get_field(
     field: FieldDefinitionNode | InputValueDefinitionNode,
     is_apollo_federation: bool,
     imports: set[Import],
     *,
     is_input_field: bool = False,
-) -> cst.SimpleStatementLine:
+) -> cst.SimpleStatementLine | cst.FunctionDef:
+    if isinstance(field, FieldDefinitionNode) and field.arguments:
+        return _get_resolver_field(field, is_apollo_federation, imports)
+
     name = to_snake_case(field.name.value)
     alias: str | None = None
 
