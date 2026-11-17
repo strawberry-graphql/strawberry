@@ -1,0 +1,6 @@
+query OperationName($class: KeywordInput!) {
+  from
+  import: id
+  clause
+  withKeywordInput(input: $class)
+}
