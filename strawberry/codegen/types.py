@@ -71,6 +71,7 @@ class GraphQLEnum:
     name: str
     values: list[str]
     python_type: EnumMeta
+    description: str | None = field(default=None, kw_only=True)
 
 
 @dataclass

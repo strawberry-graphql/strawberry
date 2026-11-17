@@ -980,6 +980,7 @@ class QueryCodegen:
             enum.name,
             [value.name for value in enum.values],
             python_type=enum.wrapped_cls,
+            description=enum.description,
         )
         self._collect_type(graphql_enum)
         return graphql_enum

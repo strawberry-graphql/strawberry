@@ -178,13 +178,11 @@ class PythonPlugin(QueryCodegenPlugin):
 
     def _print_enum_type(self, type_: GraphQLEnum) -> str:
         values = "\n".join(self._print_enum_value(value) for value in type_.values)
-
-        return "\n".join(
-            [
-                f"class {type_.name}(Enum):",
-                textwrap.indent(values, " " * 4),
-            ]
-        )
+        lines = [f"class {type_.name}(Enum):"]
+        if type_.description is not None:
+            lines.append(textwrap.indent(repr(type_.description), " " * 4))
+        lines.append(textwrap.indent(values, " " * 4))
+        return "\n".join(lines)
 
     def _print_scalar_type(self, type_: GraphQLScalar) -> str:
         if type_.name in self.SCALARS_TO_PYTHON_TYPES:
