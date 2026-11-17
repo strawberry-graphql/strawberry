@@ -302,3 +302,120 @@ def test_can_use_custom_cli_plugin(
 
     assert code_path.exists()
     assert "class GetUserResult" in code_path.read_text()
+
+
+def _write_fragment_queries(tmp_path: Path) -> list[Path]:
+    fragments = """
+        fragment AFields on A { name }
+        fragment UserFields on User {
+            name
+            role
+            exampleScalar
+            unionExample { ... on A { ...AFields } ... on B { a { ...AFields } } }
+        }
+    """
+    viewer = tmp_path / "viewer.graphql"
+    viewer.write_text(
+        fragments
+        + "query Viewer { user { ...UserFields } other: user { exampleScalar role } }",
+    )
+    issue = tmp_path / "issue.graphql"
+    issue.write_text(
+        fragments + "query Issue { user { ...UserFields } }",
+    )
+    plain = tmp_path / "plain.graphql"
+    plain.write_text("query Plain { user { name } }")
+    return [viewer, issue, plain]
+
+
+def _run_shared_fragments(
+    cli_app: Typer, cli_runner: CliRunner, queries: list[Path], out: Path
+):
+    out.mkdir()
+    return cli_runner.invoke(
+        cli_app,
+        [
+            "codegen",
+            "-p",
+            "python",
+            "--shared-fragments",
+            "-o",
+            str(out),
+            "--schema",
+            "tests.fixtures.sample_package.sample_module:schema",
+            *map(str, queries),
+        ],
+    )
+
+
+def test_codegen_shared_fragments(
+    cli_app: Typer,
+    cli_runner: CliRunner,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    queries = _write_fragment_queries(tmp_path)
+    out = tmp_path / "out"
+
+    result = _run_shared_fragments(cli_app, cli_runner, queries, out)
+
+    assert result.exit_code == 0
+    assert (out / "fragments.py").exists()
+    viewer_src = (out / "viewer.py").read_text()
+    plain_src = (out / "plain.py").read_text()
+    assert "class UserFields" not in viewer_src
+    assert "NewType" not in viewer_src
+    assert "Enum" not in viewer_src
+    assert "class UserFields" not in (out / "issue.py").read_text()
+    assert "fragments" not in plain_src
+    assert (out / "fragments.py").read_text().count("class UserFields:") == 1
+
+    monkeypatch.syspath_prepend(str(out))
+    import importlib
+
+    viewer = importlib.import_module("viewer")
+    issue = importlib.import_module("issue")
+    plain = importlib.import_module("plain")
+    assert viewer.UserFields is issue.UserFields
+    assert plain.PlainResult is not None
+    assert importlib.import_module("fragments").AFields is not None
+
+
+def test_codegen_without_shared_fragments_duplicates_classes(
+    cli_app: Typer, cli_runner: CliRunner, tmp_path: Path
+):
+    queries = _write_fragment_queries(tmp_path)
+    out = tmp_path / "out"
+    out.mkdir()
+
+    result = cli_runner.invoke(
+        cli_app,
+        [
+            "codegen",
+            "-p",
+            "python",
+            "-o",
+            str(out),
+            "--schema",
+            "tests.fixtures.sample_package.sample_module:schema",
+            *map(str, queries),
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert not (out / "fragments.py").exists()
+    assert "class UserFields" in (out / "viewer.py").read_text()
+
+
+def test_codegen_shared_fragments_conflicting_definitions(
+    cli_app: Typer, cli_runner: CliRunner, tmp_path: Path
+):
+    a = tmp_path / "a.graphql"
+    a.write_text("fragment F on User { name } query A { user { ...F } }")
+    b = tmp_path / "b.graphql"
+    b.write_text("fragment F on User { age } query B { user { ...F } }")
+
+    result = _run_shared_fragments(cli_app, cli_runner, [a, b], tmp_path / "out")
+
+    assert result.exit_code != 0
+    assert "F is defined differently" in str(result.exception)

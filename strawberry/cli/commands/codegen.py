@@ -12,6 +12,7 @@ import typer
 from strawberry.cli.app import app
 from strawberry.cli.utils import load_schema
 from strawberry.codegen import ConsolePlugin, QueryCodegen, QueryCodegenPlugin
+from strawberry.codegen.plugins.python import SharedFragments
 
 
 def _is_codegen_plugin(obj: object) -> bool:
@@ -77,13 +78,22 @@ def _load_plugin(
     return plugin
 
 
+def _supports_shared_fragments(plugin: type) -> bool:
+    return "shared_fragments" in inspect.signature(plugin).parameters
+
+
 def _load_plugins(
-    plugin_ids: list[str], query: Path
+    plugin_ids: list[str],
+    query: Path,
+    shared_fragments: SharedFragments | None = None,
 ) -> list[QueryCodegenPlugin | ConsolePlugin]:
     plugins = []
     for ptype_id in plugin_ids:
         ptype = _load_plugin(ptype_id)
-        plugin = ptype(query)
+        if shared_fragments is not None and _supports_shared_fragments(ptype):
+            plugin = ptype(query, shared_fragments=shared_fragments)  # type: ignore[call-arg]
+        else:
+            plugin = ptype(query)
         plugins.append(plugin)
 
     return plugins
@@ -121,6 +131,15 @@ def codegen(  # noqa: PLR0917
         "--plugins",
     ),
     cli_plugin: str | None = None,
+    shared_fragments: bool = typer.Option(
+        False,
+        "--shared-fragments",
+        help=(
+            "Write fragment classes once to `fragments.py` and import them from "
+            "each operation module, instead of repeating them in every module. "
+            "Only supported by the python plugin."
+        ),
+    ),
 ) -> None:
     if not query:
         return
@@ -132,8 +151,12 @@ def codegen(  # noqa: PLR0917
     assert isinstance(console_plugin, ConsolePlugin)
     console_plugin.before_any_start()
 
+    registry = SharedFragments() if shared_fragments else None
+
     for q in query:
-        plugins = cast("list[QueryCodegenPlugin]", _load_plugins(selected_plugins, q))
+        plugins = cast(
+            "list[QueryCodegenPlugin]", _load_plugins(selected_plugins, q, registry)
+        )
 
         code_generator = QueryCodegen(
             schema_symbol, plugins=plugins, console_plugin=console_plugin
