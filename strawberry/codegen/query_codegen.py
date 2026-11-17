@@ -629,6 +629,7 @@ class QueryCodegen:
             type_ = GraphQLObjectType(
                 strawberry_type.name,
                 [],
+                description=strawberry_type.description,
             )
 
             for field in strawberry_type.fields:
@@ -638,7 +639,11 @@ class QueryCodegen:
                     default = _py_to_graphql_value(field.default)
                 type_.fields.append(
                     GraphQLField(
-                        _get_field_name(field), None, field_type, default_value=default
+                        _get_field_name(field),
+                        None,
+                        field_type,
+                        default_value=default,
+                        description=field.description,
                     )
                 )
 
@@ -689,6 +694,7 @@ class QueryCodegen:
             _get_field_name(field),
             selection.alias.value if selection.alias else None,
             field_type,
+            description=field.description,
         )
 
     def _unwrap_type(
@@ -773,6 +779,7 @@ class QueryCodegen:
             _get_field_name(selected_field),
             selection.alias.value if selection.alias else None,
             field_type,
+            description=selected_field.description,
         )
 
     def _get_field(
@@ -826,6 +833,7 @@ class QueryCodegen:
             )
 
         current_type = graph_ql_object_type_factory(class_name)
+        current_type.description = parent_type.description
         fields: list[GraphQLFragmentSpread | GraphQLField] = []
 
         for sub_selection in selection_set.selections:
@@ -899,6 +907,10 @@ class QueryCodegen:
                 fragment_class_name,
                 list(common_fields),
                 graphql_typename=type_condition_name,
+                description=cast(
+                    "StrawberryObjectDefinition",
+                    self.schema.get_type_by_name(type_condition_name),
+                ).description,
             )
             fields: list[GraphQLFragmentSpread | GraphQLField] = []
 
@@ -968,6 +980,7 @@ class QueryCodegen:
             enum.name,
             [value.name for value in enum.values],
             python_type=enum.wrapped_cls,
+            description=enum.description,
         )
         self._collect_type(graphql_enum)
         return graphql_enum
