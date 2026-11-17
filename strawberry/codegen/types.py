@@ -33,6 +33,7 @@ class GraphQLField:
     alias: str | None
     type: GraphQLType
     default_value: GraphQLArgumentValue | None = None
+    description: str | None = field(default=None, kw_only=True)
 
 
 @dataclass
@@ -45,6 +46,7 @@ class GraphQLObjectType:
     name: str
     fields: list[GraphQLField] = field(default_factory=list)
     graphql_typename: str | None = None
+    description: str | None = field(default=None, kw_only=True)
 
 
 # Subtype of GraphQLObjectType.

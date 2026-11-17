@@ -116,7 +116,10 @@ class PythonPlugin(QueryCodegenPlugin):
         default_value = ""
         if field.default_value is not None:
             default_value = f" = {self._print_argument_value(field.default_value)}"
-        return f"{name}: {self._get_type_name(field.type)}{default_value}"
+        line = f"{name}: {self._get_type_name(field.type)}{default_value}"
+        if field.description is not None:
+            line += f"\n{field.description!r}"
+        return line
 
     def _print_argument_value(self, argval: GraphQLArgumentValue) -> str:
         if hasattr(argval, "values"):
@@ -163,6 +166,8 @@ class PythonPlugin(QueryCodegenPlugin):
         lines = [
             f"class {type_.name}:",
         ]
+        if type_.description is not None:
+            lines.append(textwrap.indent(repr(type_.description), indent))
         if type_.graphql_typename:
             lines.append(
                 textwrap.indent(f"# typename: {type_.graphql_typename}", indent)
