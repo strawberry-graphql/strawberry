@@ -24,7 +24,7 @@ def test_find_model_name() -> None:
     result = locate_definition(schema, "User")
 
     assert _simplify_path(result) == snapshot(
-        "fixtures/sample_package/sample_module.py:38:7"
+        "fixtures/sample_package/sample_module.py:35:7"
     )
 
 
@@ -35,7 +35,7 @@ def test_find_model_name_enum() -> None:
     result = locate_definition(schema, "Role")
 
     assert _simplify_path(result) == snapshot(
-        "fixtures/sample_package/sample_module.py:32:7"
+        "fixtures/sample_package/sample_module.py:29:7"
     )
 
 
@@ -46,7 +46,7 @@ def test_find_model_name_scalar() -> None:
     result = locate_definition(schema, "ExampleScalar")
 
     assert _simplify_path(result) == snapshot(
-        "fixtures/sample_package/sample_module.py:7:13"
+        "fixtures/sample_package/sample_module.py:57:21"
     )
 
 
@@ -57,7 +57,7 @@ def test_find_model_field() -> None:
     result = locate_definition(schema, "User.name")
 
     assert _simplify_path(result) == snapshot(
-        "fixtures/sample_package/sample_module.py:39:5"
+        "fixtures/sample_package/sample_module.py:36:5"
     )
 
 
@@ -68,7 +68,7 @@ def test_find_model_field_scalar() -> None:
     result = locate_definition(schema, "User.example_scalar")
 
     assert _simplify_path(result) == snapshot(
-        "fixtures/sample_package/sample_module.py:42:5"
+        "fixtures/sample_package/sample_module.py:39:5"
     )
 
 
@@ -79,7 +79,7 @@ def test_find_model_field_with_resolver() -> None:
     result = locate_definition(schema, "Query.user")
 
     assert _simplify_path(result) == snapshot(
-        "fixtures/sample_package/sample_module.py:50:5"
+        "fixtures/sample_package/sample_module.py:47:5"
     )
 
 
@@ -108,7 +108,7 @@ def test_find_union() -> None:
     result = locate_definition(schema, "UnionExample")
 
     assert _simplify_path(result) == snapshot(
-        "fixtures/sample_package/sample_module.py:23:16"
+        "fixtures/sample_package/sample_module.py:20:16"
     )
 
 
@@ -119,5 +119,5 @@ def test_find_inline_union() -> None:
     result = locate_definition(schema, "InlineUnion")
 
     assert _simplify_path(result) == snapshot(
-        "fixtures/sample_package/sample_module.py:44:19"
+        "fixtures/sample_package/sample_module.py:41:19"
     )

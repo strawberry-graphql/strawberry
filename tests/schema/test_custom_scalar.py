@@ -5,19 +5,15 @@ import strawberry
 from strawberry.exceptions import StrawberryInputCoercionError
 from strawberry.schema.config import StrawberryConfig
 
-Base64Encoded = strawberry.scalar(
-    NewType("Base64Encoded", bytes),
-    serialize=base64.b64encode,
-    parse_value=base64.b64decode,
-)
+# Define the types
+Base64Encoded = NewType("Base64Encoded", bytes)
 
 
-@strawberry.scalar(serialize=lambda x: 42, parse_value=lambda x: Always42())
 class Always42:
     pass
 
 
-MyStr = strawberry.scalar(NewType("MyStr", str))
+MyStr = NewType("MyStr", str)
 
 
 def test_custom_scalar_serialization():
@@ -27,7 +23,18 @@ def test_custom_scalar_serialization():
         def custom_scalar_field(self) -> Base64Encoded:
             return Base64Encoded(b"decoded value")
 
-    schema = strawberry.Schema(Query)
+    schema = strawberry.Schema(
+        Query,
+        config=StrawberryConfig(
+            scalar_map={
+                Base64Encoded: strawberry.scalar(
+                    name="Base64Encoded",
+                    serialize=base64.b64encode,
+                    parse_value=base64.b64decode,
+                )
+            }
+        ),
+    )
 
     result = schema.execute_sync("{ customScalarField }")
 
@@ -42,7 +49,18 @@ def test_custom_scalar_deserialization():
         def decode_base64(self, encoded: Base64Encoded) -> str:
             return bytes(encoded).decode("ascii")
 
-    schema = strawberry.Schema(Query)
+    schema = strawberry.Schema(
+        Query,
+        config=StrawberryConfig(
+            scalar_map={
+                Base64Encoded: strawberry.scalar(
+                    name="Base64Encoded",
+                    serialize=base64.b64encode,
+                    parse_value=base64.b64decode,
+                )
+            }
+        ),
+    )
 
     encoded = Base64Encoded(base64.b64encode(b"decoded"))
     query = """query decode($encoded: Base64Encoded!) {
@@ -100,7 +118,18 @@ def test_custom_scalar_decorated_class():
         def answer(self) -> Always42:
             return Always42()
 
-    schema = strawberry.Schema(Query)
+    schema = strawberry.Schema(
+        Query,
+        config=StrawberryConfig(
+            scalar_map={
+                Always42: strawberry.scalar(
+                    name="Always42",
+                    serialize=lambda x: 42,
+                    parse_value=lambda x: Always42(),
+                )
+            }
+        ),
+    )
 
     result = schema.execute_sync("{ answer }")
 
@@ -115,7 +144,16 @@ def test_custom_scalar_default_serialization():
         def my_str(self, arg: MyStr) -> MyStr:
             return MyStr(str(arg) + "Suffix")
 
-    schema = strawberry.Schema(Query)
+    schema = strawberry.Schema(
+        Query,
+        config=StrawberryConfig(
+            scalar_map={
+                MyStr: strawberry.scalar(
+                    name="MyStr",
+                )
+            }
+        ),
+    )
 
     result = schema.execute_sync('{ myStr(arg: "value") }')
 

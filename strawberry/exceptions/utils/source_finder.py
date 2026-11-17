@@ -585,6 +585,12 @@ class LibCSTSourceFinder:
         # Try to find direct strawberry.scalar() calls with name parameter
         direct_matcher = m.Call(
             func=m.Attribute(value=m.Name(value="strawberry"), attr=m.Name("scalar"))
+            | m.Attribute(
+                value=m.Attribute(
+                    value=m.Name("strawberry"), attr=m.Name("federation")
+                ),
+                attr=m.Name("scalar"),
+            )
             | m.Name("scalar"),
             args=[
                 m.ZeroOrMore(),
@@ -599,38 +605,7 @@ class LibCSTSourceFinder:
 
         direct_calls = self._find(source, direct_matcher)
         if direct_calls:
-            return self._create_scalar_exception_source(
-                path, source, direct_calls[0], scalar_definition, is_newtype=False
-            )
-
-        # Try to find strawberry.scalar() calls with NewType pattern
-        newtype_matcher = m.Call(
-            func=m.Attribute(value=m.Name(value="strawberry"), attr=m.Name("scalar"))
-            | m.Name("scalar"),
-            args=[
-                m.Arg(
-                    value=m.Call(
-                        func=m.Name(value="NewType"),
-                        args=[
-                            m.Arg(
-                                value=m.SimpleString(
-                                    value=f"'{scalar_definition.name}'"
-                                )
-                                | m.SimpleString(value=f'"{scalar_definition.name}"'),
-                            ),
-                            m.ZeroOrMore(),
-                        ],
-                    )
-                ),
-                m.ZeroOrMore(),
-            ],
-        )
-
-        newtype_calls = self._find(source, newtype_matcher)
-        if newtype_calls:
-            return self._create_scalar_exception_source(
-                path, source, newtype_calls[0], scalar_definition, is_newtype=True
-            )
+            return self._create_scalar_exception_source(path, source, direct_calls[0])
 
         return None  # pragma: no cover
 
@@ -639,35 +614,15 @@ class LibCSTSourceFinder:
         path: Path,
         source: str,
         call_node: Any,
-        scalar_definition: ScalarDefinition,
-        is_newtype: bool,
     ) -> ExceptionSource | None:
         """Helper method to create ExceptionSource for scalar calls."""
         import libcst.matchers as m
 
-        if is_newtype:
-            # For NewType pattern, find the string argument within the NewType call
-            newtype_nodes = m.findall(call_node, m.Call(func=m.Name(value="NewType")))
-            if not newtype_nodes:
-                return None  # pragma: no cover
+        target_nodes = m.findall(call_node, m.Arg(keyword=m.Name(value="name")))
+        if not target_nodes:
+            return None  # pragma: no cover
 
-            target_node = newtype_nodes[0]
-            string_nodes = m.findall(
-                target_node,
-                m.SimpleString(value=f"'{scalar_definition.name}'")
-                | m.SimpleString(value=f'"{scalar_definition.name}"'),
-            )
-            if not string_nodes:
-                return None  # pragma: no cover
-
-            target_node = string_nodes[0]
-        else:
-            # For direct calls, find the name argument
-            target_nodes = m.findall(call_node, m.Arg(keyword=m.Name(value="name")))
-            if not target_nodes:
-                return None  # pragma: no cover
-
-            target_node = target_nodes[0]
+        target_node = target_nodes[0]
 
         position = self._position_metadata[call_node]
         target_position = self._position_metadata[target_node]
