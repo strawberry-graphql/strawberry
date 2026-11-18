@@ -99,13 +99,17 @@ aims to address the similar problem without needing to install a separate tool.
 
 ## Shared fragment classes
 
-When generating Python types across multiple `.graphql` operation files that share GraphQL fragments, pass `--shared-fragments` so each fragment class (and its dependent fragment, enum, custom scalar, or union types) is emitted once into `fragments.py` and imported by every operation module that spreads it:
+When generating Python types across multiple `.graphql` operation files that
+share GraphQL fragments, pass `--shared-fragments` so each fragment class (and
+its dependent fragment, enum, custom scalar, or union types) is emitted once
+into `fragments.py` and imported by every operation module that spreads it:
 
 ```shell
 strawberry codegen --schema schema --output-dir ./output -p python --shared-fragments viewer.graphql issue.graphql
 ```
 
-Without `--shared-fragments`, each operation module continues to contain its own copy of any fragments it spreads.
+Without `--shared-fragments`, each operation module continues to contain its own
+copy of any fragments it spreads.
 
 ## Plugin system
 
