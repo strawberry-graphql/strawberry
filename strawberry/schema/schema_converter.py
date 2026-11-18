@@ -41,6 +41,7 @@ from graphql import (
     default_type_resolver,
 )
 from graphql.language.directive_locations import DirectiveLocation
+from graphql.pyutils import is_iterable
 
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.exceptions import (
@@ -721,8 +722,10 @@ class GraphQLCoreConverter:
         if isinstance(type_, StrawberryOptional):
             return self._to_input_value(value, type_.of_type)
 
-        if isinstance(type_, StrawberryList) and isinstance(value, (list, tuple)):
-            return [self._to_input_value(item, type_.of_type) for item in value]
+        if isinstance(type_, StrawberryList):
+            if is_iterable(value):
+                return [self._to_input_value(item, type_.of_type) for item in value]
+            return self._to_input_value(value, type_.of_type)
 
         if compat.is_scalar(type_, self.scalar_registry):
             return value
