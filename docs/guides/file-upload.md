@@ -68,6 +68,21 @@ class Mutation:
 This gives you proper IDE autocomplete and type checking, since the type
 annotation matches the actual runtime type.
 
+A file can only be provided through a multipart request, so the `Upload` scalar
+will reject any value that comes from the JSON body of the request. Passing a
+string, number, boolean, list or object where a file is expected fails
+validation and the resolver is never called:
+
+```json
+{
+  "errors": [
+    {
+      "message": "Variable '$file' got invalid value 'not a file'; Upload cannot represent a non-file value: 'not a file'"
+    }
+  ]
+}
+```
+
 ## ASGI / FastAPI / Starlette
 
 Since these integrations use asyncio for communication, the resolver _must_ be
