@@ -7,10 +7,12 @@
 from pathlib import Path
 
 import pytest
+from graphql import GraphQLError
 from pytest_snapshot.plugin import Snapshot
 
 from strawberry.codegen import QueryCodegen, QueryCodegenPlugin
 from strawberry.codegen.exceptions import (
+    InvalidOperationError,
     MultipleOperationsProvidedError,
     NoOperationNameProvidedError,
     NoOperationProvidedError,
@@ -106,3 +108,38 @@ def test_nested_fragment_spread_does_not_depend_on_definition_order(
 
     assert inner_last == inner_first
     assert "PersonFields" in inner_last
+
+
+def test_fails_with_field_not_in_schema(schema, tmp_path):
+    query = tmp_path / "query.graphql"
+    data = "query OperationName {\n  integr\n}"
+    with query.open("w") as f:
+        f.write(data)
+
+    generator = QueryCodegen(schema, plugins=[PythonPlugin(query)])
+
+    with pytest.raises(InvalidOperationError) as exc_info:
+        generator.run(data)
+
+    assert exc_info.value.messages == [
+        "2:3: Cannot query field 'integr' on type 'Query'. Did you mean 'integer'?"
+    ]
+
+
+def test_fails_with_unknown_fragment(schema, tmp_path):
+    query = tmp_path / "query.graphql"
+    data = "query OperationName { ...Missing }"
+    with query.open("w") as f:
+        f.write(data)
+
+    generator = QueryCodegen(schema, plugins=[PythonPlugin(query)])
+
+    with pytest.raises(InvalidOperationError, match="Unknown fragment 'Missing'"):
+        generator.run(data)
+
+
+def test_invalid_operation_error_without_location():
+    error = InvalidOperationError([GraphQLError("Something is wrong.")])
+
+    assert error.messages == ["Something is wrong."]
+    assert str(error) == "Something is wrong."
