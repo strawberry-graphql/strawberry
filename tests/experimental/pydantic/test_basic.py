@@ -406,12 +406,6 @@ def test_type_with_fields_mutable_default():
     assert empty_list == []
 
 
-@pytest.mark.xfail(
-    reason=(
-        "passing default values when extending types from pydantic is not"
-        "supported. https://github.com/strawberry-graphql/strawberry/issues/829"
-    )
-)
 def test_type_with_fields_coming_from_strawberry_and_pydantic_with_default():
     class User(pydantic.BaseModel):
         age: int
@@ -426,18 +420,20 @@ def test_type_with_fields_coming_from_strawberry_and_pydantic_with_default():
     definition: StrawberryObjectDefinition = UserType.__strawberry_definition__
     assert definition.name == "UserType"
 
+    # fields declared in the class body come first, as in
+    # test_type_with_nested_fields_coming_from_strawberry_and_pydantic
     [field1, field2, field3] = definition.fields
 
-    assert field1.python_name == "age"
-    assert field1.type is int
+    assert field1.python_name == "name"
+    assert field1.type is str
+    assert field1.default == "Michael"
 
-    assert field2.python_name == "password"
-    assert isinstance(field2.type, StrawberryOptional)
-    assert field2.type.of_type is str
+    assert field2.python_name == "age"
+    assert field2.type is int
 
-    assert field3.python_name == "name"
-    assert field3.type is str
-    assert field3.default == "Michael"
+    assert field3.python_name == "password"
+    assert isinstance(field3.type, StrawberryOptional)
+    assert field3.type.of_type is str
 
 
 def test_type_with_nested_fields_coming_from_strawberry_and_pydantic():
