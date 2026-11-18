@@ -97,6 +97,16 @@ Tools like [GraphQL Codegen](https://www.graphql-code-generator.com/) exist in
 order to create types and code for your clients. Strawberry's codegen feature
 aims to address the similar problem without needing to install a separate tool.
 
+## Shared fragment classes
+
+When generating Python types across multiple `.graphql` operation files that share GraphQL fragments, pass `--shared-fragments` so each fragment class (and its dependent fragment, enum, custom scalar, or union types) is emitted once into `fragments.py` and imported by every operation module that spreads it:
+
+```shell
+strawberry codegen --schema schema --output-dir ./output -p python --shared-fragments viewer.graphql issue.graphql
+```
+
+Without `--shared-fragments`, each operation module continues to contain its own copy of any fragments it spreads.
+
 ## Plugin system
 
 Strawberry's codegen supports plugins, in the example above for example, we are

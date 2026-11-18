@@ -91,12 +91,14 @@ class PythonPlugin(QueryCodegenPlugin):
     ) -> list[CodegenFile]:
         shared: list[GraphQLType] = []
         if self.shared_fragments is not None:
-            if self.outfile_name == f"{self.shared_fragments.module}.py":
+            shared = self._split_shared_types(types)
+            if (
+                shared or self.shared_fragments.classes
+            ) and self.outfile_name == f"{self.shared_fragments.module}.py":
                 raise ValueError(
                     f"Operation output file {self.outfile_name!r} collides with "
                     "the shared fragments module"
                 )
-            shared = self._split_shared_types(types)
             types = [t for t in types if t not in shared]
 
         printed_types = list(filter(None, (self._print_type(type) for type in types)))
@@ -105,12 +107,17 @@ class PythonPlugin(QueryCodegenPlugin):
             files = []
         else:
             shared_file = self._shared_file(shared)
-            used = {
-                dep.name  # type: ignore[union-attr]
+            local_names = {
+                t.name
                 for t in types
-                for dep in _get_deps(t)
-                if dep is not t
+                if not isinstance(t, (GraphQLOptional, GraphQLList))
             }
+            used = {
+                dep.name
+                for root in (*types, operation.type)
+                for dep in _get_deps(root)
+                if not isinstance(dep, (GraphQLOptional, GraphQLList))
+            } - local_names
             if imported := set(self.shared_fragments.classes) & used:
                 self.imports[self.shared_fragments.module] |= imported
             files = [shared_file] if self.shared_fragments.classes else []
@@ -119,7 +126,7 @@ class PythonPlugin(QueryCodegenPlugin):
 
         code = imports + "\n\n" + "\n\n".join(printed_types)
 
-        return [CodegenFile(self.outfile_name, code.strip()), *files]
+        return [*files, CodegenFile(self.outfile_name, code.strip())]
 
     def _split_shared_types(self, types: list[GraphQLType]) -> list[GraphQLType]:
         """Fragment types and everything they depend on."""
@@ -134,7 +141,11 @@ class PythonPlugin(QueryCodegenPlugin):
     def _shared_file(self, shared: list[GraphQLType]) -> CodegenFile:
         assert self.shared_fragments is not None
         own_imports, self.imports = self.imports, defaultdict(set)
-        printed = [(t.name, self._print_type(t)) for t in shared]  # type: ignore[union-attr]
+        printed = [
+            (t.name, self._print_type(t))
+            for t in shared
+            if not isinstance(t, (GraphQLOptional, GraphQLList))
+        ]
         shared_imports, self.imports = self.imports, own_imports
 
         for name, code in printed:
