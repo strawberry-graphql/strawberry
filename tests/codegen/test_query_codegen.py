@@ -5,10 +5,12 @@
 # - 5. test subscriptions (raise)
 
 from pathlib import Path
+from typing import NewType
 
 import pytest
 from pytest_snapshot.plugin import Snapshot
 
+import strawberry
 from strawberry.codegen import QueryCodegen, QueryCodegenPlugin
 from strawberry.codegen.exceptions import (
     MultipleOperationsProvidedError,
@@ -17,6 +19,7 @@ from strawberry.codegen.exceptions import (
 )
 from strawberry.codegen.plugins.python import PythonPlugin
 from strawberry.codegen.plugins.typescript import TypeScriptPlugin
+from strawberry.schema.config import StrawberryConfig
 
 HERE = Path(__file__).parent
 QUERIES = list(HERE.glob("queries/*.graphql"))
@@ -31,7 +34,7 @@ QUERIES = list(HERE.glob("queries/*.graphql"))
     ids=["python", "typescript"],
 )
 @pytest.mark.parametrize("query", QUERIES, ids=[x.name for x in QUERIES])
-def test_codegen(  # noqa: PLR0917
+def test_codegen(
     query: Path,
     plugin_class: type[QueryCodegenPlugin],
     plugin_name: str,
@@ -106,3 +109,157 @@ def test_nested_fragment_spread_does_not_depend_on_definition_order(
 
     assert inner_last == inner_first
     assert "PersonFields" in inner_last
+
+
+def test_codegen_custom_scalar_from_scalar_map(tmp_path: Path):
+    JSONObject = NewType("JSONObject", object)
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def metadata(self) -> JSONObject:
+            return JSONObject({})
+
+    schema = strawberry.Schema(
+        query=Query,
+        config=StrawberryConfig(
+            scalar_map={
+                JSONObject: strawberry.scalar(
+                    None,
+                    name="JSONObject",
+                    serialize=lambda v: v,
+                    parse_value=lambda v: v,
+                )
+            }
+        ),
+    )
+
+    query = tmp_path / "query.graphql"
+    query_text = "query GetMetadata { metadata }"
+
+    py_generator = QueryCodegen(schema, plugins=[PythonPlugin(query)])
+    py_result = py_generator.run(query_text)
+    py_code = py_result.to_string()
+
+    assert 'JSONObject = NewType("JSONObject", object)' in py_code
+    assert "metadata: JSONObject" in py_code
+
+    ts_generator = QueryCodegen(schema, plugins=[TypeScriptPlugin(query)])
+    ts_result = ts_generator.run(query_text)
+    ts_code = ts_result.to_string()
+
+    assert "type JSONObject = any" in ts_code
+    assert "metadata: JSONObject" in ts_code
+
+
+def test_codegen_custom_scalar_in_variables_from_scalar_map(tmp_path: Path):
+    JSONObject = NewType("JSONObject", object)
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def send(self, data: JSONObject) -> JSONObject:
+            return data
+
+    schema = strawberry.Schema(
+        query=Query,
+        config=StrawberryConfig(
+            scalar_map={
+                JSONObject: strawberry.scalar(
+                    None,
+                    name="JSONObject",
+                    serialize=lambda v: v,
+                    parse_value=lambda v: v,
+                )
+            }
+        ),
+    )
+
+    query = tmp_path / "query.graphql"
+    query_text = "query SetMeta($data: JSONObject!) { send(data: $data) }"
+
+    py_generator = QueryCodegen(schema, plugins=[PythonPlugin(query)])
+    py_result = py_generator.run(query_text)
+    py_code = py_result.to_string()
+
+    assert 'JSONObject = NewType("JSONObject", object)' in py_code
+    assert "data: JSONObject" in py_code
+
+    ts_generator = QueryCodegen(schema, plugins=[TypeScriptPlugin(query)])
+    ts_result = ts_generator.run(query_text)
+    ts_code = ts_result.to_string()
+
+    assert "type JSONObject = any" in ts_code
+    assert "data: JSONObject" in ts_code
+
+
+def test_codegen_custom_scalar_deduplication(tmp_path: Path):
+    CustomScalar = strawberry.scalar(
+        None, name="Custom", serialize=lambda v: v, parse_value=lambda v: v
+    )
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def field_a(self) -> str:
+            return "a"
+
+        @strawberry.field
+        def field_b(self) -> float:
+            return 1.0
+
+    schema = strawberry.Schema(
+        query=Query,
+        config=StrawberryConfig(
+            scalar_map={
+                str: CustomScalar,
+                float: CustomScalar,
+            }
+        ),
+    )
+
+    query = tmp_path / "query.graphql"
+    query_text = "query Test { fieldA fieldB }"
+
+    py_generator = QueryCodegen(schema, plugins=[PythonPlugin(query)])
+    py_code = py_generator.run(query_text).to_string()
+    assert py_code.count('Custom = NewType("Custom", str)') == 1
+
+    ts_generator = QueryCodegen(schema, plugins=[TypeScriptPlugin(query)])
+    ts_code = ts_generator.run(query_text).to_string()
+    assert ts_code.count("type Custom = string") == 1
+
+
+def test_codegen_void_scalar_none_type(tmp_path: Path):
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def empty(self) -> None:
+            return None
+
+    schema = strawberry.Schema(query=Query)
+
+    query = tmp_path / "query.graphql"
+    query_text = "query TestVoid { empty }"
+
+    py_generator = QueryCodegen(schema, plugins=[PythonPlugin(query)])
+    py_code = py_generator.run(query_text).to_string()
+    assert "from types import NoneType" in py_code
+    assert 'Void = NewType("Void", NoneType)' in py_code
+
+    ts_generator = QueryCodegen(schema, plugins=[TypeScriptPlugin(query)])
+    ts_code = ts_generator.run(query_text).to_string()
+    assert "type Void = null" in ts_code
+
+
+def test_codegen_unmapped_scalar_fallback_warning(tmp_path: Path):
+    from strawberry.codegen.types import GraphQLScalar
+
+    plugin = PythonPlugin(tmp_path / "query.graphql")
+    with pytest.warns(
+        UserWarning,
+        match="Scalar Unmapped has no associated Python type; falling back to Any",
+    ):
+        code = plugin._print_scalar_type(GraphQLScalar("Unmapped", None))
+
+    assert code == 'Unmapped = NewType("Unmapped", Any)'
