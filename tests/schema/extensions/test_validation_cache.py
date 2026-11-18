@@ -4,7 +4,7 @@ import pytest
 from graphql import validate
 
 import strawberry
-from strawberry.extensions import ValidationCache
+from strawberry.extensions import QueryDepthLimiter, ValidationCache
 from strawberry.extensions import validation_cache as _validation_cache_module
 
 
@@ -159,3 +159,29 @@ def test_validation_cache_extension_default_is_bounded():
         assert not result.errors
 
     assert cache.cached_validate_document.cache_info().currsize == 128
+
+
+@patch("strawberry.schema.schema.validate", wraps=validate)
+def test_validation_cache_extension_with_query_depth_limiter(mock_validate):
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def hello(self) -> str:
+            return "world"
+
+    schema = strawberry.Schema(
+        query=Query,
+        extensions=[
+            ValidationCache,
+            lambda: QueryDepthLimiter(max_depth=10),
+        ],
+    )
+
+    query = "query { hello }"
+
+    for _ in range(3):
+        result = schema.execute_sync(query)
+        assert not result.errors
+        assert result.data == {"hello": "world"}
+
+    assert mock_validate.call_count == 1

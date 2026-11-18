@@ -1,3 +1,5 @@
+from dataclasses import dataclass
+
 import pytest
 from graphql import (
     GraphQLError,
@@ -492,3 +494,53 @@ def test_should_work_as_extension():
     assert (
         result.errors[0].message == "'anonymous' exceeds maximum operation depth of 4"
     )
+
+
+@pytest.mark.parametrize(
+    ("unhashable_should_ignore", "unhashable_callback"),
+    [(True, False), (False, True), (True, True)],
+)
+def test_should_work_as_extension_with_unhashable_callables(
+    unhashable_should_ignore: bool, unhashable_callback: bool
+):
+    # A dataclass with eq=True and frozen=False sets __hash__ to None
+    @dataclass(eq=unhashable_should_ignore)
+    class RecordIgnored:
+        seen: list[str]
+
+        def __call__(self, ignore: IgnoreContext) -> bool:
+            self.seen.append(ignore.field_name)
+            return False
+
+    @dataclass(eq=unhashable_callback)
+    class RecordDepths:
+        depths: list[dict[str, int]]
+
+        def __call__(self, query_depths: dict[str, int]) -> None:
+            self.depths.append(query_depths)
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def hello(self) -> str:
+            return "world"
+
+    should_ignore = RecordIgnored(seen=[])
+    callback = RecordDepths(depths=[])
+
+    schema = strawberry.Schema(
+        query=Query,
+        extensions=[
+            lambda: QueryDepthLimiter(
+                max_depth=4, callback=callback, should_ignore=should_ignore
+            )
+        ],
+    )
+
+    for _ in range(2):
+        result = schema.execute_sync("query read { hello }")
+        assert not result.errors
+        assert result.data == {"hello": "world"}
+
+    assert should_ignore.seen == ["hello", "hello"]
+    assert callback.depths == [{"read": 0}, {"read": 0}]
