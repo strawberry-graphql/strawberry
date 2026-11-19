@@ -88,7 +88,8 @@ ArgFilter = Callable[[Dict[str, Any], GraphQLResolveInfo], Dict[str, Any]]
 A function that decides whether an exception raised by a resolver is recorded on
 its span. Return `False` to skip it: the span then gets no `exception` event and
 its status is not set to error. The exception is still raised as usual. By
-default every exception is recorded.
+default every exception is recorded, and so is any exception for which the
+filter itself raises.
 
 ```python
 RecordExceptionFilter = Callable[[Exception], bool]

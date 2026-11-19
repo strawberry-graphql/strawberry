@@ -2,6 +2,7 @@ from typing import Any
 from unittest.mock import MagicMock
 
 import pytest
+from graphql import GraphQLResolveInfo
 from opentelemetry.sdk.trace import TracerProvider as SdkTracerProvider
 from opentelemetry.sdk.trace.export import SimpleSpanProcessor
 from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
@@ -280,13 +281,36 @@ def resolver_span(exporter: InMemorySpanExporter, field: str):
     )
 
 
+def skip_value_errors(error: Exception) -> bool:
+    return not isinstance(error, ValueError)
+
+
+def failing_filter(error: Exception) -> bool:
+    raise RuntimeError("filter is broken")
+
+
+def failing_arg_filter(
+    kwargs: dict[str, Any], info: GraphQLResolveInfo
+) -> dict[str, Any]:
+    raise RuntimeError("arg filter is broken")
+
+
+RECORD_EXCEPTION_FILTER_CASES = [
+    ("secret", None, StatusCode.ERROR, ["exception"]),
+    ("secret", skip_permission_errors, StatusCode.UNSET, []),
+    ("broken", skip_permission_errors, StatusCode.ERROR, ["exception"]),
+    ("secret", skip_value_errors, StatusCode.ERROR, ["exception"]),
+    ("broken", skip_value_errors, StatusCode.UNSET, []),
+    ("secret", failing_filter, StatusCode.ERROR, ["exception"]),
+    ("broken", failing_filter, StatusCode.ERROR, ["exception"]),
+]
+
+ERROR_MESSAGES = {"secret": "Not allowed", "broken": "boom"}
+
+
 @pytest.mark.parametrize(
     ("field", "record_exception_filter", "expected_status", "expected_events"),
-    [
-        ("secret", None, StatusCode.ERROR, ["exception"]),
-        ("secret", skip_permission_errors, StatusCode.UNSET, []),
-        ("broken", skip_permission_errors, StatusCode.ERROR, ["exception"]),
-    ],
+    RECORD_EXCEPTION_FILTER_CASES,
 )
 @pytest.mark.asyncio
 async def test_record_exception_filter(
@@ -306,6 +330,7 @@ async def test_record_exception_filter(
     result = await schema.execute(f"{{ {field} }}")
 
     assert result.errors
+    assert result.errors[0].message == ERROR_MESSAGES[field]
     span = resolver_span(exporter, field)
     assert span.status.status_code == expected_status
     assert [event.name for event in span.events] == expected_events
@@ -313,11 +338,7 @@ async def test_record_exception_filter(
 
 @pytest.mark.parametrize(
     ("field", "record_exception_filter", "expected_status", "expected_events"),
-    [
-        ("secret", None, StatusCode.ERROR, ["exception"]),
-        ("secret", skip_permission_errors, StatusCode.UNSET, []),
-        ("broken", skip_permission_errors, StatusCode.ERROR, ["exception"]),
-    ],
+    RECORD_EXCEPTION_FILTER_CASES,
 )
 def test_record_exception_filter_sync(
     field, record_exception_filter, expected_status, expected_events
@@ -336,6 +357,58 @@ def test_record_exception_filter_sync(
     result = schema.execute_sync(f"{{ {field} }}")
 
     assert result.errors
+    assert result.errors[0].message == ERROR_MESSAGES[field]
     span = resolver_span(exporter, field)
     assert span.status.status_code == expected_status
     assert [event.name for event in span.events] == expected_events
+
+
+@pytest.mark.asyncio
+async def test_failing_arg_filter_is_recorded():
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        async def hi(self, name: str) -> str:
+            return f"Hi {name}"
+
+    provider, exporter = make_exporter()
+    schema = strawberry.Schema(
+        query=Query,
+        extensions=[
+            lambda: OpenTelemetryExtension(
+                tracer_provider=provider, arg_filter=failing_arg_filter
+            )
+        ],
+    )
+
+    result = await schema.execute('{ hi(name: "Patrick") }')
+
+    assert result.errors
+    span = resolver_span(exporter, "hi")
+    assert span.status.status_code == StatusCode.ERROR
+    assert [event.name for event in span.events] == ["exception"]
+
+
+def test_failing_arg_filter_is_recorded_sync():
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def hi(self, name: str) -> str:
+            return f"Hi {name}"
+
+    provider, exporter = make_exporter()
+    schema = strawberry.Schema(
+        query=Query,
+        extensions=[
+            lambda: OpenTelemetryExtensionSync(
+                tracer_provider=provider, arg_filter=failing_arg_filter
+            )
+        ],
+    )
+
+    result = schema.execute_sync('{ hi(name: "Patrick") }')
+
+    assert result.errors
+    span = resolver_span(exporter, "hi")
+    assert span.status.status_code == StatusCode.ERROR
+    assert [event.name for event in span.events] == ["exception"]

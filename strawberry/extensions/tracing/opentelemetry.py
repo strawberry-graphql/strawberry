@@ -153,11 +153,19 @@ class OpenTelemetryExtension(SchemaExtension):
                 converted_value = self.convert_to_allowed_types(value)
                 span.set_attribute(f"graphql.param.{kwarg}", converted_value)
 
+    def _should_record_exception(self, error: Exception) -> bool:
+        if self._record_exception_filter is None:
+            return True
+
+        try:
+            return self._record_exception_filter(error)
+        except Exception:  # noqa: BLE001
+            # A failing filter must not hide or replace the resolver's error,
+            # so fall back to recording it.
+            return True
+
     def _record_exception(self, span: Span, error: Exception) -> None:
-        if (
-            self._record_exception_filter is not None
-            and not self._record_exception_filter(error)
-        ):
+        if not self._should_record_exception(error):
             return
 
         span.record_exception(error)
@@ -187,8 +195,8 @@ class OpenTelemetryExtension(SchemaExtension):
             record_exception=False,
             set_status_on_exception=False,
         ) as span:
-            self.add_tags(span, info, kwargs)
             try:
+                self.add_tags(span, info, kwargs)
                 result = _next(root, info, *args, **kwargs)
 
                 if isawaitable(result):
@@ -220,8 +228,8 @@ class OpenTelemetryExtensionSync(OpenTelemetryExtension):
             record_exception=False,
             set_status_on_exception=False,
         ) as span:
-            self.add_tags(span, info, kwargs)
             try:
+                self.add_tags(span, info, kwargs)
                 return _next(root, info, *args, **kwargs)
             except Exception as error:
                 self._record_exception(span, error)
