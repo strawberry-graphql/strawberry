@@ -71,7 +71,7 @@ schema = strawberry.Schema(
 ## API reference:
 
 ```python
-class OpenTelemetryExtension(arg_filter=None): ...
+class OpenTelemetryExtension(arg_filter=None, record_exception_filter=None): ...
 ```
 
 #### `arg_filter: Optional[ArgFilter]`
@@ -81,6 +81,17 @@ data.
 
 ```python
 ArgFilter = Callable[[Dict[str, Any], GraphQLResolveInfo], Dict[str, Any]]
+```
+
+#### `record_exception_filter: Optional[RecordExceptionFilter]`
+
+A function that decides whether an exception raised by a resolver is recorded on
+its span. Return `False` to skip it: the span then gets no `exception` event and
+its status is not set to error. The exception is still raised as usual. By
+default every exception is recorded.
+
+```python
+RecordExceptionFilter = Callable[[Exception], bool]
 ```
 
 ## More examples:
@@ -149,6 +160,47 @@ schema = strawberry.Schema(
     extensions=[
         OpenTelemetryExtension(
             tracer_provider=MyTracerProvider(),
+        ),
+    ],
+)
+```
+
+</details>
+
+<details>
+  <summary>Using `record_exception_filter`</summary>
+
+```python
+import strawberry
+from strawberry.exceptions import StrawberryGraphQLError
+from strawberry.extensions.tracing import OpenTelemetryExtension
+from strawberry.permission import BasePermission
+
+
+class IsAdmin(BasePermission):
+    message = "Not allowed"
+
+    def has_permission(self, source, info, **kwargs) -> bool:
+        return False
+
+
+@strawberry.type
+class Query:
+    @strawberry.field(permission_classes=[IsAdmin])
+    def secret(self) -> str:
+        return "secret"
+
+
+def record_exception_filter(error: Exception) -> bool:
+    # Permission denials are expected, don't report them as errors
+    return not isinstance(error, StrawberryGraphQLError)
+
+
+schema = strawberry.Schema(
+    Query,
+    extensions=[
+        OpenTelemetryExtension(
+            record_exception_filter=record_exception_filter,
         ),
     ],
 )

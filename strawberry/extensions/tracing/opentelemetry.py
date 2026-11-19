@@ -9,7 +9,7 @@ from typing import (
 )
 
 from opentelemetry import trace
-from opentelemetry.trace import SpanKind
+from opentelemetry.trace import SpanKind, Status, StatusCode
 
 from strawberry.extensions import LifecycleStep, SchemaExtension
 from strawberry.extensions.utils import get_path_from_info
@@ -28,10 +28,12 @@ if TYPE_CHECKING:
 DATETIME_FORMAT = "%Y-%m-%dT%H:%M:%S.%fZ"
 
 ArgFilter = Callable[[dict[str, Any], "GraphQLResolveInfo"], dict[str, Any]]
+RecordExceptionFilter = Callable[[Exception], bool]
 
 
 class OpenTelemetryExtension(SchemaExtension):
     _arg_filter: ArgFilter | None
+    _record_exception_filter: RecordExceptionFilter | None
     _span_holder: dict[LifecycleStep, Span]
     _tracer: Tracer
 
@@ -41,8 +43,10 @@ class OpenTelemetryExtension(SchemaExtension):
         execution_context: ExecutionContext | None = None,
         arg_filter: ArgFilter | None = None,
         tracer_provider: trace.TracerProvider | None = None,
+        record_exception_filter: RecordExceptionFilter | None = None,
     ) -> None:
         self._arg_filter = arg_filter
+        self._record_exception_filter = record_exception_filter
         self._tracer = trace.get_tracer("strawberry", tracer_provider=tracer_provider)
         self._span_holder = {}
         if execution_context:
@@ -149,6 +153,16 @@ class OpenTelemetryExtension(SchemaExtension):
                 converted_value = self.convert_to_allowed_types(value)
                 span.set_attribute(f"graphql.param.{kwarg}", converted_value)
 
+    def _record_exception(self, span: Span, error: Exception) -> None:
+        if (
+            self._record_exception_filter is not None
+            and not self._record_exception_filter(error)
+        ):
+            return
+
+        span.record_exception(error)
+        span.set_status(Status(StatusCode.ERROR, f"{type(error).__name__}: {error}"))
+
     async def resolve(
         self,
         _next: Callable,
@@ -170,12 +184,18 @@ class OpenTelemetryExtension(SchemaExtension):
             context=trace.set_span_in_context(
                 self._span_holder[LifecycleStep.OPERATION]
             ),
+            record_exception=False,
+            set_status_on_exception=False,
         ) as span:
             self.add_tags(span, info, kwargs)
-            result = _next(root, info, *args, **kwargs)
+            try:
+                result = _next(root, info, *args, **kwargs)
 
-            if isawaitable(result):
-                result = await result
+                if isawaitable(result):
+                    result = await result
+            except Exception as error:
+                self._record_exception(span, error)
+                raise
 
             return result
 
@@ -197,9 +217,15 @@ class OpenTelemetryExtensionSync(OpenTelemetryExtension):
             context=trace.set_span_in_context(
                 self._span_holder[LifecycleStep.OPERATION]
             ),
+            record_exception=False,
+            set_status_on_exception=False,
         ) as span:
             self.add_tags(span, info, kwargs)
-            return _next(root, info, *args, **kwargs)
+            try:
+                return _next(root, info, *args, **kwargs)
+            except Exception as error:
+                self._record_exception(span, error)
+                raise
 
 
 __all__ = ["OpenTelemetryExtension", "OpenTelemetryExtensionSync"]
