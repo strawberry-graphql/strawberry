@@ -32,6 +32,7 @@ from graphql import (
     StringValueNode,
     VariableNode,
     parse,
+    print_ast,
 )
 
 from strawberry.types.base import (
@@ -404,6 +405,7 @@ class QueryCodegen:
                 GraphQLFragmentType,
                 on=typename,
                 graphql_typename=typename,
+                definition=print_ast(fd),
             )
 
             self._collect_types(

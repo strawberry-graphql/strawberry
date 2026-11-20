@@ -514,8 +514,79 @@ def test_codegen_shared_fragments_conflicting_definitions(
     a.write_text("fragment F on User { name } query A { user { ...F } }")
     b = tmp_path / "b.graphql"
     b.write_text("fragment F on User { age } query B { user { ...F } }")
+    out = tmp_path / "out"
 
-    result = _run_shared_fragments(cli_app, cli_runner, [a, b], tmp_path / "out")
+    result = _run_shared_fragments(cli_app, cli_runner, [a, b], out)
 
     assert result.exit_code != 0
     assert "F is defined differently" in str(result.exception)
+    assert list(out.iterdir()) == []
+
+
+def test_codegen_shared_fragments_conflicting_directives(
+    cli_app: Typer, cli_runner: CliRunner, tmp_path: Path
+):
+    a = tmp_path / "a.graphql"
+    a.write_text("fragment F on User { name } query A { user { ...F } }")
+    b = tmp_path / "b.graphql"
+    b.write_text(
+        "fragment F on User { name @skip(if: true) } query B { user { ...F } }"
+    )
+    out = tmp_path / "out"
+
+    result = _run_shared_fragments(cli_app, cli_runner, [a, b], out)
+
+    assert result.exit_code != 0
+    assert "F is defined differently" in str(result.exception)
+    assert list(out.iterdir()) == []
+
+
+def test_codegen_shared_fragments_root_fragment_spread(
+    cli_app: Typer,
+    cli_runner: CliRunner,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    root_q = tmp_path / "root_query.graphql"
+    root_q.write_text(
+        "fragment QueryFields on Query { user { name } } query Root { ...QueryFields }"
+    )
+    out = tmp_path / "out"
+
+    result = _run_shared_fragments(cli_app, cli_runner, [root_q], out)
+
+    assert result.exit_code == 0, result.output
+    root_src = (out / "root_query.py").read_text()
+    assert "from fragments import QueryFields" in root_src
+    assert "class QueryFields:" in (out / "fragments.py").read_text()
+
+    monkeypatch.syspath_prepend(str(out))
+    import importlib
+    import sys
+
+    for mod in ("fragments", "root_query"):
+        monkeypatch.delitem(sys.modules, mod, raising=False)
+
+    root_mod = importlib.import_module("root_query")
+    fragments_mod = importlib.import_module("fragments")
+    assert root_mod.QueryFields is fragments_mod.QueryFields
+
+
+def test_codegen_shared_fragments_reverse_module_name_collision(
+    cli_app: Typer, cli_runner: CliRunner, tmp_path: Path
+):
+    plain_fragments = tmp_path / "fragments.graphql"
+    plain_fragments.write_text("query Fragments { user { name } }")
+    uses_fragment = tmp_path / "viewer.graphql"
+    uses_fragment.write_text(
+        "fragment F on User { name } query Viewer { user { ...F } }"
+    )
+    out = tmp_path / "out"
+
+    result = _run_shared_fragments(
+        cli_app, cli_runner, [plain_fragments, uses_fragment], out
+    )
+
+    assert result.exit_code != 0
+    assert "collides with the shared fragments module" in str(result.exception)
+    assert list(out.iterdir()) == []

@@ -153,14 +153,36 @@ def codegen(  # noqa: PLR0917
 
     registry = SharedFragments() if shared_fragments else None
 
-    for q in query:
-        plugins = cast(
-            "list[QueryCodegenPlugin]", _load_plugins(selected_plugins, q, registry)
-        )
+    if registry is None:
+        for q in query:
+            plugins = cast(
+                "list[QueryCodegenPlugin]", _load_plugins(selected_plugins, q)
+            )
 
-        code_generator = QueryCodegen(
-            schema_symbol, plugins=plugins, console_plugin=console_plugin
-        )
-        code_generator.run(q.read_text())
+            code_generator = QueryCodegen(
+                schema_symbol, plugins=plugins, console_plugin=console_plugin
+            )
+            code_generator.run(q.read_text())
+    else:
+        pending_results = []
+        for q in query:
+            plugins = cast(
+                "list[QueryCodegenPlugin]", _load_plugins(selected_plugins, q, registry)
+            )
+            console_plugin.on_start(plugins, q)
+            code_generator = QueryCodegen(schema_symbol, plugins=plugins)
+            pending_results.append(code_generator.run(q.read_text()))
+
+        shared_filename = f"{registry.module}.py"
+        if registry.classes and any(
+            q.with_suffix(".py").name == shared_filename for q in query
+        ):
+            raise ValueError(
+                f"Operation output file {shared_filename!r} collides with "
+                "the shared fragments module"
+            )
+
+        for result in pending_results:
+            console_plugin.on_end(result)
 
     console_plugin.after_all_finished()

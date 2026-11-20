@@ -42,10 +42,20 @@ class SharedFragments:
 
     module: str = "fragments"
     classes: dict[str, str] = field(default_factory=dict)
+    definitions: dict[str, str | None] = field(default_factory=dict)
     imports: dict[str, set[str]] = field(default_factory=lambda: defaultdict(set))
 
-    def add(self, name: str, code: str, imports: dict[str, set[str]]) -> None:
-        if self.classes.setdefault(name, code) != code:
+    def add(
+        self,
+        name: str,
+        code: str,
+        imports: dict[str, set[str]],
+        definition: str | None = None,
+    ) -> None:
+        if (
+            self.classes.setdefault(name, code) != code
+            or self.definitions.setdefault(name, definition) != definition
+        ):
             raise ValueError(f"{name} is defined differently in different operations")
 
         for module, names in imports.items():
@@ -142,15 +152,19 @@ class PythonPlugin(QueryCodegenPlugin):
         assert self.shared_fragments is not None
         own_imports, self.imports = self.imports, defaultdict(set)
         printed = [
-            (t.name, self._print_type(t))
+            (
+                t.name,
+                self._print_type(t),
+                t.definition if isinstance(t, GraphQLFragmentType) else None,
+            )
             for t in shared
             if not isinstance(t, (GraphQLOptional, GraphQLList))
         ]
         shared_imports, self.imports = self.imports, own_imports
 
-        for name, code in printed:
+        for name, code, definition in printed:
             if code:
-                self.shared_fragments.add(name, code, shared_imports)
+                self.shared_fragments.add(name, code, shared_imports, definition)
 
         return CodegenFile(
             f"{self.shared_fragments.module}.py", self.shared_fragments.render()
