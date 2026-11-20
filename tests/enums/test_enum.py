@@ -403,3 +403,20 @@ def test_annotated_enum_with_name_in_annotated_resolver_parameters():
         "colorNames": ["red"],
         "optionalColorName": None,
     }
+
+
+def test_enum_value_with_unhashable_value():
+    @strawberry.enum
+    class Color(Enum):
+        RED = strawberry.enum_value([1, 2], description="Red")
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def color(self) -> Color:
+            return Color.RED
+
+    schema = strawberry.Schema(query=Query)
+
+    assert Color([1, 2]) is Color.RED
+    assert schema.execute_sync("{ color }").data == {"color": "RED"}
