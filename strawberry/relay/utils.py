@@ -196,9 +196,12 @@ class SliceMetadata:
 
         if end is None:
             end = start + max_results
-        elif end != sys.maxsize and end - start > max_results:
+        elif end - start > max_results and (before is not None or end != sys.maxsize):
             # A `before` cursor (alone or combined with `after`) must not
-            # widen the window past `max_results`.
+            # widen the window past `max_results`, even when it decodes to
+            # the `sys.maxsize` sentinel. The sentinel stays exempt only
+            # when it comes from `last` without `before`, where it marks
+            # the unbounded tail `ListConnection` trims to `last`.
             end = start + max_results
 
         expected = end - start if end != sys.maxsize else None

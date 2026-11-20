@@ -140,6 +140,27 @@ def test_to_base64_with_invalid_type(value: Any):
             SliceMetadata(start=0, end=100, expected=100),
             101,
         ),
+        # Same when the `before` cursor decodes to the `sys.maxsize`
+        # sentinel: it is a cursor-derived end, not the unbounded `last`
+        # tail, so the cap still applies.
+        (
+            sys.maxsize,
+            None,
+            None,
+            None,
+            100,
+            SliceMetadata(start=0, end=100, expected=100),
+            101,
+        ),
+        (
+            sys.maxsize,
+            10,
+            None,
+            None,
+            100,
+            SliceMetadata(start=11, end=111, expected=100),
+            112,
+        ),
         # Same when `before` is combined with `after`: the window between
         # the cursors is capped at `max_results`, anchored at `start`.
         (
