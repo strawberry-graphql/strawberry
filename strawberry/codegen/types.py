@@ -56,6 +56,7 @@ class GraphQLFragmentType(GraphQLObjectType):
     fields: list[GraphQLField] = field(default_factory=list)
     graphql_typename: str | None = None
     on: str = ""
+    definition: str | None = None
 
     def __post_init__(self) -> None:
         if not self.on:
