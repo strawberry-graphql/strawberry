@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import inspect
 from functools import cached_property
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from graphql import GraphQLError
 
@@ -98,6 +98,19 @@ class MissingTypesForGenericError(Exception):
 
     def __init__(self, annotation: StrawberryType | type) -> None:
         message = f'The type "{annotation!r}" is generic, but no type has been passed'
+
+        super().__init__(message)
+
+
+class MissingListItemTypeError(Exception):
+    """Raised when a list annotation does not say what the list contains."""
+
+    def __init__(self, annotation: Any) -> None:
+        name = getattr(annotation, "__name__", annotation)
+        message = (
+            f"The list annotation `{name}` must specify the type of its items, "
+            "for example `list[int]`"
+        )
 
         super().__init__(message)
 
@@ -266,6 +279,7 @@ __all__ = [
     "MaybeFieldOnOutputTypeError",
     "MissingArgumentsAnnotationsError",
     "MissingFieldAnnotationError",
+    "MissingListItemTypeError",
     "MissingOptionalDependenciesError",
     "MissingQueryError",
     "MissingReturnAnnotationError",

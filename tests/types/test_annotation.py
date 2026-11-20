@@ -1,11 +1,12 @@
 import itertools
 from enum import Enum
-from typing import Optional, TypeVar
+from typing import List, Optional, TypeVar  # noqa: UP035
 
 import pytest
 
 import strawberry
 from strawberry.annotation import StrawberryAnnotation
+from strawberry.exceptions import MissingListItemTypeError
 from strawberry.types.unset import UnsetType
 
 
@@ -103,3 +104,12 @@ def test_resolve_without_type_definition_skips_generic_check():
 
     assert annotation.resolve() is int
     assert CountingAnnotation.generic_checks == 0
+
+
+@pytest.mark.parametrize("annotation", [list, List, Optional[list]])  # noqa: UP006
+def test_list_without_item_type_raises(annotation):
+    with pytest.raises(
+        MissingListItemTypeError,
+        match=r"must specify the type of its items, for example `list\[int\]`",
+    ):
+        StrawberryAnnotation(annotation).resolve()

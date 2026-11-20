@@ -19,6 +19,7 @@ from typing import (
     get_origin,
 )
 
+from strawberry.exceptions import MissingListItemTypeError
 from strawberry.streamable import StrawberryStreamable
 from strawberry.types.base import (
     StrawberryList,
@@ -285,7 +286,11 @@ class StrawberryAnnotation:
             return strawberry_enum(evaled_type).__strawberry_definition__
 
     def create_list(self, evaled_type: Any) -> StrawberryList:
-        item_type, *_ = get_args(evaled_type)
+        args = get_args(evaled_type)
+        if not args:
+            raise MissingListItemTypeError(evaled_type)
+
+        item_type = args[0]
         of_type = StrawberryAnnotation(
             annotation=item_type,
             namespace=self.namespace,
