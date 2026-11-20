@@ -1,3 +1,4 @@
+import sys
 from collections.abc import Iterable
 from typing import Annotated, Any, Optional, Self
 
@@ -6,7 +7,7 @@ import pytest
 import strawberry
 from strawberry.permission import BasePermission
 from strawberry.relay import Connection, Node, PageInfo, to_base64
-from strawberry.relay.types import Edge, ListConnection
+from strawberry.relay.types import PREFIX, Edge, ListConnection
 from strawberry.schema.config import StrawberryConfig
 
 
@@ -266,3 +267,48 @@ def test_max_results(
     assert result.data is not None
     assert isinstance(result.data["users"]["edges"], list)
     assert len(result.data["users"]["edges"]) == expected
+
+
+def test_max_results_before_cursor_at_maxsize():
+    """A `before` cursor decoding to `sys.maxsize` must be capped at
+    `max_results` like any other cursor-derived end, not treated as the
+    unbounded `last` tail (which would read every node and then trip the
+    `assert last is not None` in the connection resolver)."""
+
+    @strawberry.type
+    class User(Node):
+        id: strawberry.relay.NodeID[str]
+
+    @strawberry.type
+    class Query:
+        @strawberry.relay.connection(ListConnection[User])
+        def users(self) -> list[User]:
+            return [User(id=str(i)) for i in range(200)]
+
+    schema = strawberry.Schema(
+        query=Query,
+        config=StrawberryConfig(relay_max_results=100),
+    )
+    query = """
+      query ($before: String) {
+        users(before: $before) {
+          edges {
+            node {
+              id
+            }
+          }
+          pageInfo {
+            hasNextPage
+          }
+        }
+      }
+    """
+
+    result = schema.execute_sync(
+        query,
+        variable_values={"before": to_base64(PREFIX, sys.maxsize)},
+    )
+    assert result.errors is None
+    assert result.data is not None
+    assert len(result.data["users"]["edges"]) == 100
+    assert result.data["users"]["pageInfo"]["hasNextPage"] is True

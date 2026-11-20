@@ -98,6 +98,29 @@ def should_resolve_list_connection_edges(info: strawberry.Info) -> bool:
     return False
 
 
+def _parse_cursor_offset(parsed: str, argument: str) -> int:
+    """Parse the offset encoded in a relay cursor.
+
+    Raises:
+        TypeError:
+            If the offset is not a non-negative integer, using the same
+            error as for a cursor with an unknown prefix, since such a
+            cursor cannot refer to an existing position.
+
+    """
+    try:
+        offset = int(parsed)
+    except ValueError:
+        raise TypeError(
+            f"Argument '{argument}' contains a non-existing value."
+        ) from None
+
+    if offset < 0:
+        raise TypeError(f"Argument '{argument}' contains a non-existing value.")
+
+    return offset
+
+
 @dataclasses.dataclass
 class SliceMetadata:
     start: int
@@ -140,12 +163,12 @@ class SliceMetadata:
             if after_type != prefix:
                 raise TypeError("Argument 'after' contains a non-existing value.")
 
-            start = int(after_parsed) + 1
+            start = _parse_cursor_offset(after_parsed, "after") + 1
         if before:
             before_type, before_parsed = from_base64(before)
             if before_type != prefix:
                 raise TypeError("Argument 'before' contains a non-existing value.")
-            end = int(before_parsed)
+            end = _parse_cursor_offset(before_parsed, "before")
 
         if isinstance(first, int):
             if first < 0:
@@ -172,6 +195,13 @@ class SliceMetadata:
                 end = sys.maxsize
 
         if end is None:
+            end = start + max_results
+        elif end - start > max_results and (before is not None or end != sys.maxsize):
+            # A `before` cursor (alone or combined with `after`) must not
+            # widen the window past `max_results`, even when it decodes to
+            # the `sys.maxsize` sentinel. The sentinel stays exempt only
+            # when it comes from `last` without `before`, where it marks
+            # the unbounded tail `ListConnection` trims to `last`.
             end = start + max_results
 
         expected = end - start if end != sys.maxsize else None
