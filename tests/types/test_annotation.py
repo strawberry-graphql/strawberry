@@ -1,6 +1,13 @@
 import itertools
 from enum import Enum
-from typing import List, Optional, TypeVar  # noqa: UP035
+from typing import (  # noqa: UP035
+    List,
+    Optional,
+    Sequence,
+    Tuple,
+    TypeVar,
+    get_origin,
+)
 
 import pytest
 
@@ -113,3 +120,8 @@ def test_list_without_item_type_raises(annotation):
         match=r"must specify the type of its items, for example `list\[int\]`",
     ):
         StrawberryAnnotation(annotation).resolve()
+
+
+@pytest.mark.parametrize("annotation", [Tuple, Sequence])  # noqa: UP006
+def test_tuple_and_sequence_without_item_type_do_not_raise_list_error(annotation):
+    assert StrawberryAnnotation(annotation).resolve() is get_origin(annotation)
