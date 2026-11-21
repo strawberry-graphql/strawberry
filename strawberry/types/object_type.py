@@ -1,5 +1,6 @@
 import ast
 import builtins
+import contextlib
 import copy
 import dataclasses
 import inspect
@@ -33,6 +34,7 @@ from strawberry.exceptions import (
     UnresolvedStrawberryFieldError,
 )
 from strawberry.types.maybe import Some, _annotation_is_maybe
+from strawberry.types.type_extension import TypeExtension
 from strawberry.types.unset import UNSET
 from strawberry.utils.str_converters import to_camel_case
 
@@ -355,12 +357,13 @@ def _process_type(
     directives: Sequence[object] | None = (),
     extend: bool = False,
     original_type_annotations: dict[str, Any] | None = None,
+    extensions: Sequence[TypeExtension] = (),
 ) -> T:
     name = name or to_camel_case(cls.__name__)
     original_type_annotations = original_type_annotations or {}
 
     interfaces = _get_interfaces(cls)
-    fields = _get_fields(cls, original_type_annotations)
+    fields = _get_fields(cls, original_type_annotations, extensions)
     is_type_of = getattr(cls, "is_type_of", None)
     resolve_type = getattr(cls, "resolve_type", None)
 
@@ -444,6 +447,7 @@ def type(
     description: str | None = None,
     directives: Sequence[object] | None = (),
     extend: bool = False,
+    extensions: Sequence[TypeExtension] = (),
 ) -> T: ...
 
 
@@ -459,6 +463,7 @@ def type(
     description: str | None = None,
     directives: Sequence[object] | None = (),
     extend: bool = False,
+    extensions: Sequence[TypeExtension] = (),
 ) -> Callable[[T], T]: ...
 
 
@@ -474,6 +479,7 @@ def type(
     description: str | None = None,
     directives: Sequence[object] | None = (),
     extend: bool = False,
+    extensions: Sequence[TypeExtension] = (),
 ) -> T | Callable[[T], T]:
     """Annotates a class as a GraphQL type.
 
@@ -488,6 +494,7 @@ def type(
         description: The description of the GraphQL type.
         directives: The directives of the GraphQL type.
         extend: Whether the class is extending an existing type.
+        extensions: A list of extensions to apply to the type.
 
     Returns:
         The class.
@@ -537,18 +544,31 @@ def type(
                 original_type_annotations[field_name] = field.type_annotation.annotation
         if is_input:
             _inject_default_for_maybe_annotations(cls, annotations)
-        wrapped = _wrap_dataclass(cls)
 
-        return _process_type(
-            wrapped,
-            name=name,
-            is_input=is_input,
-            is_interface=is_interface,
-            description=description,
-            directives=directives,
-            extend=extend,
-            original_type_annotations=original_type_annotations,
-        )
+        with contextlib.ExitStack() as stack:
+            for extension in extensions:
+                stack.enter_context(
+                    contextlib.contextmanager(extension.on_wrap_dataclass)(
+                        cls,
+                        name=name,
+                        is_input=is_input,
+                        is_interface=is_interface,
+                    )
+                )
+
+            wrapped = _wrap_dataclass(cls)
+
+            return _process_type(
+                wrapped,
+                name=name,
+                is_input=is_input,
+                is_interface=is_interface,
+                description=description,
+                directives=directives,
+                extend=extend,
+                extensions=extensions,
+                original_type_annotations=original_type_annotations,
+            )
 
     if cls is None:
         return wrap
@@ -567,6 +587,7 @@ def input(
     one_of: bool | None = None,
     description: str | None = None,
     directives: Sequence[object] | None = (),
+    extensions: Sequence[TypeExtension] = (),
 ) -> T: ...
 
 
@@ -580,6 +601,7 @@ def input(
     one_of: bool | None = None,
     description: str | None = None,
     directives: Sequence[object] | None = (),
+    extensions: Sequence[TypeExtension] = (),
 ) -> Callable[[T], T]: ...
 
 
@@ -593,6 +615,7 @@ def input(
     one_of: bool | None = None,
     description: str | None = None,
     directives: Sequence[object] | None = (),
+    extensions: Sequence[TypeExtension] = (),
 ):
     """Annotates a class as a GraphQL Input type.
 
@@ -604,6 +627,7 @@ def input(
         description: The description of the GraphQL input type.
         directives: The directives of the GraphQL input type.
         one_of: Whether the input type is a `oneOf` type.
+        extensions: A list of extensions to apply to the type.
 
     Returns:
         The class.
@@ -635,6 +659,7 @@ def input(
         description=description,
         directives=directives,
         is_input=True,
+        extensions=extensions,
     )
 
 
@@ -648,6 +673,7 @@ def interface(
     name: str | None = None,
     description: str | None = None,
     directives: Sequence[object] | None = (),
+    extensions: Sequence[TypeExtension] = (),
 ) -> T: ...
 
 
@@ -660,6 +686,7 @@ def interface(
     name: str | None = None,
     description: str | None = None,
     directives: Sequence[object] | None = (),
+    extensions: Sequence[TypeExtension] = (),
 ) -> Callable[[T], T]: ...
 
 
@@ -672,6 +699,7 @@ def interface(
     name: str | None = None,
     description: str | None = None,
     directives: Sequence[object] | None = (),
+    extensions: Sequence[TypeExtension] = (),
 ):
     """Annotates a class as a GraphQL Interface.
 
@@ -682,6 +710,7 @@ def interface(
         name: The name of the GraphQL interface.
         description: The description of the GraphQL interface.
         directives: The directives of the GraphQL interface.
+        extensions: A list of extensions to apply to the type.
 
     Returns:
         The class.
@@ -708,6 +737,7 @@ def interface(
         description=description,
         directives=directives,
         is_interface=True,
+        extensions=extensions,
     )
 
 
