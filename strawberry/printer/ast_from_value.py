@@ -45,6 +45,9 @@ _re_integer_string = re.compile("^-?(?:0|[1-9][0-9]*)$")
 
 
 def ast_from_leaf_type(serialized: object, type_: GraphQLInputType | None) -> ValueNode:
+    if serialized is None:
+        return NullValueNode()
+
     # Others serialize based on their corresponding Python scalar types.
     if isinstance(serialized, bool):
         return BooleanValueNode(value=serialized)
@@ -77,6 +80,11 @@ def ast_from_leaf_type(serialized: object, type_: GraphQLInputType | None) -> Va
                 )
                 for key, value in serialized.items()
             )
+        )
+
+    if isinstance(serialized, (list, tuple)):
+        return ListValueNode(
+            values=tuple(ast_from_leaf_type(item, None) for item in serialized)
         )
 
     raise TypeError(
