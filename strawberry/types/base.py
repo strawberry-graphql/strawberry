@@ -321,6 +321,8 @@ class StrawberryObjectDefinition(StrawberryType):
         default_factory=dict
     )
 
+    metadata: dict[Any, Any] = dataclasses.field(default_factory=dict)
+
     from_input: Callable[[type, Mapping[str, Any], InputContext], Any] | None = None
     """Builds a value of this type from a GraphQL input value.
 
@@ -404,6 +406,7 @@ class StrawberryObjectDefinition(StrawberryType):
             extend=self.extend,
             is_type_of=self.is_type_of,
             resolve_type=self.resolve_type,
+            metadata=self.metadata.copy(),
             fields=fields,
             concrete_of=self,
             type_var_map=type_var_map,
