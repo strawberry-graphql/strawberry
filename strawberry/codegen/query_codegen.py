@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections.abc import Callable, Iterable, Mapping, Sequence
 from dataclasses import MISSING, dataclass
 from enum import Enum
-from functools import cmp_to_key, partial
+from functools import partial
 from pathlib import Path
 from typing import (
     TYPE_CHECKING,
@@ -188,28 +188,15 @@ class ConsolePlugin:
 
 
 def _get_deps(t: GraphQLType) -> Iterable[GraphQLType]:
-    """Get all the types that `t` depends on.
-
-    To keep things simple, `t` depends on itself.
-    """
-    yield t
-
+    """Get the direct dependencies of a type."""
     if isinstance(t, GraphQLObjectType):
-        for fld in t.fields:
-            yield from _get_deps(fld.type)
-
-    elif isinstance(t, (GraphQLEnum, GraphQLScalar)):
-        # enums and scalars have no dependent types
-        pass
-
+        for field in t.fields:
+            yield field.type
     elif isinstance(t, (GraphQLOptional, GraphQLList)):
-        yield from _get_deps(t.of_type)
-
+        yield t.of_type
     elif isinstance(t, GraphQLUnion):
-        for gql_type in t.types:
-            yield from _get_deps(gql_type)
-    else:
-        # Want to make sure that all types are covered.
+        yield from t.types
+    elif not isinstance(t, (GraphQLEnum, GraphQLScalar)):
         raise ValueError(f"Unknown GraphQLType: {t}")  # noqa: TRY004
 
 
@@ -288,26 +275,30 @@ class QueryCodegenPluginManager:
         self.console_plugin = console_plugin
 
     def _sort_types(self, types: list[GraphQLType]) -> list[GraphQLType]:
-        """Sort the types.
+        """Visit types in collection order, emitting their dependencies first."""
+        pending = types.copy()
+        ordered: list[GraphQLType] = []
+        visited: set[int] = set()
 
-        t1 < t2 iff t2 has a dependency on t1.
-        t1 == t2 iff neither type has a dependency on the other.
-        """
+        def visit(type_: GraphQLType) -> None:
+            identity = id(type_)
+            if identity in visited:
+                return
 
-        def type_cmp(t1: GraphQLType, t2: GraphQLType) -> int:
-            """Compare the types."""
-            if t1 is t2:
-                retval = 0
-            elif t1 in _get_deps(t2):
-                retval = -1
-            elif t2 in _get_deps(t1):
-                retval = 1
-            else:
-                retval = 0
+            visited.add(identity)
+            for dependency in _get_deps(type_):
+                visit(dependency)
 
-            return retval
+            # References can be distinct instances of an already collected type.
+            try:
+                index = pending.index(type_)
+            except ValueError:
+                return
+            ordered.append(pending.pop(index))
 
-        return sorted(types, key=cmp_to_key(type_cmp))
+        for type_ in types:
+            visit(type_)
+        return ordered
 
     def generate_code(
         self, types: list[GraphQLType], operation: GraphQLOperation
