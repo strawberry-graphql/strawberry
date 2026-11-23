@@ -9,6 +9,7 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -175,6 +176,48 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
+  benchmarks-memory:
+    name: 📈 Benchmarks (memory)
+
+    runs-on: ubuntu-22.04
+    timeout-minutes: 20
+
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install uv
+        uses: astral-sh/setup-uv@1db35dd8eee11c5894872e0b383ae6c406cf738d # v10.4.0
+        with:
+          enable-cache: true
+          python-version: "3.14.7"
+
+      - run: uv sync --locked
+
+      - name: Record benchmark environment
+        run: uv run python -m tests.benchmarks.metadata benchmark-artifacts/environment.json --instrument memory
+
+      - name: Measure allocations
+        uses: CodSpeedHQ/action@af75f77f17a054769abefaa42fe8dc2975469b5f # v5.6.3
+        with:
+          mode: memory
+          run: >-
+            uv run pytest tests/benchmarks --codspeed -p no:codeflash-benchmark
+            -m benchmark_memory --junitxml=benchmark-artifacts/results.xml
+
+      - name: Upload benchmark diagnostics
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: benchmark-memory
+          path: benchmark-artifacts/
+          if-no-files-found: error
+          retention-days: 90
+
   lint:
     name: ✨ Lint
     runs-on: ubuntu-latest
@@ -243,6 +286,7 @@ jobs:
       - unit-tests-on-windows
       - coverage
       - benchmarks
+      - benchmarks-memory
       - lint
     runs-on: ubuntu-latest
 
