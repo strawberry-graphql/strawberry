@@ -43,6 +43,22 @@ class Query:
 # Throws 'Field "c" on type "Query" cannot define a default value and a resolver.'
 ```
 
+### MissingListItemTypeError
+
+This exception is raised when a field, argument or input field is annotated with
+a bare `list` or `typing.List`, without saying what the list contains. Specify
+the item type to fix it.
+
+```python
+import strawberry
+
+
+@strawberry.type
+class Query:
+    names: list  # Throws 'The list annotation `list` must specify the type of its items, for example `list[int]`'
+    fixed: list[str]
+```
+
 ### MissingTypesForGenericError
 
 This exception is raised when a `Generic` type is added to the Strawberry Schema
