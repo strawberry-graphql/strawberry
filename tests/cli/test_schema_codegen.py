@@ -5,8 +5,10 @@ from typer import Typer
 from typer.testing import CliRunner
 
 schema = """
+directive @foo on FIELD_DEFINITION
+
 type Query {
-    hello: String!
+    hello: String! @foo
 }
 """
 
