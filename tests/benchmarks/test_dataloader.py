@@ -18,7 +18,15 @@ async def load_many_values(count: int, cache: bool) -> list[int]:
 
 
 @pytest.mark.benchmark
-@pytest.mark.parametrize("count", [1, 10, 100, 10_000])
+@pytest.mark.parametrize(
+    "count",
+    [
+        pytest.param(1, marks=pytest.mark.benchmark_native),
+        pytest.param(10, marks=pytest.mark.benchmark_native),
+        100,
+        10_000,
+    ],
+)
 @pytest.mark.parametrize("cache", [False, True])
 def test_dataloader_batch_v2(
     benchmark: BenchmarkFixture,

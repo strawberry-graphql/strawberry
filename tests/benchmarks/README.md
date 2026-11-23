@@ -42,15 +42,16 @@ See [CodSpeed's Python documentation](https://codspeed.io/docs/benchmarks/python
 | Marker | Execution | Purpose |
 | --- | --- | --- |
 | Neither native nor stress | Every PR/main push, Python 3.14.7, four CodSpeed simulation shards | CPU regression detection |
-| `benchmark_native` | Scheduled native runs | ASGI/FastAPI request parsing through response consumption, and fresh-process import/schema startup |
+| `benchmark_native` | Scheduled native runs | ASGI/FastAPI request parsing through response consumption, fresh-process import/schema startup, and small DataLoader batches dominated by event-loop syscalls |
 | `benchmark_stress` | Weekly or explicitly requested native runs | Largest argument lists, interface counts, stadium datasets and subscription streams |
-| `benchmark_memory` | Scheduled Linux CodSpeed memory job | Schema construction, large result construction, cache churn and subscription cleanup |
+| `benchmark_memory` | Every PR/main push, CodSpeed memory job | Schema construction, large result construction, cache churn and subscription cleanup |
 
 Markers may overlap. A plain correctness run covers every group. The native
 workflow in `strawberry-graphql/benchmarks` uses the existing Mac runner with Python
 3.14.7, the latest stable release as of September 7, 2026. All three instruments
 pin this exact version; a Python upgrade starts a new baseline.
-The main repository's `benchmark-memory.yml` runs bounded allocation workloads.
+The simulation and memory jobs both live in `.github/workflows/test.yml`, because
+CodSpeed only aggregates results uploaded from a single workflow.
 New native and memory results are advisory; the workflows do not invent regression
 thresholds or change the repository's existing CodSpeed gate settings.
 
