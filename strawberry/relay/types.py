@@ -821,15 +821,19 @@ class ListConnection(Connection[NodeType]):
             prefix=edge_class.CURSOR_PREFIX,
         )
 
+        overfetch = slice_metadata.overfetch
+        if last == 0 and slice_metadata.end == sys.maxsize:
+            # No edges are returned, so fetching a single item is enough to
+            # know whether there's a previous page
+            overfetch = slice_metadata.start + 1
+
         if isinstance(nodes, (AsyncIterator, AsyncIterable)) and in_async_context():
 
             async def resolver() -> Self:
                 try:
                     iterator = cast(
                         "AsyncIterator[NodeType] | AsyncIterable[NodeType]",
-                        cast("Sequence", nodes)[
-                            slice_metadata.start : slice_metadata.overfetch
-                        ],
+                        cast("Sequence", nodes)[slice_metadata.start : overfetch],
                     )
                 except TypeError:
                     # TODO: Why mypy isn't narrowing this based on the if above?
@@ -837,7 +841,7 @@ class ListConnection(Connection[NodeType]):
                     iterator = aislice(
                         nodes,
                         slice_metadata.start,
-                        slice_metadata.overfetch,
+                        overfetch,
                     )
 
                 async with aclosing(iterator):
@@ -872,7 +876,8 @@ class ListConnection(Connection[NodeType]):
                     # Last was asked without any after/before
                     assert last is not None
                     original_len = len(edges)
-                    edges = edges[-last:]
+                    # edges[-0:] would return every edge, not zero edges
+                    edges = edges[-last:] if last else []
                     has_next_page = False
                     has_previous_page = len(edges) != original_len
                 else:
@@ -893,16 +898,14 @@ class ListConnection(Connection[NodeType]):
         try:
             iterator = cast(
                 "Iterator[NodeType] | Iterable[NodeType]",
-                cast("Sequence", nodes)[
-                    slice_metadata.start : slice_metadata.overfetch
-                ],
+                cast("Sequence", nodes)[slice_metadata.start : overfetch],
             )
         except TypeError:
             assert isinstance(nodes, (Iterable, Iterator))
             iterator = itertools.islice(
                 nodes,
                 slice_metadata.start,
-                slice_metadata.overfetch,
+                overfetch,
             )
 
         if not should_resolve_list_connection_edges(info):
@@ -936,7 +939,8 @@ class ListConnection(Connection[NodeType]):
             # Last was asked without any after/before
             assert last is not None
             original_len = len(edges)
-            edges = edges[-last:]
+            # edges[-0:] would return every edge, not zero edges
+            edges = edges[-last:] if last else []
             has_next_page = False
             has_previous_page = len(edges) != original_len
         else:
