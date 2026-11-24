@@ -1,12 +1,14 @@
 import textwrap
-from collections.abc import AsyncGenerator
+from collections.abc import AsyncGenerator, Callable
 from dataclasses import dataclass
+from typing import Any
 
 import pytest
 
 import strawberry
 from strawberry.directive import DirectiveLocation, DirectiveValue
 from strawberry.exceptions import ConflictingArgumentsError
+from strawberry.extensions import FieldExtension
 from strawberry.utils.aio import aclosing
 
 
@@ -59,6 +61,33 @@ async def test_context_parameter_async_with_info_and_arguments():
     )
     assert not result.errors
     assert result.data == {"greeting": "Hello Ada, from 2"}
+
+
+class UpperCaseExtension(FieldExtension):
+    def resolve(
+        self,
+        next_: Callable[..., Any],
+        source: Any,
+        info: strawberry.Info,
+        **kwargs: Any,
+    ) -> Any:
+        return next_(source, info, **kwargs).upper()
+
+
+@pytest.mark.parametrize("extensions", [[], [UpperCaseExtension()]])
+def test_context_parameter_named_info(extensions):
+    @strawberry.type
+    class Query:
+        @strawberry.field(extensions=extensions)
+        def user_id(self, info: strawberry.Context[MyContext]) -> str:
+            return f"user {info.user_id}"
+
+    schema = strawberry.Schema(query=Query)
+
+    result = schema.execute_sync("{ userId }", context_value=MyContext(user_id="8"))
+    assert not result.errors
+    expected = "user 8" if not extensions else "USER 8"
+    assert result.data == {"userId": expected}
 
 
 def test_context_parameter_in_resolver_function():

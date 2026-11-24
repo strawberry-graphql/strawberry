@@ -187,9 +187,11 @@ class ReservedType(NamedTuple):
             f"{module}.{type_name}",  # e.g. "strawberry.types.info.Info"
         }
 
-        # Add alias if provided (e.g. "Parent" for StrawberryParent)
+        # Add alias if provided (e.g. "Parent" for StrawberryParent), both
+        # qualified and as imported directly (`from strawberry import Context`)
         if self.alias:
             valid_names.add(f"strawberry.{self.alias}")
+            valid_names.add(self.alias)
 
         return base_annotation in valid_names
 

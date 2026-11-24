@@ -16,3 +16,6 @@ class Query:
 Type checkers see the parameter as `MyContext`, so it is typed without the mypy
 plugin. It works in field, subscription and directive resolvers, and alongside
 `Info` and other arguments.
+
+It also fixes resolvers whose `Parent` parameter is named `info`, which received
+the `Info` object instead of the parent value.

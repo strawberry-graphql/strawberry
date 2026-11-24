@@ -68,3 +68,26 @@ def test_parent_type():
 )
 def test_resolve_parent_forward_arg(annotation, expected):
     assert resolve_parent_forward_arg(annotation) == expected
+
+
+def test_parent_parameter_named_info():
+    @strawberry.type
+    class User:
+        name: str
+
+        @strawberry.field
+        @staticmethod
+        def greeting(info: strawberry.Parent["User"]) -> str:
+            return f"Hello {info.name}"
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def user(self) -> User:
+            return User(name="Ada")
+
+    schema = strawberry.Schema(query=Query)
+
+    result = schema.execute_sync("{ user { greeting } }")
+    assert not result.errors
+    assert result.data == {"user": {"greeting": "Hello Ada"}}

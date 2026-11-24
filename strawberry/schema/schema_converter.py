@@ -1255,21 +1255,27 @@ class GraphQLCoreConverter:
                     scalar_registry=self.scalar_registry,
                 )
 
-                resolver_requested_info = False
-                if "info" in field_kwargs:
-                    resolver_requested_info = True
-                    # remove info from field_kwargs because we're passing it
-                    # explicitly to the extensions
-                    field_kwargs.pop("info")
+                # A resolver parameter named "info" would clash with the `info`
+                # argument the extensions are called with, so it's taken out of
+                # field_kwargs here and put back in `wrapped_get_result`. It is
+                # usually the Info parameter, but it can be another parameter,
+                # like `info: strawberry.Context[...]`, whose value must be kept.
+                has_info_kwarg = "info" in field_kwargs
+                info_kwarg = field_kwargs.pop("info", None)
+                info_kwarg_is_info = (
+                    field.base_resolver is not None
+                    and field.base_resolver.info_parameter is not None
+                    and field.base_resolver.info_parameter.name == "info"
+                )
 
                 # `_get_result` expects `field_args` and `field_kwargs` as
                 # separate arguments so we have to wrap the function so that we
                 # can pass them in
                 def wrapped_get_result(_source: Any, info: Info, **kwargs: Any) -> Any:
-                    # if the resolver function requested the info object
-                    # then put it back in the kwargs dictionary
-                    if resolver_requested_info:
-                        kwargs["info"] = info
+                    # put the parameter named "info" back, passing the info
+                    # object given to the extensions if it's the Info parameter
+                    if has_info_kwarg:
+                        kwargs["info"] = info if info_kwarg_is_info else info_kwarg
 
                     return _get_result(
                         _source,
