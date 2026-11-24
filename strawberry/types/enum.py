@@ -1,3 +1,4 @@
+import contextlib
 import dataclasses
 from collections.abc import Callable, Iterable, Mapping
 from enum import EnumMeta
@@ -164,7 +165,9 @@ def _process_enum(
 
             # update _value2member_map_ so that doing `MyEnum.MY_VALUE` and
             # `MyEnum['MY_VALUE']` both work
-            cls._value2member_map_[item_value.value] = item
+            # unhashable values are only found by Enum's linear search
+            with contextlib.suppress(TypeError):
+                cls._value2member_map_[item_value.value] = item
             cls._member_map_[item_name]._value_ = item_value.value
 
             graphql_name = item_value.graphql_name
