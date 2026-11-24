@@ -157,6 +157,26 @@ class Query:
         )
 ```
 
+If your resolver returns another object with the same attributes, like a row of
+an ORM, wrap it with `strawberry.cast` to tell Strawberry which type of the
+union it is:
+
+```python
+@strawberry.type
+class Query:
+    @strawberry.field
+    def latest_media(self) -> Union[Audio, Video, Image]:
+        row = db.media.latest()
+
+        return strawberry.cast(Video, row)
+```
+
+For a generic type, cast to the generic class, for example
+`strawberry.cast(Edge, row)` for an `Edge[int]` member of the union. When the
+union has more than one type made from the same generic class, like
+`Edge[int] | Edge[str]`, the cast can't tell them apart, and Strawberry raises
+an error.
+
 ## Single member union
 
 Sometimes you might want to define a union with only one member. This is useful

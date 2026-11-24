@@ -44,9 +44,7 @@ entire structure of the graphQL query itself that is a dictionary.
 There are a few different ways in which these Python type hints can be used to
 express the required Strawberry graphQL type annotation.
 
-- For versions of Python >= 3.10, it is possible to annotate an array of types
-  with `list[Type]`. However, for all previous versions, `typing.List[Type]`
-  must be used instead.
+- Annotate a list of types with `list[Type]`.
 - The annotation `|` is shorthand for `typing.Union[]`, allowing either of
   `typing.Union[TypeA, TypeB]` or `TypeA | TypeB` interchangably.
 - The annotation `typing.Optional[Type]` is shorthand for

@@ -1,5 +1,3 @@
-from typing import List
-
 class RelayListResultUsers:
     id: str
     name: str

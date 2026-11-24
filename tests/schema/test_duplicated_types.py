@@ -1,6 +1,6 @@
 import textwrap
 from enum import Enum
-from typing import Generic, TypeVar
+from typing import Annotated, Generic, TypeVar
 
 import pytest
 
@@ -127,6 +127,77 @@ def test_schema_has_no_duplicated_types_between_schema_and_extra_types():
         field: A
 
     strawberry.Schema(query=Query, types=[B])
+
+
+@pytest.mark.raises_strawberry_exception(
+    DuplicatedTypeName,
+    match=r"Type Error is defined multiple times in the schema",
+)
+def test_schema_has_no_duplicated_types_in_unions_with_the_same_name():
+    @strawberry.type
+    class Ok:
+        ok: bool
+
+    @strawberry.type(name="Error")
+    class A:
+        a: int
+
+    @strawberry.type(name="Error")
+    class B:
+        b: int
+
+    @strawberry.type
+    class Query:
+        # both unions are named OkError
+        a: Ok | A
+        b: Ok | B
+
+    strawberry.Schema(query=Query)
+
+
+@pytest.mark.raises_strawberry_exception(
+    DuplicatedTypeName,
+    match=r"Type AB is defined multiple times in the schema",
+)
+def test_schema_has_no_duplicated_union_names():
+    @strawberry.type
+    class A:
+        a: int
+
+    @strawberry.type
+    class B:
+        b: int
+
+    @strawberry.type
+    class C:
+        c: int
+
+    @strawberry.type
+    class Query:
+        a: A | B
+        b: Annotated[A | C, strawberry.union("AB")]
+
+    strawberry.Schema(query=Query)
+
+
+def test_allows_the_same_union_in_different_fields():
+    @strawberry.type
+    class A:
+        a: int
+
+    @strawberry.type
+    class B:
+        b: int
+
+    @strawberry.type
+    class Query:
+        first: A | B
+        second: list[A | B]
+        third: Annotated[A | B, strawberry.union("AB")]
+
+    schema = strawberry.Schema(query=Query)
+
+    assert "union AB = A | B" in str(schema)
 
 
 def test_allows_multiple_instance_of_same_generic():

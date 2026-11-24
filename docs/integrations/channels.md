@@ -587,6 +587,11 @@ class MyGraphQLHTTPConsumer(GraphQLHTTPConsumer):
 - `subscription_protocols`: optional, defaults to
   `(GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL)`, the allowed WebSocket
   subscription protocols.
+- `allowed_origins`: optional, defaults to `()`, the origins of browser pages
+  other than your own that may open WebSocket connections, such as
+  `["https://app.example.com"]`. Same-origin pages and clients that don't send
+  an `Origin` header are always allowed. See
+  [Restricting WebSocket origins](/docs/general/subscriptions#restricting-websocket-origins).
 
 ### Extending the consumer
 
@@ -756,6 +761,10 @@ application = GraphQLProtocolTypeRouter(
 
 This will route all requests to /graphql on either HTTP or websockets to us, and
 everything else to the Django application.
+
+Pass `allowed_origins` to let browser pages on other origins open WebSocket
+connections. See
+[Restricting WebSocket origins](/docs/general/subscriptions#restricting-websocket-origins).
 
 ### ChannelsConsumer
 

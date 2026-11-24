@@ -13,9 +13,9 @@ from typing import (
     Annotated,
     Any,
     NamedTuple,
+    Self,
     cast,
 )
-from typing_extensions import Self
 
 import strawberry
 from strawberry import relay

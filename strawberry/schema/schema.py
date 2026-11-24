@@ -31,6 +31,7 @@ from graphql import (
     GraphQLSchema,
     OperationDefinitionNode,
     get_introspection_query,
+    lexicographic_sort_schema,
     parse,
     validate_schema,
 )
@@ -55,6 +56,7 @@ from strawberry.schema.validation_rules.one_of import OneOfInputValidationRule
 from strawberry.types.base import (
     StrawberryObjectDefinition,
     WithStrawberryObjectDefinition,
+    check_is_not_undecorated_subclass,
     has_object_definition,
 )
 from strawberry.types.execution import (
@@ -398,6 +400,9 @@ class Schema(BaseSchema):
         self.directives = tuple(directives)
         self.schema_directives = list(schema_directives)
 
+        for root_type in (query, mutation, subscription):
+            check_is_not_undecorated_subclass(root_type)
+
         query_type = self.schema_converter.from_object(
             cast(
                 "type[WithStrawberryObjectDefinition]", query
@@ -479,6 +484,12 @@ class Schema(BaseSchema):
         self._warn_for_federation_directives()
         self._resolve_node_ids()
         self._extend_introspection()
+
+        if self.config.sort_schema:
+            self._schema = lexicographic_sort_schema(self._schema)
+            # lexicographic_sort_schema builds a new GraphQLSchema instance, so
+            # re-attach the reference used during execution (e.g. info.schema).
+            self._schema._strawberry_schema = self  # type: ignore
 
         # Validate schema early because we want developers to know about
         # possible issues as soon as possible

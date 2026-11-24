@@ -1,6 +1,12 @@
+from __future__ import annotations
+
 import re
 import typing
 from typing import TYPE_CHECKING, Annotated, Any, Generic, TypeAlias, TypeVar
+
+if TYPE_CHECKING:
+    from pydantic import GetCoreSchemaHandler
+    from pydantic_core import CoreSchema
 
 T = TypeVar("T")
 
@@ -34,7 +40,15 @@ if TYPE_CHECKING:
     Maybe: TypeAlias = Some[T] | None
 else:
     # we do this trick so we can inspect that at runtime
-    class Maybe(Generic[T]): ...
+    class Maybe(Generic[T]):
+        @classmethod
+        def __get_pydantic_core_schema__(
+            cls, source: Any, handler: GetCoreSchemaHandler
+        ) -> CoreSchema:
+            """How pydantic validates `Maybe[T]`, for `strawberry.pydantic` inputs."""
+            from strawberry.pydantic.maybe import get_maybe_core_schema
+
+            return get_maybe_core_schema(source, handler)
 
 
 _maybe_re = re.compile(r"^(?:strawberry\.)?Maybe\[(.+)\]$")

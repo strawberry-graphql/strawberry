@@ -1,5 +1,3 @@
-from typing import List
-
 class ListLifeGenericResultListLifeItems1:
     name: str
     age: int

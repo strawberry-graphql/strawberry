@@ -1,6 +1,1282 @@
 CHANGELOG
 =========
 
+0.341.3 - 2026-11-23
+--------------------
+
+This release fixes the error raised when a field, argument or input field is
+annotated with a bare `list` or `typing.List`, with no item type. Strawberry now
+raises a `MissingListItemTypeError` telling you to specify the item type, for
+example `list[int]`, instead of an unhelpful `ValueError`.
+
+This release was contributed by [@imsurya26](https://github.com/imsurya26) in [#4821](https://github.com/strawberry-graphql/strawberry/pull/4821)
+
+0.341.2 - 2026-11-07
+--------------------
+
+This release fixes `strawberry.Maybe` fields on output types: a `Maybe` field on
+a `@strawberry.type` or `@strawberry.interface`, or a resolver returning one,
+also inside a list like `list[strawberry.Maybe[str]]`, now raises
+`MaybeFieldOnOutputTypeError` when the schema is built, instead of silently
+serializing the `strawberry.Some` as its repr, like `"Some('Ada')"`. `Maybe` is
+for inputs: make the field nullable instead.
+
+`@strawberry.pydantic.type` and `@strawberry.pydantic.interface` raise the same
+error for `Maybe` fields, instead of `MaybeFieldError`.
+
+This release was contributed by [@patrick91](https://github.com/patrick91) in [#4797](https://github.com/strawberry-graphql/strawberry/pull/4797)
+
+0.341.1 - 2026-11-07
+--------------------
+
+This release fixes how a `null` for a `strawberry.Maybe[T]` field of a
+`@strawberry.pydantic.input` is reported.
+
+Pydantic now validates the `null` as the type inside the `Maybe`, so it's
+reported at the field, like `["input", "name"]`, together with the other
+problems of the input, and returned as `ValidationError` data through
+`PydanticValidationErrorHandler`:
+
+```python
+@strawberry.pydantic.input
+class UpdateUserInput(BaseModel):
+    name: strawberry.Maybe[Annotated[str, StringConstraints(min_length=1)]]
+```
+
+```json
+{
+  "location": ["input", "name"],
+  "message": "Input should be a valid string",
+  "type": "string_type"
+}
+```
+
+Before, it failed the whole operation with a top-level error and `data: null`,
+whether the `null` was written in the document or sent in a variable. Regular
+`@strawberry.input` types are unchanged.
+
+The docs now also cover `@model_validator` on `Maybe` fields, which sees them as
+`None` or a `Some`, and `model_dump(exclude_none=True)`, which keeps a `Maybe`
+field set to `null`.
+
+This release was contributed by [@patrick91](https://github.com/patrick91) in [#4796](https://github.com/strawberry-graphql/strawberry/pull/4796)
+
+0.341.0 - 2026-11-07
+--------------------
+
+This release adds support for `strawberry.Maybe` on the fields of
+`@strawberry.pydantic.input` models, to tell the fields a client left out apart
+from the ones it set to `null`, like on other input types:
+
+```python
+@strawberry.pydantic.input
+class UpdateUserInput(pydantic.BaseModel):
+    name: strawberry.Maybe[Annotated[str, StringConstraints(min_length=1)]]
+    nickname: strawberry.Maybe[str | None]
+```
+
+A `Maybe` field is `None` when the client leaves it out, and a `strawberry.Some`
+with the validated value when it sends one, so `model_dump(exclude_unset=True)`
+only has the fields the client sent. Pydantic validates the value inside the
+`Maybe`, and reports errors at the field, like `["input", "name"]`. `Maybe[T]`
+doesn't accept `null`, while `Maybe[T | None]` gives `Some(None)` for it. The
+fields don't need a default, and `Maybe` still can't be used on output types.
+
+This release was contributed by [@patrick91](https://github.com/patrick91) in [#4795](https://github.com/strawberry-graphql/strawberry/pull/4795)
+
+0.340.1 - 2026-11-07
+--------------------
+
+This release fixes `strawberry codegen` wrapping nullable `strawberry.Maybe`
+input fields twice. A field declared as `strawberry.Maybe[str | None]` was
+generated as `Optional[Optional[str]]` in Python and `string | undefined | undefined`
+in TypeScript. It's now `Optional[str]` and `string | undefined`, matching the
+nullable `String` it is in the schema.
+
+This release was contributed by [@RagedPanda](https://github.com/RagedPanda) in [#4759](https://github.com/strawberry-graphql/strawberry/pull/4759)
+
+0.340.0 - 2026-11-05
+--------------------
+
+This release adds a `sort_schema` option to `StrawberryConfig`.
+
+When enabled, the GraphQL schema is sorted lexicographically. This affects
+both introspection queries and exported schemas, making them easier to read
+and diff.
+
+This release was contributed by [@lilacrainlog-art](https://github.com/lilacrainlog-art) in [#4733](https://github.com/strawberry-graphql/strawberry/pull/4733)
+
+Additional contributors: [@pre-commit-ci[bot]](https://github.com/pre-commit-ci[bot])
+
+0.339.3 - 2026-11-05
+--------------------
+
+This release improves the performance of argument conversion by skipping an
+unnecessary generic type check when an annotation is resolved without a type
+definition.
+
+This release was contributed by [@fernandoflorez](https://github.com/fernandoflorez) in [#4790](https://github.com/strawberry-graphql/strawberry/pull/4790)
+
+0.339.2 - 2026-11-05
+--------------------
+
+This release fixes a bug where completing one GraphQL subscription could
+silently stop delivery for sibling subscriptions on the same connection that
+share a Channels group.
+
+`listen_to_channel` now ref-counts group membership, so a group is only
+discarded once every subscription sharing it has finished, concurrent joins
+and leaves of the same group can't race each other, and a failed join no
+longer leaves a stale group reference behind.
+
+This release was contributed by [@juneja-varun](https://github.com/juneja-varun) in [#4685](https://github.com/strawberry-graphql/strawberry/pull/4685)
+
+0.339.1 - 2026-10-31
+--------------------
+
+This release fixes the name and description of enums registered with
+`Annotated` when they're used as resolver arguments:
+
+```python
+class Color(Enum):
+    RED = "red"
+
+
+GqlColor = Annotated[Color, strawberry.enum(name="GqlColor", description="A color")]
+
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def color_name(self, color: GqlColor) -> str:  # was `Color!`, now `GqlColor!`
+        return color.value
+```
+
+Strawberry removed all the `Annotated` metadata from arguments annotated
+directly with the alias, or with
+`Annotated[GqlColor, strawberry.argument(...)]`, not only
+`strawberry.argument()`. The enum was then registered with the name of the
+Python class, and since an enum is only registered once, this also renamed it
+in the rest of the schema whenever such an argument was defined before the
+other uses of the alias.
+
+Resolver parameters annotated with `strawberry.Private` were also exposed in the
+schema as regular arguments, as the private marker was removed too. They now
+raise an `InvalidArgumentTypeError`.
+
+This release was contributed by [@patrick91](https://github.com/patrick91) in [#4775](https://github.com/strawberry-graphql/strawberry/pull/4775)
+
+0.339.0 - 2026-10-29
+--------------------
+
+This release fixes cross-site WebSocket hijacking (GHSA-873f-848v-759p).
+
+Browsers don't apply CORS to WebSocket handshakes, so a page on another origin
+could open a WebSocket to a Strawberry GraphQL endpoint with the user's cookies
+attached. Applications that authenticate WebSockets from cookies could have
+queries, mutations and subscriptions run as their users by another website.
+
+Strawberry now checks the `Origin` header before accepting a WebSocket and
+refuses handshakes from other origins with an HTTP 403 response. Same-origin
+pages and clients that don't send an `Origin` header, such as mobile apps and
+server-side clients, are not affected.
+
+If your frontend is served from a different origin than your GraphQL endpoint,
+list it in the new `allowed_origins` option:
+
+```python
+graphql_app = GraphQLRouter(schema, allowed_origins=["https://app.example.com"])
+```
+
+See the [breaking changes notes](https://strawberry.rocks/docs/breaking-changes/0.339.0)
+for details.
+
+This release was contributed by [@patrick91](https://github.com/patrick91) in [#4769](https://github.com/strawberry-graphql/strawberry/pull/4769)
+
+0.338.0 - 2026-10-26
+--------------------
+
+This release fixes a permission bypass where a custom permission could
+unintentionally authorize access to a protected field, by requiring
+`has_permission` to return a boolean.
+
+When `has_permission` was written as an async generator (an `async def`
+containing `yield`), or returned a generator, async generator, or similar
+object, Strawberry evaluated the returned object for truthiness. These objects
+are always truthy and slipped past the check for awaitables added in 0.326.1,
+so the protected resolver ran even when the permission meant to deny access.
+This affected queries and mutations under both `execute_sync` and `execute`.
+
+Strawberry now only grants access when `has_permission` returns (or resolves
+to) `True`, and denies it when it returns `False`. Any other value raises a
+`PermissionReturnedNonBooleanError`, even with `fail_silently=True`.
+
+This is a breaking change for permissions that return other truthy or falsy
+values, such as a user object or `None`:
+
+```python
+# Before
+def has_permission(self, source, info, **kwargs):
+    return info.context.user
+
+
+# After
+def has_permission(self, source, info, **kwargs) -> bool:
+    return bool(info.context.user)
+```
+
+See the [breaking changes guide](https://strawberry.rocks/docs/breaking-changes/0.338.0)
+for more details.
+
+This release was contributed by [@patrick91](https://github.com/patrick91) in [#4764](https://github.com/strawberry-graphql/strawberry/pull/4764)
+
+0.337.2 - 2026-10-25
+--------------------
+
+This release fixes `strawberry codegen` crashing with a bare `StopIteration` when a
+fragment spreads another fragment that is defined later in the document.
+
+GraphQL doesn't care about the order fragments are defined in, and now neither does
+codegen: fragments are processed after the fragments they spread, so both orders
+generate the same code.
+
+This release was contributed by [@RagedPanda](https://github.com/RagedPanda) in [#4747](https://github.com/strawberry-graphql/strawberry/pull/4747)
+
+0.337.1 - 2026-10-25
+--------------------
+
+This release fixes an unused `from typing import List` import in code generated by
+`strawberry codegen` with the Python plugin.
+
+List fields are annotated with the builtin `list[...]`, so the generated modules no
+longer import `List`, and they pass linters such as Ruff's `F401` check.
+
+This release was contributed by [@RagedPanda](https://github.com/RagedPanda) in [#4745](https://github.com/strawberry-graphql/strawberry/pull/4745)
+
+0.337.0 - 2026-10-24
+--------------------
+
+This release adds first-class support for Pydantic v2 models, with
+`strawberry.pydantic`. It requires Pydantic 2.11 or newer.
+
+Pydantic models can now be decorated directly to become GraphQL types, inputs
+and interfaces, without a separate Strawberry class:
+
+```python
+from pydantic import BaseModel, Field
+
+import strawberry
+
+
+@strawberry.pydantic.type
+class User(BaseModel):
+    id: strawberry.ID
+    name: str = Field(description="The user's full name")
+    password_hash: strawberry.Private[str]
+
+
+@strawberry.pydantic.input
+class CreateUserInput(BaseModel):
+    name: str = Field(min_length=1)
+```
+
+Inputs are validated by Pydantic when the arguments are converted. Invalid
+inputs are reported as GraphQL errors with a `validationErrors` extension, or,
+by returning `User | strawberry.pydantic.ValidationError` and registering
+`strawberry.pydantic.PydanticValidationErrorHandler` in the schema's
+`exception_handlers`, as typed results. `ValidationError.errors` contains
+`ValidationErrorDetail` objects with `location`, `message` and `type` fields.
+`InputValidationError.errors` exposes the same details to Python handlers.
+
+Pydantic owns nested validation. Strawberry converts names and scalars and
+transports GraphQL lists as tuples for tuple fields, including in strict mode;
+it does not prevalidate nested models for validators that bypass or replace
+Pydantic's usual validation. Validator `ValueError`s expose their original
+message without Pydantic's generated `"Value error, "` prefix; other messages
+are preserved. Error locations contain strings, including list indexes, in
+both typed results and GraphQL error extensions. The error's `input` property
+is omitted and exception chaining is suppressed, but messages may still
+contain submitted values, even for built-in errors.
+
+Explicit field defaults use Strawberry's ordinary schema default machinery,
+including `None` as `null` and model instances as input objects. Default
+factories are Pydantic-owned and run per request when the field is omitted,
+including factories that need already validated data. Their fields are nullable
+in GraphQL to allow omission, without publishing a schema default.
+
+Only explicitly set fields of a model argument default are printed in that
+default. GraphQL can supply additional field defaults during input coercion, so
+`model_fields_set` is not guaranteed to survive a round trip unchanged, and
+`model_dump(exclude_unset=True)` is not a record of only client-submitted
+fields.
+
+Nullable fields without a default, like `nickname: str | None`, are optional for
+clients, like in other input types: Pydantic gets `None` for them when they're
+left out, as if the client had sent `null`.
+
+GraphQL field names come from the Python field names, as Pydantic aliases only
+affect Pydantic's own (de)serialization: use
+`Annotated[..., strawberry.field(name=...)]` to rename a field. Computed fields
+are included, and deprecated fields are deprecated in GraphQL too. Fields with a
+resolver can be added with `@strawberry.pydantic.field`, fields can be
+customized with `Annotated[..., strawberry.field(...)]`, `strawberry.Private`
+hides a field from the schema, and Pydantic's `Field(exclude=True)` hides it
+from output types (inputs still accept it). See the
+[Pydantic integration docs](https://strawberry.rocks/docs/integrations/pydantic)
+for everything that's supported.
+
+Generic models work like generic Strawberry types: decorate the generic model,
+and use its parametrizations directly, like `Page[User]`, which is named
+`UserPage` in the schema.
+
+Each model class has one GraphQL role: use separate subclasses for output types
+and inputs. Forward references support self-references, same-module models and
+explicit `strawberry.lazy()` references. If unresolved references affect field
+metadata or GraphQL mappings, call `model_rebuild()` before decorating:
+rebuilding afterward does not refresh captured GraphQL fields or mappings.
+
+GraphQL resolves fields from the model's attributes, so Pydantic's serializers
+don't apply to it. Instead of silently ignoring them, types and interfaces whose
+exposed fields have serializers, or that have a model serializer, raise an
+error. This includes `PlainSerializer` and `WrapSerializer` in computed fields'
+return annotations. There is no option to bypass this check; use private or
+excluded fields and explicit GraphQL resolvers to hide or transform values.
+
+Pydantic types can also extend regular Strawberry types and implement regular
+`@strawberry.interface`s, including their `@strawberry.field` methods, as long
+as the Pydantic model comes first in the bases:
+
+```python
+@strawberry.interface
+class Node:
+    id: strawberry.ID
+
+    @strawberry.field
+    def display_name(self) -> str:
+        return f"Node {self.id}"
+
+
+@strawberry.pydantic.type
+class Product(BaseModel, Node):
+    title: str
+```
+
+This includes `relay.Node`, with a `relay.NodeID` field and a `resolve_nodes`
+class method, like on regular Strawberry types.
+
+Resolver functions can be reused across Pydantic fields and models, with
+independent names, descriptions and permissions for each decoration.
+
+Resolvers also accept bound methods and typed callable objects, including async
+callables, and the `resolver=...` spelling. Their Python binding behavior is
+preserved.
+
+Explicit `scalar_map` entries take precedence over automatic Pydantic scalar
+mappings. Undecorated models can be used as custom scalars; missing model
+registration is checked when building the schema rather than during decoration.
+Regular Strawberry fields returning undecorated Pydantic models also raise the
+contextual `UnregisteredPydanticTypeError`, rather than a generic unexpected-type
+error, even without explicitly importing `strawberry.pydantic` first.
+Upload fields use Pydantic's validation, including custom validators, instead
+of being rejected by their annotation. Defaults in Strawberry `Annotated`
+metadata raise a clear error: defaults must be declared on the Pydantic field.
+
+The experimental integration, `strawberry.experimental.pydantic`, keeps working
+as before, next to `strawberry.pydantic`. The two integrations can't use each
+other's types, so models that reference each other need to use the same
+integration, or have a type from both.
+
+This release was contributed by [@patrick91](https://github.com/patrick91) in [#3965](https://github.com/strawberry-graphql/strawberry/pull/3965)
+
+Additional contributors: [@ampagent](https://github.com/ampagent)
+
+0.336.2 - 2026-10-20
+--------------------
+
+This release fixes `strawberry schema-codegen` adding a newline to the start and
+end of multi-line descriptions.
+
+Multi-line strings are still written as triple-quoted strings on their own
+lines, but the generated code now uses escaped line breaks so the description
+matches the one in the schema exactly.
+
+This release was contributed by [@patrick91](https://github.com/patrick91) in [#4726](https://github.com/strawberry-graphql/strawberry/pull/4726)
+
+0.336.1 - 2026-10-20
+--------------------
+
+This release fixes `strawberry schema-codegen` generating invalid Python for
+strings that need escaping.
+
+Descriptions, `@specifiedBy` URLs, directive arguments and string default
+values containing both kinds of quotes, backslashes or control characters are
+now escaped correctly, so they keep their content in the generated code.
+
+This release was contributed by [@patrick91](https://github.com/patrick91) in [#4725](https://github.com/strawberry-graphql/strawberry/pull/4725)
+
+0.336.0 - 2026-10-17
+--------------------
+
+This release fixes the annotations of Strawberry types with fields that have a
+resolver: `typing.get_type_hints()` and other tools that read a type's
+annotations no longer see a `StrawberryAnnotation` object for these fields.
+
+Strawberry adds an annotation for each field with a resolver that doesn't have
+one, like a `@strawberry.field` method, so that `dataclasses` creates the field.
+These annotations are now removed once the type is created, so the class only
+keeps the annotations you wrote:
+
+```python
+import typing
+
+import strawberry
+
+
+@strawberry.type
+class User:
+    name: str
+
+    @strawberry.field
+    def greeting(self) -> str:
+        return f"Hi {self.name}"
+
+
+typing.get_type_hints(User)  # {'name': <class 'str'>}
+```
+
+Code that read `__annotations__` to find a type's fields with a resolver can use
+`strawberry.types.get_object_definition(User).fields` instead, which has all of
+them.
+
+This release was contributed by [@patrick91](https://github.com/patrick91) in [#4708](https://github.com/strawberry-graphql/strawberry/pull/4708)
+
+0.335.0 - 2026-10-14
+--------------------
+
+This release drops support for Python 3.10, which reached end of life in
+October 2026. The minimum supported Python version is now 3.11.
+
+The unused `strawberry.ext.dataclasses` module is removed.
+
+This release was contributed by [@bellini666](https://github.com/bellini666) in [#4706](https://github.com/strawberry-graphql/strawberry/pull/4706)
+
+0.334.4 - 2026-10-13
+--------------------
+
+This release fixes the types of fields inherited from generic types, when the
+generic types use the same name for their type parameters, or when they're
+given a type like `list[T]` or `User | None`.
+
+Strawberry looked up type parameters by name across all the generic types a
+type extends, so when two of them called their type parameter `T`, the fields
+of both got the type given to the first one:
+
+```python
+T = TypeVar("T")
+
+
+@strawberry.type
+class Page(Generic[T]):
+    items: list[T]
+
+
+@strawberry.type
+class Sorted(Generic[T]):
+    sorted_by: T
+
+
+@strawberry.type
+class UserPage(Page[User], Sorted[UserOrder]):  # `sortedBy` was `User!`
+    pass
+```
+
+Each inherited field now gets the type given to the generic type that declares
+it, so `sortedBy` is `UserOrder!`. This also fixes types that are given to a
+type parameter wrapped in a list or an optional:
+
+```python
+@strawberry.type
+class Result(Generic[T]):
+    data: T
+
+
+@strawberry.type
+class ListResult(Result[list[T]], Generic[T]):
+    total: int
+
+
+@strawberry.type
+class UserListResult(ListResult[User]):  # `data` was `User!`, now `[User!]!`
+    pass
+
+
+@strawberry.type
+class MaybeUserPage(Page[User | None]):  # failed, now `items: [User]!`
+    pass
+```
+
+This release was contributed by [@patrick91](https://github.com/patrick91) in [#4704](https://github.com/strawberry-graphql/strawberry/pull/4704)
+
+0.334.3 - 2026-10-12
+--------------------
+
+This release adds internal helpers for reading `strawberry.field()` and other
+options from `Annotated` annotations, so that integrations, like the upcoming
+first-class Pydantic support, can share them with `@strawberry.type` instead of
+reimplementing them.
+
+- `strawberry.types.field.get_annotated_field()` splits an annotation like
+  `Annotated[int, strawberry.field(name="age")]` into its type and its
+  `strawberry.field()`, and raises an error for a `strawberry.field()` used twice
+  or nested in the type.
+- `strawberry.types.unresolved_annotations.find_unresolved_options()` reports
+  why the options of an annotation that can't be evaluated yet, for example
+  because it uses a type defined further down the module, can't be read. It
+  checks `strawberry.field()` by default, and integrations can pass the options
+  they read themselves.
+
+There are no changes in behavior.
+
+This release was contributed by [@patrick91](https://github.com/patrick91) in [#4703](https://github.com/strawberry-graphql/strawberry/pull/4703)
+
+0.334.2 - 2026-10-12
+--------------------
+
+This release fixes `Annotated` fields sharing a `strawberry.field()` resolving
+their `graphql_type` in the wrong module.
+
+When the same `strawberry.field()` was used by types in different modules, for
+example through a type alias, the first type to be processed decided where a
+string `graphql_type` was looked up, and every other type used that module too:
+
+```python
+# aliases.py
+AddressField = Annotated[str, strawberry.field(graphql_type="Address")]
+
+
+# shop.py
+@strawberry.type
+class Shop:
+    address: AddressField  # uses shop.Address
+
+
+# warehouse.py
+@strawberry.type
+class Warehouse:
+    address: AddressField  # used shop.Address too, now uses warehouse.Address
+```
+
+Each type now resolves it in its own module, like other annotations.
+
+This release was contributed by [@patrick91](https://github.com/patrick91) in [#4693](https://github.com/strawberry-graphql/strawberry/pull/4693)
+
+0.334.1 - 2026-10-11
+--------------------
+
+This release fixes Strawberry's rich exception handler crashing with
+`Error in sys.excepthook` when a Strawberry error is raised from a script run
+directly, such as `python app.py`.
+
+Python 3.13.15+, 3.14.7+ and 3.15 remove `__file__` from `__main__` before an
+uncaught exception reaches `sys.excepthook`, so Strawberry couldn't find the
+source of the error. Strawberry now also finds the source file via the module's
+spec or loader, and shows the error with its source again.
+
+Errors whose source file is outside the current working directory (for example
+when running `python ../app.py`) are now shown with the file's absolute path,
+instead of crashing the handler.
+
+When the source can't be found at all (for example with `python -c` or in the
+REPL), or rendering the error fails for any other reason, Strawberry now falls
+back to the standard Python traceback.
+
+This release was contributed by [@patrick91](https://github.com/patrick91) in [#4692](https://github.com/strawberry-graphql/strawberry/pull/4692)
+
+0.334.0 - 2026-10-11
+--------------------
+
+This release adds an error for undecorated subclasses of Strawberry types used
+in the schema:
+
+```python
+import strawberry
+
+
+@strawberry.type
+class Animal:
+    name: str
+
+
+class Dog(Animal):  # missing @strawberry.type
+    breed: str
+
+
+@strawberry.type
+class Query:
+    dog: Dog
+
+
+schema = strawberry.Schema(query=Query)
+```
+
+Python inherits the Strawberry definition of `Animal`, so `Dog` was silently
+published as `Animal`, and its `breed` field was missing from the schema. The
+same happened to undecorated subclasses of interfaces and input types: an
+argument typed with an undecorated subclass of an input type only accepted the
+parent's fields, and the resolver received an instance of the subclass that was
+missing the fields declared on it.
+
+Strawberry now raises an `UndecoratedSubclassError` pointing at the subclass
+when it's used in the schema: in field and argument annotations (including in
+lists, optionals and unions), lazy types, `strawberry.Schema(types=[...])` and
+as the query, mutation or subscription type.
+
+Schemas that relied on this now fail to build. To fix them, decorate the
+subclass (with `@strawberry.type`, or `@strawberry.input` for input types), or
+use the parent type in the annotation if you meant to publish it. Resolvers can
+still return instances of undecorated subclasses of the type they're annotated
+with.
+
+This release was contributed by [@patrick91](https://github.com/patrick91) in [#4691](https://github.com/strawberry-graphql/strawberry/pull/4691)
+
+0.333.0 - 2026-10-10
+--------------------
+
+This release adds an error for input types with fields that have resolvers,
+raised when the input type is created:
+
+```python
+import strawberry
+
+
+@strawberry.input
+class UserInput:
+    name: str
+
+    @strawberry.field
+    def upper_name(self) -> str:
+        return self.name.upper()
+```
+
+Input types only hold the values sent by the client, so the resolver never ran:
+the schema published `upperName: String!` as an input field, so requests that
+left it out failed, and requests that sent it failed with
+`UserInput.__init__() got an unexpected keyword argument 'upper_name'`. The same
+happened to input types inheriting from an output type with resolvers.
+
+Strawberry now raises a `ResolverFieldOnInputError` pointing at the resolver
+instead. Remove the resolver, or move the field to an output type.
+
+If you use strawberry-django, update it too: its filter and order methods were
+fields with resolvers on input types, which
+[strawberry-django#972](https://github.com/strawberry-graphql/strawberry-django/pull/972)
+changes.
+
+This release was contributed by [@patrick91](https://github.com/patrick91) in [#4682](https://github.com/strawberry-graphql/strawberry/pull/4682)
+
+0.332.1 - 2026-10-09
+--------------------
+
+This release fixes `strawberry.lazy` references to types re-exported through
+Python 3.15 native lazy imports.
+
+Strawberry now resolves these imports when building a schema, instead of passing
+an unresolved import proxy to the schema converter. Both `lazy from` imports and
+imports made lazy through `__lazy_modules__` are supported.
+
+This release was contributed by [@patrick91](https://github.com/patrick91) in [#4684](https://github.com/strawberry-graphql/strawberry/pull/4684)
+
+0.332.0 - 2026-10-06
+--------------------
+
+This release adds a check for the fields of OneOf input types, when the schema
+is built. GraphQL requires them to be nullable and without a default value, as
+clients set exactly one of them, but Strawberry didn't check it:
+
+```python
+import strawberry
+
+
+@strawberry.input(one_of=True)
+class SearchBy:
+    name: str | None = None
+    email: str | None = None
+```
+
+The schema printed `name: String = null` and `email: String = null`, so GraphQL
+filled in the other field and every request failed with
+`OneOf Input Object 'SearchBy' must specify exactly one key.` A required field,
+like `name: str`, made the input only work with that field. The printed schema
+was also invalid for other GraphQL tools.
+
+Strawberry now raises an `InvalidOneOfInputFieldError` when the schema is built
+instead. Declare the fields as nullable and without a default, and Strawberry
+sets the ones that the client didn't set to `None`:
+
+```python
+@strawberry.input(one_of=True)
+class SearchBy:
+    name: str | None
+    email: str | None
+```
+
+Default values of OneOf input types now leave out the fields set to `None`, so
+`by: SearchBy = SearchBy(name="Patrick", email=None)` prints as
+`{ name: "Patrick" }` instead of `{ name: "Patrick", email: null }`, which isn't
+a valid OneOf value.
+
+The OneOf docs now use this style instead of `strawberry.Maybe`, which still
+works: OneOf fields can't be set to `null`, so `Maybe` doesn't add anything
+there.
+
+This release was contributed by [@patrick91](https://github.com/patrick91) in [#4676](https://github.com/strawberry-graphql/strawberry/pull/4676)
+
+0.331.6 - 2026-10-05
+--------------------
+
+This release fixes some errors in client input not being reported as
+`StrawberryInputCoercionError`, the exception Strawberry uses for invalid input
+values, so that error handling, like `MaskErrors`, can tell them apart from
+server errors:
+
+- `null` for a `strawberry.Maybe` field or argument that doesn't accept it,
+  whether it's sent in the query or in variables;
+- a relay `GlobalID` that can't be parsed, which raises the new
+  `strawberry.relay.InvalidGlobalIDError`. It's also a `GlobalIDValueError`, so
+  code that handles that keeps working, and its message is now
+  `Value cannot represent a GlobalID: "...".`, like the built-in scalars,
+  instead of the base64 or UTF-8 decoding error.
+
+The other messages are unchanged. As these errors are now `GraphQLError`s,
+exception handlers registered for `StrawberryGraphQLError` or `GraphQLError`
+also handle invalid `GlobalID` arguments, like other input errors.
+
+This release was contributed by [@patrick91](https://github.com/patrick91) in [#4675](https://github.com/strawberry-graphql/strawberry/pull/4675)
+
+0.331.5 - 2026-10-05
+--------------------
+
+This release fixes two issues with how federation schemas print the root
+`Query` type and composed directives.
+
+The description and directives of the `Query` type were dropped, because
+`strawberry.federation.Schema` rebuilds that type to add the `_service` and
+`_entities` fields. Directives like `@shareable` and composed custom directives
+on `Query` are now kept, along with the `@link` and `@composeDirective` they
+need:
+
+```python
+@strawberry.federation.type(shareable=True, description="The root query")
+class Query:
+    hello: str
+```
+
+Directives defined with `compose=True` also added one `@composeDirective` to the
+schema for every place they were used, instead of one per directive:
+
+```python
+@strawberry.federation.schema_directive(
+    locations=[Location.FIELD_DEFINITION], repeatable=True, compose=True
+)
+class Tag:
+    name: str
+
+
+@strawberry.type
+class Query:
+    a: str = strawberry.field(directives=[Tag(name="x")])
+    b: str = strawberry.field(directives=[Tag(name="y")])
+```
+
+This schema used to print `@composeDirective(name: "@tag")` twice. It now prints
+it once.
+
+This release was contributed by [@patrick91](https://github.com/patrick91) in [#4670](https://github.com/strawberry-graphql/strawberry/pull/4670)
+
+0.331.4 - 2026-10-05
+--------------------
+
+This release fixes how federation schemas add the `_service` and `_entities`
+fields to the `Query` type.
+
+Fields of the `Query` type were matched with these fields by their Python name
+instead of their GraphQL name. A `Query` field named `service` was removed from
+the schema, with only a "Query has overridden fields: service" warning:
+
+```python
+@strawberry.type
+class Query:
+    @strawberry.field
+    def service(self) -> str:  # was missing from the schema
+        return "service"
+
+
+schema = strawberry.federation.Schema(query=Query)
+```
+
+Fields like this are now kept. A `Query` that defines its own `_service` or
+`_entities` field now uses it instead of the one Strawberry adds. Before, doing
+this with your own `_Service` type failed with a `DuplicatedTypeName` error:
+
+```python
+@strawberry.type(name="_Service")
+class CustomService:
+    sdl: str
+
+
+@strawberry.type
+class Query:
+    @strawberry.field(name="_service")
+    def custom_service(self) -> CustomService:
+        return CustomService(sdl=load_sdl())
+```
+
+This release was contributed by [@patrick91](https://github.com/patrick91) in [#4671](https://github.com/strawberry-graphql/strawberry/pull/4671)
+
+0.331.3 - 2026-10-05
+--------------------
+
+This release fixes `strawberry.field()` options in `Annotated` that use names
+that aren't defined yet when the type is created, on Python 3.14. For example, a
+permission class defined after the type:
+
+```python
+from __future__ import annotations
+
+from typing import Annotated
+
+import strawberry
+
+
+@strawberry.type
+class User:
+    account: Annotated[Account, strawberry.field(permission_classes=[IsAdmin])]
+
+
+class IsAdmin(BasePermission): ...
+```
+
+In modules with `from __future__ import annotations`, Strawberry reads these
+annotations partially on Python 3.14, so the options got forward references
+instead of the names they use. Depending on the option, building the schema then
+failed with an unclear `TypeError` or `AttributeError`, a query failed, or the
+option was silently wrong, like a description or a directive argument. This now
+raises an `UnresolvedStrawberryFieldError` when the type is created, like on older
+Python versions, which says to define the names the options use before the type.
+
+This release was contributed by [@patrick91](https://github.com/patrick91) in [#4666](https://github.com/strawberry-graphql/strawberry/pull/4666)
+
+0.331.2 - 2026-10-05
+--------------------
+
+This release fixes a bug with nullable input fields.
+
+Given the following Strawberry schema:
+```python
+@strawberry.input
+class RunInput:
+    required: int
+    optional: str | None
+
+
+@strawberry.type
+class Mutation:
+    @strawberry.mutation
+    def run(self, input: RunInput) -> int: ...
+```
+
+and the following GraphQL query:
+```graphql
+mutation {
+    run(input: {required: 42})
+}
+```
+
+Previous versions of Strawberry raised a `TypeError: RunInput.__init__() missing 1 required keyword-only argument: 'optional'`.
+This meant that clients had to  explicitly specify nullable fields as `null`:
+```graphql
+mutation {
+    run(input: {required: 42, optional: null})
+}
+```
+
+However, according to the [GraphQL spec](https://spec.graphql.org/draft/#sec-Non-Null.Nullable-vs-Optional), nullable input fields are always optional:
+
+> Nullable types are always optional and non-null types are always required.
+
+This release fixes the `TypeError` and now correctly treats nullable input fields as optional.
+
+This release was contributed by [@flo-zimmermann](https://github.com/flo-zimmermann) in [#4568](https://github.com/strawberry-graphql/strawberry/pull/4568)
+
+0.331.1 - 2026-10-04
+--------------------
+
+This release fixes `import strawberry` importing pydantic whenever it's
+installed, which slowed down the startup of every app, including the ones that
+don't use pydantic, and made Strawberry impossible to import when the installed
+pydantic was broken.
+
+The experimental pydantic integration is now imported the first time it's
+used, and `PydanticErrorExtension` no longer imports pydantic. With pydantic
+installed, importing Strawberry now loads about 60 fewer modules.
+
+`strawberry.experimental.pydantic` keeps working the same way, whether it's
+imported with `import strawberry.experimental.pydantic`, with
+`from strawberry.experimental import pydantic`, or accessed as an attribute of
+`strawberry.experimental`.
+
+This release was contributed by [@patrick91](https://github.com/patrick91) in [#4665](https://github.com/strawberry-graphql/strawberry/pull/4665)
+
+0.331.0 - 2026-10-04
+--------------------
+
+This release fixes `strawberry.field()` options in `Annotated` being silently
+ignored on Python 3.10 to 3.13, when the field's type isn't defined yet when the
+Strawberry type is created. For example, with a type defined further down the
+module:
+
+```python
+from __future__ import annotations
+
+from typing import Annotated
+
+import strawberry
+
+
+@strawberry.type
+class User:
+    account: Annotated[Account, strawberry.field(permission_classes=[IsAdmin])]
+
+
+@strawberry.type
+class Account:
+    iban: str
+```
+
+Strawberry couldn't evaluate the annotation when `User` was created, so it
+skipped its options and resolved `Account` later, when building the schema. The
+field was still in the schema, but without its permissions, name, description or
+default. Strawberry now raises an `UnresolvedStrawberryFieldError` instead. To
+fix it, pass the options as the field's default
+(`account: Account = strawberry.field(permission_classes=[IsAdmin])`), define
+`Account` before `User`, or use `strawberry.lazy()` for the type.
+
+Python 3.14 and newer already read these options, and aren't affected.
+
+This release was contributed by [@patrick91](https://github.com/patrick91) in [#4664](https://github.com/strawberry-graphql/strawberry/pull/4664)
+
+0.330.3 - 2026-10-04
+--------------------
+
+This release fixes classmethod resolvers inherited by a subclass being called
+with the class that defined them as `cls`, instead of the subclass. For example,
+`{ dog { says } }` now returns `"Dog says woof"`, and so does `Dog.says()`:
+
+```python
+from typing import ClassVar
+
+import strawberry
+
+
+@strawberry.type
+class Animal:
+    sound: ClassVar[str] = "..."
+
+    @strawberry.field
+    @classmethod
+    def says(cls) -> str:
+        return f"{cls.__name__} says {cls.sound}"
+
+
+@strawberry.type
+class Dog(Animal):
+    sound: ClassVar[str] = "woof"
+```
+
+`cls` is now always the type using the field, both when resolving a query and
+when the resolver is called from Python. This includes types implementing an
+interface, subclasses of generic types, types created with `merge_types`, and
+fields reused in another type, like with `create_type` or with an `Annotated`
+alias used by several types. A classmethod resolver reused in another type
+therefore no longer sees the class attributes of the type that defined it.
+
+To do this, each type gets its own copy of an inherited field with a classmethod
+resolver, so the field in `Dog.__strawberry_definition__` is no longer the same
+object as the one in `Animal.__strawberry_definition__`, or as the one that
+`dataclasses.fields(Dog)` returns, which stays bound to `Animal`. The copy is
+made with `copy.copy`, like the copies Strawberry already makes of the fields of
+generic types, so custom `StrawberryField` subclasses with their own state need
+to implement `__copy__` to keep it.
+
+It also fixes inherited staticmethod resolvers called on an instance of the
+subclass, like `Dog().helper()`, which raised a `TypeError`.
+
+This release was contributed by [@patrick91](https://github.com/patrick91) in [#4662](https://github.com/strawberry-graphql/strawberry/pull/4662)
+
+0.330.2 - 2026-10-03
+--------------------
+
+This release fixes types that inherit an interface through a class that isn't
+decorated with Strawberry. Strawberry listed the interface more than once for
+these types, so building the schema failed with errors like
+`Type Fruit can only implement Node once.`
+
+This happened, for example, when sharing `resolve_nodes` between `relay.Node`
+types with a base class:
+
+```python
+import strawberry
+from strawberry import relay
+
+
+class DatabaseNode(relay.Node):
+    @classmethod
+    def resolve_nodes(cls, *, info, node_ids, required=False):
+        return [load(cls, node_id) for node_id in node_ids]
+
+
+@strawberry.type
+class Fruit(DatabaseNode):
+    id: relay.NodeID[int]
+    name: str
+```
+
+`Fruit` now implements `Node` once. The same applies to interfaces that extend
+another interface through an undecorated class, and the error raised when an
+input inherits an interface this way now lists the interface once.
+
+A class like `DatabaseNode` can share methods such as `resolve_nodes`, but
+Strawberry ignores fields declared on it. To share fields too, decorate it with
+`@strawberry.interface` or `@strawberry.type`.
+
+This release was contributed by [@patrick91](https://github.com/patrick91) in [#4661](https://github.com/strawberry-graphql/strawberry/pull/4661)
+
+0.330.1 - 2026-10-03
+--------------------
+
+This release fixes list defaults of arguments and input fields being shared
+between requests.
+
+When a client omitted an argument or input field whose default is a list of
+scalars or enums, every request got the same list. A resolver that changed it,
+for example by appending to it, changed the default for all the following
+requests, and the default printed in the schema too:
+
+```python
+import strawberry
+
+
+@strawberry.input
+class Filter:
+    tags: list[str] = strawberry.field(default_factory=lambda: ["base"])
+
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def search(self, filter: Filter) -> list[str]:
+        filter.tags.append("added")
+
+        return filter.tags
+```
+
+Each `{ search(filter: {}) }` request now returns `["base", "added"]`, instead
+of one more `"added"` than the previous one. Strawberry copies these lists again
+when it converts the arguments, like it did before 0.275.5, which also covers
+nested and optional lists, lists in input type defaults and directive arguments.
+
+This release was contributed by [@patrick91](https://github.com/patrick91) in [#4660](https://github.com/strawberry-graphql/strawberry/pull/4660)
+
+0.330.0 - 2026-10-03
+--------------------
+
+This release adds a `to_input` hook to `StrawberryObjectDefinition`, the
+counterpart of `from_input`. Like `from_input`, it's meant for integrations that
+create their own type definitions, which pass it when they create the
+definition. It isn't meant to be set on types defined with `@strawberry.input`.
+
+Strawberry converts input instances used as argument and input field defaults to
+GraphQL input values when it builds the schema. When the input type sets
+`to_input`, Strawberry calls it to get the instance's fields, instead of using
+all of them. For example, an integration for Pydantic models can use it to only
+include the fields that were set, so that the default of
+`patch: UserPatch = UserPatch(name="Ada")` is `{ name: "Ada" }`, instead of
+setting every other field to `None`:
+
+```python
+from typing import Any
+
+from pydantic import BaseModel
+
+from strawberry.types.base import StrawberryObjectDefinition
+
+
+def dump_model(model: BaseModel) -> dict[str, Any]:
+    return {name: getattr(model, name) for name in model.model_fields_set}
+
+
+definition = StrawberryObjectDefinition(
+    name="UserPatch",
+    is_input=True,
+    # the other arguments of the definition
+    to_input=dump_model,
+)
+```
+
+The hook returns the values of the fields, keyed by their Python names. Every
+field it returns is part of the default, with `None` as an explicit null, unless
+its value is `UNSET`, and nested input instances use their own type's
+`to_input`. The fields it leaves out aren't part of the default.
+
+This release was contributed by [@patrick91](https://github.com/patrick91) in [#4658](https://github.com/strawberry-graphql/strawberry/pull/4658)
+
+0.329.0 - 2026-10-02
+--------------------
+
+This release adds a `from_input` hook to `StrawberryObjectDefinition`, for
+integrations that create their own type definitions, like the first-class
+Pydantic integration. It lets them build input values their own way, for example
+to validate a whole input with the request's info. It isn't meant to be set on
+types defined with `@strawberry.input`.
+
+An integration passes the hook when it creates the type definition. Strawberry
+then calls it with the class to build, the input value keyed by GraphQL field
+names, and an `InputContext`, instead of converting the fields and passing them
+to the class:
+
+```python
+from collections.abc import Mapping
+from typing import Any
+
+from strawberry.types.arguments import InputContext
+from strawberry.types.base import StrawberryObjectDefinition
+
+
+def build_model(cls: type, value: Mapping[str, Any], context: InputContext) -> Any:
+    return cls.model_validate(value, context={"info": context.info})
+
+
+definition = StrawberryObjectDefinition(
+    name="UserInput",
+    is_input=True,
+    # the other arguments of the definition
+    from_input=build_model,
+)
+```
+
+`InputContext` has the request's `info`, the schema config and scalar registry,
+the `path` of the value in the arguments, made of GraphQL field names and list
+indices, like `("input", "items", 0)`, and a `convert()` method that converts
+nested values like Strawberry does, given a Strawberry type or an annotation
+like `list[Item]`. Its keys are the location of the value in the input, so inputs
+nested in it know their own location:
+
+```python
+context.convert(value["items"][0], Item, "items", 0)
+```
+
+The hook is used for field arguments, directive arguments and federation
+entities, and for argument and input field defaults, which Strawberry converts
+to input values when it builds the schema. Federation entities have the location
+of their representation, like `("representations", 0)`, and GraphQL errors
+raised while building them are now returned to the client, instead of a generic
+"Unable to resolve reference" error.
+
+This release was contributed by [@patrick91](https://github.com/patrick91) in [#4655](https://github.com/strawberry-graphql/strawberry/pull/4655)
+
+0.328.3 - 2026-10-02
+--------------------
+
+This release fixes argument and input field defaults that are instances of an
+input type:
+
+```python
+@strawberry.input
+class Filter:
+    limit: int = 10
+
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def items(self, filter: Filter = Filter(limit=5)) -> list[Item]: ...
+```
+
+Executing a field that used such a default failed with
+`argument of type 'Filter' is not iterable`, and introspection queries failed
+with `Invalid default value`. The same happened for input fields whose
+`default_factory` returns an input instance.
+
+Strawberry now converts these defaults to GraphQL input values when it builds
+the schema, so introspection shows them, and resolvers get an instance built from
+the default for every request, like when the client sends the value. Defaults
+given as dicts keyed by Python names, like `{"page_size": 5}`, and `GlobalID`
+defaults are converted too, instead of being ignored or failing when the field
+is executed.
+
+Printed and introspected defaults leave out `None` values that are the field's
+default, and keep an explicit `null` only when it changes the value, for example
+for a field whose default isn't `None`.
+
+This release was contributed by [@patrick91](https://github.com/patrick91) in [#4654](https://github.com/strawberry-graphql/strawberry/pull/4654)
+
+Additional contributors: [@bellini666](https://github.com/bellini666)
+
+0.328.2 - 2026-10-02
+--------------------
+
+This release fixes objects cast with `strawberry.cast` not being resolved when
+they're returned in a union.
+
+Resolvers can return objects that aren't instances of a union's types, like rows
+of an ORM, by casting them to the type they represent:
+
+```python
+@strawberry.type
+class Query:
+    @strawberry.field
+    def latest_media(self) -> Audio | Video:
+        return strawberry.cast(Video, db.media.latest())
+```
+
+Casts to a generic type work too, like `strawberry.cast(Edge, row)` for an
+`Edge[int]` member, also when it's returned through an interface that `Edge`
+implements. When more than one possible type is made from the generic class,
+like `Edge[int] | Edge[str]`, the cast is ambiguous and Strawberry raises an
+error, in unions and interfaces alike.
+
+The cast takes precedence over the types' `is_type_of`, and a cast that matches
+none of the possible types, for example a cast to an interface, is ignored, so
+the object is resolved as before.
+
+This release was contributed by [@patrick91](https://github.com/patrick91) in [#4653](https://github.com/strawberry-graphql/strawberry/pull/4653)
+
+0.328.1 - 2026-10-02
+--------------------
+
+This release fixes unions with the same name but different types.
+
+Strawberry reused a union by its name without checking its types, so a union
+whose generated name matched another union, for example `Ok | Error` with two
+different `Error` types, was silently replaced by the first one, and returning
+the second `Error` failed at runtime:
+
+```python
+@strawberry.type
+class Query:
+    @strawberry.field
+    def a(self) -> Ok | Error: ...
+
+    @strawberry.field
+    def b(self) -> Ok | OtherError: ...  # also named OkError
+```
+
+Building this schema now raises `DuplicatedTypeName`, like other types with the
+same name do. Explicitly named unions, such as
+`Annotated[A | B, strawberry.union("AB")]`, are checked too.
+
+This release was contributed by [@patrick91](https://github.com/patrick91) in [#4657](https://github.com/strawberry-graphql/strawberry/pull/4657)
+
 0.328.0 - 2026-09-30
 --------------------
 

@@ -6,3 +6,5 @@
 .mypy_cache
 .nox
 .ruff_cache
+.env
+.env.*

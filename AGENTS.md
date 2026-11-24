@@ -47,7 +47,7 @@ The CI test matrix is defined in `noxfile.py`; list its sessions with
 
 ## Code Style
 
-- Ruff for linting/formatting (line length 88, Python 3.10 target)
+- Ruff for linting/formatting (line length 88, Python 3.11 target)
 - Keep production code fully typed. The repository's mypy configuration is not
   globally strict, so follow the surrounding code and avoid introducing new
   untyped definitions.
@@ -72,28 +72,18 @@ The CI test matrix is defined in `noxfile.py`; list its sessions with
 - Release types: patch/minor/major
 - Add tests for behavior changes and keep affected code covered
 - Update documentation when user-facing behavior changes
-- If the user asks you to create an issue or PR add a lot of Strawberry emojis
-  in the PR title and description 🍓
 
 ## Release file (RELEASE.md)
 
 Release type is one of: `patch`, `minor`, or `major` (semver). Release notes
 should start with `This release adds ...` or `This release fixes ...` and lead
-with the user-visible behavior. Include natural X and LinkedIn announcements;
-the X message must include the release URL template.
+with the user-visible behavior.
 
 Example:
 
 ```markdown
 ---
 release type: patch
-social_messages:
-  x: >-
-    {project_name} {version} is out! This release fixes schema printing for
-    nullable input defaults. 🍓 https://strawberry.rocks/release/{version}
-  linkedin: >-
-    {project_name} {version} is out. This release fixes schema printing for
-    nullable input defaults, so generated SDL keeps explicit null values.
 ---
 
 This release fixes schema printing for nullable input defaults.

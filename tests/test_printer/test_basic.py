@@ -472,10 +472,11 @@ def test_input_with_unset_default():
         }
 
         input QueryInput {
-          filter: FilterInput! = { age: null }
+          filter: FilterInput! = {  }
         }
     """).strip()
 
+    # `age: null` is left out, as it's the field's default
     assert sdl == expected
 
 

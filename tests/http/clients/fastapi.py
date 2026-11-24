@@ -9,6 +9,8 @@ from typing import Any, Literal
 
 from fastapi import BackgroundTasks, Depends, FastAPI, Request, WebSocket
 from fastapi.testclient import TestClient
+from starlette.testclient import WebSocketDenialResponse
+from starlette.websockets import WebSocketDisconnect
 
 from strawberry.fastapi import GraphQLRouter as BaseGraphQLRouter
 from strawberry.http import GraphQLHTTPResponse
@@ -32,6 +34,7 @@ from .base import (
     Response,
     ResultOverrideFunction,
     WebSocketClient,
+    WebSocketRejectedError,
 )
 
 
@@ -90,6 +93,7 @@ class FastAPIHttpClient(HttpClient):
         result_override: ResultOverrideFunction = None,
         multipart_uploads_enabled: bool = False,
         max_subscriptions_per_connection: int | None = 100,
+        allowed_origins: Sequence[str] = (),
     ):
         self.app = FastAPI()
 
@@ -103,6 +107,7 @@ class FastAPIHttpClient(HttpClient):
             connection_init_wait_timeout=connection_init_wait_timeout,
             multipart_uploads_enabled=multipart_uploads_enabled,
             max_subscriptions_per_connection=max_subscriptions_per_connection,
+            allowed_origins=allowed_origins,
             context_getter=fastapi_get_context,
             root_value_getter=get_root_value,
         )
@@ -192,6 +197,16 @@ class FastAPIHttpClient(HttpClient):
         url: str,
         *,
         protocols: list[str],
+        headers: dict[str, str] | None = None,
     ) -> AsyncGenerator[WebSocketClient, None]:
-        with self.client.websocket_connect(url, protocols) as ws:
+        with contextlib.ExitStack() as stack:
+            try:
+                ws = stack.enter_context(
+                    self.client.websocket_connect(
+                        url, protocols, headers=dict(headers or {})
+                    )
+                )
+            except (WebSocketDisconnect, WebSocketDenialResponse) as e:
+                raise WebSocketRejectedError from e
+
             yield AsgiWebSocketClient(ws)

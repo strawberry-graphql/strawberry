@@ -1,11 +1,14 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
+from weakref import WeakKeyDictionary
 
 from graphql import get_argument_values
 
 from strawberry.extensions import SchemaExtension
 from strawberry.types.arguments import convert_arguments
+from strawberry.types.base import StrawberryContainer, has_object_definition
+from strawberry.types.lazy_type import LazyType
 from strawberry.utils.await_maybe import await_maybe
 
 if TYPE_CHECKING:
@@ -13,8 +16,9 @@ if TYPE_CHECKING:
 
     from graphql import DirectiveNode, GraphQLResolveInfo
 
-    from strawberry.directive import StrawberryDirective
+    from strawberry.directive import StrawberryDirective, StrawberryDirectiveResolver
     from strawberry.schema.schema import Schema
+    from strawberry.types.base import StrawberryType
     from strawberry.types.field import StrawberryField
     from strawberry.utils.await_maybe import AwaitableOrValue
 
@@ -90,28 +94,61 @@ def process_directive(
         variable_values_type = vars(execution_values)["VariableValues"]
         variable_values = variable_values_type({}, variable_values)
 
+    resolver = strawberry_directive.resolver
+    info_parameter = resolver.info_parameter
+    value_parameter = resolver.value_parameter
+
+    # the info is only built when it can be used: by the resolver, or by input
+    # types that build their own value
+    strawberry_info = None
+    if info_parameter or _has_input_object_arguments(strawberry_directive):
+        field: StrawberryField = schema.get_field_for_type(  # type: ignore
+            field_name=info.field_name,
+            type_name=info.parent_type.name,
+        )
+        strawberry_info = schema.config.info_class(_raw_info=info, _field=field)
+
     arguments = get_argument_values(directive_definition, directive, variable_values)
     arguments = convert_arguments(
         arguments,
         strawberry_directive.arguments,
         scalar_registry=schema.schema_converter.scalar_registry,
         config=schema.config,
+        info=strawberry_info,
     )
-    resolver = strawberry_directive.resolver
 
-    info_parameter = resolver.info_parameter
-    value_parameter = resolver.value_parameter
     if info_parameter:
-        field: StrawberryField = schema.get_field_for_type(  # type: ignore
-            field_name=info.field_name,
-            type_name=info.parent_type.name,
-        )
-        arguments[info_parameter.name] = schema.config.info_class(
-            _raw_info=info, _field=field
-        )
+        arguments[info_parameter.name] = strawberry_info
     if value_parameter:
         arguments[value_parameter.name] = value
     return strawberry_directive, arguments
+
+
+# the answer never changes for a directive, and checking it on every use of the
+# directive would slow down queries that use many directives
+_input_object_arguments: WeakKeyDictionary[StrawberryDirectiveResolver[Any], bool] = (
+    WeakKeyDictionary()
+)
+
+
+def _has_input_object_arguments(directive: StrawberryDirective) -> bool:
+    if (cached := _input_object_arguments.get(directive.resolver)) is not None:
+        return cached
+
+    result = any(_is_input_object(argument.type) for argument in directive.arguments)
+    _input_object_arguments[directive.resolver] = result
+
+    return result
+
+
+def _is_input_object(type_: StrawberryType | type) -> bool:
+    while isinstance(type_, StrawberryContainer):
+        type_ = type_.of_type
+
+    if isinstance(type_, LazyType):
+        return _is_input_object(type_.resolve_type())
+
+    return has_object_definition(type_)
 
 
 __all__ = ["DirectivesExtension", "DirectivesExtensionSync"]

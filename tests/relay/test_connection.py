@@ -1,6 +1,5 @@
 from collections.abc import Iterable
-from typing import Annotated, Any, Optional
-from typing_extensions import Self
+from typing import Annotated, Any, Optional, Self
 
 import pytest
 

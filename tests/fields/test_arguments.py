@@ -487,6 +487,28 @@ def test_interface_as_an_argument_type():
 
 @pytest.mark.raises_strawberry_exception(
     InvalidArgumentTypeError,
+    match='Argument "limit" on field "users" cannot be of type "private"',
+)
+def test_private_type_as_an_argument_type():
+    @strawberry.field
+    def users(limit: strawberry.Private[int]) -> list[str]:  # pragma: no cover
+        return []
+
+
+@pytest.mark.raises_strawberry_exception(
+    InvalidArgumentTypeError,
+    match='Argument "limit" on field "users" cannot be of type "private"',
+)
+def test_annotated_private_type_as_an_argument_type():
+    @strawberry.field
+    def users(
+        limit: Annotated[strawberry.Private[int], strawberry.argument(name="first")],
+    ) -> list[str]:  # pragma: no cover
+        return []
+
+
+@pytest.mark.raises_strawberry_exception(
+    InvalidArgumentTypeError,
     (
         'Argument "adjective" on field "add_adjective_resolver" cannot be '
         'of type "Interface"'

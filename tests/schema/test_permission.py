@@ -12,6 +12,7 @@ from strawberry.exceptions.permission_fail_silently_requires_optional import (
 from strawberry.permission import BasePermission, PermissionExtension
 from strawberry.printer import print_schema
 from strawberry.schema_directive import Location
+from strawberry.types import ExecutionResult
 from strawberry.utils.aio import aclosing
 
 
@@ -770,3 +771,191 @@ async def test_sync_permission_returning_awaitable_denies_access_on_async_execut
     assert result.errors is not None
     assert "returned an awaitable" in result.errors[0].message
     assert calls == 0
+
+
+class AsyncGeneratorPermission(BasePermission):
+    async def has_permission(  # type: ignore[override]
+        self, source: typing.Any, info: strawberry.Info, **kwargs: typing.Any
+    ) -> typing.AsyncGenerator[bool, None]:
+        yield False  # pragma: no cover
+
+
+class GeneratorPermission(BasePermission):
+    def has_permission(  # type: ignore[override]
+        self, source: typing.Any, info: strawberry.Info, **kwargs: typing.Any
+    ) -> typing.Generator[bool, None, None]:
+        yield False  # pragma: no cover
+
+
+async def _async_generator() -> typing.AsyncGenerator[bool, None]:
+    yield False  # pragma: no cover
+
+
+class SyncReturningAsyncGeneratorPermission(BasePermission):
+    def has_permission(
+        self, source: typing.Any, info: strawberry.Info, **kwargs: typing.Any
+    ) -> typing.Any:
+        return _async_generator()
+
+
+class AsyncReturningAsyncGeneratorPermission(BasePermission):
+    async def has_permission(
+        self, source: typing.Any, info: strawberry.Info, **kwargs: typing.Any
+    ) -> typing.Any:
+        return _async_generator()
+
+
+class AsyncReturningCoroutinePermission(BasePermission):
+    async def has_permission(
+        self, source: typing.Any, info: strawberry.Info, **kwargs: typing.Any
+    ) -> typing.Any:
+        async def result() -> bool:
+            return False  # pragma: no cover
+
+        return result()
+
+
+class TruthyPermission(BasePermission):
+    def has_permission(
+        self, source: typing.Any, info: strawberry.Info, **kwargs: typing.Any
+    ) -> typing.Any:
+        return "yes"
+
+
+class AsyncTruthyPermission(BasePermission):
+    async def has_permission(
+        self, source: typing.Any, info: strawberry.Info, **kwargs: typing.Any
+    ) -> typing.Any:
+        return object()
+
+
+class NonePermission(BasePermission):
+    def has_permission(
+        self, source: typing.Any, info: strawberry.Info, **kwargs: typing.Any
+    ) -> typing.Any:
+        return None
+
+
+NON_BOOLEAN_PERMISSIONS = [
+    pytest.param(AsyncGeneratorPermission, "async_generator", id="async-generator"),
+    pytest.param(GeneratorPermission, "generator", id="generator"),
+    pytest.param(
+        SyncReturningAsyncGeneratorPermission,
+        "async_generator",
+        id="sync-returning-async-generator",
+    ),
+    pytest.param(TruthyPermission, "str", id="truthy"),
+    pytest.param(NonePermission, "NoneType", id="none"),
+]
+
+ASYNC_ONLY_NON_BOOLEAN_PERMISSIONS = [
+    pytest.param(
+        AsyncReturningAsyncGeneratorPermission,
+        "async_generator",
+        id="async-returning-async-generator",
+    ),
+    pytest.param(
+        AsyncReturningCoroutinePermission, "coroutine", id="async-returning-coroutine"
+    ),
+    pytest.param(AsyncTruthyPermission, "object", id="async-truthy"),
+]
+
+
+def _schema_with_permission(
+    permission_class: type[BasePermission],
+) -> tuple[strawberry.Schema, list[str]]:
+    calls: list[str] = []
+
+    @strawberry.type
+    class Query:
+        @strawberry.field(permission_classes=[permission_class])
+        def secret(self) -> str | None:
+            calls.append("query")
+            return "secret"
+
+        @strawberry.field(permission_classes=[permission_class])
+        async def async_secret(self) -> str | None:
+            calls.append("async query")
+            return "secret"
+
+    @strawberry.type
+    class Mutation:
+        @strawberry.mutation(permission_classes=[permission_class])
+        def delete_everything(self) -> bool:
+            calls.append("mutation")
+            return True
+
+        @strawberry.mutation(permission_classes=[permission_class])
+        async def async_delete_everything(self) -> bool:
+            calls.append("async mutation")
+            return True
+
+    return strawberry.Schema(query=Query, mutation=Mutation), calls
+
+
+def _assert_rejected(
+    result: ExecutionResult, calls: list[str], result_type: str
+) -> None:
+    assert result.errors is not None
+    assert len(result.errors) == 1
+    message = result.errors[0].message
+    assert f"returned a value of type {result_type!r}" in message
+    assert "permissions must return a boolean" in message
+    assert ("must not use `yield`" in message) == ("generator" in result_type)
+    assert calls == []
+
+
+@pytest.mark.parametrize(("permission_class", "result_type"), NON_BOOLEAN_PERMISSIONS)
+@pytest.mark.parametrize("query", ["{ secret }", "mutation { deleteEverything }"])
+def test_permission_returning_non_boolean_denies_access(
+    permission_class: type[BasePermission], result_type: str, query: str
+):
+    schema, calls = _schema_with_permission(permission_class)
+
+    result = schema.execute_sync(query)
+
+    _assert_rejected(result, calls, result_type)
+
+
+@pytest.mark.parametrize(
+    ("permission_class", "result_type"),
+    NON_BOOLEAN_PERMISSIONS + ASYNC_ONLY_NON_BOOLEAN_PERMISSIONS,
+)
+@pytest.mark.parametrize(
+    "query",
+    [
+        "{ secret }",
+        "{ asyncSecret }",
+        "mutation { deleteEverything }",
+        "mutation { asyncDeleteEverything }",
+    ],
+)
+async def test_permission_returning_non_boolean_denies_access_on_async_execution(
+    permission_class: type[BasePermission], result_type: str, query: str
+):
+    schema, calls = _schema_with_permission(permission_class)
+
+    result = await schema.execute(query)
+
+    _assert_rejected(result, calls, result_type)
+
+
+def test_permission_returning_non_boolean_is_not_silenced_by_fail_silently():
+    @strawberry.type
+    class Query:
+        @strawberry.field(
+            extensions=[
+                PermissionExtension(
+                    permissions=[TruthyPermission()], fail_silently=True
+                )
+            ]
+        )
+        def secret(self) -> str | None:  # pragma: no cover
+            return "secret"
+
+    schema = strawberry.Schema(query=Query)
+
+    result = schema.execute_sync("{ secret }")
+
+    assert result.errors is not None
+    assert "permissions must return a boolean" in result.errors[0].message

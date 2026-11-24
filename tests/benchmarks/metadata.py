@@ -8,7 +8,7 @@ import os
 import platform
 import subprocess
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 
@@ -56,7 +56,7 @@ def write_metadata(output: Path, instrument: str) -> None:
         "worktree_dirty": dirty,
         "suite_sha256": digest.hexdigest(),
         "lock_sha256": hashlib.sha256((root / "uv.lock").read_bytes()).hexdigest(),
-        "recorded_at": datetime.now(timezone.utc).isoformat(),
+        "recorded_at": datetime.now(UTC).isoformat(),
         "instrument": instrument,
         "python": sys.version,
         "python_executable": sys.executable,

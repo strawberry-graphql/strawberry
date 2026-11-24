@@ -24,20 +24,21 @@ from strawberry.exceptions import (
     InvalidArgumentTypeError,
     InvalidDefaultFactoryError,
     InvalidStrawberryFieldAnnotationError,
+    MultipleStrawberryFieldsError,
 )
 from strawberry.types.base import (
     StrawberryType,
     WithStrawberryObjectDefinition,
     has_object_definition,
 )
+from strawberry.types.private import is_private
 from strawberry.types.union import StrawberryUnion
 
 from .fields.resolver import StrawberryResolver
 
 if TYPE_CHECKING:
     import builtins
-    from typing import Literal
-    from typing_extensions import Self
+    from typing import Literal, Self
 
     from strawberry.extensions.field_extension import FieldExtension
     from strawberry.permission import BasePermission
@@ -210,7 +211,7 @@ class StrawberryField(dataclasses.Field):
             if isinstance(argument.type_annotation.annotation, str):
                 continue
 
-            if isinstance(argument.type, StrawberryUnion):
+            if is_private(argument.type) or isinstance(argument.type, StrawberryUnion):
                 raise InvalidArgumentTypeError(
                     resolver,
                     argument,
@@ -361,7 +362,10 @@ class StrawberryField(dataclasses.Field):
                         type_annotation._evaluated_annotation
                     )
 
-                resolved = type_annotation.resolve(type_definition=type_definition)
+                resolved = type_annotation.resolve(
+                    type_definition=type_definition,
+                    origin=self.origin if isinstance(self.origin, type) else None,
+                )
                 self._validated_type_annotation = type_annotation
             elif self.base_resolver is not None and self.base_resolver.type is not None:
                 # Handle unannotated functions (such as lambdas)
@@ -444,6 +448,37 @@ def _contains_strawberry_field(
         _contains_strawberry_field(arg, at_field_annotation_root=False)
         for arg in get_args(annotation)
     )
+
+
+def get_annotated_field(
+    annotation: object, *, cls: type, field_name: str
+) -> tuple[object, StrawberryField | None]:
+    """Split an annotation into its type and its `strawberry.field()`, if any.
+
+    For `Annotated[int, strawberry.field(name="age"), Doc("...")]` that's
+    `Annotated[int, Doc("...")]` and the field, as the rest of the metadata, like
+    `strawberry.lazy()`, is kept. A `strawberry.field()` can only be used once,
+    in the outermost `Annotated`.
+    """
+    if get_origin(annotation) is Annotated:
+        type_, *metadata = get_args(annotation)
+    else:
+        type_, metadata = annotation, []
+
+    fields = [item for item in metadata if isinstance(item, StrawberryField)]
+
+    if len(fields) > 1:
+        raise MultipleStrawberryFieldsError(field_name=field_name, cls=cls)
+
+    if _contains_strawberry_field(annotation):
+        raise InvalidStrawberryFieldAnnotationError(field_name=field_name, cls=cls)
+
+    if not fields:
+        return annotation, None
+
+    metadata = [item for item in metadata if not isinstance(item, StrawberryField)]
+
+    return (Annotated[(type_, *metadata)] if metadata else type_), fields[0]
 
 
 # NOTE: we are separating the sync and async resolvers because using both
@@ -624,4 +659,4 @@ def field(
     return field_
 
 
-__all__ = ["StrawberryField", "field"]
+__all__ = ["StrawberryField", "field", "get_annotated_field"]

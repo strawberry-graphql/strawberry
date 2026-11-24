@@ -78,6 +78,11 @@ The `GraphQLRouter` accepts the following options:
   to enable multipart uploads. Please make sure to consider the
   [security implications mentioned in the GraphQL Multipart Request Specification](https://github.com/jaydenseric/graphql-multipart-request-spec/blob/master/readme.md#security)
   when enabling this feature.
+- `allowed_origins`: optional, defaults to `()`, the origins of browser pages
+  other than your own that may open WebSocket connections, such as
+  `["https://app.example.com"]`. Same-origin pages and clients that don't send
+  an `Origin` header are always allowed. See
+  [Restricting WebSocket origins](/docs/general/subscriptions#restricting-websocket-origins).
 
 ### context_getter
 

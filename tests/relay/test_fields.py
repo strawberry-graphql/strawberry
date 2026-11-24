@@ -2,8 +2,7 @@ import dataclasses
 import textwrap
 import warnings
 from collections.abc import AsyncIterator, Iterable, Iterator
-from typing import Annotated
-from typing_extensions import Self
+from typing import Annotated, Self
 
 import pytest
 from pytest_mock import MockerFixture

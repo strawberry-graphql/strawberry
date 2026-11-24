@@ -1,9 +1,13 @@
 from __future__ import annotations
 
+import re
 from textwrap import dedent
+
+import pytest
 
 import strawberry
 from strawberry import Maybe
+from strawberry.exceptions import MaybeFieldOnOutputTypeError
 
 
 def test_maybe_annotation_from_strawberry():
@@ -66,3 +70,17 @@ def test_maybe_annotation_directly():
         assert MyInput()
     finally:
         del MyInput
+
+
+@pytest.mark.raises_strawberry_exception(
+    MaybeFieldOnOutputTypeError,
+    match=re.escape("Field `name` on type `Query` can't use `strawberry.Maybe`"),
+)
+def test_resolvers_returning_maybe_are_an_error():
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def name(self) -> Maybe[str]:
+            return strawberry.Some("Patrick")
+
+    strawberry.Schema(query=Query)

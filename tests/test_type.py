@@ -1,6 +1,5 @@
 import dataclasses
-from typing import Optional
-from typing_extensions import assert_type
+from typing import Optional, assert_type
 
 import pytest
 

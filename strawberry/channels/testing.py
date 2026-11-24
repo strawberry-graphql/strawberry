@@ -19,7 +19,7 @@ from strawberry.types import ExecutionResult
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator
     from types import TracebackType
-    from typing_extensions import Self
+    from typing import Self
 
     from asgiref.typing import ASGIApplication
 

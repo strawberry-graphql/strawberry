@@ -1,0 +1,739 @@
+from __future__ import annotations
+
+import functools
+import re
+from functools import cached_property
+from typing import TYPE_CHECKING, Any, Literal, get_args, get_origin
+
+from pydantic import BaseModel
+
+from strawberry.exceptions.exception import StrawberryException
+from strawberry.exceptions.utils.source_finder import SourceFinder
+from strawberry.types.base import has_object_definition
+
+if TYPE_CHECKING:
+    from collections.abc import Callable, Sequence
+
+    from strawberry.exceptions.exception_source import ExceptionSource
+    from strawberry.types.field import StrawberryField
+
+
+_MARKUP_TAG = re.compile(r"(\\*)(\[[a-z#/@][^[]*?])")
+
+
+def _escape_markup(text: str) -> str:
+    """Escape text that rich would read as markup, like `RootModel[list[str]]`.
+
+    The same as `rich.markup.escape`, as rich is an optional dependency.
+    """
+    text = _MARKUP_TAG.sub(r"\1\1\\\2", text)
+
+    if text.endswith("\\") and not text.endswith("\\\\"):
+        text += "\\"
+
+    return text
+
+
+def _format_base(base: Any) -> str:
+    """Return a base class like it's written in a class statement."""
+    if args := get_args(base):
+        # e.g. `Generic[T]`
+        origin = _format_base(get_origin(base))
+
+        return f"{origin}[{', '.join(_format_base(arg) for arg in args)}]"
+
+    return getattr(base, "__name__", repr(base))
+
+
+def _is_undecorated_model(base: Any) -> bool:
+    """Whether a base class is a pydantic model without a GraphQL definition."""
+    return (
+        isinstance(base, type)
+        and issubclass(base, BaseModel)
+        and base is not BaseModel
+        and not has_object_definition(base)
+    )
+
+
+def _find_field_source(cls: type, field_name: str) -> ExceptionSource | None:
+    source_finder = SourceFinder()
+    attribute = vars(cls).get(field_name)
+
+    # computed fields are properties, not annotated attributes
+    if isinstance(attribute, property):
+        getter = attribute.fget
+    elif isinstance(attribute, functools.cached_property):
+        getter = attribute.func
+    else:
+        return source_finder.find_class_attribute_from_object(cls, field_name)
+
+    return source_finder.find_function_from_object(getter) if getter else None
+
+
+def _format_message(template: str, **names: str) -> tuple[str, str]:
+    """Format an error message, and its rich version with the names underlined."""
+    underlined = {key: f"[underline]{value}[/]" for key, value in names.items()}
+
+    return template.format(**names), template.format(**underlined)
+
+
+class UnregisteredPydanticTypeError(StrawberryException):
+    def __init__(
+        self, type_: type[BaseModel], *, cls: type, field_name: str, is_input: bool
+    ) -> None:
+        self.type = type_
+        self.cls = cls
+        self.field_name = field_name
+
+        decorator = f"@strawberry.pydantic.{'input' if is_input else 'type'}"
+        attributes = vars(type_)
+        generic_metadata = getattr(type_, "__pydantic_generic_metadata__", {})
+        # the decorated base the model inherits its definition from, which
+        # isn't its own GraphQL type
+        decorated_base = next(
+            (
+                base
+                for base in type_.__mro__[1:]
+                if "__strawberry_definition__" in vars(base)
+            ),
+            None,
+        )
+
+        if generic_metadata.get("origin") is not None:
+            # e.g. `Page[User]`, which pydantic creates when it's used, and which
+            # is a GraphQL type when `Page` is decorated
+            origin = generic_metadata["origin"].__name__
+            problem = (
+                f"a parametrized generic model of `{origin}`, which isn't a "
+                "Strawberry type"
+            )
+            fix = f"decorate `{origin}` with `{decorator}`"
+            suggestion = (
+                f"Decorate the generic model `{origin}` with `{decorator}`, which "
+                f"makes its parametrizations, like `{type_.__name__}`, GraphQL "
+                "types too."
+            )
+        elif "_strawberry_type" in attributes or "_strawberry_input_type" in attributes:
+            # set on the model by `strawberry.experimental.pydantic`, whose
+            # types can't be used by `strawberry.pydantic` types. Subclasses
+            # inherit them, but don't have an experimental type of their own
+            problem = "which only has a `strawberry.experimental.pydantic` type"
+            fix = f"decorate it with `{decorator}`"
+            suggestion = f"Decorate `{type_.__name__}` with `{decorator}`."
+        elif decorated_base is not None:
+            problem = (
+                "which isn't a Strawberry type, even though it extends "
+                f"`{decorated_base.__name__}`"
+            )
+            fix = f"decorate it with `{decorator}`"
+            suggestion = (
+                f"Subclasses of decorated models need their own decorator: "
+                f"decorate `{type_.__name__}` with `{decorator}`, or use "
+                f"`{decorated_base.__name__}` for the field."
+            )
+        else:
+            problem = "which isn't a Strawberry type"
+            fix = f"decorate it with `{decorator}`"
+            suggestion = f"Decorate `{type_.__name__}` with `{decorator}`."
+
+        self.message = (
+            f"`{cls.__name__}.{field_name}` uses `{type_.__name__}`, {problem}: {fix}"
+        )
+        # the names of parametrized generic models, like `Box[str]`, look like
+        # rich markup
+        type_name = _escape_markup(type_.__name__)
+
+        self.rich_message = (
+            f"`[underline]{cls.__name__}.{field_name}[/]` uses "
+            f"`[underline]{type_name}[/]`, {_escape_markup(problem)}"
+        )
+        self.annotation_message = f"field using {type_name}"
+        self.suggestion = _escape_markup(suggestion)
+
+        super().__init__(self.message)
+
+    @cached_property
+    def exception_source(self) -> ExceptionSource | None:
+        return _find_field_source(self.cls, self.field_name)
+
+
+class MisplacedFieldError(StrawberryException):
+    def __init__(
+        self,
+        field_name: str,
+        cls: type,
+        *,
+        usage: Literal["default", "model_field", "resolver"],
+        field: StrawberryField | None = None,
+    ) -> None:
+        self.cls = cls
+        self.field_name = field_name
+        self.field = field
+
+        if usage == "default":
+            template = (
+                "`strawberry.field()` can't be used as the default value of field "
+                "`{field}` on pydantic model `{cls}`"
+            )
+            self.annotation_message = "strawberry.field() used as a default value"
+            self.suggestion = (
+                "Pydantic keeps only the default of a `strawberry.field()` assigned "
+                "to a field and discards the rest of its configuration. Move it into "
+                f"the annotation instead: `{field_name}: Annotated[..., "
+                "strawberry.field(...)]`."
+            )
+        elif usage == "model_field":
+            template = (
+                "Field `{field}` on pydantic model `{cls}` uses "
+                "`strawberry.pydantic.field`, which is only for fields with a resolver"
+            )
+            self.annotation_message = "strawberry.pydantic.field used on a model field"
+            self.suggestion = (
+                "`strawberry.pydantic.field` decorates methods to add fields with a "
+                "resolver. To configure a model field, use `strawberry.field()` in its "
+                f"annotation instead: `{field_name}: Annotated[..., "
+                "strawberry.field(...)]`."
+            )
+        else:
+            is_model = issubclass(cls, BaseModel)
+            kind = "pydantic model" if is_model else "class"
+
+            template = (
+                f"Field `{{field}}` on {kind} `{{cls}}` uses `strawberry.field`, "
+                "which pydantic types only read from Strawberry types and interfaces"
+            )
+            self.annotation_message = "strawberry.field outside of a Strawberry type"
+            self.suggestion = (
+                "Use `@strawberry.pydantic.field` to add a field with a resolver to a "
+                "pydantic model."
+                if is_model
+                else "Use `@strawberry.pydantic.field`, or decorate "
+                f"`{cls.__name__}` with `@strawberry.type` or `@strawberry.interface`."
+            )
+
+        self.message, self.rich_message = _format_message(
+            template, field=field_name, cls=cls.__name__
+        )
+
+        super().__init__(self.message)
+
+    @cached_property
+    def exception_source(self) -> ExceptionSource | None:
+        resolver = self.field.base_resolver if self.field is not None else None
+
+        if resolver is None:
+            return _find_field_source(self.cls, self.field_name)
+
+        function = resolver.wrapped_func
+
+        # e.g. the function of a `@staticmethod`
+        if isinstance(function, (staticmethod, classmethod)):
+            function = function.__func__
+
+        return SourceFinder().find_function_from_object(function)
+
+
+class UnresolvedAnnotatedFieldError(StrawberryException):
+    """The `Annotated` options of a field can't be read yet.
+
+    `cls` declares the field, and `model` is the decorated model, which can be a
+    subclass of it.
+    """
+
+    def __init__(self, field_name: str, cls: type, *, model: type) -> None:
+        self.cls = cls
+        self.field_name = field_name
+
+        self.message = (
+            f"The `Annotated` options of field `{field_name}` on pydantic model "
+            f"`{cls.__name__}` can't be read because its annotation uses names "
+            "that aren't defined yet"
+        )
+        self.rich_message = (
+            f"The `Annotated` options of field `[underline]{field_name}[/]` on "
+            f"pydantic model `[underline]{cls.__name__}[/]` can't be read because "
+            "its annotation uses names that aren't defined yet"
+        )
+        self.annotation_message = "annotation using names that aren't defined yet"
+        self.suggestion = (
+            "Strawberry reads the options when the model is decorated, but Pydantic "
+            "only reads them once it can resolve the annotation, so options like "
+            "the permissions of `strawberry.field()` or `Field(exclude=True)` "
+            "would be lost. Define the models the annotation references before "
+            f"`{cls.__name__}`, or decorate `{model.__name__}` later: once they're "
+            f"defined, call `{model.__name__}.model_rebuild()` and then decorate "
+            "it. In a module without `from __future__ import annotations`, you can "
+            'also quote only the types, like `Annotated["Account", '
+            "strawberry.field(...)]`."
+        )
+
+        super().__init__(self.message)
+
+    @cached_property
+    def exception_source(self) -> ExceptionSource | None:
+        return _find_field_source(self.cls, self.field_name)
+
+
+class NotAPydanticModelError(StrawberryException):
+    def __init__(self, obj: object, decorator: str) -> None:
+        self.obj = obj
+
+        obj_name = getattr(obj, "__name__", repr(obj))
+        is_pydantic_v1_model = isinstance(obj, type) and any(
+            base.__module__.startswith("pydantic.v1") for base in obj.__mro__
+        )
+
+        if is_pydantic_v1_model:
+            self.message = (
+                f"`{obj_name}` is a pydantic v1 model, but strawberry.pydantic."
+                f"{decorator} only supports pydantic v2 models"
+            )
+            self.suggestion = (
+                "Migrate the model to pydantic v2 (`from pydantic import "
+                "BaseModel`), or use `strawberry.experimental.pydantic`, which "
+                "supports pydantic v1 models."
+            )
+        else:
+            self.message = (
+                f"strawberry.pydantic.{decorator} can only be used with pydantic "
+                f"models, but `{obj_name}` is not a subclass of `pydantic.BaseModel`"
+            )
+            self.suggestion = (
+                f"Use `strawberry.{decorator}` for classes that aren't pydantic models."
+            )
+
+        self.rich_message = self.message
+        self.annotation_message = "class defined here"
+
+        super().__init__(self.message)
+
+    @cached_property
+    def exception_source(self) -> ExceptionSource | None:
+        if not isinstance(self.obj, type):
+            return None
+
+        return SourceFinder().find_class_from_object(self.obj)
+
+
+class UnsupportedRootModelError(StrawberryException):
+    """A `RootModel` is decorated, or used by a field of a pydantic type."""
+
+    def __init__(
+        self,
+        root_model: type,
+        *,
+        decorator: str | None = None,
+        cls: type | None = None,
+        field_name: str | None = None,
+    ) -> None:
+        self.root_model = root_model
+        self.cls = cls
+        self.field_name = field_name
+
+        # parametrized root models are named like `RootModel[list[int]]`
+        name = root_model.__name__
+        rich_name = _escape_markup(name)
+
+        if cls is not None and field_name is not None:
+            self.message = (
+                f"`{cls.__name__}.{field_name}` uses `{name}`, which is a "
+                "`RootModel` and can't be a GraphQL type"
+            )
+            self.rich_message = (
+                f"`[underline]{cls.__name__}.{field_name}[/]` uses "
+                f"`[underline]{rich_name}[/]`, which is a `RootModel` and can't be "
+                "a GraphQL type"
+            )
+            self.annotation_message = f"field using {rich_name}"
+        else:
+            self.message = (
+                f"`{name}` is a `RootModel`, which can't be used with "
+                f"`strawberry.pydantic.{decorator}`"
+            )
+            self.rich_message = (
+                f"`[underline]{rich_name}[/]` is a `RootModel`, which can't be used "
+                f"with `strawberry.pydantic.{decorator}`"
+            )
+            self.annotation_message = "RootModel defined here"
+
+        self.suggestion = _escape_markup(
+            "A `RootModel` holds a single value instead of fields, so it can't be "
+            "a GraphQL object type. Use the type of its value instead, for example "
+            "`list[str]` for `RootModel[list[str]]`."
+        )
+
+        super().__init__(self.message)
+
+    @cached_property
+    def exception_source(self) -> ExceptionSource | None:
+        if self.cls is not None and self.field_name is not None:
+            return _find_field_source(self.cls, self.field_name)
+
+        return SourceFinder().find_class_from_object(self.root_model)
+
+
+class MaybeFieldError(StrawberryException):
+    def __init__(
+        self,
+        field_name: str,
+        cls: type,
+        *,
+        reason: Literal["default", "metadata", "validator", "validate_default"],
+    ) -> None:
+        self.cls = cls
+        self.field_name = field_name
+
+        if reason == "default":
+            template = (
+                "Field `{field}` on pydantic input `{cls}` can't use "
+                "`strawberry.Maybe` with a default"
+            )
+            self.annotation_message = "strawberry.Maybe field with a default"
+            self.suggestion = (
+                "A `strawberry.Maybe` field is `None` when the client leaves it "
+                f"out, so it doesn't need a default: remove it, e.g. `{field_name}: "
+                "strawberry.Maybe[str]`."
+            )
+        elif reason == "metadata":
+            template = (
+                "Field `{field}` on pydantic input `{cls}` has metadata outside its "
+                "`strawberry.Maybe`"
+            )
+            self.annotation_message = "metadata outside strawberry.Maybe"
+            self.suggestion = (
+                "Pydantic applies the constraints and validators of a field to its "
+                "value, which is a `strawberry.Some` here. Put them in the type "
+                f"inside the `Maybe`, e.g. `{field_name}: "
+                "strawberry.Maybe[Annotated[int, pydantic.Field(ge=0)]]`."
+            )
+        elif reason == "validator":
+            template = (
+                "Field `{field}` on pydantic input `{cls}` has a field validator "
+                "outside its `strawberry.Maybe`"
+            )
+            self.annotation_message = "field validator outside strawberry.Maybe"
+            self.suggestion = (
+                "Pydantic runs the validators of a field on its value, which is a "
+                "`strawberry.Some` here, and a `plain` validator replaces the "
+                "validation of the `Maybe`. Put the validator in the type inside "
+                f"the `Maybe`, e.g. `{field_name}: strawberry.Maybe[Annotated[str, "
+                'pydantic.AfterValidator(check)]]`, or use `mode="before"`, which '
+                "gets the value the client sent."
+            )
+        else:
+            template = (
+                "Pydantic input `{cls}` can't validate the default of "
+                "`strawberry.Maybe` field `{field}`"
+            )
+            self.annotation_message = "default validated by pydantic"
+            self.suggestion = (
+                "`validate_default` makes pydantic validate the `None` default like "
+                "a value the client sent, which `Maybe[T]` rejects and "
+                "`Maybe[T | None]` wraps in `Some`. Remove the default, e.g. "
+                f"`{field_name}: strawberry.Maybe[str]`: the field is `None` when "
+                "the client leaves it out, without validating it."
+            )
+
+        self.message = template.format(field=field_name, cls=cls.__name__)
+        self.rich_message = template.format(
+            field=f"[underline]{field_name}[/]", cls=f"[underline]{cls.__name__}[/]"
+        )
+
+        super().__init__(self.message)
+
+    @cached_property
+    def exception_source(self) -> ExceptionSource | None:
+        source_finder = SourceFinder()
+
+        return source_finder.find_class_attribute_from_object(self.cls, self.field_name)
+
+
+class UnsupportedInheritedFieldError(StrawberryException):
+    def __init__(
+        self,
+        field_name: str,
+        cls: type,
+        base: type,
+        *,
+        reason: Literal["default_factory", "resolver"],
+    ) -> None:
+        self.cls = base
+        self.field_name = field_name
+
+        if reason == "default_factory":
+            template = (
+                "Pydantic input `{cls}` can't use the default factory of field "
+                "`{field}`, inherited from `{base}`"
+            )
+            self.annotation_message = "default factory that pydantic doesn't see"
+            self.suggestion = (
+                "Strawberry types are dataclasses, which don't keep a field's default "
+                "factory on the class, so pydantic doesn't see it and the field would "
+                "be required. Declare the field on the pydantic model instead, e.g. "
+                f"`{field_name}: list[str] | None = "
+                "pydantic.Field(default_factory=list)`."
+            )
+        else:
+            template = (
+                "Pydantic type `{cls}` can't inherit field `{field}` from `{base}`, "
+                "as it has a resolver"
+            )
+            self.annotation_message = "field with a resolver that pydantic sees as data"
+            self.suggestion = (
+                "Pydantic would make it a field of the model, with the resolver as its "
+                "default value. Declare the field as a method with `@strawberry.field` "
+                "instead, which Pydantic doesn't see, for example: "
+                f"`@strawberry.field def {field_name}(self) -> ...`."
+            )
+
+        self.message, self.rich_message = _format_message(
+            template, field=field_name, cls=cls.__name__, base=base.__name__
+        )
+
+        super().__init__(self.message)
+
+    @cached_property
+    def exception_source(self) -> ExceptionSource | None:
+        source_finder = SourceFinder()
+
+        return source_finder.find_class_attribute_from_object(self.cls, self.field_name)
+
+
+class UnsupportedFieldOverrideError(StrawberryException):
+    def __init__(
+        self,
+        field_name: str,
+        cls: type,
+        *,
+        overridden: Literal["model_field", "resolver_field", "computed_field"],
+    ) -> None:
+        self.cls = cls
+        self.field_name = field_name
+
+        if overridden == "model_field":
+            template = (
+                "The resolver of `{field}` on pydantic model `{cls}` overrides a "
+                "model field with the same name"
+            )
+            self.annotation_message = "resolver with the name of a model field"
+            self.suggestion = (
+                "Pydantic would use the resolver as the default value of the field. "
+                "Rename the resolver, or remove the model field."
+            )
+        elif overridden == "resolver_field":
+            template = (
+                "`{field}` on `{cls}` overrides an inherited field with a resolver, "
+                "but isn't a field itself"
+            )
+            self.annotation_message = "attribute overriding a field with a resolver"
+            self.suggestion = (
+                "The field would be removed from the GraphQL type. To change its "
+                "resolver, decorate the method with `@strawberry.pydantic.field`, or "
+                "rename the method to keep the inherited field."
+            )
+        else:
+            template = (
+                "`{field}` on `{cls}` overrides an inherited computed field, but "
+                "isn't a field itself"
+            )
+            self.annotation_message = "attribute overriding a computed field"
+            self.suggestion = (
+                "Pydantic keeps the computed field, with the method as its value. To "
+                "change the field, make the method a computed field with "
+                "`@computed_field` and `@property`, or a field with a resolver with "
+                "`@strawberry.pydantic.field`. Otherwise rename the method."
+            )
+
+        self.message, self.rich_message = _format_message(
+            template, field=field_name, cls=cls.__name__
+        )
+
+        super().__init__(self.message)
+
+    @cached_property
+    def exception_source(self) -> ExceptionSource | None:
+        return SourceFinder().find_class_attribute_from_object(
+            self.cls, self.field_name
+        )
+
+
+class IgnoredSerializerError(StrawberryException):
+    def __init__(
+        self,
+        cls: type,
+        *,
+        decorator: str,
+        field_names: Sequence[str] = (),
+        serializer: Callable[..., Any] | None = None,
+    ) -> None:
+        self.cls = cls
+        self.field_names = field_names
+        self.serializer = serializer
+
+        if field_names:
+            *others, last = [f"`{name}`" for name in field_names]
+            fields = f"{', '.join(others)} and {last}" if others else last
+            template = (
+                f"Pydantic {decorator} `{{cls}}` customizes how {fields} "
+                f"{'are' if others else 'is'} serialized, which GraphQL doesn't apply"
+            )
+            self.annotation_message = "serialization that GraphQL doesn't apply"
+        else:
+            template = (
+                f"Pydantic {decorator} `{{cls}}` has a model serializer, which GraphQL "
+                "doesn't apply"
+            )
+            self.annotation_message = "model serializer that GraphQL doesn't apply"
+
+        self.message, self.rich_message = _format_message(template, cls=cls.__name__)
+        self.suggestion = (
+            "GraphQL resolves fields from the model's attributes, not from "
+            "`model_dump()`, so Pydantic's serializers would silently be ignored. "
+            "To change a value in GraphQL, use a field with a resolver or a custom "
+            "scalar, and to hide it, `strawberry.Private` or `Field(exclude=True)`."
+        )
+
+        super().__init__(self.message)
+
+    @cached_property
+    def exception_source(self) -> ExceptionSource | None:
+        if self.serializer is not None:
+            return SourceFinder().find_function_from_object(self.serializer)
+
+        return _find_field_source(self.cls, self.field_names[0])
+
+
+class StrawberryBaseBeforeModelError(StrawberryException):
+    def __init__(self, cls: type, base: type, decorator: str) -> None:
+        self.cls = cls
+
+        definition = base.__strawberry_definition__  # type: ignore[attr-defined]
+        kind = (
+            "input"
+            if definition.is_input
+            else "interface"
+            if definition.is_interface
+            else "type"
+        )
+        bases = vars(cls).get("__orig_bases__", cls.__bases__)
+        reordered = ", ".join(
+            _format_base(base)
+            for base in sorted(
+                bases,
+                # the models first, keeping the order of the other bases
+                key=lambda base: (
+                    not (isinstance(base, type) and issubclass(base, BaseModel))
+                ),
+            )
+        )
+
+        self.message = (
+            f"Pydantic {decorator} `{cls.__name__}` extends the Strawberry {kind} "
+            f"`{base.__name__}` before a Pydantic model"
+        )
+        self.rich_message = (
+            f"Pydantic {decorator} `[underline]{cls.__name__}[/]` extends the "
+            f"Strawberry {kind} `[underline]{base.__name__}[/]` before a Pydantic "
+            "model"
+        )
+        self.annotation_message = "Strawberry base before the Pydantic model"
+        self.suggestion = _escape_markup(
+            f"The `__init__` of `{base.__name__}` would replace Pydantic's, so the "
+            "model couldn't be created. List the Pydantic models first: "
+            f"`class {cls.__name__}({reordered})`."
+        )
+
+        super().__init__(self.message)
+
+    @cached_property
+    def exception_source(self) -> ExceptionSource | None:
+        return SourceFinder().find_class_from_object(self.cls)
+
+
+class ModelAlreadyDecoratedError(StrawberryException):
+    def __init__(self, cls: type, decorator: str) -> None:
+        self.cls = cls
+
+        definition = cls.__strawberry_definition__  # type: ignore[attr-defined]
+        kind = (
+            "an input"
+            if definition.is_input
+            else "an interface"
+            if definition.is_interface
+            else "a type"
+        )
+
+        self.message = (
+            f"`{cls.__name__}` is already {kind}, so it can't be decorated with "
+            f"`strawberry.pydantic.{decorator}`"
+        )
+        self.rich_message = (
+            f"`[underline]{cls.__name__}[/]` is already {kind}, so it can't be "
+            f"decorated with `strawberry.pydantic.{decorator}`"
+        )
+        self.annotation_message = "model decorated twice"
+
+        if definition.is_input == (decorator == "input"):
+            self.suggestion = "Remove one of the decorators."
+        elif decorator == "input" and (
+            definition.is_interface or definition.interfaces
+        ):
+            # a subclass would inherit the interface, and inputs can't implement
+            # interfaces
+            name = cls.__name__
+            # `__orig_bases__` has the parameters of generic bases, like
+            # `Generic[T]`, it's only set when there are some
+            bases = vars(cls).get("__orig_bases__", cls.__bases__)
+            shared_bases = [base for base in bases if _is_undecorated_model(base)]
+
+            if shared_bases:
+                # the model already shares its fields with an undecorated base
+                # model, which the input can extend too
+                shared = ", ".join(_format_base(base) for base in shared_bases)
+                noun, pronoun = (
+                    ("base model", "it")
+                    if len(shared_bases) == 1
+                    else ("base models", "them")
+                )
+
+                self.suggestion = _escape_markup(
+                    f"Inputs can't implement interfaces, so `{name}` can't be "
+                    f"subclassed for an input. Extend its undecorated {noun} "
+                    f"instead, and move any other fields to share to {pronoun}, "
+                    f"for example: `@strawberry.pydantic.input class "
+                    f"{name}Input({shared})`."
+                )
+            else:
+                new_bases = ", ".join(
+                    [
+                        f"{name}Base",
+                        *(
+                            _format_base(base)
+                            for base in bases
+                            if base is not BaseModel
+                        ),
+                    ]
+                )
+                current_decorator = "interface" if definition.is_interface else "type"
+
+                self.suggestion = _escape_markup(
+                    f"Inputs can't implement interfaces, so `{name}` can't be "
+                    "subclassed for an input. Move the fields to share to an "
+                    "undecorated base model used by both instead, for example: "
+                    f"`class {name}Base(BaseModel)`, with "
+                    f"`@strawberry.pydantic.{current_decorator} "
+                    f"class {name}({new_bases})` "
+                    f"and `@strawberry.pydantic.input class {name}Input({name}Base)`."
+                )
+        else:
+            self.suggestion = (
+                "To use a model both as an output type and as an input, decorate "
+                "a subclass, for example: `@strawberry.pydantic.input class "
+                "AddressInput(Address): pass`."
+            )
+
+        super().__init__(self.message)
+
+    @cached_property
+    def exception_source(self) -> ExceptionSource | None:
+        return SourceFinder().find_class_from_object(self.cls)

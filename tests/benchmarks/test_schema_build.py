@@ -6,10 +6,15 @@ from pytest_codspeed import BenchmarkFixture
 
 import strawberry
 
+# A single build of a small schema is too short for CodSpeed's simulation: each
+# measurement starts with empty CPU caches, and unrelated changes moved that
+# build's estimate by up to 13%. Each round builds several schemas instead.
+SCHEMAS_PER_ROUND = 10
+
 
 @pytest.mark.benchmark_memory
 @pytest.mark.parametrize("types_count", [10, 100])
-def test_schema_construction(benchmark: BenchmarkFixture, types_count: int):
+def test_schema_construction_v2(benchmark: BenchmarkFixture, types_count: int):
     types = [
         strawberry.type(type(f"BenchType{i}", (), {"__annotations__": {"value": int}}))
         for i in range(types_count)
@@ -21,9 +26,17 @@ def test_schema_construction(benchmark: BenchmarkFixture, types_count: int):
             {"__annotations__": {f"field{i}": t for i, t in enumerate(types)}},
         )
     )
-    schema = benchmark(strawberry.Schema, query=query)
-    assert len(schema._schema.query_type.fields) == types_count
-    assert all(f"BenchType{i}" in schema._schema.type_map for i in range(types_count))
+
+    def build_schemas() -> list[strawberry.Schema]:
+        return [strawberry.Schema(query=query) for _ in range(SCHEMAS_PER_ROUND)]
+
+    schemas = benchmark(build_schemas)
+    assert len(schemas) == SCHEMAS_PER_ROUND
+    for schema in schemas:
+        assert len(schema._schema.query_type.fields) == types_count
+        assert all(
+            f"BenchType{i}" in schema._schema.type_map for i in range(types_count)
+        )
 
 
 @pytest.mark.benchmark_native

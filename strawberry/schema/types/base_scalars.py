@@ -1,4 +1,4 @@
-import datetime
+import datetime as dt
 import decimal
 import uuid
 from collections.abc import Callable
@@ -52,9 +52,9 @@ DateDefinition: ScalarDefinition = ScalarDefinition(
     description="Date (isoformat)",
     specified_by_url=None,
     serialize=isoformat,
-    parse_value=wrap_parser(datetime.date.fromisoformat, "Date"),
+    parse_value=wrap_parser(dt.date.fromisoformat, "Date"),
     parse_literal=None,
-    origin=datetime.date,
+    origin=dt.date,
 )
 
 DateTimeDefinition: ScalarDefinition = ScalarDefinition(
@@ -64,7 +64,7 @@ DateTimeDefinition: ScalarDefinition = ScalarDefinition(
     serialize=isoformat,
     parse_value=wrap_parser(dateutil.parser.isoparse, "DateTime"),
     parse_literal=None,
-    origin=datetime.datetime,
+    origin=dt.datetime,
 )
 
 TimeDefinition: ScalarDefinition = ScalarDefinition(
@@ -72,9 +72,9 @@ TimeDefinition: ScalarDefinition = ScalarDefinition(
     description="Time (isoformat)",
     specified_by_url=None,
     serialize=isoformat,
-    parse_value=wrap_parser(datetime.time.fromisoformat, "Time"),
+    parse_value=wrap_parser(dt.time.fromisoformat, "Time"),
     parse_literal=None,
-    origin=datetime.time,
+    origin=dt.time,
 )
 
 DecimalDefinition: ScalarDefinition = ScalarDefinition(

@@ -1,4 +1,4 @@
-from datetime import date, datetime, timedelta, timezone
+from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal
 from textwrap import dedent
 from typing import Any
@@ -310,14 +310,14 @@ def test_override_built_in_scalars():
     EpochDateTime = strawberry.scalar(
         datetime,
         serialize=lambda value: int(value.timestamp()),
-        parse_value=lambda value: datetime.fromtimestamp(int(value), timezone.utc),
+        parse_value=lambda value: datetime.fromtimestamp(int(value), UTC),
     )
 
     @strawberry.type
     class Query:
         @strawberry.field
         def current_time(self) -> datetime:
-            return datetime(2021, 8, 11, 12, 0, tzinfo=timezone.utc)
+            return datetime(2021, 8, 11, 12, 0, tzinfo=UTC)
 
         @strawberry.field
         def isoformat(self, input_datetime: datetime) -> str:
@@ -633,7 +633,7 @@ def test_scalar_map_override_builtin():
     class Query:
         @strawberry.field
         def current_time(self) -> datetime:
-            return datetime(2021, 8, 11, 12, 0, tzinfo=timezone.utc)
+            return datetime(2021, 8, 11, 12, 0, tzinfo=UTC)
 
         @strawberry.field
         def parse_time(self, value: datetime) -> str:
@@ -646,7 +646,7 @@ def test_scalar_map_override_builtin():
                 datetime: strawberry.scalar(
                     name="DateTime",
                     serialize=lambda v: int(v.timestamp()),
-                    parse_value=lambda v: datetime.fromtimestamp(int(v), timezone.utc),
+                    parse_value=lambda v: datetime.fromtimestamp(int(v), UTC),
                 )
             }
         ),

@@ -2,7 +2,6 @@ from typing import Any
 
 from graphql import (
     ArgumentNode,
-    GraphQLError,
     GraphQLNamedType,
     ObjectValueNode,
     ValidationContext,
@@ -10,6 +9,7 @@ from graphql import (
     get_named_type,
 )
 
+from strawberry.exceptions import StrawberryInputCoercionError
 from strawberry.types.base import StrawberryMaybe, StrawberryOptional
 from strawberry.utils.str_converters import to_camel_case
 
@@ -56,7 +56,7 @@ class MaybeNullValidationRule(ValidationRule):
             type_name = self._get_type_name(field_type.of_type)
 
             self.report_error(
-                GraphQLError(
+                StrawberryInputCoercionError(
                     f"Expected value of type '{type_name}', found null. "
                     f"Argument '{node.name.value}' of type 'Maybe[{type_name}]' cannot be explicitly set to null. "
                     f"Use 'Maybe[{type_name} | None]' if you need to allow null values.",
@@ -88,6 +88,13 @@ class MaybeNullValidationRule(ValidationRule):
         if not hasattr(strawberry_type, "fields"):
             return
 
+        # Input types that build their own value, like pydantic inputs, convert
+        # the values of their fields themselves, nulls included, so they can
+        # report them with the other problems of the input instead of failing
+        # the whole operation
+        if getattr(strawberry_type, "from_input", None) is not None:
+            return
+
         for field_def in strawberry_type.fields:
             # Resolve the actual GraphQL field name using the same logic as NameConverter
             if field_def.graphql_name is not None:
@@ -110,7 +117,7 @@ class MaybeNullValidationRule(ValidationRule):
                         # This is Maybe[T] - should not accept null values
                         type_name = self._get_type_name(field_type.of_type)
                         self.report_error(
-                            GraphQLError(
+                            StrawberryInputCoercionError(
                                 f"Expected value of type '{type_name}', found null. "
                                 f"Field '{field_name}' of type 'Maybe[{type_name}]' cannot be explicitly set to null. "
                                 f"Use 'Maybe[{type_name} | None]' if you need to allow null values.",

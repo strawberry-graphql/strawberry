@@ -12,6 +12,7 @@ from typing import (
 
 from strawberry.exceptions import (
     PermissionReturnedAwaitableInSyncContextError,
+    PermissionReturnedNonBooleanError,
     StrawberryGraphQLError,
 )
 from strawberry.exceptions.permission_fail_silently_requires_optional import (
@@ -224,6 +225,12 @@ class PermissionExtension(FieldExtension):
 
                 raise PermissionReturnedAwaitableInSyncContextError(permission)
 
+            # Only a real boolean decides access. Anything else, such as the
+            # truthy async generator returned by an `async def` that `yield`s,
+            # is rejected rather than evaluated for truthiness.
+            if not isinstance(has_permission, bool):
+                raise PermissionReturnedNonBooleanError(permission, has_permission)
+
             if not has_permission:
                 return self._on_unauthorized(permission)
 
@@ -240,6 +247,14 @@ class PermissionExtension(FieldExtension):
             has_permission = await await_maybe(
                 permission.has_permission(source, info, **kwargs)
             )
+
+            if not isinstance(has_permission, bool):
+                # e.g. an `async def` returning a coroutine; close it so it
+                # doesn't also warn about never being awaited.
+                if inspect.iscoroutine(has_permission):
+                    has_permission.close()
+
+                raise PermissionReturnedNonBooleanError(permission, has_permission)
 
             if not has_permission:
                 return self._on_unauthorized(permission)

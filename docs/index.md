@@ -12,7 +12,7 @@ This tutorial will help you:
   schema
 
 This tutorial assumes that you are familiar with the command line and Python,
-and that you have a recent version of Python (3.10+) installed.
+and that you have a recent version of Python (3.11+) installed.
 
 Strawberry is built on top of Python’s
 [dataclasses](https://realpython.com/python-data-classes/) and

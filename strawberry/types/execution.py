@@ -4,10 +4,11 @@ import dataclasses
 from typing import (
     TYPE_CHECKING,
     Any,
+    NotRequired,
     TypeAlias,
     runtime_checkable,
 )
-from typing_extensions import NotRequired, Protocol, TypedDict
+from typing_extensions import Protocol, TypedDict
 
 from graphql import specified_rules
 from graphql.execution import (
@@ -21,7 +22,7 @@ from strawberry.utils.operation import get_first_operation, get_operation_type
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
-    from typing_extensions import NotRequired
+    from typing import NotRequired
 
     from graphql import ASTValidationRule
     from graphql.error.graphql_error import GraphQLError

@@ -1,6 +1,7 @@
 # type: ignore
 import dataclasses
 import re
+import typing
 from enum import Enum
 from typing import Annotated, Optional, TypeVar
 
@@ -198,6 +199,68 @@ def test_object_preserves_annotations():
         "c": bool,
         "d": Annotated[str, "something"],
     }
+
+
+def test_annotations_of_fields_with_a_resolver_are_not_added():
+    def get_label() -> str:
+        return "label"
+
+    @strawberry.type
+    class Object:
+        name: str
+        label: str = strawberry.field(resolver=get_label)
+
+        @strawberry.field
+        def greeting(self) -> str:
+            return f"Hi {self.name}"
+
+        @strawberry.field(graphql_type=int)
+        def count(self):
+            return 1
+
+    # Strawberry annotates `greeting` and `count` while dataclasses creates the
+    # fields, then removes these annotations, so tools that read the class's
+    # annotations, like `typing.get_type_hints`, only see the user's ones
+    assert Object.__annotations__ == {"name": str, "label": str}
+    assert typing.get_type_hints(Object) == {"name": str, "label": str}
+
+    definition = get_object_definition(Object, strict=True)
+
+    assert [field.python_name for field in definition.fields] == [
+        "name",
+        "label",
+        "greeting",
+        "count",
+    ]
+
+
+def test_fields_with_a_resolver_are_inherited_without_annotations():
+    @strawberry.interface
+    class Node:
+        id: strawberry.ID
+
+        @strawberry.field
+        def display_name(self) -> str:
+            return f"Node {self.id}"
+
+    @strawberry.type
+    class Product(Node):
+        title: str
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def node(self) -> Node:
+            return Product(id=strawberry.ID("1"), title="Jam")
+
+    schema = strawberry.Schema(query=Query, types=[Product])
+
+    result = schema.execute_sync("{ node { id displayName ... on Product { title } } }")
+
+    assert not result.errors
+    assert result.data == {"node": {"id": "1", "displayName": "Node 1", "title": "Jam"}}
+    assert Node.__annotations__ == {"id": strawberry.ID}
+    assert Product.__annotations__ == {"title": str}
 
 
 def test_has_object_definition_returns_true_for_object_type():

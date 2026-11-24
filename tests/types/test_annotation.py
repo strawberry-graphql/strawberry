@@ -1,11 +1,19 @@
 import itertools
 from enum import Enum
-from typing import Optional, TypeVar
+from typing import (  # noqa: UP035
+    List,
+    Optional,
+    Sequence,
+    Tuple,
+    TypeVar,
+    get_origin,
+)
 
 import pytest
 
 import strawberry
 from strawberry.annotation import StrawberryAnnotation
+from strawberry.exceptions import MissingListItemTypeError
 from strawberry.types.unset import UnsetType
 
 
@@ -88,3 +96,32 @@ def test_evaluation_is_cached_between_annotation_and_resolve():
     assert annotation.annotation is int
     assert annotation.resolve() is int
     assert annotation.evaluations == 1
+
+
+def test_resolve_without_type_definition_skips_generic_check():
+    class CountingAnnotation(StrawberryAnnotation):
+        generic_checks = 0
+
+        @classmethod
+        def _is_type_generic(cls, type_: object) -> bool:
+            cls.generic_checks += 1
+            return super()._is_type_generic(type_)
+
+    annotation = CountingAnnotation(int)
+
+    assert annotation.resolve() is int
+    assert CountingAnnotation.generic_checks == 0
+
+
+@pytest.mark.parametrize("annotation", [list, List, Optional[list]])  # noqa: UP006
+def test_list_without_item_type_raises(annotation):
+    with pytest.raises(
+        MissingListItemTypeError,
+        match=r"must specify the type of its items, for example `list\[int\]`",
+    ):
+        StrawberryAnnotation(annotation).resolve()
+
+
+@pytest.mark.parametrize("annotation", [Tuple, Sequence])  # noqa: UP006
+def test_tuple_and_sequence_without_item_type_do_not_raise_list_error(annotation):
+    assert StrawberryAnnotation(annotation).resolve() is get_origin(annotation)

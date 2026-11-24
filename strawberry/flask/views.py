@@ -20,7 +20,7 @@ from strawberry.http.typevars import Context, RootValue
 from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
+    from collections.abc import Mapping, Sequence
 
     from flask.typing import ResponseReturnValue
 
@@ -134,6 +134,12 @@ class AsyncGraphQLView(
     async def create_websocket_response(
         self, request: Request, subprotocol: str | None
     ) -> Response:
+        raise NotImplementedError
+
+    def get_websocket_headers(self, request: Request) -> Mapping[str, str]:
+        raise NotImplementedError
+
+    async def reject_websocket(self, request: Request) -> Response:
         raise NotImplementedError
 
 

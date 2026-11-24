@@ -3,8 +3,7 @@ from __future__ import annotations
 import base64
 import dataclasses
 import sys
-from typing import TYPE_CHECKING, Any
-from typing_extensions import Self, assert_never
+from typing import TYPE_CHECKING, Any, Self, assert_never
 
 from strawberry.types.base import StrawberryObjectDefinition
 from strawberry.types.nodes import InlineFragment

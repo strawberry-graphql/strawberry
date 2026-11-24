@@ -1,4 +1,4 @@
-import datetime
+import datetime as dt
 import typing
 from typing import Union
 
@@ -102,6 +102,6 @@ def test_raises_error_when_piping_with_scalar():
 def test_raises_error_when_piping_with_custom_scalar():
     @strawberry.type
     class Query:
-        field: datetime.date | datetime.datetime
+        field: dt.date | dt.datetime
 
     strawberry.Schema(query=Query)

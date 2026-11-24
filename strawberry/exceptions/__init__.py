@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+import inspect
 from functools import cached_property
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from graphql import GraphQLError
 
@@ -10,9 +11,11 @@ from .duplicated_type_name import DuplicatedTypeName
 from .exception import StrawberryException, UnableToFindExceptionSource
 from .handler import setup_exception_handler
 from .invalid_argument_type import InvalidArgumentTypeError
+from .invalid_one_of_input_field import InvalidOneOfInputFieldError
 from .invalid_strawberry_field_annotation import InvalidStrawberryFieldAnnotationError
 from .invalid_superclass_interface import InvalidSuperclassInterfaceError
 from .invalid_union_type import InvalidTypeForUnionMergeError, InvalidUnionTypeError
+from .maybe_field_on_output_type import MaybeFieldOnOutputTypeError
 from .missing_arguments_annotations import MissingArgumentsAnnotationsError
 from .missing_dependencies import MissingOptionalDependenciesError
 from .missing_field_annotation import MissingFieldAnnotationError
@@ -21,8 +24,11 @@ from .multiple_strawberry_fields import MultipleStrawberryFieldsError
 from .object_is_not_a_class import ObjectIsNotClassError
 from .object_is_not_an_enum import ObjectIsNotAnEnumError
 from .private_strawberry_field import PrivateStrawberryFieldError
+from .resolver_field_on_input import ResolverFieldOnInputError
 from .scalar_already_registered import ScalarAlreadyRegisteredError
+from .undecorated_subclass import UndecoratedSubclassError
 from .unresolved_field_type import UnresolvedFieldTypeError
+from .unresolved_strawberry_field import UnresolvedStrawberryFieldError
 
 if TYPE_CHECKING:
     from graphql import GraphQLInputObjectType, GraphQLObjectType
@@ -63,6 +69,22 @@ class UnallowedReturnTypeForUnion(Exception):
         super().__init__(message)
 
 
+class AmbiguousCastError(Exception):
+    """An object cast with `strawberry.cast` matches more than one possible type."""
+
+    def __init__(self, field_name: str, cast_type: type, type_names: list[str]) -> None:
+        formatted_type_names = ", ".join(sorted(type_names))
+
+        message = (
+            f'The object returned for the field "{field_name}" is cast to '
+            f'"{cast_type.__name__}", which matches more than one of its possible '
+            f"types: {formatted_type_names}. Return an instance of one of these "
+            "types instead."
+        )
+
+        super().__init__(message)
+
+
 # TODO: this doesn't seem to be tested
 class InvalidTypeInputForUnion(Exception):
     def __init__(self, annotation: GraphQLInputObjectType) -> None:
@@ -76,6 +98,19 @@ class MissingTypesForGenericError(Exception):
 
     def __init__(self, annotation: StrawberryType | type) -> None:
         message = f'The type "{annotation!r}" is generic, but no type has been passed'
+
+        super().__init__(message)
+
+
+class MissingListItemTypeError(Exception):
+    """Raised when a list annotation does not say what the list contains."""
+
+    def __init__(self, annotation: Any) -> None:
+        name = getattr(annotation, "__name__", annotation)
+        message = (
+            f"The list annotation `{name}` must specify the type of its items, "
+            "for example `list[int]`"
+        )
 
         super().__init__(message)
 
@@ -196,7 +231,39 @@ class PermissionReturnedAwaitableInSyncContextError(Exception):
         super().__init__(message)
 
 
+class PermissionReturnedNonBooleanError(Exception):
+    """A permission's ``has_permission`` returned something other than a bool.
+
+    Strawberry only grants access when ``has_permission`` returns (or, for an
+    asynchronous permission, resolves to) ``True``. Any other value is
+    rejected rather than evaluated for truthiness, so that results Strawberry
+    cannot evaluate, such as an async generator from an ``async def`` that
+    ``yield``s, never grant access by accident.
+    """
+
+    def __init__(self, permission: object, result: object) -> None:
+        self.permission = permission
+        self.result = result
+        permission_name = type(permission).__name__
+        result_type = type(result).__name__
+        message = (
+            f"Permission {permission_name!r} returned a value of type "
+            f"{result_type!r} from `has_permission`, but permissions must "
+            "return a boolean. Return `True` to grant access or `False` to "
+            "deny it."
+        )
+
+        if inspect.isasyncgen(result) or inspect.isgenerator(result):
+            message += (
+                " `has_permission` must not use `yield`; declare it as "
+                "`async def` (or `def`) and `return` a boolean instead."
+            )
+
+        super().__init__(message)
+
+
 __all__ = [
+    "AmbiguousCastError",
     "ConflictingArgumentsError",
     "DuplicatedTypeName",
     "FieldWithResolverAndDefaultFactoryError",
@@ -204,12 +271,15 @@ __all__ = [
     "InvalidArgumentTypeError",
     "InvalidCustomContext",
     "InvalidDefaultFactoryError",
+    "InvalidOneOfInputFieldError",
     "InvalidStrawberryFieldAnnotationError",
     "InvalidSuperclassInterfaceError",
     "InvalidTypeForUnionMergeError",
     "InvalidUnionTypeError",
+    "MaybeFieldOnOutputTypeError",
     "MissingArgumentsAnnotationsError",
     "MissingFieldAnnotationError",
+    "MissingListItemTypeError",
     "MissingOptionalDependenciesError",
     "MissingQueryError",
     "MissingReturnAnnotationError",
@@ -219,14 +289,18 @@ __all__ = [
     "ObjectIsNotAnEnumError",
     "ObjectIsNotClassError",
     "PermissionReturnedAwaitableInSyncContextError",
+    "PermissionReturnedNonBooleanError",
     "PrivateStrawberryFieldError",
+    "ResolverFieldOnInputError",
     "ScalarAlreadyRegisteredError",
     "StrawberryException",
     "StrawberryGraphQLError",
     "StrawberryInputCoercionError",
     "UnableToFindExceptionSource",
     "UnallowedReturnTypeForUnion",
+    "UndecoratedSubclassError",
     "UnresolvedFieldTypeError",
+    "UnresolvedStrawberryFieldError",
     "UnsupportedTypeError",
     "WrongNumberOfResultsReturned",
     "WrongReturnTypeForUnion",

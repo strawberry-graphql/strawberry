@@ -9,14 +9,18 @@ from typing import (
     ClassVar,
     Generic,
     Literal,
+    Self,
     TypeGuard,
     TypeVar,
     get_origin,
     overload,
 )
-from typing_extensions import Protocol, Self
+from typing_extensions import Protocol
 
-from strawberry.utils.inspect import get_specialized_type_var_map
+from strawberry.utils.inspect import (
+    get_generic_arguments,
+    get_specialized_type_var_map,
+)
 from strawberry.utils.typing import is_concrete_generic
 from strawberry.utils.typing import is_generic as is_type_generic
 
@@ -25,6 +29,7 @@ if TYPE_CHECKING:
 
     from graphql import GraphQLAbstractType, GraphQLResolveInfo
 
+    from strawberry.types.arguments import InputContext
     from strawberry.types.field import StrawberryField
 
 
@@ -264,6 +269,31 @@ def get_object_definition(
     return definition
 
 
+def check_is_not_undecorated_subclass(type_: object) -> None:
+    """Raise if `type_` only inherits its object definition from a base class.
+
+    Python inherits `__strawberry_definition__`, so an undecorated subclass of a
+    Strawberry type passes `has_object_definition`, and would be published as its
+    parent type. This is meant for types used in the schema (annotations, root
+    types, `types=[...]`), not for runtime values: resolvers can return instances
+    of undecorated subclasses of the type they're annotated with.
+
+    Generic aliases like `Edge[int]` aren't classes, so they're left alone, and
+    the classes they're resolved to have their own definition.
+    """
+    if not isinstance(type_, type):
+        return
+
+    # Reading a descriptor may give an integration's subclass its own definition.
+    definition = get_object_definition(type_)
+    if definition is None or definition.origin is type_:
+        return
+
+    from strawberry.exceptions import UndecoratedSubclassError
+
+    raise UndecoratedSubclassError(type_, definition.origin, definition)
+
+
 @dataclasses.dataclass(eq=False)
 class StrawberryObjectDefinition(StrawberryType):
     """Encapsulates definitions for Input / Object / interface GraphQL Types.
@@ -290,6 +320,49 @@ class StrawberryObjectDefinition(StrawberryType):
     type_var_map: Mapping[str, StrawberryType | type] = dataclasses.field(
         default_factory=dict
     )
+
+    from_input: Callable[[type, Mapping[str, Any], InputContext], Any] | None = None
+    """Builds a value of this type from a GraphQL input value.
+
+    It's meant for integrations that create their own type definitions, like
+    `strawberry.pydantic`, which pass it when they create the definition.
+
+    It's called with the class to build, which can be a subclass of `origin`, and
+    the whole input value, keyed by GraphQL field names, so it's also responsible
+    for converting the values of the fields (see `InputContext.convert`), which
+    includes a null for a `Maybe` field, as Strawberry doesn't validate those in
+    the document for types that set it. Fields
+    the client omitted contain their default when it's published in the schema,
+    and are missing otherwise, e.g. when they default to `UNSET`. Defaults of
+    arguments and input fields are built with it too, as Strawberry converts them
+    to input values when it builds the schema.
+
+    When it's not set, the fields are converted first and passed to the class as
+    keyword arguments.
+    """
+
+    to_input: Callable[[Any], Mapping[str, Any]] | None = None
+    """Returns the fields of an instance of this type that make its input value.
+
+    It's the counterpart of `from_input`, meant for integrations that create
+    their own type definitions, like `strawberry.pydantic`, which pass it when
+    they create the definition.
+
+    Strawberry calls it when it converts an instance to a GraphQL input value,
+    which it does for argument and input field defaults when it builds the
+    schema. It returns the values of the fields, keyed by their python names,
+    as it doesn't know the names the schema gives them. Every field it returns
+    is part of the input value, with `None` as an explicit null, unless its
+    value is `UNSET`, and nested instances are converted with their own type's
+    hook.
+
+    The fields it leaves out aren't part of the input value, so `from_input`
+    doesn't get them when the default is used, even when their default is
+    published in the schema, as GraphQL only fills those in for values sent by
+    clients.
+
+    When it's not set, all the fields of the instance are used.
+    """
 
     def __post_init__(self) -> None:
         # resolve `Self` annotation with the origin type
@@ -334,6 +407,8 @@ class StrawberryObjectDefinition(StrawberryType):
             fields=fields,
             concrete_of=self,
             type_var_map=type_var_map,
+            from_input=self.from_input,
+            to_input=self.to_input,
         )
 
         new_type = type(
@@ -370,6 +445,33 @@ class StrawberryObjectDefinition(StrawberryType):
     @property
     def specialized_type_var_map(self) -> dict[str, type] | None:
         return get_specialized_type_var_map(self.origin)
+
+    def get_base_type_var_map(
+        self, base: type
+    ) -> dict[str, StrawberryType | type] | None:
+        """Return the arguments this type gives to the type parameters of `base`.
+
+        `base` is a generic class this type extends, like `Page` for a field
+        inherited from `Page[int]`. Unlike `specialized_type_var_map`, the type
+        parameters of other bases aren't mixed in, even when they have the same
+        name.
+
+        Like the arguments of `Page[int]` used in an annotation, they're resolved
+        to Strawberry types, so that fields wrapping a type parameter, like
+        `list[T]`, get them too.
+        """
+        from strawberry.annotation import StrawberryAnnotation
+
+        arguments = get_generic_arguments(self.origin).get(base)
+
+        if not arguments:
+            return None
+
+        return {
+            parameter.__name__: StrawberryAnnotation(argument).resolve()
+            for parameter, argument in arguments.items()
+            if not isinstance(argument, TypeVar)
+        }
 
     @property
     def is_object_type(self) -> bool:
@@ -488,6 +590,7 @@ __all__ = [
     "StrawberryType",
     "StrawberryTypeVar",
     "WithStrawberryObjectDefinition",
+    "check_is_not_undecorated_subclass",
     "get_object_definition",
     "has_object_definition",
 ]

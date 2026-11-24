@@ -23,10 +23,12 @@ from strawberry.exceptions import (
 )
 from strawberry.exceptions.handler import should_use_rich_exceptions
 from strawberry.types.base import (
+    StrawberryObjectDefinition,
     StrawberryOptional,
     StrawberryType,
     has_object_definition,
 )
+from strawberry.types.cast import get_cast_type_name
 from strawberry.types.lazy_type import LazyType
 
 if TYPE_CHECKING:
@@ -171,7 +173,15 @@ class StrawberryUnion(StrawberryType):
         ) -> str:
             assert isinstance(type_, GraphQLUnionType)
 
-            from strawberry.types.base import StrawberryObjectDefinition
+            # objects cast with `strawberry.cast` resolve to the type they're cast
+            # to, as they're usually not instances of it. A cast to none of the
+            # union's types (e.g. a cast to an interface) is ignored
+            if (
+                cast_type_name := get_cast_type_name(
+                    root, type_.types, type_map, info.field_name
+                )
+            ) is not None:
+                return cast_type_name
 
             # If the type given is not an Object type, try resolving using `is_type_of`
             # defined on the union's inner types

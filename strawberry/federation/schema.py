@@ -10,13 +10,18 @@ from typing import (
     cast,
 )
 
+from graphql import GraphQLError
+
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.printer import print_schema
 from strawberry.schema import Schema as BaseSchema
+from strawberry.schema.config import StrawberryConfig
+from strawberry.schema.name_converter import NameConverter
 from strawberry.types.base import (
     StrawberryContainer,
     StrawberryObjectDefinition,
     WithStrawberryObjectDefinition,
+    check_is_not_undecorated_subclass,
     get_object_definition,
 )
 from strawberry.types.info import Info
@@ -32,10 +37,10 @@ if TYPE_CHECKING:
 
     from strawberry.extensions import SchemaExtension
     from strawberry.federation.schema_directives import ComposeDirective
-    from strawberry.schema.config import StrawberryConfig
     from strawberry.schema.exception_handlers import ExceptionHandler
     from strawberry.schema_directive import StrawberrySchemaDirective
     from strawberry.types.enum import StrawberryEnumDefinition
+    from strawberry.types.field import StrawberryField
 
 
 FederationAny = NewType("FederationAny", object)
@@ -78,7 +83,11 @@ class Schema(BaseSchema):
         # Convert version string (e.g., "2.5") to version tuple (e.g., (2, 5))
         self.federation_version = parse_version(federation_version)
 
-        query = self._get_federation_query_type(query, mutation, subscription, types)
+        config = config or StrawberryConfig()
+
+        query = self._get_federation_query_type(
+            query, mutation, subscription, types, config.name_converter
+        )
 
         # Add FederationAny to types so it appears in the schema
         types = [*types, FederationAny]
@@ -117,6 +126,7 @@ class Schema(BaseSchema):
         mutation: type[WithStrawberryObjectDefinition] | None,
         subscription: type[WithStrawberryObjectDefinition] | None,
         additional_types: Iterable[type[WithStrawberryObjectDefinition]],
+        name_converter: NameConverter,
     ) -> type:
         """Returns a new query type that includes the _service field.
 
@@ -130,11 +140,11 @@ class Schema(BaseSchema):
             that are part of the federated service.
 
         The _service field is added by default, but the _entities field is only
-        added if the schema contains an entity type.
+        added if the schema contains an entity type. If the query type already
+        defines one of these fields, its own field is used instead.
         """
         import strawberry
         from strawberry.tools.create_type import create_type
-        from strawberry.tools.merge_types import merge_types
 
         @strawberry.type(name="_Service")
         class Service:
@@ -143,10 +153,10 @@ class Schema(BaseSchema):
             )
 
         @strawberry.field(name="_service")
-        def service() -> Service:
+        def _service() -> Service:
             return Service()
 
-        fields = [service]
+        fields: list[StrawberryField] = [_service]
 
         entity_type = _get_entity_type(query, mutation, subscription, additional_types)
 
@@ -155,34 +165,59 @@ class Schema(BaseSchema):
                 entity_type | None  # type: ignore
             ]
 
-            entities_field = strawberry.field(
-                name="_entities", resolver=self.entities_resolver
+            entities_field = cast(
+                "StrawberryField",
+                strawberry.field(name="_entities", resolver=self.entities_resolver),
             )
+            entities_field.python_name = "_entities"
 
             fields.insert(0, entities_field)
 
-        FederationQuery = create_type(name="Query", fields=fields)
-
         if query is None:
-            return FederationQuery
+            return create_type(name="Query", fields=fields)
 
-        query_type = merge_types(
-            "Query",
-            (FederationQuery, query),
+        # The query type is subclassed below, so the base schema can't tell if it
+        # was decorated
+        check_is_not_undecorated_subclass(query)
+
+        query_definition = query.__strawberry_definition__
+        query_field_names = {
+            name_converter.from_field(field) for field in query_definition.fields
+        }
+        fields = [
+            field
+            for field in fields
+            if name_converter.from_field(field) not in query_field_names
+        ]
+
+        # Subclassing merges fields by Python name, so the federation fields
+        # need Python names that don't shadow any of the query type's fields
+        query_python_names = {field.python_name for field in query_definition.fields}
+
+        for field in fields:
+            while field.python_name in query_python_names:
+                field.python_name = f"_{field.python_name}"
+
+        bases: tuple[type, ...] = (query,)
+
+        if fields:
+            bases = (create_type(name="Query", fields=fields), query)
+
+        # Subclassing merges the fields, but the type's description, directives
+        # and extend flag have to be passed on, or they'd be lost
+        return strawberry.type(
+            type("Query", bases, {}),
+            description=query_definition.description,
+            directives=query_definition.directives,
+            extend=query_definition.extend,
         )
-
-        # TODO: this should be probably done in merge_types
-        if query.__strawberry_definition__.extend:
-            query_type.__strawberry_definition__.extend = True  # type: ignore
-
-        return query_type
 
     def entities_resolver(
         self, info: Info, representations: list[FederationAny]
     ) -> list[FederationAny]:
         results = []
 
-        for representation in representations:
+        for index, representation in enumerate(representations):
             type_name = representation.pop("__typename")  # type: ignore[attr-defined]
             type_ = self.schema_converter.type_map[type_name]
 
@@ -214,7 +249,13 @@ class Schema(BaseSchema):
                         type_=definition.origin,
                         scalar_registry=scalar_registry,
                         config=config,
+                        info=info,
+                        path=("representations", index),
                     )
+                except GraphQLError as error:
+                    # e.g. raised on purpose by input types that validate their
+                    # value, so the client gets the reason
+                    result = error
                 except Exception:  # noqa: BLE001
                     result = TypeError(f"Unable to resolve reference for {type_name}")
 
@@ -297,6 +338,7 @@ class Schema(BaseSchema):
         from .schema_directives import ComposeDirective
 
         compose_directives: list[ComposeDirective] = []
+        composed_names: set[str] = set()
 
         for directive in self.schema_directives_in_use:
             definition = directive.__strawberry_directive__  # type: ignore
@@ -308,6 +350,12 @@ class Schema(BaseSchema):
             if is_federation_schema_directive and definition.compose_options:
                 name = self.config.name_converter.from_directive(definition)
 
+                # schema_directives_in_use has one entry per application, but
+                # each directive only needs to be composed once
+                if name in composed_names:
+                    continue
+
+                composed_names.add(name)
                 compose_directives.append(
                     ComposeDirective(
                         name=f"@{name}",

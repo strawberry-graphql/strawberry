@@ -447,11 +447,9 @@ def _print_interface(type_: Any, schema: BaseSchema, *, extras: PrintExtras) -> 
 
 
 def print_input_value(name: str, arg: GraphQLArgument | GraphQLInputField) -> str:
-    default_ast = ast_from_value(
-        arg.default_value,
-        arg.type,
-        isinstance(arg, GraphQLInputField),
-    )
+    # the schema converter already omits the fields of input type defaults that
+    # don't need to be printed
+    default_ast = ast_from_value(arg.default_value, arg.type)
     arg_decl = f"{name}: {arg.type}"
     if default_ast:
         arg_decl += f" = {print_ast(default_ast)}"

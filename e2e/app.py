@@ -1,4 +1,5 @@
 import asyncio  # noqa: INP001
+import os
 import random
 from collections.abc import AsyncGenerator
 
@@ -114,11 +115,24 @@ subscription_protocols = (
 )
 
 
+# The frontend runs on Vite's dev server, a different origin, and its proxy
+# rewrites the Host header, so its WebSocket connections need to be allowed
+allowed_origins = [f"http://localhost:{os.environ.get('E2E_PORT', '5173')}"]
+
 app = FastAPI()
 app.include_router(
-    GraphQLRouter(schema, path="/", subscription_protocols=subscription_protocols)
+    GraphQLRouter(
+        schema,
+        path="/",
+        subscription_protocols=subscription_protocols,
+        allowed_origins=allowed_origins,
+    )
 )
 app.include_router(
-    GraphQLRouter(schema, subscription_protocols=subscription_protocols),
+    GraphQLRouter(
+        schema,
+        subscription_protocols=subscription_protocols,
+        allowed_origins=allowed_origins,
+    ),
     prefix="/graphql",
 )

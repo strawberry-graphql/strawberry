@@ -1,4 +1,4 @@
-import datetime
+import datetime as dt
 from typing import Annotated, Generic, TypeVar
 
 import pytest
@@ -133,7 +133,7 @@ def test_list_inside_generic():
 
     @strawberry.type
     class Value(Generic[T]):
-        valuation_date: datetime.date
+        valuation_date: dt.date
         value: T
 
     @strawberry.type

@@ -1,4 +1,4 @@
-import datetime
+import datetime as dt
 
 import dateutil.tz
 import pytest
@@ -11,13 +11,13 @@ from strawberry.types.execution import ExecutionResult
 @pytest.mark.parametrize(
     ("typing", "instance", "serialized"),
     [
-        (datetime.date, datetime.date(2019, 10, 25), "2019-10-25"),
+        (dt.date, dt.date(2019, 10, 25), "2019-10-25"),
         (
-            datetime.datetime,
-            datetime.datetime(2019, 10, 25, 13, 37),
+            dt.datetime,
+            dt.datetime(2019, 10, 25, 13, 37),
             "2019-10-25T13:37:00",
         ),
-        (datetime.time, datetime.time(13, 37), "13:37:00"),
+        (dt.time, dt.time(13, 37), "13:37:00"),
     ],
 )
 def test_serialization(typing, instance, serialized):
@@ -38,20 +38,20 @@ def test_serialization(typing, instance, serialized):
 @pytest.mark.parametrize(
     ("typing", "name", "instance", "serialized"),
     [
-        (datetime.date, "Date", datetime.date(2019, 10, 25), "2019-10-25"),
+        (dt.date, "Date", dt.date(2019, 10, 25), "2019-10-25"),
         (
-            datetime.datetime,
+            dt.datetime,
             "DateTime",
-            datetime.datetime(2019, 10, 25, 13, 37),
+            dt.datetime(2019, 10, 25, 13, 37),
             "2019-10-25T13:37:00",
         ),
         (
-            datetime.datetime,
+            dt.datetime,
             "DateTime",
-            datetime.datetime(2019, 10, 25, 13, 37, tzinfo=dateutil.tz.tzutc()),
+            dt.datetime(2019, 10, 25, 13, 37, tzinfo=dateutil.tz.tzutc()),
             "2019-10-25T13:37:00Z",
         ),
-        (datetime.time, "Time", datetime.time(13, 37), "13:37:00"),
+        (dt.time, "Time", dt.time(13, 37), "13:37:00"),
     ],
 )
 def test_deserialization(typing, name, instance, serialized):
@@ -78,13 +78,13 @@ def test_deserialization(typing, name, instance, serialized):
 @pytest.mark.parametrize(
     ("typing", "instance", "serialized"),
     [
-        (datetime.date, datetime.date(2019, 10, 25), "2019-10-25"),
+        (dt.date, dt.date(2019, 10, 25), "2019-10-25"),
         (
-            datetime.datetime,
-            datetime.datetime(2019, 10, 25, 13, 37),
+            dt.datetime,
+            dt.datetime(2019, 10, 25, 13, 37),
             "2019-10-25T13:37:00",
         ),
-        (datetime.time, datetime.time(13, 37), "13:37:00"),
+        (dt.time, dt.time(13, 37), "13:37:00"),
     ],
 )
 def test_deserialization_with_parse_literal(typing, instance, serialized):
@@ -116,10 +116,8 @@ def execute_mutation(value) -> ExecutionResult:
     @strawberry.type
     class Mutation:
         @strawberry.mutation
-        def datetime_input(
-            self, datetime_input: datetime.datetime
-        ) -> datetime.datetime:
-            assert isinstance(datetime_input, datetime.datetime)
+        def datetime_input(self, datetime_input: dt.datetime) -> dt.datetime:
+            assert isinstance(datetime_input, dt.datetime)
             return datetime_input
 
     schema = strawberry.Schema(query=Query, mutation=Mutation)

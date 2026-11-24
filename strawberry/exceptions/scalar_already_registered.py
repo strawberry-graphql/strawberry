@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 from strawberry.exceptions.utils.source_finder import SourceFinder
 
 from .exception import StrawberryException
+from .exception_source import path_relative_to_cwd
 
 if TYPE_CHECKING:
     from strawberry.types.scalar import ScalarDefinition
@@ -39,7 +40,7 @@ class ScalarAlreadyRegisteredError(StrawberryException):
 
             self.suggestion += (
                 f", defined in [bold white][link=file://{other_path}]"
-                f"{other_path.relative_to(Path.cwd())}:{other_line}[/]"
+                f"{path_relative_to_cwd(other_path)}:{other_line}[/]"
             )
 
         super().__init__(self.message)

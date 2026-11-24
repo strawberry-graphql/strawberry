@@ -1,8 +1,10 @@
 from __future__ import annotations as _
 
 import asyncio
+import copy
 import inspect
 import sys
+import types
 from functools import cached_property
 from inspect import isasyncgenfunction
 from typing import (
@@ -216,6 +218,15 @@ class StrawberryResolver(Generic[T]):
         PARENT_PARAMSPEC,
     )
 
+    # Typed as `object` because type checkers bind staticmethod and classmethod
+    # objects declared on the class when they're read from an instance
+    _descriptor: object = None
+    """The staticmethod or classmethod the resolver was defined with, if any
+
+    `bind` replaces `wrapped_func` with its function bound to a type, so this is
+    kept to bind it to other types too, like subclasses
+    """
+
     def __init__(
         self,
         func: Callable[..., T] | staticmethod | classmethod,
@@ -230,6 +241,37 @@ class StrawberryResolver(Generic[T]):
 
         This is used when creating copies of types w/ generics
         """
+
+    def bind(self, cls: type) -> StrawberryResolver[T]:
+        """Bind a staticmethod or classmethod resolver to the type using it.
+
+        When the @strawberry.field decorator is used on @staticmethod/@classmethods,
+        we get the raw staticmethod/classmethod objects before class evaluation binds
+        them to the class, so types bind them to themselves when they're created.
+
+        The resolver is bound in place the first time. As classmethods get the type
+        as `cls`, when a classmethod resolver is already bound to another type, like
+        a parent of `cls` sharing its fields with it, a copy bound to `cls` is
+        returned instead. Other resolvers are returned as they are.
+        """
+        descriptor = self._descriptor
+        if isinstance(self.wrapped_func, (staticmethod, classmethod)):
+            descriptor = self._descriptor = self.wrapped_func
+            resolver = self
+        elif (
+            isinstance(descriptor, classmethod)
+            and getattr(self.wrapped_func, "__self__", None) is not cls
+        ):
+            resolver = copy.copy(self)
+        else:
+            return self
+
+        if isinstance(descriptor, staticmethod):
+            resolver.wrapped_func = descriptor.__get__(cls)
+        elif isinstance(descriptor, classmethod):
+            resolver.wrapped_func = types.MethodType(descriptor.__func__, cls)
+
+        return resolver
 
     # TODO: Use this when doing the actual resolving? How to deal with async resolvers?
     def __call__(self, *args: str, **kwargs: Any) -> T:

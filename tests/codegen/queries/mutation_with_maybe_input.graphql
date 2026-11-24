@@ -1,0 +1,3 @@
+mutation UpdateBlogPost($input: UpdateBlogPostInput!) {
+  updateBlogPost(input: $input)
+}

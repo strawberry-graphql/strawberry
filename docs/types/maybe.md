@@ -213,7 +213,10 @@ Use regular optional types (`str | None`) when:
 
 - You only need two states: value or null
 - The field absence and null have the same meaning
-- You're defining output types (GraphQL responses)
+- You're defining output types (GraphQL responses): a `Maybe` field on a
+  `@strawberry.type` or `@strawberry.interface` raises a
+  [`MaybeFieldOnOutputTypeError`](../errors/maybe-field-on-output-type.md) when
+  the schema is built, as GraphQL has no value for a field that was left out
 
 ### Error Handling
 
@@ -333,9 +336,19 @@ Note: This codemod is for updating `Maybe` annotations, not for migrating from
 both the type annotations and the value access patterns (from `value` to
 `value.value`).
 
+## Pydantic inputs
+
+`Maybe` works the same way on the fields of a
+[`@strawberry.pydantic.input`](../integrations/pydantic.md#partial-updates-with-maybe):
+Pydantic validates the value inside the `Some`, `null` included, so a `null` for
+a `Maybe[T]` field is a validation error like any other, and
+`model_dump(exclude_unset=True)` gives the fields the client sent.
+
 ## Related Types
 
 - [Input Types](./input-types.md) - Using Maybe in input type definitions
+- [Pydantic](../integrations/pydantic.md#partial-updates-with-maybe) - Using
+  Maybe in Pydantic inputs
 - [Resolvers](./resolvers.md) - Using Maybe in resolver arguments
 - [Union Types](./union.md) - Combining Maybe with union types
 - [Scalars](./scalars.md) - Custom scalar types with Maybe

@@ -1,6 +1,6 @@
 import os
 import sys
-from enum import Enum
+from enum import StrEnum
 from typing import Annotated
 
 import rich
@@ -11,7 +11,7 @@ from strawberry.cli.constants import DEV_SERVER_SCHEMA_ENV_VAR_KEY
 from strawberry.cli.utils import load_schema
 
 
-class LogLevel(str, Enum):
+class LogLevel(StrEnum):
     critical = "critical"
     error = "error"
     warning = "warning"

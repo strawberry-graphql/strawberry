@@ -248,5 +248,11 @@ class AsyncGraphQLView(
     ) -> TemporalHttpResponse:
         raise NotImplementedError
 
+    def get_websocket_headers(self, request: HttpRequest) -> Mapping[str, str]:
+        raise NotImplementedError
+
+    async def reject_websocket(self, request: HttpRequest) -> TemporalHttpResponse:
+        raise NotImplementedError
+
 
 __all__ = ["AsyncGraphQLView", "GraphQLView"]

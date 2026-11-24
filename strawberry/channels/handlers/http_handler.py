@@ -3,8 +3,7 @@ from __future__ import annotations
 import dataclasses
 from functools import cached_property
 from io import BytesIO
-from typing import TYPE_CHECKING, Any, TypeGuard
-from typing_extensions import assert_never
+from typing import TYPE_CHECKING, Any, TypeGuard, assert_never
 from urllib.parse import parse_qs
 
 from channels.db import database_sync_to_async
@@ -354,6 +353,12 @@ class GraphQLHTTPConsumer(
     async def create_websocket_response(
         self, request: ChannelsRequest, subprotocol: str | None
     ) -> TemporalResponse:
+        raise NotImplementedError
+
+    def get_websocket_headers(self, request: ChannelsRequest) -> Mapping[str, str]:
+        raise NotImplementedError
+
+    async def reject_websocket(self, request: ChannelsRequest) -> TemporalResponse:
         raise NotImplementedError
 
 

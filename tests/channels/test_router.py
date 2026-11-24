@@ -44,6 +44,7 @@ def test_included_paths(ws_asgi: mock.Mock, http_asgi: mock.Mock, pattern: str):
     ws_asgi.assert_called_once_with(
         schema=schema,
         subscription_protocols=protocols,
+        allowed_origins=(),
     )
 
     assert len(router.application_mapping["http"].routes) == 1
@@ -93,6 +94,7 @@ def test_included_paths_with_django_app(
     ws_asgi.assert_called_once_with(
         schema=schema,
         subscription_protocols=protocols,
+        allowed_origins=(),
     )
 
     assert len(router.application_mapping["http"].routes) == 2
@@ -108,3 +110,14 @@ def test_included_paths_with_django_app(
     http_route = router.application_mapping["websocket"].routes[0]
     assert http_route.pattern._regex == pattern
     assert http_route.callback is ws_ret
+
+
+@mock.patch("strawberry.channels.router.GraphQLWSConsumer.as_asgi")
+def test_passes_allowed_origins_to_the_websocket_consumer(ws_asgi: mock.Mock):
+    from strawberry.channels.router import GraphQLProtocolTypeRouter
+
+    ws_asgi.return_value = _fake_asgi()
+
+    GraphQLProtocolTypeRouter(schema, allowed_origins=["https://app.example.com"])
+
+    assert ws_asgi.call_args.kwargs["allowed_origins"] == ["https://app.example.com"]

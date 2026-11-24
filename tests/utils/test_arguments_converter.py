@@ -9,6 +9,7 @@ from strawberry.exceptions import UnsupportedTypeError
 from strawberry.schema.config import StrawberryConfig
 from strawberry.schema.types.scalar import DEFAULT_SCALAR_REGISTRY
 from strawberry.types.arguments import StrawberryArgument, convert_arguments
+from strawberry.types.base import get_object_definition
 from strawberry.types.unset import UNSET
 
 
@@ -439,3 +440,88 @@ def test_fails_when_passing_non_strawberry_classes():
         )
         == {}
     )
+
+
+def test_input_types_can_build_their_own_value():
+    @strawberry.input
+    class Point:
+        x: int
+        y: int
+
+    calls = []
+
+    def from_input(cls, value, context):
+        calls.append((cls, value))
+
+        return (context.convert(value["x"], int), value["y"])
+
+    get_object_definition(Point, strict=True).from_input = from_input
+
+    arguments = [
+        StrawberryArgument(
+            graphql_name="point",
+            type_annotation=StrawberryAnnotation(Point),
+            python_name="point",
+        ),
+        StrawberryArgument(
+            graphql_name="points",
+            type_annotation=StrawberryAnnotation(list[Optional[Point]]),
+            python_name="points",
+        ),
+    ]
+
+    assert convert_arguments(
+        {"point": {"x": 1, "y": 2}, "points": [{"x": 3, "y": 4}, None]},
+        arguments,
+        scalar_registry=DEFAULT_SCALAR_REGISTRY,
+        config=StrawberryConfig(),
+    ) == {"point": (1, 2), "points": [(3, 4), None]}
+
+    # it receives the GraphQL input value, not converted keyword arguments
+    assert calls == [(Point, {"x": 1, "y": 2}), (Point, {"x": 3, "y": 4})]
+
+
+def test_input_types_building_their_own_value_receive_its_location():
+    @strawberry.input
+    class Leaf:
+        value: int
+
+    @strawberry.input
+    class Branch:
+        leaves: list[Optional[Leaf]]
+        main_leaf: Leaf | None = None
+
+    paths = []
+
+    def from_input(cls, value, context):
+        paths.append(context.path)
+
+        return value["value"]
+
+    get_object_definition(Leaf, strict=True).from_input = from_input
+
+    arguments = [
+        StrawberryArgument(
+            graphql_name="branches",
+            type_annotation=StrawberryAnnotation(list[Branch]),
+            python_name="branches",
+        )
+    ]
+
+    convert_arguments(
+        {
+            "branches": [
+                {"leaves": [{"value": 1}]},
+                {"leaves": [None, {"value": 2}], "mainLeaf": {"value": 3}},
+            ]
+        },
+        arguments,
+        scalar_registry=DEFAULT_SCALAR_REGISTRY,
+        config=StrawberryConfig(),
+    )
+
+    assert paths == [
+        ("branches", 0, "leaves", 0),
+        ("branches", 1, "leaves", 1),
+        ("branches", 1, "mainLeaf"),
+    ]

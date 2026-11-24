@@ -90,6 +90,45 @@ type Book {
 
 </CodeGrid>
 
+Object types can subclass other object types to reuse their fields, as long as
+the subclass is decorated too:
+
+<CodeGrid>
+
+```python
+import strawberry
+
+
+@strawberry.type
+class Character:
+    name: str
+    age: int
+
+
+@strawberry.type
+class Wizard(Character):
+    house: str
+```
+
+```graphql
+type Character {
+  name: String!
+  age: Int!
+}
+
+type Wizard {
+  name: String!
+  age: Int!
+  house: String!
+}
+```
+
+</CodeGrid>
+
+An undecorated subclass would be published as its parent type, without its own
+fields, so Strawberry raises an error when one is used in the schema. The same
+applies to input types and interfaces.
+
 ## Customizing fields with `Annotated`
 
 You can configure fields by adding `strawberry.field()` to
@@ -116,9 +155,12 @@ All `strawberry.field()` options are supported. In particular, `default` and
 `default_factory` also configure the generated dataclass constructor, so
 `User(name="Patrick")` in the example above gets a new empty `tags` list.
 
-On Python 3.10 through 3.13, use `strawberry.lazy()` when the field type is only
-imported under `TYPE_CHECKING` or otherwise unavailable at runtime. This form
-works together with field metadata:
+On Python 3.11 through 3.13, Strawberry can only read the `strawberry.field()`
+options when it can evaluate the annotation when the type is created. When the
+field type is defined further down the module, or only imported under
+`TYPE_CHECKING`, pass the options as the field's default
+(`account: Account = strawberry.field(...)`), define the type first, or use
+`strawberry.lazy()` for it, which works together with field metadata:
 
 ```python
 from typing import TYPE_CHECKING, Annotated
@@ -138,8 +180,11 @@ class Post:
     ]
 ```
 
-Python 3.14 and newer can also preserve the field metadata on a direct
-unresolved reference without `strawberry.lazy()`.
+Otherwise Strawberry raises an
+[`UnresolvedStrawberryFieldError`](https://errors.strawberry.rocks/unresolved-strawberry-field)
+when the type is created, instead of ignoring options like permissions. Python
+3.14 and newer read the options on a direct unresolved reference without
+`strawberry.lazy()`.
 
 The field configuration can be combined with other Strawberry metadata. The
 order of the metadata does not matter:

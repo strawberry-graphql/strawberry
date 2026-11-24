@@ -4,7 +4,7 @@ nox.options.reuse_existing_virtualenvs = True
 nox.options.error_on_external_run = True
 nox.options.default_venv_backend = "uv"
 
-PYTHON_VERSIONS = ["3.15", "3.14", "3.13", "3.12", "3.11", "3.10"]
+PYTHON_VERSIONS = ["3.15", "3.14", "3.13", "3.12", "3.11"]
 
 COMMON_PYTEST_OPTIONS = [
     "--cov=.",
@@ -114,7 +114,7 @@ def tests_integrations(session: nox.Session, integration: str) -> None:
 
 
 @nox.session(
-    python=["3.10", "3.11", "3.12", "3.13"],
+    python=["3.11", "3.12", "3.13"],
     name="Pydantic V1 tests",
     tags=["tests", "pydantic"],
 )
@@ -134,6 +134,8 @@ def test_pydantic(session: nox.Session) -> None:
         "pydantic",
         "--ignore=tests/cli",
         "--ignore=tests/benchmarks",
+        # strawberry.pydantic only supports pydantic v2
+        "--ignore=tests/pydantic",
     )
 
 
@@ -145,7 +147,32 @@ def test_pydantic_v2(session: nox.Session) -> None:
         "--no-group=integrations",
         env={"UV_PROJECT_ENVIRONMENT": session.virtualenv.location},
     )
-    session.install("pydantic>=2.2")
+    session.install("pydantic>=2.11")
+    session.run(
+        "pytest",
+        "--cov=.",
+        "--cov-append",
+        "-m",
+        "pydantic",
+        "--ignore=tests/cli",
+        "--ignore=tests/benchmarks",
+    )
+
+
+@nox.session(
+    python=["3.11"],
+    name="Pydantic minimum version tests",
+    tags=["tests", "pydantic"],
+)
+def test_pydantic_minimum_version(session: nox.Session) -> None:
+    session.run_install(
+        "uv",
+        "sync",
+        "--no-group=integrations",
+        env={"UV_PROJECT_ENVIRONMENT": session.virtualenv.location},
+    )
+    # the oldest pydantic supported by strawberry.pydantic
+    session.install("pydantic==2.11.*")
     session.run(
         "pytest",
         "--cov=.",

@@ -23,9 +23,23 @@ class UnsupportedTypeError(Exception):
 
 class UnregisteredTypeException(Exception):
     def __init__(self, type: type[BaseModel]) -> None:
-        message = (
-            f"Cannot find a Strawberry Type for {type} did you forget to register it?"
-        )
+        attributes = vars(type)
+
+        # a `strawberry.pydantic` model without an experimental type, while one
+        # with an experimental type is only missing the other kind of type
+        if "__strawberry_definition__" in attributes and not (
+            "_strawberry_type" in attributes or "_strawberry_input_type" in attributes
+        ):
+            message = (
+                f"{type.__name__} is decorated with `strawberry.pydantic`, which "
+                "can't be mixed with `strawberry.experimental.pydantic`: move the "
+                "models that use it to `strawberry.pydantic` too"
+            )
+        else:
+            message = (
+                f"Cannot find a Strawberry Type for {type} did you forget to "
+                "register it?"
+            )
 
         super().__init__(message)
 

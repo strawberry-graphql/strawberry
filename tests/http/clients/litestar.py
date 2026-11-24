@@ -34,6 +34,7 @@ from .base import (
     Response,
     ResultOverrideFunction,
     WebSocketClient,
+    WebSocketRejectedError,
 )
 
 
@@ -66,6 +67,7 @@ class LitestarHttpClient(HttpClient):
         result_override: ResultOverrideFunction = None,
         multipart_uploads_enabled: bool = False,
         max_subscriptions_per_connection: int | None = 100,
+        allowed_origins: Sequence[str] = (),
     ):
         BaseGraphQLController = make_graphql_controller(
             schema=schema,
@@ -77,6 +79,7 @@ class LitestarHttpClient(HttpClient):
             connection_init_wait_timeout=connection_init_wait_timeout,
             multipart_uploads_enabled=multipart_uploads_enabled,
             max_subscriptions_per_connection=max_subscriptions_per_connection,
+            allowed_origins=allowed_origins,
             path="/graphql",
             context_getter=litestar_get_context,
             root_value_getter=get_root_value,
@@ -180,8 +183,18 @@ class LitestarHttpClient(HttpClient):
         url: str,
         *,
         protocols: list[str],
+        headers: dict[str, str] | None = None,
     ) -> AsyncGenerator[WebSocketClient, None]:
-        with self.client.websocket_connect(url, protocols) as ws:
+        with contextlib.ExitStack() as stack:
+            try:
+                ws = stack.enter_context(
+                    self.client.websocket_connect(
+                        url, protocols, headers=dict(headers or {})
+                    )
+                )
+            except WebSocketDisconnect as e:
+                raise WebSocketRejectedError from e
+
             yield LitestarWebSocketClient(ws)
 
 

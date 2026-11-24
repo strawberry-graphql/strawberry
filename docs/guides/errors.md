@@ -59,13 +59,15 @@ disable all validation by using the
 ### Strawberry input coercion errors
 
 When Strawberry cannot coerce a value provided for one of its built-in `Date`,
-`DateTime`, `Time`, `Decimal`, or `UUID` scalars, or for a OneOf input object,
-it raises `StrawberryInputCoercionError`. This exception lets server-side error
-handling distinguish these client input errors without changing the serialized
-GraphQL response.
+`DateTime`, `Time`, `Decimal`, or `UUID` scalars, for a OneOf input object, or
+for a relay `GlobalID`, or when a `strawberry.Maybe` field or argument that
+doesn't accept `null` gets one, it raises `StrawberryInputCoercionError`. This
+exception lets server-side error handling distinguish these client input errors
+without changing the serialized GraphQL response.
 
-graphql-core wraps scalar errors raised while coercing variables, so error
-handlers should also check `original_error`:
+Some of these errors are raised while graphql-core coerces variables, or while
+Strawberry converts field arguments, and are then wrapped in another
+`GraphQLError`, so error handlers should also check `original_error`:
 
 ```python
 from graphql import GraphQLError

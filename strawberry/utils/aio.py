@@ -21,9 +21,7 @@ _R = TypeVar("_R")
 async def aclosing(thing: _T) -> AsyncGenerator[_T, None]:
     """Ensure that an async generator is closed properly.
 
-    Port from the stdlib contextlib.asynccontextmanager. Can be removed
-    and replaced with the stdlib version when we drop support for Python
-    versions before 3.10.
+    Unlike `contextlib.aclosing`, exceptions raised by `aclose()` are suppressed.
     """
     try:
         yield thing

@@ -1,5 +1,5 @@
 import base64 as base64_lib
-import datetime
+import datetime as dt
 import decimal
 from uuid import UUID
 
@@ -55,9 +55,9 @@ DEFAULT_SCALAR_REGISTRY: dict[object, ScalarDefinition] = {
     ID: _make_scalar_definition(GraphQLID),
     UUID: base_scalars.UUIDDefinition,
     Upload: UploadDefinition,
-    datetime.date: base_scalars.DateDefinition,
-    datetime.datetime: base_scalars.DateTimeDefinition,
-    datetime.time: base_scalars.TimeDefinition,
+    dt.date: base_scalars.DateDefinition,
+    dt.datetime: base_scalars.DateTimeDefinition,
+    dt.time: base_scalars.TimeDefinition,
     decimal.Decimal: base_scalars.DecimalDefinition,
     JSON: scalar(
         name="JSON",
