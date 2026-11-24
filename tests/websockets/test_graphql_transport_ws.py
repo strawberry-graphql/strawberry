@@ -107,6 +107,93 @@ async def test_parsing_an_invalid_message(ws: WebSocketClient):
     assert ws.close_reason == "Failed to parse message"
 
 
+@pytest.mark.parametrize("message", [[], ["connection_init"], "hello", 1, True, None])
+async def test_non_object_messages_result_in_socket_closure(
+    ws_raw: WebSocketClient, message: object
+):
+    ws = ws_raw
+
+    await ws.send_text(json.dumps(message))
+
+    await ws.receive(timeout=2)
+    assert ws.closed
+    assert ws.close_code == 4400
+    assert ws.close_reason == "Failed to parse message"
+
+
+@pytest.mark.parametrize(
+    "message",
+    [
+        pytest.param(
+            {"type": "subscribe", "payload": {"query": "{ hello }"}}, id="no-id"
+        ),
+        pytest.param(
+            {"type": "subscribe", "id": ["sub1"], "payload": {"query": "{ hello }"}},
+            id="non-string-id",
+        ),
+        pytest.param(
+            {"type": "subscribe", "id": "sub1", "payload": None}, id="null-payload"
+        ),
+        pytest.param(
+            {"type": "subscribe", "id": "sub1", "payload": "{ hello }"},
+            id="non-object-payload",
+        ),
+        pytest.param({"type": "subscribe", "id": "sub1", "payload": {}}, id="no-query"),
+        pytest.param(
+            {"type": "subscribe", "id": "sub1", "payload": {"query": 1}},
+            id="non-string-query",
+        ),
+        pytest.param(
+            {
+                "type": "subscribe",
+                "id": "sub1",
+                "payload": {"query": "{ hello }", "variables": ["value"]},
+            },
+            id="non-object-variables",
+        ),
+        pytest.param(
+            {
+                "type": "subscribe",
+                "id": "sub1",
+                "payload": {"query": "{ hello }", "operationName": 1},
+            },
+            id="non-string-operation-name",
+        ),
+        pytest.param({"type": "complete"}, id="complete-without-id"),
+        pytest.param({"type": "complete", "id": ["sub1"]}, id="complete-non-string-id"),
+    ],
+)
+async def test_malformed_messages_result_in_socket_closure(
+    ws: WebSocketClient, message: dict[str, object]
+):
+    await ws.send_json(message)
+
+    await ws.receive(timeout=2)
+    assert ws.closed
+    assert ws.close_code == 4400
+    assert ws.close_reason == "Failed to parse message"
+
+
+async def test_subscribe_payload_may_have_null_optional_fields(ws: WebSocketClient):
+    await ws.send_message(
+        {
+            "id": "sub1",
+            "type": "subscribe",
+            "payload": {
+                "query": "{ hello }",
+                "variables": None,
+                "operationName": None,
+            },
+        }
+    )
+
+    next_message: NextMessage = await ws.receive_json()
+    assert_next(next_message, "sub1", {"hello": "Hello world"})
+
+    complete_message: CompleteMessage = await ws.receive_json()
+    assert complete_message == {"id": "sub1", "type": "complete"}
+
+
 async def test_non_text_ws_messages_result_in_socket_closure(ws_raw: WebSocketClient):
     ws = ws_raw
 
