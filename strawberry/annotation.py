@@ -164,8 +164,6 @@ class StrawberryAnnotation:
         # If this is a generic field, try to resolve it using its origin's
         # specialized type_var_map
         if type_definition is not None and self._is_type_generic(resolved):
-            from strawberry.types.base import StrawberryType
-
             # the type parameters of the class declaring the field, so that fields
             # of different generic bases get their own arguments, even when their
             # type parameters have the same name
@@ -174,37 +172,102 @@ class StrawberryAnnotation:
                 if origin is not None
                 else None
             )
+            resolved_type_params = self._get_type_params(resolved)
             if (
                 base_type_var_map
-                and isinstance(resolved, StrawberryType)
+                and resolved_type_params
                 and all(
                     type_param.__name__ in base_type_var_map
-                    for type_param in resolved.type_params
+                    for type_param in resolved_type_params
                 )
             ):
-                resolved = resolved.copy_with(base_type_var_map)
+                resolved = self._copy_type(resolved, base_type_var_map)
 
             specialized_type_var_map = type_definition.specialized_type_var_map
-            if (
-                self._is_type_generic(resolved)
-                and specialized_type_var_map
-                and isinstance(resolved, StrawberryType)
-            ):
-                resolved = resolved.copy_with(specialized_type_var_map)
+            if self._is_type_generic(resolved) and specialized_type_var_map:
+                resolved = self._copy_type(resolved, specialized_type_var_map)
 
             # If the field is still generic, try to resolve it from the type_definition
             # that is asking for it.
-            if (
-                self._is_type_generic(resolved)
-                and type_definition.type_var_map
-                and isinstance(resolved, StrawberryType)
-            ):
-                resolved = resolved.copy_with(type_definition.type_var_map)
+            if self._is_type_generic(resolved) and type_definition.type_var_map:
+                resolved = self._copy_type(resolved, type_definition.type_var_map)
 
             # Resolve the type again to resolve any `Annotated` types
             resolved = self._resolve_evaled_type(resolved)
 
         return resolved
+
+    @classmethod
+    def _get_type_params(cls, type_: StrawberryType | type) -> list[TypeVar]:
+        from strawberry.types.base import StrawberryType
+
+        if isinstance(type_, StrawberryType):
+            return type_.type_params
+        if hasattr(type_, "__parameters__"):
+            return [p for p in type_.__parameters__ if isinstance(p, TypeVar)]
+        return []
+
+    @classmethod
+    def _copy_type(
+        cls,
+        type_: StrawberryType | type,
+        type_var_map: abc.Mapping[str, StrawberryType | type],
+    ) -> StrawberryType | type:
+        from strawberry.types.base import (
+            StrawberryContainer,
+            StrawberryType,
+            StrawberryTypeVar,
+        )
+
+        if is_type_var(type_):
+            return type_var_map.get(type_.__name__, type_)
+
+        if isinstance(type_, StrawberryTypeVar):
+            return type_var_map.get(type_.type_var.__name__, type_)
+
+        if isinstance(type_, StrawberryContainer):
+            new_of_type = cls._copy_type(type_.of_type, type_var_map)
+            if get_origin(new_of_type) is Annotated:
+                new_of_type = StrawberryAnnotation(new_of_type).resolve()
+            return type(type_)(new_of_type)
+
+        origin = get_origin(type_)
+        if origin is not None:
+            args = get_args(type_)
+            new_args = tuple(cls._copy_type(arg, type_var_map) for arg in args)
+            if has_object_definition(origin):
+                check_is_not_undecorated_subclass(origin)
+                new_alias = origin[new_args]
+                if not any(
+                    is_type_var(a)
+                    or (isinstance(a, StrawberryType) and a.is_graphql_generic)
+                    or bool(getattr(a, "__parameters__", None))
+                    for a in new_args
+                ):
+                    return origin.__strawberry_definition__.resolve_generic(new_alias)
+                return new_alias
+            elif origin in (typing.Union, UnionType):
+                return Union[new_args]  # noqa: UP007
+            else:
+                try:
+                    return origin[new_args]
+                except (TypeError, KeyError):
+                    return type_
+
+        if isinstance(type_, StrawberryType):
+            if type_.is_graphql_generic:
+                return type_.copy_with(type_var_map)
+            return type_
+
+        if has_object_definition(type_):
+            check_is_not_undecorated_subclass(type_)
+            td = type_.__strawberry_definition__
+            if td.is_graphql_generic:
+                params = getattr(type_, "__parameters__", None)
+                if params and all(p.__name__ in type_var_map for p in params):
+                    return td.copy_with(type_var_map)
+
+        return type_
 
     def _resolve(self) -> StrawberryType | type:
         evaled_type = cast("Any", self._evaluated_annotation)

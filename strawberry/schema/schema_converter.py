@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import contextlib
+import copy
 import dataclasses
 import inspect
 import sys
@@ -361,13 +362,27 @@ def get_arguments(
     kwargs: Any,
     config: StrawberryConfig,
     scalar_registry: Mapping[object, ScalarWrapper | ScalarDefinition],
+    type_definition: StrawberryObjectDefinition | None = None,
 ) -> tuple[list[Any], dict[str, Any]]:
+    if source is not None and has_object_definition(source):
+        type_definition = source.__strawberry_definition__
+    elif (
+        type_definition is None
+        and isinstance(field.origin, type)
+        and has_object_definition(field.origin)
+    ):
+        type_definition = field.origin.__strawberry_definition__
+
+    origin = field.origin if isinstance(field.origin, type) else None
+
     kwargs = convert_arguments(
         kwargs,
         field.arguments,
         scalar_registry=scalar_registry,
         config=config,
         info=info,
+        type_definition=type_definition,
+        origin=origin,
     )
 
     # Let field extensions reshape the converted arguments before the resolver
@@ -458,18 +473,32 @@ class GraphQLCoreConverter:
 
         return scalar_registry
 
-    def from_argument(self, argument: StrawberryArgument) -> GraphQLArgument:
-        argument_type = cast(
-            "GraphQLInputType", self.from_maybe_optional(argument.type)
+    def from_argument(
+        self,
+        argument: StrawberryArgument,
+        *,
+        type_definition: StrawberryObjectDefinition | None = None,
+        origin: type | None = None,
+    ) -> GraphQLArgument:
+        arg_type = argument.resolve_type(
+            type_definition=type_definition,
+            origin=origin,
         )
+        argument_type = cast("GraphQLInputType", self.from_maybe_optional(arg_type))
         if argument.is_maybe:
             default_value: Any = Undefined
         else:
             default_value = (
                 Undefined
                 if argument.default is UNSET
-                else self._to_input_value(argument.default, argument.type)
+                else self._to_input_value(argument.default, arg_type)
             )
+
+        if arg_type is not argument.type:
+            argument_for_backref = copy.copy(argument)
+            argument_for_backref.type_annotation = StrawberryAnnotation(arg_type)
+        else:
+            argument_for_backref = argument
 
         return GraphQLArgument(
             type_=argument_type,
@@ -477,7 +506,7 @@ class GraphQLCoreConverter:
             description=argument.description,
             deprecation_reason=argument.deprecation_reason,
             extensions={
-                GraphQLCoreConverter.DEFINITION_BACKREF: argument,
+                GraphQLCoreConverter.DEFINITION_BACKREF: argument_for_backref,
             },
         )
 
@@ -638,7 +667,7 @@ class GraphQLCoreConverter:
     ) -> GraphQLField:
         # self.from_resolver needs to be called before accessing field.type because
         # in there a field extension might want to change the type during its apply
-        resolver = self.from_resolver(field)
+        resolver = self.from_resolver(field, type_definition=type_definition)
         resolved_type = field.resolve_type(type_definition=type_definition)
 
         if _has_maybe(resolved_type):
@@ -680,7 +709,11 @@ class GraphQLCoreConverter:
         graphql_arguments = {}
         for argument in field.arguments:
             argument_name = self.config.name_converter.from_argument(argument)
-            graphql_arguments[argument_name] = self.from_argument(argument)
+            graphql_arguments[argument_name] = self.from_argument(
+                argument,
+                type_definition=type_definition,
+                origin=field.origin if isinstance(field.origin, type) else None,
+            )
 
         return GraphQLField(
             type_=field_type,
@@ -1109,7 +1142,9 @@ class GraphQLCoreConverter:
         )
 
     def from_resolver(
-        self, field: StrawberryField
+        self,
+        field: StrawberryField,
+        type_definition: StrawberryObjectDefinition | None = None,
     ) -> Callable:  # TODO: Take StrawberryResolver
         field.default_resolver = self.config.default_resolver
 
@@ -1249,6 +1284,7 @@ class GraphQLCoreConverter:
                     kwargs=kwargs,
                     config=self.config,
                     scalar_registry=self.scalar_registry,
+                    type_definition=type_definition,
                 )
 
                 resolver_requested_info = False
