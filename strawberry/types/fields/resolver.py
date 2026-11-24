@@ -21,6 +21,7 @@ from typing import (
 from typing_extensions import Protocol
 
 from strawberry.annotation import StrawberryAnnotation
+from strawberry.context import StrawberryContext
 from strawberry.exceptions import (
     ConflictingArgumentsError,
     MissingArgumentsAnnotationsError,
@@ -198,6 +199,7 @@ CLS_PARAMSPEC = ReservedNameBoundParameter("cls")
 ROOT_PARAMSPEC = ReservedName("root")
 INFO_PARAMSPEC = ReservedType("info", Info)
 PARENT_PARAMSPEC = ReservedType(name=None, type=StrawberryParent, alias="Parent")
+CONTEXT_PARAMSPEC = ReservedType(name=None, type=StrawberryContext, alias="Context")
 
 T = TypeVar("T")
 
@@ -216,6 +218,7 @@ class StrawberryResolver(Generic[T]):
         ROOT_PARAMSPEC,
         INFO_PARAMSPEC,
         PARENT_PARAMSPEC,
+        CONTEXT_PARAMSPEC,
     )
 
     # Typed as `object` because type checkers bind staticmethod and classmethod
@@ -362,6 +365,10 @@ class StrawberryResolver(Generic[T]):
     @cached_property
     def parent_parameter(self) -> inspect.Parameter | None:
         return self.reserved_parameters.get(PARENT_PARAMSPEC)
+
+    @cached_property
+    def context_parameter(self) -> inspect.Parameter | None:
+        return self.reserved_parameters.get(CONTEXT_PARAMSPEC)
 
     @cached_property
     def name(self) -> str:

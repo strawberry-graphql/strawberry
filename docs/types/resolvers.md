@@ -236,6 +236,34 @@ Strawberry uses the type to pass the correct value to the resolver.
 
 </Tip>
 
+### Accessing the context directly
+
+If a resolver only needs the context, it can ask for it directly instead of
+going through `info.context`. Annotate a parameter with `strawberry.Context`,
+passing the type of your context in brackets:
+
+```python
+from dataclasses import dataclass
+
+import strawberry
+
+
+@dataclass
+class MyContext:
+    user_id: str
+
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def user_id(self, context: strawberry.Context[MyContext]) -> str:
+        return context.user_id
+```
+
+The parameter receives the same object as `info.context`, and type checkers see
+it as `MyContext`. Like `Info`, its name can be anything, it isn't exposed in
+the schema, and it can be combined with `Info` and other arguments.
+
 ### API
 
 Info objects contain information for the current execution context:

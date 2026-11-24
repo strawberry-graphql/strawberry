@@ -383,6 +383,7 @@ def get_arguments(
     # if it asks for self, the source will be passed as first argument
     # if it asks for root or parent, the source will be passed as kwarg
     # if it asks for info, the info will be passed as kwarg
+    # if it asks for context, the request context will be passed as kwarg
 
     args = []
 
@@ -398,6 +399,9 @@ def get_arguments(
 
         if info_parameter := field.base_resolver.info_parameter:
             kwargs[info_parameter.name] = info
+
+        if context_parameter := field.base_resolver.context_parameter:
+            kwargs[context_parameter.name] = info.context
 
     return args, kwargs
 

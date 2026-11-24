@@ -121,6 +121,8 @@ def process_directive(
         arguments[info_parameter.name] = strawberry_info
     if value_parameter:
         arguments[value_parameter.name] = value
+    if context_parameter := resolver.context_parameter:
+        arguments[context_parameter.name] = info.context
     return strawberry_directive, arguments
 
 
