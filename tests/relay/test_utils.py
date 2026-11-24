@@ -156,6 +156,33 @@ def test_to_base64_with_invalid_type(value: Any):
             SliceMetadata(start=16, end=sys.maxsize, expected=None),
             sys.maxsize,
         ),
+        (
+            200,
+            None,
+            None,
+            None,
+            100,
+            SliceMetadata(start=0, end=100, expected=100),
+            101,
+        ),
+        (
+            500,
+            10,
+            None,
+            None,
+            100,
+            SliceMetadata(start=11, end=111, expected=100),
+            112,
+        ),
+        (
+            200,
+            None,
+            None,
+            10,
+            100,
+            SliceMetadata(start=190, end=200, expected=10),
+            201,
+        ),
     ],
 )
 def test_get_slice_metadata(  # noqa: PLR0917
@@ -222,3 +249,30 @@ def test_get_slice_metadata_first_with_before(
         last=None,
     )
     assert slice_metadata == expected
+
+
+@pytest.mark.parametrize("argument", ["before", "after"])
+@pytest.mark.parametrize(
+    "cursor",
+    [
+        to_base64(PREFIX, -1),
+        to_base64(PREFIX, "abc"),
+        to_base64(PREFIX, " 1"),
+        to_base64(PREFIX, "+1"),
+        to_base64(PREFIX, "1_000"),
+        to_base64(PREFIX, ""),
+        to_base64(PREFIX, "1" * 5000),
+        to_base64(PREFIX, sys.maxsize // 2 + 1),
+        to_base64(PREFIX, sys.maxsize),
+        to_base64("Fake", 1),
+        "not a cursor",
+    ],
+)
+def test_get_slice_metadata_with_invalid_cursor(argument: str, cursor: str):
+    info = mock.Mock()
+    info.schema.config = StrawberryConfig(relay_max_results=100)
+
+    with pytest.raises(
+        TypeError, match=f"Argument '{argument}' contains a non-existing value."
+    ):
+        SliceMetadata.from_arguments(info, **{argument: cursor})

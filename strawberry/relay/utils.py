@@ -98,6 +98,42 @@ def should_resolve_list_connection_edges(info: strawberry.Info) -> bool:
     return False
 
 
+# `sys.maxsize` is used as the "unbounded" end marker for `last`, and slicing
+# iterators fails above it, so leave plenty of room for `start + max_results`
+_MAX_CURSOR_OFFSET = sys.maxsize // 2
+
+
+def _parse_cursor_offset(cursor: str, *, prefix: str, argument: str) -> int:
+    """Parse the offset from a `ListConnection` cursor.
+
+    Raises:
+        TypeError:
+            If the cursor is malformed, has a different prefix or doesn't
+            point to a non-negative offset that fits in a slice index.
+
+    """
+    try:
+        cursor_type, offset = from_base64(cursor)
+    except ValueError:
+        cursor_type, offset = None, ""
+
+    # Only accept the plain digits produced by `to_base64`, so that negative
+    # offsets can't turn into Python's negative indexing when slicing
+    error = TypeError(f"Argument '{argument}' contains a non-existing value.")
+    if cursor_type != prefix or not (offset.isascii() and offset.isdigit()):
+        raise error
+
+    try:
+        value = int(offset)
+    except ValueError:  # more digits than Python's int conversion limit
+        raise error from None
+
+    if value > _MAX_CURSOR_OFFSET:
+        raise error
+
+    return value
+
+
 @dataclasses.dataclass
 class SliceMetadata:
     start: int
@@ -136,16 +172,9 @@ class SliceMetadata:
         end: int | None = None
 
         if after:
-            after_type, after_parsed = from_base64(after)
-            if after_type != prefix:
-                raise TypeError("Argument 'after' contains a non-existing value.")
-
-            start = int(after_parsed) + 1
+            start = _parse_cursor_offset(after, prefix=prefix, argument="after") + 1
         if before:
-            before_type, before_parsed = from_base64(before)
-            if before_type != prefix:
-                raise TypeError("Argument 'before' contains a non-existing value.")
-            end = int(before_parsed)
+            end = _parse_cursor_offset(before, prefix=prefix, argument="before")
 
         if isinstance(first, int):
             if first < 0:
@@ -173,6 +202,10 @@ class SliceMetadata:
 
         if end is None:
             end = start + max_results
+        elif end != sys.maxsize:
+            # `first` and `last` are already limited to `max_results`, but
+            # `before` on its own isn't, so cap it as if `first` was missing
+            end = min(end, start + max_results)
 
         expected = end - start if end != sys.maxsize else None
 
