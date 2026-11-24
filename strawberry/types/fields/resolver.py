@@ -21,6 +21,7 @@ from typing import (
 from typing_extensions import Protocol
 
 from strawberry.annotation import StrawberryAnnotation
+from strawberry.context import StrawberryContext
 from strawberry.exceptions import (
     ConflictingArgumentsError,
     MissingArgumentsAnnotationsError,
@@ -186,9 +187,11 @@ class ReservedType(NamedTuple):
             f"{module}.{type_name}",  # e.g. "strawberry.types.info.Info"
         }
 
-        # Add alias if provided (e.g. "Parent" for StrawberryParent)
+        # Add alias if provided (e.g. "Parent" for StrawberryParent), both
+        # qualified and as imported directly (`from strawberry import Context`)
         if self.alias:
             valid_names.add(f"strawberry.{self.alias}")
+            valid_names.add(self.alias)
 
         return base_annotation in valid_names
 
@@ -198,6 +201,7 @@ CLS_PARAMSPEC = ReservedNameBoundParameter("cls")
 ROOT_PARAMSPEC = ReservedName("root")
 INFO_PARAMSPEC = ReservedType("info", Info)
 PARENT_PARAMSPEC = ReservedType(name=None, type=StrawberryParent, alias="Parent")
+CONTEXT_PARAMSPEC = ReservedType(name=None, type=StrawberryContext, alias="Context")
 
 T = TypeVar("T")
 
@@ -216,6 +220,7 @@ class StrawberryResolver(Generic[T]):
         ROOT_PARAMSPEC,
         INFO_PARAMSPEC,
         PARENT_PARAMSPEC,
+        CONTEXT_PARAMSPEC,
     )
 
     # Typed as `object` because type checkers bind staticmethod and classmethod
@@ -362,6 +367,10 @@ class StrawberryResolver(Generic[T]):
     @cached_property
     def parent_parameter(self) -> inspect.Parameter | None:
         return self.reserved_parameters.get(PARENT_PARAMSPEC)
+
+    @cached_property
+    def context_parameter(self) -> inspect.Parameter | None:
+        return self.reserved_parameters.get(CONTEXT_PARAMSPEC)
 
     @cached_property
     def name(self) -> str:

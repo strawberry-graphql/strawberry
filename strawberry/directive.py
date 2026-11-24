@@ -14,6 +14,7 @@ from graphql import DirectiveLocation
 
 from strawberry.types.field import StrawberryField
 from strawberry.types.fields.resolver import (
+    CONTEXT_PARAMSPEC,
     INFO_PARAMSPEC,
     ReservedType,
     StrawberryResolver,
@@ -78,6 +79,7 @@ class StrawberryDirectiveResolver(StrawberryResolver[T]):
     RESERVED_PARAMSPEC = (
         INFO_PARAMSPEC,
         VALUE_PARAMSPEC,
+        CONTEXT_PARAMSPEC,
     )
 
     @cached_property

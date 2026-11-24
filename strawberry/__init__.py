@@ -7,6 +7,7 @@ specification and allow for a more natural way of defining GraphQL schemas.
 from typing import TYPE_CHECKING
 
 from . import experimental, federation, relay
+from .context import Context
 from .directive import directive, directive_field
 from .parent import Parent
 from .permission import BasePermission
@@ -54,6 +55,7 @@ __all__ = [
     "ID",
     "UNSET",
     "BasePermission",
+    "Context",
     "ExceptionHandler",
     "Info",
     "LazyType",
