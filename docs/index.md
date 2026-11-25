@@ -33,7 +33,8 @@ After that we need a new virtualenv:
 python -m venv virtualenv
 ```
 
-Activate the virtualenv and then install strawberry plus the dev server.
+Activate the virtualenv and then install strawberry plus the dev server. In
+PowerShell on Windows, use `.\virtualenv\Scripts\Activate.ps1` instead.
 
 ```shell
 source virtualenv/bin/activate
