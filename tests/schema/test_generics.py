@@ -2,6 +2,8 @@ import textwrap
 from enum import Enum
 from typing import Any, Generic, Self, TypeVar
 
+import pytest
+
 import strawberry
 
 
@@ -1497,4 +1499,248 @@ def test_generic_bases_with_wrapped_arguments():
         "intListBox": {"content": [[1, 2]]},
         "optionalIntBox": {"content": [None, 1]},
         "edgeBox": {"content": [{"node": 1}]},
+    }
+
+
+def test_generic_interface_with_generic_fields():
+    T = TypeVar("T")
+
+    @strawberry.interface
+    class GenericInterface(Generic[T]):
+        obj: strawberry.Private[T]
+
+        @strawberry.field
+        def as_list(self) -> list[T]:
+            return [self.obj]
+
+    @strawberry.type
+    class GenericObject(GenericInterface[int]):
+        pass
+
+    @strawberry.type
+    class GenericStrObject(GenericInterface[str]):
+        pass
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def numbers(self) -> GenericObject:
+            return GenericObject(obj=1)
+
+        @strawberry.field
+        def iface_int(self) -> GenericInterface[int]:
+            return GenericObject(obj=2)
+
+        @strawberry.field
+        def iface_str(self) -> GenericInterface[str]:
+            return GenericStrObject(obj="hi")
+
+    schema = strawberry.Schema(query=Query, types=[GenericObject, GenericStrObject])
+
+    expected_schema = """
+    type GenericObject implements IntGenericInterface {
+      asList: [Int!]!
+    }
+
+    type GenericStrObject implements StrGenericInterface {
+      asList: [String!]!
+    }
+
+    interface IntGenericInterface {
+      asList: [Int!]!
+    }
+
+    type Query {
+      numbers: GenericObject!
+      ifaceInt: IntGenericInterface!
+      ifaceStr: StrGenericInterface!
+    }
+
+    interface StrGenericInterface {
+      asList: [String!]!
+    }
+    """
+
+    assert str(schema) == textwrap.dedent(expected_schema).strip()
+
+    result = schema.execute_sync(
+        """
+        query {
+            numbers { asList }
+            ifaceInt { __typename asList }
+            ifaceStr { __typename asList }
+        }
+        """
+    )
+
+    assert not result.errors
+    assert result.data == {
+        "numbers": {"asList": [1]},
+        "ifaceInt": {"__typename": "GenericObject", "asList": [2]},
+        "ifaceStr": {"__typename": "GenericStrObject", "asList": ["hi"]},
+    }
+
+
+def test_generic_interface_subclasses_and_nested_mapping():
+    T = TypeVar("T")
+    U = TypeVar("U")
+
+    @strawberry.interface
+    class GenericInterface(Generic[T]):
+        obj: strawberry.Private[T]
+
+        @strawberry.field
+        def as_list(self) -> list[T]:
+            return [self.obj]
+
+    @strawberry.type
+    class GenericImpl(GenericInterface[T], Generic[T]):
+        pass
+
+    @strawberry.type
+    class ListImpl(GenericInterface[list[U]], Generic[U]):
+        pass
+
+    @strawberry.interface
+    class SubInterface(GenericInterface[T], Generic[T]):
+        extra: str
+
+    @strawberry.type
+    class SubImpl(SubInterface[int]):
+        pass
+
+    @strawberry.interface
+    class FixedIntInterface(GenericInterface[int]):
+        label: str
+
+    @strawberry.type
+    class ConcreteSubImpl(FixedIntInterface):
+        pass
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def generic_impl(self) -> GenericImpl[int]:
+            return GenericImpl(obj=42)
+
+        @strawberry.field
+        def list_impl(self) -> ListImpl[int]:
+            return ListImpl(obj=[7, 8])
+
+        @strawberry.field
+        def sub_impl(self) -> SubImpl:
+            return SubImpl(obj=9, extra="ok")
+
+        @strawberry.field
+        def concrete_sub_impl(self) -> ConcreteSubImpl:
+            return ConcreteSubImpl(obj=10, label="lbl")
+
+    schema = strawberry.Schema(query=Query)
+    result = schema.execute_sync(
+        """
+        query {
+            genericImpl { __typename asList }
+            listImpl { __typename asList }
+            subImpl { __typename asList extra }
+            concreteSubImpl { __typename asList label }
+        }
+        """
+    )
+
+    assert not result.errors
+    assert result.data == {
+        "genericImpl": {"__typename": "IntGenericImpl", "asList": [42]},
+        "listImpl": {"__typename": "IntListImpl", "asList": [[7, 8]]},
+        "subImpl": {"__typename": "SubImpl", "asList": [9], "extra": "ok"},
+        "concreteSubImpl": {
+            "__typename": "ConcreteSubImpl",
+            "asList": [10],
+            "label": "lbl",
+        },
+    }
+
+
+def test_generic_interface_missing_type_raises():
+    T = TypeVar("T")
+
+    @strawberry.interface
+    class GenericInterface(Generic[T]):
+        @strawberry.field
+        def as_list(self) -> list[T]:
+            return []
+
+    @strawberry.type
+    class BadImpl(GenericInterface):
+        pass
+
+    @strawberry.type
+    class Query:
+        bad: BadImpl
+
+    with pytest.raises(TypeError, match="generic, but no type has been passed"):
+        strawberry.Schema(query=Query)
+
+
+@pytest.mark.asyncio
+async def test_generic_arguments_on_specialized_type_and_interface():
+    T = TypeVar("T")
+
+    @strawberry.input
+    class BoxInput:
+        x: int
+
+    @strawberry.type
+    class Base(Generic[T]):
+        @strawberry.field
+        async def dummy_field(self, info: strawberry.Info, value: list[T]) -> int:
+            return sum(v.x if isinstance(v, BoxInput) else v for v in value)
+
+    @strawberry.type
+    class Child(Base[int]):
+        pass
+
+    @strawberry.type
+    class BoxChild(Base[BoxInput]):
+        pass
+
+    @strawberry.interface
+    class ArgInterface(Generic[T]):
+        @strawberry.field
+        def echo(self, value: list[T]) -> int:
+            return sum(v.x if isinstance(v, BoxInput) else v for v in value)
+
+    @strawberry.type
+    class BoxArgImpl(ArgInterface[BoxInput]):
+        pass
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def child(self) -> Child:
+            return Child()
+
+        @strawberry.field
+        def box_child(self) -> BoxChild:
+            return BoxChild()
+
+        @strawberry.field
+        def box_arg(self) -> BoxArgImpl:
+            return BoxArgImpl()
+
+    schema = strawberry.Schema(query=Query)
+    result = await schema.execute(
+        """
+        query {
+            child { dummyField(value: [1, 2, 3]) }
+            boxChild { dummyField(value: [{ x: 10 }, { x: 20 }]) }
+            boxArg { echo(value: [{ x: 3 }, { x: 4 }]) }
+        }
+        """
+    )
+
+    assert not result.errors
+    assert result.data == {
+        "child": {"dummyField": 6},
+        "boxChild": {"dummyField": 30},
+        "boxArg": {"echo": 7},
     }

@@ -34,9 +34,14 @@ from strawberry.exceptions import (
 )
 from strawberry.types.maybe import Some, _annotation_is_maybe
 from strawberry.types.unset import UNSET
+from strawberry.utils.inspect import get_generic_arguments
 from strawberry.utils.str_converters import to_camel_case
 
-from .base import StrawberryObjectDefinition, has_object_definition
+from .base import (
+    StrawberryObjectDefinition,
+    has_object_definition,
+    resolve_generic_type_var_map,
+)
 from .field import StrawberryField, field, get_annotated_field
 from .type_resolver import _get_fields
 from .unresolved_annotations import (
@@ -199,6 +204,26 @@ def _process_annotated_fields(cls: T) -> dict[str, StrawberryAnnotation]:
     return type_annotations
 
 
+def _resolve_interface_generic(
+    cls: builtins.type[Any],
+    base: builtins.type[Any],
+    type_definition: StrawberryObjectDefinition,
+) -> StrawberryObjectDefinition:
+    generic_arguments = get_generic_arguments(cls).get(base)
+    if not generic_arguments:
+        return type_definition
+
+    namespace = sys.modules[cls.__module__].__dict__
+    type_var_map = resolve_generic_type_var_map(
+        generic_arguments,
+        namespace=namespace,
+    )
+    if all(param.__name__ in type_var_map for param in type_definition.type_params):
+        return type_definition.copy_with(type_var_map).__strawberry_definition__
+
+    return type_definition
+
+
 def _get_interfaces(cls: builtins.type[Any]) -> list[StrawberryObjectDefinition]:
     interfaces: list[StrawberryObjectDefinition] = []
     for base in cls.__mro__[1:]:  # Exclude current class
@@ -210,6 +235,8 @@ def _get_interfaces(cls: builtins.type[Any]) -> list[StrawberryObjectDefinition]
             and type_definition.origin is base
             and type_definition.is_interface
         ):
+            if type_definition.is_graphql_generic:
+                type_definition = _resolve_interface_generic(cls, base, type_definition)
             interfaces.append(type_definition)
 
     return interfaces

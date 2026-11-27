@@ -20,6 +20,7 @@ from strawberry.types.base import (
     StrawberryMaybe,
     StrawberryOptional,
     StrawberryType,
+    get_type_params,
     has_object_definition,
 )
 from strawberry.types.enum import StrawberryEnumDefinition, has_enum_definition
@@ -29,8 +30,10 @@ from strawberry.types.unset import UNSET
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Mapping
+    from typing import TypeVar
 
     from strawberry.schema.config import StrawberryConfig
+    from strawberry.types.base import StrawberryObjectDefinition
     from strawberry.types.info import Info
     from strawberry.types.scalar import ScalarDefinition, ScalarWrapper
 
@@ -132,9 +135,24 @@ class StrawberryArgument:
                             arg.resolve_forward_ref(first)
                         )
 
+    def resolve_type(
+        self,
+        *,
+        type_definition: StrawberryObjectDefinition | None = None,
+        origin: type | None = None,
+    ) -> StrawberryType | type:
+        return self.type_annotation.resolve(
+            type_definition=type_definition,
+            origin=origin,
+        )
+
     @property
     def type(self) -> StrawberryType | type:
-        return self.type_annotation.resolve()
+        return self.resolve_type()
+
+    @property
+    def type_params(self) -> list[TypeVar]:
+        return get_type_params(self.type)
 
     @property
     def is_graphql_generic(self) -> bool:
@@ -379,6 +397,9 @@ def convert_arguments(
     scalar_registry: Mapping[object, ScalarWrapper | ScalarDefinition],
     config: StrawberryConfig,
     info: Info | None = None,
+    *,
+    type_definition: StrawberryObjectDefinition | None = None,
+    origin: type | None = None,
 ) -> dict[str, Any]:
     """Converts a nested dictionary to a dictionary of actual types.
 
@@ -403,7 +424,10 @@ def convert_arguments(
 
             kwargs[argument.python_name] = convert_argument(
                 value=current_value,
-                type_=argument.type,
+                type_=argument.resolve_type(
+                    type_definition=type_definition,
+                    origin=origin,
+                ),
                 config=config,
                 scalar_registry=scalar_registry,
                 info=info,

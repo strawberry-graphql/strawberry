@@ -1236,3 +1236,47 @@ def test_info_type_alias_syntax():
     result = schema.execute_sync("query { hello }")
     assert result.errors is None
     assert result.data == {"hello": "Hello World"}
+
+
+def test_pep695_generic_interface_with_generic_fields():
+    @strawberry.interface
+    class GenericInterface[T]:
+        obj: strawberry.Private[T]
+
+        @strawberry.field
+        def as_list(self) -> list[T]:
+            return [self.obj]
+
+    @strawberry.type
+    class GenericObject(GenericInterface[int]):
+        pass
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def numbers(self) -> GenericObject:
+            return GenericObject(obj=1)
+
+    schema = strawberry.Schema(query=Query)
+
+    expected_schema = textwrap.dedent(
+        """
+        type GenericObject implements IntGenericInterface {
+          asList: [Int!]!
+        }
+
+        interface IntGenericInterface {
+          asList: [Int!]!
+        }
+
+        type Query {
+          numbers: GenericObject!
+        }
+        """
+    ).strip()
+
+    assert str(schema) == expected_schema
+
+    result = schema.execute_sync("query { numbers { asList } }")
+    assert result.errors is None
+    assert result.data == {"numbers": {"asList": [1]}}
