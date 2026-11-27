@@ -458,3 +458,32 @@ async def test_extension_without_resolve_is_transparent_on_async_field():
     result = await schema.execute("query { echo(value: 4) }")
     assert result.errors is None
     assert result.data == {"echo": 8}
+
+
+@pytest.mark.asyncio
+async def test_async_extension_on_sync_resolver_with_argument_named_source():
+    # An async-only extension on a sync resolver goes through the built-in
+    # SyncToAsyncExtension, whose `source` parameter must not clash with a
+    # field argument of the same name.
+    class AsyncPrefixExtension(FieldExtension):
+        async def resolve_async(
+            self,
+            next_: AsyncExtensionResolver,
+            source: Any,
+            info: strawberry.Info,
+            /,
+            **kwargs: Any,
+        ) -> Any:
+            return f"prefix:{await next_(source, info, **kwargs)}"
+
+    @strawberry.type
+    class Query:
+        @strawberry.field(extensions=[AsyncPrefixExtension()])
+        def readings(self, source: str) -> str:
+            return source
+
+    schema = strawberry.Schema(query=Query)
+    result = await schema.execute('{ readings(source: "manual") }')
+
+    assert result.errors is None
+    assert result.data == {"readings": "prefix:manual"}
