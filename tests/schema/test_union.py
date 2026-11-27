@@ -4,6 +4,7 @@ from textwrap import dedent
 from typing import Annotated, Any, ClassVar, Generic, TypeVar, Union
 
 import pytest
+from pytest_mock import MockerFixture
 
 import strawberry
 from strawberry.exceptions import InvalidUnionTypeError
@@ -1440,3 +1441,86 @@ def test_annotated_union_inside_generic_subclass():
             ]
         }
     }
+
+
+def test_union_uses_interface_resolve_type(mocker: MockerFixture):
+    """A union member's custom `resolve_type`, usually inherited from a shared
+    interface, should be consulted when resolving which union member a value
+    is, the same way it already is when the interface is used directly as a
+    field's return type.
+
+    https://github.com/strawberry-graphql/strawberry/issues/519
+    """
+
+    @strawberry.interface
+    class Fruit:
+        kind: str
+
+        @classmethod
+        def resolve_type(cls, obj: Any, *args: Any, **kwargs: Any) -> str:
+            return "Apple" if obj.kind == "Apple" else "Banana"
+
+    spy_resolve_type = mocker.spy(Fruit, "resolve_type")
+
+    @strawberry.type
+    class Apple(Fruit):
+        pass
+
+    @strawberry.type
+    class Banana(Fruit):
+        pass
+
+    FruitUnion = Annotated[Union[Apple, Banana], strawberry.union("FruitUnion")]
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def fruit(self) -> FruitUnion:
+            # A plain instance of the interface, as returned e.g. by an ORM
+            # integration, rather than one of the concrete union members.
+            return Fruit(kind="Banana")  # type: ignore[return-value]
+
+    schema = strawberry.Schema(query=Query, types=[Apple, Banana])
+
+    query = "{ fruit { __typename ... on Fruit { kind } } }"
+    result = schema.execute_sync(query)
+
+    assert not result.errors
+    assert result.data == {"fruit": {"__typename": "Banana", "kind": "Banana"}}
+    spy_resolve_type.assert_called_once()
+
+
+def test_union_resolve_type_ignored_when_not_a_union_member(mocker: MockerFixture):
+    """A `resolve_type` result that isn't one of the union's own member types
+    should be ignored, falling through to the existing `is_type_of`/structural
+    matching instead of being trusted blindly.
+    """
+
+    @strawberry.interface
+    class Fruit:
+        kind: str
+
+        @classmethod
+        def resolve_type(cls, obj: Any, *args: Any, **kwargs: Any) -> str | None:
+            # Deliberately resolves to a type that isn't part of the union
+            # below, so this should be ignored rather than raising.
+            return "Grape"
+
+    @strawberry.type
+    class Apple(Fruit):
+        pass
+
+    AppleUnion = Annotated[Union[Apple], strawberry.union("AppleUnion")]
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def fruit(self) -> AppleUnion:
+            return Apple(kind="Apple")
+
+    schema = strawberry.Schema(query=Query)
+
+    result = schema.execute_sync("{ fruit { __typename ... on Fruit { kind } } }")
+
+    assert not result.errors
+    assert result.data == {"fruit": {"__typename": "Apple", "kind": "Apple"}}
