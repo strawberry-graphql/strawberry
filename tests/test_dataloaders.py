@@ -1,4 +1,6 @@
 import asyncio
+import gc
+import weakref
 from asyncio.futures import Future
 from collections.abc import Awaitable, Callable
 from typing import Any, Optional, cast
@@ -6,7 +8,7 @@ from typing import Any, Optional, cast
 import pytest
 from pytest_mock import MockerFixture
 
-from strawberry.dataloader import AbstractCache, DataLoader
+from strawberry.dataloader import AbstractCache, DataLoader, DefaultCache
 from strawberry.exceptions import WrongNumberOfResultsReturned
 
 IDXType = Callable[[list[int]], Awaitable[list[int]]]
@@ -141,8 +143,6 @@ async def test_caches_by_id(mocker: MockerFixture):
     a = loader.load(1)
     b = loader.load(1)
 
-    assert a == b
-
     assert await a == 1
     assert await b == 1
 
@@ -157,8 +157,6 @@ async def test_caches_by_id_when_loading_many(mocker: MockerFixture):
 
     a = loader.load(1)
     b = loader.load(1)
-
-    assert a == b
 
     assert await asyncio.gather(a, b) == [1, 1]
 
@@ -726,3 +724,497 @@ async def test_partial_cancellation_during_load(cache: bool):
     # A cancelled cached future must be replaced on the next load.
     assert await asyncio.wait_for(loader.load(1), timeout=1) == 1
     assert calls == [[1, 2], [1]]
+
+
+@pytest.mark.asyncio
+async def test_cancelling_one_caller_of_a_cached_key_does_not_cancel_others():
+    """Callers that load the same cached key share one pending load, but
+    cancelling one of them must not cancel the others.
+    """
+    calls: list[list[int]] = []
+
+    async def load(keys: list[int]) -> list[int]:
+        calls.append(keys)
+        await asyncio.sleep(0)
+        return keys
+
+    loader = DataLoader(load_fn=load)
+    first = asyncio.ensure_future(loader.load(1))
+    second = asyncio.ensure_future(loader.load(1))
+    await asyncio.sleep(0)
+    first.cancel()
+
+    assert await asyncio.wait_for(second, timeout=1) == 1
+    assert first.cancelled()
+    assert calls == [[1]]
+
+
+@pytest.mark.asyncio
+async def test_cancelling_one_caller_while_loading_does_not_cancel_others():
+    started = asyncio.Event()
+    finish = asyncio.Event()
+    calls: list[list[int]] = []
+
+    async def load(keys: list[int]) -> list[int]:
+        calls.append(keys)
+        started.set()
+        await finish.wait()
+        return keys
+
+    loader = DataLoader(load_fn=load)
+    first = cast("Future[int]", loader.load(1))
+    second = loader.load(1)
+    await started.wait()
+    first.cancel()
+    await asyncio.sleep(0)
+    # A caller arriving after the cancellation joins the pending load.
+    third = loader.load(1)
+    finish.set()
+
+    assert await asyncio.wait_for(asyncio.gather(second, third), timeout=1) == [1, 1]
+    assert first.cancelled()
+    assert calls == [[1]]
+    # The cached value is still served to later callers.
+    assert await loader.load(1) == 1
+    assert calls == [[1]]
+
+
+@pytest.mark.asyncio
+async def test_cancelling_one_load_many_does_not_cancel_other_callers():
+    calls: list[list[int]] = []
+
+    async def load(keys: list[int]) -> list[int]:
+        calls.append(keys)
+        await asyncio.sleep(0)
+        return keys
+
+    loader = DataLoader(load_fn=load)
+    first = cast("Future[list[int]]", loader.load_many([1, 2]))
+    second = loader.load_many([2, 3])
+    await asyncio.sleep(0)
+    first.cancel()
+
+    assert await asyncio.wait_for(second, timeout=1) == [2, 3]
+    assert calls == [[1, 2, 3]]
+
+
+@pytest.mark.asyncio
+async def test_error_is_delivered_to_every_caller_of_a_cached_key():
+    async def load(keys: list[int]) -> list[int | BaseException]:
+        return [ValueError(f"error {key}") for key in keys]
+
+    loader = DataLoader(load_fn=load)
+    results = await asyncio.gather(
+        loader.load(1), loader.load(1), return_exceptions=True
+    )
+
+    assert [str(result) for result in results] == ["error 1", "error 1"]
+
+
+@pytest.mark.asyncio
+async def test_all_callers_of_a_cached_key_cancelled_skips_load_fn():
+    """load_fn is still skipped when every caller of a shared key is cancelled."""
+    calls: list[list[int]] = []
+
+    async def load(keys: list[int]) -> list[int]:
+        calls.append(keys)
+        return keys
+
+    loader = DataLoader(load_fn=load)
+    first = cast("Future[int]", loader.load(1))
+    second = cast("Future[int]", loader.load(1))
+    first.cancel()
+    second.cancel()
+
+    await asyncio.sleep(0)
+    await asyncio.sleep(0)
+
+    assert first.cancelled()
+    assert second.cancelled()
+    assert calls == []
+    # The abandoned load is not served from the cache.
+    assert await loader.load(1) == 1
+    assert calls == [[1]]
+
+
+@pytest.mark.asyncio
+async def test_all_callers_of_a_cached_key_cancelled_cancels_running_dispatch():
+    started = asyncio.Event()
+
+    async def load(keys: list[int]) -> list[int]:
+        started.set()
+        await asyncio.sleep(10)
+        return keys
+
+    loader = DataLoader(load_fn=load)
+    first = cast("Future[int]", loader.load(1))
+    second = cast("Future[int]", loader.load(1))
+    await started.wait()
+
+    assert loader.batch is not None
+    dispatch_task = loader.batch._dispatch_task
+    assert dispatch_task is not None
+
+    first.cancel()
+    second.cancel()
+    await asyncio.sleep(0)
+    await asyncio.sleep(0)
+
+    assert dispatch_task.cancelled()
+
+
+@pytest.mark.asyncio
+async def test_all_callers_of_one_cached_key_cancelled_still_loads_other_keys():
+    calls: list[list[int]] = []
+
+    async def load(keys: list[int]) -> list[int]:
+        calls.append(keys)
+        await asyncio.sleep(0)
+        return keys
+
+    loader = DataLoader(load_fn=load)
+    first = cast("Future[int]", loader.load(1))
+    second = cast("Future[int]", loader.load(1))
+    other = loader.load(2)
+    first.cancel()
+    second.cancel()
+
+    assert await asyncio.wait_for(other, timeout=1) == 2
+    # As for uncached keys, the batch keeps the keys whose callers were cancelled
+    assert calls == [[1, 2]]
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("cache", [False, True])
+async def test_load_after_batch_cancelled_before_dispatch(cache: bool):
+    """A batch whose dispatch was cancelled must not swallow later loads."""
+    calls: list[list[int]] = []
+
+    async def load(keys: list[int]) -> list[int]:
+        calls.append(keys)
+        return keys
+
+    loader = DataLoader(load_fn=load, cache=cache)
+    first = cast("Future[int]", loader.load(1))
+    second = cast("Future[int]", loader.load(2))
+    first.cancel()
+    second.cancel()
+    await asyncio.sleep(0)
+    await asyncio.sleep(0)
+
+    assert await asyncio.wait_for(loader.load(3), timeout=1) == 3
+    assert calls == [[3]]
+
+
+@pytest.mark.asyncio
+async def test_load_while_a_batch_is_skipped_at_dispatch_starts_a_new_batch():
+    """A load joining a batch that is then skipped must not wait for it forever.
+
+    Here the cancellation of the only caller hasn't reached the shared future
+    when the dispatch skips the batch, and a new load of the same key comes in
+    right after.
+    """
+    calls: list[list[int]] = []
+
+    async def load(keys: list[int]) -> list[int]:
+        calls.append(keys)
+        return keys
+
+    loader = DataLoader(load_fn=load)
+    first = cast("Future[int]", loader.load(1))
+    # Let the dispatch task be created.
+    await asyncio.sleep(0)
+
+    later_loads: list[Awaitable[int]] = []
+    asyncio.get_running_loop().call_soon(lambda: later_loads.append(loader.load(1)))
+    first.cancel()
+    await asyncio.sleep(0)
+    await asyncio.sleep(0)
+
+    assert await asyncio.wait_for(later_loads[0], timeout=1) == 1
+    assert calls == [[1]]
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("cache", [False, True])
+async def test_load_errors_are_not_reported_as_never_retrieved(cache: bool):
+    reported: list[dict[str, Any]] = []
+    loop = asyncio.get_running_loop()
+    loop.set_exception_handler(lambda _, context: reported.append(context))
+
+    async def load(keys: list[int]) -> list[int | BaseException]:
+        return [ValueError(f"error {key}") for key in keys]
+
+    try:
+        loader = DataLoader(load_fn=load, cache=cache)
+        results = await asyncio.gather(
+            loader.load(1), loader.load(1), loader.load(2), return_exceptions=True
+        )
+        assert [str(result) for result in results] == [
+            "error 1",
+            "error 1",
+            "error 2",
+        ]
+
+        loader.clear_all()
+        del loader
+        del results
+        gc.collect()
+
+        assert reported == []
+    finally:
+        loop.set_exception_handler(None)
+
+
+@pytest.mark.asyncio
+async def test_prime_after_a_cancellation_still_dispatches_other_keys():
+    """Priming removes the cancelled key from the batch, before its callback runs."""
+    calls: list[list[int]] = []
+
+    async def load(keys: list[int]) -> list[int]:
+        calls.append(keys)
+        return keys
+
+    loader = DataLoader(load_fn=load, cache=False)
+    cancelled = cast("Future[int]", loader.load(1))
+    primed = loader.load(2)
+    other = loader.load(3)
+    cancelled.cancel()
+    loader.prime(2, 20)
+
+    assert await asyncio.wait_for(primed, timeout=1) == 20
+    assert await asyncio.wait_for(other, timeout=1) == 3
+    assert calls == [[3]]
+
+
+@pytest.mark.asyncio
+async def test_cancelling_the_cached_future_cancels_every_caller():
+    loader = DataLoader(load_fn=idx)
+    first = loader.load(1)
+    second = loader.load(1)
+
+    cached = loader.cache_map.get(1)
+    assert cached is not None
+    cached.cancel()
+
+    results = await asyncio.gather(first, second, return_exceptions=True)
+    assert all(isinstance(result, asyncio.CancelledError) for result in results)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("cache", [False, True])
+async def test_all_callers_cancelled_after_dispatch_is_scheduled_skips_load_fn(
+    cache: bool,
+):
+    """Callers cancelled once the dispatch task exists, but before it runs.
+
+    The cancellation of a cached key's callers only reaches the shared
+    future in a later loop iteration, load_fn must be skipped regardless.
+    """
+    calls: list[list[int]] = []
+
+    async def load(keys: list[int]) -> list[int]:
+        calls.append(keys)
+        return keys
+
+    async def resolver(key: int) -> int:
+        return await loader.load(key)
+
+    loader = DataLoader(load_fn=load, cache=cache)
+    callers = [asyncio.ensure_future(resolver(key)) for key in [1, 1, 2]]
+    # Let the resolvers call load, and the dispatch task be created.
+    await asyncio.sleep(0)
+    await asyncio.sleep(0)
+    for caller in callers:
+        caller.cancel()
+
+    await asyncio.sleep(0)
+    await asyncio.sleep(0)
+
+    assert all(caller.cancelled() for caller in callers)
+    assert calls == []
+    assert await asyncio.wait_for(loader.load(1), timeout=1) == 1
+    assert calls == [[1]]
+
+
+@pytest.mark.asyncio
+async def test_loading_a_key_again_right_after_cancelling_its_caller():
+    calls: list[list[int]] = []
+
+    async def load(keys: list[int]) -> list[int]:
+        calls.append(keys)
+        return keys
+
+    loader = DataLoader(load_fn=load)
+    first = cast("Future[int]", loader.load(1))
+    first.cancel()
+    # The cancellation isn't processed yet, the new caller joins the load.
+    second = loader.load(1)
+
+    assert await asyncio.wait_for(second, timeout=1) == 1
+    assert first.cancelled()
+    assert calls == [[1]]
+
+
+@pytest.mark.asyncio
+async def test_prime_resolves_every_caller_of_a_pending_key():
+    calls: list[list[int]] = []
+
+    async def load(keys: list[int]) -> list[int]:
+        calls.append(keys)
+        return keys
+
+    loader = DataLoader(load_fn=load)
+    first = loader.load(1)
+    second = loader.load(1)
+    loader.prime(1, 10)
+
+    assert await asyncio.gather(first, second) == [10, 10]
+    assert calls == []
+
+
+@pytest.mark.asyncio
+async def test_cache_returning_a_future_not_created_by_the_loader():
+    future: Future[int] = asyncio.get_running_loop().create_future()
+
+    class StaticCache(AbstractCache[int, int]):
+        def get(self, key: int) -> Future[int] | None:
+            return future
+
+        def set(self, key: int, value: Future[int]) -> None:
+            pass
+
+        def delete(self, key: int) -> None:
+            pass
+
+        def clear(self) -> None:
+            pass
+
+    loader = DataLoader(load_fn=idx, cache_map=StaticCache())
+    loaded = loader.load(1)
+    future.set_result(42)
+
+    assert await asyncio.wait_for(loaded, timeout=1) == 42
+
+
+@pytest.mark.asyncio
+async def test_cancelling_a_caller_of_a_future_not_created_by_the_loader():
+    future: Future[int] = asyncio.get_running_loop().create_future()
+
+    class StaticCache(AbstractCache[int, int]):
+        def get(self, key: int) -> Future[int] | None:
+            return future
+
+        def set(self, key: int, value: Future[int]) -> None:
+            pass
+
+        def delete(self, key: int) -> None:
+            pass
+
+        def clear(self) -> None:
+            pass
+
+    loader = DataLoader(load_fn=idx, cache_map=StaticCache())
+    first = cast("Future[int]", loader.load(1))
+    second = loader.load(1)
+    first.cancel()
+    await asyncio.sleep(0)
+    future.set_result(42)
+
+    assert await asyncio.wait_for(second, timeout=1) == 42
+    assert first.cancelled()
+
+
+@pytest.mark.asyncio
+async def test_failing_cache_write_does_not_load_the_key():
+    calls: list[list[int]] = []
+
+    async def load(keys: list[int]) -> list[int]:
+        calls.append(keys)
+        return keys
+
+    class FailingCache(DefaultCache[int, int]):
+        def set(self, key: int, value: Future[int]) -> None:
+            if key == 1:
+                raise RuntimeError("Cache unavailable")
+            super().set(key, value)
+
+    loader = DataLoader(load_fn=load, cache_map=FailingCache())
+    with pytest.raises(RuntimeError, match="Cache unavailable"):
+        loader.load(1)
+
+    assert await loader.load(2) == 2
+    assert calls == [[2]]
+
+
+@pytest.mark.asyncio
+async def test_cancelling_a_caller_of_a_cache_shared_between_loaders():
+    calls: list[list[int]] = []
+
+    async def load(keys: list[int]) -> list[int]:
+        calls.append(keys)
+        await asyncio.sleep(0)
+        return keys
+
+    cache_map: AbstractCache[int, int] = DataLoader(load_fn=load).cache_map
+    first_loader = DataLoader(load_fn=load, cache_map=cache_map)
+    second_loader = DataLoader(load_fn=load, cache_map=cache_map)
+
+    first = cast("Future[int]", first_loader.load(1))
+    second = second_loader.load(1)
+    first.cancel()
+
+    assert await asyncio.wait_for(second, timeout=1) == 1
+    assert calls == [[1]]
+
+
+@pytest.mark.asyncio
+async def test_cancelled_callers_are_freed_while_their_key_is_loading():
+    finish = asyncio.Event()
+
+    async def load(keys: list[int]) -> list[int]:
+        await finish.wait()
+        return keys
+
+    loader = DataLoader(load_fn=load)
+    live = loader.load(1)
+    cancelled = cast("Future[int]", loader.load(1))
+    ref = weakref.ref(cancelled)
+    cancelled.cancel()
+    del cancelled
+    await asyncio.sleep(0)
+    await asyncio.sleep(0)
+
+    assert ref() is None
+    finish.set()
+    assert await live == 1
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("cache", [False, True])
+async def test_loaded_values_are_freed_without_garbage_collection(cache: bool):
+    """The loader must not create reference cycles keeping loaded values alive."""
+
+    class Value:
+        pass
+
+    refs: list[weakref.ref[Value]] = []
+
+    async def load(keys: list[int]) -> list[Value]:
+        values = [Value() for _ in keys]
+        refs.extend(weakref.ref(value) for value in values)
+        return values
+
+    gc.disable()
+    try:
+        loader = DataLoader(load_fn=load, cache=cache)
+        await loader.load_many([1, 2, 3])
+        # Start a new batch, so that the loader no longer refers to the first.
+        await loader.load(4)
+        loader.clear_all()
+        del loader
+        await asyncio.sleep(0)
+
+        assert [ref() for ref in refs] == [None] * 4
+    finally:
+        gc.enable()

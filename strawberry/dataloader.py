@@ -36,6 +36,115 @@ K = TypeVar("K")
 class LoaderTask(Generic[K, T]):
     key: K
     future: Future
+    # Only used for cached keys. Every `load` of a cached key gets its own
+    # waiter future, so that cancelling one caller doesn't cancel the others
+    # waiting for the same key. `future` is cancelled once all waiters are.
+    # A dict is used as an ordered set, to remove cancelled waiters in O(1).
+    waiters: dict[Future, None] | None = dataclasses.field(default=None, repr=False)
+    _live_waiters: int = dataclasses.field(default=0, repr=False)
+    _batch: Batch[K, T] | None = dataclasses.field(default=None, repr=False)
+    _cancellation_handled: bool = dataclasses.field(default=False, repr=False)
+
+    def add_waiter(self, loop: AbstractEventLoop) -> Future:
+        waiter = loop.create_future()
+        if self.waiters is None:
+            self.waiters = {waiter: None}
+        else:
+            self.waiters[waiter] = None
+        self._live_waiters += 1
+        waiter.add_done_callback(self._on_waiter_done)
+        return waiter
+
+    def set_result(self, value: Any) -> None:
+        self.future.set_result(value)
+        if self.waiters:
+            for waiter in self.waiters:
+                if not waiter.done():
+                    # Resolved here, so the callback has nothing to do.
+                    waiter.remove_done_callback(self._on_waiter_done)
+                    waiter.set_result(value)
+
+    def set_exception(self, exception: BaseException) -> None:
+        self.future.set_exception(exception)
+        if self.waiters:
+            # Callers get the exception from their waiters, mark it as
+            # retrieved on the shared future so asyncio doesn't log it.
+            self.future.exception()
+            for waiter in self.waiters:
+                if not waiter.done():
+                    waiter.remove_done_callback(self._on_waiter_done)
+                    waiter.set_exception(exception)
+
+    @property
+    def _is_abandoned(self) -> bool:
+        """Whether no caller is waiting for the task's result anymore.
+
+        Waiters are checked directly, as their cancellation only reaches
+        `future` once their callbacks run, in a later loop iteration.
+        """
+        if self.future.cancelled():
+            return True
+        return self.waiters is not None and all(w.cancelled() for w in self.waiters)
+
+    def _on_waiter_done(self, waiter: Future) -> None:
+        if not waiter.cancelled():
+            return
+
+        if self.waiters is not None:
+            # Don't keep cancelled waiters alive while the key is loading.
+            self.waiters.pop(waiter, None)
+        self._live_waiters -= 1
+        if self._live_waiters == 0 and not self.future.done():
+            self.future.cancel()
+            # Don't wait for the future's callback to cancel the dispatch.
+            self._handle_cancellation()
+
+    def _on_future_done(self, future: Future) -> None:
+        if isinstance(future, _CachedFuture):
+            self._resolve_pending_waiters()
+            # The cache only needs the resolved future.
+            future.task = None
+
+        if future.cancelled():
+            self._handle_cancellation()
+
+        # Release the batch and the waiters, so that they are freed by
+        # refcounting.
+        self._batch = None
+        self.waiters = None
+
+    def _handle_cancellation(self) -> None:
+        if self._cancellation_handled:
+            return
+        self._cancellation_handled = True
+        if self._batch is not None:
+            self._batch._on_task_cancelled()
+
+    def _resolve_pending_waiters(self) -> None:
+        """Resolve the waiters left pending by a future resolved elsewhere.
+
+        For example, when the future is cancelled through the cache.
+        """
+        if not self.waiters:
+            return
+
+        for waiter in self.waiters:
+            if waiter.done():
+                continue
+            if self.future.cancelled():
+                waiter.cancel()
+            elif (exception := self.future.exception()) is not None:
+                waiter.set_exception(exception)
+            else:
+                waiter.set_result(self.future.result())
+
+
+class _CachedFuture(Future[T]):
+    """The future stored in the cache, linked to its task until it is done."""
+
+    __slots__ = ("task",)
+
+    task: LoaderTask[Any, T] | None
 
 
 @dataclass(slots=True)
@@ -45,20 +154,51 @@ class Batch(Generic[K, T]):
     _dispatch_task: asyncio.Task[None] | None = dataclasses.field(
         default=None, repr=False
     )
+    _abandoned: bool = dataclasses.field(default=False, repr=False)
+    # Number of tasks whose future isn't cancelled
+    _live_tasks: int = dataclasses.field(default=0, repr=False)
 
-    def add_task(self, key: Any, future: Future) -> None:
-        task: LoaderTask[K, T] = LoaderTask(key, future)
+    def add_task(self, key: Any, future: Future) -> LoaderTask[K, T]:
+        task: LoaderTask[K, T] = LoaderTask(key, future, _batch=self)
         self.tasks.append(task)
-        future.add_done_callback(self._on_future_done)
+        self._live_tasks += 1
+        future.add_done_callback(task._on_future_done)
+        return task
 
-    def _on_future_done(self, future: Future) -> None:
-        """Cancel the dispatch task if all futures in the batch are cancelled."""
+    def _remove_done_tasks(self) -> None:
+        tasks = []
+        for task in self.tasks:
+            if task.future.done():
+                # Its pending callback must not update this batch anymore
+                task._batch = None
+            else:
+                tasks.append(task)
+        self.tasks = tasks
+        self._live_tasks = len(tasks)
+
+    def _abandon(self) -> None:
+        """Give up on the batch, as no caller is waiting for any of its keys.
+
+        The batch is closed to new loads and its futures are cancelled, so
+        that new loads of its keys start a new batch instead of waiting for
+        this one.
+        """
+        self._abandoned = True
+        self.dispatched = True
+        for task in self.tasks:
+            if not task.future.done():
+                task.future.cancel()
+
+    def _on_task_cancelled(self) -> None:
+        self._live_tasks -= 1
+        # Cancel the dispatch task if no caller is waiting for the batch.
         if (
-            future.cancelled()
+            self._live_tasks == 0
+            and not self._abandoned
             and self._dispatch_task is not None
             and not self._dispatch_task.done()
-            and all(t.future.cancelled() for t in self.tasks)
         ):
+            self._abandon()
             self._dispatch_task.cancel()
 
     def __len__(self) -> int:
@@ -161,21 +301,33 @@ class DataLoader(Generic[K, T]):
         return self._loop
 
     def load(self, key: K) -> Awaitable[T]:
-        if self.cache:
-            future = self.cache_map.get(key)
+        if not self.cache:
+            uncached = self.loop.create_future()
+            get_current_batch(self).add_task(key, uncached)
+            return uncached
 
-            if future and not future.cancelled():
-                return future
+        cached = self.cache_map.get(key)
 
-        future = self.loop.create_future()
+        if cached and not cached.cancelled():
+            if cached.done():
+                return cached
 
-        if self.cache:
-            self.cache_map.set(key, future)
+            if isinstance(cached, _CachedFuture) and cached.task is not None:
+                return cached.task.add_waiter(self.loop)
 
-        batch = get_current_batch(self)
-        batch.add_task(key, future)
+            # Not created by a loader: give the caller its own future, so
+            # that cancelling it doesn't cancel the one shared by the others.
+            return _follow(cached, self.loop)
 
-        return future
+        future: _CachedFuture[T] = _CachedFuture(loop=self.loop)
+        future.task = None
+        # Cache the future first, so that nothing is loaded if this fails
+        self.cache_map.set(key, future)
+
+        task = get_current_batch(self).add_task(key, future)
+        future.task = task
+
+        return task.add_waiter(self.loop)
 
     def load_many(self, keys: Iterable[K]) -> Awaitable[list[T]]:
         return gather(*map(self.load, keys))
@@ -213,11 +365,35 @@ class DataLoader(Generic[K, T]):
             for task in self.batch.tasks:
                 if task.key in data:
                     batch_updated = True
-                    task.future.set_result(data[task.key])
+                    task.set_result(data[task.key])
             if batch_updated:
-                self.batch.tasks = [
-                    task for task in self.batch.tasks if not task.future.done()
-                ]
+                self.batch._remove_done_tasks()
+
+
+def _follow(source: Future[T], loop: AbstractEventLoop) -> Future[T]:
+    """Return a new future resolved like `source`.
+
+    Cancelling the new future doesn't cancel `source`.
+    """
+    waiter: Future[T] = loop.create_future()
+
+    def copy_state(source: Future[T]) -> None:
+        if waiter.done():
+            return
+        if source.cancelled():
+            waiter.cancel()
+        elif (exception := source.exception()) is not None:
+            waiter.set_exception(exception)
+        else:
+            waiter.set_result(source.result())
+
+    def on_waiter_done(waiter: Future[T]) -> None:
+        if waiter.cancelled():
+            source.remove_done_callback(copy_state)
+
+    source.add_done_callback(copy_state)
+    waiter.add_done_callback(on_waiter_done)
+    return waiter
 
 
 def should_create_new_batch(loader: DataLoader, batch: Batch) -> bool:
@@ -259,10 +435,10 @@ async def dispatch_batch(loader: DataLoader, batch: Batch) -> None:
         # overridden with preset values
         return
 
-    # Skip the batch entirely if all futures have already been cancelled.
-    # This avoids calling load_fn (e.g. a database query) when no caller
-    # is waiting for the results.
-    if all(task.future.cancelled() for task in batch.tasks):
+    # Skip the batch entirely if no caller is waiting for the results.
+    # This avoids calling load_fn (e.g. a database query) for nothing.
+    if all(task._is_abandoned for task in batch.tasks):
+        batch._abandon()
         return
 
     # TODO: check if load_fn return an awaitable and it is a list
@@ -283,14 +459,14 @@ async def dispatch_batch(loader: DataLoader, batch: Batch) -> None:
                 continue
 
             if isinstance(value, BaseException):
-                task.future.set_exception(value)
+                task.set_exception(value)
             else:
-                task.future.set_result(value)
+                task.set_result(value)
     except Exception as e:  # noqa: BLE001
         for task in batch.tasks:
             if task.future.cancelled():
                 continue
-            task.future.set_exception(e)
+            task.set_exception(e)
 
 
 __all__ = [
