@@ -88,6 +88,10 @@ class MyQueryResult:
     user: MyQueryResultUser
 ```
 
+The Python plugin includes GraphQL type descriptions as class docstrings and
+field descriptions as attribute docstrings in generated models. Descriptions are
+taken from the schema, including for input types and aliased fields.
+
 ## Why is this useful?
 
 Query code generation is usually used to generate types for clients using your
