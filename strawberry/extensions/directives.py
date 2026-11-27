@@ -8,6 +8,7 @@ from graphql import get_argument_values
 from strawberry.extensions import SchemaExtension
 from strawberry.types.arguments import convert_arguments
 from strawberry.types.base import StrawberryContainer, has_object_definition
+from strawberry.types.introspection import get_introspection_field
 from strawberry.types.lazy_type import LazyType
 from strawberry.utils.await_maybe import await_maybe
 
@@ -19,7 +20,6 @@ if TYPE_CHECKING:
     from strawberry.directive import StrawberryDirective, StrawberryDirectiveResolver
     from strawberry.schema.schema import Schema
     from strawberry.types.base import StrawberryType
-    from strawberry.types.field import StrawberryField
     from strawberry.utils.await_maybe import AwaitableOrValue
 
 
@@ -102,10 +102,10 @@ def process_directive(
     # types that build their own value
     strawberry_info = None
     if info_parameter or _has_input_object_arguments(strawberry_directive):
-        field: StrawberryField = schema.get_field_for_type(  # type: ignore
+        field = schema.get_field_for_type(
             field_name=info.field_name,
             type_name=info.parent_type.name,
-        )
+        ) or get_introspection_field(info.parent_type.name, info.field_name)
         strawberry_info = schema.config.info_class(_raw_info=info, _field=field)
 
     arguments = get_argument_values(directive_definition, directive, variable_values)
