@@ -4,6 +4,7 @@ from collections.abc import Iterator, Mapping
 from typing import Any, Generic, TypeVar
 
 import strawberry
+from strawberry.schema_directive import Location
 from strawberry.types.arguments import InputContext
 from strawberry.types.base import get_object_definition
 
@@ -254,3 +255,74 @@ def test_fields_left_out_by_to_input_are_not_passed_to_from_input():
         "update": "Ada user"
     }
     assert received == [{"name": "Ada"}, {"name": "Ada", "role": "user"}]
+
+
+def test_to_input_is_used_for_schema_directive_values():
+    @strawberry.input
+    class Filter:
+        limit: int = 10
+        query: str | None = "all"
+
+    get_object_definition(Filter, strict=True).to_input = lambda instance: {
+        "limit": instance.limit
+    }
+
+    @strawberry.schema_directive(locations=[Location.FIELD_DEFINITION])
+    class Filtered:
+        filter: Filter
+
+    @strawberry.type
+    class Query:
+        items: list[str] = strawberry.field(
+            directives=[Filtered(filter=Filter(limit=5, query=None))]
+        )
+
+    schema = strawberry.Schema(query=Query)
+
+    assert "items: [String!]! @filtered(filter: { limit: 5 })" in str(schema)
+
+
+def test_to_input_is_used_for_arbitrary_iterables_in_list_defaults():
+    from collections import deque
+
+    @strawberry.input
+    class Pagination:
+        limit: int = 10
+        offset: int = 0
+
+    get_object_definition(Pagination, strict=True).to_input = lambda p: {
+        "limit": p.limit
+    }
+
+    @strawberry.input
+    class BatchFilter:
+        pages: list[Pagination] = strawberry.field(
+            default_factory=lambda: (Pagination(limit=n, offset=99) for n in (2, 4))  # type: ignore[arg-type,return-value]
+        )
+
+    default_pages: Any = deque(
+        [Pagination(limit=5, offset=1), Pagination(limit=8, offset=2)]
+    )
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def batch(
+            self,
+            pages: list[Pagination] = default_pages,
+            filter: BatchFilter = BatchFilter(),
+        ) -> str:
+            page_limits = [p.limit for p in pages]
+            filter_limits = [p.limit for p in filter.pages]
+            return f"{page_limits} {filter_limits}"
+
+    schema = strawberry.Schema(query=Query)
+    sdl = str(schema)
+
+    assert "pages: [Pagination!]! = [{ limit: 2 }, { limit: 4 }]" in sdl
+    assert "pages: [Pagination!]! = [{ limit: 5 }, { limit: 8 }]" in sdl
+    assert _query_default(schema) == "[{ limit: 5 }, { limit: 8 }]"
+
+    result = schema.execute_sync("{ batch }")
+    assert not result.errors
+    assert result.data == {"batch": "[5, 8] [2, 4]"}
