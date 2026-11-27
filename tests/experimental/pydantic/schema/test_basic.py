@@ -4,6 +4,7 @@ from enum import Enum
 import pydantic
 
 import strawberry
+from strawberry.schema.config import StrawberryConfig
 from tests.experimental.pydantic.utils import needs_pydantic_v1
 
 
@@ -556,3 +557,90 @@ def test_basic_type_with_constrained_list():
 
     assert not result.errors
     assert result.data["user"]["friendNames"] == ["A", "B"]
+
+
+def test_default_resolver_with_dict():
+    class UserModel(pydantic.BaseModel):
+        name: str
+        age: int
+
+    @strawberry.experimental.pydantic.type(model=UserModel, all_fields=True)
+    class User:
+        pass
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def user(self) -> User:
+            return {"name": "Alice", "age": 30}  # type: ignore[return-value]
+
+    schema = strawberry.Schema(
+        query=Query,
+        config=StrawberryConfig(default_resolver=lambda root, field: root[field]),
+    )
+
+    result = schema.execute_sync("{ user { name age } }")
+
+    assert not result.errors
+    assert result.data == {"user": {"name": "Alice", "age": 30}}
+
+
+def test_custom_is_type_of_is_preserved():
+    called = False
+
+    class UserModel(pydantic.BaseModel):
+        name: str
+
+    @strawberry.experimental.pydantic.type(model=UserModel, all_fields=True)
+    class User:
+        @classmethod
+        def is_type_of(cls, obj: object, info: object) -> bool:
+            nonlocal called
+            called = True
+            return isinstance(obj, dict) and "name" in obj
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def user(self) -> User:
+            return {"name": "Bob"}  # type: ignore[return-value]
+
+    schema = strawberry.Schema(
+        query=Query,
+        config=StrawberryConfig(default_resolver=lambda root, field: root[field]),
+    )
+
+    result = schema.execute_sync("{ user { name } }")
+
+    assert called
+    assert not result.errors
+    assert result.data == {"user": {"name": "Bob"}}
+
+
+def test_interface_with_pydantic_model_return():
+    class NodeModel(pydantic.BaseModel):
+        id: str
+
+    class UserModel(NodeModel):
+        name: str
+
+    @strawberry.experimental.pydantic.interface(model=NodeModel, all_fields=True)
+    class Node:
+        pass
+
+    @strawberry.experimental.pydantic.type(model=UserModel, all_fields=True)
+    class User(Node):
+        pass
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def node(self) -> Node:
+            return UserModel(id="1", name="Charlie")  # type: ignore[return-value]
+
+    schema = strawberry.Schema(query=Query, types=[User])
+
+    result = schema.execute_sync("{ node { id ... on User { name } } }")
+
+    assert not result.errors
+    assert result.data == {"node": {"id": "1", "name": "Charlie"}}

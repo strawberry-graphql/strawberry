@@ -26,7 +26,6 @@ from strawberry.experimental.pydantic.utils import (
     get_private_fields,
 )
 from strawberry.types.auto import StrawberryAuto
-from strawberry.types.cast import get_strawberry_type_cast
 from strawberry.types.field import StrawberryField
 from strawberry.types.object_type import _process_type, _wrap_dataclass
 from strawberry.types.private import is_private
@@ -35,8 +34,6 @@ from strawberry.types.type_resolver import _get_fields
 if TYPE_CHECKING:
     import builtins
     from collections.abc import Callable, Sequence
-
-    from graphql import GraphQLResolveInfo
 
 
 def get_type_for_field(field: CompatModelField, is_input: bool, compat: PydanticCompat):  # noqa: ANN201
@@ -213,16 +210,9 @@ def type(
             if field.name not in fields_set
         ] + all_model_fields
 
-        # Implicitly define `is_type_of` to support interfaces/unions that use
-        # pydantic objects (not the corresponding strawberry type)
-        @classmethod  # type: ignore
-        def is_type_of(cls: builtins.type, obj: Any, _info: GraphQLResolveInfo) -> bool:
-            if (type_cast := get_strawberry_type_cast(obj)) is not None:
-                return type_cast is cls
-
-            return isinstance(obj, (cls, model))
-
-        namespace = {"is_type_of": is_type_of}
+        namespace: dict[str, Any] = {}
+        if hasattr(cls, "is_type_of"):
+            namespace["is_type_of"] = cls.is_type_of
         # We need to tell the difference between a from_pydantic method that is
         # inherited from a base class and one that is defined by the user in the
         # decorated class. We want to override the method only if it is
