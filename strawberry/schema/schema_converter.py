@@ -1069,6 +1069,11 @@ class GraphQLCoreConverter:
                 ):
                     return True
 
+                if (
+                    pydantic_type := getattr(object_type.origin, "_pydantic_type", None)
+                ) is not None and isinstance(obj, pydantic_type):
+                    return True
+
                 return isinstance(obj, possible_types)
 
             return is_type_of

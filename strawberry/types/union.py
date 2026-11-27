@@ -192,6 +192,22 @@ class StrawberryUnion(StrawberryType):
                     ):
                         return inner_type.name
 
+                for inner_type in type_.types:
+                    if (
+                        (concrete_type := type_map.get(inner_type.name)) is not None
+                        and isinstance(
+                            concrete_type.definition, StrawberryObjectDefinition
+                        )
+                        and (
+                            pydantic_type := getattr(
+                                concrete_type.definition.origin, "_pydantic_type", None
+                            )
+                        )
+                        is not None
+                        and isinstance(root, pydantic_type)
+                    ):
+                        return inner_type.name
+
                 # Couldn't resolve using `is_type_of`
                 raise WrongReturnTypeForUnion(info.field_name, str(type(root)))
 
