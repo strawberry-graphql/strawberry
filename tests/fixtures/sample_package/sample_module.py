@@ -2,12 +2,9 @@ from enum import Enum
 from typing import Annotated, NewType
 
 import strawberry
+from strawberry.schema.config import StrawberryConfig
 
-ExampleScalar = strawberry.scalar(
-    NewType("ExampleScalar", object),
-    serialize=lambda v: v,
-    parse_value=lambda v: v,
-)
+ExampleScalar = NewType("ExampleScalar", object)
 
 
 @strawberry.type
@@ -52,7 +49,18 @@ class Query:
 
 
 def create_schema():
-    return strawberry.Schema(query=Query)
+    return strawberry.Schema(
+        query=Query,
+        config=StrawberryConfig(
+            scalar_map={
+                ExampleScalar: strawberry.scalar(
+                    name="ExampleScalar",
+                    serialize=lambda v: v,
+                    parse_value=lambda v: v,
+                )
+            }
+        ),
+    )
 
 
 schema = create_schema()

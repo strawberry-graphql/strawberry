@@ -23,7 +23,7 @@ def test_find_model_name(cli_app: Typer, cli_runner: CliRunner):
 
     assert result.exit_code == 0
     assert _simplify_path(result.stdout.strip()) == snapshot(
-        "fixtures/sample_package/sample_module.py:38:7"
+        "fixtures/sample_package/sample_module.py:35:7"
     )
 
 
@@ -33,7 +33,7 @@ def test_find_model_field(cli_app: Typer, cli_runner: CliRunner):
 
     assert result.exit_code == 0
     assert _simplify_path(result.stdout.strip()) == snapshot(
-        "fixtures/sample_package/sample_module.py:39:5"
+        "fixtures/sample_package/sample_module.py:36:5"
     )
 
 

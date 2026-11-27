@@ -84,7 +84,7 @@ if TYPE_CHECKING:
 
     from strawberry.exceptions import StrawberryException
     from strawberry.types.base import StrawberryType
-    from strawberry.types.scalar import ScalarDefinition, ScalarWrapper
+    from strawberry.types.scalar import ScalarDefinition
 
 
 def _is_subclass(annotation: object, base: type | tuple[type, ...]) -> bool:
@@ -422,7 +422,7 @@ def _is_registered(model: type[BaseModel]) -> bool:
 def _find_unregistered_model(
     type_: Any,
     model: type[BaseModel] | None,
-    scalar_registry: dict[object, ScalarDefinition | ScalarWrapper],
+    scalar_registry: dict[object, ScalarDefinition],
 ) -> type[BaseModel] | None:
     """Register scalar fallbacks and find models without a GraphQL type."""
     if isinstance(type_, LazyType):
@@ -470,7 +470,7 @@ def _find_unregistered_model(
 def validate_field_type(
     field: StrawberryField,
     type_: Any,
-    scalar_registry: dict[object, ScalarDefinition | ScalarWrapper],
+    scalar_registry: dict[object, ScalarDefinition],
     *,
     is_input: bool,
 ) -> None:
