@@ -361,6 +361,7 @@ def get_arguments(
     kwargs: Any,
     config: StrawberryConfig,
     scalar_registry: Mapping[object, ScalarWrapper | ScalarDefinition],
+    type_definition: StrawberryObjectDefinition | None = None,
 ) -> tuple[list[Any], dict[str, Any]]:
     kwargs = convert_arguments(
         kwargs,
@@ -368,6 +369,8 @@ def get_arguments(
         scalar_registry=scalar_registry,
         config=config,
         info=info,
+        type_definition=type_definition,
+        origin=field.origin if isinstance(field.origin, type) else None,
     )
 
     # Let field extensions reshape the converted arguments before the resolver
@@ -458,17 +461,27 @@ class GraphQLCoreConverter:
 
         return scalar_registry
 
-    def from_argument(self, argument: StrawberryArgument) -> GraphQLArgument:
-        argument_type = cast(
-            "GraphQLInputType", self.from_maybe_optional(argument.type)
+    def from_argument(
+        self,
+        argument: StrawberryArgument,
+        *,
+        type_definition: StrawberryObjectDefinition | None = None,
+        origin: type | None = None,
+    ) -> GraphQLArgument:
+        resolved_type = argument.resolve_type(
+            type_definition=type_definition,
+            origin=origin,
         )
-        if argument.is_maybe:
+        argument_type = cast(
+            "GraphQLInputType", self.from_maybe_optional(resolved_type)
+        )
+        if isinstance(resolved_type, StrawberryMaybe):
             default_value: Any = Undefined
         else:
             default_value = (
                 Undefined
                 if argument.default is UNSET
-                else self._to_input_value(argument.default, argument.type)
+                else self._to_input_value(argument.default, resolved_type)
             )
 
         return GraphQLArgument(
@@ -638,7 +651,7 @@ class GraphQLCoreConverter:
     ) -> GraphQLField:
         # self.from_resolver needs to be called before accessing field.type because
         # in there a field extension might want to change the type during its apply
-        resolver = self.from_resolver(field)
+        resolver = self.from_resolver(field, type_definition=type_definition)
         resolved_type = field.resolve_type(type_definition=type_definition)
 
         if _has_maybe(resolved_type):
@@ -678,9 +691,14 @@ class GraphQLCoreConverter:
             resolver = lambda event, *_, **__: event  # noqa: E731
 
         graphql_arguments = {}
+        origin = field.origin if isinstance(field.origin, type) else None
         for argument in field.arguments:
             argument_name = self.config.name_converter.from_argument(argument)
-            graphql_arguments[argument_name] = self.from_argument(argument)
+            graphql_arguments[argument_name] = self.from_argument(
+                argument,
+                type_definition=type_definition,
+                origin=origin,
+            )
 
         return GraphQLField(
             type_=field_type,
@@ -961,7 +979,12 @@ class GraphQLCoreConverter:
                 ) is not None:
                     return cast_type_name
 
-                if isinstance(obj, interface.origin):
+                interface_origin = (
+                    interface.concrete_of.origin
+                    if interface.concrete_of is not None
+                    else interface.origin
+                )
+                if isinstance(obj, interface_origin):
                     type_definition = get_object_definition(obj, strict=True)
 
                     # TODO: we should find the correct type here from the
@@ -1109,7 +1132,10 @@ class GraphQLCoreConverter:
         )
 
     def from_resolver(
-        self, field: StrawberryField
+        self,
+        field: StrawberryField,
+        *,
+        type_definition: StrawberryObjectDefinition | None = None,
     ) -> Callable:  # TODO: Take StrawberryResolver
         field.default_resolver = self.config.default_resolver
 
@@ -1249,6 +1275,7 @@ class GraphQLCoreConverter:
                     kwargs=kwargs,
                     config=self.config,
                     scalar_registry=self.scalar_registry,
+                    type_definition=type_definition,
                 )
 
                 resolver_requested_info = False

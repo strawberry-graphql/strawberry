@@ -21,7 +21,7 @@ from strawberry.utils.inspect import (
     get_generic_arguments,
     get_specialized_type_var_map,
 )
-from strawberry.utils.typing import is_concrete_generic
+from strawberry.utils.typing import is_concrete_generic, is_type_var
 from strawberry.utils.typing import is_generic as is_type_generic
 
 if TYPE_CHECKING:
@@ -391,7 +391,34 @@ class StrawberryObjectDefinition(StrawberryType):
     def copy_with(
         self, type_var_map: Mapping[str, StrawberryType | type]
     ) -> type[WithStrawberryObjectDefinition]:
-        fields = [field.copy_with(type_var_map) for field in self.fields]
+        generic_arguments_by_origin = get_generic_arguments(self.origin)
+        fields: list[StrawberryField] = []
+        for field in self.fields:
+            field_type_var_map = type_var_map
+            if (
+                isinstance(field.origin, type)
+                and field.origin is not self.origin
+                and (origin_args := generic_arguments_by_origin.get(field.origin))
+            ):
+                resolved_origin_map = resolve_generic_type_var_map(
+                    origin_args,
+                    outer_type_var_map=type_var_map,
+                )
+                if resolved_origin_map:
+                    field_type_var_map = resolved_origin_map
+            fields.append(field.copy_with(field_type_var_map))
+
+        interfaces = [
+            _specialize_inherited_interface(
+                self.origin,
+                interface,
+                type_var_map,
+                generic_arguments_by_origin=generic_arguments_by_origin,
+            )
+            if interface.is_graphql_generic
+            else interface
+            for interface in self.interfaces
+        ]
 
         new_type_definition = StrawberryObjectDefinition(
             name=self.name,
@@ -399,7 +426,7 @@ class StrawberryObjectDefinition(StrawberryType):
             origin=self.origin,
             is_interface=self.is_interface,
             directives=self.directives and self.directives[:],
-            interfaces=self.interfaces and self.interfaces[:],
+            interfaces=interfaces,
             description=self.description,
             extend=self.extend,
             is_type_of=self.is_type_of,
@@ -582,6 +609,131 @@ class StrawberryObjectDefinition(StrawberryType):
         return any(isinstance(directive, OneOf) for directive in self.directives)
 
 
+def get_type_params(type_: object) -> list[TypeVar]:
+    """Return GraphQL-relevant TypeVars referenced by `type_`."""
+    if has_object_definition(type_):
+        parameters = getattr(type_, "__parameters__", None)
+        return list(parameters) if parameters else []
+
+    if isinstance(type_, StrawberryType):
+        return type_.type_params
+
+    return []
+
+
+def specialize_generic_object(
+    type_: Any,
+    type_var_map: Mapping[str, StrawberryType | type],
+    *,
+    namespace: dict[str, Any] | None = None,
+) -> Any:
+    """Specialize a generic Strawberry object type or generic alias using `type_var_map`."""
+    from strawberry.annotation import StrawberryAnnotation
+
+    definition = type_.__strawberry_definition__
+    if is_concrete_generic(type_):
+        params = getattr(type_.__origin__, "__parameters__", ())
+        args = getattr(type_, "__args__", ())
+        mapped: dict[str, StrawberryType | type] = {}
+
+        for param, arg in zip(params, args, strict=False):
+            if is_type_var(arg):
+                if arg.__name__ in type_var_map:
+                    mapped[param.__name__] = type_var_map[arg.__name__]
+                continue
+
+            resolved_arg = StrawberryAnnotation(arg, namespace=namespace).resolve()
+            if (
+                isinstance(resolved_arg, StrawberryType)
+                and resolved_arg.is_graphql_generic
+                and all(tp.__name__ in type_var_map for tp in resolved_arg.type_params)
+            ):
+                resolved_arg = resolved_arg.copy_with(type_var_map)
+            elif (
+                has_object_definition(resolved_arg)
+                and resolved_arg.__strawberry_definition__.is_graphql_generic
+            ):
+                resolved_arg = specialize_generic_object(
+                    resolved_arg, type_var_map, namespace=namespace
+                )
+
+            if not StrawberryAnnotation._is_type_generic(resolved_arg):
+                mapped[param.__name__] = resolved_arg
+
+        if all(tp.__name__ in mapped for tp in definition.type_params):
+            return definition.copy_with(mapped)
+        return type_
+
+    if all(tp.__name__ in type_var_map for tp in definition.type_params):
+        return definition.copy_with(type_var_map)
+    return type_
+
+
+def resolve_generic_type_var_map(
+    generic_arguments: Mapping[Any, Any],
+    *,
+    outer_type_var_map: Mapping[str, StrawberryType | type] | None = None,
+    namespace: dict[str, Any] | None = None,
+) -> dict[str, StrawberryType | type]:
+    """Resolve generic base arguments to concrete Strawberry types where possible."""
+    from strawberry.annotation import StrawberryAnnotation
+
+    resolved_map: dict[str, StrawberryType | type] = {}
+    for parameter, argument in generic_arguments.items():
+        if isinstance(argument, TypeVar):
+            if outer_type_var_map and argument.__name__ in outer_type_var_map:
+                resolved_map[parameter.__name__] = outer_type_var_map[argument.__name__]
+            continue
+
+        resolved = StrawberryAnnotation(argument, namespace=namespace).resolve()
+        if outer_type_var_map:
+            if (
+                isinstance(resolved, StrawberryType)
+                and resolved.is_graphql_generic
+                and all(
+                    tp.__name__ in outer_type_var_map for tp in resolved.type_params
+                )
+            ):
+                resolved = resolved.copy_with(outer_type_var_map)
+            elif (
+                has_object_definition(resolved)
+                and resolved.__strawberry_definition__.is_graphql_generic
+            ):
+                resolved = specialize_generic_object(
+                    resolved, outer_type_var_map, namespace=namespace
+                )
+
+        if not StrawberryAnnotation._is_type_generic(resolved):
+            resolved_map[parameter.__name__] = resolved
+
+    return resolved_map
+
+
+def _specialize_inherited_interface(
+    origin_cls: type[Any],
+    interface: StrawberryObjectDefinition,
+    type_var_map: Mapping[str, StrawberryType | type],
+    *,
+    generic_arguments_by_origin: Mapping[type, Mapping[Any, Any]] | None = None,
+) -> StrawberryObjectDefinition:
+    if generic_arguments_by_origin is None:
+        generic_arguments_by_origin = get_generic_arguments(origin_cls)
+    generic_arguments = generic_arguments_by_origin.get(interface.origin)
+    if generic_arguments:
+        iface_type_var_map = resolve_generic_type_var_map(
+            generic_arguments,
+            outer_type_var_map=type_var_map,
+        )
+        if all(param.__name__ in iface_type_var_map for param in interface.type_params):
+            return interface.copy_with(iface_type_var_map).__strawberry_definition__
+        return interface
+
+    if all(param.__name__ in type_var_map for param in interface.type_params):
+        return interface.copy_with(type_var_map).__strawberry_definition__
+
+    return interface
+
+
 __all__ = [
     "StrawberryContainer",
     "StrawberryList",
@@ -592,5 +744,8 @@ __all__ = [
     "WithStrawberryObjectDefinition",
     "check_is_not_undecorated_subclass",
     "get_object_definition",
+    "get_type_params",
     "has_object_definition",
+    "resolve_generic_type_var_map",
+    "specialize_generic_object",
 ]

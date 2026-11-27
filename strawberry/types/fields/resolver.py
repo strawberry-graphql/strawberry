@@ -27,7 +27,11 @@ from strawberry.exceptions import (
 )
 from strawberry.parent import StrawberryParent, resolve_parent_forward_arg
 from strawberry.types.arguments import StrawberryArgument
-from strawberry.types.base import StrawberryType, has_object_definition
+from strawberry.types.base import (
+    StrawberryType,
+    has_object_definition,
+    specialize_generic_object,
+)
 from strawberry.types.info import Info
 from strawberry.utils.typing import type_has_annotation
 
@@ -441,12 +445,22 @@ class StrawberryResolver(Generic[T]):
         )
         # Resolve generic arguments
         for argument in other.arguments:
-            if (
-                isinstance(argument.type, StrawberryType)
-                and argument.type.is_graphql_generic
+            arg_type = argument.type
+            if isinstance(arg_type, StrawberryType) and arg_type.is_graphql_generic:
+                argument.type_annotation = StrawberryAnnotation(
+                    annotation=arg_type.copy_with(type_var_map),
+                    namespace=argument.type_annotation.namespace,
+                )
+            elif (
+                has_object_definition(arg_type)
+                and arg_type.__strawberry_definition__.is_graphql_generic
             ):
                 argument.type_annotation = StrawberryAnnotation(
-                    annotation=argument.type.copy_with(type_var_map),
+                    annotation=specialize_generic_object(
+                        arg_type,
+                        type_var_map,
+                        namespace=argument.type_annotation.namespace,
+                    ),
                     namespace=argument.type_annotation.namespace,
                 )
         return other

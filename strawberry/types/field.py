@@ -29,6 +29,7 @@ from strawberry.exceptions import (
 from strawberry.types.base import (
     StrawberryType,
     WithStrawberryObjectDefinition,
+    get_type_params,
     has_object_definition,
 )
 from strawberry.types.private import is_private
@@ -325,19 +326,15 @@ class StrawberryField(dataclasses.Field):
             type_, namespace=None
         )
 
-    # TODO: add this to arguments (and/or move it to StrawberryType)
     @property
     def type_params(self) -> list[TypeVar]:
-        if has_object_definition(self.type):
-            parameters = getattr(self.type, "__parameters__", None)
+        type_params = get_type_params(self.type)
+        for argument in self.arguments:
+            for type_param in argument.type_params:
+                if type_param not in type_params:
+                    type_params.append(type_param)
 
-            return list(parameters) if parameters else []
-
-        # TODO: Consider making leaf types always StrawberryTypes, maybe a
-        #       StrawberryBaseType or something
-        if isinstance(self.type, StrawberryType):
-            return self.type.type_params
-        return []
+        return type_params
 
     def resolve_type(
         self,
@@ -415,6 +412,7 @@ class StrawberryField(dataclasses.Field):
 
         if self.base_resolver is not None:
             new_field.base_resolver = self.base_resolver.copy_with(type_var_map)
+            new_field._arguments = None
 
         return new_field
 
