@@ -2,14 +2,20 @@ from typing import Any
 from unittest.mock import MagicMock
 
 import pytest
-from opentelemetry.trace import SpanKind
+from graphql import GraphQLResolveInfo
+from opentelemetry.sdk.trace import TracerProvider as SdkTracerProvider
+from opentelemetry.sdk.trace.export import SimpleSpanProcessor
+from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
+from opentelemetry.trace import SpanKind, StatusCode
 from pytest_mock import MockerFixture
 
 import strawberry
+from strawberry.exceptions import StrawberryGraphQLError
 from strawberry.extensions.tracing.opentelemetry import (
     OpenTelemetryExtension,
     OpenTelemetryExtensionSync,
 )
+from strawberry.permission import BasePermission
 
 
 @pytest.fixture
@@ -99,7 +105,12 @@ async def test_open_tracing(global_tracer_mock, mocker):
     # it is a context manager, all other spans are a child of this
     global_tracer_mock.return_value.start_as_current_span.assert_has_calls(
         [
-            mocker.call("GraphQL Resolving: person", context=mocker.ANY),
+            mocker.call(
+                "GraphQL Resolving: person",
+                context=mocker.ANY,
+                record_exception=False,
+                set_status_on_exception=False,
+            ),
             mocker.call().__enter__(),
             mocker.call().__enter__().set_attribute("component", "graphql"),
             mocker.call().__enter__().set_attribute("graphql.parentType", "Query"),
@@ -220,3 +231,184 @@ async def test_tracing_filter_kwargs(global_tracer_mock, mocker):
             mocker.call().__enter__().set_attribute("graphql.param.name", "[...]"),
         ]
     )
+
+
+class DenyAll(BasePermission):
+    message = "Not allowed"
+
+    def has_permission(self, source: Any, info: strawberry.Info, **kwargs: Any) -> bool:
+        return False
+
+
+@strawberry.type
+class ErrorQuery:
+    @strawberry.field(permission_classes=[DenyAll])
+    async def secret(self) -> str:
+        return "secret"
+
+    @strawberry.field
+    async def broken(self) -> str:
+        raise ValueError("boom")
+
+
+@strawberry.type
+class SyncErrorQuery:
+    @strawberry.field(permission_classes=[DenyAll])
+    def secret(self) -> str:
+        return "secret"
+
+    @strawberry.field
+    def broken(self) -> str:
+        raise ValueError("boom")
+
+
+def skip_permission_errors(error: Exception) -> bool:
+    return not isinstance(error, StrawberryGraphQLError)
+
+
+def make_exporter() -> tuple[SdkTracerProvider, InMemorySpanExporter]:
+    exporter = InMemorySpanExporter()
+    provider = SdkTracerProvider()
+    provider.add_span_processor(SimpleSpanProcessor(exporter))
+    return provider, exporter
+
+
+def resolver_span(exporter: InMemorySpanExporter, field: str):
+    return next(
+        span
+        for span in exporter.get_finished_spans()
+        if span.name == f"GraphQL Resolving: {field}"
+    )
+
+
+def skip_value_errors(error: Exception) -> bool:
+    return not isinstance(error, ValueError)
+
+
+def failing_filter(error: Exception) -> bool:
+    raise RuntimeError("filter is broken")
+
+
+def failing_arg_filter(
+    kwargs: dict[str, Any], info: GraphQLResolveInfo
+) -> dict[str, Any]:
+    raise RuntimeError("arg filter is broken")
+
+
+RECORD_EXCEPTION_FILTER_CASES = [
+    ("secret", None, StatusCode.ERROR, ["exception"]),
+    ("secret", skip_permission_errors, StatusCode.UNSET, []),
+    ("broken", skip_permission_errors, StatusCode.ERROR, ["exception"]),
+    ("secret", skip_value_errors, StatusCode.ERROR, ["exception"]),
+    ("broken", skip_value_errors, StatusCode.UNSET, []),
+    ("secret", failing_filter, StatusCode.ERROR, ["exception"]),
+    ("broken", failing_filter, StatusCode.ERROR, ["exception"]),
+]
+
+ERROR_MESSAGES = {"secret": "Not allowed", "broken": "boom"}
+
+
+@pytest.mark.parametrize(
+    ("field", "record_exception_filter", "expected_status", "expected_events"),
+    RECORD_EXCEPTION_FILTER_CASES,
+)
+@pytest.mark.asyncio
+async def test_record_exception_filter(
+    field, record_exception_filter, expected_status, expected_events
+):
+    provider, exporter = make_exporter()
+    schema = strawberry.Schema(
+        query=ErrorQuery,
+        extensions=[
+            lambda: OpenTelemetryExtension(
+                tracer_provider=provider,
+                record_exception_filter=record_exception_filter,
+            )
+        ],
+    )
+
+    result = await schema.execute(f"{{ {field} }}")
+
+    assert result.errors
+    assert result.errors[0].message == ERROR_MESSAGES[field]
+    span = resolver_span(exporter, field)
+    assert span.status.status_code == expected_status
+    assert [event.name for event in span.events] == expected_events
+
+
+@pytest.mark.parametrize(
+    ("field", "record_exception_filter", "expected_status", "expected_events"),
+    RECORD_EXCEPTION_FILTER_CASES,
+)
+def test_record_exception_filter_sync(
+    field, record_exception_filter, expected_status, expected_events
+):
+    provider, exporter = make_exporter()
+    schema = strawberry.Schema(
+        query=SyncErrorQuery,
+        extensions=[
+            lambda: OpenTelemetryExtensionSync(
+                tracer_provider=provider,
+                record_exception_filter=record_exception_filter,
+            )
+        ],
+    )
+
+    result = schema.execute_sync(f"{{ {field} }}")
+
+    assert result.errors
+    assert result.errors[0].message == ERROR_MESSAGES[field]
+    span = resolver_span(exporter, field)
+    assert span.status.status_code == expected_status
+    assert [event.name for event in span.events] == expected_events
+
+
+@pytest.mark.asyncio
+async def test_failing_arg_filter_is_recorded():
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        async def hi(self, name: str) -> str:
+            return f"Hi {name}"
+
+    provider, exporter = make_exporter()
+    schema = strawberry.Schema(
+        query=Query,
+        extensions=[
+            lambda: OpenTelemetryExtension(
+                tracer_provider=provider, arg_filter=failing_arg_filter
+            )
+        ],
+    )
+
+    result = await schema.execute('{ hi(name: "Patrick") }')
+
+    assert result.errors
+    span = resolver_span(exporter, "hi")
+    assert span.status.status_code == StatusCode.ERROR
+    assert [event.name for event in span.events] == ["exception"]
+
+
+def test_failing_arg_filter_is_recorded_sync():
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def hi(self, name: str) -> str:
+            return f"Hi {name}"
+
+    provider, exporter = make_exporter()
+    schema = strawberry.Schema(
+        query=Query,
+        extensions=[
+            lambda: OpenTelemetryExtensionSync(
+                tracer_provider=provider, arg_filter=failing_arg_filter
+            )
+        ],
+    )
+
+    result = schema.execute_sync('{ hi(name: "Patrick") }')
+
+    assert result.errors
+    span = resolver_span(exporter, "hi")
+    assert span.status.status_code == StatusCode.ERROR
+    assert [event.name for event in span.events] == ["exception"]
