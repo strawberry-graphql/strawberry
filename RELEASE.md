@@ -10,7 +10,18 @@ For example, it can skip permission denials, so they no longer show up as
 errors in tracing backends:
 
 ```python
+class PermissionDeniedError(StrawberryGraphQLError): ...
+
+
+class IsAdmin(BasePermission):
+    message = "Not allowed"
+    error_class = PermissionDeniedError
+
+    def has_permission(self, source, info, **kwargs) -> bool:
+        return False
+
+
 OpenTelemetryExtension(
-    record_exception_filter=lambda error: not isinstance(error, StrawberryGraphQLError)
+    record_exception_filter=lambda error: not isinstance(error, PermissionDeniedError)
 )
 ```
