@@ -178,8 +178,17 @@ from strawberry.extensions.tracing import OpenTelemetryExtension
 from strawberry.permission import BasePermission
 
 
+class PermissionDeniedError(StrawberryGraphQLError):
+    """
+    An exception class raised only by your permission checks. This avoids broader
+    filtering on a class such as `StrawberryGraphQLError` which may mask more errors
+    than you intend.
+    """
+
+
 class IsAdmin(BasePermission):
     message = "Not allowed"
+    error_class = PermissionDeniedError
 
     def has_permission(self, source, info, **kwargs) -> bool:
         return False
@@ -194,7 +203,7 @@ class Query:
 
 def record_exception_filter(error: Exception) -> bool:
     # Permission denials are expected, don't report them as errors
-    return not isinstance(error, StrawberryGraphQLError)
+    return not isinstance(error, PermissionDeniedError)
 
 
 schema = strawberry.Schema(

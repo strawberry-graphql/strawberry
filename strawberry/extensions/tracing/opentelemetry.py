@@ -168,7 +168,7 @@ class OpenTelemetryExtension(SchemaExtension):
         if not self._should_record_exception(error):
             return
 
-        span.record_exception(error)
+        span.record_exception(error, escaped=True)
         span.set_status(Status(StatusCode.ERROR, f"{type(error).__name__}: {error}"))
 
     async def resolve(
